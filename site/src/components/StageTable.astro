@@ -33,7 +33,7 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
             <span class="et">{s.id}</span>
             <span class="name body-strong">{s.name}</span>
           </p>
-          <p class="badge">
+          <p class="state-line">
             <StatusBadge status={s.status} />
           </p>
           <p class="what" set:html={nb(detail(s))} />
@@ -111,6 +111,9 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
   table.stages tbody tr.current {
     background: var(--grass-soft);
   }
+  .compact .name {
+    min-width: 72px;
+  }
   .name {
     min-width: 96px;
     overflow-wrap: break-word;
@@ -154,8 +157,8 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
   .cards .name {
     overflow-wrap: break-word;
   }
-  .badge {
-    margin-top: var(--space-2) !important;
+  .cards .state-line {
+    margin-top: var(--space-2);
   }
   .cards .what {
     margin-top: var(--space-2);
@@ -179,14 +182,31 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
     width: 1%;
     white-space: nowrap;
   }
-  /* Narrow screens: the badge may wrap instead of fixing the column at its full width. */
-  @media (max-width: 719.98px) {
+  .cards .state-line :global(.badge) {
+    height: auto;
+    min-height: 24px;
+    padding-block: 2px;
+    white-space: normal;
+  }
+  /* Narrow table container (any screen width): the badge may wrap instead of fixing the column. */
+  @container (max-width: 340px) {
+    .compact th,
+    .compact td {
+      padding-inline: var(--space-2);
+    }
+    .compact .name {
+      min-width: 56px;
+    }
+    .compact th.et {
+      width: 40px;
+    }
+  }
+  @container (max-width: 520px) {
     .state {
       width: auto;
       white-space: normal;
     }
-    .state :global(.badge),
-    .cards .badge :global(.badge) {
+    .state :global(.badge) {
       height: auto;
       min-height: 24px;
       padding-block: 2px;

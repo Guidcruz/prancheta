@@ -57,6 +57,21 @@ const { label, minWidth = '520px', stack = false } = Astro.props;
     left: 0;
     background: var(--surface-1);
   }
+  /* The fixed column casts its own edge shadow, so scrolling from the left reads as such. */
+  .scroll :global(tr > :first-child::after) {
+    content: '';
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    right: 0;
+    width: 6px;
+    pointer-events: none;
+    background: linear-gradient(
+      to right,
+      color-mix(in srgb, var(--ink) 10%, transparent),
+      transparent
+    );
+  }
   .scroll :global(tr[aria-current='step'] > :first-child) {
     background: var(--grass-soft);
   }
@@ -87,7 +102,7 @@ const { label, minWidth = '520px', stack = false } = Astro.props;
       white-space: normal;
     }
     .stack :global(tr > :first-child) {
-      max-width: 40cqw;
+      width: 40%;
     }
   }
   .scroll :global(tbody th) {
