@@ -1,6 +1,6 @@
 # Lote 2026-11-04: nomes de jogadores (brasileiros), T-004 / US-003
 
-Autor: `content-writer`. Pedido: `/content nomes de jogadores`. Status: **revisão 2 — aguardando ok do CEO** (a revisão 1 foi aprovada em 2026-11-04 com ajustes; esta revisão trata do QA da T-006). Nada foi gravado em `app/src/`; as listas aprovadas viram arquivos em `app/src/content/names/` (a lista de atletas reais bloqueados fica fora do repositório, só em hash, via `npm run blocklist:hash`).
+Autor: `content-writer`. Pedido: `/content nomes de jogadores`. Status: **revisão 2 aprovada pelo CEO em 2026-11-04**, com o limite de 22 caracteres (a revisão 1 foi aprovada em 2026-11-04 com ajustes; esta revisão trata do QA da T-006). Nada foi gravado em `app/src/`; as listas aprovadas viram arquivos em `app/src/content/names/` (a lista de atletas reais bloqueados fica fora do repositório, só em hash, via `npm run blocklist:hash`).
 
 ## Números propostos e por quê
 
