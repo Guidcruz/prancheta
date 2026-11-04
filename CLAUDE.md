@@ -73,7 +73,7 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 - Código, identificadores e comentários de API em inglês. Specs, commits de corpo longo, PRs, docs e devlog em **português do Brasil** (o CEO lê tudo). Textos do jogo em pt-BR, es e en, sempre em `app/src/content/<idioma>/`, nunca no código.
 - O motor é determinístico: toda aleatoriedade passa pelo `Rng` com semente; `Math.random()` e `Date.now()` são proibidos em `app/src/engine/` (lint bloqueia).
 - O formato de save tem número de versão e migração; mudar o formato exige ADR e teste de migração.
-- Nenhum nome de clube, jogador, veículo ou pessoa real em lugar nenhum. Exceção: documentos de trabalho em `docs/` podem citar nomes reais só como referência; no jogo, código, dados e site a regra continua absoluta. Nenhum escudo, uniforme, canção ou voz que imite um real.
+- Nenhum nome de clube, jogador, veículo ou pessoa real em lugar nenhum. Exceção: documentos de trabalho em `docs/` podem citar nomes reais só como referência; no jogo, código, dados e site a regra continua absoluta. Escudos podem lembrar o real só na silhueta, nas cores e no tipo de padrão, nunca no símbolo, iniciais, sigla, nome ou composição (ADR-0014); nenhum uniforme, canção ou voz que imite um real.
 - Nenhum dado pessoal novo sem ADR e revisão do `security-auditor` (LGPD). Sem analytics com identificação, sem cookies de terceiros.
 - Sem loot box, sem recompensa por tempo de uso, sem chat de texto livre (ECA Digital, Lei 15.211/2025).
 - Acessibilidade: alvos de toque ≥ 44px, contraste ≥ 4,5:1, resultado nunca só por cor, respeito a `prefers-reduced-motion`.

@@ -20,6 +20,7 @@ A Etapa 0 (Dia 1) está concluída; o que resta dela são pendências do CEO, li
 | Versão zero do jogo em `/jogo` | feito      | tela inicial com escudo, nome e botão                                                |
 | Post "Dia 1"                   | feito      | `site/src/content/devlog/2026-11-03-dia-1.md`                                        |
 | Nome no INPI                   | pendente   | CEO                                                                                  |
+| Revisão jurídica dos escudos   | pendente   | CEO; antes do lançamento público, escudos de risco médio (ADR-0014)                  |
 | Licença do código              | pendente   | CEO                                                                                  |
 
 ## Decisões pendentes do CEO (da auditoria do dia 1)
