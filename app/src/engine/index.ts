@@ -5,6 +5,22 @@
 export { ENGINE_VERSION } from './version.ts';
 export { Rng, seedFromString } from './rng.ts';
 export { PARAM_RANGES, SEASON_ROUNDS, SEASON_WEEKS, validateParams } from './params.ts';
+export {
+  AI_PROFILES,
+  BLOCKLIST_FIELDS,
+  CLUB_SIZES,
+  SERIE_A_CLUBS,
+  STRENGTH_RANGE_BY_SIZE,
+  validateClubs,
+} from './clubs.ts';
+export type {
+  BlocklistField,
+  ClubDef,
+  ClubIssue,
+  ClubProblem,
+  ClubsResult,
+  ValidateClubsOptions,
+} from './clubs.ts';
 export type {
   AiParams,
   FansParams,
