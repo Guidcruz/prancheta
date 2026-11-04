@@ -160,3 +160,9 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 **Slogan na imagem.** O slogan completo (86 caracteres) é longo demais para a imagem e quebraria em quatro linhas. Versão curta para a imagem do Início: **"O Brasil inteiro na prancheta"** (29 caracteres), a última parte do próprio slogan. O slogan completo continua no site e no `<title>`.
 
 **Para a implementação (depois do ok):** hoje só `index.astro` usa o slogan como descrição; as demais páginas têm textos longos em `site/src/pages/*.astro` e o Devlog não passa descrição. A troca é de textos; o título curto da imagem pede um campo novo na configuração (por exemplo `slogan.short`), a cargo do Desenvolvimento.
+
+## Página Clubes: frase sobre o escudo (revisão)
+
+> Status: **aprovado pelo CEO em 2026-11-04** (escudos estilo A v5, ADR-0014). Substitui a frase que citava "um símbolo simples (estrela, bola ou letra)".
+
+Cada escudo tem o formato, as cores e um símbolo da cidade do clube, com uma estrela para cada título. Tudo desenhado por código.
