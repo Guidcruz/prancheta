@@ -98,8 +98,15 @@ export function bestOnPitch(
 
 /** What the markers need besides the teams. */
 export interface MarkerContext {
+  /** The final score: the awarded one when the match was abandoned (`abandonedScore`). */
   readonly score: readonly [number, number];
+  /** The goals actually scored, in order. */
   readonly goals: readonly GoalRecord[];
+  /**
+   * The match ended with fewer than 7 on one side (partida.md, "Jogo encerrado"): no `goleada`,
+   * `virada` nor `golNoFim`. Absent = false.
+   */
+  readonly abandoned?: boolean;
   readonly derby: boolean;
   readonly neutral: boolean;
   /** Displayed strength of each kick-off XI (mean `overall × fit`). */
@@ -117,9 +124,13 @@ const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
  * - `golNoFim`: the last goal that changed the result (win, draw or loss) came at minute 85 or
  *   later, added time included; it names that goal;
  * - `hatTrick`: each player with 3 goals or more;
- * - `semSofrerGols`: each side that conceded nothing;
+ * - `semSofrerGols`: each side that conceded no real goal;
  * - `classico`: the clubs are rivals;
  * - `estreia`: each player in his first match for the club.
+ *
+ * An abandoned match (partida.md, "Jogo encerrado"): the awarded score decides the winner (so
+ * `zebra`), the real goals count as goals (`hatTrick`, `semSofrerGols`), and `goleada`, `virada`
+ * and `golNoFim` never come out: the story of that match is the abandonment.
  */
 export function resultMarkers(
   teams: readonly [TeamState, TeamState],
@@ -127,9 +138,14 @@ export function resultMarkers(
 ): MatchMarker[] {
   const markers: MatchMarker[] = [];
   const { score, goals } = context;
+  const abandoned = context.abandoned === true;
   const winner = winnerOf(score);
 
-  if (winner !== undefined && Math.abs(score[0] - score[1]) >= MARKERS.thrashingMargin) {
+  if (
+    !abandoned &&
+    winner !== undefined &&
+    Math.abs(score[0] - score[1]) >= MARKERS.thrashingMargin
+  ) {
     markers.push({ kind: 'goleada', side: winner });
   }
 
@@ -140,7 +156,7 @@ export function resultMarkers(
       diff += goal.side === 'home' ? 1 : -1;
       if ((winner === 'home' ? diff : -diff) < 0) behind = true;
     }
-    if (behind) markers.push({ kind: 'virada', side: winner });
+    if (behind && !abandoned) markers.push({ kind: 'virada', side: winner });
 
     const homePoints = (side: Side) =>
       side === 'home' && !context.neutral ? MARKERS.homePoints : 0;
@@ -157,7 +173,7 @@ export function resultMarkers(
     diff += goal.side === 'home' ? 1 : -1;
     if (sign(diff) !== before) decisive = goal;
   }
-  if (decisive !== undefined && decisive.minute >= MARKERS.lateGoalMinute) {
+  if (!abandoned && decisive !== undefined && decisive.minute >= MARKERS.lateGoalMinute) {
     markers.push({
       kind: 'golNoFim',
       side: decisive.side,
@@ -180,7 +196,7 @@ export function resultMarkers(
     }
   }
   for (const team of teams) {
-    const conceded = team.side === 'home' ? score[1] : score[0];
+    const conceded = goals.filter((g) => g.side !== team.side).length;
     if (conceded === 0) markers.push({ kind: 'semSofrerGols', side: team.side });
   }
   if (context.derby) markers.push({ kind: 'classico' });

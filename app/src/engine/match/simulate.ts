@@ -550,9 +550,11 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   // Summary.
   const ratings = playerRatings(teams, final, rng);
   const motm = bestOnPitch(ratings, winnerOf(final));
+  // The awarded score decides the result; the real goals count as goals ("Jogo encerrado").
   const markers = resultMarkers(teams, {
     score: final,
     goals,
+    abandoned: abandoned !== undefined,
     derby: input.derby,
     neutral: input.neutral,
     strength: kickoffStrength,

@@ -228,3 +228,72 @@ describe('player ratings and best on the pitch (partida.md, "Estatísticas e not
     expect(winnerOf([0, 2])).toBe('away');
   });
 });
+
+describe('abandoned match (partida.md, "Jogo encerrado"; Pedido ao developer, item 7)', () => {
+  const teams = [side('home'), side('away')] as const;
+  const kinds = (c: MarkerContext) => resultMarkers(teams, c).map((m) => m.kind);
+  const abandoned = (goals: GoalRecord[], score: [number, number]): MarkerContext => ({
+    ...context(goals),
+    score,
+    abandoned: true,
+  });
+
+  it('1×0 with the away side abandoning (3×0): no goleada, semSofrerGols only for the home side', () => {
+    const c = abandoned([goal('home', 'home#10', 20)], [3, 0]);
+    expect(kinds(c)).not.toContain('goleada');
+    expect(resultMarkers(teams, c).filter((m) => m.kind === 'semSofrerGols')).toEqual([
+      { kind: 'semSofrerGols', side: 'home' },
+    ]);
+    // Without the abandonment, the same 3×0 would be a thrashing.
+    expect(kinds({ ...c, abandoned: false })).toContain('goleada');
+  });
+
+  it('2×1 for the home side, which abandons (0×3): no virada, golNoFim nor semSofrerGols', () => {
+    const goals = [
+      goal('away', 'away#10', 10),
+      goal('home', 'home#10', 80),
+      goal('home', 'home#11', 88),
+    ];
+    const c = abandoned(goals, [0, 3]);
+    const k = kinds(c);
+    for (const kind of ['virada', 'golNoFim', 'semSofrerGols', 'goleada'] as const) {
+      expect(k).not.toContain(kind);
+    }
+    // The awarded score decides the winner: ±0.4 against the same match drawn, same noise.
+    const won = playerRatings(teams, [0, 3], new Rng(11));
+    const drawn = playerRatings(teams, [0, 0], new Rng(11));
+    for (const team of teams) {
+      for (const app of team.appearances) {
+        const delta = won.get(app)! - drawn.get(app)!;
+        expect(delta).toBeCloseTo(team.side === 'away' ? 0.4 : -0.4, 9);
+      }
+    }
+  });
+
+  it('0×4 with the home side abandoning stays 0×4: no goleada, semSofrerGols for the away side', () => {
+    const goals = [10, 20, 30, 40].map((m) => goal('away', 'away#10', m));
+    const c = abandoned(goals, [0, 4]);
+    const own = [side('home'), side('away')] as const;
+    own[1].appearances[9]!.goals = 4; // away#10, as in the goal records
+    const markers = resultMarkers(own, c);
+    expect(markers.map((m) => m.kind)).not.toContain('goleada');
+    expect(markers.filter((m) => m.kind === 'semSofrerGols')).toEqual([
+      { kind: 'semSofrerGols', side: 'away' },
+    ]);
+    // The real goals count as goals: four from one player is a hat-trick.
+    expect(markers).toContainEqual({ kind: 'hatTrick', side: 'away', player: 'away#10', goals: 4 });
+  });
+
+  it('still gives zebra by the awarded score, and classico and estreia as always', () => {
+    const debut = [side('home', { clubAppearances: 0 }), side('away')] as const;
+    const c: MarkerContext = {
+      ...abandoned([goal('home', 'home#10', 5)], [0, 3]),
+      derby: true,
+      strength: { home: 80, away: 60 },
+    };
+    const k = resultMarkers(debut, c).map((m) => m.kind);
+    expect(k).toContain('zebra');
+    expect(k).toContain('classico');
+    expect(k).toContain('estreia');
+  });
+});

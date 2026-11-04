@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
 import type { GameParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
-import { GOALKEEPER_SLOT, conditionMultiplier } from '../strength.ts';
+import { FORMATION_SECTORS, GOALKEEPER_SLOT, conditionMultiplier } from '../strength.ts';
 import { firstDerby, fixtureInput, teamInputFrom, testGame } from '../testing/match.ts';
 import { testParams } from '../testing/params.ts';
 import type { Side } from '../types.ts';
@@ -672,5 +672,72 @@ describe('derby: cards in the first derby of the calendar', () => {
       const third = ofType(r, 'yellow').some((e) => e.player === s.player && e.triggersSuspension);
       expect(red || third).toBe(true);
     }
+  });
+});
+
+describe('abandoned match in the engine (partida.md, "Jogo encerrado"; Pedido ao developer 7)', () => {
+  const short = (team: TeamInput) =>
+    withLineup(team, {
+      starters: team.sheet.lineup.starters.map((id, i) => (i < 7 ? id : `${team.clubId}#ghost`)),
+    });
+  /** Goals actually scored when the match ended, as [home, away]. */
+  const live = (r: MatchResult): [number, number] => {
+    const goals = ofType(r, 'goal');
+    return [
+      goals.filter((g) => g.side === 'home').length,
+      goals.filter((g) => g.side === 'away').length,
+    ];
+  };
+  /** The first abandoned match, with `side` on 7 from kick-off, ended at the real score `at`. */
+  function abandonedAt(side: Side, at: [number, number], injury: number) {
+    return firstMatch(
+      (seed) => ({ ...withSeed(base, seed), [side]: short(base[side]) }),
+      (r) => ofType(r, 'fulltime')[0]!.abandoned && live(r).join() === at.join(),
+      tuned({ injury: { basePerMinute: injury } }),
+    ).result;
+  }
+  const kinds = (r: MatchResult) => r.markers.map((m) => m.kind);
+  const clean = (r: MatchResult) =>
+    r.markers.flatMap((m) => (m.kind === 'semSofrerGols' ? [m.side] : []));
+
+  it('1×0 with the away side abandoning becomes 3×0: no goleada, semSofrerGols only at home', () => {
+    const r = abandonedAt('away', [1, 0], 0.002);
+    expect(r.score).toEqual([3, 0]);
+    expect(kinds(r)).not.toContain('goleada');
+    expect(clean(r)).toEqual(['home']);
+  });
+
+  it('2×1 for the home side, which abandons, becomes 0×3: no virada, golNoFim nor semSofrerGols', () => {
+    const r = abandonedAt('home', [2, 1], 0.001);
+    expect(r.score).toEqual([0, 3]);
+    for (const kind of ['virada', 'golNoFim', 'goleada', 'semSofrerGols'] as const) {
+      expect(kinds(r)).not.toContain(kind);
+    }
+    // The real goals still count: the home scorers keep their goals in the events.
+    expect(ofType(r, 'goal').filter((g) => g.side === 'home')).toHaveLength(2);
+    // Outfield players outside the defence who did nothing but play: 6.0 ± 0.5 noise, +0.4 for
+    // the awarded winner (5.9 to 6.9) and −0.4 for the side that abandoned (5.1 to 6.1). The
+    // exact ±0.4 is in summary.test.ts.
+    const involved = new Set(r.events.flatMap((e) => playersIn(e)));
+    for (const s of ['home', 'away'] as const) {
+      const team = s === 'home' ? short(base.home) : base.away;
+      const sectors = FORMATION_SECTORS[team.sheet.lineup.formation];
+      team.sheet.lineup.starters.forEach((id, i) => {
+        const rating = r.ratings[id];
+        if (rating === undefined || rating === null || involved.has(id)) return;
+        if (sectors[i] === 'gk' || sectors[i] === 'def') return;
+        if (s === 'away') expect(rating).toBeGreaterThanOrEqual(5.9);
+        else expect(rating).toBeLessThanOrEqual(6.1);
+      });
+    }
+    expect(ofType(r, 'fulltime')[0]!.score).toEqual([0, 3]);
+  });
+
+  it('0×4 with the home side abandoning stays 0×4: no goleada, semSofrerGols for the away side', () => {
+    const r = abandonedAt('home', [0, 4], 0.001);
+    expect(r.score).toEqual([0, 4]);
+    expect(kinds(r)).not.toContain('goleada');
+    expect(clean(r)).toEqual(['away']);
+    expect(r.motm === undefined || r.ratings[r.motm] !== null).toBe(true);
   });
 });
