@@ -1,0 +1,24 @@
+{
+  "name": "Prancheta",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:22-bookworm",
+  "containerEnv": {
+    "ASTRO_TELEMETRY_DISABLED": "1"
+  },
+  "postCreateCommand": "npm ci",
+  "forwardPorts": [5173, 4321],
+  "portsAttributes": {
+    "5173": { "label": "Jogo (app)" },
+    "4321": { "label": "Site" }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "svelte.svelte-vscode",
+        "astro-build.astro-vscode",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "vitest.explorer"
+      ]
+    }
+  }
+}
