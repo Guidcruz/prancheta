@@ -1,33 +1,35 @@
 # Clubes da Série A: força, perfil de IA e capacidade (T-003)
 
-> Mantido pelo `game-designer`. Entrada para `ClubDef` (`docs/02-architecture.md` §4.1): `size`, `strength`, `aiProfile`, `stadium.capacity`. Nomes, cores, siglas e rivais vêm do lote aprovado `docs/content/lotes/2026-11-04-nomes-serie-a.md`. O nome do estádio fica com o `content-writer` (próximo lote); este documento só fixa a capacidade.
+> Mantido pelo `game-designer`. Entrada para `ClubDef` (`docs/02-architecture.md` §4.1): `size`, `strength`, `aiProfile`, `stadium.capacity` e o campo novo proposto `titles`. Nomes, cores, siglas e rivais vêm do lote aprovado `docs/content/lotes/2026-11-04-nomes-serie-a.md`. O nome do estádio fica com o `content-writer` (próximo lote); este documento só fixa a capacidade.
 
-**Regra em uma frase:** cada clube recebe uma força-alvo dentro da faixa do seu porte, um perfil de IA que respeita a distribuição padrão por porte e um estádio cujo tamanho acompanha a torcida.
+**Regra em uma frase:** cada clube recebe uma força-alvo dentro da faixa do seu porte, um perfil de IA que respeita a distribuição padrão por porte, o estádio real em que manda os jogos e um histórico de títulos que espelha o real, só para contar a história.
 
 ## Tabela
 
-| #   | Clube            | Porte   | `strength` | `aiProfile`   | `stadium.capacity` | Justificativa curta                                                                   |
-| --- | ---------------- | ------- | ---------- | ------------- | ------------------ | ------------------------------------------------------------------------------------- |
-| 1   | Palmeral         | grande  | 78         | `ambitious`   | 43.000             | Favorito: elenco mais caro e mais regular; estádio moderno, não o maior.              |
-| 2   | Flamingo         | grande  | 77         | `ambitious`   | 72.000             | Segundo favorito e maior torcida: o maior estádio do jogo.                            |
-| 3   | Atlético Minério | grande  | 76         | `ambitious`   | 46.000             | Terceira força, briga por título; arena nova de porte médio-grande.                   |
-| 4   | Corinto          | grande  | 75         | `ambitious`   | 48.000             | Torcida enorme, elenco um degrau abaixo: candidato a G4 que às vezes briga pelo topo. |
-| 5   | São Paulão       | grande  | 74         | `traditional` | 62.000             | Grande que muda pouco e aposta em experientes; estádio antigo e grande.               |
-| 6   | Grêmeos          | grande  | 73         | `traditional` | 55.000             | Grande mais fraco: mantém base e copeiros; arena grande no Sul.                       |
-| 7   | Cruzador         | médio   | 72         | `traditional` | 44.000             | Médio forte (lote): torcida de grande, elenco experiente; estádio grande.             |
-| 8   | Botafogueira     | médio   | 72         | `seller`      | 42.000             | Médio forte (lote): investe e vende caro; força que ameaça os grandes.                |
-| 9   | Inter-Regional   | médio   | 71         | `academy`     | 45.000             | Médio forte (lote, decisão 3 do CEO): base forte que vende jovens; estádio grande.    |
-| 10  | Fluminário       | médio   | 70         | `academy`     | 34.000             | Base tradicional que revela e vende; meio da tabela com chance de surpresa.           |
-| 11  | Tufão            | médio   | 70         | `seller`      | 40.000             | Clube-empresa que compra barato e vende caro; arena moderna.                          |
-| 12  | Baião            | médio   | 69         | `traditional` | 38.000             | Maior do Nordeste na lista, elenco estável; torcida que enche a arena.                |
-| 13  | Vasconcelos      | médio   | 68         | `traditional` | 24.000             | Gigante de torcida em fase fraca; estádio próprio pequeno e apertado.                 |
-| 14  | Santões          | médio   | 68         | `academy`     | 18.000             | A base é a identidade: revela joias e as perde; o menor estádio entre os médios.      |
-| 15  | Bragantão        | pequeno | 67         | `seller`      | 15.000             | Pequeno mais forte: projeto que vende bem e reinveste; estádio de cidade do interior. |
-| 16  | Miragol          | pequeno | 66         | `seller`      | 12.000             | Interior organizado, vende quem se destaca; o menor estádio do jogo.                  |
-| 17  | Vitorioso        | pequeno | 65         | `chaotic`     | 26.000             | Pequeno de torcida grande e diretoria inquieta: o caótico da liga.                    |
-| 18  | Coritibom        | pequeno | 64         | `academy`     | 28.000             | Pequeno de torcida grande que vive da base; estádio maior que o porte.                |
-| 19  | Chapecão         | pequeno | 63         | `traditional` | 20.000             | Elenco estável e sem sobressalto; perfil neutro (decisão 5 do CEO: nada de história). |
-| 20  | Remador          | pequeno | 62         | `academy`     | 18.000             | O mais fraco no papel; aposta em jovens da região para escapar do rebaixamento.       |
+Títulos = histórico fictício até 2025, espelhando o clube real que inspira cada um (Brasileiro / Copa do Brasil). Capacidade = a do estádio real em que o clube manda os jogos, arredondada para centenas (pedido do CEO: reconhecível).
+
+| #   | Clube            | Porte   | `strength` | `aiProfile`   | `stadium.capacity` | Brasileiro | Copa do Brasil | Justificativa curta                                                                                 |
+| --- | ---------------- | ------- | ---------- | ------------- | ------------------ | ---------- | -------------- | --------------------------------------------------------------------------------------------------- |
+| 1   | Palmeral         | grande  | 78         | `ambitious`   | 43.700             | 12         | 4              | Favorito e maior campeão nacional; arena moderna, não a maior.                                      |
+| 2   | Flamingo         | grande  | 77         | `ambitious`   | 78.800             | 8          | 5              | Segundo favorito e maior torcida; divide com o Fluminário o maior estádio do jogo.                  |
+| 3   | Atlético Minério | grande  | 76         | `ambitious`   | 44.900             | 3          | 2              | Terceira força, briga por título; arena nova.                                                       |
+| 4   | Corinto          | grande  | 75         | `ambitious`   | 48.900             | 7          | 4              | Torcida enorme, elenco um degrau abaixo: candidato a G4 que às vezes briga pelo topo.               |
+| 5   | São Paulão       | grande  | 74         | `traditional` | 72.000             | 6          | 1              | Grande que muda pouco e aposta em experientes; estádio antigo e grande.                             |
+| 6   | Grêmeos          | grande  | 73         | `traditional` | 55.700             | 2          | 5              | Grande mais fraco na liga, copeiro (5 Copas); arena grande no Sul.                                  |
+| 7   | Cruzador         | médio   | 72         | `traditional` | 61.900             | 4          | 6              | Médio forte (lote), maior campeão da Copa; torcida de grande, elenco experiente.                    |
+| 8   | Botafogueira     | médio   | 72         | `seller`      | 44.700             | 3          | 0              | Médio forte (lote): investe e vende caro; força que ameaça os grandes.                              |
+| 9   | Inter-Regional   | médio   | 71         | `academy`     | 50.800             | 3          | 1              | Médio forte (lote, decisão 3 do CEO): base forte que vende jovens.                                  |
+| 10  | Fluminário       | médio   | 70         | `academy`     | 78.800             | 4          | 1              | Base tradicional que revela e vende; divide o maior estádio com o Flamingo.                         |
+| 11  | Tufão            | médio   | 70         | `seller`      | 42.400             | 1          | 1              | Clube-empresa que compra barato e vende caro; arena moderna.                                        |
+| 12  | Baião            | médio   | 69         | `traditional` | 48.700             | 2          | 0              | Maior do Nordeste na lista, elenco estável; arena grande (fontes 47.400–50.000, média).             |
+| 13  | Vasconcelos      | médio   | 68         | `traditional` | 21.700             | 4          | 1              | Gigante de torcida em fase fraca; estádio próprio pequeno e apertado.                               |
+| 14  | Santões          | médio   | 68         | `academy`     | 16.100             | 8          | 1              | Muitos títulos, fase fraca; a base é a identidade; o menor estádio entre os médios.                 |
+| 15  | Bragantão        | pequeno | 67         | `seller`      | 12.000             | 0          | 0              | Pequeno mais forte: projeto que vende bem e reinveste; estádio de interior reinaugurado.            |
+| 16  | Miragol          | pequeno | 66         | `seller`      | 15.000             | 0          | 0              | Interior organizado, vende quem se destaca.                                                         |
+| 17  | Vitorioso        | pequeno | 65         | `chaotic`     | 35.600             | 0          | 0              | Pequeno de torcida grande e diretoria inquieta: o caótico da liga.                                  |
+| 18  | Coritibom        | pequeno | 64         | `academy`     | 40.500             | 1          | 0              | Pequeno de torcida grande, campeão uma vez, vive da base; estádio maior que o porte.                |
+| 19  | Chapecão         | pequeno | 63         | `traditional` | 21.600             | 0          | 0              | Elenco estável e sem sobressalto (decisão 5 do CEO: nada de história); fontes 20.600–22.600, média. |
+| 20  | Remador          | pequeno | 62         | `academy`     | 53.600             | 0          | 0              | O mais fraco no papel; manda no estádio estadual grande (ver "Capacidade").                         |
 
 ## Regras gerais
 
@@ -56,10 +58,19 @@ Segue exatamente o padrão por porte de `ia-clubes.md` (nenhum sorteio necessár
 
 ### Capacidade
 
-- **Faixas por porte:** grande 43.000 a 72.000; médio 18.000 a 45.000; pequeno 12.000 a 28.000. Todas múltiplas de 1.000. Médias: grande 54.300, médio 35.600, pequeno 19.800, acima dos padrões de `torcida.md` (45.000 / 30.000 / 15.000), que continuam valendo só para clube sem capacidade na lista.
-- **A capacidade acompanha a torcida, não a força.** Por isso Vasconcelos e Santões (médios) têm estádio pequeno, e Coritibom e Vitorioso (pequenos) têm estádio maior que Bragantão e Miragol. A ocupação média continua a de `torcida.md` (`fans.baseOccupancy = 0,62`, cerca de 61% com humor médio, dentro da meta de 55% a 70%), porque a fórmula é proporcional à capacidade.
-- Os números são fictícios e arredondados; não reproduzem a capacidade oficial de nenhum estádio real.
-- Na 1a o público é só exibido; quando a bilheteria entrar (Etapa 3), a capacidade passa a pesar na receita e a tabela será revista com o `/balance` da economia.
+- **Igual à real, arredondada para centenas** (pedido do CEO). Onde as fontes divergem (Baião, Chapecão), uso a média da faixa. Flamingo e Fluminário dividem o mesmo estádio e têm a mesma capacidade, 78.800; o `content-writer` deve dar o mesmo nome de estádio aos dois.
+- **Remador: 53.600 (o estádio estadual), não o estádio próprio.** Não há dado confiável do estádio próprio, o clube real manda os jogos grandes no estadual e tem uma das maiores médias de público do país; um estádio pequeno o deixaria irreconhecível. Na 1a o público é só exibido, então o custo é zero. Reavaliar na Etapa 3, quando a bilheteria entrar: um pequeno com 53.600 lugares pode ganhar receita de médio.
+- **Ocupação média continua na meta.** A fórmula de `torcida.md` é proporcional à capacidade: `ocupação = clamp(fans.baseOccupancy × demanda × clássico, 0,10, 1,00)`, e a capacidade não entra no fator. Com `fans.baseOccupancy = 0,62` e termômetro médio 55 (demanda 0,985), a ocupação é 61% em todo estádio e em todo porte, dentro da meta de 55% a 70% de `balance-targets.md`. **Nenhum parâmetro muda.**
+- **Efeito colateral (só exibição na 1a):** com 61% de ocupação, Fluminário (médio) mostra cerca de 48.000 por jogo e Remador (pequeno) cerca de 32.700, mais que a média dos grandes Palmeral (26.700) e Atlético Minério (27.400). Para a 1a isso é aceitável e até reconhecível. Se na Etapa 3 a bilheteria precisar de público por porte, a correção será uma demanda por porte em `torcida.md` (ADR-0005), não mudar a capacidade.
+- Médias por porte: grande 57.300, médio 45.600, pequeno 29.700. Os padrões de `torcida.md` (45.000 / 30.000 / 15.000) continuam valendo só para clube sem capacidade na lista.
+
+### Títulos (histórico fictício)
+
+- **Espelham os reais até 2025**, um a um, para o clube ser reconhecível pela história além do nome e das cores. São do clube fictício; nenhum texto menciona o clube real.
+- **Para que servem na 1a (só conteúdo, sem efeito no motor):** notícias e fichas ("o maior campeão do país", "o maior campeão da Copa", "em busca do primeiro título"), apresentação do clube na escolha da carreira e nas cerimônias de título ("13º Brasileiro"), e os comentários de expectativa da torcida em templates. O título conquistado na carreira soma ao histórico na exibição.
+- **Não pesam em porte, `strength` nem `aiProfile`.** Título conta o passado; `strength` é o elenco de agora, porte é o orçamento e a torcida de agora (lote aprovado pelo CEO), perfil é o jeito de gerir. Misturar faria o Santões (8 Brasileiros, fase fraca) virar favorito e apagaria a história de "gigante em crise", que é boa para o jogo.
+- **Escada revisada contra os títulos, sem mudança:** Santões fica médio 68 (muitos títulos, momento fraco, como o Vasconcelos); Cruzador (4/6) já é o médio mais forte; Grêmeos (2/5) segue o grande mais fraco porque o porte vem da torcida e do orçamento, e a Copa reforça só o rótulo de copeiro nas notícias; Botafogueira (3/0) segue médio forte pelo elenco atual. Mudar porte do Santões seria mudar o lote aprovado: decisão do CEO, não minha.
+- **Cinco clubes sem título** (Bragantão, Miragol, Vitorioso, Chapecão, Remador): cinco histórias possíveis de "primeiro título da história".
 
 ## Casos de borda
 
@@ -72,6 +83,19 @@ Segue exatamente o padrão por porte de `ia-clubes.md` (nenhum sorteio necessár
 | Dois clubes com a mesma `strength` (72/72, 70/70, 68/68)         | válido; a variação por carreira (`clubStrengthSd`) desempata                               |
 | Clube com `rivals` vazio (Bragantão, Miragol, Chapecão, Remador) | sem efeito nesta tabela; o multiplicador de clássico do público simplesmente não se aplica |
 
+## Campo novo no `ClubDef` (para o `architect` e o `developer`)
+
+```ts
+titles: {
+  league: number;
+  cup: number;
+} // histórico até a temporada inicial; inteiros >= 0
+```
+
+- Obrigatório nos 20 clubes (o padrão para clube sem dado é `{ league: 0, cup: 0 }`).
+- É dado estático de `app/src/data/`, como cores e porte; o motor não lê para calcular nada. Títulos ganhos na carreira ficam no estado da carreira (histórico de temporadas), não no `ClubDef`; a interface exibe a soma. Se isso pedir campo novo no save, é ADR do `architect` com migração.
+- Copas e campeonatos futuros (Libertadores, estaduais) entram como chaves novas quando as competições existirem; não antecipar agora.
+
 ## Pedido ao `developer` (T-003)
 
-Gravar os quatro campos acima nos `ClubDef` de `app/src/data/`. Aceite: os 20 clubes com `strength`, `aiProfile` e `stadium.capacity` iguais a esta tabela; teste que confere que cada `strength` está na faixa do seu porte e que a contagem de perfis por porte bate com a tabela "Distribuição de perfis"; `/balance` de 200 temporadas com campeão entre 72 e 82 pontos e 17º entre 40 e 46 (mesma meta de `balance-targets.md`).
+Gravar `strength`, `aiProfile`, `stadium.capacity` e `titles` nos `ClubDef` de `app/src/data/`. Aceite: os 20 clubes iguais a esta tabela; teste que confere que cada `strength` está na faixa do seu porte, que a contagem de perfis por porte bate com a tabela "Distribuição de perfis", que Flamingo e Fluminário têm a mesma capacidade e que `titles` tem inteiros >= 0; `/balance` de 200 temporadas com campeão entre 72 e 82 pontos, 17º entre 40 e 46 e ocupação média por porte entre 55% e 70% (`balance-targets.md`).
