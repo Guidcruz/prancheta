@@ -72,6 +72,13 @@ scripts/             balance.ts, content-check.mjs, template-repeat.ts, check-pr
 - `npm run blocklist:hash:athletes` faz o mesmo e grava em `athletes-blocklist.sha256.json` (nomes de atletas reais, usado pelo teste dos nomes).
 - `npm run names:exclusions` (`scripts/name-exclusions.mjs`) recalcula `app/src/content/names/br.exclusions.json` (pares, sobrenomes e triplas, só por índice). `NAMES_FULL_CHECK=1 npm test -w app` roda a verificação completa dos nomes (cerca de 2 minutos): antes de release e quando as listas mudarem.
 
+### Gerador de escudos (`app/src/lib/generators/shield.ts`)
+
+- Estilo A v5 (`docs/art/escudos-estilos/README.md`; ADR-0014). Função pura e determinística, fora do motor: `shieldSpecFor(club, { label? })` monta o `ShieldSpec` a partir do clube e `shieldSvg(spec, size = 64, { instance? })` devolve o SVG.
+- Nada é sorteado: silhueta (`crestShape`), padrão (`crestPattern`), cor de base (`crestBase`) e símbolo (`crestSymbol`) são dados fixos do `ClubDef`. As estrelas vêm de `titles.league` (douradas, Série A) e `titles.leagueB` (prateadas, Série B; campo opcional, ainda ausente nos dados).
+- O SVG é autocontido (sem variáveis CSS nem filtros), então serve no navegador, no Astro em build e no librsvg (`scripts/og.mjs`). Até 32px (`SMALL_SIZE`) sai a versão simples. Os ids internos derivam do id do clube; `instance` evita colisão com o mesmo clube duas vezes na página. Valores fora das listas caem em padrões seguros (`rounded`, `none`, `sol`); o aviso fica por conta de `validateClubs` (`invalid-crest`).
+- Sem `label`, o SVG é decorativo (`aria-hidden`); com `label`, usa `shortName` como nome acessível, sempre escapado.
+
 ### Interface (`app/src/ui/`)
 
 - Telas e componentes Svelte 5 segundo `docs/design/telas/` (ux-designer). Roteamento por estado simples (sem biblioteca de rotas), com abas embaixo no celular e barra lateral a partir de 900 px.
@@ -146,10 +153,16 @@ export interface ClubDef {
   titles: { league: number; cup: number; libertadores: number; sudamericana: number };
   stadium: { name: string; capacity: number };
   rivals: ClubId[];
+  // escudo (ADR-0014): dados fixos de cada clube, nunca sorteados; listas fechadas em clubs.ts
+  crestShape: CrestShape; // 'rounded' | 'french' | 'swiss' | 'oval' | 'chamfer' | 'disc'
+  crestPattern: CrestPattern; // 'hoops' | 'vstripes' | 'pales' | 'split' | 'bend' | 'bendMirror' | 'fess' | 'chief' | 'chevron' | 'none'
+  crestBase: 0 | 1; // qual das duas cores é a base do campo (0 = primária, 1 = secundária)
+  crestSymbol: CrestSymbol; // um dos 20 símbolos da cidade (CREST_SYMBOLS)
 }
 
-// validateClubs(raw): valida os clubes, nunca lança. Escudo: shieldSpecFor(clubId, color1, color2, abbreviation?)
-// usa a sigla no símbolo de letra; sem o 4º argumento, as 3 primeiras letras do id.
+// validateClubs(raw): valida os clubes, nunca lança. Cada campo de escudo ausente ou fora da lista
+// gera o problema 'invalid-crest' (com o campo e o valor); a lista inteira dos problemas é devolvida.
+// Escudo: shieldSpecFor(club, { label? }) em app/src/lib/generators/shield.ts (ver "Gerador de escudos").
 
 export interface Player {
   id: PlayerId;
@@ -436,7 +449,8 @@ export function startNextSeason(
 
 Notas do contrato:
 
-- **Calendário (T-007):** `newGame` devolve `GameState.fixtures` com os 380 jogos (Berger com `BERGER_START = 3`, returno espelhado, mando com no máximo 2 seguidos; 1ª rodada no domingo depois do 2º sábado de abril, 8 quartas, sem Data FIFA, última rodada entre 26/11 e 02/12). `'invalid-calendar'` indica ano fora do intervalo aceito ou calendário que não cabe na janela; o `detail` traz o motivo. `startNextSeason` devolve o mesmo erro (previsto; ainda não implementado). `Rng.shuffle` embaralha de forma determinística. `ENGINE_VERSION` é 2.
+- **Calendário (T-007):** `newGame` devolve `GameState.fixtures` com os 380 jogos (Berger com `BERGER_START = 3`, returno espelhado, mando com no máximo 2 seguidos; 1ª rodada no domingo depois do 2º sábado de abril, 8 quartas, sem Data FIFA, última rodada entre 26/11 e 02/12). `'invalid-calendar'` indica ano fora do intervalo aceito ou calendário que não cabe na janela; o `detail` traz o motivo. `startNextSeason` devolve o mesmo erro (previsto; ainda não implementado). `Rng.shuffle` embaralha de forma determinística. `ENGINE_VERSION` é 2 neste ponto.
+- **Escudo no `ClubDef` (ADR-0014):** `crestShape`, `crestPattern`, `crestBase` e `crestSymbol` são obrigatórios; `validateClubs` devolve `invalid-crest` (com `field` e `value`) para campo ausente ou fora das listas `CREST_SHAPES`, `CREST_PATTERNS`, `[0, 1]` e `CREST_SYMBOLS`. Como fazem parte das definições de clube no resumo do estado, `ENGINE_VERSION` passou a **3** (a simulação não mudou).
 - **Semente por partida e por fluxo:** cada partida, o calendário, a geração, o sorteio de desempate e o conteúdo usam `seedFromString` com um rótulo próprio (`docs/design/partida.md`, "Determinismo"). Nunca se compartilha um `Rng` entre sistemas. Assim, mudar uma partida não desloca as outras, e as 10 partidas podem rodar em qualquer ordem.
 - **Comandos:** mesma semente + mesmos comandos = mesmos eventos, byte a byte. A tela ao vivo reexecuta `simulateMatch` com a lista de comandos acumulada. Os eventos até o minuto do comando não mudam, porque o comando só vale a partir do minuto seguinte. Troca por lesão do lado humano: o motor aplica a regra da IA, salvo se houver um comando `substitution` com o mesmo `minute` e `out` igual ao lesionado.
 - **A tabela é derivada:** `getStandings` calcula a tabela a partir das `Fixture.result`, com os critérios de desempate de `docs/design/temporada.md`. Não existe uma tabela gravada que possa divergir dos resultados.

@@ -36,6 +36,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Nomes, revisão 2: listas revisadas pelo CEO, origens curtas e exclusões regeneradas.
 - Descrições curtas para compartilhar as páginas do site, aprovadas (clubes: "Clubes com trocadilho").
 - Propostas de três direções visuais do site (escolhida a A "Noite de estádio") e de três estilos de escudo (aguardando escolha).
+- Site na direção visual A "Noite de estádio" (`docs/design/site.md`): componentes novos (`StadiumHero`, `FloodlightTower`, `GlassCard`, `Sticker`, `StickerGrid`, `StageTable`, `TableScroll`, `TacticDiagram`, `PitchShowcase`, `MatchSample`, `NewsSample`, `FanMeter`, `RhythmCompare`, `StepList`, `StatusBadge`, entre outros), páginas refeitas e tabelas que viram cartões no celular; sem rolagem horizontal da página a 320px.
+- Imagens de compartilhamento (1200x630) geradas no build por `scripts/og.mjs` (`npm run og`), uma por página, em `site/public/og/`; o script falha se as fontes não forem achadas ou se a imagem passar de 300 KB.
+- Gerador de escudos estilo A v5 (`app/src/lib/generators/shield.ts`): seis silhuetas, dez padrões, 20 símbolos da cidade desenhados por nós, estrelas douradas (títulos da Série A) e prateadas (Série B), versão simples até 32px. SVG autocontido, determinístico, sem sorteio.
+- Campos fixos de escudo em `ClubDef` (`crestShape`, `crestPattern`, `crestBase`, `crestSymbol`) nos 20 clubes da Série A, validados por `validateClubs` (problema `invalid-crest` quando o valor não está na lista).
+- ADR-0014 aceito: escudos podem lembrar o clube real só na silhueta, nas cores e no tipo de padrão, nunca no símbolo, nas iniciais, na sigla, no nome ou na composição.
+- Tokens novos no design system: `body-lg` (17px/26px), `sticker-name`, `sticker-name-long` e `stage-number`; `type-display-xl` passa a ter mínimo de 64px. Também os tokens de vidro, feixe de luz, adesivo e giz da direção A.
+- Textos complementares do site aprovados pelo CEO em `docs/content/site/complementos.md` (inclui o item dos escudos na página Clubes).
+- Capturas de tela do site implementado em `docs/design/`.
 
 ### Alterado
 
@@ -53,6 +61,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - O tamanho do elenco (25) deixou de ser parâmetro e virou constante.
 - O escudo gerado passa a mostrar a sigla do clube (`abbreviation`) no símbolo de letra; `shieldSpecFor` ganhou o 4º argumento opcional.
 - Porte (grandes, médios, pequenos) separado da força: o porte vem de títulos, história e torcida; a força, da tabela do Brasileirão 2026 parcial (33ª rodada), numa escada única de 20 degraus.
+- `ENGINE_VERSION` passa a 3 (campos de escudo em `ClubDef`; a simulação não mudou).
+- `shieldSpecFor` agora recebe o clube (`ShieldClub`) e opções (`{ label?: boolean }`) e lê forma, padrão, base e símbolo dos dados do clube, no lugar do sorteio por id; as estrelas vêm de `titles.league` (e `titles.leagueB`, opcional).
+- ADR-0013 revisada: ao vivo até 8 humanos, assíncrona até 20 por divisão, e liga com Série A e B já na Etapa 2.
+- Texto alternativo do diagrama de pressão no site: "cada uma mais marcada que a anterior".
 
 ### Corrigido
 

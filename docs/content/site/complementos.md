@@ -39,7 +39,7 @@ Obs. para o developer: na frase de abertura de "Perguntas", falta espaço antes 
 - **Rótulo do sumário** (`aria-label` do `nav`): Nesta página
 - **Texto alternativo, formação:** Diagrama de campo com onze jogadores em linhas, na formação 4-3-3.
 - **Texto alternativo, postura:** Diagrama de campo com três setas de ataque, cada uma de um tamanho: quanto maior, mais ofensiva a postura.
-- **Texto alternativo, pressão (corrigido):** Diagrama de campo com três faixas, cada uma mais clara que a anterior: quanto mais clara, mais alta a pressão.
+- **Texto alternativo, pressão (corrigido):** Diagrama de campo com três faixas, cada uma mais marcada que a anterior: quanto mais marcada, mais alta a pressão.
 - **Legenda da partida:** Exemplo ilustrativo, com clubes fictícios
 
 **Partida de exemplo:** Flamingo 2 x 1 Corinto.
