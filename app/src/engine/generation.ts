@@ -29,6 +29,7 @@ import type {
   ClubSize,
   EngineWarning,
   Formation,
+  PlayerId,
   Position,
   Trait,
 } from './types.ts';
@@ -38,7 +39,8 @@ import type {
  * every club draws from its own streams (ADR-0007, rule 2), so changing one club never moves
  * another:
  * - `${seed}-strength-${clubId}`: the effective strength of the career;
- * - `${seed}-profile-${clubId}`:  the AI profile (only when the data has none) and the formations;
+ * - `${seed}-profile-${clubId}`:  the AI profile (always drawn; used only when the data has none)
+ *   and the formations;
  * - `${seed}-squad-${clubId}`:    positions, then every player, then the potentials;
  * - `${seed}-names-${clubId}-${nationality}`: the seed handed to the IdentitySource.
  *
@@ -122,6 +124,26 @@ export const SOUTH_AMERICAN_NATIONALITIES: readonly string[] = [
   'UY',
   'VE',
 ];
+
+/**
+ * Shirt numbers (jogadores.md, "Camisas"). Starters, in this position order (and slot order
+ * within a position), take the first free number of their list, else the lowest free of 2..11.
+ */
+export const STARTER_SHIRT_ORDER: readonly Position[] = ['GK', 'FB', 'CB', 'DM', 'AM', 'ST'];
+export const STARTER_SHIRTS: { readonly [P in Position]: readonly number[] } = {
+  GK: [1],
+  FB: [2, 6],
+  CB: [3, 4],
+  DM: [5, 8],
+  AM: [10, 8, 7],
+  ST: [9, 11, 7],
+};
+/** Shirt of the first reserve goalkeeper. */
+export const RESERVE_GOALKEEPER_SHIRT = 12;
+/** Other reserves and the rotation group take the lowest free number from here. */
+export const SQUAD_SHIRTS_FROM = 13;
+/** The youth take the lowest free number from here. */
+export const YOUTH_SHIRTS_FROM = 30;
 
 /** Initial morale: `Rng.int(50, 70)` (jogadores.md, "Estados que mudam"). */
 export const START_MORALE: { readonly min: number; readonly max: number } = { min: 50, max: 70 };
@@ -225,6 +247,40 @@ function squadPositions(rng: Rng, formation: Formation): Position[] {
   return [...starters, ...reserves, ...pool];
 }
 
+/** Shirt of each player, by index in squad order (see {@link STARTER_SHIRTS}). */
+function assignShirts(positions: readonly Position[]): number[] {
+  const shirts = new Array<number>(positions.length).fill(0);
+  const used = new Set<number>();
+  const take = (index: number, shirt: number) => {
+    shirts[index] = shirt;
+    used.add(shirt);
+  };
+  const lowestFree = (from: number, to = Number.MAX_SAFE_INTEGER) => {
+    let n = from;
+    while (used.has(n) && n < to) n++;
+    return n;
+  };
+  const starters = SQUAD_GROUP_SIZES.starters;
+  for (const position of STARTER_SHIRT_ORDER) {
+    for (let i = 0; i < starters; i++) {
+      if (positions[i] !== position) continue;
+      const listed = STARTER_SHIRTS[position].find((n) => !used.has(n));
+      take(i, listed ?? lowestFree(2, starters));
+    }
+  }
+  let reserveGoalkeeper = false;
+  for (let i = starters; i < positions.length; i++) {
+    const group = groupAt(i);
+    if (group === 'reserves' && positions[i] === 'GK' && !reserveGoalkeeper) {
+      reserveGoalkeeper = true;
+      take(i, RESERVE_GOALKEEPER_SHIRT);
+    } else {
+      take(i, lowestFree(group === 'youth' ? YOUTH_SHIRTS_FROM : SQUAD_SHIRTS_FROM));
+    }
+  }
+  return shirts;
+}
+
 function groupAt(index: number): SquadGroup {
   let end = 0;
   for (const group of SQUAD_GROUPS) {
@@ -294,10 +350,16 @@ function clampGenerated(overall: number): number {
  * target until it does (each point moves the mean by about 0.09).
  *
  * Only then each player reaches the new overall by the coarse shift and the fine adjustment
- * (fitAttributesToOverall). Returns the final distance, target − strength.
+ * (fitAttributesToOverall). Returns the final distance (target − strength), the common shift and
+ * how many single-point moves the fallback made.
  */
-function shiftSquad(players: DraftBase[], formation: Formation, target: number): number {
+function shiftSquad(
+  players: DraftBase[],
+  formation: Formation,
+  target: number,
+): { diff: number; shift: number; fineSteps: number } {
   const base = players.map((p, index) => ({
+    id: p.id,
     position: p.position,
     age: p.age,
     overall: p.overall,
@@ -324,11 +386,13 @@ function shiftSquad(players: DraftBase[], formation: Formation, target: number):
   }
 
   const current = shiftedBy(best);
+  let fineSteps = 0;
   for (let step = 0; step < MAX_FINE_STEPS && Math.abs(bestDiff) > STRENGTH_TOLERANCE; step++) {
     const eleven = bestEleven(current, formation);
     const member = eleven[step % eleven.length]!.player;
     member.overall = clampGenerated(member.overall + (bestDiff > 0 ? 1 : -1));
     bestDiff = diffOf(current);
+    fineSteps++;
   }
 
   for (const { index, overall } of current) {
@@ -337,21 +401,30 @@ function shiftSquad(players: DraftBase[], formation: Formation, target: number):
     player.attributes = fitAttributesToOverall(player.attributes, player.position, overall);
     player.overall = computeOverall(player.position, player.attributes);
   }
-  return bestDiff;
+  return { diff: bestDiff, shift: best, fineSteps };
+}
+
+/** N of `${clubId}#N`, for the "lower id" tie-break; the list position when there is no id. */
+function idNumber(player: { readonly id?: PlayerId }, index: number): number {
+  const hash = player.id?.lastIndexOf('#') ?? -1;
+  if (player.id === undefined || hash < 0) return index;
+  const n = Number(player.id.slice(hash + 1));
+  return Number.isInteger(n) ? n : index;
 }
 
 /**
  * Best XI of a squad in a formation, as the AI would pick it with everyone fresh
  * (ia-clubes.md, "Escalação", steps 2 and 3 at condition 100): slot by slot in formation order,
  * the player not yet chosen with the highest `overall × fit`; ties by higher overall, then
- * younger, then squad order. Used to measure the generated squad; the match lineup with
+ * younger, then lower id. "Lower id" compares the number N of `${clubId}#N` numerically (a text
+ * comparison would put `#10` before `#2`); players without an id fall back to their order in the
+ * list. Used to measure the generated squad; the match lineup with
  * condition, injuries and rotation is the AI's (T-010). Returns the chosen player of each slot
  * (fewer than 11 only if the squad is smaller).
  */
-export function bestEleven<T extends Pick<Player, 'position' | 'overall' | 'age'>>(
-  players: readonly T[],
-  formation: Formation,
-): { player: T; slot: Position }[] {
+export function bestEleven<
+  T extends Pick<Player, 'position' | 'overall' | 'age'> & { readonly id?: PlayerId },
+>(players: readonly T[], formation: Formation): { player: T; slot: Position }[] {
   const taken = new Set<number>();
   const chosen: { player: T; slot: Position }[] = [];
   for (const slot of FORMATION_SLOTS[formation]) {
@@ -366,7 +439,9 @@ export function bestEleven<T extends Pick<Player, 'position' | 'overall' | 'age'
         b === undefined ||
         value > bestValue ||
         (value === bestValue &&
-          (p.overall > b.overall || (p.overall === b.overall && p.age < b.age)))
+          (p.overall > b.overall ||
+            (p.overall === b.overall &&
+              (p.age < b.age || (p.age === b.age && idNumber(p, i) < idNumber(b, best))))))
       ) {
         best = i;
         bestValue = value;
@@ -461,13 +536,16 @@ export interface GeneratedSquad {
   players: Player[];
   /** Strength (mean `overall × fit`) of the best XI in the preferred formation. */
   elevenStrength: number;
+  /** The squad shift: the common `d` and the single-point moves of the fallback (diagnostics). */
+  adjustment: { shift: number; fineSteps: number };
   warnings: EngineWarning[];
 }
 
 /**
  * Generates one squad of 25 (docs/design/jogadores.md, "Geração de elencos"): the composition
  * 3/5/4/4/4/5, the four groups with their overall and age ranges, the squad shift to the target
- * strength, potentials, the joia, the idol, initial morale, unique shirts 1..25 in squad order
+ * strength, potentials, the joia, the idol, initial morale, unique shirts (starters 1..11 by
+ * position, reserve goalkeeper 12, others from 13, youth from 30)
  * and ids `${clubId}#1`..`#25`. Names and faces come from `identities`, one call per
  * nationality (in code order), each told the names already given in the club.
  *
@@ -482,6 +560,7 @@ export function generateSquad(
   const { clubId, seed, strength, formation } = request;
   const rng = new Rng(seedFromString(`${seed}-squad-${clubId}`));
   const positions = squadPositions(rng, formation);
+  const shirts = assignShirts(positions);
   const drafts: DraftBase[] = positions.map((position, index) => {
     const group = groupAt(index);
     const age = drawAge(rng, group);
@@ -504,7 +583,7 @@ export function generateSquad(
       peakAge,
       growth,
       trait,
-      shirt: index + 1,
+      shirt: shirts[index]!,
       condition: START_CONDITION,
       morale,
       injuryRounds: 0,
@@ -517,7 +596,8 @@ export function generateSquad(
   });
 
   const warnings: EngineWarning[] = [];
-  const diff = shiftSquad(drafts, formation, strength);
+  const adjustment = shiftSquad(drafts, formation, strength);
+  const diff = adjustment.diff;
   if (Math.abs(diff) > STRENGTH_TOLERANCE) {
     warnings.push({ code: 'squad-strength-off', detail: { clubId, diff } });
   }
@@ -538,6 +618,7 @@ export function generateSquad(
   return {
     players,
     elevenStrength: elevenStrength(bestEleven(players, formation)),
+    adjustment: { shift: adjustment.shift, fineSteps: adjustment.fineSteps },
     warnings,
   };
 }

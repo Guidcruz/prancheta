@@ -96,7 +96,10 @@ export function newGame(
 
   for (const def of checked.value) {
     const profileRng = new Rng(seedFromString(`${seed}-profile-${def.id}`));
-    const profile = def.aiProfile ?? drawClubProfile(profileRng, def.size);
+    // Drawn even when the data has a profile, so the formation draw always uses the same
+    // position of the stream (fixed consumption of the Rng).
+    const drawnProfile = drawClubProfile(profileRng, def.size);
+    const profile = def.aiProfile ?? drawnProfile;
     const preferredFormations = drawPreferredFormations(profileRng, profile);
     const strength = effectiveStrength(
       new Rng(seedFromString(`${seed}-strength-${def.id}`)),

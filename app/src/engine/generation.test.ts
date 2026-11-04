@@ -91,6 +91,20 @@ function stateProblems(state: GameState): string[] {
       check(p.condition === 100, `${p.id}: condition ${p.condition}`);
     }
     check(new Set(squad.map((p) => p.shirt)).size === SQUAD_SIZE, `${clubId}: shirts`);
+    const starterShirts = squad.slice(0, 11).map((p) => p.shirt);
+    check(
+      [...starterShirts].sort((a, b) => a - b).join() === '1,2,3,4,5,6,7,8,9,10,11',
+      `${clubId}: starter shirts ${starterShirts.join()}`,
+    );
+    check(squad[11]!.position === 'GK' && squad[11]!.shirt === 12, `${clubId}: shirt 12`);
+    check(
+      squad.slice(SQUAD_SIZE - SQUAD_GROUP_SIZES.youth).every((p) => p.shirt >= 30),
+      `${clubId}: youth shirts`,
+    );
+    check(
+      squad.slice(12, SQUAD_SIZE - SQUAD_GROUP_SIZES.youth).every((p) => p.shirt >= 13),
+      `${clubId}: squad shirts`,
+    );
     check(new Set(squad.map((p) => p.name.display)).size === SQUAD_SIZE, `${clubId}: names`);
     const squadProblems = checkGeneratedSquad(squad, clubId, club.strength);
     check(squadProblems.length === 0, `${clubId}: ${squadProblems.join(', ')}`);
@@ -155,14 +169,13 @@ describe('newGame (US-004)', () => {
     expect(problems).toEqual([]);
   });
 
-  it('lays the squad out as XI by slot, 7 reserves, 4 rotation, 3 youth, shirts 1..25', () => {
+  it('lays the squad out as XI by slot, 7 reserves, 4 rotation, 3 youth', () => {
     const state = play(99);
     for (const [clubId, club] of Object.entries(state.clubs)) {
       const squad = squadOf(state, clubId);
       expect(squad.slice(0, 11).map((p) => p.position)).toEqual(
         FORMATION_SLOTS[club.preferredFormations[0]],
       );
-      expect(squad.map((p) => p.shirt)).toEqual(squad.map((_, i) => i + 1));
       expect(squad.map((p) => p.id)).toEqual(squad.map((_, i) => `${clubId}#${i + 1}`));
       // Reserves: one of each position first, the second goalkeeper wearing 12.
       expect(squad.slice(11, 17).map((p) => p.position)).toEqual([...POSITIONS]);
@@ -329,6 +342,65 @@ describe('newGame (US-004)', () => {
     expect(() =>
       newGame({ seed: 1, year: 2026, realism: 'full' }, ladderClubs(), params, longFace),
     ).toThrow(/invalid/);
+  });
+});
+
+describe('shirts (jogadores.md, "Camisas")', () => {
+  const shirtsOf = (formation: (typeof FORMATIONS)[number]) =>
+    generateSquad(
+      { clubId: 'clube-teste-01', seed: 8, strength: 70, formation },
+      params,
+      identities,
+    ).players;
+
+  it('numbers a 4-3-3 the Brazilian way', () => {
+    const squad = shirtsOf('4-3-3');
+    const byPosition = (position: string) =>
+      squad.slice(0, 11).flatMap((p) => (p.position === position ? [p.shirt] : []));
+    expect(byPosition('GK')).toEqual([1]);
+    expect(byPosition('FB')).toEqual([2, 6]);
+    expect(byPosition('CB')).toEqual([3, 4]);
+    expect(byPosition('DM')).toEqual([5]);
+    expect(byPosition('AM')).toEqual([10, 8]);
+    expect(byPosition('ST')).toEqual([9, 11, 7]);
+    expect(squad[11]!.shirt).toBe(12);
+  });
+
+  it('gives the reserves and rotation the lowest free from 13 and the youth from 30', () => {
+    const squad = shirtsOf('4-4-2');
+    const rest = squad.slice(11, 22);
+    const reserveGk = rest.findIndex((p) => p.position === 'GK');
+    expect(rest[reserveGk]!.shirt).toBe(12);
+    expect(rest.filter((_, i) => i !== reserveGk).map((p) => p.shirt)).toEqual([
+      13, 14, 15, 16, 17, 18, 19, 20, 21, 22,
+    ]);
+    expect(squad.slice(22).map((p) => p.shirt)).toEqual([30, 31, 32]);
+  });
+});
+
+describe('bestEleven', () => {
+  it('breaks a full tie by the number of the id, not its text', () => {
+    const twin = { position: 'ST' as const, overall: 70, age: 25 };
+    const squad = [
+      { ...twin, id: 'c#10' },
+      { ...twin, id: 'c#2' },
+    ];
+    // Identical players: the first slot (GK) must take the lower id, c#2.
+    expect(bestEleven(squad, '4-4-2')[0]!.player.id).toBe('c#2');
+  });
+});
+
+describe('squad shift fallback', () => {
+  it('reaches the window by single-point moves when no common shift does (seed 81, 4-4-2)', () => {
+    const squad = generateSquad(
+      { clubId: 'clube-teste-01', seed: 81, strength: 70, formation: '4-4-2' },
+      params,
+      identities,
+    );
+    expect(squad.adjustment.fineSteps).toBeGreaterThan(0);
+    expect(squad.warnings).toEqual([]);
+    expect(Math.abs(squad.elevenStrength - 70)).toBeLessThanOrEqual(STRENGTH_TOLERANCE);
+    expect(checkGeneratedSquad(squad.players, 'clube-teste-01', 70)).toEqual([]);
   });
 });
 

@@ -58,8 +58,14 @@ describe('game identity source (ADR-0012)', () => {
     expect(JSON.stringify(realGame(77))).toBe(JSON.stringify(realGame(77)));
   });
 
-  it('keeps the names of a saved game when the lists change (reordered br.json)', () => {
-    const saved = JSON.stringify(realGame(2026));
+  /*
+   * What this proves: the name lists decide the names of NEW players (a reordered br.json gives
+   * another game), and a game state round-trips through JSON with its names and stays valid, so
+   * nothing in it depends on the lists. The real ADR-0012 conformance (open a fixed save with
+   * changed lists and see the same names on screen) needs the save layer: T-018/T-044.
+   */
+  it('stores names in the state: the lists only change new games, the state round-trips', () => {
+    const game = realGame(2026);
     const reordered: NameLists = {
       ...lists,
       given: [...lists.given].reverse(),
@@ -67,17 +73,14 @@ describe('game identity source (ADR-0012)', () => {
       nicknames: [...lists.nicknames].reverse(),
     };
     // Exclusions are by index, so they do not apply to the reordered copy (test-only source).
-    const changed = createIdentitySource(reordered);
-    const opened = JSON.parse(saved) as GameState;
-    // The lists do matter for new players...
-    const fresh = realGame(2026, changed);
-    expect(JSON.stringify(fresh.players)).not.toBe(JSON.stringify(opened.players));
-    // ...but a saved game reads `Player.name` and never asks the source again.
+    const fresh = realGame(2026, createIdentitySource(reordered));
+    expect(JSON.stringify(fresh.players)).not.toBe(JSON.stringify(game.players));
+    const opened = JSON.parse(JSON.stringify(game)) as GameState;
     const names = (s: GameState) => Object.values(s.players).map((p) => p.name);
-    expect(names(opened)).toEqual(names(JSON.parse(saved) as GameState));
-    expect(names(opened)).toEqual(names(realGame(2026)));
-    for (const player of Object.values(opened.players))
+    expect(names(opened)).toEqual(names(game));
+    for (const player of Object.values(opened.players)) {
       expect(validatePlayer(player).ok).toBe(true);
+    }
   });
 
   it('respects the names already in the squad', () => {
