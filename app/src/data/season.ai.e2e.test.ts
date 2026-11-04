@@ -48,6 +48,8 @@ function run(seed: number) {
   let tiredStarters = 0;
   let outRounds = 0;
   let outSuspended = 0;
+  /** Substitutions of the in-match AI (T-012), by reason. */
+  const subs: Record<string, number> = { injury: 0, fatigue: 0, tactical: 0 };
   const lastXi = new Map<string, Set<PlayerId>>();
 
   for (let round = 1; round <= 38; round++) {
@@ -119,6 +121,7 @@ function run(seed: number) {
         played.add(id);
         finalEnergy[id] = result.finalEnergy[id]!;
       }
+      for (const e of result.events) if (e.type === 'substitution') subs[e.reason]! += 1;
       newInj.push(...result.newInjuries);
       newSus.push(...result.newSuspensions);
       Object.assign(yc, result.yellowCounts);
@@ -151,7 +154,7 @@ function run(seed: number) {
     }
     state = { ...state, players };
   }
-  return { problems, rotations, sheets, tiredStarters, outRounds, outSuspended };
+  return { problems, rotations, sheets, tiredStarters, outRounds, outSuspended, subs };
 }
 
 describe('T-011 acceptance: chained season with the 20 real clubs', () => {
@@ -164,6 +167,7 @@ describe('T-011 acceptance: chained season with the 20 real clubs', () => {
       let sus = 0;
       let sheets = 0;
       let tired = 0;
+      const subs: Record<string, number> = { injury: 0, fatigue: 0, tactical: 0 };
       for (const seed of [1, 2, 3]) {
         const r = run(seed);
         expect(r.problems).toEqual([]);
@@ -172,9 +176,14 @@ describe('T-011 acceptance: chained season with the 20 real clubs', () => {
         sus += r.outSuspended;
         sheets += r.sheets;
         tired += r.tiredStarters;
+        for (const [reason, n] of Object.entries(r.subs)) subs[reason]! += n;
       }
+      const matches = 3 * 380;
+      const perMatch = (n: number) => (n / matches).toFixed(2);
+      const all = subs.injury! + subs.fatigue! + subs.tactical!;
       console.info(
-        `[T-011 e2e] sheets ${sheets}; player-rounds out ${out} (suspended ${sus}); rotations of tired starters ${rot}; starters below ${ROTATION}: ${tired}`,
+        `[T-011 e2e] sheets ${sheets}; player-rounds out ${out} (suspended ${sus}); rotations of tired starters ${rot}; starters below ${ROTATION}: ${tired}\n` +
+          `[T-012 e2e] substitutions per match ${perMatch(all)} (ia-clubes.md: 3 to 4): injury ${perMatch(subs.injury!)}, fatigue ${perMatch(subs.fatigue!)}, tactical ${perMatch(subs.tactical!)}`,
       );
       expect(sheets).toBe(3 * 380 * 2);
       expect(out).toBeGreaterThan(0);
