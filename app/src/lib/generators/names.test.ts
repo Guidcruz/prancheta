@@ -4,6 +4,7 @@ import { buildBlocklist, hashName, normalizeName, parseBlocklist } from '../../d
 import { computeExclusions } from '../../data/name-exclusions.ts';
 import {
   checkNameLists,
+  MAX_DISPLAY_LENGTH,
   compileExclusions,
   nameFromSeed,
   namesForSquad,
@@ -14,31 +15,31 @@ import {
 
 /* Synthetic lists: invented names only, never a real athlete (not even as a test fixture). */
 const lists: NameLists = {
-  given: Array.from({ length: 40 }, (_, i) => `Nometeste${i + 1}`),
+  given: Array.from({ length: 40 }, (_, i) => `Nome${i + 1}`),
   givenCompound: ['Nomeum Nomedois', 'Nomeum Nometres'],
-  family: Array.from({ length: 50 }, (_, i) => `Sobrenometeste${i + 1}`),
-  familyNoSolo: ['Sobrenometeste7'],
-  short: Array.from({ length: 20 }, (_, i) => `Curtoteste${i + 1}`),
-  // Curtoteste1..10 belong to Nometeste1..10; Curtoteste11..20 fit any first name.
+  family: Array.from({ length: 50 }, (_, i) => `Sobr${i + 1}`),
+  familyNoSolo: ['Sobr7'],
+  short: Array.from({ length: 20 }, (_, i) => `Curto${i + 1}`),
+  // Curto1..10 belong to Nome1..10; Curto11..20 fit any first name.
   shortOf: Object.fromEntries(
-    Array.from({ length: 10 }, (_, i) => [`Curtoteste${i + 1}`, [`Nometeste${i + 1}`]]),
+    Array.from({ length: 10 }, (_, i) => [`Curto${i + 1}`, [`Nome${i + 1}`]]),
   ),
-  shortGeneric: Array.from({ length: 10 }, (_, i) => `Curtoteste${i + 11}`),
-  nicknames: Array.from({ length: 30 }, (_, i) => `Apelidoteste${i + 1}`),
-  origins: Array.from({ length: 10 }, (_, i) => `Origemteste${i + 1}`),
+  shortGeneric: Array.from({ length: 10 }, (_, i) => `Curto${i + 11}`),
+  nicknames: Array.from({ length: 30 }, (_, i) => `Apel${i + 1}`),
+  origins: Array.from({ length: 10 }, (_, i) => `Orig${i + 1}`),
 };
 
 /* Blocked names that the lists CAN produce, so the skipping is really exercised. */
 const blocklist = buildBlocklist([
-  'Nometeste1 Sobrenometeste1',
-  'Nometeste2 Sobrenometeste2',
-  'Sobrenometeste3',
-  'Apelidoteste4',
-  'Curtoteste1 Apelidoteste1',
-  'Curtoteste1 de Origemteste1',
-  'Nometeste6 Apelidoteste2',
-  'Nometeste5 Sobrenometeste5 Sobrenometeste6',
-  ...Array.from({ length: 10 }, (_, i) => `Nometeste${i + 3} Sobrenometeste${i + 3}`),
+  'Nome1 Sobr1',
+  'Nome2 Sobr2',
+  'Sobr3',
+  'Apel4',
+  'Curto1 Apel1',
+  'Curto1 de Orig1',
+  'Nome6 Apel2',
+  'Nome5 Sobr5 Sobr6',
+  ...Array.from({ length: 10 }, (_, i) => `Nome${i + 3} Sobr${i + 3}`),
 ]);
 const blockedHashes = new Set(blocklist.hashes);
 const isBlocked = (name: string) => blockedHashes.has(hashName(name));
@@ -138,17 +139,17 @@ describe('name generator (US-003)', () => {
     const n = 20_000;
     for (let i = 0; i < n; i++) {
       const { display } = nameFromSeed(i * 2654435761, lists);
-      const form = display.startsWith('Apelidoteste')
+      const form = display.startsWith('Apel')
         ? 'nickname'
-        : /^Sobrenometeste\d+$/.test(display)
+        : /^Sobr\d+$/.test(display)
           ? 'family'
-          : /^Curtoteste\d+ Sobrenometeste/.test(display)
+          : /^Curto\d+ Sobr/.test(display)
             ? 'short-family'
-            : /^Curtoteste\d+ Apelido/.test(display)
+            : /^Curto\d+ Apel/.test(display)
               ? 'short-nickname'
-              : /Origemteste/.test(display)
+              : /Orig/.test(display)
                 ? 'origin'
-                : /^Nome\w+( Nome\w+)? Apelido/.test(display)
+                : /^Nome\w+( Nome\w+)? Apel/.test(display)
                   ? 'given-nickname'
                   : 'given-family';
       counts.set(form, (counts.get(form) ?? 0) + 1);
@@ -170,10 +171,8 @@ describe('name generator (US-003)', () => {
     for (let i = 0; i < n; i++) {
       const { display, full, family } = nameFromSeed(i + 11, lists);
       expect(firsts.has(display)).toBe(false);
-      expect(display.split(' ').filter((w) => w.startsWith('Sobrenometeste')).length).toBeLessThan(
-        2,
-      );
-      if (full.split(' ').filter((w) => w.startsWith('Sobrenometeste')).length === 2) withSecond++;
+      expect(display.split(' ').filter((w) => w.startsWith('Sobr')).length).toBeLessThan(2);
+      if (full.split(' ').filter((w) => w.startsWith('Sobr')).length === 2) withSecond++;
       expect(full).toContain(family);
     }
     expect(withSecond / n).toBeCloseTo(0.35, 1);
@@ -183,14 +182,14 @@ describe('name generator (US-003)', () => {
     let seen = 0;
     for (let i = 0; i < 20_000; i++) {
       const { display, full } = nameFromSeed(i * 40503, lists, exclusions);
-      const short = /^(Curtoteste\d+)/.exec(display)?.[1] ?? /de$/.exec(display)?.[0];
-      const match = /Curtoteste(\d+)/.exec(display);
+      const short = /^(Curto\d+)/.exec(display)?.[1] ?? /de$/.exec(display)?.[0];
+      const match = /Curto(\d+)/.exec(display);
       if (!match) continue;
       seen++;
       const n = Number(match[1]);
       const firstWord = full.split(' ')[0];
       expect(short).toBeDefined();
-      expect(n > 10 || firstWord === `Nometeste${n}`).toBe(true);
+      expect(n > 10 || firstWord === `Nome${n}`).toBe(true);
     }
     expect(seen).toBeGreaterThan(1000);
   });
@@ -204,7 +203,7 @@ describe('name generator (US-003)', () => {
 
   it('never shows a familyNoSolo surname alone', () => {
     for (let i = 0; i < 5000; i++) {
-      expect(nameFromSeed(i, lists).display).not.toBe('Sobrenometeste7');
+      expect(nameFromSeed(i, lists).display).not.toBe('Sobr7');
     }
   });
 
@@ -260,6 +259,7 @@ describe('list checks', () => {
  * Skipped while either file is missing. This is the CI guarantee that lets the browser skip the
  * check: no name the lists can produce is on the blocklist.
  */
+const KNOWN_REDRAW_SEED = 220;
 const listsPath = new URL('../../content/names/br.json', import.meta.url);
 const athletesPath = new URL('../../data/athletes-blocklist.sha256.json', import.meta.url);
 
@@ -274,8 +274,43 @@ describe.skipIf(!existsSync(listsPath) || !existsSync(athletesPath))('real name 
   };
   const onDisk = () => JSON.parse(readFileSync(exclusionsPath, 'utf8')) as NameExclusionsFile;
 
-  it('are well formed', () => {
-    expect(checkNameLists(real())).toEqual([]);
+  it('are well formed and have the sizes of revision 2', () => {
+    const l = real();
+    expect(checkNameLists(l)).toEqual([]);
+    expect([
+      l.given.length,
+      l.givenCompound.length,
+      l.family.length,
+      l.short.length,
+      l.nicknames.length,
+      l.origins.length,
+    ]).toEqual([398, 20, 386, 117, 130, 49]);
+    expect(l.shortGeneric).toHaveLength(18);
+    expect(l.familyNoSolo).toHaveLength(6);
+  });
+
+  it('never show a display name above 22 characters (10,000 names, never cut)', () => {
+    const l = real();
+    const ex = compileExclusions(onDisk());
+    for (let seed = 1; seed <= 10_000; seed++) {
+      const n = nameFromSeed(seed * 2654435761, l, ex);
+      expect(n.display.length).toBeLessThanOrEqual(MAX_DISPLAY_LENGTH);
+      expect(n.degraded).toBeUndefined();
+    }
+  });
+
+  it('redraws a too-long name deterministically and still reproduces it from the seed', () => {
+    const l = real();
+    const ex = compileExclusions(onDisk());
+    let seed = 1;
+    // First seed whose unrestricted draw passes the limit (a known re-draw case).
+    while (nameFromSeed(seed, l, ex, Infinity).display.length <= MAX_DISPLAY_LENGTH) seed++;
+    const redrawn = nameFromSeed(seed, l, ex);
+    expect(redrawn.display.length).toBeLessThanOrEqual(MAX_DISPLAY_LENGTH);
+    expect(redrawn.display).not.toBe(nameFromSeed(seed, l, ex, Infinity).display);
+    expect(nameFromSeed(seed, l, ex)).toEqual(redrawn);
+    expect(redrawn.nameSeed).toBe(seed);
+    expect(seed).toBe(KNOWN_REDRAW_SEED);
   });
 
   it('have an exclusions file in sync with the lists and the blocklist (fast forms)', () => {

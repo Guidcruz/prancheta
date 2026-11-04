@@ -101,6 +101,9 @@ const MIN_SURNAME_ONLY_LETTERS = 4;
 const MAX_PER_FAMILY = 3;
 const MAX_ATTEMPTS = 200;
 const MAX_RESEEDS = 50;
+/** Longest display name (spaces and "de" included). Longer draws are redrawn, never cut. */
+export const MAX_DISPLAY_LENGTH = 22;
+const MAX_FORM_REDRAWS = 8;
 /** Share of the origin form shown with the first name; the rest uses a short form. */
 const ORIGIN_WITH_FIRST_SHARE = 0.5;
 
@@ -167,10 +170,17 @@ function shortsFor(lists: NameLists, given: string): number[] {
 interface Drawn {
   name: PlayerName;
   excluded: boolean;
+  /** Display above `MAX_DISPLAY_LENGTH` even after redrawing the form: the player is redrawn. */
+  tooLong: boolean;
 }
 
 /** One draw from a seed: always the same number of random draws, even with empty lists. */
-function draw(nameSeed: number, lists: NameLists, ex: NameExclusions | undefined): Drawn {
+function draw(
+  nameSeed: number,
+  lists: NameLists,
+  ex: NameExclusions | undefined,
+  maxLength: number,
+): Drawn {
   const rng = new Rng(nameSeed);
   const index = (length: number) => {
     const u = rng.next(); // drawn even for an empty list, to keep the draws fixed
@@ -204,7 +214,6 @@ function draw(nameSeed: number, lists: NameLists, ex: NameExclusions | undefined
   const useShort = rng.next() >= ORIGIN_WITH_FIRST_SHARE; // origin form: first name or short
   const roll = rng.next();
 
-  const form = DISPLAY_FORMS[FORM_LIMITS.findIndex((limit) => roll < limit)] ?? 'given-family';
   const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' ');
   const noSolo = new Set((lists.familyNoSolo ?? []).map(normalizeNameKey));
   const soloOk =
@@ -212,46 +221,66 @@ function draw(nameSeed: number, lists: NameLists, ex: NameExclusions | undefined
     !noSolo.has(normalizeNameKey(family)) &&
     !ex?.family.has(i1);
 
-  // Default display: "First Surname" (also the fallback when a form cannot be shown).
-  let display = join(given, family);
-  let defaultDisplay = true;
-  let excluded = hasSecond
-    ? (ex?.triples.has(`${firstIdx},${i1},${familyIdx2}`) ?? false)
-    : (ex?.firstFamily.has(`${firstIdx},${i1}`) ?? false);
-  if (form === 'family' && soloOk) {
-    display = family;
-    defaultDisplay = false;
-  } else if (form === 'short-family') {
-    display = join(short, family);
-    defaultDisplay = false;
-    excluded ||= ex?.firstFamily.has(`${shortFirst},${i1}`) ?? false;
-  } else if (form === 'nickname' && nickname !== undefined) {
-    display = nickname;
-    defaultDisplay = false;
-    excluded ||= ex?.nickname.has(nickIdx) ?? false;
-  } else if (form === 'name-origin' && origin !== undefined) {
-    display = join(useShort ? short : given, 'de', origin);
-    defaultDisplay = false;
-    const first = useShort ? shortFirst : firstIdx;
-    excluded ||= ex?.firstOrigin.has(`${first},${originIdx}`) ?? false;
-  } else if (form === 'given-nickname' && nickname !== undefined) {
-    display = join(given, nickname);
-    defaultDisplay = false;
-    excluded ||= ex?.firstNickname.has(`${firstIdx},${nickIdx}`) ?? false;
-  } else if (form === 'short-nickname' && nickname !== undefined) {
-    display = join(short, nickname);
-    defaultDisplay = false;
-    excluded ||= ex?.firstNickname.has(`${shortFirst},${nickIdx}`) ?? false;
+  /** Display and exclusion flag for one form roll. */
+  const show = (formRoll: number): { display: string; excluded: boolean } => {
+    const form =
+      DISPLAY_FORMS[FORM_LIMITS.findIndex((limit) => formRoll < limit)] ?? 'given-family';
+    // Default display: "First Surname" (also the fallback when a form cannot be shown).
+    let display = join(given, family);
+    let defaultDisplay = true;
+    let excluded = hasSecond
+      ? (ex?.triples.has(`${firstIdx},${i1},${familyIdx2}`) ?? false)
+      : (ex?.firstFamily.has(`${firstIdx},${i1}`) ?? false);
+    if (form === 'family' && soloOk) {
+      display = family;
+      defaultDisplay = false;
+    } else if (form === 'short-family') {
+      display = join(short, family);
+      defaultDisplay = false;
+      excluded ||= ex?.firstFamily.has(`${shortFirst},${i1}`) ?? false;
+    } else if (form === 'nickname' && nickname !== undefined) {
+      display = nickname;
+      defaultDisplay = false;
+      excluded ||= ex?.nickname.has(nickIdx) ?? false;
+    } else if (form === 'name-origin' && origin !== undefined) {
+      display = join(useShort ? short : given, 'de', origin);
+      defaultDisplay = false;
+      const first = useShort ? shortFirst : firstIdx;
+      excluded ||= ex?.firstOrigin.has(`${first},${originIdx}`) ?? false;
+    } else if (form === 'given-nickname' && nickname !== undefined) {
+      display = join(given, nickname);
+      defaultDisplay = false;
+      excluded ||= ex?.firstNickname.has(`${firstIdx},${nickIdx}`) ?? false;
+    } else if (form === 'short-nickname' && nickname !== undefined) {
+      display = join(short, nickname);
+      defaultDisplay = false;
+      excluded ||= ex?.firstNickname.has(`${shortFirst},${nickIdx}`) ?? false;
+    }
+    if (defaultDisplay) excluded ||= ex?.firstFamily.has(`${firstIdx},${i1}`) ?? false;
+    return { display, excluded };
+  };
+
+  // Too long for the UI: draw the form again (same player), never cut the text.
+  let shown = show(roll);
+  const formRetry = new Rng(nameSeed ^ 0x85ebca6b);
+  for (let i = 0; i < MAX_FORM_REDRAWS && shown.display.length > maxLength; i++) {
+    shown = show(formRetry.next());
   }
-  if (defaultDisplay) excluded ||= ex?.firstFamily.has(`${firstIdx},${i1}`) ?? false;
   return {
-    name: { nameSeed: nameSeed >>> 0, display, full: join(given, family, family2), family },
-    excluded,
+    name: {
+      nameSeed: nameSeed >>> 0,
+      display: shown.display,
+      full: join(given, family, family2),
+      family,
+    },
+    excluded: shown.excluded,
+    tooLong: shown.display.length > maxLength,
   };
 }
 
 /**
- * The name for a seed. Pure. When the drawn combination is in `exclusions`, it is replaced by the
+ * The name for a seed. Pure. When the drawn combination is in `exclusions`, or the display passes 22 characters even after
+ * redrawing the form (8 times), the player is replaced by the
  * next draw of a generator seeded with `nameSeed` itself (deterministic; at most 50 times), and the
  * result still carries the original `nameSeed`, so storing it reproduces the name.
  */
@@ -259,14 +288,15 @@ export function nameFromSeed(
   nameSeed: number,
   lists: NameLists,
   exclusions?: NameExclusions,
+  maxLength: number = MAX_DISPLAY_LENGTH,
 ): PlayerName {
-  let current = draw(nameSeed, lists, exclusions);
+  let current = draw(nameSeed, lists, exclusions, maxLength);
   const reseed = new Rng(nameSeed ^ 0x9e3779b9);
-  for (let i = 0; i < MAX_RESEEDS && current.excluded; i++) {
-    current = draw(reseed.int(0, 0xffffffff), lists, exclusions);
+  for (let i = 0; i < MAX_RESEEDS && (current.excluded || current.tooLong); i++) {
+    current = draw(reseed.int(0, 0xffffffff), lists, exclusions, maxLength);
   }
   // Still excluded after 50 reseeds (absurd exclusions): keep the last draw and say so.
-  const degraded = current.excluded ? ({ degraded: true } as const) : {};
+  const degraded = current.excluded || current.tooLong ? ({ degraded: true } as const) : {};
   return { ...current.name, nameSeed: nameSeed >>> 0, ...degraded };
 }
 
