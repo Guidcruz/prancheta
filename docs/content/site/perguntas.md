@@ -36,9 +36,9 @@ Sim. Jogar não custa nada, e o projeto não vende vantagem dentro do jogo.
 
 ### Vai ter pop-up, vídeo ou propaganda no meio do jogo?
 
-Não. O jogo não tem anúncio, banner nem vídeo. As placas em volta do campo e as camisas mostram marcas inventadas, só para o estádio parecer estádio.
+Não. O jogo não tem anúncio, banner nem vídeo. As placas em volta do campo e o placar mostram marcas inventadas, só para o estádio parecer estádio.
 
-<!-- Aprovado pelo CEO em 2026-11-04. -->
+<!-- Texto revisado e aprovado pelo CEO em 2026-11-04. -->
 
 ### Dá para pagar para ganhar?
 
