@@ -143,14 +143,14 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 
 ## Descrições para compartilhar (revisão)
 
-> Status: **aguardando ok do CEO**. Motivo: a descrição da página inicial (o slogan, 86 caracteres) e as das demais páginas (141 a 150 caracteres nas quatro com texto longo) são cortadas na prévia do WhatsApp. Cada descrição abaixo tem no máximo 110 caracteres (contado com o nome já no lugar; o maior tem 104), sem nome real e sem data. Valem para `<meta name="description">` e `og:description`. `{config.name}` = nome de `config/prancheta.config.ts`.
+> Status: **aprovado pelo CEO em 2026-11-04** (título de Clubes: "Clubes com trocadilho"). Motivo: a descrição da página inicial (o slogan, 86 caracteres) e as das demais páginas (141 a 150 caracteres nas quatro com texto longo) são cortadas na prévia do WhatsApp. Cada descrição abaixo tem no máximo 110 caracteres (contado com o nome já no lugar; o maior tem 104), sem nome real e sem data. Valem para `<meta name="description">` e `og:description`. `{config.name}` = nome de `config/prancheta.config.ts`.
 
 | Página      | Descrição (meta e Open Graph)                                                                                | Título da imagem de compartilhamento |
 | ----------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
 | Início      | Técnico de futebol no celular, com clubes fictícios do Brasil. Acompanhe o {config.name} em construção.      | O Brasil inteiro na prancheta        |
 | O jogo      | Escale o time, ajuste a tática em três opções e acompanhe a partida minuto a minuto no {config.name}.        | Como é jogar                         |
 | Modos       | Carreira offline ou liga online com amigos, no seu ritmo ou em tempo real. Veja os modos do {config.name}.   | Carreira ou liga com amigos          |
-| Clubes      | Clubes fictícios com nomes em trocadilho e escudos desenhados por código. Conheça os times do {config.name}. | Clubes de mentirinha                 |
+| Clubes      | Clubes fictícios com nomes em trocadilho e escudos desenhados por código. Conheça os times do {config.name}. | Clubes com trocadilho                |
 | Perguntas   | Preço, celular, privacidade e online: respostas diretas sobre o {config.name}.                               | Perguntas frequentes                 |
 | Roteiro     | As etapas do {config.name}, cada uma com uma versão jogável. Veja onde estamos.                              | O roteiro do jogo                    |
 | Devlog      | O diário de desenvolvimento do {config.name}: o que ficou pronto e o que vem a seguir.                       | Diário de desenvolvimento            |
