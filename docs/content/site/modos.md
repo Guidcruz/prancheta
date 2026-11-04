@@ -38,7 +38,7 @@ A rodada roda no servidor, com o mesmo motor da carreira. Ninguém mexe no resul
 | O que se vê     | Placares ao vivo, mensagens prontas      | Aviso de rodada processada               |
 | Tamanho         | Até 20 (um técnico por clube da Série A) | Até 20 (um técnico por clube da Série A) |
 
-Os números são o padrão e podem ser ajustados. O dono da liga pode trocar de ao vivo para assíncrono (e o contrário) no meio da temporada.
+O dono da liga pode trocar de ao vivo para assíncrono (e o contrário) no meio da temporada.
 
 ### Conta sem dados pessoais
 
