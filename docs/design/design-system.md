@@ -26,6 +26,25 @@ A escala completa (família, tamanho, entrelinha, peso e uso de cada estilo) est
 - A troca para `sticker-name-long` é por comprimento do nome, decidida no componente (no site, `Sticker.astro` usa o longo quando o nome curto passa de 10 caracteres).
 - Uso restrito à figurinha. Nome de clube em card comum continua em `subtitulo`; em tabela, em `body-strong`.
 
+### Mínimo do `display-xl` (aprovado pelo CEO em 2026-11-04)
+
+| Token        | Antes                      | Depois                     |
+| ------------ | -------------------------- | -------------------------- |
+| `display-xl` | `clamp(72px, 21vw, 196px)` | `clamp(64px, 21vw, 196px)` |
+
+- Só o mínimo muda, de 72px para 64px, para "PRANCHETA" caber em uma linha a 320px de largura. O máximo (196px), a entrelinha (0,84), o peso (800), o espaçamento e a caixa alta continuam iguais.
+- Uso continua restrito ao nome do jogo no hero do Início do site.
+
+### Número da etapa (aprovado pelo CEO em 2026-11-04)
+
+| Token          | Família                    | Peso | Tamanho / entrelinha | Uso                                                           |
+| -------------- | -------------------------- | ---- | -------------------- | ------------------------------------------------------------- |
+| `stage-number` | display (Barlow Condensed) | 800  | 26px / 1             | Número da etapa nos cartões de etapa e nas tabelas de etapas. |
+
+- Mora em `design/tokens.json` e chega ao CSS por `npm run tokens`; nenhum componente declara esse tamanho à mão.
+- Mesma família display já usada nos títulos; não entra fonte nova.
+- Uso restrito ao número da etapa. O nome e a descrição da etapa continuam nos estilos de texto comuns; números em tabela seguem em `tabular-nums`.
+
 ## Padrões de layout
 
 ### Tabela vira cartões abaixo de 720px (aprovado pelo CEO em 2026-11-04)
