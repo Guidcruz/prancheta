@@ -51,7 +51,7 @@ Segue exatamente o padrão por porte de `ia-clubes.md` (nenhum sorteio necessár
 | Pequeno | 0           | 1             | 2         | 2        | 1         |
 | Total   | 4           | 6             | 5         | 4        | 1         |
 
-- Os quatro favoritos jogam ofensivos (`ambitious`); os dois grandes `traditional` dão grandes mais previsíveis e mais vulneráveis fora de casa.
+- Quatro grandes jogam ofensivos (`ambitious`: Flamingo, Palmeral, Atlético Minério, Corinto) e dois são `traditional` (São Paulão, Grêmeos), mais previsíveis e vulneráveis fora de casa. O perfil não segue a força: Corinto (73) continua ambicioso em crise.
 - Um único `chaotic` na liga: o suficiente para haver um time imprevisível, não tanto que a tabela vire sorteio.
 - Na 1a o perfil só afeta formação, postura, pressão e intervalo; mercado e paciência (`seller`, `academy` vendendo jovens, `chaotic` trocando técnico) entram nas Etapas 3 a 5 e já ficam coerentes com esta escolha.
 
