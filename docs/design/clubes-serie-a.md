@@ -1,159 +1,148 @@
-# Clubes da Série A: força, perfil de IA e capacidade (T-003)
+# Clubes da Série A: porte, força, perfil de IA, capacidade e títulos (T-003)
 
-> Mantido pelo `game-designer`. Entrada para `ClubDef` (`docs/02-architecture.md` §4.1): `size`, `strength`, `aiProfile`, `stadium.capacity` e o campo novo proposto `titles`. `strength` segue a regra "Atualização anual e força pela colocação" (decisão do CEO, aplicada já na base 2026). Nomes, cores, siglas e rivais vêm do lote aprovado `docs/content/lotes/2026-11-04-nomes-serie-a.md`. O nome do estádio fica com o `content-writer` (próximo lote); este documento só fixa a capacidade.
+> Mantido pelo `game-designer`. Entrada para `ClubDef` (`docs/02-architecture.md` §4.1): `size`, `strength`, `aiProfile`, `stadium.capacity` e o campo novo proposto `titles`. Nomes, cores, siglas e rivais vêm do lote aprovado `docs/content/lotes/2026-11-04-nomes-serie-a.md`. O nome do estádio fica com o `content-writer`; este documento só fixa a capacidade.
 
-**Regra em uma frase:** cada clube recebe uma força-alvo dentro da faixa do seu porte, um perfil de IA que respeita a distribuição padrão por porte, o estádio real em que manda os jogos e um histórico de títulos que espelha o real, só para contar a história.
+**Regra em uma frase:** o porte diz quem o clube é (títulos, história, torcida) e a força diz como o elenco está agora (colocação na tabela de referência); um grande pode estar mal.
+
+## Porte e força: dois conceitos separados (decisão do CEO, 2026-11-04)
+
+|                 | Porte (`size`)                                                                                                                                                     | Força (`strength`)                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------- |
+| O que é         | estrutura: títulos (Brasileiro, Copa do Brasil, Libertadores, Sul-Americana), história e tamanho da torcida                                                        | momento do elenco                                                                                                     |
+| De onde vem     | decisão do CEO no lote de clubes                                                                                                                                   | colocação na tabela de referência, numa escada única de 20 degraus                                                    |
+| Quando muda     | raramente, só por decisão do CEO; a colocação **nunca** muda o porte                                                                                               | todo lote anual (e na revisão de dezembro de 2026)                                                                    |
+| O que afeta     | meta e paciência da diretoria; humor e expectativa da torcida nos textos; perfil de IA padrão; capacidade padrão; na Etapa 3, receita (público, cotas, patrocínio) | geração do elenco (overall dos titulares, reservas e jovens, `jogadores.md`) e, por ele, tudo o que acontece em campo |
+| O que não afeta | o resultado de um jogo (o motor da partida não lê porte)                                                                                                           | metas e paciência (estas leem o porte)                                                                                |
 
 ## Tabela
 
-Títulos = histórico fictício até 2025, espelhando o clube real que inspira cada um (Brasileiro, Copa do Brasil, Libertadores, Sul-Americana). Exceção: Chapecão tem 0 Sul-Americana por decisão do CEO (nenhuma alusão à história do clube real). `strength` = regra "Força pela colocação" (abaixo) aplicada à classificação do Brasileirão 2026 **parcial, 33ª rodada, 2026-11-02**; Ref. 2026 = posição nessa tabela. O lote é refeito com a tabela final depois da 38ª rodada (dezembro de 2026). Capacidade = a do estádio real em que o clube manda os jogos, arredondada para centenas (pedido do CEO: reconhecível).
+Ordem e `strength` pela classificação do Brasileirão 2026 **parcial, 33ª rodada, 2026-11-02** (Ref. 2026 = posição nessa tabela). **O lote é refeito com a tabela final depois da 38ª rodada (dezembro de 2026).** Títulos = histórico fictício até 2025, espelhando o clube real (Chapecão tem 0 Sul-Americana por decisão do CEO: nenhuma alusão à história do clube real). Capacidade = a do estádio real em que o clube manda os jogos, arredondada para centenas.
 
-| #   | Clube            | Porte   | Ref. 2026 | `strength` | `aiProfile`   | `stadium.capacity` | Brasileiro | Copa do Brasil | Libertadores | Sul-Americana | Justificativa curta                                                                                       |
-| --- | ---------------- | ------- | --------- | ---------- | ------------- | ------------------ | ---------- | -------------- | ------------ | ------------- | --------------------------------------------------------------------------------------------------------- |
-| 1   | Palmeral         | grande  | 2         | 77         | `ambitious`   | 43.700             | 12         | 4              | 3            | 0             | Vice na tabela-referência e maior campeão nacional; arena moderna, não a maior.                           |
-| 2   | Flamingo         | grande  | 1         | 78         | `ambitious`   | 78.800             | 8          | 5              | 4            | 0             | Líder da tabela-referência e maior torcida: o favorito; divide com o Fluminário o maior estádio.          |
-| 3   | Atlético Minério | grande  | 7         | 76         | `ambitious`   | 44.900             | 3          | 2              | 1            | 0             | Terceiro grande na tabela, briga por G4; arena nova.                                                      |
-| 4   | Corinto          | grande  | 17        | 73         | `ambitious`   | 48.900             | 7          | 4              | 1            | 0             | Grande na zona de rebaixamento real: o grande mais fraco, ainda acima de quase todos os médios.           |
-| 5   | São Paulão       | grande  | 10        | 75         | `traditional` | 72.000             | 6          | 1              | 3            | 1             | Meio de tabela; grande que muda pouco e aposta em experientes; estádio antigo e grande.                   |
-| 6   | Grêmeos          | grande  | 15        | 74         | `traditional` | 55.700             | 2          | 5              | 3            | 0             | Temporada ruim, copeiro (5 Copas); arena grande no Sul.                                                   |
-| 7   | Cruzador         | médio   | 3         | 72         | `traditional` | 61.900             | 4          | 6              | 2            | 0             | Terceiro da tabela, médio forte; maior campeão da Copa, torcida de grande.                                |
-| 8   | Botafogueira     | médio   | 12        | 69         | `seller`      | 44.700             | 3          | 0              | 1            | 0             | Temporada fraca depois de anos fortes; investe e vende caro.                                              |
-| 9   | Inter-Regional   | médio   | 18        | 68         | `academy`     | 50.800             | 3          | 1              | 2            | 1             | Zona de rebaixamento real: o médio mais fraco; base que vende jovens.                                     |
-| 10  | Fluminário       | médio   | 4         | 72         | `academy`     | 78.800             | 4          | 1              | 1            | 0             | Quarto da tabela, médio forte; base que revela e vende; divide o maior estádio com o Flamingo.            |
-| 11  | Tufão            | médio   | 5         | 71         | `seller`      | 42.400             | 1          | 1              | 0            | 2             | Quinto da tabela; clube-empresa que compra barato e vende caro; arena moderna.                            |
-| 12  | Baião            | médio   | 6         | 70         | `traditional` | 48.700             | 2          | 0              | 0            | 0             | Maior do Nordeste na lista, perto do G6; arena grande (fontes 47.400–50.000, média).                      |
-| 13  | Vasconcelos      | médio   | 13        | 68         | `traditional` | 21.700             | 4          | 1              | 1            | 0             | Gigante de torcida em fase fraca; estádio próprio pequeno e apertado.                                     |
-| 14  | Santões          | médio   | 8         | 70         | `academy`     | 16.100             | 8          | 1              | 3            | 0             | Muitos títulos, meio de tabela; a base é a identidade; o menor estádio entre os médios.                   |
-| 15  | Bragantão        | pequeno | 9         | 67         | `seller`      | 12.000             | 0          | 0              | 0            | 0             | Pequeno mais bem colocado: projeto que vende bem e reinveste; estádio de interior.                        |
-| 16  | Miragol          | pequeno | 16        | 64         | `seller`      | 15.000             | 0          | 0              | 0            | 0             | Interior organizado, temporada difícil; vende quem se destaca.                                            |
-| 17  | Vitorioso        | pequeno | 14        | 65         | `chaotic`     | 35.600             | 0          | 0              | 0            | 0             | Pequeno de torcida grande e diretoria inquieta: o caótico da liga.                                        |
-| 18  | Coritibom        | pequeno | 11        | 66         | `academy`     | 40.500             | 1          | 0              | 0            | 0             | Pequeno de torcida grande, campeão uma vez, meio de tabela; estádio maior que o porte.                    |
-| 19  | Chapecão         | pequeno | 20        | 62         | `traditional` | 21.600             | 0          | 0              | 0            | 0             | Lanterna da tabela-referência; elenco estável (decisão 5 do CEO: nada de história); fontes 20.600–22.600. |
-| 20  | Remador          | pequeno | 19        | 63         | `academy`     | 53.600             | 0          | 0              | 0            | 0             | Penúltimo na tabela; manda no estádio estadual grande (ver "Capacidade").                                 |
+| #   | Clube            | Porte   | Ref. 2026 | `strength` | `aiProfile`   | `stadium.capacity` | Brasileiro | Copa do Brasil | Libertadores | Sul-Americana | Justificativa curta (porte; momento)                                                                |
+| --- | ---------------- | ------- | --------- | ---------- | ------------- | ------------------ | ---------- | -------------- | ------------ | ------------- | --------------------------------------------------------------------------------------------------- |
+| 1   | Flamingo         | grande  | 1         | 78         | `ambitious`   | 78.800             | 8          | 5              | 4            | 0             | Grande: 8 Brasileiros, 4 Libertadores, maior torcida. Líder: o favorito.                            |
+| 2   | Palmeral         | grande  | 2         | 77         | `ambitious`   | 43.700             | 12         | 4              | 3            | 0             | Grande: maior campeão nacional (12). Vice: segundo favorito.                                        |
+| 3   | Cruzador         | grande  | 3         | 76         | `traditional` | 61.900             | 4          | 6              | 2            | 0             | Grande: maior campeão da Copa (6), 2 Libertadores. Terceiro: briga pelo título.                     |
+| 4   | Fluminário       | grande  | 4         | 75         | `academy`     | 78.800             | 4          | 1              | 1            | 0             | Grande: 4 Brasileiros e Libertadores. Quarto; divide o maior estádio com o Flamingo.                |
+| 5   | Tufão            | médio   | 5         | 74         | `seller`      | 42.400             | 1          | 1              | 0            | 2             | Médio: títulos nacionais (1/1), 2 Sul-Americanas, torcida regional. Quinto: médio em alta.          |
+| 6   | Baião            | médio   | 6         | 73         | `traditional` | 48.700             | 2          | 0              | 0            | 0             | Médio: 2 Brasileiros, maior torcida do Nordeste na lista. Sexto: médio em alta.                     |
+| 7   | Atlético Minério | grande  | 7         | 72         | `ambitious`   | 44.900             | 3          | 2              | 1            | 0             | Grande: 3 Brasileiros, Libertadores, torcida enorme. Sétimo: G8.                                    |
+| 8   | Santões          | grande  | 8         | 72         | `academy`     | 16.100             | 8          | 1              | 3            | 0             | Grande: 8 Brasileiros, 3 Libertadores. Oitavo: meio de tabela.                                      |
+| 9   | Bragantão        | pequeno | 9         | 71         | `seller`      | 12.000             | 0          | 0              | 0            | 0             | Pequeno: sem títulos, torcida de cidade do interior. Nono: pequeno bem armado, à frente de grandes. |
+| 10  | São Paulão       | grande  | 10        | 70         | `traditional` | 72.000             | 6          | 1              | 3            | 1             | Grande: 6 Brasileiros, 3 Libertadores. Décimo: meio de tabela.                                      |
+| 11  | Coritibom        | médio   | 11        | 70         | `academy`     | 40.500             | 1          | 0              | 0            | 0             | Médio: 1 Brasileiro, torcida grande no estado. 11º: meio de tabela.                                 |
+| 12  | Botafogueira     | grande  | 12        | 69         | `seller`      | 44.700             | 3          | 0              | 1            | 0             | Grande: 3 Brasileiros, Libertadores. 12º: temporada fraca.                                          |
+| 13  | Vasconcelos      | grande  | 13        | 68         | `traditional` | 21.700             | 4          | 1              | 1            | 0             | Grande: 4 Brasileiros, Libertadores, torcida enorme. 13º: gigante em fase ruim.                     |
+| 14  | Vitorioso        | médio   | 14        | 68         | `chaotic`     | 35.600             | 0          | 0              | 0            | 0             | Médio: sem títulos nacionais, torcida grande no Nordeste. 14º: luta contra a queda.                 |
+| 15  | Grêmeos          | grande  | 15        | 67         | `traditional` | 55.700             | 2          | 5              | 3            | 0             | Grande: 3 Libertadores, 5 Copas. 15º: grande em crise.                                              |
+| 16  | Miragol          | pequeno | 16        | 66         | `seller`      | 15.000             | 0          | 0              | 0            | 0             | Pequeno: sem títulos, cidade pequena. 16º: no limite da queda.                                      |
+| 17  | Corinto          | grande  | 17        | 65         | `ambitious`   | 48.900             | 7          | 4              | 1            | 0             | Grande: 7 Brasileiros, segunda maior torcida. 17º: grande na zona de rebaixamento.                  |
+| 18  | Inter-Regional   | grande  | 18        | 64         | `academy`     | 50.800             | 3          | 1              | 2            | 1             | Grande: 3 Brasileiros, 2 Libertadores. 18º: grande na zona de rebaixamento.                         |
+| 19  | Remador          | médio   | 19        | 63         | `academy`     | 53.600             | 0          | 0              | 0            | 0             | Médio: sem títulos nacionais, mas torcida regional enorme (estádio estadual). 19º.                  |
+| 20  | Chapecão         | pequeno | 20        | 62         | `traditional` | 21.600             | 0          | 0              | 0            | 0             | Pequeno: sem títulos (decisão 5 do CEO), cidade pequena. Lanterna.                                  |
 
-## Regras gerais
+## Porte
 
-### Escada de força
+**Critério:** grande = os "12 grandes" de referência do futebol brasileiro (muitos títulos nacionais e continentais, torcida nacional). Médio = títulos nacionais ou torcida regional muito grande. Pequeno = sem títulos nacionais e torcida de cidade.
 
-- **Os valores são exatamente a escada padrão por porte de `jogadores.md`** (78 a 73; 72, 72, 71, 70, 70, 69, 68, 68; 67 a 62). A ordem dentro de cada porte vem da colocação na tabela real ("Atualização anual e força pela colocação"). A soma e a forma da escada são as que o protótipo validou (campeão 73,7 pontos, 17º com 40,7), então nenhuma métrica de `balance-targets.md` muda; muda só quem tende a ocupar cada posição.
-- **Degrau de 1 ponto dentro do porte, com sobreposição na fronteira.** O grande mais fraco (73) fica a 1 ponto dos médios fortes (72) e o pequeno mais forte (67) a 1 ponto dos médios mais fracos (68). Com `generation.clubStrengthSd = 1,5`, Cruzador ou Fluminário terminam acima de Corinto em boa parte das carreiras, e Bragantão às vezes passa Inter-Regional: o porte guia a meta da diretoria, não trava a tabela.
-- **Dois favoritos claros (Flamingo 78, Palmeral 77)**, como na tabela real. A diferença de 5 pontos entre o 1º e o 6º grande garante que "ser grande" não é garantia de G4.
-- **Clássicos com porte diferente dão azarão:** Clássico do Minério (76 × 72) e Gêm-Reg (74 × 68) têm favorito; Flami-Flumi (78 × 72) e Majestosão (73 × 75) são mais parelhos do que o nome sugere.
+| Porte   | Quantos | Clubes                                                                                                                                                |
+| ------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Grande  | 12      | Flamingo, Corinto, Palmeral, São Paulão, Santões, Vasconcelos, Fluminário, Botafogueira, Grêmeos, Inter-Regional, Atlético Minério, Cruzador          |
+| Médio   | 5       | Tufão (1/1 e 2 Sul-Americanas), Baião (2 Brasileiros), Coritibom (1 Brasileiro), Vitorioso e Remador (sem títulos nacionais, torcida regional enorme) |
+| Pequeno | 3       | Bragantão, Miragol, Chapecão                                                                                                                          |
 
-### Distribuição de perfis
+- **Mudança em relação ao lote aprovado (6/8/6):** sobem a grande Fluminário, Botafogueira, Vasconcelos, Santões, Cruzador e Inter-Regional; sobem a médio Vitorioso, Coritibom e Remador. A coluna "Porte" do lote `docs/content/lotes/2026-11-04-nomes-serie-a.md` precisa ser atualizada pelo Orquestrador ou pelo `content-writer` (o teste do `developer` confere os dois documentos).
+- Vitorioso e Remador são médios só pela torcida; se o CEO preferir o critério "médio exige título nacional", os dois viram pequenos (12/3/5). Recomendo médio: a torcida grande é o que o jogador sente (estádio cheio, cobrança).
 
-Segue exatamente o padrão por porte de `ia-clubes.md` (nenhum sorteio necessário, porque a lista traz o perfil):
+## Força
+
+**Escada única de 20 degraus, a mesma que já existia:** 78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62 (soma 1.400). O 1º da tabela de referência recebe 78, o 2º 77, e assim por diante; o porte não entra. Como os valores e a soma são os mesmos, a distribuição de forças da liga é a validada no protótipo (campeão 73,7 pontos, 17º com 40,7) e as metas de pontos de `balance-targets.md` não mudam.
+
+```
+strength(club) = LADDER[reference(club) - 1]
+LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62]
+reference(club) = posição na tabela de referência (1..20)
+```
+
+- Empates previstos (72/72, 70/70, 68/68) são parte da escada; a variação por carreira (`generation.clubStrengthSd = 1,5`) desempata.
+- **Consequências que o CEO pediu:** Corinto (17º) tem 65 e Inter-Regional (18º) 64, abaixo de Bragantão (71) e Coritibom (70). Tufão (5º) e Baião (6º), médios, são o 5º e o 6º mais fortes.
+
+### Impacto previsto nas metas (precisa do `/balance` do motor)
+
+Sem o motor de partida, estimei com um modelo simplificado (Poisson, mando +4, 300 temporadas, `clubStrengthSd = 1,5`): serve para a direção da mudança, não para o número.
+
+| Métrica (`balance-targets.md`)              | Meta          | Antes (6/8/6, escada por porte) | Depois (12/5/3, escada única) | Leitura                                            |
+| ------------------------------------------- | ------------- | ------------------------------- | ----------------------------- | -------------------------------------------------- |
+| Pontos do campeão / do 17º                  | 72–82 / 40–46 | sem mudança                     | sem mudança                   | mesma escada                                       |
+| Campeão por porte: grande                   | 50%–75%       | ~92% no modelo                  | ~87% no modelo                | cai um pouco; o modelo exagera os dois             |
+| Campeão por porte: pequeno                  | 0,5%–3%       | 0%                              | ~1%                           | Bragantão (71) às vezes ganha                      |
+| Temporadas com ao menos um grande rebaixado | 1%–5%         | ~4%                             | **~97%**                      | **quebra a meta**: 2 dos 4 mais fracos são grandes |
+
+**Decisão do CEO (a meta "grande rebaixado" foi escrita quando porte e força eram a mesma coisa):** proponho trocar por "temporadas com ao menos um grande rebaixado: 40% a 80%" (no Brasil real é comum um grande cair; com 12 grandes e a tabela atual, ver um cair é a história, não a falha) e manter "campeão por porte: grande 50% a 85%", porque 4 dos 5 mais fortes são grandes. A alternativa é medir as duas métricas pela força (os 6 mais fortes), não pelo porte. Até a decisão, o `/balance` reporta as duas formas.
+
+### Expectativa da diretoria (proposta, precisa de ADR)
+
+`PROJETO.md` diz que o porte define a meta da temporada (`temporada.md`: grande, ficar entre os 6). Com força baixa, Corinto (65, 17º mais forte) e Inter-Regional (64) quase nunca cumprem essa meta; na 1a a meta é só informativa, então isso é texto ("a diretoria cobra"), não demissão. **Para a Etapa 4 proponho (ADR):** a meta vem da força (`posição-alvo = posição de força + 2`, no máximo 16º) e o porte define a paciência e o tom da cobrança. Assim o grande mal está obrigado a melhorar, não a ser campeão.
+
+## Distribuição de perfis
+
+Os perfis de cada clube não mudaram; mudou só a contagem por porte, que é a referência para o sorteio padrão de `ia-clubes.md`:
 
 | Porte   | `ambitious` | `traditional` | `academy` | `seller` | `chaotic` |
 | ------- | ----------- | ------------- | --------- | -------- | --------- |
-| Grande  | 4           | 2             | 0         | 0        | 0         |
-| Médio   | 0           | 3             | 3         | 2        | 0         |
-| Pequeno | 0           | 1             | 2         | 2        | 1         |
+| Grande  | 4           | 4             | 3         | 1        | 0         |
+| Médio   | 0           | 1             | 2         | 1        | 1         |
+| Pequeno | 0           | 1             | 0         | 2        | 0         |
 | Total   | 4           | 6             | 5         | 4        | 1         |
 
-- Quatro grandes jogam ofensivos (`ambitious`: Flamingo, Palmeral, Atlético Minério, Corinto) e dois são `traditional` (São Paulão, Grêmeos), mais previsíveis e vulneráveis fora de casa. O perfil não segue a força: Corinto (73) continua ambicioso em crise.
-- Um único `chaotic` na liga: o suficiente para haver um time imprevisível, não tanto que a tabela vire sorteio.
-- Na 1a o perfil só afeta formação, postura, pressão e intervalo; mercado e paciência (`seller`, `academy` vendendo jovens, `chaotic` trocando técnico) entram nas Etapas 3 a 5 e já ficam coerentes com esta escolha.
+- O perfil é jeito de gerir, não força: Corinto (65) segue `ambitious`, um grande em crise que continua atacando; Bragantão (71) segue `seller`.
+- Um único `chaotic` (Vitorioso) na liga.
+- Na 1a o perfil só afeta formação, postura, pressão e intervalo (a postura compara forças, não portes).
 
-### Capacidade
+## Capacidade
 
-- **Igual à real, arredondada para centenas** (pedido do CEO). Onde as fontes divergem (Baião, Chapecão), uso a média da faixa. Flamingo e Fluminário dividem o mesmo estádio e têm a mesma capacidade, 78.800; o `content-writer` deve dar o mesmo nome de estádio aos dois.
-- **Remador: 53.600 (o estádio estadual), não o estádio próprio.** Não há dado confiável do estádio próprio, o clube real manda os jogos grandes no estadual e tem uma das maiores médias de público do país; um estádio pequeno o deixaria irreconhecível. Na 1a o público é só exibido, então o custo é zero. Reavaliar na Etapa 3, quando a bilheteria entrar: um pequeno com 53.600 lugares pode ganhar receita de médio.
-- **Ocupação média continua na meta.** A fórmula de `torcida.md` é proporcional à capacidade: `ocupação = clamp(fans.baseOccupancy × demanda × clássico, 0,10, 1,00)`, e a capacidade não entra no fator. Com `fans.baseOccupancy = 0,62` e termômetro médio 55 (demanda 0,985), a ocupação é 61% em todo estádio e em todo porte, dentro da meta de 55% a 70% de `balance-targets.md`. **Nenhum parâmetro muda.**
-- **Efeito colateral (só exibição na 1a):** com 61% de ocupação, Fluminário (médio) mostra cerca de 48.000 por jogo e Remador (pequeno) cerca de 32.700, mais que a média dos grandes Palmeral (26.700) e Atlético Minério (27.400). Para a 1a isso é aceitável e até reconhecível. Se na Etapa 3 a bilheteria precisar de público por porte, a correção será uma demanda por porte em `torcida.md` (ADR-0005), não mudar a capacidade.
-- Médias por porte: grande 57.300, médio 45.600, pequeno 29.700. Os padrões de `torcida.md` (45.000 / 30.000 / 15.000) continuam valendo só para clube sem capacidade na lista.
+- **Igual à real, arredondada para centenas.** Onde as fontes divergem (Baião, Chapecão), média da faixa. Flamingo e Fluminário dividem o mesmo estádio (78.800); o `content-writer` dá o mesmo nome aos dois.
+- **Remador: 53.600 (o estádio estadual).** Não há dado confiável do estádio próprio, e o clube manda os jogos grandes lá; agora como médio de torcida enorme, isso fica coerente.
+- **Ocupação média na meta.** A ocupação de `torcida.md` não depende da capacidade nem do porte: com `fans.baseOccupancy = 0,62` e termômetro médio 55, 61% em todo estádio (meta 55% a 70%). **Nenhum parâmetro muda.**
+- Médias por porte: grande 51.500, médio 44.200, pequeno 16.200. Padrões de `torcida.md` (45.000 / 30.000 / 15.000) só para clube sem capacidade na lista.
 
-### Títulos (histórico fictício)
+## Títulos (histórico fictício)
 
-- **Espelham os reais até 2025**, um a um, para o clube ser reconhecível pela história além do nome e das cores. São do clube fictício; nenhum texto menciona o clube real.
-- **Para que servem na 1a (só conteúdo, sem efeito no motor):** notícias e fichas ("o maior campeão do país", "o maior campeão da Copa", "em busca do primeiro título"), apresentação do clube na escolha da carreira e nas cerimônias de título ("13º Brasileiro"), e os comentários de expectativa da torcida em templates. O título conquistado na carreira soma ao histórico na exibição.
-- **Não pesam em porte, `strength` nem `aiProfile`.** Título conta o passado; `strength` é o elenco de agora, porte é o orçamento e a torcida de agora (lote aprovado pelo CEO), perfil é o jeito de gerir. Misturar faria o Santões (8 Brasileiros, fase fraca) virar favorito e apagaria a história de "gigante em crise", que é boa para o jogo.
-- **Títulos não reordenam a escada:** quem ordena é a colocação na tabela real. Santões (8 Brasileiros) segue médio; mudar o porte dele seria mudar o lote aprovado, decisão do CEO.
-- **Continentais:** 12 clubes têm Libertadores (Flamingo é o maior, com 4); Tufão é o maior da Sul-Americana (2). Servem às mesmas notícias ("tetracampeão da América") e a nenhuma conta.
-- **Cinco clubes sem título** (Bragantão, Miragol, Vitorioso, Chapecão, Remador): cinco histórias possíveis de "primeiro título da história".
+- **Espelham os reais até 2025**, um a um; nenhum texto menciona o clube real.
+- **Na 1a são só conteúdo:** notícias e fichas ("o maior campeão do país", "tetracampeão da América", "em busca do primeiro título"), apresentação do clube na escolha da carreira, cerimônias de título. O título ganho na carreira soma ao histórico na exibição.
+- **Pesam no porte** (critério acima, decisão do CEO), **nunca na força**.
+- Seis clubes sem título nacional (Bragantão, Miragol, Vitorioso, Chapecão, Remador; Coritibom tem 1): histórias de "primeiro título".
 
-## Atualização anual e força pela colocação (regra do CEO, aplicada na base 2026)
+## Atualização anual
 
-**Regra em uma frase:** uma vez por ano o lote de clubes é atualizado para quem começa um jogo novo, e a escada de força de cada porte é reordenada pela colocação final do último campeonato real: quem terminou melhor recebe o degrau mais alto do seu porte.
+**Regra em uma frase:** uma vez por ano o lote de clubes é atualizado para quem começa jogo novo; a força segue a colocação final do último campeonato e o porte só muda se o CEO decidir.
 
-### O que muda no lote anual
+| Dado                    | Muda?                 | Como                                                                  |
+| ----------------------- | --------------------- | --------------------------------------------------------------------- |
+| `strength`              | sim                   | escada única pela colocação de referência                             |
+| `titles`                | sim                   | soma os títulos reais da temporada encerrada                          |
+| `stadium.capacity`      | sim, se mudou         | capacidade real arredondada para centenas                             |
+| Quem está em cada série | sim                   | 4 rebaixados saem, 4 que subiram entram                               |
+| `size` (porte)          | só por decisão do CEO | nunca pela colocação                                                  |
+| `aiProfile`             | não, por padrão       | troca só com justificativa no lote (clube vendido, mudança de gestão) |
+| Carreiras já começadas  | não                   | o save leva os seus `ClubDef`; o lote novo vale só para jogo novo     |
 
-| Dado                    | Muda?                 | Como                                                                              |
-| ----------------------- | --------------------- | --------------------------------------------------------------------------------- |
-| `titles`                | sim                   | soma os títulos reais da temporada encerrada                                      |
-| `stadium.capacity`      | sim, se mudou         | capacidade real arredondada para centenas                                         |
-| Quem está em cada série | sim                   | 4 rebaixados saem, 4 que subiram entram (vindos da lista reserva ou de lote novo) |
-| `strength`              | sim                   | reordenação da escada (abaixo)                                                    |
-| `size` (porte)          | só por decisão do CEO | o lote anual propõe; não muda por fórmula                                         |
-| `aiProfile`             | não, por padrão       | mantém; troca só com justificativa no lote (clube vendido, mudança de gestão)     |
-| Carreiras já começadas  | não                   | o save leva os seus `ClubDef`; o lote novo vale só para jogo novo                 |
+**Referência:** posição final na Série A anterior (1 a 16 para quem ficou); quem subiu recebe `20 + posição na Série B` (21 a 24). Os 20 da Série A nova são ordenados pela referência e recebem `LADDER` nessa ordem. **Base 2026:** os 20 já estão na Série A 2026, então a referência é a posição na tabela parcial de 2026 (1 a 20).
 
-### Fórmula da força
-
-1. **Colocação de referência** de cada clube da Série A da temporada nova: a posição na Série A real mais recente (1 a 16 para quem ficou, porque os 4 últimos caíram). Quem subiu recebe `20 + posição na Série B` (21 a 24): sempre atrás de quem ficou. **Exceção da base 2026:** os 20 clubes já estão na Série A 2026, então a referência é a posição atual na tabela de 2026 (1 a 20) para todos.
-2. **Dentro de cada porte**, ordena os clubes pela colocação de referência (melhor primeiro).
-3. **Atribui a escada fixa do porte nessa ordem:** grande 78, 77, 76, 75, 74, 73; médio 72, 72, 71, 70, 70, 69, 68, 68; pequeno 67, 66, 65, 64, 63, 62 (`jogadores.md`).
-4. Se o número de clubes por porte mudar (ex.: 7 médios e 5 pequenos depois de acesso), a escada do porte é a padrão cortada ou estendida no degrau mais fraco, sempre dentro da faixa (grande 73–78, médio 67–72, pequeno 62–67); um 7º grande recebe 73.
-
-```
-reference(club) = previousSerieAPosition            // 1..16 (base 2026: posição atual, 1..20)
-               ?? 20 + previousSerieBPosition       // 21..24 para quem subiu
-strength(club) = LADDER[size][rank of reference(club) among clubs of same size]
-```
-
-**Por que assim:** a escada continua a mesma, então a soma das forças e as metas de `balance-targets.md` (pontos do campeão e do 17º, zebra) não mudam com a atualização: nenhum `/balance` novo é obrigatório. A colocação pesa até 5 pontos dentro do porte (do 1º ao 6º grande), que é a diferença entre favorito e candidato a G4. Não é uma fórmula contínua (pontos ou posição convertidos em força) porque ela empurraria clubes para fora da faixa e mexeria na escada validada; ordenar é uma frase e o jogador reconhece ("o campeão do ano passado é o favorito"). O porte não muda por fórmula porque porte é torcida e orçamento, e uma temporada boa não muda isso; quando muda (um pequeno que se firma), é decisão do CEO no lote anual.
-
-**Parâmetros:** nenhum novo. A escada é constante (`jogadores.md`).
-
-### Exemplo numérico
-
-Médios em uma temporada hipotética: A terminou 3º, B 5º, C 9º, D 12º, E 14º, F 16º, G subiu como 1º da B (referência 21), H subiu como 3º da B (23). Força: A 72, B 72, C 71, D 70, E 70, F 69, G 68, H 68. Se no ano seguinte F terminar 2º, ele passa a 72 e quem ficar atrás desce um degrau.
-
-### Casos de borda
-
-| Caso                                                     | Regra                                                                                 |
-| -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| Empate de referência (impossível na Série A)             | dois que subiram com a mesma posição não existem; se faltar dado, desempata pelo `id` |
-| Clube sem colocação conhecida (lote novo, dado faltando) | referência 25 (último do porte)                                                       |
-| Campeão da Série A num porte pequeno                     | recebe 67, o teto do porte; o lote anual deve propor ao CEO subir o porte             |
-| Temporada real em andamento (caso da base 2026)          | usa a tabela parcial mais recente, com data e rodada no doc; refaz com a final        |
-| Empate de pontos na tabela real                          | vale a posição oficial (critérios de desempate da competição)                         |
-
-### Aplicação na base 2026
-
-Tabela usada: Brasileirão 2026, **parcial, 33ª rodada, 2026-11-02** (pesquisada pelo Orquestrador): 1 Flamengo, 2 Palmeiras, 3 Cruzeiro, 4 Fluminense, 5 Athletico-PR, 6 Bahia, 7 Atlético-MG, 8 Santos, 9 Bragantino, 10 São Paulo, 11 Coritiba, 12 Botafogo, 13 Vasco (um jogo a menos), 14 Vitória, 15 Grêmio, 16 Mirassol, 17 Corinthians, 18 Internacional, 19 Remo, 20 Chapecoense. **O lote é refeito com a tabela final depois da 38ª rodada (dezembro de 2026).**
-
-| Porte   | Ordem (posição) → `strength`                                                                                                                      |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Grande  | Flamingo (1) 78, Palmeral (2) 77, Atlético Minério (7) 76, São Paulão (10) 75, Grêmeos (15) 74, Corinto (17) 73                                   |
-| Médio   | Cruzador (3) 72, Fluminário (4) 72, Tufão (5) 71, Baião (6) 70, Santões (8) 70, Botafogueira (12) 69, Vasconcelos (13) 68, Inter-Regional (18) 68 |
-| Pequeno | Bragantão (9) 67, Coritibom (11) 66, Vitorioso (14) 65, Miragol (16) 64, Remador (19) 63, Chapecão (20) 62                                        |
-
-- **Pontos instáveis:** Bragantino tem 44 ou 47 conforme a fonte (não muda a ordem entre pequenos); Vasco e Vitória empatam em 38, mas estão em portes diferentes (sem efeito). Até a 38ª, qualquer troca de posição dentro do mesmo porte troca no máximo um degrau.
-- Soma e forma da escada iguais à validada: nenhuma mudança prevista nas métricas de `balance-targets.md`; não há `/balance` obrigatório.
-
-### Revisão de porte sugerida pela tabela (proposta ao CEO, não aplicada)
-
-| Clube          | Porte   | Posição | Leitura                                                          | Proposta                                                                                                       |
-| -------------- | ------- | ------- | ---------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
-| Corinto        | grande  | 17      | grande em crise; com a escada, ainda 73, acima de 6 dos 8 médios | **manter grande.** O grande na zona de rebaixamento, com meta de G4 e diretoria impaciente, é uma boa história |
-| Tufão          | médio   | 5       | médio no G6; 71, a 2 pontos do grande mais fraco                 | **manter médio** por ora; rever com a tabela final. Uma temporada boa não muda torcida e orçamento             |
-| Inter-Regional | médio   | 18      | médio na zona; 68                                                | manter médio                                                                                                   |
-| Coritibom      | pequeno | 11      | pequeno à frente de 3 médios; 66                                 | manter pequeno; candidato a médio se repetir em 2027                                                           |
-| Bragantão      | pequeno | 9       | o pequeno mais bem colocado; já no teto (67)                     | manter pequeno; candidato a médio se terminar no G8 também em 2027                                             |
-
-Critério que proponho para o lote anual (decisão do CEO): sugerir mudança de porte só quando a colocação contradiz o porte **em duas temporadas seguidas** (grande fora dos 12 primeiros, médio no G4 ou no Z4, pequeno no G8). Nenhum clube cumpre isso hoje, porque só temos uma temporada medida.
+**Exemplo:** se em 2026 Corinto terminar 3º, no lote de 2027 ele recebe 76 (3º degrau) e continua grande; se Bragantão terminar 3º, recebe 76 e continua pequeno.
 
 ## Casos de borda
 
-| Caso                                                             | Regra                                                                                      |
-| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------------ |
-| `strength` fora da faixa do porte                                | dado inválido: o carregador de `app/src/data/` recusa (faixas de `jogadores.md`)           |
-| `aiProfile` ausente                                              | sorteio por porte com a semente da carreira (`ia-clubes.md`); nesta lista não ocorre       |
-| `stadium.capacity` ausente                                       | padrão por porte de `torcida.md`; nesta lista não ocorre                                   |
-| Clube da lista reserva sobe da Série B                           | entra no lote anual com referência 21–24 (ver "Atualização anual")                         |
-| Dois clubes com a mesma `strength` (72/72, 70/70, 68/68)         | válido; a variação por carreira (`clubStrengthSd`) desempata                               |
-| Clube com `rivals` vazio (Bragantão, Miragol, Chapecão, Remador) | sem efeito nesta tabela; o multiplicador de clássico do público simplesmente não se aplica |
+| Caso                                                             | Regra                                                                                |
+| ---------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `strength` fora de 55–85                                         | dado inválido: o carregador de `app/src/data/` recusa                                |
+| `strength` ausente                                               | 70 (meio da escada), com aviso                                                       |
+| `aiProfile` ausente                                              | sorteio por porte com a semente da carreira (`ia-clubes.md`); nesta lista não ocorre |
+| `stadium.capacity` ausente                                       | padrão por porte de `torcida.md`; nesta lista não ocorre                             |
+| Tabela real em andamento (base 2026)                             | usa a parcial mais recente, com data e rodada no doc; refaz com a final              |
+| Empate de pontos na tabela real                                  | vale a posição oficial (critérios de desempate da competição)                        |
+| Clube sem colocação conhecida                                    | vai para o fim da ordem; empate entre dois nessa situação desempata pelo `id`        |
+| Clube com `rivals` vazio (Bragantão, Miragol, Chapecão, Remador) | sem efeito; o multiplicador de clássico do público não se aplica                     |
 
 ## Campo novo no `ClubDef` (para o `architect` e o `developer`)
 
@@ -170,6 +159,14 @@ titles: {
 - É dado estático de `app/src/data/`, como cores e porte; o motor não lê para calcular nada. Títulos ganhos na carreira ficam no estado da carreira (histórico de temporadas), não no `ClubDef`; a interface exibe a soma. Se isso pedir campo novo no save, é ADR do `architect` com migração.
 - Libertadores e Sul-Americana entram já como histórico (decisão do CEO), mesmo sem as competições na 1a. Estaduais e outras copas entram como chaves novas quando existirem.
 
-## Pedido ao `developer` (T-003)
+## Pedido ao `developer` (T-003, revisão)
 
-Gravar `strength`, `aiProfile`, `stadium.capacity` e `titles` nos `ClubDef` de `app/src/data/`. Aceite: os 20 clubes iguais a esta tabela; teste que confere que cada `strength` está na faixa do seu porte, que a contagem de perfis por porte bate com a tabela "Distribuição de perfis", que Flamingo e Fluminário têm a mesma capacidade e que `titles` tem inteiros >= 0; `/balance` de 200 temporadas com campeão entre 72 e 82 pontos, 17º entre 40 e 46 e ocupação média por porte entre 55% e 70% (`balance-targets.md`).
+O que muda no código (não aplicado por mim):
+
+1. **`app/src/engine/clubs.ts`:** remover `STRENGTH_RANGE_BY_SIZE` e a checagem "strength dentro da faixa do porte". Regra nova do validador: `strength`, se presente, inteiro entre 55 e 85 (`out-of-range` fora disso), sem relação com `size`. Ausente: 70, com aviso (como já está em `jogadores.md`).
+2. **`app/src/data/clubs.serie-a.json`:** `size` e `strength` iguais à tabela acima (12 grandes, 5 médios, 3 pequenos); perfis, capacidade e títulos não mudam.
+3. **`app/src/data/clubs.serie-a.test.ts`:**
+   - contagem por porte e perfil (ordem `[total, ambitious, traditional, academy, seller, chaotic]`): grande `[12, 4, 4, 3, 1, 0]`, médio `[5, 0, 1, 2, 1, 1]`, pequeno `[3, 0, 1, 0, 2, 0]`;
+   - trocar "strength dentro da faixa do porte" por: as 20 forças, ordenadas, são exatamente `LADDER` (`[78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62]`), ou seja, soma 1.400 e só os três empates previstos; e a ordem de força bate com a coluna "Ref. 2026" (`strength` = `LADDER[ref − 1]`);
+   - o teste que lê a tabela deste doc continua igual (colunas `Clube`, `Porte`, `strength`, `aiProfile`, `stadium.capacity`, títulos); o teste que compara `size` com o lote de nomes falha até a coluna "Porte" do lote ser atualizada (ver "Porte").
+4. **`/balance`** de 200 temporadas: campeão 72–82 pontos, 17º 40–46, ocupação 55%–70% (sem mudança esperada); e imprimir "campeão por porte" e "temporadas com grande rebaixado" pelo porte **e** pelos 6 mais fortes, para a decisão do CEO.

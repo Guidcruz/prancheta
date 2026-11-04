@@ -83,6 +83,8 @@ Mostrada no início da temporada e conferida no resumo; não mexe em nada na 1a.
 | Médio   | terminar entre os 10     |
 | Pequeno | não cair (16º ou melhor) |
 
+Com porte e força separados (`clubes-serie-a.md`), um grande fraco recebe a meta de grande; na 1a isso só muda o texto da cobrança. Proposta para a Etapa 4 (ADR, decisão do CEO): meta pela força, paciência pelo porte (ver `clubes-serie-a.md`, "Expectativa da diretoria").
+
 No estilo Tranquilo o texto é "a diretoria espera"; no Realista, "a diretoria cobra". A confiança de 0 a 100 e a demissão entram na Etapa 4.
 
 ## Fim de temporada

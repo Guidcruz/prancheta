@@ -128,19 +128,19 @@ idade = idade + 1
 
 ## Geração de elencos
 
-**Dados de entrada por clube** (vêm da lista de clubes aprovada pelo CEO, não do motor): nome, cidade, cores, porte (grande, médio, pequeno), perfil da IA, rivais, capacidade do estádio e `strength` (força-alvo do time titular). Se a lista não trouxer `strength`, vale o padrão por porte:
+**Dados de entrada por clube** (vêm da lista de clubes aprovada pelo CEO, não do motor): nome, cidade, cores, porte (grande, médio, pequeno), perfil da IA, rivais, capacidade do estádio e `strength` (força-alvo do time titular). **A força não depende do porte** (decisão do CEO, `clubes-serie-a.md`): é uma escada única de 20 degraus, atribuída pela colocação na tabela de referência:
 
-| Porte   | Clubes na Série A | `strength` padrão              | Faixa |
-| ------- | ----------------- | ------------------------------ | ----- |
-| Grande  | 6                 | 78, 77, 76, 75, 74, 73         | 73–78 |
-| Médio   | 8                 | 72, 72, 71, 70, 70, 69, 68, 68 | 67–72 |
-| Pequeno | 6                 | 67, 66, 65, 64, 63, 62         | 62–67 |
+```
+LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62]   // soma 1.400
+```
+
+Validade: inteiro entre 55 e 85. Se a lista não trouxer `strength`, vale 70, com aviso.
 
 Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (metas 72–82 e 40–46). Se o `/balance` do motor mostrar campeão abaixo de 72, a correção é abrir a escada (o maior para 79), não mexer na partida.
 
 **Variação por carreira:** `strength` efetiva = `strength + Normal(0, generation.clubStrengthSd)`, com `generation.clubStrengthSd = 1.5` (decisão 3 de `balance-targets.md`).
 
-**Atualização anual:** a ordem dos clubes na escada de cada porte segue a colocação final do último campeonato real (regra do CEO; fórmula em `clubes-serie-a.md`, "Atualização anual e força pela colocação"). Os valores da escada não mudam.
+**Atualização anual:** a força de cada clube segue a colocação final do último campeonato real, na escada única acima; o porte não muda pela colocação (`clubes-serie-a.md`, "Atualização anual").
 
 **Elenco de 25 (constante):** 3 GOL, 5 ZAG, 4 LAT, 4 VOL, 4 MEI, 5 ATA. O tamanho sai da composição; não há parâmetro de tamanho de elenco (ver "Parâmetros").
 
@@ -173,10 +173,10 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 ## Casos de borda
 
-| Caso                                                    | Regra                                                              |
-| ------------------------------------------------------- | ------------------------------------------------------------------ |
-| Evolução levaria um atributo acima de 99 ou abaixo de 1 | corta na borda e recalcula o overall                               |
-| Jovem já no potencial                                   | Δ positivo vira 0; Δ negativo (raro, pelo ruído) vale              |
-| Clube sem veterano ≥ 29 para ídolo                      | ídolo é o titular de maior overall                                 |
-| Dois jogadores gerados com o mesmo nome no clube        | o gerador de nomes resolve (fora do motor); o motor usa IDs        |
-| Lista de clubes sem `strength` ou com porte inválido    | usa o padrão por porte; porte inválido vira médio e registra aviso |
+| Caso                                                    | Regra                                                                 |
+| ------------------------------------------------------- | --------------------------------------------------------------------- |
+| Evolução levaria um atributo acima de 99 ou abaixo de 1 | corta na borda e recalcula o overall                                  |
+| Jovem já no potencial                                   | Δ positivo vira 0; Δ negativo (raro, pelo ruído) vale                 |
+| Clube sem veterano ≥ 29 para ídolo                      | ídolo é o titular de maior overall                                    |
+| Dois jogadores gerados com o mesmo nome no clube        | o gerador de nomes resolve (fora do motor); o motor usa IDs           |
+| Lista de clubes sem `strength` ou com porte inválido    | `strength` ausente vira 70; porte inválido vira médio; registra aviso |
