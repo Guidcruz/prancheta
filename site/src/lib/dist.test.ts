@@ -50,6 +50,11 @@ run('built site (site/dist)', () => {
     }
   });
 
+  it('keeps a space before and after inline links', () => {
+    const bad = pages.filter((f) => /\p{L}<a[\s>]|<\/a>\p{L}/u.test(readFileSync(f, 'utf8')));
+    expect(bad).toEqual([]);
+  });
+
   it('ships no <script> in any page', () => {
     const bad = pages.filter((f) => /<script\b/i.test(readFileSync(f, 'utf8')));
     expect(bad).toEqual([]);
