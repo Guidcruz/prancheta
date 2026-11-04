@@ -61,6 +61,27 @@ Depois disso soma-se a **forma do dia** `dayForm(t)`, sorteada uma vez no apito 
 
 `faltando(t)` = jogadores a menos que 11 (expulsão ou lesão sem substituição disponível).
 
+### Vaga vazia (jogador a menos)
+
+**Regra:** a vaga vazia sai da média do seu setor, e o time paga só o `missingPlayerPenalty` de `T(t)`. Se o setor fica sem ninguém, a média dele passa a ser `EMPTY_SECTOR_FIT × média(eff de todos os jogadores de linha em campo)`, com `EMPTY_SECTOR_FIT = 0.90` (constante: o `fit` de "improvisado" da tabela de posições).
+
+- `média(eff das vagas do setor)` é sempre sobre as vagas **ocupadas**; cada jogador entra com o `eff` da vaga em que está e a energia do momento. A vaga vazia nunca conta como 0: contar 0 somaria um segundo castigo ao `missingPlayerPenalty` (perder um de dois atacantes cortaria o ataque pela metade), e o 0,07 já foi calibrado como o custo inteiro de um a menos.
+- A vaga do goleiro nunca fica vazia: se o goleiro sai sem substituição, o jogador de linha de maior `physical` vai para o gol ("Casos de borda") e a vaga **dele** é que fica vazia, pela mesma regra.
+- O setor vazio continua levando `formation.*`, `pressure.mid` (se for o meio) e `T(t)`, como os outros. A média de jogadores de linha nunca é de zero jogadores: com menos de 7 em campo a partida já acabou, então sempre há pelo menos 6 na linha.
+- Por quê: uma regra só, sem tabela de "setor vizinho". Perder um jogador custa o mesmo 7% em qualquer setor, salvo quando esvazia o setor; aí custa um pouco mais, porque alguém improvisa na função. O caso só acontece com facilidade no 4-2-3-1 (um ATA), e o efeito na meta "nenhuma tática dominante" é desprezível: o centroavante isolado sai sem reposição em menos de 1% dos jogos.
+
+**Exemplo 1 (um de dois atacantes).** 4-4-2, campo neutro, sem conversa de intervalo; ATA com eff 78 e 70. O de 78 é expulso. Antes: `Atk = 74 × 1,00 × 1 = 74`. Depois: `Atk = 70 × 1,00 × 0,93 = 65,1` (a média é só do que ficou, 70, e não 35). Os outros setores também levam o 0,93.
+
+**Exemplo 2 (caso extremo: setor vazio).** 4-2-3-1, campo neutro, postura equilibrada, pressão média, `midWeight` 0,5. Defesa 70, 70, 68, 72; meio 74, 70, 72, 66, 68 (média 70); ATA único com eff 76, expulso.
+
+|         | Antes            | Depois da expulsão                                                      |
+| ------- | ---------------- | ----------------------------------------------------------------------- |
+| `Mid`   | 70 × 1,04 = 72,8 | 72,8 × 0,93 = 67,7                                                      |
+| `Atk`   | 76 × 0,95 = 72,2 | 0,90 × 70,0 × 0,95 × 0,93 = 55,7 (70,0 = média dos 9 de linha: 630 / 9) |
+| `Power` | 72,5             | 61,7                                                                    |
+
+Se o expulso fosse um zagueiro, `Power` cairia só para 72,5 × 0,93 = 67,4: perder o único atacante custa cerca de 14% das oportunidades por minuto (`exp(0,14 × −1,08) = 0,86`), contra 7% de um a menos comum (`exp(0,14 × −0,51) = 0,93`).
+
 ## Chance de oportunidade e finalização
 
 Por minuto, para o time `t` contra o adversário `o`:
@@ -112,6 +133,25 @@ Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 3
 | Todo mundo no ataque | postura "tudo no ataque" + pressão alta |
 
 O técnico também pode trocar formação, postura e pressão diretamente a qualquer momento.
+
+### Troca de formação durante o jogo
+
+**Regra:** quem já joga numa posição que existe na formação nova fica nela; quem sobra preenche as vagas livres, uma a uma, na ordem da formação; as vagas que ficam sem ninguém são as últimas vagas livres dessa ordem.
+
+1. **Fica na posição.** Na ordem das vagas da formação atual, cada jogador em campo ocupa a primeira vaga livre da formação nova com a **mesma posição** da vaga em que ele está (ZAG → ZAG, LAT → LAT etc.). Vale também para quem está no gol, mesmo jogador de linha: o gol nunca muda de dono numa troca de formação.
+2. **Quem sobra.** Na ordem das vagas da formação nova (GOL, ZAG, LAT, VOL, MEI, ATA, como em `FORMATION_SLOTS`), cada vaga ainda livre recebe, entre os que sobraram, o de maior `eff` naquela vaga (com a energia e a moral do momento). Empate: maior overall, depois mais novo, depois menor ID (o mesmo de `ia-clubes.md`, "Escalação").
+3. **Vagas vazias.** Com `N` em campo, ficam vazias exatamente `11 − N` vagas: as que sobram no fim do passo 2. Elas seguem a regra de "Vaga vazia".
+
+- Vale para o técnico e para a IA. Depois da troca, o técnico pode trocar dois jogadores de vaga entre si (vagas ocupadas), mas não escolhe quais vagas ficam vazias. Assim ninguém esvazia um setor fraco de propósito para receber os 0,90 da média da linha.
+- Trocar para a formação em que o time já está não é troca: nada muda, nem a vaga vazia.
+- Expulsão ou lesão sem substituição, sem troca de formação, deixa vazia a vaga de quem saiu, onde ela estiver. Quem entra numa substituição ocupa a vaga de quem saiu.
+
+**Exemplo.** 4-4-2 com 10 em campo (um ATA expulso), todos com moral 50 e energia 100; os VOL têm eff 70 e 66, nessa ordem de vaga, e o ATA que ficou tem eff 76. O técnico muda para 4-3-3 (ZAG 2, LAT 2, VOL 1, MEI 2, ATA 3).
+
+- Passo 1: os 2 ZAG, os 2 LAT e os 2 MEI ficam nas suas posições; o VOL da primeira vaga (70) fica na única vaga de VOL; o ATA ocupa a primeira vaga de ATA.
+- Passo 2: sobra o VOL de 66; a segunda vaga de ATA o recebe (`66 × fit(VOL, ATA) 0,75 = 49,5`).
+- Passo 3: a terceira vaga de ATA fica vazia.
+- `Atk = média(76; 49,5) × 1,06 × 0,93 = 61,9`, contra `76 × 1,00 × 0,93 = 70,7` se ficasse no 4-4-2. Abrir o time com um a menos e sem atacante no banco custa ataque: a troca é uma decisão, não um ganho automático.
 
 ## Mando de campo e clássico
 
@@ -266,6 +306,9 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Sem goleiro disponível                              | joga o jogador de linha com maior `physical`, com `fit` 0,40                                                                           |
 | Goleiro expulso ou lesionado sem substituição       | idem, durante o jogo                                                                                                                   |
 | Menos de 11 disponíveis no elenco                   | joga com os que há (`missingPlayerPenalty` por jogador a menos)                                                                        |
+| Vaga vazia (expulsão, lesão sem substituição)       | sai da média do setor; só o `missingPlayerPenalty` ("Vaga vazia")                                                                      |
+| Setor sem ninguém (ex.: o único ATA do 4-2-3-1)     | média do setor = `EMPTY_SECTOR_FIT` (0,90) × média do `eff` dos jogadores de linha em campo ("Vaga vazia")                             |
+| Troca de formação com menos de 11 em campo          | "Troca de formação durante o jogo": ficam vazias as últimas vagas livres da ordem da formação                                          |
 | Menos de 7 em campo em qualquer momento             | partida encerrada; o adversário vence por 3×0, ou pelo placar do momento se vencia por mais                                            |
 | Cobrador escolhido fora de campo                    | regra de "Capitão e cobradores"                                                                                                        |
 | Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
@@ -295,7 +338,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `cards.redPerMinute`         | 0,00003                  | 0–0,0002     | cerca de 0,18 vermelho por jogo somando segundo amarelo    |
 | `cards.derbyMult`            | 1,2                      | 1–1,5        | clássico é mais quente                                     |
 
-**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult` e `moraleMult`.
+**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
 
 ## Pedido ao `developer` (critérios de aceite)
 
@@ -303,3 +346,5 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 2. Teste: mesma semente e mesmos comandos dão a mesma lista de eventos, byte a byte; semente diferente dá resultados diferentes em ao menos 95 de 100 partidas.
 3. `scripts/balance.ts` com os três modos de `balance-targets.md` (liga, duelos calibrados, duelos táticos), imprimindo cada métrica com meta, tolerância e "ok/falha", e aceitando `--seasons`, `--seed` e `--duels`.
 4. 200 temporadas rodam em menos de 3 minutos no CI (o `/balance` precisa ser usado a cada ajuste).
+5. Vaga vazia ("Vaga vazia"): as forças de setor aceitam vagas vazias e reproduzem os dois exemplos daquela seção (65,1; 55,7 e 61,7, com tolerância de 0,05); nenhum setor dá `NaN` ou divide por zero em nenhuma formação com 7 a 11 em campo (teste que esvazia cada setor de cada formação).
+6. Troca de formação ("Troca de formação durante o jogo"): reproduz o exemplo daquela seção (61,9 com tolerância de 0,05); para cada par das 6 × 6 formações e cada `N` de 7 a 11, nunca lança, deixa exatamente `11 − N` vagas vazias, mantém o goleiro no gol e é determinística; trocar para a formação atual não muda nenhuma vaga.

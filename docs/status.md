@@ -67,6 +67,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                        |
 | T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                      |
 | T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
+| T-008  | em andamento (code review aprovado; PR em aberto): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                               |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -143,9 +144,12 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - L2: criar `_headers` do Cloudflare Pages (CSP, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors`) antes da Etapa 1b.
 - L3: fixar a imagem do devcontainer e as ações do CI por SHA/digest.
 
-## Em andamento (PR do site e dos escudos, branch `claude/kickoff-i22gas`)
+## Concluído (mergeado em 2026-11-04)
 
-Aprovado em revisão, aguardando merge do CEO:
+- PR #16: site na direção A "Noite de estádio" e escudos v5 (ADR-0014).
+- PR #17: privacidade e canal de suporte (correção do achado M1).
+
+Entregas do PR #16:
 
 - Site na direção A "Noite de estádio": componentes e páginas novos, imagens de compartilhamento por `scripts/og.mjs`, tabelas que viram cartões no celular.
 - Gerador de escudos estilo A v5 (`shield.ts`): silhuetas, padrões, símbolo da cidade, estrelas douradas (Série A) e prateadas (Série B). ADR-0014 aceito.
@@ -154,18 +158,31 @@ Aprovado em revisão, aguardando merge do CEO:
 - Tokens novos: `body-lg`, `sticker-name`, `sticker-name-long`, `stage-number`; mínimo de `type-display-xl` em 64px.
 - Textos aprovados em `docs/content/site/complementos.md`.
 
+## Em andamento
+
+- **T-008** (força por setor, nota efetiva, mando com termômetro e força exibida): aprovada no code review, PR em aberto aguardando o merge do CEO. `ENGINE_VERSION` segue 3.
+
+## Decisões novas do CEO em 2026-11-04 (patrocínio e marca)
+
+1. O patrocínio fica como possibilidade futura, desligada e não anunciada.
+2. O jogo e o site mostram só marcas fictícias no cenário.
+3. A receita vem só do apoio voluntário.
+4. O ADR e os ajustes do site vêm depois do PR da T-008.
+
+**Marca:** o CEO avalia lançar sem registro no INPI. Recomendação: fazer pelo menos a busca gratuita antes do lançamento.
+
 ## Pendências do CEO
 
 - Consulta no INPI do nome "Prancheta" e dos nomes de risco médio.
 - Advogado: espelhamento anual de dados reais (tabela e títulos) e os 5 escudos de risco médio da ADR-0014.
 - Domínio definitivo (bloqueia a US-047).
 - Quem trata as denúncias e em quanto tempo (bloqueia a US-065).
-- Merge do PR do site e dos escudos.
 
 ## Próximo
 
-1. Bloco "Patrocine aqui" em `/apoiar/` (`/quick`).
-2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
-3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
-4. T-008 até T-016 da Etapa 1a.
-5. Lote de clubes de dezembro, com a tabela final de 2026.
+1. T-009: a simulação da partida.
+2. ADR do patrocínio e ajustes do site (depois do PR da T-008).
+3. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
+4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
+5. T-010 até T-016 da Etapa 1a.
+6. Lote de clubes de dezembro, com a tabela final de 2026.

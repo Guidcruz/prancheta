@@ -2,8 +2,8 @@ import type { AiProfile, Formation, Position } from './types.ts';
 
 /*
  * Formation tables (docs/design/partida.md, "Formações"; docs/design/ia-clubes.md, "Perfis na
- * 1a"). Rule constants, not /balance knobs. The sector multipliers (`def`, `mid`, `atk`) belong to
- * the strength calculation (T-008) and are added there.
+ * 1a"). Rule constants, not /balance knobs. The sector of each slot and the sector multipliers
+ * (`def`, `mid`, `atk`) belong to the strength calculation, in strength.ts (T-008).
  */
 
 export const FORMATIONS: readonly Formation[] = [
@@ -19,7 +19,7 @@ export const FORMATIONS: readonly Formation[] = [
  * Natural position of each of the 11 slots, in the order of `Lineup.starters`: always 1 GK, then
  * the defence, midfield and attack positions in the order GK, CB, FB, DM, AM, ST. The full-backs
  * of a back three (3-5-2, 3-4-3) are wing-backs and count in midfield (T-008), but keep the `FB`
- * position here.
+ * position here (strength.ts, FORMATION_SECTORS).
  */
 export const FORMATION_SLOTS: { readonly [F in Formation]: readonly Position[] } = {
   '4-4-2': ['GK', 'CB', 'CB', 'FB', 'FB', 'DM', 'DM', 'AM', 'AM', 'ST', 'ST'],
