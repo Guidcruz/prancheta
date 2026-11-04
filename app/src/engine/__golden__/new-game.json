@@ -1,9 +1,9 @@
 {
-  "engineVersion": 1,
+  "engineVersion": 2,
   "name": "new-game",
   "data": {
     "header": {
-      "engineVersion": 1,
+      "engineVersion": 2,
       "retiredNamesRev": 0,
       "seed": 20261104,
       "year": 2026,
@@ -2074,6 +2074,73 @@
         }
       ]
     },
-    "digest": "bfb5ed77"
+    "fixtures": {
+      "count": 380,
+      "dates": [
+        "2026-04-12",
+        "2026-04-19",
+        "2026-04-26",
+        "2026-04-29",
+        "2026-05-03",
+        "2026-05-10",
+        "2026-05-17",
+        "2026-05-24",
+        "2026-05-27",
+        "2026-05-31",
+        "2026-06-14",
+        "2026-06-21",
+        "2026-06-28",
+        "2026-07-01",
+        "2026-07-05",
+        "2026-07-12",
+        "2026-07-19",
+        "2026-07-26",
+        "2026-07-29",
+        "2026-08-02",
+        "2026-08-09",
+        "2026-08-16",
+        "2026-08-19",
+        "2026-08-23",
+        "2026-09-06",
+        "2026-09-13",
+        "2026-09-16",
+        "2026-09-20",
+        "2026-10-04",
+        "2026-10-11",
+        "2026-10-18",
+        "2026-10-21",
+        "2026-10-25",
+        "2026-11-08",
+        "2026-11-15",
+        "2026-11-18",
+        "2026-11-22",
+        "2026-11-29"
+      ],
+      "firstRound": [
+        "s1-r1-clube-teste-20-clube-teste-06",
+        "s1-r1-clube-teste-02-clube-teste-03",
+        "s1-r1-clube-teste-19-clube-teste-13",
+        "s1-r1-clube-teste-15-clube-teste-10",
+        "s1-r1-clube-teste-04-clube-teste-05",
+        "s1-r1-clube-teste-07-clube-teste-12",
+        "s1-r1-clube-teste-16-clube-teste-09",
+        "s1-r1-clube-teste-08-clube-teste-01",
+        "s1-r1-clube-teste-14-clube-teste-18",
+        "s1-r1-clube-teste-17-clube-teste-11"
+      ],
+      "returnRound": [
+        "s1-r20-clube-teste-06-clube-teste-20",
+        "s1-r20-clube-teste-03-clube-teste-02",
+        "s1-r20-clube-teste-13-clube-teste-19",
+        "s1-r20-clube-teste-10-clube-teste-15",
+        "s1-r20-clube-teste-05-clube-teste-04",
+        "s1-r20-clube-teste-12-clube-teste-07",
+        "s1-r20-clube-teste-09-clube-teste-16",
+        "s1-r20-clube-teste-01-clube-teste-08",
+        "s1-r20-clube-teste-18-clube-teste-14",
+        "s1-r20-clube-teste-11-clube-teste-17"
+      ]
+    },
+    "digest": "dc5cd9a4"
   }
 }

@@ -1,4 +1,5 @@
 import { validateClubs, type ClubDef } from './clubs.ts';
+import { generateFixtures, type Fixture } from './fixtures.ts';
 import {
   drawClubProfile,
   drawPreferredFormations,
@@ -15,8 +16,7 @@ import type { AiProfile, ClubId, EngineWarning, Formation, PlayerId, Result } fr
 /*
  * Game state and `newGame` (docs/02-architecture.md, 4.1; T-006). The state grows with the tasks
  * that own each part: this file has what a new game needs to exist (clubs, squads, players and
- * the identity of the career). Still to come, as §4.1 assigns them:
- * - `fixtures` (the 380 matches with dates): T-007;
+ * the identity of the career) and the calendar (`fixtures`, T-007). Still to come, as §4.1 assigns them:
  * - `lastSheets`, `seasonStats`, `lastRound` (rounds, tables, cards, injuries): T-013;
  * - `pastSeasons` (end of season): T-017.
  * The save format (T-018/T-019) is frozen only after those land, so adding them needs no
@@ -62,6 +62,8 @@ export interface GameState {
   readonly players: Readonly<Record<PlayerId, Player>>;
   /** Squad of each club in squad order: XI by slot, reserves, rotation, youth. */
   readonly squads: Readonly<Record<ClubId, readonly PlayerId[]>>;
+  /** The 380 matches of the current season, by round (fixtures.ts). */
+  readonly fixtures: readonly Fixture[];
 }
 
 export interface NewGameSetup {
@@ -77,6 +79,10 @@ export interface NewGameSetup {
  * Season 1, round 1. Pure: the same setup, clubs, params and identity source always give the same
  * state, and the inputs are never changed.
  *
+ * The calendar of season 1 comes from `generateFixtures` (stream `${seed}-fixtures-1`), which
+ * draws nothing from the other streams. `invalid-calendar`: the year is outside YEAR_RANGE or
+ * the season weeks are invalid (params not passed through `validateParams`).
+ *
  * Warnings: those of `validateClubs` (`club-strength-default`) and `squad-strength-off` when a
  * squad could not be brought within 0.5 of its strength.
  */
@@ -85,10 +91,20 @@ export function newGame(
   clubs: readonly ClubDef[],
   params: GameParams,
   identities: IdentitySource,
-): Result<GameState, 'invalid-clubs'> {
+): Result<GameState, 'invalid-clubs' | 'invalid-calendar'> {
   const checked = validateClubs(clubs);
   if (!checked.ok) return fail('invalid-clubs', checked.detail);
   const seed = setup.seed >>> 0;
+  // validateClubs already guarantees 20 distinct ids, so only the calendar can refuse here.
+  const fixtures = generateFixtures(
+    { seed, season: 1, year: setup.year, clubIds: checked.value.map((def) => def.id) },
+    params.season,
+  );
+  if (!fixtures.ok) {
+    return fixtures.error === 'invalid-calendar'
+      ? fail('invalid-calendar', fixtures.detail)
+      : fail('invalid-clubs', fixtures.detail);
+  }
   const warnings: EngineWarning[] = [...checked.warnings];
   const clubStates: Record<ClubId, ClubState> = {};
   const players: Record<PlayerId, Player> = {};
@@ -137,6 +153,7 @@ export function newGame(
       clubs: clubStates,
       players,
       squads,
+      fixtures: fixtures.value,
     },
     warnings,
   );

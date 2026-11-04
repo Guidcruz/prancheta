@@ -10,7 +10,7 @@ import { testParams } from './testing/params.ts';
  * Golden of `newGame` (T-006) with the synthetic clubs and the fixed identity source of the
  * engine, so the name lists never move it (ADR-0012). Kept small: per club the profile, the
  * formations and the strength; the full squads of two clubs (one in 4-4-2 or 3-5-2, one in
- * 4-3-3 or 3-4-3); and a 32-bit digest (FNV-1a) of the
+ * 4-3-3 or 3-4-3); the calendar (the 38 dates, rounds 1 and 20); and a 32-bit digest (FNV-1a) of the
  * whole state as JSON, which catches any change in the other 475 players.
  */
 describe('golden: newGame', () => {
@@ -27,7 +27,7 @@ describe('golden: newGame', () => {
     );
     if (!result.ok) throw new Error('newGame failed');
     const state = result.value;
-    const { clubs: clubStates, players, squads, ...header } = state;
+    const { clubs: clubStates, players, squads, fixtures, ...header } = state;
     expectGolden('new-game', {
       header,
       warnings: result.warnings,
@@ -42,6 +42,12 @@ describe('golden: newGame', () => {
       academySquad: {
         formation: clubStates['clube-teste-03']!.preferredFormations[0],
         players: squads['clube-teste-03']!.map((id) => players[id]),
+      },
+      fixtures: {
+        count: fixtures.length,
+        dates: [...new Set(fixtures.map((f) => f.date))],
+        firstRound: fixtures.filter((f) => f.round === 1).map((f) => f.id),
+        returnRound: fixtures.filter((f) => f.round === 20).map((f) => f.id),
       },
       digest: seedFromString(JSON.stringify(state)).toString(16),
     });
