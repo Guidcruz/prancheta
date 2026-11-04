@@ -13,6 +13,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Seis JSON em `app/src/params/` (`match`, `players`, `generation`, `ai`, `season`, `fans`), com `match.homeBase = 0.05` (ADR-0011) e valores da ADR-0005 fixos; `fatigue`, `injury` e `cards` são grupos dentro de `match.json`.
 - `loadGameParams()` em `app/src/lib/params.ts`: valida uma vez e devolve os parâmetros congelados.
 - Teste que prende os JSON às tabelas de `docs/design/`.
+- Dados dos clubes (T-003, US-001): `ClubDef` e `validateClubs` em `app/src/engine/clubs.ts` (nunca lança), com `abbreviation` de 3 letras única, `titles` (`league`, `cup`, `libertadores`, `sudamericana`) e `strength` inteiro de 55 a 85, sem relação com o porte (ausente vale 70, com aviso).
+- `app/src/data/` com `clubs.serie-a.json` (20 clubes fictícios aprovados), `blocklist.sha256.json` (1.443 hashes de nomes reais; nenhum nome real em texto), `check.ts` e `blocklist.ts` (SHA-256 só no Node).
+- `npm run content:check` e `npm run blocklist:hash -- <arquivo fora do repositório>` (`scripts/hash-blocklist.mjs`).
 
 ### Alterado
 
@@ -20,3 +23,5 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - `erasableSyntaxOnly` ligado em `app/tsconfig.json`.
 - `engines.node` passa a exigir `>= 22.18`.
 - O tamanho do elenco (25) deixou de ser parâmetro e virou constante.
+- O escudo gerado passa a mostrar a sigla do clube (`abbreviation`) no símbolo de letra; `shieldSpecFor` ganhou o 4º argumento opcional.
+- Porte (grandes, médios, pequenos) separado da força: o porte vem de títulos, história e torcida; a força, da tabela do Brasileirão 2026 parcial (33ª rodada), numa escada única de 20 degraus.

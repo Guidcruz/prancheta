@@ -66,7 +66,9 @@ scripts/             balance.ts, content-check.mjs, template-repeat.ts, check-pr
 
 - `clubs.serie-a.json`: os 20 `ClubDef` (US-001), aprovados pelo CEO. Até a lista chegar, os testes do motor usam clubes sintéticos gerados no próprio teste (`Clube Teste 01`...).
 - `blocklist.sha256.json`: hashes SHA-256 dos nomes reais normalizados (minúsculas, sem acento, espaços colapsados) de clubes, estádios e apelidos, mantidos pelo `content-writer` com `scripts/hash-blocklist.mjs`. Assim a validação bloqueia nome real sem que o repositório contenha nome real em texto (regra do `CLAUDE.md`).
-- A validação (20 clubes, ids únicos, campos, rivalidade simétrica, escudo gerado sem erro, nenhum hash bloqueado) roda como teste Vitest e em `npm run content:check`.
+- A validação (20 clubes, ids e siglas únicos, campos, `titles`, `strength` inteiro de 55 a 85, rivalidade simétrica, escudo gerado sem erro, nenhum hash bloqueado) roda como teste Vitest e em `npm run content:check`.
+- `check.ts` e `blocklist.ts` fazem o SHA-256 só no Node (nunca no motor nem no navegador).
+- `npm run blocklist:hash -- <arquivo>` (`scripts/hash-blocklist.mjs`) gera os hashes a partir de uma lista de nomes reais que fica **fora do repositório**; o arquivo de nomes nunca é commitado.
 
 ### Interface (`app/src/ui/`)
 
@@ -131,16 +133,21 @@ export interface ClubDef {
   id: ClubId;
   name: string;
   shortName: string;
+  abbreviation: string; // 3 letras, única entre os clubes; vai no escudo
   nickname: string;
   city: string;
   state: string;
   colors: [string, string];
-  size: ClubSize;
+  size: ClubSize; // porte: títulos, história e torcida (quem o clube é)
   aiProfile?: AiProfile;
-  strength?: number;
+  strength?: number; // inteiro 55..85, sem relação com o porte; ausente = 70, com aviso
+  titles: { league: number; cup: number; libertadores: number; sudamericana: number };
   stadium: { name: string; capacity: number };
   rivals: ClubId[];
 }
+
+// validateClubs(raw): valida os clubes, nunca lança. Escudo: shieldSpecFor(clubId, color1, color2, abbreviation?)
+// usa a sigla no símbolo de letra; sem o 4º argumento, as 3 primeiras letras do id.
 
 export interface Player {
   id: PlayerId;
@@ -566,8 +573,8 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | #     | Tarefa                                                                                                                                                         | Histórias                      | Etapa | Depende de   | Caminho    | Tamanho | Estado     |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----- | ------------ | ---------- | ------- | ---------- |
 | T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos   | base de US-004..012            | 1a    | —            | `/feature` | M       | feita      |
-| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos             | base de US-007..013            | 1a    | T-001        | `/feature` | M       | em revisão |
-| T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`  | US-001                         | 1a    | T-001        | `/feature` | M       | a fazer    |
+| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos             | base de US-007..013            | 1a    | T-001        | `/feature` | M       | feita      |
+| T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`  | US-001                         | 1a    | T-001        | `/feature` | M       | em revisão |
 | T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de sílabas/nomes                                                             | US-003                         | 1a    | —            | `/feature` | M       | a fazer    |
 | T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial                                                                              | US-004                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |
 | T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI)                                                                              | US-004                         | 1a    | T-003, T-005 | `/feature` | M       | a fazer    |
