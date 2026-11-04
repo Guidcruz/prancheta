@@ -4,19 +4,19 @@ Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do 
 
 ## Etapa atual: 0 — Dia 1
 
-| Item                           | Estado     | Observação                                                                         |
-| ------------------------------ | ---------- | ---------------------------------------------------------------------------------- |
-| Documento de projeto           | feito      | congelado em `docs/PROJETO.md`                                                     |
-| Design system                  | feito (v1) | artefato "Prancheta"; tokens em `design/tokens.json`                               |
-| Kit de agentes adaptado        | feito      | 14 agentes, 10 comandos, hook com travas do projeto e 74 casos de teste            |
-| Auditoria do dia 1             | feita      | 50 achados; corrigidos os que não dependem de decisão; os outros estão abaixo      |
-| Repositório no GitHub          | pendente   | proteger a `main` (checklist em `docs/04-deploy.md`)                               |
-| Site no Cloudflare Pages       | pendente   | criar o projeto apontando para o repositório, build `npm run build`, saída `dist/` |
-| Domínio                        | pendente   | decisão do CEO; até lá `*.pages.dev`                                               |
-| Versão zero do jogo em `/jogo` | feito      | tela inicial com escudo, nome e botão                                              |
-| Post "Dia 1"                   | feito      | `site/src/content/devlog/2026-11-03-dia-1.md`                                      |
-| Nome no INPI                   | pendente   | CEO                                                                                |
-| Licença do código              | pendente   | CEO                                                                                |
+| Item                           | Estado     | Observação                                                                           |
+| ------------------------------ | ---------- | ------------------------------------------------------------------------------------ |
+| Documento de projeto           | feito      | congelado em `docs/PROJETO.md`                                                       |
+| Design system                  | feito (v1) | artefato "Prancheta"; tokens em `design/tokens.json`                                 |
+| Kit de agentes adaptado        | feito      | 14 agentes, 10 comandos, hook com travas do projeto e 74 casos de teste              |
+| Auditoria do dia 1             | feita      | 50 achados; corrigidos os que não dependem de decisão; os outros estão abaixo        |
+| Repositório no GitHub          | feito      | `Guidcruz/prancheta`, público, `main` protegida por ruleset (PR, CI `ci`, só squash) |
+| Site no Cloudflare Pages       | feito      | `prancheta-ad1.pages.dev`; publica a cada merge na `main`, prévia por PR             |
+| Domínio                        | pendente   | decisão do CEO; até lá `*.pages.dev`                                                 |
+| Versão zero do jogo em `/jogo` | feito      | tela inicial com escudo, nome e botão                                                |
+| Post "Dia 1"                   | feito      | `site/src/content/devlog/2026-11-03-dia-1.md`                                        |
+| Nome no INPI                   | pendente   | CEO                                                                                  |
+| Licença do código              | pendente   | CEO                                                                                  |
 
 ## Decisões pendentes do CEO (da auditoria do dia 1)
 
