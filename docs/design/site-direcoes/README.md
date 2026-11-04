@@ -1,6 +1,6 @@
 # Site público: três direções visuais para a página inicial
 
-**Status:** aguardando a escolha do CEO. Autor: `ux-designer`. Nada foi mudado em `site/`, no código nem em `design/tokens.json`; isto é só para escolher.
+**Status:** escolhida em 2026-11-04 pelo CEO a **direção A**, com os toques recomendados (figurinha e etapas como classificação, da C; diagrama a giz só em O jogo, da B). A especificação para implementar está em `docs/design/site.md`; a imagem de compartilhamento, em `docs/art/og-image.md`. Autor: `ux-designer`. Os mockups abaixo ficam como referência.
 
 Cada direção é um mockup estático da página Início (HTML autocontido, CSS inline, sem JavaScript), com o conteúdo aprovado (`docs/content/site/inicio.md` e `complementos.md`), nome e slogan de `config/prancheta.config.ts` e escudos reais gerados por `app/src/lib/generators/shield.ts` com os clubes de `app/src/data/clubs.serie-a.json`. As fontes são as locais (`@fontsource`, Barlow e Barlow Condensed); para abrir os HTML no navegador, rode `npm install` antes (os `@font-face` apontam para `node_modules/`).
 
