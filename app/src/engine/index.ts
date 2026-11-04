@@ -118,6 +118,7 @@ export type {
   StrengthFactors,
   StrengthSheet,
   StrengthTactic,
+  StrengthsResult,
   TeamStrengths,
 } from './strength.ts';
 export type { Lineup, Tactic, TeamSheet } from './lineup.ts';

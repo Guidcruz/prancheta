@@ -16,6 +16,7 @@ import {
   strengthsFromRatings,
   teamFactor,
   teamStrength,
+  type LineupProblem,
   type StrengthContext,
   type TeamStrengths,
 } from './strength.ts';
@@ -401,7 +402,7 @@ describe('US-007: força por setor a partir de escalação e tática', () => {
       expect(run(players.slice(0, 10), ids)).toMatchObject({
         ok: false,
         error: 'invalid-lineup',
-        detail: { reason: 'unknown-player', player: ids[10] },
+        detail: { reason: 'wrong-club', player: ids[10] },
       });
       expect(run(players, ids, '4-5-1')).toMatchObject({
         ok: false,
@@ -576,5 +577,24 @@ describe('teamStrength: força exibida', () => {
         teamStrength(state, clubA, lineup as { formation: Formation; starters: string[] }),
       ).toBeUndefined();
     }
+  });
+});
+
+describe('invalid-lineup com detail tipado', () => {
+  it('exposes the reason without a cast', () => {
+    const player = testPlayer();
+    const result = sectorStrengths(
+      [player],
+      {
+        lineup: { formation: '4-4-2', starters: [player.id] },
+        tactic: { posture: 'balanced', pressure: 'medium' },
+      },
+      { home: 0 },
+      params,
+    );
+    expect(result.ok).toBe(false);
+    if (result.ok) return;
+    const problem: LineupProblem = result.detail;
+    expect(problem).toEqual({ reason: 'wrong-count', count: 1 });
   });
 });

@@ -5,7 +5,6 @@ import type { Lineup } from './lineup.ts';
 import { clamp } from './math.ts';
 import type { GameParams, MatchParams } from './params.ts';
 import { fit, type Player } from './players.ts';
-import { fail, ok } from './result.ts';
 import type { ClubId, Formation, PlayerId, Position, Posture, Pressure, Result } from './types.ts';
 
 /*
@@ -209,13 +208,26 @@ export function strengthsFromRatings(
   };
 }
 
-/** Why a lineup cannot be measured (the `detail` of `invalid-lineup`). */
+/**
+ * Why a lineup cannot be measured (the `detail` of `invalid-lineup`), with the reasons of
+ * `validateLineup` (docs/02-architecture.md, 4.1): `wrong-club` is a starter who is not in the
+ * club's squad.
+ */
 export type LineupProblem =
   | { reason: 'no-formation'; formation: string }
   | { reason: 'wrong-count'; count: number }
   | { reason: 'duplicate'; player: PlayerId }
-  | { reason: 'unknown-player'; player: PlayerId }
+  | { reason: 'wrong-club'; player: PlayerId }
   | { reason: 'unavailable'; player: PlayerId };
+
+/**
+ * Result of {@link sectorStrengths}: a `Result<TeamStrengths, 'invalid-lineup'>` whose `detail`
+ * is typed, so callers read the reason without a cast.
+ */
+type StrengthsBase = Result<TeamStrengths, 'invalid-lineup'>;
+export type StrengthsResult =
+  | Extract<StrengthsBase, { ok: true }>
+  | (Extract<StrengthsBase, { ok: false }> & { detail: LineupProblem });
 
 /** The part of a team sheet the strength reads: formation and starters, posture and pressure. */
 export interface StrengthSheet {
@@ -223,7 +235,7 @@ export interface StrengthSheet {
   readonly tactic: StrengthTactic;
 }
 
-/** Match situation of a team for {@link sectorStrengths}. */
+/** Match situation of a team for {@link sectorStrengths} (always 11 on the pitch). */
 export interface StrengthContext extends StrengthFactors {
   /** Energy on the pitch by player; a player not listed uses their condition. */
   readonly energy?: Readonly<Record<PlayerId, number>>;
@@ -236,6 +248,35 @@ function isFormation(value: string): value is Formation {
 /** Injured or suspended players are not fit to play (jogadores.md, "Estados que mudam"). */
 function isAvailable(player: Pick<Player, 'injuryRounds' | 'suspendedGames'>): boolean {
   return player.injuryRounds <= 0 && player.suspendedGames <= 0;
+}
+
+/**
+ * The checks shared by {@link sectorStrengths} and {@link teamStrength}: a known formation, as
+ * many distinct starters as slots, each found by `lookup` (the club's squad) and, when
+ * `requireAvailable`, neither injured nor suspended. Returns the starters with their slots, or
+ * the first problem (formation, count, then each starter in slot order).
+ */
+function resolveStarters(
+  lineup: Pick<Lineup, 'formation' | 'starters'>,
+  lookup: (id: PlayerId) => Player | undefined,
+  requireAvailable: boolean,
+): { formation: Formation; eleven: { player: Player; slot: Position }[] } | LineupProblem {
+  const { formation, starters } = lineup;
+  if (!isFormation(formation)) return { reason: 'no-formation', formation };
+  const slots = FORMATION_SLOTS[formation];
+  if (starters.length !== slots.length) return { reason: 'wrong-count', count: starters.length };
+  const seen = new Set<PlayerId>();
+  const eleven: { player: Player; slot: Position }[] = [];
+  for (let i = 0; i < slots.length; i++) {
+    const id = starters[i]!;
+    if (seen.has(id)) return { reason: 'duplicate', player: id };
+    seen.add(id);
+    const player = lookup(id);
+    if (player === undefined) return { reason: 'wrong-club', player: id };
+    if (requireAvailable && !isAvailable(player)) return { reason: 'unavailable', player: id };
+    eleven.push({ player, slot: slots[i]! });
+  }
+  return { formation, eleven };
 }
 
 /**
@@ -253,41 +294,22 @@ export function sectorStrengths(
   sheet: StrengthSheet,
   context: StrengthContext,
   params: Pick<GameParams, 'match'>,
-): Result<TeamStrengths, 'invalid-lineup'> {
-  const { formation, starters } = sheet.lineup;
-  if (!isFormation(formation)) {
-    return fail('invalid-lineup', { reason: 'no-formation', formation } satisfies LineupProblem);
-  }
-  const slots = FORMATION_SLOTS[formation];
-  if (starters.length !== slots.length) {
-    return fail('invalid-lineup', {
-      reason: 'wrong-count',
-      count: starters.length,
-    } satisfies LineupProblem);
-  }
+): StrengthsResult {
   const byId = new Map<PlayerId, Player>();
   for (const player of squad) byId.set(player.id, player);
-  const seen = new Set<PlayerId>();
-  const ratings: number[] = [];
-  for (let i = 0; i < slots.length; i++) {
-    const id = starters[i]!;
-    if (seen.has(id)) {
-      return fail('invalid-lineup', { reason: 'duplicate', player: id } satisfies LineupProblem);
-    }
-    seen.add(id);
-    const player = byId.get(id);
-    if (player === undefined) {
-      return fail('invalid-lineup', {
-        reason: 'unknown-player',
-        player: id,
-      } satisfies LineupProblem);
-    }
-    if (!isAvailable(player)) {
-      return fail('invalid-lineup', { reason: 'unavailable', player: id } satisfies LineupProblem);
-    }
-    ratings.push(effectiveRating(player, slots[i]!, context.energy?.[id] ?? player.condition));
-  }
-  return ok(strengthsFromRatings(formation, sheet.tactic, ratings, context, params.match));
+  const resolved = resolveStarters(sheet.lineup, (id) => byId.get(id), true);
+  if ('reason' in resolved) return { ok: false, error: 'invalid-lineup', detail: resolved };
+  const ratings = resolved.eleven.map(({ player, slot }) =>
+    effectiveRating(player, slot, context.energy?.[player.id] ?? player.condition),
+  );
+  const value = strengthsFromRatings(
+    resolved.formation,
+    sheet.tactic,
+    ratings,
+    context,
+    params.match,
+  );
+  return { ok: true, value, warnings: [] };
 }
 
 /**
@@ -322,18 +344,11 @@ export function teamStrength(
     return eleven.length === STARTERS_COUNT ? elevenStrength(eleven) : undefined;
   }
 
-  if (!isFormation(lineup.formation)) return undefined;
-  const slots = FORMATION_SLOTS[lineup.formation];
-  if (lineup.starters.length !== slots.length) return undefined;
   const inSquad = new Set(squadIds);
-  const seen = new Set<PlayerId>();
-  const eleven: { player: Player; slot: Position }[] = [];
-  for (let i = 0; i < slots.length; i++) {
-    const id = lineup.starters[i]!;
-    const player = state.players[id];
-    if (seen.has(id) || !inSquad.has(id) || player === undefined) return undefined;
-    seen.add(id);
-    eleven.push({ player, slot: slots[i]! });
-  }
-  return elevenStrength(eleven);
+  const resolved = resolveStarters(
+    lineup,
+    (id) => (inSquad.has(id) ? state.players[id] : undefined),
+    false,
+  );
+  return 'reason' in resolved ? undefined : elevenStrength(resolved.eleven);
 }
