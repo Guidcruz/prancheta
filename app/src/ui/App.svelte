@@ -4,8 +4,18 @@
   import { shieldSpecFor, shieldSvg } from '@lib/generators/shield';
 
   const lang = detectLang();
+  // The app's own crest (not a club): fixed crest data, brand colours from the config.
   const shield = shieldSvg(
-    shieldSpecFor('prancheta', config.colors.primary, config.colors.accent),
+    shieldSpecFor({
+      id: 'prancheta',
+      colors: [config.colors.primary, config.colors.accent],
+      size: 'big',
+      titles: { league: 0 },
+      crestShape: 'french',
+      crestPattern: 'chevron',
+      crestBase: 0,
+      crestSymbol: 'sol',
+    }),
     96,
   );
   let pressed = $state(false);

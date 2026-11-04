@@ -21,7 +21,11 @@
       "cup": 5,
       "libertadores": 4,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "rounded",
+    "crestPattern": "hoops",
+    "crestBase": 0,
+    "crestSymbol": "calcadao"
   },
   {
     "id": "corinto",
@@ -45,7 +49,11 @@
       "cup": 4,
       "libertadores": 1,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "disc",
+    "crestPattern": "chief",
+    "crestBase": 0,
+    "crestSymbol": "predios"
   },
   {
     "id": "palmeral",
@@ -69,7 +77,11 @@
       "cup": 4,
       "libertadores": 3,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "rounded",
+    "crestPattern": "chief",
+    "crestBase": 0,
+    "crestSymbol": "palmeira"
   },
   {
     "id": "sao-paulao",
@@ -93,7 +105,11 @@
       "cup": 1,
       "libertadores": 3,
       "sudamericana": 1
-    }
+    },
+    "crestShape": "french",
+    "crestPattern": "fess",
+    "crestBase": 0,
+    "crestSymbol": "ponte"
   },
   {
     "id": "atletico-minerio",
@@ -117,7 +133,11 @@
       "cup": 2,
       "libertadores": 1,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "disc",
+    "crestPattern": "vstripes",
+    "crestBase": 0,
+    "crestSymbol": "gema"
   },
   {
     "id": "gremeos",
@@ -141,7 +161,11 @@
       "cup": 5,
       "libertadores": 3,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "oval",
+    "crestPattern": "vstripes",
+    "crestBase": 0,
+    "crestSymbol": "chapeu"
   },
   {
     "id": "fluminario",
@@ -165,7 +189,11 @@
       "cup": 1,
       "libertadores": 1,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "french",
+    "crestPattern": "pales",
+    "crestBase": 0,
+    "crestSymbol": "arcos"
   },
   {
     "id": "botafogueira",
@@ -189,7 +217,11 @@
       "cup": 0,
       "libertadores": 1,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "rounded",
+    "crestPattern": "split",
+    "crestBase": 0,
+    "crestSymbol": "chama"
   },
   {
     "id": "vasconcelos",
@@ -213,7 +245,11 @@
       "cup": 1,
       "libertadores": 1,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "chamfer",
+    "crestPattern": "bendMirror",
+    "crestBase": 0,
+    "crestSymbol": "bondinho"
   },
   {
     "id": "santoes",
@@ -237,7 +273,11 @@
       "cup": 1,
       "libertadores": 3,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "disc",
+    "crestPattern": "fess",
+    "crestBase": 0,
+    "crestSymbol": "contineres"
   },
   {
     "id": "cruzador",
@@ -261,7 +301,11 @@
       "cup": 6,
       "libertadores": 2,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "disc",
+    "crestPattern": "none",
+    "crestBase": 0,
+    "crestSymbol": "pampulha"
   },
   {
     "id": "inter-regional",
@@ -285,7 +329,11 @@
       "cup": 1,
       "libertadores": 2,
       "sudamericana": 1
-    }
+    },
+    "crestShape": "rounded",
+    "crestPattern": "chevron",
+    "crestBase": 0,
+    "crestSymbol": "chamine"
   },
   {
     "id": "tufao",
@@ -309,7 +357,11 @@
       "cup": 1,
       "libertadores": 0,
       "sudamericana": 2
-    }
+    },
+    "crestShape": "rounded",
+    "crestPattern": "split",
+    "crestBase": 0,
+    "crestSymbol": "cataVento"
   },
   {
     "id": "baiao",
@@ -333,7 +385,11 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "rounded",
+    "crestPattern": "fess",
+    "crestBase": 0,
+    "crestSymbol": "berimbau"
   },
   {
     "id": "coritibom",
@@ -357,7 +413,11 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "disc",
+    "crestPattern": "vstripes",
+    "crestBase": 0,
+    "crestSymbol": "araucaria"
   },
   {
     "id": "vitorioso",
@@ -381,7 +441,11 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "french",
+    "crestPattern": "chief",
+    "crestBase": 0,
+    "crestSymbol": "farol"
   },
   {
     "id": "bragantao",
@@ -405,7 +469,11 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "disc",
+    "crestPattern": "chevron",
+    "crestBase": 0,
+    "crestSymbol": "sino"
   },
   {
     "id": "miragol",
@@ -429,7 +497,11 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "chamfer",
+    "crestPattern": "bend",
+    "crestBase": 0,
+    "crestSymbol": "sol"
   },
   {
     "id": "chapecao",
@@ -453,7 +525,11 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "french",
+    "crestPattern": "chevron",
+    "crestBase": 0,
+    "crestSymbol": "espiga"
   },
   {
     "id": "remador",
@@ -477,6 +553,10 @@
       "cup": 0,
       "libertadores": 0,
       "sudamericana": 0
-    }
+    },
+    "crestShape": "oval",
+    "crestPattern": "chief",
+    "crestBase": 0,
+    "crestSymbol": "vitoriaregia"
   }
 ]

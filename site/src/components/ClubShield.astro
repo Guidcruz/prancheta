@@ -1,0 +1,36 @@
+---
+// The only place of the site that draws a club shield (style A v5 generator of the game).
+import { shieldSpecFor, shieldSvg } from '../../../app/src/lib/generators/shield';
+import type { SiteClub } from '../lib/shields';
+interface Props {
+  club: SiteClub;
+  /** Width in px of the generated drawing; the box scales it with --shield-size. */
+  size?: number;
+  /** Decorative: hidden from assistive tech. Otherwise the shield gets "Escudo: {name}". */
+  decorative?: boolean;
+}
+const { club, size = 96, decorative = false } = Astro.props;
+// Generated at build time; no JavaScript reaches the browser.
+// `instance` keeps gradient ids unique when the same club appears twice on one page.
+const svg = shieldSvg(shieldSpecFor(club), size, { instance: String(size) });
+---
+
+<span
+  class="shield"
+  role={decorative ? undefined : 'img'}
+  aria-label={decorative ? undefined : `Escudo: ${club.shortName}`}
+  aria-hidden={decorative ? 'true' : undefined}
+  style={`--shield-default: ${size}px`}
+  set:html={svg}
+/>
+<style>
+  .shield {
+    display: block;
+    width: var(--shield-size, var(--shield-default));
+  }
+  .shield :global(svg) {
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+</style>

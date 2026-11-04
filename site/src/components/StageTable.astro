@@ -1,69 +1,216 @@
 ---
 import StatusBadge from './StatusBadge.astro';
+import TableScroll from './TableScroll.astro';
 import type { Stage } from '../lib/roadmap';
 import { stageSummaries } from '../data/etapas-resumo';
 interface Props {
   stages: Stage[];
-  /** 'delivery' shows the roadmap text; 'summary' shows the short text from data/etapas-resumo.ts. */
+  /** `compact`: Etapa, Nome, Estado (home). `full`: adds "O que entra" (roadmap and modes). */
+  variant?: 'compact' | 'full';
+  /** 'delivery' shows the roadmap text; 'summary' the short text from data/etapas-resumo.ts. */
   text?: 'delivery' | 'summary';
 }
-const { stages, text = 'delivery' } = Astro.props;
+const { stages, variant = 'full', text = 'delivery' } = Astro.props;
+const full = variant === 'full';
+const escapeHtml = (t: string) =>
+  t.replace(
+    /[&<>"']/g,
+    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
+  );
+/** Keeps ADR numbers together ("ADR-0013" never breaks at the hyphen). */
+const nb = (t: string) =>
+  escapeHtml(t).replace(/ADR-\d+/g, (m) => `<span class="nowrap">${m}</span>`);
+const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') : s.delivery);
 ---
 
-<div class="scroll" tabindex="0" role="region" aria-label="Etapas do jogo (tabela com rolagem)">
-  <table>
-    <thead>
-      <tr>
-        <th scope="col">Etapa</th>
-        <th scope="col">Nome</th>
-        <th scope="col" aria-label="O que entra para o jogador">
-          O que entra
-        </th>
-        <th scope="col">Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      {stages.map((s) => (
-        <tr>
-          <th scope="row" class="numero sticky">
-            {s.id}
-          </th>
-          <td class="body-strong">{s.name}</td>
-          <td>{text === 'summary' ? (stageSummaries[s.id] ?? '') : s.delivery}</td>
-          <td>
+{full && (
+  <ol class="cards" aria-label="Etapas do jogo">
+    {stages.map((s) => {
+      const current = s.status === 'em-desenvolvimento';
+      return (
+        <li class:list={{ current }} aria-current={current ? 'step' : undefined}>
+          <p class="head">
+            <span class="et">{s.id}</span>
+            <span class="name body-strong">{s.name}</span>
+          </p>
+          <p class="state-line">
             <StatusBadge status={s.status} />
-          </td>
+          </p>
+          <p class="what" set:html={nb(detail(s))} />
+        </li>
+      );
+    })}
+  </ol>
+)}
+<div class:list={{ 'table-wrap': full }}>
+  <TableScroll label="Etapas do jogo" minWidth="0px">
+    <table class:list={['stages', variant]}>
+      <thead>
+        <tr>
+          <th scope="col" class="et">
+            Etapa
+          </th>
+          <th scope="col">Nome</th>
+          {full && (
+            <th scope="col" aria-label="O que entra para o jogador">
+              O que entra
+            </th>
+          )}
+          <th scope="col" class="state">
+            Estado
+          </th>
         </tr>
-      ))}
-    </tbody>
-  </table>
+      </thead>
+      <tbody>
+        {stages.map((s) => {
+          const current = s.status === 'em-desenvolvimento';
+          return (
+            <tr
+              class:list={{ current, done: s.status === 'disponivel' }}
+              aria-current={current ? 'step' : undefined}
+            >
+              <th scope="row" class="et">
+                {s.id}
+              </th>
+              <td class="name body-strong">{s.name}</td>
+              {full && <td class="what" set:html={nb(detail(s))} />}
+              <td class="state">
+                <StatusBadge status={s.status} />
+              </td>
+            </tr>
+          );
+        })}
+      </tbody>
+    </table>
+  </TableScroll>
 </div>
 <style>
-  .scroll {
-    overflow-x: auto;
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
+  table.stages {
+    width: 100%;
   }
-  table {
-    min-width: 640px;
-  }
-  .sticky {
-    position: sticky;
-    left: 0;
-    background: var(--surface-1);
-    color: var(--ink);
-    font: var(--type-numero);
+  table.stages th.et {
+    width: 52px;
+    font: var(--type-stage-number);
     font-variant-numeric: tabular-nums;
     text-transform: none;
     letter-spacing: 0;
-    border-right: 1px solid var(--line);
+    color: var(--ink-muted);
   }
-  thead th:first-child {
-    position: sticky;
-    left: 0;
+  table.stages thead th.et {
+    font: var(--type-rotulo);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  table.stages tbody tr.current > th.et,
+  table.stages tbody tr.done > th.et {
+    color: var(--ink);
+  }
+  table.stages tbody tr.current > th.et {
+    box-shadow: inset 4px 0 0 var(--grass);
+  }
+  table.stages tbody tr.current {
+    background: var(--grass-soft);
+  }
+  .compact .name {
+    min-width: 72px;
+  }
+  .name {
+    min-width: 96px;
+    overflow-wrap: break-word;
+    color: var(--ink);
+  }
+  .nowrap,
+  .what :global(.nowrap) {
+    white-space: nowrap;
+  }
+  .cards {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-3);
+  }
+  .cards li {
+    padding: var(--space-3) var(--space-4);
     background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
   }
-  td:nth-child(3) {
-    min-width: 260px;
+  .cards li.current {
+    border: 2px solid var(--grass);
+    background: var(--grass-soft);
+    padding: calc(var(--space-3) - 1px) calc(var(--space-4) - 1px);
+  }
+  .cards p {
+    margin: 0;
+  }
+  .head {
+    display: flex;
+    align-items: baseline;
+    gap: var(--space-3);
+  }
+  .cards .et {
+    font: var(--type-stage-number);
+    font-variant-numeric: tabular-nums;
+    min-width: 2ch;
+  }
+  .cards .name {
+    overflow-wrap: break-word;
+  }
+  .cards .state-line {
+    margin-top: var(--space-2);
+  }
+  .cards .what {
+    margin-top: var(--space-2);
+  }
+  /* Phone: cards. Wide screens: the table. */
+  @media (min-width: 720px) {
+    .cards {
+      display: none;
+    }
+  }
+  @media (max-width: 719.98px) {
+    .table-wrap {
+      display: none;
+    }
+  }
+  .what {
+    min-width: 160px;
+    color: var(--ink-muted);
+  }
+  .state {
+    width: 1%;
+    white-space: nowrap;
+  }
+  .cards .state-line :global(.badge) {
+    height: auto;
+    min-height: 24px;
+    padding-block: 2px;
+    white-space: normal;
+  }
+  /* Narrow table container (any screen width): the badge may wrap instead of fixing the column. */
+  @container (max-width: 340px) {
+    .compact th,
+    .compact td {
+      padding-inline: var(--space-2);
+    }
+    .compact .name {
+      min-width: 56px;
+    }
+    .compact th.et {
+      width: 40px;
+    }
+  }
+  @container (max-width: 520px) {
+    .state {
+      width: auto;
+      white-space: normal;
+    }
+    .state :global(.badge) {
+      height: auto;
+      min-height: 24px;
+      padding-block: 2px;
+      white-space: normal;
+    }
   }
 </style>

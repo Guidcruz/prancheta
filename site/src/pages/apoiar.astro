@@ -1,25 +1,37 @@
 ---
 import Base from '../layouts/Base.astro';
+import PageHero from '../components/PageHero.astro';
+import GlassCard from '../components/GlassCard.astro';
 import { config } from '../../../config/prancheta.config.ts';
 ---
 
-<Base
-  title="Apoiar"
-  current="apoiar"
-  description={`Como apoiar o desenvolvimento do ${config.name}.`}
->
-  <h1>Apoiar o projeto</h1>
-  <p>
-    O {config.name} é feito por uma pessoa, no tempo livre, e vai ser gratuito. O jogo nunca terá
-    pagamento para ganhar, caixinhas aleatórias nem recompensas por tempo de uso.
-  </p>
-  <p>
-    Por enquanto, a melhor forma de apoiar é{' '}
-    <strong>jogar a versão atual, contar o que achou e compartilhar o devlog</strong>. Um canal de
-    apoio financeiro, com recompensas só cosméticas, entra quando o jogo estiver mais completo.
-  </p>
-  <p class="caption" style="color: var(--ink-muted)">
-    Se você é menor de idade, qualquer apoio financeiro futuro precisa da autorização de um
-    responsável.
-  </p>
+<Base title="Apoiar" current="apoiar" share="apoiar">
+  <PageHero title="Apoiar o projeto" />
+  <div class="sec flow glow">
+    <p>
+      O {config.name} é feito por uma pessoa, no tempo livre, e vai ser gratuito. O jogo nunca terá
+      pagamento para ganhar, caixinhas aleatórias nem recompensas por tempo de uso.
+    </p>
+    <GlassCard>
+      <p>
+        Por enquanto, a melhor forma de apoiar é{' '}
+        <strong>jogar a versão atual, contar o que achou e compartilhar o devlog</strong>. Um canal
+        de apoio financeiro, com recompensas só cosméticas, entra quando o jogo estiver mais
+        completo.
+      </p>
+    </GlassCard>
+    <p class="caption minors">
+      Se você é menor de idade, qualquer apoio financeiro futuro precisa da autorização de um
+      responsável.
+    </p>
+  </div>
 </Base>
+<style>
+  .minors {
+    margin: var(--space-4) 0 0;
+    color: var(--ink-muted);
+  }
+  .sec :global(.glass p) {
+    margin: 0;
+  }
+</style>

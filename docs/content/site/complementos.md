@@ -39,7 +39,7 @@ Obs. para o developer: na frase de abertura de "Perguntas", falta espaço antes 
 - **Rótulo do sumário** (`aria-label` do `nav`): Nesta página
 - **Texto alternativo, formação:** Diagrama de campo com onze jogadores em linhas, na formação 4-3-3.
 - **Texto alternativo, postura:** Diagrama de campo com três setas de ataque, cada uma de um tamanho: quanto maior, mais ofensiva a postura.
-- **Texto alternativo, pressão (corrigido):** Diagrama de campo com três faixas, cada uma mais clara que a anterior: quanto mais clara, mais alta a pressão.
+- **Texto alternativo, pressão (corrigido):** Diagrama de campo com três faixas, cada uma mais marcada que a anterior: quanto mais marcada, mais alta a pressão.
 - **Legenda da partida:** Exemplo ilustrativo, com clubes fictícios
 
 **Partida de exemplo:** Flamingo 2 x 1 Corinto.
@@ -160,3 +160,32 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 **Slogan na imagem.** O slogan completo (86 caracteres) é longo demais para a imagem e quebraria em quatro linhas. Versão curta para a imagem do Início: **"O Brasil inteiro na prancheta"** (29 caracteres), a última parte do próprio slogan. O slogan completo continua no site e no `<title>`.
 
 **Para a implementação (depois do ok):** hoje só `index.astro` usa o slogan como descrição; as demais páginas têm textos longos em `site/src/pages/*.astro` e o Devlog não passa descrição. A troca é de textos; o título curto da imagem pede um campo novo na configuração (por exemplo `slogan.short`), a cargo do Desenvolvimento.
+
+## Página Clubes: frase sobre o escudo (revisão)
+
+> Status: **aprovado pelo CEO em 2026-11-04** (escudos estilo A v5, ADR-0014). Substitui a frase que citava "um símbolo simples (estrela, bola ou letra)".
+
+Cada escudo tem o formato, as cores e um símbolo da cidade do clube, com uma estrela para cada título. Tudo desenhado por código.
+
+## Página Clubes: lista "Como um clube nasce" (revisão do item Escudo)
+
+> Status: **aprovado pelo CEO em 2026-11-04, sem "desenhado por código"** (o topo da página já diz isso). Autor: `content-writer`. Só pt-BR. Motivo: o item "Escudo" ainda descreve o gerador antigo ("símbolo simples (estrela, bola ou letra)"). A regra vigente é a do ADR-0014 e do gerador v5. Não repete a frase aprovada do topo da página (formato, cores, símbolo da cidade, estrela por título); detalha o que ela não diz: de onde vêm silhueta, cores e padrão, e a cor das estrelas. Os demais itens da lista (Nome, Cidade e cores, Uniforme, Estádio, Torcida) foram lidos e não estão desatualizados quanto ao escudo; ficam como estão.
+
+**Antes** (`site/src/pages/clubes.astro`, linhas 44 a 47):
+
+> **Escudo:** desenhado por código, combinando formato, cores, faixas e um símbolo simples (estrela, bola ou letra). Nunca imita um escudo real.
+
+**Depois (aprovado):**
+
+> **Escudo:** a silhueta, as cores e o tipo de padrão lembram o clube que inspirou o time, mas o desenho é sempre novo. O símbolo vem da cidade, e as estrelas são douradas para títulos da Série A e prateadas para os da Série B.
+
+Notas:
+
+- Sai a frase "Nunca imita um escudo real": a palavra "real" sugeria comparação. A ideia (lembra na forma, não copia) fica em "o desenho é sempre novo".
+- Não cita sigla, letra, nome nem símbolo de nenhum clube (ADR-0014).
+- 221 caracteres com "Escudo:", cabe em um item de lista sem quebrar o layout.
+
+**Pendências fora do pedido, para o CEO decidir:**
+
+1. A "Frase sob os escudos" da seção "Clubes" deste arquivo (acima) também cita "um símbolo simples (estrela, bola ou letra)". Já foi substituída pela frase aprovada em 2026-11-04; conferido: o site usa a nova.
+2. O item "Nome" da lista exemplifica com "Coritibom" e "Botafogueira", que ficam muito perto de nomes de clubes existentes. Sugiro trocar por exemplos mais distantes, em outro lote, se o CEO concordar.

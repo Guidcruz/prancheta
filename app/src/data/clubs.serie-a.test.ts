@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { AiProfile, ClubDef, ClubSize } from '../engine/index.ts';
 import { parseBlocklist } from './blocklist.ts';
+import { CREST_PATTERNS, CREST_SHAPES, CREST_SYMBOLS } from '../engine/clubs.ts';
 import { checkClubData, formatClubIssues } from './check.ts';
 
 /*
@@ -79,6 +80,32 @@ describe('app/src/data/clubs.serie-a.json', () => {
         expect(Number.isInteger(count) && count >= 0, id).toBe(true);
       }
     }
+  });
+
+  // ADR-0014: the crest is fixed data of each club, the 20 symbols all different.
+  it('has the crest fields of every club in the closed lists, with 20 different symbols', () => {
+    const list = clubs();
+    for (const c of list) {
+      expect(CREST_SHAPES, c.id).toContain(c.crestShape);
+      expect(CREST_PATTERNS, c.id).toContain(c.crestPattern);
+      expect([0, 1], c.id).toContain(c.crestBase);
+      expect(CREST_SYMBOLS, c.id).toContain(c.crestSymbol);
+    }
+    expect(new Set(list.map((c) => c.crestSymbol)).size).toBe(20);
+  });
+
+  it('gives rivals and same-city clubs different shapes, except the three accepted pairs', () => {
+    const list = clubs();
+    const same = new Set<string>();
+    for (const a of list) {
+      for (const b of list) {
+        const near = a.city === b.city || a.rivals.includes(b.id);
+        if (a.id < b.id && near && a.crestShape === b.crestShape) same.add(`${a.id}|${b.id}`);
+      }
+    }
+    // docs/art/escudos-estilos/README.md, style A v5: pairs the CEO accepted, set apart by colour.
+    const accepted = ['botafogueira|flamingo', 'corinto|santoes', 'atletico-minerio|cruzador'];
+    expect([...same].filter((p) => !accepted.includes(p))).toEqual([]);
   });
 
   /** Rows of the markdown table whose header has `column`, keyed by the header cells. */

@@ -1,7 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
-import ShieldGrid from '../components/ShieldGrid.astro';
+import StickerGrid from '../components/StickerGrid.astro';
+import PageHero from '../components/PageHero.astro';
 import StatusBadge from '../components/StatusBadge.astro';
 import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
@@ -18,18 +19,14 @@ const divisions = [
 ];
 ---
 
-<Base
-  title="Clubes"
-  current="clubes"
-  description={`Todos os clubes são fictícios, com nomes em trocadilho e escudos desenhados por código. Conheça a ideia por trás dos times do ${config.name}.`}
-  wide
->
-  <div class="prose">
-    <h1>Clubes</h1>
+<Base title="Clubes" current="clubes" share="clubes">
+  <PageHero title="Clubes">
     <p class="lead">
       No {config.name}, todos os clubes são fictícios. O nome é um trocadilho: você bate o olho e
       sabe quem é, mas ninguém copiou marca nenhuma.
     </p>
+  </PageHero>
+  <div class="sec flow">
     <p>
       Cidade, cores e apelido da torcida estão lá. O que você não vai achar é escudo, uniforme ou
       nome oficial de clube de verdade.
@@ -45,8 +42,9 @@ const divisions = [
         <strong>Cidade e cores:</strong> as do lugar, para a torcida se reconhecer.
       </li>
       <li>
-        <strong>Escudo:</strong> desenhado por código, combinando formato, cores, faixas e um
-        símbolo simples (estrela, bola ou letra). Nunca imita um escudo real.
+        <strong>Escudo:</strong> a silhueta, as cores e o tipo de padrão lembram o clube que
+        inspirou o time, mas o desenho é sempre novo. O símbolo vem da cidade, e as estrelas são
+        douradas para títulos da Série A e prateadas para os da Série B.
       </li>
       <li>
         <strong>Uniforme:</strong> listras, faixas, gola e metades, com as cores do clube.
@@ -61,17 +59,16 @@ const divisions = [
     </ul>
   </div>
 
-  <section aria-labelledby="escudos">
+  <section class="sec flow wide" aria-labelledby="escudos">
     <h2 id="escudos">Alguns escudos de exemplo</h2>
-    <ShieldGrid {clubs} />
-    <p class="caption muted note">
-      Cada escudo é desenhado por código, a partir do formato, das cores e de um símbolo simples
-      (estrela, bola ou letra), e é sempre o mesmo para o mesmo clube. Os 20 da Série A serão
-      apresentados aqui em breve.
+    <StickerGrid {clubs} />
+    <p class="note">
+      Cada escudo tem o formato, as cores e um símbolo da cidade do clube, com uma estrela para cada
+      título. Tudo desenhado por código.
     </p>
   </section>
 
-  <div class="prose">
+  <div class="sec flow">
     <h2>Jogadores</h2>
     <p>
       Todos fictícios, com nome, nacionalidade, posição e atributos gerados pelo jogo. O rosto
@@ -80,21 +77,28 @@ const divisions = [
     </p>
 
     <h2>Quem está no jogo</h2>
-    <TableScroll label="Quem está no jogo">
+    <TableScroll label="Quem está no jogo" stack>
       <table>
         <thead>
           <tr>
             <th scope="col">Divisão</th>
             <th scope="col">Clubes</th>
-            <th scope="col">Estado</th>
+            <th scope="col" class="col-state">
+              Estado
+            </th>
           </tr>
         </thead>
         <tbody>
           {divisions.map((d) => (
             <tr>
-              <th scope="row">{d.name}</th>
+              <th scope="row">
+                {d.name}
+                <div class="inline-state">
+                  <StatusBadge recurso={d.id} showStage />
+                </div>
+              </th>
               <td>{d.clubs}</td>
-              <td>
+              <td class="col-state">
                 <StatusBadge recurso={d.id} showStage />
               </td>
             </tr>
@@ -124,14 +128,8 @@ const divisions = [
   <FinalCta />
 </Base>
 <style>
-  .prose {
-    max-width: var(--layout-content-max);
-  }
   .note {
-    margin-top: var(--space-4);
-    max-width: var(--layout-content-max);
-  }
-  .prose ul {
-    padding-left: var(--space-6);
+    margin-top: var(--space-6);
+    color: var(--ink-muted);
   }
 </style>

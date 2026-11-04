@@ -61,6 +61,10 @@ export function syntheticClubs(count = 20): MutableClubDef[] {
       strength: STRENGTH[size],
       stadium: { name: `Estádio Teste ${n}`, capacity: 20_000 + i * 1_000 },
       rivals: [],
+      crestShape: 'rounded',
+      crestPattern: 'split',
+      crestBase: 0,
+      crestSymbol: 'sol',
       titles: { league: i % 3, cup: 0, libertadores: i % 2, sudamericana: 0 },
     });
   }

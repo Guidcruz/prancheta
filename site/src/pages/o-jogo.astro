@@ -9,6 +9,7 @@ import FanMeter from '../components/FanMeter.astro';
 import NewsSample from '../components/NewsSample.astro';
 import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
+import PageHero from '../components/PageHero.astro';
 
 const base = config.paths.site;
 const toc = [
@@ -26,47 +27,47 @@ const later = [
 ];
 ---
 
-<Base
-  title="O jogo"
-  current="o-jogo"
-  description={`Uma temporada da Série A, tática em três ajustes e partida minuto a minuto, com notícias e torcida reagindo: veja como é jogar o ${config.name}.`}
->
-  <h1>O jogo</h1>
-  <p class="lead">
-    O {config.name} é um jogo de técnico de futebol para o celular. Você monta o time, define como
-    ele joga e acompanha cada partida minuto a minuto. O resto do clube, a torcida e a imprensa
-    reagem ao que você decide.
-  </p>
-  <p>A ideia é simples de propósito: completo, mas sem precisar de manual.</p>
-  <nav aria-label="Nesta página">
-    <ul class="toc">
-      {toc.map((t) => (
-        <li>
-          <a href={`#${t.id}`}>{t.label}</a>
-        </li>
-      ))}
-    </ul>
-  </nav>
+<Base title="O jogo" current="o-jogo" share="o-jogo">
+  <PageHero
+    title="O jogo"
+    lead={`O ${config.name} é um jogo de técnico de futebol para o celular. Você monta o time, define como ele joga e acompanha cada partida minuto a minuto. O resto do clube, a torcida e a imprensa reagem ao que você decide.`}
+  />
+  <div class="sec flow intro">
+    <p>A ideia é simples de propósito: completo, mas sem precisar de manual.</p>
+    <nav aria-label="Nesta página">
+      <ul class="toc">
+        {toc.map((t) => (
+          <li>
+            <a href={`#${t.id}`}>{t.label}</a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  </div>
 
-  <section aria-labelledby="tatica">
+  <section class="sec flow wide" aria-labelledby="tatica">
     <h2 id="tatica">Você manda no time</h2>
     <p>Três ajustes táticos, e só. Dá para explicar cada um numa frase.</p>
     <ul class="grid-cards three tactics">
       <li>
-        <FeatureCard title="Formação" recurso="tatica">
+        <FeatureCard title="Formação" recurso="tatica" glass={false}>
           <TacticDiagram
+            variant="chalk"
             kind="formation"
             title="Diagrama de campo com onze jogadores em linhas, na formação 4-3-3."
           />
           <p>
-            4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3 ou 5-3-2. Define quantos jogadores pesam na defesa,
-            no meio e no ataque.
+            <span class="nowrap">4-3-3</span>, <span class="nowrap">4-4-2</span>,{' '}
+            <span class="nowrap">4-2-3-1</span>, <span class="nowrap">3-5-2</span>,{' '}
+            <span class="nowrap">3-4-3</span> ou <span class="nowrap">5-3-2</span>. Define quantos
+            jogadores pesam na defesa, no meio e no ataque.
           </p>
         </FeatureCard>
       </li>
       <li>
-        <FeatureCard title="Postura" recurso="tatica">
+        <FeatureCard title="Postura" recurso="tatica" glass={false}>
           <TacticDiagram
+            variant="chalk"
             kind="posture"
             title="Diagrama de campo com três setas de ataque, cada uma de um tamanho: quanto maior, mais ofensiva a postura."
           />
@@ -76,10 +77,11 @@ const later = [
         </FeatureCard>
       </li>
       <li>
-        <FeatureCard title="Pressão" recurso="tatica">
+        <FeatureCard title="Pressão" recurso="tatica" glass={false}>
           <TacticDiagram
+            variant="chalk"
             kind="pressure"
-            title="Diagrama de campo com três faixas, cada uma mais clara que a anterior: quanto mais clara, mais alta a pressão."
+            title="Diagrama de campo com três faixas, cada uma mais marcada que a anterior: quanto mais marcada, mais alta a pressão."
           />
           <p>
             Baixa, média ou alta. Mais bolas recuperadas, mas também mais cansaço e mais cartões.
@@ -96,7 +98,7 @@ const later = [
     </p>
   </section>
 
-  <section aria-labelledby="partida">
+  <section class="sec flow" aria-labelledby="partida">
     <h2 id="partida">A partida</h2>
     <p>
       O jogo é simulado minuto a minuto. A cada minuto, os dois times tentam criar chances. O meio e
@@ -131,7 +133,7 @@ const later = [
     </p>
   </section>
 
-  <section aria-labelledby="clube">
+  <section class="sec flow" aria-labelledby="clube">
     <h2 id="clube">O clube em volta</h2>
     <ul>
       <li>
@@ -172,7 +174,7 @@ const later = [
     </p>
   </section>
 
-  <section aria-labelledby="progresso">
+  <section class="sec flow" aria-labelledby="progresso">
     <h2 id="progresso">Seu progresso fica protegido</h2>
     <ul>
       <li>Salvamento automático ao fim de cada rodada, com as 3 últimas versões guardadas.</li>
@@ -185,26 +187,33 @@ const later = [
     </p>
   </section>
 
-  <section aria-labelledby="depois">
+  <section class="sec flow" aria-labelledby="depois">
     <h2 id="depois">O que vem depois</h2>
     <p>
       Mais divisões, copas, mercado de transferências, finanças, clubes de outros países da América
       do Sul e ligas com Série A e B (Etapa 2). Cada coisa tem uma etapa no{' '}
       <a href={`${base}roadmap/`}>roteiro</a>, sem data prometida.
     </p>
-    <TableScroll label="O que vem depois" minWidth="440px">
+    <TableScroll label="O que vem depois" minWidth="440px" stack>
       <table>
         <thead>
           <tr>
             <th scope="col">Recurso</th>
-            <th scope="col">Estado</th>
+            <th scope="col" class="col-state">
+              Estado
+            </th>
           </tr>
         </thead>
         <tbody>
           {later.map((l) => (
             <tr>
-              <th scope="row">{l.name}</th>
-              <td>
+              <th scope="row">
+                {l.name}
+                <div class="inline-state">
+                  <StatusBadge recurso={l.id} showStage />
+                </div>
+              </th>
+              <td class="col-state">
                 <StatusBadge recurso={l.id} showStage />
               </td>
             </tr>
@@ -222,18 +231,25 @@ const later = [
   <FinalCta />
 </Base>
 <style>
-  .lead {
+  .nowrap {
+    white-space: nowrap;
+  }
+  .intro p {
     margin-bottom: var(--space-3);
   }
   .toc {
     list-style: none;
-    padding: 0;
+    padding: var(--space-2);
     margin: var(--space-4) 0 0;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
   }
   .toc a {
     display: flex;
     align-items: center;
     min-height: var(--touch);
+    padding: 0 var(--space-3);
   }
   .state {
     margin-top: var(--space-3);
@@ -246,7 +262,9 @@ const later = [
   .tactics {
     margin: var(--space-4) 0;
   }
-  section :global(ul:not(.grid-cards)) {
-    padding-left: var(--space-6);
+  @media (min-width: 720px) {
+    .tactics {
+      gap: var(--space-4);
+    }
   }
 </style>

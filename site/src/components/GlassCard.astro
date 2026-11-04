@@ -1,0 +1,81 @@
+---
+interface Props {
+  as?: 'li' | 'div' | 'article' | 'span';
+  /** Hover and focus-within change the border and lift the card (lift only without reduced motion). */
+  interactive?: boolean;
+  /** `card`: radius-lg with padding. `pill`: the hero tag. */
+  variant?: 'card' | 'pill';
+  /** Same card on an opaque surface-1, for places where glass would sit on a plain background. */
+  solid?: boolean;
+}
+const { as: Tag = 'div', interactive = false, variant = 'card', solid = false } = Astro.props;
+---
+
+<Tag class:list={['glass', variant, { interactive, solid }]}>
+  <slot />
+</Tag>
+<style>
+  /* Only over a decorated background (green glow or beam); on plain surfaces use .card. */
+  .glass {
+    background: var(--surface-glass);
+    border: 1px solid var(--glass-line);
+    -webkit-backdrop-filter: blur(14px) saturate(1.2);
+    backdrop-filter: blur(14px) saturate(1.2);
+  }
+  .glass.solid {
+    background: var(--surface-1);
+    border-color: var(--line);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+    min-width: 0;
+    height: 100%;
+    border-radius: var(--radius-lg);
+    padding: var(--space-4);
+  }
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-2);
+    border-radius: var(--radius-pill);
+    padding: 6px 14px;
+  }
+  .interactive:hover,
+  .interactive:focus-within {
+    border-color: color-mix(in srgb, var(--grass) 55%, transparent);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .interactive {
+      transition:
+        transform 150ms,
+        border-color 150ms;
+    }
+    .interactive:hover,
+    .interactive:focus-within {
+      transform: translateY(-2px);
+    }
+  }
+  @media (min-width: 720px) {
+    .card {
+      padding: var(--space-6);
+    }
+  }
+  @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    .glass {
+      background: var(--surface-1);
+      border-color: var(--line);
+    }
+  }
+  @media (prefers-reduced-transparency: reduce) {
+    .glass {
+      background: var(--surface-1);
+      border-color: var(--line);
+      -webkit-backdrop-filter: none;
+      backdrop-filter: none;
+    }
+  }
+</style>

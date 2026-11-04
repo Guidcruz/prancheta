@@ -28,3 +28,4 @@ test-results/
 playwright-report/
 app/public/icons/icon-192.png
 app/public/icons/icon-512.png
+site/public/og/

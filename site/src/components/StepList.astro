@@ -9,8 +9,8 @@ const { steps } = Astro.props;
   {steps.map((s) => (
     <li>
       <div>
-        <p class="body-strong">{s.title}</p>
-        <p>{s.text}</p>
+        <p class="step-title subtitulo">{s.title}</p>
+        <p class="step-text">{s.text}</p>
       </div>
     </li>
   ))}
@@ -26,24 +26,42 @@ const { steps } = Astro.props;
   }
   li {
     counter-increment: step;
-    display: flex;
-    gap: var(--space-3);
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: var(--space-4);
+    align-items: center;
+    padding: var(--space-3) var(--space-4);
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
   }
   li::before {
     content: counter(step);
-    flex: none;
     display: grid;
     place-items: center;
-    width: 36px;
-    height: 36px;
+    width: 56px;
+    height: 56px;
     border-radius: 50%;
-    background: var(--grass-soft);
-    color: var(--ink);
-    font: var(--type-numero);
+    background: var(--surface-0);
+    box-shadow: inset 0 0 0 2px var(--floodlight);
+    color: var(--floodlight);
+    font: 800 32px/1 var(--font-display);
     font-variant-numeric: tabular-nums;
   }
   p {
     margin: 0;
+  }
+  .step-title {
+    text-transform: uppercase;
+  }
+  .step-text {
+    color: var(--ink-muted);
+  }
+  /* Day theme: the number is ink (floodlight on a light surface would be too pale). */
+  @media (prefers-color-scheme: light) {
+    li::before {
+      box-shadow: inset 0 0 0 3px var(--floodlight);
+      color: var(--ink);
+    }
   }
 </style>

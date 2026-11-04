@@ -20,6 +20,7 @@ A Etapa 0 (Dia 1) está concluída; o que resta dela são pendências do CEO, li
 | Versão zero do jogo em `/jogo` | feito      | tela inicial com escudo, nome e botão                                                |
 | Post "Dia 1"                   | feito      | `site/src/content/devlog/2026-11-03-dia-1.md`                                        |
 | Nome no INPI                   | pendente   | CEO                                                                                  |
+| Revisão jurídica dos escudos   | pendente   | CEO; antes do lançamento público, escudos de risco médio (ADR-0014)                  |
 | Licença do código              | pendente   | CEO                                                                                  |
 
 ## Decisões pendentes do CEO (da auditoria do dia 1)
@@ -57,15 +58,15 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                                                                                                                 |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                             |
-| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                                |
-| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                                |
-| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                                    |
-| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                            |
-| T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                          |
-| T-007  | entregue, aguardando merge (code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
+| Tarefa | Estado                                                                                                                                                                                                             |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                         |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                            |
+| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                            |
+| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                                |
+| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                        |
+| T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                      |
+| T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -112,7 +113,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 2. ADR-0013 revisado: liga ao vivo até 8 humanos; assíncrona até 20 por divisão. O site usa esses números.
 3. Descrições curtas para compartilhar aprovadas (clubes: "Clubes com trocadilho").
 4. Site: escolhida a direção visual A "Noite de estádio", com os toques recomendados; especificação em `docs/design/site.md` (em escrita pelo `ux-designer`).
-5. Escudos: três estilos propostos; aguardando escolha do CEO (recomendação: A Brasão, com C nas listas pequenas).
+5. Escudos: estilo A v5 (Brasão) escolhido e implementado; ADR-0014 aceito.
 
 ## Perguntas abertas para a Etapa 2
 
@@ -135,6 +136,29 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - Consulta ao advogado sobre espelhar dados reais (tabela e títulos).
 - Lote de dezembro com a tabela final.
 
+## Em andamento (PR do site e dos escudos, branch `claude/kickoff-i22gas`)
+
+Aprovado em revisão, aguardando merge do CEO:
+
+- Site na direção A "Noite de estádio": componentes e páginas novos, imagens de compartilhamento por `scripts/og.mjs`, tabelas que viram cartões no celular.
+- Gerador de escudos estilo A v5 (`shield.ts`): silhuetas, padrões, símbolo da cidade, estrelas douradas (Série A) e prateadas (Série B). ADR-0014 aceito.
+- Campos de escudo em `ClubDef` (`crestShape`, `crestPattern`, `crestBase`, `crestSymbol`, problema `invalid-crest`) e `ENGINE_VERSION` 3.
+- ADR-0013 revisada: ao vivo até 8, assíncrona até 20 por divisão, Série A+B na Etapa 2.
+- Tokens novos: `body-lg`, `sticker-name`, `sticker-name-long`, `stage-number`; mínimo de `type-display-xl` em 64px.
+- Textos aprovados em `docs/content/site/complementos.md`.
+
+## Pendências do CEO
+
+- Consulta no INPI do nome "Prancheta" e dos nomes de risco médio.
+- Advogado: espelhamento anual de dados reais (tabela e títulos) e os 5 escudos de risco médio da ADR-0014.
+- Domínio definitivo (bloqueia a US-047).
+- Quem trata as denúncias e em quanto tempo (bloqueia a US-065).
+- Merge do PR do site e dos escudos.
+
 ## Próximo
 
-T-007 aguardando merge do CEO. Depois: site na direção A, imagem de compartilhamento e escudos novos (PR próprio, depois da escolha do estilo de escudo), e então a T-008. Pendências do site: bloco "Patrocine aqui" em `/apoiar/` (`/quick`) e a passada `REQUIRE_SITE_DIST=1` no CI depois do build (`devops-engineer`). Pendentes do CEO: escolha do estilo de escudo, consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+1. Bloco "Patrocine aqui" em `/apoiar/` (`/quick`).
+2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
+3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
+4. T-008 até T-016 da Etapa 1a.
+5. Lote de clubes de dezembro, com a tabela final de 2026.

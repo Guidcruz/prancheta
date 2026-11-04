@@ -40,7 +40,57 @@ export interface ClubDef {
    * (docs/design/clubes-serie-a.md).
    */
   readonly titles: ClubTitles;
+  /** Silhouette of the crest, fixed per club (ADR-0014); the generator never draws it by lot. */
+  readonly crestShape: CrestShape;
+  /** Pattern of the crest field, drawn in the colour that is not the base. */
+  readonly crestPattern: CrestPattern;
+  /** Which club colour is the base of the crest field: 0 (primary) or 1 (secondary). */
+  readonly crestBase: 0 | 1;
+  /** Key of the symbol in the medallion of the crest (own drawing, one per club). */
+  readonly crestSymbol: CrestSymbol;
 }
+
+/** Crest silhouettes (docs/art/escudos-estilos/README.md, style A v5; ADR-0014). */
+export const CREST_SHAPES = ['rounded', 'french', 'swiss', 'oval', 'chamfer', 'disc'] as const;
+export type CrestShape = (typeof CREST_SHAPES)[number];
+/** Crest field patterns. */
+export const CREST_PATTERNS = [
+  'hoops',
+  'vstripes',
+  'pales',
+  'split',
+  'bend',
+  'bendMirror',
+  'fess',
+  'chief',
+  'chevron',
+  'none',
+] as const;
+export type CrestPattern = (typeof CREST_PATTERNS)[number];
+/** Crest symbols: the 20 drawings of lib/generators/shield.ts, drawn by us (no animal, no cross). */
+export const CREST_SYMBOLS = [
+  'calcadao',
+  'arcos',
+  'chama',
+  'predios',
+  'palmeira',
+  'ponte',
+  'gema',
+  'contineres',
+  'bondinho',
+  'chapeu',
+  'cataVento',
+  'pampulha',
+  'chamine',
+  'araucaria',
+  'berimbau',
+  'farol',
+  'sino',
+  'sol',
+  'espiga',
+  'vitoriaregia',
+] as const;
+export type CrestSymbol = (typeof CREST_SYMBOLS)[number];
 
 export interface ClubTitles {
   readonly league: number;
@@ -95,6 +145,7 @@ export type ClubProblem =
   | 'invalid-color'
   | 'invalid-size'
   | 'invalid-ai-profile'
+  | 'invalid-crest'
   | 'not-a-number'
   | 'not-an-integer'
   | 'out-of-range'
@@ -150,6 +201,10 @@ const CLUB_KEYS = [
   'stadium',
   'rivals',
   'titles',
+  'crestShape',
+  'crestPattern',
+  'crestBase',
+  'crestSymbol',
 ] as const;
 const OPTIONAL_KEYS: ReadonlySet<string> = new Set(['aiProfile', 'strength']);
 const STADIUM_KEYS = ['name', 'capacity'] as const;
@@ -211,6 +266,18 @@ function checkKeys(
     }
   }
   return complete;
+}
+
+/** A value of a closed list (crest shape, pattern, base, symbol). */
+function checkChoice<T extends string | number>(
+  scope: ClubScope,
+  field: string,
+  value: unknown,
+  allowed: readonly T[],
+): T | undefined {
+  if (allowed.includes(value as T)) return value as T;
+  scope.add({ field, problem: 'invalid-crest', value });
+  return undefined;
 }
 
 function checkColors(scope: ClubScope, value: unknown): [string, string] | undefined {
@@ -377,6 +444,18 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
   const stadium = has('stadium') ? checkStadium(scope, raw.stadium) : undefined;
   const rivals = has('rivals') ? checkRivalList(scope, raw.rivals) : undefined;
   const titles = has('titles') ? checkTitles(scope, raw.titles) : undefined;
+  const crestShape = has('crestShape')
+    ? checkChoice(scope, 'crestShape', raw.crestShape, CREST_SHAPES)
+    : undefined;
+  const crestPattern = has('crestPattern')
+    ? checkChoice(scope, 'crestPattern', raw.crestPattern, CREST_PATTERNS)
+    : undefined;
+  const crestBase = has('crestBase')
+    ? checkChoice(scope, 'crestBase', raw.crestBase, [0, 1] as const)
+    : undefined;
+  const crestSymbol = has('crestSymbol')
+    ? checkChoice(scope, 'crestSymbol', raw.crestSymbol, CREST_SYMBOLS)
+    : undefined;
 
   if (scope.count > 0) return undefined;
   const club: {
@@ -394,6 +473,10 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
     stadium: stadium!,
     rivals: rivals!,
     titles: titles!,
+    crestShape: crestShape!,
+    crestPattern: crestPattern!,
+    crestBase: crestBase!,
+    crestSymbol: crestSymbol!,
   };
   if (aiProfile !== undefined) club.aiProfile = aiProfile;
   club.strength = strength ?? DEFAULT_STRENGTH;
@@ -466,7 +549,7 @@ function checkAbbreviations(raw: readonly unknown[], issues: ClubIssue[]): void 
  * exact count, required fields filled, known keys only, valid id slugs, colours, state, size,
  * profile, integer strength in STRENGTH_RANGE (absent: DEFAULT_STRENGTH with a
  * `club-strength-default` warning), positive integer capacity, titles as integers
- * of at least 0, unique ids, unique three-letter abbreviations and
+ * of at least 0, crest fields (shape, pattern, base, symbol) from their closed lists, unique ids, unique three-letter abbreviations and
  * symmetric derbies with existing clubs (an empty `rivals` is valid). Lists every issue at once
  * with club and field. Never throws; on success returns fresh copies that share nothing with
  * `raw`.

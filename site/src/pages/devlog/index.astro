@@ -1,30 +1,34 @@
 ---
 import Base from '../../layouts/Base.astro';
-import { config } from '../../../../config/prancheta.config.ts';
+import PageHero from '../../components/PageHero.astro';
+import PostCard from '../../components/PostCard.astro';
 import { getCollection } from 'astro:content';
 const posts = (await getCollection('devlog')).sort(
   (a, b) => b.data.date.valueOf() - a.data.date.valueOf(),
 );
-const base = config.paths.site;
 ---
 
-<Base
-  title="Devlog"
-  current="devlog"
-  description={`Diário de desenvolvimento do ${config.name}, desde o dia 1.`}
->
-  <h1>Devlog</h1>
-  <p>Um post por semana, mesmo que curto, e um por etapa concluída. Desde o dia 1.</p>
-  {posts.map((p) => (
-    <article class="card" style="margin-bottom: var(--space-3)">
-      <p class="caption" style="color: var(--ink-muted); margin: 0">
-        {p.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa {p.data.etapa}
-        {p.data.tags.length ? ' · ' + p.data.tags.join(', ') : ''}
-      </p>
-      <h3 style="margin-top: var(--space-1)">
-        <a href={`${base}devlog/${p.id}/`}>{p.data.title}</a>
-      </h3>
-      <p style="margin: 0">{p.data.summary}</p>
-    </article>
-  ))}
+<Base title="Devlog" current="devlog" share="devlog">
+  <PageHero
+    title="Devlog"
+    lead="Um post por semana, mesmo que curto, e um por etapa concluída. Desde o dia 1."
+  />
+  <section class="sec flow" aria-label="Posts">
+    <ul class="posts">
+      {posts.map((p) => (
+        <li>
+          <PostCard post={p} />
+        </li>
+      ))}
+    </ul>
+  </section>
 </Base>
+<style>
+  .posts {
+    display: grid;
+    gap: var(--space-3);
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+</style>

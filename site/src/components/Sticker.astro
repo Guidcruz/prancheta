@@ -1,0 +1,109 @@
+---
+import type { SiteClub } from '../lib/shields';
+import ClubShield from './ClubShield.astro';
+interface Props {
+  club: SiteClub;
+  /** Order in the grid; shown as two digits ("07"). Decorative. */
+  number: number;
+  size?: 'md' | 'lg';
+  /** `md` on the phone, `lg` from 720px (the club page). */
+  grow?: boolean;
+}
+const { club, number, size = 'md', grow = false } = Astro.props;
+const long = club.shortName.length > 10;
+const num = String(number).padStart(2, '0');
+---
+
+<figure class:list={['sticker', size, { grow, long }]}>
+  <div
+    class="band"
+    aria-hidden="true"
+    style={`--c1: ${club.colors[0]}; --c2: ${club.colors[1]}`}
+  ></div>
+  <span class="num" aria-hidden="true">
+    {num}
+  </span>
+  <div class="crest">
+    <ClubShield {club} size={96} />
+  </div>
+  <figcaption>
+    <span class="name">{club.shortName}</span>
+    <span class="city caption">
+      {club.city} · {club.state}
+    </span>
+  </figcaption>
+</figure>
+<style>
+  .sticker {
+    --shield-size: 76px;
+    /* The generator draws outline and symbol in --ink; on the paper that must be dark. */
+    --ink: var(--on-sticker);
+    position: relative;
+    width: min(100%, 128px);
+    margin: 0;
+    padding: 0 var(--space-1) var(--space-3);
+    overflow: hidden;
+    text-align: center;
+    background: var(--sticker);
+    color: var(--on-sticker);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-lift);
+  }
+  .sticker.lg {
+    --shield-size: 84px;
+    width: min(100%, 160px);
+  }
+  @media (min-width: 720px) {
+    .sticker.grow {
+      --shield-size: 84px;
+      width: min(100%, 160px);
+    }
+  }
+  .sticker::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border: 2px solid color-mix(in srgb, var(--on-sticker) 12%, transparent);
+    border-radius: calc(var(--radius-md) - 4px);
+    pointer-events: none;
+  }
+  .band {
+    height: 34px;
+    margin: 0 calc(-1 * var(--space-1));
+    background: linear-gradient(115deg, var(--c1) 0 55%, var(--c2) 55% 100%);
+  }
+  .num {
+    position: absolute;
+    top: 8px;
+    left: 10px;
+    z-index: 1;
+    padding: 0 var(--space-1);
+    border-radius: var(--radius-sm);
+    background: var(--sticker);
+    color: var(--sticker-muted);
+    font: 800 14px/18px var(--font-display);
+    font-variant-numeric: tabular-nums;
+  }
+  .crest {
+    display: flex;
+    justify-content: center;
+    margin-top: -14px;
+    position: relative;
+  }
+  figcaption {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-2) var(--space-2) 0;
+  }
+  .name {
+    font: var(--type-sticker-name);
+    text-transform: uppercase;
+    overflow-wrap: break-word;
+  }
+  .long .name {
+    font: var(--type-sticker-name-long);
+  }
+  .city {
+    color: var(--sticker-muted);
+  }
+</style>

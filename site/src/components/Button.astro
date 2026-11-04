@@ -2,11 +2,13 @@
 interface Props {
   href: string;
   variant?: 'primary' | 'secondary';
+  /** Halo around the primary button; only in the hero and in the final call. */
+  glow?: boolean;
 }
-const { href, variant = 'primary' } = Astro.props;
+const { href, variant = 'primary', glow = false } = Astro.props;
 ---
 
-<a {href} class:list={['button', 'botao', variant]}>
+<a {href} class:list={['button', 'botao', variant, { glow: glow && variant === 'primary' }]}>
   <slot />
 </a>
 <style>
@@ -25,6 +27,11 @@ const { href, variant = 'primary' } = Astro.props;
     background: var(--grass);
     color: var(--on-grass);
   }
+  .primary.glow {
+    box-shadow:
+      0 0 0 6px color-mix(in srgb, var(--grass) 22%, transparent),
+      0 10px 40px color-mix(in srgb, var(--grass) 45%, transparent);
+  }
   .secondary {
     border-color: var(--line);
     color: var(--ink);
@@ -34,5 +41,13 @@ const { href, variant = 'primary' } = Astro.props;
   }
   .primary:hover {
     filter: brightness(1.08);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .button {
+      transition: transform 150ms;
+    }
+    .button:hover {
+      transform: translateY(-1px);
+    }
   }
 </style>

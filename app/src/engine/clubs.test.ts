@@ -131,6 +131,10 @@ describe('validateClubs', () => {
     'stadium',
     'rivals',
     'titles',
+    'crestShape',
+    'crestPattern',
+    'crestBase',
+    'crestSymbol',
   ] as const)('names the club and the field when %s is missing', (field) => {
     const raw = syntheticClubs();
     delete (raw[3] as Partial<(typeof raw)[number]>)[field];
@@ -207,6 +211,22 @@ describe('validateClubs', () => {
         [5, 'colors', 'not-a-list'],
       ]),
     );
+  });
+
+  it('refuses crest values outside the closed lists, naming club and field', () => {
+    const raw = syntheticClubs();
+    const bad = raw[2] as unknown as Record<string, unknown>;
+    bad.crestShape = 'triangle';
+    bad.crestPattern = 'plaid';
+    bad.crestBase = 2;
+    bad.crestSymbol = 'lion';
+    const issues = issuesOf(validateClubs(raw));
+    expect(issues.map((i) => [i.index, i.field, i.problem, i.value])).toEqual([
+      [2, 'crestShape', 'invalid-crest', 'triangle'],
+      [2, 'crestPattern', 'invalid-crest', 'plaid'],
+      [2, 'crestBase', 'invalid-crest', 2],
+      [2, 'crestSymbol', 'invalid-crest', 'lion'],
+    ]);
   });
 
   it('keeps strength in 55..85, whatever the size', () => {

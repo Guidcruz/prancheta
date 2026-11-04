@@ -10,3 +10,57 @@ Regras que o `ux-designer` cobra:
 - Resultado nunca só por cor (V/E/D ou ícone); `prefers-reduced-motion`.
 - Componentes base: Escudo, CardPartida, LinhaTabela, CardJogador, BarraAbas, Botao, Noticia.
 - Textos em `app/src/content/<idioma>/`; nome, logo e cores em `config/prancheta.config.ts`.
+
+## Tipografia
+
+A escala completa (família, tamanho, entrelinha, peso e uso de cada estilo) está em `design/tokens.json`, em `typography.groups`. Aqui ficam só os acréscimos aprovados depois da exportação do artefato.
+
+### Nome na figurinha (aprovado pelo CEO em 2026-11-04)
+
+| Token               | Família                    | Peso | Tamanho / entrelinha | Uso                                                                |
+| ------------------- | -------------------------- | ---- | -------------------- | ------------------------------------------------------------------ |
+| `sticker-name`      | display (Barlow Condensed) | 800  | 20px / 24px          | Nome curto do clube na figurinha (cartão de clube do álbum).       |
+| `sticker-name-long` | display (Barlow Condensed) | 800  | 17px / 22px          | O mesmo nome quando é longo demais para caber em uma linha a 20px. |
+
+- Os dois tokens moram em `design/tokens.json`, grupo "Placar e títulos", e chegam ao CSS por `npm run tokens`; nenhum componente declara esses tamanhos à mão.
+- A troca para `sticker-name-long` é por comprimento do nome, decidida no componente (no site, `Sticker.astro` usa o longo quando o nome curto passa de 10 caracteres).
+- Uso restrito à figurinha. Nome de clube em card comum continua em `subtitulo`; em tabela, em `body-strong`.
+
+### Mínimo do `display-xl` (aprovado pelo CEO em 2026-11-04)
+
+| Token        | Antes                      | Depois                     |
+| ------------ | -------------------------- | -------------------------- |
+| `display-xl` | `clamp(72px, 21vw, 196px)` | `clamp(64px, 21vw, 196px)` |
+
+- Só o mínimo muda, de 72px para 64px, para "PRANCHETA" caber em uma linha a 320px de largura. O máximo (196px), a entrelinha (0,84), o peso (800), o espaçamento e a caixa alta continuam iguais.
+- Uso continua restrito ao nome do jogo no hero do Início do site.
+
+### Número da etapa (aprovado pelo CEO em 2026-11-04)
+
+| Token          | Família                    | Peso | Tamanho / entrelinha | Uso                                                           |
+| -------------- | -------------------------- | ---- | -------------------- | ------------------------------------------------------------- |
+| `stage-number` | display (Barlow Condensed) | 800  | 26px / 1             | Número da etapa nos cartões de etapa e nas tabelas de etapas. |
+
+- Mora em `design/tokens.json` e chega ao CSS por `npm run tokens`; nenhum componente declara esse tamanho à mão.
+- Mesma família display já usada nos títulos; não entra fonte nova.
+- Uso restrito ao número da etapa. O nome e a descrição da etapa continuam nos estilos de texto comuns; números em tabela seguem em `tabular-nums`.
+
+## Padrões de layout
+
+### Tabela vira cartões abaixo de 720px (aprovado pelo CEO em 2026-11-04)
+
+Vale para o site e para as telas futuras do jogo.
+
+**Quando usar.** Em tabelas cujo texto principal (descrição, nome longo, frase) não cabe ao lado da coluna fixa a 360px sem forçar rolagem horizontal para ler a própria linha. Tabelas numéricas curtas (classificação, artilharia) continuam com a coluna do clube fixa e rolagem horizontal, como na regra geral.
+
+**Regras.**
+
+- A partir de 720px a tabela é uma tabela normal: cabeçalho, coluna fixa à esquerda, linhas de 48px, números em `tabular-nums`.
+- Abaixo de 720px cada linha passa a ser lida como um cartão: a tabela perde a largura mínima e não rola na horizontal; o texto principal quebra em quantas linhas precisar.
+- A coluna fixa (primeira célula) nunca passa de cerca de 40% da largura útil do contêiner, em qualquer largura. O resto é do texto principal.
+- Quando a coluna Estado (`.col-state`) some abaixo de 720px, o selo de estado vai para baixo da primeira célula, no elemento `.inline-state`. Os dois existem no markup; o CSS mostra um ou outro, nunca os dois. O selo mantém texto além da cor (estado nunca só por cor).
+- A semântica de tabela fica (`table`, `th` de linha e de coluna); a mudança é só visual, para o leitor de tela continuar lendo cabeçalho e célula.
+- Linha atual (`aria-current`) mantém o destaque também no formato de cartão, incluindo a primeira célula.
+- Só tokens de cor, espaço e raio; o ponto de quebra é o mesmo 720px usado no resto do layout.
+
+**Implementação de referência.** No site, `site/src/components/TableScroll.astro` com a prop `stack`. No jogo, quando aparecer a primeira tabela desse tipo, a casca entra em `app/src/ui/components/` com o mesmo comportamento e as mesmas classes (`.col-state`, `.inline-state`).

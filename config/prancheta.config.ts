@@ -18,6 +18,15 @@ export const config = {
       'O jogo de técnico de futebol para jogar no celular, com o Brasil inteiro na prancheta.',
     es: 'El juego de director técnico para jugar en el celular, con toda Sudamérica en la pizarra.',
     en: 'The football manager game for your phone, with all of Brazil on the clipboard.',
+    /**
+     * Highlighted tail of the slogan (hero) and title of the share image on the home page.
+     * Must be the end of the slogan, ignoring case and the final period.
+     */
+    short: {
+      'pt-BR': 'O Brasil inteiro na prancheta',
+      es: 'Toda Sudamérica en la pizarra',
+      en: 'All of Brazil on the clipboard',
+    },
   },
   /** Logo as inline SVG path data (plain type for now; replace when the brand exists). */
   logo: {

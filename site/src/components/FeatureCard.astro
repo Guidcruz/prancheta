@@ -1,6 +1,7 @@
 ---
 import StatusBadge from './StatusBadge.astro';
 import Icon from './Icon.astro';
+import GlassCard from './GlassCard.astro';
 import type { FeatureStatus } from '../lib/roadmap';
 interface Props {
   title: string;
@@ -10,13 +11,31 @@ interface Props {
   showStage?: boolean;
   href?: string;
   linkLabel?: string;
+  /** Glass over a decorated background (default) or a plain surface-1 card. */
+  glass?: boolean;
+  /** Glass cards: hover and focus change the border and lift the card. */
+  interactive?: boolean;
 }
-const { title, icon, recurso, status, showStage, href, linkLabel } = Astro.props;
+const {
+  title,
+  icon,
+  recurso,
+  status,
+  showStage,
+  href,
+  linkLabel,
+  glass = true,
+  interactive = false,
+} = Astro.props;
 ---
 
-<article class="card">
+<GlassCard as="article" {interactive} solid={!glass}>
   <div class="top">
-    {icon && <Icon name={icon} size={24} />}
+    {icon && (
+      <span class="ic">
+        <Icon name={icon} size={26} />
+      </span>
+    )}
     <StatusBadge {recurso} {status} {showStage} />
   </div>
   <h3 class="subtitulo">{title}</h3>
@@ -28,31 +47,31 @@ const { title, icon, recurso, status, showStage, href, linkLabel } = Astro.props
       {linkLabel ?? 'Saiba mais'}
     </a>
   )}
-</article>
+</GlassCard>
 <style>
-  .card {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-2);
-    background: var(--surface-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
-    padding: var(--space-4);
-    height: 100%;
-  }
   .top {
     display: flex;
+    flex-wrap: wrap;
     align-items: center;
     justify-content: space-between;
     gap: var(--space-2);
-    color: var(--grass);
+  }
+  .ic {
+    display: grid;
+    place-items: center;
+    width: 44px;
+    height: 44px;
+    border-radius: var(--radius-md);
+    background: var(--grass-soft);
+    color: var(--ink);
   }
   h3 {
-    margin: 0;
+    margin: var(--space-1) 0 0;
+    text-transform: uppercase;
   }
   .body {
     flex: 1;
+    color: var(--ink-muted);
   }
   .body :global(p),
   .body :global(ul) {
@@ -62,5 +81,6 @@ const { title, icon, recurso, status, showStage, href, linkLabel } = Astro.props
     display: inline-flex;
     align-items: center;
     min-height: var(--touch);
+    margin-top: auto;
   }
 </style>

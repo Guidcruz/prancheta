@@ -71,6 +71,11 @@ const pairs = [
   ['danger', 'surface-1'],
   ['ink', 'grass-soft'],
   ['ink', 'danger-soft'],
+  // Site only (solid pairs; the rgba tokens are checked by hand in docs/design/site.md).
+  ['on-sticker', 'sticker'],
+  ['sticker-muted', 'sticker'],
+  ['chalk', 'board'],
+  ['mark', 'board'],
 ];
 const failures = [];
 for (const theme of themes)
