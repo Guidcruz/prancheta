@@ -390,7 +390,7 @@ export function newGame(
   clubs: readonly ClubDef[],
   params: GameParams,
   identities: IdentitySource,
-): Result<GameState, 'invalid-clubs'>;
+): Result<GameState, 'invalid-clubs' | 'invalid-calendar'>;
 export function prepareRound(
   state: GameState,
   params: GameParams,
@@ -431,11 +431,12 @@ export function startNextSeason(
   params: GameParams,
   identities: IdentitySource,
   opts?: { incoming?: readonly ClubDef[] },
-): Result<GameState, 'season-not-ended' | 'invalid-clubs'>;
+): Result<GameState, 'season-not-ended' | 'invalid-clubs' | 'invalid-calendar'>;
 ```
 
 Notas do contrato:
 
+- **Calendário (T-007):** `newGame` devolve `GameState.fixtures` com os 380 jogos (Berger com `BERGER_START = 3`, returno espelhado, mando com no máximo 2 seguidos; 1ª rodada no domingo depois do 2º sábado de abril, 8 quartas, sem Data FIFA, última rodada entre 26/11 e 02/12). `'invalid-calendar'` indica ano fora do intervalo aceito ou calendário que não cabe na janela; o `detail` traz o motivo. `startNextSeason` devolve o mesmo erro (previsto; ainda não implementado). `Rng.shuffle` embaralha de forma determinística. `ENGINE_VERSION` é 2.
 - **Semente por partida e por fluxo:** cada partida, o calendário, a geração, o sorteio de desempate e o conteúdo usam `seedFromString` com um rótulo próprio (`docs/design/partida.md`, "Determinismo"). Nunca se compartilha um `Rng` entre sistemas. Assim, mudar uma partida não desloca as outras, e as 10 partidas podem rodar em qualquer ordem.
 - **Comandos:** mesma semente + mesmos comandos = mesmos eventos, byte a byte. A tela ao vivo reexecuta `simulateMatch` com a lista de comandos acumulada. Os eventos até o minuto do comando não mudam, porque o comando só vale a partir do minuto seguinte. Troca por lesão do lado humano: o motor aplica a regra da IA, salvo se houver um comando `substitution` com o mesmo `minute` e `out` igual ao lesionado.
 - **A tabela é derivada:** `getStandings` calcula a tabela a partir das `Fixture.result`, com os critérios de desempate de `docs/design/temporada.md`. Não existe uma tabela gravada que possa divergir dos resultados.
@@ -608,8 +609,8 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`                                                                                                                 | US-001                         | 1a    | T-001        | `/feature` | M       | feita      |
 | T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de nomes                                                                                                                                                                                    | US-003                         | 1a    | —            | `/feature` | M       | feita      |
 | T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial; `Player.name`/`face`, `IdentitySource` e fonte de teste do motor (ADR-0012)                                                                                                                | US-004                         | 1a    | T-001, T-002 | `/feature` | M       | feita      |
-| T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI); o gerador passa os 6 atributos da posição a `fitAttributesToOverall` (atributos de peso 0 não são criados por ela); `newGame` com `identities` e `lib/generators/identity.ts` (ADR-0012)   | US-004                         | 1a    | T-003, T-005 | `/feature` | M       | em revisão |
-| T-007 | Calendário: Berger, returno espelhado, mando ≤ 2 seguidos, datas (Data FIFA, meio de semana)                                                                                                                                                                                  | US-006                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |
+| T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI); o gerador passa os 6 atributos da posição a `fitAttributesToOverall` (atributos de peso 0 não são criados por ela); `newGame` com `identities` e `lib/generators/identity.ts` (ADR-0012)   | US-004                         | 1a    | T-003, T-005 | `/feature` | M       | feita      |
+| T-007 | Calendário: Berger, returno espelhado, mando ≤ 2 seguidos, datas (Data FIFA, meio de semana)                                                                                                                                                                                  | US-006                         | 1a    | T-001, T-002 | `/feature` | M       | em revisão |
 | T-008 | Força por setor, nota efetiva, mando com termômetro (e `homeBase`), força exibida                                                                                                                                                                                             | US-007, US-026 (mando)         | 1a    | T-005        | `/feature` | M       | a fazer    |
 | T-009 | `simulateMatch` núcleo: oportunidades, finalização, assistência, acréscimos, estatísticas, notas, marcadores, eventos, golden                                                                                                                                                 | US-008                         | 1a    | T-008        | `/feature` | G       | a fazer    |
 | T-010 | Partida: cartões, lesões, pênaltis e faltas, cobradores e capitão, casos de borda (menos de 7, sem goleiro)                                                                                                                                                                   | US-009                         | 1a    | T-009        | `/feature` | M       | a fazer    |

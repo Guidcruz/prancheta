@@ -57,14 +57,15 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                                                                                                     |
-| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                 |
-| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                    |
-| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                    |
-| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                        |
-| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                |
-| T-006  | entregue, aguardando merge (code review e QA aprovados, 450 testes): `newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027 |
+| Tarefa | Estado                                                                                                                                                                                                                 |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                             |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                                |
+| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                                |
+| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                                    |
+| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                            |
+| T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                          |
+| T-007  | entregue, aguardando merge (code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -105,6 +106,14 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 3. Site com "Até 20 (um técnico por clube da Série A)" no tamanho da liga.
 4. Site novo entregue (implementação do desenho aprovado), com correção dos espaços em volta de elementos inline.
 
+## Decisões do CEO em 2026-11-04 (calendário, nomes, site e escudos)
+
+1. Nomes, revisão 2: listas revisadas pelo CEO, origens curtas, limite de 22 caracteres no nome de exibição, exclusões regeneradas.
+2. ADR-0013 revisado: liga ao vivo até 8 humanos; assíncrona até 20 por divisão. O site usa esses números.
+3. Descrições curtas para compartilhar aprovadas (clubes: "Clubes com trocadilho").
+4. Site: escolhida a direção visual A "Noite de estádio", com os toques recomendados; especificação em `docs/design/site.md` (em escrita pelo `ux-designer`).
+5. Escudos: três estilos propostos; aguardando escolha do CEO (recomendação: A Brasão, com C nas listas pequenas).
+
 ## Perguntas abertas para a Etapa 2
 
 1. **No online, o que acontece quando um técnico humano é rebaixado?** (pergunta do CEO)
@@ -128,4 +137,4 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 
 ## Próximo
 
-T-006 aguardando merge do CEO. Depois: T-007 (calendário). Pendências do site: bloco "Patrocine aqui" em `/apoiar/` (`/quick`) e a passada `REQUIRE_SITE_DIST=1` no CI depois do build (`devops-engineer`). Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+T-007 aguardando merge do CEO. Depois: site na direção A, imagem de compartilhamento e escudos novos (PR próprio, depois da escolha do estilo de escudo), e então a T-008. Pendências do site: bloco "Patrocine aqui" em `/apoiar/` (`/quick`) e a passada `REQUIRE_SITE_DIST=1` no CI depois do build (`devops-engineer`). Pendentes do CEO: escolha do estilo de escudo, consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
