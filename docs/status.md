@@ -68,6 +68,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                      |
 | T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
 | T-008  | feita (PR #18 mergeado; code review aprovado): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                                   |
+| T-009  | em andamento (PR em aberto; code review aprovado): `app/src/engine/match/`, goldens de partida, `ENGINE_VERSION` 4                                                                                                 |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -146,6 +147,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 
 ## Concluído (mergeado em 2026-11-04)
 
+- PR #19: ADR-0015 (patrocínio desligado) e textos do site e do jogo sem patrocínio.
 - PR #16: site na direção A "Noite de estádio" e escudos v5 (ADR-0014).
 - PR #17: privacidade e canal de suporte (correção do achado M1).
 
@@ -158,9 +160,28 @@ Entregas do PR #16:
 - Tokens novos: `body-lg`, `sticker-name`, `sticker-name-long`, `stage-number`; mínimo de `type-display-xl` em 64px.
 - Textos aprovados em `docs/content/site/complementos.md`.
 
+## Métricas da partida (T-009) contra as metas
+
+| Métrica                  | Valor atual | Meta    |
+| ------------------------ | ----------- | ------- |
+| Gols por jogo            | 2,60        | 2,5–2,8 |
+| 0×0                      | 7,6%        | —       |
+| Empates                  | 25,8%       | —       |
+| Mandante                 | 47,1%       | —       |
+| Goleada                  | 14,0%       | 8–13    |
+| Mais forte com 20 pontos | 65,3%       | —       |
+| Zebra com 30 pontos      | 7,7%        | 8–12    |
+
+Goleada e zebra ficam fora da meta por ora: ajuste na T-012 (IA "segurar o resultado") e na T-016 (`/balance`).
+
+## Decisões do CEO em 2026-11-04 (T-009)
+
+1. Fator casa também na finalização (chute e goleiro do mandante); nota no ADR-0011.
+2. Marcador "estreia" só para os jovens no início da carreira (quem nunca jogou pelo clube).
+
 ## Em andamento
 
-- **T-009** (simulação da partida): próxima tarefa.
+- **T-009** (núcleo do `simulateMatch`): aprovada no code review, PR em aberto.
 - Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
 
 ## Concluído em 2026-11-04 (T-008 e patrocínio)
@@ -187,7 +208,7 @@ Entregas do PR #16:
 
 ## Próximo
 
-1. T-009: a simulação da partida.
+1. T-010: cartões, lesões, pênaltis e faltas.
 2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
 4. T-010 até T-016 da Etapa 1a.

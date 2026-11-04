@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Partida simulada minuto a minuto (T-009, US-008) em `app/src/engine/match/`: `simulateMatch(input, params)` gera as oportunidades de cada minuto (chance, finalização, defesa do goleiro e assistência), o cansaço, os acréscimos, a conversa do intervalo e o fechamento com estatísticas, notas, melhor em campo, marcadores do resultado (goleada, virada, zebra, gol no fim, hat-trick, clássico, estreia) e a lista de eventos. Mesma semente dá a mesma partida, byte a byte. Cartões, lesões, pênaltis e faltas ficam para a T-010.
+- Goldens de partida novos (`__golden__`) e `ENGINE_VERSION` 4 (a geração do elenco passou a marcar as aparições pelo clube, o que muda o golden de novo jogo).
+- Decisão do CEO (2026-11-04): o fator casa vale também na finalização, no chute do mandante e na defesa do goleiro do mandante, sem parâmetro novo (nota no ADR-0011 e em `docs/design/partida.md`, "Mando na finalização").
+- A posse de bola exibida não leva o fator casa: dois times iguais ficam em 50% (antes, davam cerca de 61% ao mandante).
+- O marcador "estreia" vale só para quem nunca jogou pelo clube: o elenco inicial começa com uma aparição (`PRE_CAREER_APPEARANCES`) e só os jovens do início da carreira com zero.
+- Bancada da partida (`npm run bench -w app`): cerca de 0,13 ms por partida no Node, abaixo da meta de 0,3 ms. Ainda não roda no CI.
+- Relatório de métricas da partida com os clubes reais, só com `MATCH_METRICS=1` (fora do `npm test` comum).
+
 - ADR-0015 aceito: patrocínio real desligado e não anunciado; marcas fictícias só como cenário (`brandForSlot` como ponto único, a implementar na T-040); receita só com apoio voluntário. Substitui em parte a seção "Monetização e apoio" do `docs/PROJETO.md`.
 - `config.sponsorship.enabled = false` em `config/prancheta.config.ts` (no lugar de `placeholderSponsor`), com teste de conformidade (`app/src/lib/sponsorship.test.ts`) que falha se o valor mudar ou se aparecerem convites como "Patrocine aqui" em `app/src/content/`, `site/src/` e `config/`.
 - Força por setor (T-008, US-007) em `app/src/engine/strength.ts`: nota efetiva do jogador na vaga (overall, adequação à posição, moral e condição) e forças de defesa, meio e ataque a partir da formação, da postura e da pressão. Escalação inválida devolve o erro tipado `invalid-lineup`, sem lançar. Tipos `Lineup`, `Tactic` e `TeamSheet` em `lineup.ts`.
