@@ -50,8 +50,10 @@ run('built site (site/dist)', () => {
     }
   });
 
-  it('keeps a space before and after inline links', () => {
-    const bad = pages.filter((f) => /\p{L}<a[\s>]|<\/a>\p{L}/u.test(readFileSync(f, 'utf8')));
+  it('keeps a space before and after inline elements', () => {
+    const tags = 'a|strong|em|b|i|span|code|abbr|mark|small|time|cite|q|kbd';
+    const glued = new RegExp(`[\\p{L}\\p{N}]<(?:${tags})[\\s>]|</(?:${tags})>[\\p{L}\\p{N}]`, 'u');
+    const bad = pages.filter((f) => glued.test(readFileSync(f, 'utf8')));
     expect(bad).toEqual([]);
   });
 
