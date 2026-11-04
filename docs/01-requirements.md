@@ -85,9 +85,9 @@ Convenções usadas nas histórias:
 | US-066 | Temporada base nos dados de clubes e no novo jogo          | 1a    | Must       | pronta   |
 | US-067 | Lote anual de atualização da temporada base                | 1a    | Should     | pronta   |
 | US-068 | Títulos da carreira somam ao histórico do clube            | 1a    | Must       | pronta   |
-| US-069 | Força inicial pela colocação da temporada anterior         | 1a    | Must       | rascunho |
+| US-069 | Força inicial pela colocação da temporada anterior         | 1a    | Must       | pronta   |
 
-Totais: 50 histórias da 1a (US-001 a US-046 e US-066 a US-069) e 19 da 1b (US-047 a US-065). US-066 a US-069 vêm da regra do CEO sobre os dados de referência dos clubes (2026-11-04) e foram acrescentadas no fim, fora da ordem de dependência do índice: na 1a, entram junto da US-001 (dados), da US-025 (fim de temporada) e da US-032/US-033 (save). Depois das decisões de 2026-11-04: 66 prontas e 3 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo; US-069, regra de força do `game-designer`).
+Totais: 50 histórias da 1a (US-001 a US-046 e US-066 a US-069) e 19 da 1b (US-047 a US-065). US-066 a US-069 vêm da regra do CEO sobre os dados de referência dos clubes (2026-11-04) e foram acrescentadas no fim, fora da ordem de dependência do índice: na 1a, entram junto da US-001 (dados), da US-025 (fim de temporada) e da US-032/US-033 (save). Depois das decisões de 2026-11-04: 67 prontas e 2 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
 
 ---
 
@@ -199,11 +199,11 @@ Cenário: sem duplicata no mesmo clube
 
 ## US-004: Modelo de jogador e geração dos elencos
 
-**Como** jogador, **quero** que cada clube comece com um elenco completo e coerente com o seu porte, **para** que escolher o clube seja a dificuldade do jogo.
+**Como** jogador, **quero** que cada clube comece com um elenco completo e coerente com a força do clube, **para** que escolher o clube seja a dificuldade do jogo.
 
 **Prioridade:** Must
 **Depende de:** US-001, US-003
-**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado). Campos da Etapa 1: posição, 6 atributos por posição (1 a 99), nota geral, potencial (oculto na interface como número; ver o rótulo "promessa" em US-016), idade, forma, moral, fadiga, um traço de personalidade (líder, temperamental, profissional, ídolo da torcida), número da camisa. Tamanho do elenco, distribuição por posição e faixa de notas por porte são definidos em `docs/design/` (constante ou parâmetro): [jogadores › Geração de elencos](design/jogadores.md#geração-de-elencos). Contrato e salário não entram na Etapa 1 (mercado e finanças são Etapa 3).
+**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado). Campos da Etapa 1: posição, 6 atributos por posição (1 a 99), nota geral, potencial (oculto na interface como número; ver o rótulo "promessa" em US-016), idade, forma, moral, fadiga, um traço de personalidade (líder, temperamental, profissional, ídolo da torcida), número da camisa. Tamanho do elenco, distribuição por posição e faixa de notas pela força do clube (`strength`) são definidos em `docs/design/` (constante ou parâmetro): [jogadores › Geração de elencos](design/jogadores.md#geração-de-elencos). Decisão do CEO (2026-11-04): a força não depende do porte; vem da colocação na tabela de referência (US-069, [clubes-serie-a.md](design/clubes-serie-a.md)). Contrato e salário não entram na Etapa 1 (mercado e finanças são Etapa 3).
 
 ### Critérios de aceite
 
@@ -219,10 +219,11 @@ Cenário: atributos dentro dos limites
   Então cada atributo está entre 1 e 99, a nota geral está entre 1 e 99
   E o potencial é maior ou igual à nota geral
 
-Cenário: porte influencia a força
+Cenário: força do clube define o elenco
   Dado 100 sementes diferentes
   Quando os elencos são gerados
-  Então a média da nota dos titulares prováveis dos clubes grandes é maior que a dos médios, e a dos médios maior que a dos pequenos, em todas as sementes
+  Então, em todas as sementes, a média da nota dos titulares prováveis do clube de maior strength é maior que a do clube de menor strength
+  E, na média das 100 sementes, a ordem dos clubes pela nota dos titulares prováveis segue a ordem de strength, com empate permitido só entre clubes de mesma strength
 ```
 
 ### Fora do escopo desta história
@@ -2471,7 +2472,7 @@ Cenário: dados da denúncia
 
 **Prioridade:** Must
 **Depende de:** US-001, US-014, US-032
-**Notas:** Regra do CEO (2026-11-04): os dados de referência dos clubes (títulos históricos, capacidade dos estádios, quem está na Série A depois de acesso e rebaixamento, e a força pela colocação final do último campeonato, US-069) são atualizados uma vez por ano, num conjunto identificado pela **temporada base** (ex.: "dados 2026"). O novo jogo sempre usa a temporada base mais recente; carreiras já existentes não mudam, porque o save guarda o próprio estado (ADR-0006). Como a temporada base fica registrada na carreira é decisão do `architect`; se pedir campo novo no save, é ADR com migração, junto da T-018/T-019. O primeiro conjunto é o lote atual de [clubes-serie-a.md](design/clubes-serie-a.md) (títulos até 2025); o ano que ele leva está em "Perguntas que seguem abertas", item 4. O processo anual de troca é a US-067; os títulos ganhos na carreira (US-068) nunca entram nestes conjuntos. Na Etapa 1 só existe a Série A.
+**Notas:** Regra do CEO (2026-11-04): os dados de referência dos clubes (títulos históricos, capacidade dos estádios, quem está na Série A depois de acesso e rebaixamento, e a força pela colocação de referência, US-069) são atualizados uma vez por ano, num conjunto identificado pela **temporada base**. Decisão do CEO (D4, em "Decisões do CEO sobre os dados de referência dos clubes"): a temporada base leva o ano que será jogado, e a temporada 1 da carreira leva esse ano. A **base 2026** usa a tabela do Brasileirão 2026 parcial para a força e os títulos até 2025 ([clubes-serie-a.md](design/clubes-serie-a.md)). O novo jogo sempre usa a temporada base mais recente; carreiras já existentes não mudam, porque o save guarda o próprio estado (ADR-0006). Como a temporada base fica registrada na carreira é decisão do `architect`; se pedir campo novo no save, é ADR com migração, junto da T-018/T-019. O processo anual de troca é a US-067; os títulos ganhos na carreira (US-068) nunca entram nestes conjuntos. Na Etapa 1 só existe a Série A.
 
 ### Critérios de aceite
 
@@ -2482,11 +2483,11 @@ Cenário: cada temporada base passa na validação da US-001
   Então cada conjunto passa em todos os cenários de US-001
   E não existem dois conjuntos com a mesma temporada base
 
-Cenário: novo jogo usa a temporada base mais recente
+Cenário: novo jogo usa a temporada base mais recente (D4)
   Dado o jogo com os conjuntos das temporadas base 2026 e 2027
   Quando o jogador cria uma carreira nova (US-014)
   Então os clubes, estádios, capacidades, títulos e forças da carreira são os do conjunto 2027
-  E o save registra a temporada base 2027
+  E o save registra a temporada base 2027, e a temporada 1 da carreira leva o ano 2027
 
 Cenário: carreira existente não muda
   Dado um save fixture criado com a temporada base 2026
@@ -2509,9 +2510,9 @@ Cenário: carreira existente não muda
 
 **Como** CEO, **quero** receber uma vez por ano o lote da nova temporada base com tudo o que mudou em relação à anterior, **para** aprovar as mudanças antes que entrem no jogo.
 
-**Prioridade:** Should (vira Must se a primeira versão pública da 1a sair depois do fim do Brasileiro real de 2026; ver "Perguntas que seguem abertas", item 6)
+**Prioridade:** Should (decisão D6: fica Should até a data da 1a estar clara; vira Must se a primeira versão pública da 1a sair depois do fim do Brasileiro real de 2026)
 **Depende de:** US-066; lista reserva de clubes que podem subir da Série B, com nomes aprovados pelo CEO
-**Notas:** Regra do CEO (2026-11-04). Depois do fim da temporada real, o `game-designer` e o `content-writer` montam o conjunto N+1: quem sobe e quem cai, títulos atualizados, capacidades e colocação final (que muda a força, US-069). Como toda lista de clubes, o lote passa pelo CEO antes de entrar no jogo; a aprovação faz parte do PR de conteúdo, que só o CEO aprova e faz merge. Clube que sobe precisa de nome em trocadilho, cores, estádio, apelido e rivais vindos de um lote aprovado; clube que já esteve num conjunto anterior mantém o mesmo id. O número de vagas de acesso e rebaixamento é constante ou parâmetro do `game-designer` (4 na Série A atual). Quando o lote sai está em "Perguntas que seguem abertas", item 5.
+**Notas:** Regra do CEO (2026-11-04) e [clubes-serie-a.md › Atualização anual](design/clubes-serie-a.md#atualização-anual). Decisão D5: o lote é montado em dezembro, depois do fim da temporada real, e publicado até o fim de janeiro. O `game-designer` e o `content-writer` montam o conjunto N+1: quem sobe e quem cai, títulos atualizados, capacidades e colocação de referência (que muda a força, US-069). O porte só muda por decisão do CEO, nunca pela colocação; o perfil de IA só muda com justificativa no lote. Como toda lista de clubes, o lote passa pelo CEO antes de entrar no jogo; a aprovação faz parte do PR de conteúdo, que só o CEO aprova e faz merge. Clube que sobe precisa de nome em trocadilho, cores, estádio, apelido e rivais vindos de um lote aprovado; clube que já esteve num conjunto anterior mantém o mesmo id. O número de vagas de acesso e rebaixamento é constante ou parâmetro do `game-designer` (4 na Série A atual).
 
 ### Critérios de aceite
 
@@ -2533,7 +2534,7 @@ Cenário: títulos só crescem, com um campeão por ano
   Dado os clubes presentes nos conjuntos N e N+1
   Quando a validação roda no CI
   Então nenhum contador de títulos diminui
-  E exatamente um clube ganha 1 título de liga, no máximo um clube ganha 1 título de copa, e nenhum ganha mais de 1 em cada contador
+  E exatamente um clube ganha 1 título no contador do Brasileiro, nos demais contadores no máximo um clube ganha 1, e nenhum clube ganha mais de 1 num mesmo contador
 ```
 
 ### Fora do escopo desta história
@@ -2551,7 +2552,7 @@ Cenário: títulos só crescem, com um campeão por ano
 
 **Prioridade:** Must
 **Depende de:** US-025, US-032, US-033, US-066
-**Notas:** Regra do CEO (2026-11-04) e [clubes-serie-a.md › Títulos](design/clubes-serie-a.md#títulos-histórico-fictício): o histórico fixo vem do conjunto da temporada base (US-066) e nunca é alterado pela carreira; os títulos ganhos no jogo ficam no estado da carreira, no save, e a interface e os templates mostram a soma. Entra na T-017 (fim de temporada) e na T-018 (save), com ADR do `architect` e migração (T-019). Vale para os 20 clubes, inclusive os da IA, para que notícias como "o maior campeão do país" continuem certas. Na Etapa 1 só existe o título de liga (Série A); o de copa entra com as copas (Etapa 2). Na 1a, "ficha do clube" é a tela do clube (US-015) do clube do jogador; a ficha de outros clubes está em "Perguntas que seguem abertas", item 7.
+**Notas:** Regra do CEO (2026-11-04) e [clubes-serie-a.md › Títulos](design/clubes-serie-a.md#títulos-histórico-fictício): o histórico fixo vem do conjunto da temporada base (US-066) e nunca é alterado pela carreira; os títulos ganhos no jogo ficam no estado da carreira, no save, e a interface e os templates mostram a soma. Entra na T-017 (fim de temporada) e na T-018 (save), com ADR do `architect` e migração (T-019). O total é calculado para os 20 clubes, inclusive os da IA, para que notícias como "o maior campeão do país" continuem certas. Na Etapa 1 só se ganha o título do Brasileiro (Série A); os outros contadores (Copa do Brasil, Libertadores, Sul-Americana) só mudam quando as competições existirem. Decisão D7: na 1a o total de títulos aparece só para o clube do jogador (tela do clube, US-015), além da cerimônia e das notícias.
 
 ### Critérios de aceite
 
@@ -2564,7 +2565,7 @@ Cenário: título conquistado soma ao histórico
 
 Cenário: campeão da IA também soma
   Dado uma carreira em que um clube da IA com H títulos de liga é campeão da temporada
-  Então o total de títulos de liga desse clube na carreira, usado por telas e templates, passa a H+1
+  Então o total de títulos de liga desse clube na carreira, usado pelos templates, passa a H+1
   E o total de nenhum outro clube muda
 
 Cenário: fica no save e não passa para outras carreiras
@@ -2580,7 +2581,8 @@ Cenário: migração do save
 
 ### Fora do escopo desta história
 
-- Títulos de copa, estaduais e continentais (Etapas 2 e 5).
+- Ficha com o total de títulos de outros clubes (D7: Etapa 4, junto com "Histórico e recordes").
+- Títulos de copa, estaduais e continentais conquistados na carreira (Etapas 2 e 5).
 - Sala de troféus, hall da fama e troféus do técnico (Etapa 4, "Histórico e recordes").
 - Títulos de ligas online (1b): não somam ao histórico de nenhuma carreira nem do conjunto da temporada base.
 - Levar títulos de uma carreira para outra ou para o conjunto da temporada base.
@@ -2589,35 +2591,41 @@ Cenário: migração do save
 
 ## US-069: Força inicial pela colocação da temporada anterior
 
-**Como** jogador, **quero** que a força inicial de cada clube leve em conta a colocação final dele no último campeonato, **para** que o começo da carreira se pareça com a temporada de verdade.
+**Como** jogador, **quero** que a força inicial de cada clube siga a colocação dele no último campeonato, **para** que o começo da carreira se pareça com a temporada de verdade, mesmo quando um grande está mal.
 
 **Prioridade:** Must
-**Depende de:** US-066; regra do `game-designer` em [clubes-serie-a.md](design/clubes-serie-a.md) (em redação)
-**Notas:** Regra do CEO (2026-11-04). Cada conjunto de temporada base guarda, por clube, a colocação final da temporada anterior (posição na Série A ou a origem de quem subiu). A regra do `game-designer` transforma essa colocação, junto com o porte e o que mais ela definir, na força do clube (`strength`, a força-alvo da geração de elencos de US-004). Esta história não define a regra; exige que dados e regra concordem, conferido por máquina. Fica em rascunho até a regra estar no documento. Na carreira, a virada de temporada segue US-025; se a colocação no jogo também mexe na força da temporada seguinte está em "Perguntas que seguem abertas", item 8.
+**Depende de:** US-066
+**Notas:** Regra do CEO (2026-11-04) e [clubes-serie-a.md › Força e Atualização anual](design/clubes-serie-a.md#força). Porte e força são separados: o porte vem de títulos, história e torcida e nunca muda pela colocação; a força (`strength`) vem só da colocação de referência, numa escada única de 20 degraus (`LADDER`, soma 1.400), sem relação com o porte. Referência: posição final na Série A anterior (1 a 16 para quem ficou) e `20 + posição na Série B` para quem subiu (21 a 24); os 20 clubes são ordenados pela referência e recebem `LADDER` nessa ordem. Na base 2026, a referência é a posição na tabela parcial do Brasileirão 2026 (1 a 20), com data e rodada no documento. Clube sem colocação conhecida vai para o fim da ordem, com desempate pelo `id`. A força gera o elenco (US-004). Decisão D8: a colocação dentro da carreira não mexe na força da temporada seguinte.
 
 ### Critérios de aceite
 
 ```gherkin
-Cenário: força bate com a regra
-  Dado um conjunto de temporada base com a colocação final anterior de cada clube
+Cenário: força segue a escada pela referência
+  Dado um conjunto de temporada base com a referência de cada clube
   Quando a validação roda no CI
-  Então a força de cada clube é igual ao resultado da regra de docs/design/clubes-serie-a.md aplicada aos insumos desse clube
-  E, se divergir, a validação falha indicando o clube, o valor gravado e o esperado
+  Então as 20 forças, ordenadas, são exatamente a LADDER de docs/design/clubes-serie-a.md
+  E a força de cada clube é a do degrau da sua posição na ordem por referência; se divergir, a validação falha indicando o clube, o valor gravado e o esperado
 
-Cenário: colocação ausente ou inválida
-  Dado um clube sem colocação anterior, com posição na Série A fora de 1 a 20, sem a origem de acesso para quem subiu, ou dois clubes com a mesma posição na Série A
+Cenário: referência inválida ou ausente
+  Dado um clube com referência fora de 1 a 24 ou dois clubes com a mesma referência
   Quando a validação roda no CI
   Então ela falha e indica o clube
+  E dado um clube sem referência, ele recebe o degrau do fim da ordem, com desempate pelo id, sem falhar
 
-Cenário: melhor colocação não deixa o clube mais fraco
-  Dado dois clubes do mesmo porte que terminaram a temporada anterior na Série A, com os demais insumos da regra iguais
-  Quando a força dos dois é calculada pela regra
-  Então o de melhor colocação tem força maior ou igual à do outro
+Cenário: porte não entra na força
+  Dado dois conjuntos iguais exceto pelo porte de um clube
+  Quando as forças são calculadas
+  Então as forças dos 20 clubes são idênticas nos dois conjuntos
+
+Cenário: colocação na carreira não muda a força (D8)
+  Dado uma carreira em que um clube termina a temporada 1 numa posição diferente da sua referência
+  Quando começa a temporada 2 (US-025)
+  Então a strength desse clube na carreira é a mesma da temporada 1
 ```
 
 ### Fora do escopo desta história
 
-- Mudar a força na virada de temporada da carreira pela colocação no jogo (a virada segue US-025; ver "Perguntas que seguem abertas", item 8).
+- Mudar o porte pela colocação (nunca; o porte só muda por decisão do CEO).
 - Considerar copas ou campanhas anteriores à última temporada.
 
 ---
@@ -2671,22 +2679,29 @@ Outras decisões do CEO que mudaram critérios:
 - **Patrocínio:** espaço vazio no jogo mostra marca fictícia; "Patrocine aqui" só no site e na tela Sobre. (US-041, US-043)
 - **Ícones próprios** do `art-director`, com conjunto aberto provisório atrás do componente `Icon` até a aprovação; **menu "Mais"** no topo, com as mesmas entradas no pé da tela Clube. (US-015)
 - **Fator casa:** ADR-0011, opção A (`match.homeBase = 0.05`; mandante vence 45% a 50%). (US-007, US-008, US-013, US-026)
-- **Dados de referência dos clubes:** atualizados uma vez por ano, por temporada base; o novo jogo usa a mais recente e carreiras existentes não mudam (ADR-0006); cada lote passa pelo CEO; títulos ganhos na carreira somam ao histórico e ficam no save; a força inicial considera a colocação final da temporada anterior. (US-066, US-067, US-068, US-069)
+- **Dados de referência dos clubes:** atualizados uma vez por ano, por temporada base; o novo jogo usa a mais recente e carreiras existentes não mudam (ADR-0006); cada lote passa pelo CEO; títulos ganhos na carreira somam ao histórico e ficam no save; a força inicial segue a colocação de referência. (US-066, US-067, US-068, US-069)
+- **Porte e força separados:** o porte vem de títulos, história e torcida e só muda por decisão do CEO; a força vem só da colocação de referência, numa escada única de 20 degraus (`docs/design/clubes-serie-a.md`). (US-004, US-069)
+
+### Decisões do CEO sobre os dados de referência dos clubes (2026-11-04)
+
+O CEO aceitou as recomendações das perguntas abertas 4 a 8 desta revisão. A numeração segue a das perguntas (D4 a D8).
+
+4. **D4. Ano da temporada base.** É o ano que será jogado, e a temporada 1 da carreira leva esse ano. A base 2026 usa a tabela do Brasileirão 2026 parcial para a força (decisão anterior do CEO, registrada em `docs/design/clubes-serie-a.md`) e os títulos até 2025. (US-066, US-069)
+5. **D5. Quando sai o lote anual.** Montado em dezembro, depois do fim da temporada real, e publicado até o fim de janeiro. (US-067)
+6. **D6. US-067 na primeira versão da 1a.** Fica Should até a data da 1a estar clara; vira Must se a primeira versão pública sair depois do fim do Brasileiro real de 2026. (US-067)
+7. **D7. Onde aparece o total de títulos.** Na 1a, só para o clube do jogador (tela do clube), além da cerimônia de título e das notícias; a ficha de outros clubes fica para a Etapa 4, com "Histórico e recordes". (US-068)
+8. **D8. Colocação dentro da carreira.** Não mexe na força da temporada seguinte da carreira; a força na carreira vem do elenco e da curva de idade (US-025). (US-069)
 
 ### Perguntas que seguem abertas
 
 1. **P7 (resto). Quem trata as denúncias e em quanto tempo?** Recomendo que, na 1b, o próprio CEO trate, com prazo de até 72 horas para renomear à força ou remover um apelido ou nome de liga ofensivo, e que o `architect` defina como o CEO fica sabendo de uma denúncia nova (sem painel). Um prazo semanal seria mais leve, mas deixa um apelido ofensivo visível para menores por dias. Trava a US-065.
 2. **P13 (resto). Discussions do GitHub ou formulário no devlog?** Recomendo as Discussions do repositório público: custo zero, nada para construir nem guardar do nosso lado, moderação pronta e exigência de conta no GitHub (que só aceita maiores de 13 anos). O formulário no devlog pediria um lugar para guardar as respostas, ou seja, dado pessoal novo com ADR e `security-auditor`. Não trava nenhuma história: a tela Sobre lê o link da configuração.
 3. **Tipo de partida por carreira ou para o aparelho?** As decisões não dizem se trocar o tipo de partida vale só para a carreira aberta ou para todas as carreiras do aparelho. Recomendo por carreira, porque ele é escolhido no novo jogo (US-014). Os critérios de US-019 e US-044 foram escritos para valer nos dois casos, então não trava nada; a resposta orienta o `ux-designer` e o `architect`.
-4. **Que ano leva a temporada base?** Recomendo que o nome seja o ano que o jogador vai jogar e que os dados reflitam o real até o ano anterior: o lote atual (títulos até 2025, colocação do Brasileiro 2025) é a "temporada base 2026", e a temporada 1 da carreira leva o ano 2026 no calendário. Nomear pelo ano dos resultados ("dados 2025") faria o jogador ver 2025 num jogo lançado em 2026. Não trava a US-066 (os testes usam anos de exemplo); orienta o `content-writer` e o `ux-designer`.
-5. **Quando sai o lote anual?** Recomendo montá-lo logo depois da última rodada do Brasileiro e da final da Copa do Brasil (dezembro) e publicá-lo até o fim de janeiro, para quem começa um jogo novo no início do ano já encontrar a temporada nova. Não trava nada; orienta o roteiro (US-067).
-6. **A US-067 precisa estar na primeira versão da 1a?** Hoje o Brasileiro real de 2026 ainda não acabou. Se a 1a for publicada depois de dezembro de 2026, a primeira versão já deveria trazer a temporada base 2027, com os clubes que sobem, que ainda não têm nome aprovado. Recomendo manter a US-067 como Should, decidir quando a data da 1a estiver clara e já pedir ao `content-writer` a lista reserva (candidatos a subir da Série B de 2026), para não depender disso na última hora.
-7. **O total de títulos aparece só para o meu clube ou para qualquer clube?** Recomendo, na 1a, só o clube do jogador (tela do clube), a cerimônia de título e as notícias; uma ficha de qualquer clube (tocando na tabela) fica para a Etapa 4, junto com "Histórico e recordes". A alternativa é uma ficha simples na 1a (nome, estádio, capacidade, títulos), uma tela a mais para desenhar e testar. Não trava a US-068.
-8. **A colocação dentro da carreira mexe na força da temporada seguinte da carreira?** Recomendo que não: na carreira, a força vem do elenco, que já envelhece e evolui pela curva de idade (US-025); somar a colocação contaria o mesmo efeito duas vezes e deixaria o campeão cada vez mais forte, sem mercado para equilibrar até a Etapa 3. A regra do CEO fala da força inicial de um jogo novo, e é assim que a US-069 está escrita.
+
+As perguntas 4 a 8 foram respondidas (ver D4 a D8 acima).
 
 Insumos pendentes que travam histórias (não são perguntas novas):
 
 - **Lista dos 20 clubes da Série A** (`/content nomes série A`, aprovada pelo CEO): trava a US-001.
 - **Domínio definitivo** (item 4 da auditoria do dia 1): trava a US-047, porque a passkey fica presa ao domínio em que foi criada. Recomendo decidir antes de começar a 1b.
-- **Regra de força pela colocação final** (`game-designer`, em `docs/design/clubes-serie-a.md`, em redação): trava a US-069.
 - **Lista reserva de clubes que podem subir da Série B**, com nomes aprovados pelo CEO: trava o primeiro lote da US-067.
