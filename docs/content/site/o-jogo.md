@@ -53,7 +53,7 @@ Estado: **em desenvolvimento** (Etapa 1a). Sincronização opcional entre aparel
 
 ## O que vem depois
 
-Mais divisões, copas, mercado de transferências, finanças, clubes de outros países da América do Sul e ligas maiores com amigos. Cada coisa tem uma etapa no [roteiro](roadmap), sem data prometida.
+Mais divisões, copas, mercado de transferências, finanças, clubes de outros países da América do Sul e ligas com Série A e B (Etapa 2). Cada coisa tem uma etapa no [roteiro](roadmap), sem data prometida.
 
 | Recurso                                       | Estado              |
 | --------------------------------------------- | ------------------- |
