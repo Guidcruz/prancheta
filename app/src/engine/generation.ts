@@ -408,7 +408,7 @@ function shiftSquad(
 }
 
 /** N of `${clubId}#N`, for the "lower id" tie-break; the list position when there is no id. */
-function idNumber(player: { readonly id?: PlayerId }, index: number): number {
+export function idNumber(player: { readonly id?: PlayerId }, index: number): number {
   const hash = player.id?.lastIndexOf('#') ?? -1;
   if (player.id === undefined || hash < 0) return index;
   const n = Number(player.id.slice(hash + 1));

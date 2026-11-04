@@ -3,6 +3,7 @@ import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
 import { clamp } from '../math.ts';
 import type { MatchParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
+import { bestForSlot, correctedCondition } from '../selection.ts';
 import {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
@@ -137,14 +138,6 @@ function inRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && value >= min && value <= max;
 }
 
-/**
- * A player's condition as the match uses it: NaN goes to 0, like every clamp of the engine, and a
- * value out of 0..100 goes to the nearest end.
- */
-function correctedCondition(player: Player): number {
-  return clamp(player.condition, 0, 100);
-}
-
 function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appearance {
   const energy = correctedCondition(player);
   if (!inRange(player.condition, 0, 100)) {
@@ -187,42 +180,6 @@ function unavailable(player: Player): boolean {
   return player.injuryRounds > 0 || player.suspendedGames > 0;
 }
 
-/**
- * Selection value of a player for a slot (ia-clubes.md, "Escalação"):
- * `overall × fit × (0.80 + 0.20 × condition / 100)`, with the corrected condition (a damaged
- * NaN or out-of-range value never wins nor loses a place by itself).
- */
-function selectionValue(player: Player, slot: Position): number {
-  return (
-    player.overall * fit(player.position, slot) * conditionMultiplier(correctedCondition(player))
-  );
-}
-
-/**
- * The best available bench player for `slot` (partida.md, "Casos de borda": a suspended or
- * injured starter is replaced by the best available reserve): the highest selection value; ties
- * by higher overall, then younger, then lower ID (ia-clubes.md, "Escalação").
- */
-function bestReserve(bench: readonly Player[], slot: Position): Player | undefined {
-  let best: Player | undefined;
-  let bestValue = -1;
-  for (const player of bench) {
-    const value = selectionValue(player, slot);
-    const better =
-      best === undefined ||
-      value > bestValue ||
-      (value === bestValue &&
-        (player.overall > best.overall ||
-          (player.overall === best.overall &&
-            (player.age < best.age || (player.age === best.age && player.id < best.id)))));
-    if (better) {
-      best = player;
-      bestValue = value;
-    }
-  }
-  return best;
-}
-
 /** Puts `app` in `slot` (or empties it) and refreshes the cached part of its rating. */
 export function occupy(slot: Slot, app: Appearance | undefined): void {
   slot.app = app;
@@ -243,7 +200,8 @@ export function occupy(slot: Slot, app: Appearance | undefined): void {
  * - fans or a player's condition that is NaN or outside 0..100 → clipped (NaN to 0);
  * - a starter who is not in the squad, a repeated starter or a missing one → empty slot;
  * - an injured or suspended starter → the best available bench player for his slot
- *   (`bestReserve`), in slot order; without one, an empty slot;
+ *   (`bestForSlot`: the highest selection value, ties by higher overall, then younger, then
+ *   lower ID; ia-clubes.md, "Escalação"), in slot order; without one, an empty slot;
  * - a player's `yellowCount` outside 0..2 or not an integer → clipped;
  * - an empty goalkeeper slot → the outfield player with the highest `physical` goes in goal
  *   (`fillEmptyGoal`) and his slot is the empty one.
@@ -317,7 +275,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
   for (let i = 0; i < occupants.length; i++) {
     const player = occupants[i];
     if (player === undefined || !unavailable(player)) continue;
-    const reserve = bestReserve(bench, positions[i]!);
+    const reserve = bestForSlot(bench, positions[i]!);
     warnings.push({
       code: 'lineup-unavailable-player',
       detail: {
