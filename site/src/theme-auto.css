@@ -19,7 +19,18 @@
     --focus: #1565c0;
     --pitch: #2d8f55;
     --pitch-line: #eaf7ef;
+    --surface-glass: rgba(255,255,255,0.72);
+    --glass-line: rgba(16,32,44,0.10);
+    --beam: rgba(240,180,41,0.14);
+    --sticker: #ffffff;
+    --on-sticker: #10202c;
+    --sticker-muted: #4e6170;
+    --board: #fbfcf8;
+    --chalk: #10202c;
+    --chalk-line: #8ea2b2;
+    --mark: #1565c0;
     --shadow-card: 0 1px 2px rgba(16,32,44,0.08);
+    --shadow-lift: 0 8px 8px rgba(16,32,44,0.22);
     color-scheme: light;
   }
 }
