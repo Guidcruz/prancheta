@@ -183,7 +183,9 @@ export type ParamProblem =
   | 'not-a-list'
   | 'not-increasing'
   | 'overlap'
-  | 'round-count';
+  | 'round-count'
+  /** A getter or Proxy trap threw while reading the input. */
+  | 'unreadable';
 
 /** One reason why a parameter set was refused. `path` is dotted from the root (`match.kChance`). */
 export interface ParamIssue {
@@ -320,6 +322,16 @@ function checkSeason(season: SeasonParams, issues: ParamIssue[]): void {
  * once. Never throws; on success returns a fresh copy that shares nothing with `raw`.
  */
 export function validateParams(raw: unknown): ParamsResult {
+  // A getter or Proxy trap that throws is input, not a programming error: never let it escape.
+  try {
+    return checkParams(raw);
+  } catch {
+    const detail: ParamIssue[] = [{ path: '', problem: 'unreadable', value: undefined }];
+    return { ok: false, error: 'invalid-params', detail };
+  }
+}
+
+function checkParams(raw: unknown): ParamsResult {
   const issues: ParamIssue[] = [];
   const value = checkNode('', raw, PARAM_RANGES as AnyRange, issues);
   const seasonShapeOk = !issues.some((i) => i.path === 'season' || i.path.startsWith('season.'));

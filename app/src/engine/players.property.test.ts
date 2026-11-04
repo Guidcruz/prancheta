@@ -184,9 +184,7 @@ describe('validatePlayer against hostile input', () => {
     expect(() => validatePlayer(cyclic)).not.toThrow();
   });
 
-  // Known bug (low): a getter or Proxy trap that throws escapes validatePlayer. Unreachable from JSON saves;
-  // it.fails flips red when fixed, then change it to `it`.
-  it.fails('does not throw on an object with a throwing getter', () => {
+  it('does not throw on an object with a throwing getter', () => {
     const getter = { ...testPlayer() };
     Object.defineProperty(getter, 'age', {
       enumerable: true,
@@ -204,5 +202,12 @@ describe('validatePlayer against hostile input', () => {
       },
     );
     expect(() => validatePlayer(trap)).not.toThrow();
+    const revoked = Proxy.revocable({}, {});
+    revoked.revoke();
+    for (const raw of [getter, trap, revoked.proxy]) {
+      const result = validatePlayer(raw);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.detail).toEqual([{ field: '', problem: 'unreadable' }]);
+    }
   });
 });

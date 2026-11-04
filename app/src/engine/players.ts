@@ -418,7 +418,9 @@ export type PlayerProblem =
   | 'invalid-position'
   | 'invalid-trait'
   | 'overall-mismatch'
-  | 'potential-below-overall';
+  | 'potential-below-overall'
+  /** A getter or Proxy trap threw while reading the input. */
+  | 'unreadable';
 
 /**
  * One reason why a player was refused. `field` is dotted inside the player (`name.display`,
@@ -599,6 +601,15 @@ function checkRatings(issues: Issues, value: unknown): number[] | undefined {
  * rules (unique shirts, the composition, one idol) are checked where squads are built (T-006).
  */
 export function validatePlayer(raw: unknown): PlayerResult {
+  // A getter or Proxy trap that throws is input, not a programming error: never let it escape.
+  try {
+    return checkPlayer(raw);
+  } catch {
+    return { ok: false, error: 'invalid-player', detail: [{ field: '', problem: 'unreadable' }] };
+  }
+}
+
+function checkPlayer(raw: unknown): PlayerResult {
   const issues = new Issues();
   if (!isPlainObject(raw)) {
     issues.add({ field: '', problem: 'not-an-object', value: raw });

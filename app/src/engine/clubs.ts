@@ -101,7 +101,9 @@ export type ClubProblem =
   | 'self-rival'
   | 'duplicate-rival'
   | 'unknown-rival'
-  | 'asymmetric-rival';
+  | 'asymmetric-rival'
+  /** A getter or Proxy trap threw while reading the input. */
+  | 'unreadable';
 
 /**
  * One reason why a club list was refused. `index` is the position in the list and `clubId` the
@@ -470,6 +472,15 @@ function checkAbbreviations(raw: readonly unknown[], issues: ClubIssue[]): void 
  * `raw`.
  */
 export function validateClubs(raw: unknown, options: ValidateClubsOptions = {}): ClubsResult {
+  // A getter or Proxy trap that throws is input, not a programming error: never let it escape.
+  try {
+    return checkClubs(raw, options);
+  } catch {
+    return { ok: false, error: 'invalid-clubs', detail: [{ field: '', problem: 'unreadable' }] };
+  }
+}
+
+function checkClubs(raw: unknown, options: ValidateClubsOptions): ClubsResult {
   const count = options.count ?? SERIE_A_CLUBS;
   const issues: ClubIssue[] = [];
   if (!Array.isArray(raw)) {
