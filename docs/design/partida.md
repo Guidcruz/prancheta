@@ -149,6 +149,17 @@ Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 3
 
 O técnico também pode trocar formação, postura e pressão diretamente a qualquer momento.
 
+### Quando um comando vale
+
+**Regra em uma frase:** o comando leva o último minuto jogado e vale a partir do minuto seguinte, também nos acréscimos do 2º tempo.
+
+- **Relógio da tela.** A partida pausa com o relógio em `M'`, o próximo minuto a ser jogado. O comando sai com `minute: M − 1` e vale a partir de `M`, como pede a US-021 ("o reserva participa dos eventos a partir do minuto 60": a tela mostra 60' e o comando vai com `minute: 59`). No intervalo, o comando vai com `minute: 45` e vale a partir do 46.
+- **Acréscimos do 1º tempo.** Os comandos esperam o 2º tempo: vão com `minute: 45`. Nenhuma regra da IA começa antes do 60, então o 1º tempo não precisa de mais que isso.
+- **Acréscimos do 2º tempo.** O comando ganha o campo opcional `added` (inteiro de 0 a 6), só com `minute: 90`. `{ minute: 90 }` (ou `added: 0`) vale a partir do 90+1; `{ minute: 90, added: k }` vale a partir do 90+(k+1). Com `k` maior ou igual ao número de acréscimos sorteado (o do último minuto de acréscimo, ou além dele), não há minuto seguinte, e o comando é ignorado no fim do jogo com o aviso `command-too-late`. `added` com outro minuto, ou fora de 0 a 6, é `command-invalid-minute`. Por quê: os acréscimos do 2º tempo têm em média 4 minutos e são onde mora o `golNoFim`; o técnico que sofre um gol no 90+1 precisa poder pôr "todo mundo no ataque". O determinismo continua: os acréscimos são sorteados antes do primeiro minuto de acréscimo, então o comando não muda nada do que já passou.
+- **A IA também decide nos acréscimos do 2º tempo** (`ia-clubes.md`, "Durante o jogo"), depois dos comandos daquele minuto.
+- **Só o lado do técnico recebe comandos.** Comando para um lado com `controller: 'ai'` é ignorado com aviso `command-ai-side`, verificado no apito. Por quê: com o comando aceito, a IA decidia logo depois no mesmo minuto e podia desfazê-lo; nenhuma tela gera comando para a IA, e no online quem manda em cada clube é o servidor.
+- **Lesão com troca disponível:** o lesionado sempre sai e é substituído enquanto houver troca e reserva. O técnico escolhe quem entra com o comando de substituição daquele minuto (`out` = o lesionado); sem comando, vale a regra 1 de `ia-clubes.md`. Ele não pode deixar o time com 10 de propósito: jogar com um a menos custa 7% em todos os setores, nunca é melhor que gastar a troca, e a escolha pediria mais uma pausa na tela.
+
 ### Troca de formação durante o jogo
 
 **Regra:** quem já joga numa posição que existe na formação nova fica nela; quem sobra preenche as vagas livres, uma a uma, na ordem da formação; as vagas que ficam sem ninguém são as últimas vagas livres dessa ordem.
@@ -157,7 +168,8 @@ O técnico também pode trocar formação, postura e pressão diretamente a qual
 2. **Quem sobra.** Na ordem das vagas da formação nova (GOL, ZAG, LAT, VOL, MEI, ATA, como em `FORMATION_SLOTS`), cada vaga ainda livre recebe, entre os que sobraram, o de maior `eff` naquela vaga (com a energia e a moral do momento). Empate: maior overall, depois mais novo, depois menor ID (o mesmo de `ia-clubes.md`, "Escalação").
 3. **Vagas vazias.** Com `N` em campo, ficam vazias exatamente `11 − N` vagas: as que sobram no fim do passo 2. Elas seguem a regra de "Vaga vazia".
 
-- Vale para o técnico e para a IA. Depois da troca, o técnico pode trocar dois jogadores de vaga entre si (vagas ocupadas), mas não escolhe quais vagas ficam vazias. Assim ninguém esvazia um setor fraco de propósito para receber os 0,90 da média da linha.
+- Vale para o técnico. A IA da 1a nunca troca a formação durante o jogo (`ia-clubes.md`, "Durante o jogo"); a regra vale para ela quando isso mudar.
+- Depois da troca, o técnico pode trocar dois jogadores de vaga entre si (vagas ocupadas), mas não escolhe quais vagas ficam vazias. Assim ninguém esvazia um setor fraco de propósito para receber os 0,90 da média da linha. **Esse comando de troca de vagas entra com as telas (T-033)**, como um tipo novo de `MatchCommand` (`{ kind: 'swapSlots', a, b }`, os dois em campo); a T-012 não o tem e nada a bloqueia: nenhuma tela gera o comando antes disso.
 - Trocar para a formação em que o time já está não é troca: nada muda, nem a vaga vazia.
 - Expulsão ou lesão sem substituição, sem troca de formação, deixa vazia a vaga de quem saiu, onde ela estiver. Quem entra numa substituição ocupa a vaga de quem saiu.
 
@@ -276,12 +288,43 @@ Somando os 22 jogadores do 4-4-2 (`Σ positionMult² = 12,1` por time), com 15% 
 
 - **Proposta para a T-016 (revista):** promover `BOOKED_MULT` a parâmetro, `cards.bookedMult`, faixa 0 a 1, e baixar de 0,5 para **0,20** (não mais 0,30). Os 0,30 ficam em 0,242, a 0,008 do teto, sem margem para as três sementes nem para os comandos da T-012 ("todo mundo no ataque" põe pressão alta no fim do jogo). Com 0,20, o segundo amarelo fica em 0,11 e o vermelho direto em 0,08. Métrica que deve mudar: vermelhos por partida, para perto de 0,18. Métricas que não podem piorar: amarelos por partida (3,5 a 4,5; o fator não mexe neles), gols por partida, goleada e zebra com 30 pontos. Medir depois da T-012, com o `/balance` jogando as rodadas em sequência (`ia-clubes.md`, "Pedido ao `developer`", item 5).
 - **O que não fazer:** baixar `pressure.cards` da pressão alta (1,4) tiraria o custo da pressão alta e mexeria nos amarelos e no equilíbrio tático; mudar a pressão dos perfis tiraria a identidade do Formador. Os dois ficam como estão.
+- **Depois da T-012** (regras novas de `ia-clubes.md` medidas na cópia): os vermelhos caem de 0,343 para 0,321, porque mais pendurados saem de campo nas trocas dos 60, 70 e 80. A proposta de 0,20 continua; medir de novo na T-016 antes de aplicar.
+
+### Calibragem das goleadas (para a T-016)
+
+**Diagnóstico: não é erro de regra da T-012; é calibragem, e uma premissa errada de `balance-targets.md`.** Medido no relatório de 30 temporadas encadeadas (11.400 jogos, IA nos dois lados), numa cópia do motor:
+
+| Variante (só ela muda)                                           | Gols  | Goleada | Diferença ≥ 5 |
+| ---------------------------------------------------------------- | ----- | ------- | ------------- |
+| Hoje (T-012)                                                     | 2,756 | 14,9%   | 1,5%          |
+| Sem nenhuma regra da IA em jogo (regras 2 a 6 desligadas)        | 2,715 | 14,2%   | 1,5%          |
+| "Segurar" também ganhando por 2                                  | 2,743 | 14,6%   | 1,5%          |
+| "Segurar" com qualquer vantagem, por 2 ou mais já a partir do 60 | 2,717 | 14,2%   | 1,5%          |
+| Regra 3 só perdendo por 1                                        | 2,731 | 14,4%   | 1,4%          |
+| `match.kChance` 0,12                                             | 2,720 | 14,2%   | 1,5%          |
+| `match.dayFormSd` 2                                              | 2,760 | 14,6%   | 1,6%          |
+| `match.baseChance` 0,085                                         | 2,623 | 13,8%   | 1,4%          |
+| `match.baseChance` 0,082                                         | 2,523 | 12,9%   | 1,0%          |
+
+- As regras em jogo da T-012 somam só 0,7 ponto (14,2% → 14,9%). Mesmo os jogos entre iguais (diferença de força mais mando abaixo de 4) têm 12,7% de goleadas: é a variância do placar com cerca de 2,75 gols, a mesma da conta de Poisson de `balance-targets.md` (14,9% com 2,80 gols).
+- A premissa errada: `balance-targets.md` contava com "o time que ganha por 2 ou mais segura o resultado a partir dos 75'" para ficar abaixo do Poisson, mas a regra 5 só age com 1 gol de vantagem, e mesmo estendida ela tira menos de 1 ponto: a postura defensiva com pressão baixa corta só cerca de 5% das chances (`power` 0,95, `mid` 0,96), pouco para mudar o placar em 15 minutos.
+- Só com `baseChance` (menos gols) a goleada entra na faixa abaixo de 2,52 gols, na borda das duas metas ao mesmo tempo. Não serve.
+
+**Proposta para a T-016: regra nova "tirar o pé" + `baseChance`, um ajuste por vez.**
+
+1. **Regra (precisa do CEO e de código):** o time que ganha por 2 gols ou mais cria menos: `Power × match.comfortableLeadPower` no cálculo do `pChance` dele, com `comfortableLeadPower = 0.85` (faixa 0,7 a 1; 1 desliga). Vale para todos os times, técnico ou IA, por cima da postura: é o time que relaxa, não uma ordem do técnico. A `Defense` não muda, então quem perde não ganha chances a mais; o que cai é o terceiro e o quarto gol de quem já ganha. Medido: goleada 14,9% → 12,8%, diferença ≥ 5 1,5% → 1,0%, gols 2,71; 20 pontos mais forte 65,5% → 65,4%; zebra de 30 pontos sem mudança.
+2. **Depois, `match.baseChance` 0,090 → 0,087**, para levar os gols ao centro da meta. Medido com os dois: gols 2,63, goleada 12,1% a 12,3%, diferença ≥ 5 0,8% a 0,9%, 0×0 7,1% a 7,2%, empates 25,1%, mandante 46,9% a 47,0%, 20 pontos 64,9%.
+
+- Métrica que deve mudar: goleada, para 11% a 12,5%. Métricas que não podem piorar: gols (2,5 a 2,8), 0×0, empates, mandante, 20 pontos mais forte e zebra de 30 pontos.
+- Por quê uma regra e não só parâmetro: os botões existentes mexem na goleada só pelo número de gols, e as duas metas se cruzam na borda. "Tirar o pé" é como o futebol de verdade fica abaixo do Poisson, e o jogador sente: menos 5×0 sem graça, e a virada de quem perde por 2 continua possível. Fica como **decisão de diversão do CEO** (abaixo, e no relatório).
+- **Aviso à parte (não é goleada):** a zebra de 30 pontos está em 7,1% (meta 8% a 12%), e já estava em 7,4% a 7,6% sem as regras da IA em jogo. `match.dayFormSd` de 3 para 4 ou 5 não a move (7,6% a 7,7%), ao contrário do que `balance-targets.md` previa. Fica para a T-016, depois das goleadas, com `match.kChance` como próximo candidato, medido nos duelos calibrados.
 
 ## Substituições
 
 - Até 5 por jogo (`match.maxSubs = 5`), sem limite de paradas; banco de 7 (`match.benchSize = 7`).
 - Quem sai não volta. O reserva entra com a sua condição.
-- Substituição pedida pelo técnico vale no minuto seguinte. A IA do adversário segue as regras de `ia-clubes.md`.
+- Substituição pedida pelo técnico vale no minuto seguinte ("Quando um comando vale"). A IA do adversário segue as regras de `ia-clubes.md`.
+- O lesionado é sempre substituído enquanto houver troca e reserva ("Quando um comando vale", último item).
 
 ## Capitão e cobradores
 
@@ -300,6 +343,12 @@ O técnico escolhe uma de três; o efeito é `halftimeBoost` (multiplica as for�
 | Acalmar | −2%      | +1%       | +2%      | amarelos ×0,75 no segundo tempo                       |
 
 Sem escolha (modo "só resultado" ou técnico ausente), vale a escolha da IA (ver `ia-clubes.md`). Cada opção tem um placar em que é a melhor; a interface mostra o efeito em palavras ("o time voltou ligado"), nunca o número.
+
+**"Pular" é uma escolha, não a falta dela** (US-022: "a moral não muda pela conversa"). O técnico que abre a conversa e toca "Pular" não fala: `halftimeBoost = 0`, sem amarelos ×0,75 e sem a perda de moral do "Cobrar"; o capitão líder dobra zero. No contrato, o comando `halftimeTalk` aceita `talk: 'skip'` (o `architect` registra), e o evento `halftimeTalk` sai com `talk: 'skip'` (a narração tem um texto para "vestiário em silêncio"). O sorteio do Caótico continua acontecendo, como com qualquer escolha do técnico. A falta de escolha continua sendo a escolha da IA: o técnico ausente tem um auxiliar que fala; o que tocou "Pular" decidiu não falar.
+
+- Por quê "Pular" vale 0 e não a escolha da IA: é o que a história promete, e o técnico sabe o que escolheu. "Motivar" nunca é negativo, então quem quer o seguro escolhe "Motivar"; "Pular" é para quem quer ir rápido e aceita não ganhar nada.
+
+**"Cobrar" e a moral (T-013).** Os −3 de moral do "Cobrar" são aplicados com a moral da rodada (`jogadores.md`, "Moral por rodada"), na `playRound`, não na partida. Perdem os temperamentais que estavam em campo no apito do intervalo (os que ouviram a conversa), mesmo que tenham saído depois; quem entrou no 2º tempo não perde. A partida já dá o que é preciso: o evento `halftimeTalk` com a opção e quem estava em campo naquele momento (eventos de substituição e expulsão até o intervalo).
 
 ## Acréscimos
 
@@ -448,3 +497,9 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
    - Jogo encerrado ("Jogo encerrado"): com `abandoned`, `goleada`, `virada` e `golNoFim` não saem; `semSofrerGols` lê os gols reais sofridos; tabela, ±0,4 da nota, melhor em campo e `zebra` leem o placar dado. Testes: 1×0 com o visitante abandonando (vira 3×0): sem `goleada`, `semSofrerGols` só do mandante; 2×1 com o mandante abandonando (vira 0×3): sem `virada` nem `golNoFim`, nenhum `semSofrerGols`, +0,4 na nota do visitante e −0,4 na do mandante; 0×4 com o mandante abandonando: fica 0×4, sem `goleada`, `semSofrerGols` do visitante.
    - Os casos da tabela de suspensão ("Cartões e suspensão") com um teste cada.
    - O resto das decisões da T-010 está confirmado como implementado; o texto do mando (amarelos ×1,2) foi corrigido aqui, sem mudança no código.
+8. Ajustes da T-012 (comandos; as regras da IA em jogo estão em `ia-clubes.md`, "Pedido ao `developer`", item 6):
+   - **"Pular" no intervalo:** `halftimeTalk` aceita `talk: 'skip'` (contrato registrado pelo `architect`). Testes: com `skip`, `halftimeBoost` é 0 em qualquer placar e com capitão líder, os amarelos do 2º tempo não levam ×0,75, o evento sai com `talk: 'skip'`, e o time Caótico consome o mesmo sorteio que com outra escolha (os eventos do 1º tempo e o resto da sequência de sorteios não mudam). Sem comando, continua a escolha da IA.
+   - **Acréscimos do 2º tempo:** campo opcional `added` no `MatchCommand`, só com `minute: 90` ("Quando um comando vale"). Testes: `{ minute: 90 }` vale no 90+1 (antes era sempre `command-too-late`); `{ minute: 90, added: 2 }` com 4 de acréscimo vale no 90+3 e os eventos até o 90+2 não mudam; `added` igual ao número de acréscimos → `command-too-late`; `added` com `minute: 45`, negativo, não inteiro ou acima de 6 → `command-invalid-minute`. Um comando de `minute: 45` continua valendo no 46, haja ou não acréscimo no 1º tempo.
+   - **Comando para o lado da IA:** ignorado no apito com `command-ai-side`. Teste: um `preset` para o lado `controller: 'ai'` não gera `tacticChange` nem muda a partida.
+   - **Lesionado com troca disponível:** sempre substituído (como está). Teste já existente; nenhuma mudança.
+   - A mudança da IA nos acréscimos muda os eventos: sobe `ENGINE_VERSION` e regrava o golden.
