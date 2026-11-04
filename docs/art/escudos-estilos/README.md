@@ -164,3 +164,49 @@ Alguns símbolos ainda leem fraco a 32 px ou grandes: pão de açúcar, guindast
 ## Peso e o que muda no gerador
 
 SVG médio: cerca de 3,3 KB na versão grande e 1,4 KB na pequena (sem compressão). Mudanças em relação à v2: `crestSymbol` vira campo do clube e entra no `ShieldSpec`; `titles` ganha `leagueB` opcional; a função de estrelas passa a `starGlyphs(titles)`; o resto vale como na v2 (IDs únicos por clube, atualizar o snapshot e os testes de `shield.test.ts`).
+
+---
+
+# Estilo A v4
+
+Arquivos: `estilo-a-brasao-v4.html`, `estilo-a-grade-v4.png` (355 KB), `estilo-a-zoom-v4.png` (136 KB); código em `prototipo/escudos-v4.mjs`, `prototipo/medir-v4.cjs` (mede as caixas dos símbolos, grava `bbox.json`) e `prototipo/gerar-v4.cjs`. As versões anteriores foram mantidas.
+
+## O que mudou
+
+- **Estrelas:** como na v3, aprovada pelo CEO (1 pequena por título, 1 grande a cada 5; ouro da Série A, prata da Série B).
+- **Cinco símbolos fracos trocados:** Minério agora é `gema` (diamante, minério do estado); Santões é `contineres` (pilha de contêineres do porto); Vasconcelos é `bondinho` (cabo e cabine); Grêmeos é `chapeu` (chapéu de aba, gaúcho); Tufão é `cataVento` (cata-vento, o trocadilho do vento). A cuia, a torre, a picareta, o guindaste e o morro saíram.
+- **Nada vaza do medalhão:** cada símbolo é medido (`getBBox`), centrado e escalado para o raio que contém a sua caixa caber em 82% do medalhão (e a altura/largura em no máximo 1,5 vezes o raio), com margem para o traço, mais um recorte circular de segurança. O tamanho ótico fica parecido entre os 20. O medalhão ficou menor (raio 15,5; 14,5 na bolacha) para o padrão do clube voltar a aparecer.
+- **Formato, padrão e símbolo fixos por clube**, em dados. Propostas de campos em `clubs.serie-a.json`: `crestShape` (`rounded|french|swiss|oval|chamfer|disc`), `crestPattern` (`hoops|vstripes|pales|split|bend|bendMirror|fess|chief|chevron|none`), `crestBase` (0 ou 1: qual cor é o fundo) e `crestSymbol`. Os valores estão em `CLUB_CREST` no protótipo. `assignShapes` deixa de ser necessário. Rivais e clubes da mesma cidade seguem sem repetir formato (0 conflitos).
+
+## Aproximação com o clube que inspirou
+
+Importante: pedido do CEO nesta rodada. Isso afrouxa a frase de `docs/PROJETO.md` ("combinando formato, cores, faixas e um símbolo genérico... nunca imitam o desenho do escudo real") e a regra anterior de evitar padrões iguais ao real. A régua usada: aproximar a sensação (formato geral, disposição e proporção das cores, tipo de padrão) e nunca copiar. Em nenhum clube há o símbolo real, monograma ou iniciais entrelaçadas, sigla ou nome real, e a composição nunca é a mesma (o símbolo central grande e o medalhão são sempre nossos). A conferência é de memória, sem busca na internet; o CEO deve confirmar visualmente. Seria bom registrar a decisão em `docs/PROJETO.md` (quem tem a pasta de decisões). Risco: B = baixo, M = médio.
+
+| Clube          | O que aproxima                                                      | O que ficou diferente de propósito                                                            | Risco |
+| -------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ----- |
+| Flamingo       | Vermelho e preto em faixas horizontais, escudo de fundo arredondado | 3 faixas largas (não a quantidade real), medalhão com ondas, sem letras                       | M     |
+| Corinto        | Preto com topo branco, escudo clássico                              | Recorte suíço no topo, medalhão de prédios, sem remo, âncora ou iniciais                      | B     |
+| Palmeral       | Verde com topo branco, formato arredondado                          | Palmeira no medalhão, sem letra nem faixas do real                                            | B     |
+| São Paulão     | Vermelho com faixa preta, ponta francesa                            | Sem terceira cor, sem faixas em três, ponte estaiada no centro                                | B     |
+| Minério        | Redondo com listras verticais pretas e brancas                      | Sem estrelas nem monograma, medalhão grande com diamante cobre o centro                       | M     |
+| Grêmeos        | Oval, listras verticais azul e preto                                | Sem terceira cor, sem ornamentos, chapéu de aba no centro                                     | M     |
+| Fluminário     | Ponta francesa, listras verticais grená e verde                     | Três listras de larguras diferentes (não as três iguais), arcos no centro                     | M     |
+| Botafogueira   | Oval dividido em preto e branco                                     | Metades verticais (não faixas), sem estrela, chama no centro                                  | B     |
+| Vasconcelos    | Preto com faixa branca na diagonal, formato com cantos              | Diagonal espelhada, chanfrado em vez do escudo real, bondinho no centro, sem cruz ou caravela | M     |
+| Santões        | Redondo, branco com faixa preta                                     | Sem iniciais nem anel de texto, contêineres no centro                                         | B     |
+| Cruzador       | Redondo-oval azul com anel metálico                                 | Sem estrelas nem cruz, arcos parabólicos no centro                                            | B     |
+| Inter-Regional | Vermelho e branco, ponta francesa arredondada                       | Chevron branco em vez de qualquer arranjo real, chaminé no centro                             | B     |
+| Tufão          | Vermelho e preto, chanfrado                                         | Metades verticais, cata-vento, sem a letra do real                                            | B     |
+| Baião          | Azul com faixa vermelha, escudo arredondado                         | Uma faixa só (o real tem três), berimbau no centro                                            | B     |
+| Coritibom      | Verde e branco em listras verticais                                 | Recorte suíço, araucária no centro                                                            | B     |
+| Vitorioso      | Vermelho com topo preto, ponta francesa                             | Sem leão (nem outro animal), farol no centro                                                  | B     |
+| Bragantão      | Redondo, vermelho e branco                                          | Chevron vermelho, sino no centro, sem touro                                                   | B     |
+| Miragol        | Amarelo com diagonal verde                                          | Chanfrado, sol no centro                                                                      | B     |
+| Chapecão       | Verde com chevron branco                                            | Sem letra nem figura do real, espiga no centro                                                | B     |
+| Remador        | Oval azul com topo branco                                           | Vitória-régia (nada de remo ou leão), sem anel                                                | B     |
+
+Resumo de risco: 5 clubes em M (Flamingo, Minério, Grêmeos, Fluminário, Vasconcelos); 15 em B. Nenhum ficou perto demais a ponto de eu recuar; se o CEO ou o jurídico quiser menos risco nos M, o recuo é trocar o padrão por `split` ou `chief`, sem mexer em mais nada. Os clubes sem pistas claras de escudo real na memória (Bragantão, Miragol, Chapecão, Remador) seguem só a cor e o formato geral.
+
+## Peso e o que muda no gerador
+
+SVG médio nos 20 clubes: cerca de 3,1 KB na versão grande e 1,6 KB na pequena (sem compressão). No gerador: `ShieldSpec` ganha `crestShape`, `crestPattern`, `crestBase` e `crestSymbol` vindos dos dados (sem sorteio); os caminhos dos símbolos e a tabela de caixas (`bbox.json`) viram constantes do módulo; o resto vale como na v3 (ids únicos por clube, atualizar o snapshot e os testes de `shield.test.ts`).
