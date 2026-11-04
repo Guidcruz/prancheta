@@ -1,4 +1,4 @@
-import type { AiProfile, ClubId, ClubSize, Result } from './types.ts';
+import type { AiProfile, ClubId, ClubSize, EngineWarning, Result } from './types.ts';
 
 /*
  * Club definitions (docs/02-architecture.md, 3 "Dados de jogo" and 4.1; US-001). The approved
@@ -25,7 +25,11 @@ export interface ClubDef {
   readonly size: ClubSize;
   /** Absent: drawn by size with the career seed (docs/design/ia-clubes.md). */
   readonly aiProfile?: AiProfile;
-  /** Target strength of the first XI; absent: default by size (docs/design/jogadores.md). */
+  /**
+   * Target strength of the first XI, from the placement in the reference table; unrelated to
+   * `size` (docs/design/clubes-serie-a.md). Absent in the data: {@link DEFAULT_STRENGTH}, with a
+   * warning; always present in the output of {@link validateClubs}.
+   */
   readonly strength?: number;
   readonly stadium: { readonly name: string; readonly capacity: number };
   /** Derbies. May be empty; when present, both clubs list each other. */
@@ -58,16 +62,12 @@ export const AI_PROFILES: readonly AiProfile[] = [
 ];
 
 /**
- * Valid `strength` per size, inclusive (docs/design/jogadores.md, "Geração de elencos"; a value
- * outside the range of its size is invalid data, docs/design/clubes-serie-a.md).
+ * Valid `strength`, inclusive, whatever the size: size is who the club is, strength is how the
+ * squad is now (docs/design/clubes-serie-a.md, "Porte e força").
  */
-export const STRENGTH_RANGE_BY_SIZE: Readonly<
-  Record<ClubSize, { readonly min: number; readonly max: number }>
-> = {
-  big: { min: 73, max: 78 },
-  medium: { min: 67, max: 72 },
-  small: { min: 62, max: 67 },
-};
+export const STRENGTH_RANGE: { readonly min: number; readonly max: number } = { min: 55, max: 85 };
+/** `strength` of a club without one in the data: the middle of the ladder. */
+export const DEFAULT_STRENGTH = 70;
 
 /** Text fields compared against the blocklist of real names (US-001). */
 export const BLOCKLIST_FIELDS = [
@@ -365,11 +365,11 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
       scope.add({ field: 'strength', problem: 'not-a-number', value });
     } else if (!Number.isInteger(value)) {
       scope.add({ field: 'strength', problem: 'not-an-integer', value });
-    } else if (size !== undefined) {
-      const range = STRENGTH_RANGE_BY_SIZE[size];
-      if (value < range.min || value > range.max) {
-        scope.add({ field: 'strength', problem: 'out-of-range', value, range: { ...range } });
-      } else strength = value;
+    } else if (value < STRENGTH_RANGE.min || value > STRENGTH_RANGE.max) {
+      const range = { ...STRENGTH_RANGE };
+      scope.add({ field: 'strength', problem: 'out-of-range', value, range });
+    } else {
+      strength = value;
     }
   }
   const stadium = has('stadium') ? checkStadium(scope, raw.stadium) : undefined;
@@ -394,7 +394,7 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
     titles: titles!,
   };
   if (aiProfile !== undefined) club.aiProfile = aiProfile;
-  if (strength !== undefined) club.strength = strength;
+  club.strength = strength ?? DEFAULT_STRENGTH;
   return club;
 }
 
@@ -462,7 +462,8 @@ function checkAbbreviations(raw: readonly unknown[], issues: ClubIssue[]): void 
 /**
  * Checks a raw club list (the parsed JSON of app/src/data/) against the ClubDef contract:
  * exact count, required fields filled, known keys only, valid id slugs, colours, state, size,
- * profile, strength within the range of the size, positive integer capacity, titles as integers
+ * profile, integer strength in STRENGTH_RANGE (absent: DEFAULT_STRENGTH with a
+ * `club-strength-default` warning), positive integer capacity, titles as integers
  * of at least 0, unique ids, unique three-letter abbreviations and
  * symmetric derbies with existing clubs (an empty `rivals` is valid). Lists every issue at once
  * with club and field. Never throws; on success returns fresh copies that share nothing with
@@ -484,11 +485,17 @@ export function validateClubs(raw: unknown, options: ValidateClubsOptions = {}):
     });
   }
   const clubs: ClubDef[] = [];
+  const warnings: EngineWarning[] = [];
   const entries: { index: number; id: string; rivals: readonly unknown[] | undefined }[] = [];
   for (let index = 0; index < raw.length; index++) {
     const scope = new ClubScope(index, issues);
     const club = checkClub(scope, raw[index] as unknown);
-    if (club) clubs.push(club);
+    if (club) {
+      clubs.push(club);
+      if (!Object.hasOwn(raw[index] as object, 'strength')) {
+        warnings.push({ code: 'club-strength-default', detail: { clubId: club.id } });
+      }
+    }
     if (scope.clubId !== undefined) {
       const rawRivals = (raw[index] as Record<string, unknown>).rivals;
       // Kept as is (positions match `rivals.<i>`); unreadable items were reported above.
@@ -499,5 +506,5 @@ export function validateClubs(raw: unknown, options: ValidateClubsOptions = {}):
   checkAcrossClubs(entries, issues);
   checkAbbreviations(raw, issues);
   if (issues.length > 0) return { ok: false, error: 'invalid-clubs', detail: issues };
-  return { ok: true, value: clubs, warnings: [] };
+  return { ok: true, value: clubs, warnings };
 }

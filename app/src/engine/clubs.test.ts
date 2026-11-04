@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
   SERIE_A_CLUBS,
-  STRENGTH_RANGE_BY_SIZE,
+  DEFAULT_STRENGTH,
+  STRENGTH_RANGE,
   validateClubs,
   type ClubIssue,
   type ClubsResult,
@@ -43,8 +44,14 @@ describe('validateClubs', () => {
     delete loner.aiProfile;
     delete loner.strength;
     const result = validateClubs(raw);
-    expect(result.ok).toBe(true);
-    if (result.ok) expect(result.value[19]).not.toHaveProperty('strength');
+    if (!result.ok) throw new Error(JSON.stringify(result.detail, null, 2));
+    expect(result.value[19]).not.toHaveProperty('aiProfile');
+    // docs/design/clubes-serie-a.md, "Casos de borda": absent strength is 70, with a warning.
+    expect(result.value[19]!.strength).toBe(DEFAULT_STRENGTH);
+    expect(DEFAULT_STRENGTH).toBe(70);
+    expect(result.warnings).toEqual([
+      { code: 'club-strength-default', detail: { clubId: 'clube-teste-20' } },
+    ]);
   });
 
   it('requires exactly 20 clubs', () => {
@@ -156,24 +163,34 @@ describe('validateClubs', () => {
     );
   });
 
-  it('keeps strength inside the range of the size', () => {
+  it('keeps strength in 55..85, whatever the size', () => {
+    expect(STRENGTH_RANGE).toEqual({ min: 55, max: 85 });
     const raw = syntheticClubs();
-    raw[0]!.strength = STRENGTH_RANGE_BY_SIZE.big.min - 1; // big
-    raw[6]!.strength = STRENGTH_RANGE_BY_SIZE.medium.max; // medium, edge: valid
-    raw[19]!.strength = Number.NaN; // small
-    const issues = issuesOf(validateClubs(raw));
-    expect(issues).toEqual([
+    raw[0]!.strength = 55; // big at the bottom edge: valid
+    raw[19]!.strength = 85; // small at the top edge: valid
+    raw[6]!.strength = 54;
+    raw[7]!.strength = 86;
+    raw[8]!.strength = Number.NaN;
+    expect(issuesOf(validateClubs(raw))).toEqual([
       {
-        index: 0,
-        clubId: 'clube-teste-01',
+        index: 6,
+        clubId: 'clube-teste-07',
         field: 'strength',
         problem: 'out-of-range',
-        value: 72,
-        range: { min: 73, max: 78 },
+        value: 54,
+        range: { min: 55, max: 85 },
       },
       {
-        index: 19,
-        clubId: 'clube-teste-20',
+        index: 7,
+        clubId: 'clube-teste-08',
+        field: 'strength',
+        problem: 'out-of-range',
+        value: 86,
+        range: { min: 55, max: 85 },
+      },
+      {
+        index: 8,
+        clubId: 'clube-teste-09',
         field: 'strength',
         problem: 'not-a-number',
         value: Number.NaN,

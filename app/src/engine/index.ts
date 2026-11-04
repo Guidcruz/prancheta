@@ -9,8 +9,9 @@ export {
   AI_PROFILES,
   BLOCKLIST_FIELDS,
   CLUB_SIZES,
+  DEFAULT_STRENGTH,
   SERIE_A_CLUBS,
-  STRENGTH_RANGE_BY_SIZE,
+  STRENGTH_RANGE,
   validateClubs,
 } from './clubs.ts';
 export type {

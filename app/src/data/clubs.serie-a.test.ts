@@ -1,11 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import {
-  STRENGTH_RANGE_BY_SIZE,
-  type AiProfile,
-  type ClubDef,
-  type ClubSize,
-} from '../engine/index.ts';
+import type { AiProfile, ClubDef, ClubSize } from '../engine/index.ts';
 import { parseBlocklist } from './blocklist.ts';
 import { checkClubData, formatClubIssues } from './check.ts';
 
@@ -46,9 +41,9 @@ describe('app/src/data/clubs.serie-a.json', () => {
         by('chaotic'),
       ];
     };
-    expect(count('big')).toEqual([6, 4, 2, 0, 0, 0]);
-    expect(count('medium')).toEqual([8, 0, 3, 3, 2, 0]);
-    expect(count('small')).toEqual([6, 0, 1, 2, 2, 1]);
+    expect(count('big')).toEqual([12, 4, 4, 3, 1, 0]);
+    expect(count('medium')).toEqual([5, 0, 1, 2, 1, 1]);
+    expect(count('small')).toEqual([3, 0, 1, 0, 2, 0]);
   });
 
   const clubs = () => readJson(clubsUrl) as ClubDef[];
@@ -65,14 +60,6 @@ describe('app/src/data/clubs.serie-a.json', () => {
       .split('\n')
       .map((line) => line.split('|').map((cell) => cell.trim()))
       .filter((cells) => first.test(cells[1] ?? ''));
-
-  it('keeps every strength inside the range of its size', () => {
-    for (const club of clubs()) {
-      const range = STRENGTH_RANGE_BY_SIZE[club.size];
-      expect(club.strength, club.id).toBeGreaterThanOrEqual(range.min);
-      expect(club.strength, club.id).toBeLessThanOrEqual(range.max);
-    }
-  });
 
   it('gives Flamingo and Fluminário the same stadium and capacity', () => {
     const [a, b] = [byName('Flamingo'), byName('Fluminário')];
@@ -115,6 +102,20 @@ describe('app/src/data/clubs.serie-a.json', () => {
   it('reads the 20 rows of the design table', () => {
     expect(designRows).toHaveLength(20);
   });
+
+  // docs/design/clubes-serie-a.md, "Pedido ao developer": one 20-step ladder, by placement.
+  const LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62];
+  it('uses exactly the strength ladder, sum 1400 with the three planned ties', () => {
+    const strengths = clubs().map((c) => c.strength!);
+    expect([...strengths].sort((a, b) => b - a)).toEqual(LADDER);
+    expect(strengths.reduce((a, b) => a + b, 0)).toBe(1400);
+  });
+  it.each(designRows.map((row) => [row.Clube!, n(row['Ref. 2026']!)]))(
+    '%s (Ref. 2026 = %i) has strength LADDER[ref − 1]',
+    (label, ref) => {
+      expect(byName(label).strength).toBe(LADDER[ref - 1]);
+    },
+  );
   it.each(designRows.map((row) => [row.Clube!, row]))('%s matches the design table', (_, row) => {
     const club = byName(row.Clube!);
     expect({

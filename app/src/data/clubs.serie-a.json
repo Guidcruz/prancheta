@@ -34,7 +34,7 @@
     "colors": ["#111417", "#FFFFFF"],
     "size": "big",
     "aiProfile": "ambitious",
-    "strength": 73,
+    "strength": 65,
     "stadium": {
       "name": "Arena Itaquerê",
       "capacity": 48900
@@ -82,7 +82,7 @@
     "colors": ["#E4002B", "#111417"],
     "size": "big",
     "aiProfile": "traditional",
-    "strength": 75,
+    "strength": 70,
     "stadium": {
       "name": "Estádio do Morumbom",
       "capacity": 72000
@@ -106,7 +106,7 @@
     "colors": ["#111417", "#FFFFFF"],
     "size": "big",
     "aiProfile": "ambitious",
-    "strength": 76,
+    "strength": 72,
     "stadium": {
       "name": "Arena Veio de Minério",
       "capacity": 44900
@@ -130,7 +130,7 @@
     "colors": ["#0D80BF", "#111417"],
     "size": "big",
     "aiProfile": "traditional",
-    "strength": 74,
+    "strength": 67,
     "stadium": {
       "name": "Arena dos Grêmeos",
       "capacity": 55700
@@ -152,9 +152,9 @@
     "city": "Rio de Janeiro",
     "state": "RJ",
     "colors": ["#8B1A2E", "#00704A"],
-    "size": "medium",
+    "size": "big",
     "aiProfile": "academy",
-    "strength": 72,
+    "strength": 75,
     "stadium": {
       "name": "Estádio Maracatu",
       "capacity": 78800
@@ -176,7 +176,7 @@
     "city": "Rio de Janeiro",
     "state": "RJ",
     "colors": ["#111417", "#FFFFFF"],
-    "size": "medium",
+    "size": "big",
     "aiProfile": "seller",
     "strength": 69,
     "stadium": {
@@ -200,7 +200,7 @@
     "city": "Rio de Janeiro",
     "state": "RJ",
     "colors": ["#111417", "#FFFFFF"],
-    "size": "medium",
+    "size": "big",
     "aiProfile": "traditional",
     "strength": 68,
     "stadium": {
@@ -224,9 +224,9 @@
     "city": "Santos",
     "state": "SP",
     "colors": ["#FFFFFF", "#111417"],
-    "size": "medium",
+    "size": "big",
     "aiProfile": "academy",
-    "strength": 70,
+    "strength": 72,
     "stadium": {
       "name": "Vila Belamar",
       "capacity": 16100
@@ -248,9 +248,9 @@
     "city": "Belo Horizonte",
     "state": "MG",
     "colors": ["#0033A0", "#FFFFFF"],
-    "size": "medium",
+    "size": "big",
     "aiProfile": "traditional",
-    "strength": 72,
+    "strength": 76,
     "stadium": {
       "name": "Estádio Minerão",
       "capacity": 61900
@@ -272,9 +272,9 @@
     "city": "Porto Alegre",
     "state": "RS",
     "colors": ["#E5050F", "#FFFFFF"],
-    "size": "medium",
+    "size": "big",
     "aiProfile": "academy",
-    "strength": 68,
+    "strength": 64,
     "stadium": {
       "name": "Estádio Beira-Riacho",
       "capacity": 50800
@@ -298,7 +298,7 @@
     "colors": ["#C8102E", "#111417"],
     "size": "medium",
     "aiProfile": "seller",
-    "strength": 71,
+    "strength": 74,
     "stadium": {
       "name": "Arena da Baixadinha",
       "capacity": 42400
@@ -322,7 +322,7 @@
     "colors": ["#0057B8", "#D6001C"],
     "size": "medium",
     "aiProfile": "traditional",
-    "strength": 70,
+    "strength": 73,
     "stadium": {
       "name": "Arena Fonte Novelo",
       "capacity": 48700
@@ -344,9 +344,9 @@
     "city": "Curitiba",
     "state": "PR",
     "colors": ["#00553A", "#FFFFFF"],
-    "size": "small",
+    "size": "medium",
     "aiProfile": "academy",
-    "strength": 66,
+    "strength": 70,
     "stadium": {
       "name": "Estádio Couve-Pera",
       "capacity": 40500
@@ -368,9 +368,9 @@
     "city": "Salvador",
     "state": "BA",
     "colors": ["#C8102E", "#111417"],
-    "size": "small",
+    "size": "medium",
     "aiProfile": "chaotic",
-    "strength": 65,
+    "strength": 68,
     "stadium": {
       "name": "Estádio Barrancão",
       "capacity": 35600
@@ -394,7 +394,7 @@
     "colors": ["#FFFFFF", "#D81E2B"],
     "size": "small",
     "aiProfile": "seller",
-    "strength": 67,
+    "strength": 71,
     "stadium": {
       "name": "Arena Bragança",
       "capacity": 12000
@@ -418,7 +418,7 @@
     "colors": ["#FFD400", "#0A7A3D"],
     "size": "small",
     "aiProfile": "seller",
-    "strength": 64,
+    "strength": 66,
     "stadium": {
       "name": "Estádio Maionão",
       "capacity": 15000
@@ -464,7 +464,7 @@
     "city": "Belém",
     "state": "PA",
     "colors": ["#003A8C", "#FFFFFF"],
-    "size": "small",
+    "size": "medium",
     "aiProfile": "academy",
     "strength": 63,
     "stadium": {
