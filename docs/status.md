@@ -57,13 +57,13 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                                                                          |
-| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                      |
-| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                         |
-| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                         |
-| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                             |
-| T-005  | entregue, aguardando merge (modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1) |
+| Tarefa | Estado                                                                                                                                                                                          |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                      |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                         |
+| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                         |
+| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                             |
+| T-005  | feita (PR #10); entregue, aguardando merge (modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1) |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -106,4 +106,4 @@ A implementação sai em PR próprio.
 
 ## Próximo
 
-T-005 aguarda o merge do CEO; depois, implementação do site novo (PR próprio) e T-006. Antes disso, o `/quick` do devcontainer segue aguardando merge; a T-004 aguarda o merge do CEO; depois T-005. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+T-005 mergeada. Site novo entregue, aguardando merge do CEO (PR próprio). Depois: T-006 (elencos e novo jogo). Pendências do site: bloco "Patrocine aqui" em `/apoiar/` (`/quick`) e a passada `REQUIRE_SITE_DIST=1` no CI depois do build (`devops-engineer`). Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).

@@ -18,6 +18,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - `npm run content:check` e `npm run blocklist:hash -- <arquivo fora do repositório>` (`scripts/hash-blocklist.mjs`).
 - Gerador de nomes (T-004, US-003) em `app/src/lib/generators/names.ts`: sete formas de exibição, forma curta coerente com o prenome, sem duplicata no elenco, no máximo 3 jogadores por sobrenome, `familyNoSolo`, origem "X de Y", determinístico por semente e exclusões por índice; em esgotamento das listas devolve resultado marcado `degraded`.
 - Listas de nomes fictícios `app/src/content/names/br.json` (412 prenomes, 19, 407, 123, 130 e 49 itens nas demais listas) e `br.exclusions.json` (57 pares, 6 sobrenomes e 3 triplas, só índices).
+- Site novo: páginas O jogo, Modos, Clubes e Perguntas, página inicial refeita, roteiro com selo de estado (`site/src/data/recursos.ts`), escudos de exemplo gerados no build, tema dia automático, menu sem JavaScript, sitemap (`@astrojs/sitemap` 3.7.4) e `robots.txt`; nenhum script, cookie ou serviço de terceiros (teste `site/src/lib/dist.test.ts`).
+- Tokens `layout` e o estilo `display-lg`; `display-xl` e `botao` passam a ser estilos de verdade em `design/tokens.json`.
+- `contacts.discussionsUrl` e `contacts.repository` em `config/prancheta.config.ts`.
 - `app/src/data/athletes-blocklist.sha256.json` (469 hashes de nomes de atletas reais; nenhum nome em texto).
 - `npm run names:exclusions` (`scripts/name-exclusions.mjs`) e `npm run blocklist:hash:athletes`.
 - Teste completo dos nomes com `NAMES_FULL_CHECK=1 npm test -w app` (cerca de 2 minutos), para rodar antes de release e quando as listas mudarem.
