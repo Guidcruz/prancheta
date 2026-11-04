@@ -77,21 +77,28 @@ const divisions = [
     </p>
 
     <h2>Quem está no jogo</h2>
-    <TableScroll label="Quem está no jogo">
+    <TableScroll label="Quem está no jogo" stack>
       <table>
         <thead>
           <tr>
             <th scope="col">Divisão</th>
             <th scope="col">Clubes</th>
-            <th scope="col">Estado</th>
+            <th scope="col" class="col-state">
+              Estado
+            </th>
           </tr>
         </thead>
         <tbody>
           {divisions.map((d) => (
             <tr>
-              <th scope="row">{d.name}</th>
+              <th scope="row">
+                {d.name}
+                <div class="inline-state">
+                  <StatusBadge recurso={d.id} showStage />
+                </div>
+              </th>
               <td>{d.clubs}</td>
-              <td>
+              <td class="col-state">
                 <StatusBadge recurso={d.id} showStage />
               </td>
             </tr>

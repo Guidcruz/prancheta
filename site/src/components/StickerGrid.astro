@@ -21,11 +21,12 @@ const { clubs } = Astro.props;
     padding: 0;
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(128px, 1fr));
-    justify-items: center;
+    justify-items: stretch;
     gap: var(--space-4);
   }
   li {
-    display: block;
+    display: flex;
+    justify-content: center;
   }
   @media (min-width: 720px) {
     .grid {

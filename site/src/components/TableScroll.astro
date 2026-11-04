@@ -2,12 +2,14 @@
 interface Props {
   label: string;
   minWidth?: string;
+  /** Below 720px the state moves under the first cell (`.inline-state`) and `.col-state` goes away. */
+  stack?: boolean;
 }
-const { label, minWidth = '520px' } = Astro.props;
+const { label, minWidth = '520px', stack = false } = Astro.props;
 ---
 
 <div
-  class="scroll"
+  class:list={['scroll', { stack }]}
   tabindex="0"
   role="region"
   aria-label={`${label} (tabela com rolagem)`}
@@ -32,7 +34,7 @@ const { label, minWidth = '520px' } = Astro.props;
       var(--surface-1);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
-    padding: var(--space-2);
+    padding: var(--space-2) 0;
     margin-bottom: var(--space-3);
   }
   .scroll :global(table) {
@@ -49,13 +51,38 @@ const { label, minWidth = '520px' } = Astro.props;
   .scroll :global(tbody tr:last-child > *) {
     border-bottom: 0;
   }
-  .scroll :global(tr) {
-    background: var(--surface-1);
-  }
+  /* Rows stay transparent so the edge shadows show; only the fixed column is opaque. */
   .scroll :global(tr > :first-child) {
     position: sticky;
     left: 0;
-    background: inherit;
+    background: var(--surface-1);
+  }
+  .scroll :global(tr[aria-current='step'] > :first-child) {
+    background: var(--grass-soft);
+  }
+  .scroll :global(tr[aria-current='step']) {
+    background: var(--grass-soft);
+  }
+  .scroll {
+    container-type: inline-size;
+  }
+  .scroll :global(.inline-state) {
+    display: none;
+  }
+  @media (max-width: 719.98px) {
+    .stack :global(table) {
+      min-width: 0;
+    }
+    .stack :global(.col-state) {
+      display: none;
+    }
+    .stack :global(.inline-state) {
+      display: block;
+      margin-top: var(--space-1);
+    }
+    .stack :global(tr > :first-child) {
+      max-width: 40cqw;
+    }
   }
   .scroll :global(tbody th) {
     color: var(--ink);
