@@ -141,6 +141,23 @@ const engineImportPatterns = [
   { group: ['svelte', 'svelte/*', 'idb'], message: 'The engine has no UI or storage dependency.' },
 ];
 
+const libPatterns = {
+  noUi: { group: ['**/ui/**'], message: 'lib/ does not import ui/.' },
+};
+
+const uiPatterns = {
+  noSave: {
+    group: ['**/lib/save', '**/lib/save/**', '@lib/save', '@lib/save/*'],
+    message: 'ui/ reaches saves only through lib/career.',
+  },
+};
+
+// engine/testing/ pulls node:fs and vitest: production code of lib/ and ui/ never imports it.
+const appTestingImports = {
+  group: ['**/engine/testing', '**/engine/testing/**', '@engine/testing', '@engine/testing/*'],
+  message: 'engine/testing/ is test-only; production code cannot import it.',
+};
+
 export default [
   { ignores: ['dist/**', 'dev-dist/**', 'node_modules/**'] },
   ...tseslint.configs.recommended,
@@ -183,10 +200,7 @@ export default [
   {
     files: ['src/lib/**/*.{ts,svelte}'],
     rules: {
-      'no-restricted-imports': [
-        'error',
-        { patterns: [{ group: ['**/ui/**'], message: 'lib/ does not import ui/.' }] },
-      ],
+      'no-restricted-imports': ['error', { patterns: [libPatterns.noUi, appTestingImports] }],
     },
   },
   {
@@ -195,14 +209,18 @@ export default [
       'no-restricted-imports': [
         'error',
         {
-          patterns: [
-            {
-              group: ['**/lib/save', '**/lib/save/**', '@lib/save', '@lib/save/*'],
-              message: 'ui/ reaches saves only through lib/career.',
-            },
-          ],
+          patterns: [uiPatterns.noSave, appTestingImports],
         },
       ],
     },
+  },
+  {
+    // Tests of lib/ and ui/ may use the engine test helpers; the other boundaries still hold.
+    files: ['src/lib/**/*.test.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [libPatterns.noUi] }] },
+  },
+  {
+    files: ['src/ui/**/*.test.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [uiPatterns.noSave] }] },
   },
 ];

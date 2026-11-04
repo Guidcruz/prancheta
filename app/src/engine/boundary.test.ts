@@ -75,6 +75,15 @@ describe('engine lint boundary', () => {
     expect(await ruleIds(code, 'src/engine/__fixture__.test.ts')).toEqual([]);
   });
 
+  it('keeps engine/testing/ out of production lib/ and ui/, but not out of their tests', async () => {
+    const relative = "import '../engine/testing/golden.ts';";
+    const alias = "import '@engine/testing/golden.ts';";
+    expect(await ruleIds(relative, 'src/lib/fixture.ts')).toContain('no-restricted-imports');
+    expect(await ruleIds(alias, 'src/ui/fixture.ts')).toContain('no-restricted-imports');
+    expect(await ruleIds(relative, 'src/lib/fixture.test.ts')).toEqual([]);
+    expect(await ruleIds(alias, 'src/ui/fixture.test.ts')).toEqual([]);
+  });
+
   it('allows transcendental functions only in engine/math.ts', async () => {
     expect(
       await ruleIds('export const e = (x: number) => Math.exp(x) ** 2;', 'src/engine/math.ts'),
