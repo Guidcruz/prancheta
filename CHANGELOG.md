@@ -6,6 +6,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Força por setor (T-008, US-007) em `app/src/engine/strength.ts`: nota efetiva do jogador na vaga (overall, adequação à posição, moral e condição) e forças de defesa, meio e ataque a partir da formação, da postura e da pressão. Escalação inválida devolve o erro tipado `invalid-lineup`, sem lançar. Tipos `Lineup`, `Tactic` e `TeamSheet` em `lineup.ts`.
+- Fator casa: 5% fixo (`match.homeBase`) mais a parte do termômetro da torcida do mandante, mais o bônus de clássico; o visitante e o campo neutro não recebem nada.
+- Força exibida (`teamStrength`): média de `overall` com adequação dos 11 titulares, sem condição, moral nem mando; sem escalação definida, usa o melhor time disponível do clube.
+- Vaga vazia (jogador a menos): a vaga sai da média do setor e o time paga só a penalidade por jogador a menos; setor sem ninguém vale 90% da média dos jogadores de linha em campo. O goleiro nunca fica sem substituto: um jogador de linha vai ao gol.
+- Golden `strengths.json`; `ENGINE_VERSION` continua 3.
+- Regras novas de design em `docs/design/partida.md`: "Vaga vazia (jogador a menos)" e troca de formação durante o jogo com menos de 11 em campo (ficam vazias as últimas vagas livres da ordem da formação).
+- Contrato da T-008 documentado em `docs/02-architecture.md` (§4.1, "Força (T-008)").
 - Dia 1: site com devlog, roteiro, apoio e privacidade; versão zero do jogo em `/jogo` (tela inicial, PWA instalável); configuração central da marca; tokens do design system; motor com gerador aleatório determinístico e gerador de escudos; kit da empresa de agentes adaptado ao projeto.
 - Fundações do motor (T-001) em `app/src/engine/`: tipos base (`types.ts`), resultado tipado `ok`/`fail` (`result.ts`), `ENGINE_VERSION = 1` (`version.ts`) e utilitários numéricos determinísticos (`math.ts`: clamp, exp, normal).
 - Utilitário de golden (`testing/golden.ts`, `__golden__/foundations.json`) e o script `npm run golden:update -w app`, que recusa sobrescrever um golden alterado sem subir `ENGINE_VERSION`.
