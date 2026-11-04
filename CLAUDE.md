@@ -18,7 +18,7 @@
 
 ## Stack e comandos
 
-- **Linguagem:** TypeScript 5 (strict) / Node 22.
+- **Linguagem:** TypeScript 5 (strict) / Node 22.18+.
 - **Jogo (`app/`):** Svelte 5 + Vite 8, PWA com `vite-plugin-pwa` 2, saves em IndexedDB (`idb`), campo 2D em canvas. Fontes hospedadas no próprio app (`@fontsource`), sem chamadas a terceiros.
 - **Site (`site/`):** Astro 7, conteúdo em Markdown (`site/src/content/devlog/`); o roteiro do site é lido de `docs/roadmap.md` no build. O site é só em pt-BR.
 - **Motor (`app/src/engine/`):** TypeScript puro, sem DOM, determinístico (semente explícita), compartilhado com o servidor a partir da Etapa 1b. Parâmetros numéricos ficam fora dele, em `app/src/params/`, e entram como argumento.
@@ -27,21 +27,22 @@
 - **Lint/format:** ESLint 10 + svelte-check + astro check + Prettier (`npm run lint` roda tudo e também os testes do hook; `npm run format`).
 - **Gerenciador:** npm com workspaces (`app`, `site`).
 
-| Ação                                       | Comando                            |
-| ------------------------------------------ | ---------------------------------- |
-| Instalar                                   | `npm install`                      |
-| Rodar o jogo (dev)                         | `npm run dev -w app`               |
-| Rodar o site (dev)                         | `npm run dev -w site`              |
-| Testes unitários e do motor                | `npm test`                         |
-| Regressão completa (lint + testes + build) | `npm run test:all`                 |
-| Lint                                       | `npm run lint`                     |
-| Formatar                                   | `npm run format`                   |
-| Build (site + jogo em `dist/`)             | `npm run build`                    |
-| Auditoria de dependências                  | `npm audit --audit-level=high`     |
-| Ícones da PWA a partir do SVG              | `npm run icons`                    |
-| Testes do hook de travas                   | `bash scripts/test-hook.sh`        |
-| Tokens do design system → CSS              | `npm run tokens`                   |
-| Balanceamento (simula N temporadas)        | `npm run balance -- --seasons 200` |
+| Ação                                                        | Comando                            |
+| ----------------------------------------------------------- | ---------------------------------- |
+| Instalar                                                    | `npm install`                      |
+| Rodar o jogo (dev)                                          | `npm run dev -w app`               |
+| Rodar o site (dev)                                          | `npm run dev -w site`              |
+| Testes unitários e do motor                                 | `npm test`                         |
+| Atualizar golden do motor (recusa sem subir ENGINE_VERSION) | `npm run golden:update -w app`     |
+| Regressão completa (lint + testes + build)                  | `npm run test:all`                 |
+| Lint                                                        | `npm run lint`                     |
+| Formatar                                                    | `npm run format`                   |
+| Build (site + jogo em `dist/`)                              | `npm run build`                    |
+| Auditoria de dependências                                   | `npm audit --audit-level=high`     |
+| Ícones da PWA a partir do SVG                               | `npm run icons`                    |
+| Testes do hook de travas                                    | `bash scripts/test-hook.sh`        |
+| Tokens do design system → CSS                               | `npm run tokens`                   |
+| Balanceamento (simula N temporadas)                         | `npm run balance -- --seasons 200` |
 
 ## Estrutura
 

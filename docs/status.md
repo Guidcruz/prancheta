@@ -59,10 +59,10 @@ Telas da 1a (`docs/design/telas/`):
 
 | Tarefa | Estado                                                                                                                     |
 | ------ | -------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | entregue, aguardando merge (branch `claude/kickoff-i22gas`; passou no code review e no QA); fundações do motor             |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                 |
 | T-002  | próxima (`GameParams` e `validateParams`)                                                                                  |
 | T-003  | próxima, em paralelo à T-002 (dados dos clubes; lista dos 20 aprovada em `docs/content/lotes/2026-11-04-nomes-serie-a.md`) |
 
 ## Próximo
 
-`/feature T-002` e `/feature T-003` depois do merge da T-001. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+`/quick` do devcontainer (Codespaces pronto, Node 22.18) aguardando merge; depois `/feature T-002` e `/feature T-003`. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
