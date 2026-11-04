@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { BENCH_SIZE, suggestSheet, validateLineup, type SuggestState } from './ai.ts';
+import { suggestSheet, validateLineup, type SuggestState } from './ai.ts';
+import { BENCH_SIZE } from './lineup.ts';
 import { AI_PROFILES } from './clubs.ts';
 import { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
 import type { ClubState } from './game.ts';
@@ -60,7 +61,8 @@ function problemsOf(state: SuggestState, clubId: ClubId, opponentId?: ClubId): s
   if (!['defensive', 'balanced', 'attacking'].includes(tactic.posture)) problems.push('posture');
   if (!['low', 'medium', 'high'].includes(tactic.pressure)) problems.push('pressure');
   const checked = validateLineup(state, clubId, sheet);
-  if (available >= 11 ? !checked.ok : checked.ok || checked.error !== 'wrong-count') {
+  // Valid whenever someone is available (11, or all of them with fewer); never with nobody.
+  if (available > 0 ? !checked.ok : checked.ok || checked.error !== 'wrong-count') {
     problems.push(`validateLineup ${JSON.stringify(checked.ok ? 'ok' : checked.detail)}`);
   }
   return problems.map((p) => `${clubId} r${state.round} s${state.season}: ${p}`);

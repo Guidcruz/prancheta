@@ -90,7 +90,11 @@ export interface TeamState {
   readonly order: (Appearance | undefined)[];
   /** Everyone who took the pitch, in order of entry (starters by slot first). */
   readonly appearances: Appearance[];
-  /** The AI profile; an unknown one plays as `traditional` (partida.md, "Casos de borda"). */
+  /**
+   * The profile the match plays by (the half-time talk without a choice; the in-match rules of
+   * T-012): an unknown one plays as `traditional` (partida.md, "Casos de borda"), and so does the
+   * coach's club, `controller: 'human'` (ia-clubes.md, "Clube do técnico humano").
+   */
   readonly profile: AiProfile;
   /** Fans thermometer, 0..100 (corrected at kick-off). */
   readonly fans: number;
@@ -197,6 +201,7 @@ export function occupy(slot: Slot, app: Appearance | undefined): void {
  * match through a bug or a damaged save):
  * - unknown formation → `4-4-2`; unknown posture → `balanced`; unknown pressure → `medium`;
  *   unknown profile → `traditional` (one warning per side for each);
+ * - `controller: 'human'` → the profile is read as `traditional`, without a warning;
  * - fans or a player's condition that is NaN or outside 0..100 → clipped (NaN to 0);
  * - a starter who is not in the squad, a repeated starter or a missing one → empty slot;
  * - an injured or suspended starter → the best available bench player for his slot
@@ -235,6 +240,9 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     warnings.push({ code: 'team-unknown-profile', detail: { side, profile: String(profile) } });
     profile = 'traditional';
   }
+  // The coach's club: the AI decides for him as `traditional` (ia-clubes.md, "Clube do técnico
+  // humano"), whatever the club's profile; no warning, it is the rule.
+  if (input.controller === 'human') profile = 'traditional';
   let fans = input.fans;
   if (!inRange(fans, 0, 100)) {
     warnings.push({ code: 'team-invalid-fans', detail: { side, fans: String(fans) } });

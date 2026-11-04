@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BENCH_SIZE,
   CHAOTIC_POSTURE_WEIGHTS,
   CHAOTIC_PRESSURE_WEIGHTS,
   aiSeed,
@@ -15,13 +14,13 @@ import {
 } from './ai.ts';
 import { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
 import type { ClubState, GameState } from './game.ts';
-import type { TeamSheet } from './lineup.ts';
+import { BENCH_SIZE, type TeamSheet } from './lineup.ts';
 import { simulateMatch } from './match/simulate.ts';
 import type { Player } from './players.ts';
 import { Rng } from './rng.ts';
 import { teamStrength } from './strength.ts';
 import { syntheticClubs } from './testing/clubs.ts';
-import { testGame } from './testing/match.ts';
+import { firstDerby, fixtureInput, testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
 import { testPlayer, type MutablePlayer } from './testing/players.ts';
 import type { AiProfile, Formation, Position } from './types.ts';
@@ -240,6 +239,39 @@ describe('US-011 "rotação por fadiga"', () => {
     expect(suggestSheet(state, strict, 'c').lineup.starters).toContain('c#10');
   });
 
+  // ia-clubes.md, "Pedido ao developer" 4: the reserve must be rested (condition ≥ 85).
+  it('does not rotate to a reserve below ai.rotationCondition, even worth 0.95 of the starter', () => {
+    // Starter 80 at 80: 76.8. Reserve 75 at 84: 75 × 0.968 = 72.6 (0.945 of him) → no swap.
+    const specs = tiredSpecs(80, 75);
+    specs[16] = ['ST', 75, { condition: 84 }];
+    const { state } = build(specs, { formations: ['4-4-2', '4-4-2'] });
+    const { starters, rested } = pickEleven(playersOf(state, state.squads.c!), '4-4-2', AI);
+    expect(starters.map((p) => p.id)).toContain('c#10');
+    expect(rested).toEqual([]);
+  });
+
+  it('rotates to the same reserve at condition 85', () => {
+    // 75 × 0.97 = 72.75 ≥ 0.90 × 76.8 = 69.12.
+    const specs = tiredSpecs(80, 75);
+    specs[16] = ['ST', 75, { condition: 85 }];
+    const { state } = build(specs, { formations: ['4-4-2', '4-4-2'] });
+    const { starters, rested } = pickEleven(playersOf(state, state.squads.c!), '4-4-2', AI);
+    expect(starters[10]!.id).toBe('c#17');
+    expect(rested.map((p) => p.id)).toEqual(['c#10']);
+  });
+
+  it('with two reserves, takes the rested one (condition 90) over the more valuable tired one (84)', () => {
+    // c#17: 78 at 84 = 75.5 (more value, tired). c#18: 73 at 90 = 71.54 ≥ 69.12 → c#18 enters.
+    const specs = tiredSpecs(80, 78);
+    specs[16] = ['ST', 78, { condition: 84 }];
+    specs[17] = ['ST', 73, { condition: 90 }];
+    const { state } = build(specs, { formations: ['4-4-2', '4-4-2'] });
+    const { starters, rested } = pickEleven(playersOf(state, state.squads.c!), '4-4-2', AI);
+    expect(starters[10]!.id).toBe('c#18');
+    expect(starters.map((p) => p.id)).not.toContain('c#17');
+    expect(rested.map((p) => p.id)).toEqual(['c#10']);
+  });
+
   it('never picks a rested starter again for another slot', () => {
     // CB c#2 (condition 72: 75.52) gives way to the reserve CB c#13 (70 ≥ 67.97). Then FB c#4
     // (condition 70: 75.2) is tired too; the rested c#2 would be worth 80 × 0.90 × 0.944 =
@@ -278,7 +310,22 @@ describe('US-011 "elenco sem reservas aptos"', () => {
     const sheet = suggestSheet(state, params, 'c');
     expect(sheet.lineup.starters).toHaveLength(9);
     expect(sheet.lineup.bench).toEqual([]);
-    expect(validateLineup(state, 'c', sheet)).toMatchObject({ ok: false, error: 'wrong-count' });
+    // With 9 available, a sheet of exactly 9 is valid (min(11, available)); 8 or 10 are not.
+    expect(validateLineup(state, 'c', sheet)).toEqual({ ok: true, value: sheet, warnings: [] });
+    const eight = {
+      ...sheet,
+      lineup: { ...sheet.lineup, starters: sheet.lineup.starters.slice(0, 8) },
+    };
+    expect(validateLineup(state, 'c', eight)).toMatchObject({
+      ok: false,
+      error: 'wrong-count',
+      detail: { count: 8, part: 'starters' },
+    });
+    const ten = {
+      ...sheet,
+      lineup: { ...sheet.lineup, starters: [...sheet.lineup.starters, 'c#10'] },
+    };
+    expect(validateLineup(state, 'c', ten)).toMatchObject({ error: 'wrong-count' });
 
     const opponent = suggestSheet(state, params, 'o');
     const input = (clubId: 'c' | 'o', s: TeamSheet) => ({
@@ -315,20 +362,44 @@ describe('US-011 "elenco sem reservas aptos"', () => {
     expect(sheet.tactic.posture).toBeDefined();
   });
 
-  it('with no goalkeeper available puts the best outfield player by selection value in goal', () => {
+  it('with no goalkeeper available fills the goal last, with the best of those left', () => {
+    // Both goalkeepers out. The DM of 82 is the best outfield player: he stays in an outfield
+    // slot (the first CB slot: 82 × 0.90 = 73.8), and the goal goes to the best for goal (× 0.40)
+    // of those left after the 10 outfield slots: the AM of 65 among the reserves of 60.
     const specs = fullSquad('c').map(([p, o]): Spec => [
       p,
       o,
       p === 'GK' ? { injuryRounds: 2 } : {},
     ]);
     specs[5] = ['DM', 82];
-    const { state } = build(specs);
+    specs[15] = ['AM', 65];
+    const { state } = build(specs, { formations: ['4-4-2', '4-4-2'] });
     const sheet = suggestSheet(state, params, 'c');
-    // overall × 0.40 for everyone: the DM of 82 is the highest.
-    expect(sheet.lineup.starters[0]).toBe('c#6');
     expect(sheet.lineup.starters).toHaveLength(11);
-    // "Banco sem goleiro": 7 outfield players (or as many as are left).
+    expect(sheet.lineup.starters.indexOf('c#6')).toBe(1);
+    expect(sheet.lineup.starters[0]).toBe('c#16');
+    // "Banco sem goleiro": the outfield players left (5 here).
     expect(playersOf(state, sheet.lineup.bench).every((p) => p.position !== 'GK')).toBe(true);
+    expect(sheet.lineup.bench).toHaveLength(5);
+    expect(validateLineup(state, 'c', sheet).ok).toBe(true);
+  });
+
+  it('with no goalkeeper and fewer than 11 keeps one of them for the goal', () => {
+    // 6 outfield players available, no goalkeeper: 5 outfield slots, then the goal.
+    const specs: Spec[] = [
+      ['GK', 70, { injuryRounds: 1 }],
+      ['CB', 70],
+      ['CB', 69],
+      ['FB', 68],
+      ['DM', 67],
+      ['AM', 66],
+      ['ST', 65],
+    ];
+    const { state } = build(specs);
+    const available = playersOf(state, state.squads.c!).filter((p) => p.injuryRounds === 0);
+    const { starters } = pickEleven(available, '4-4-2', AI);
+    expect(starters).toHaveLength(6);
+    expect(starters.map((p) => p.position)).toEqual(['ST', 'CB', 'CB', 'FB', 'DM', 'AM']);
   });
 });
 
@@ -400,7 +471,8 @@ describe('bench (ia-clubes.md, "Escalação", step 5)', () => {
     expect(bench).toEqual(['c#8', 'c#1', 'c#2', 'c#3', 'c#4', 'c#5', 'c#9']);
   });
 
-  it('may take a second goalkeeper among the 6 of highest overall', () => {
+  it('never takes a second goalkeeper while there are 6 outfield players left', () => {
+    // 3 goalkeepers available: the 3rd (here the 2nd left) is above every outfield reserve.
     const rest = squad('c', [
       ['GK', 75],
       ['GK', 74],
@@ -411,15 +483,20 @@ describe('bench (ia-clubes.md, "Escalação", step 5)', () => {
       ['ST', 60],
       ['ST', 60],
     ]);
-    expect(pickBench(rest).map((p) => p.id)).toEqual([
-      'c#1',
-      'c#2',
-      'c#3',
-      'c#4',
-      'c#5',
-      'c#6',
-      'c#7',
+    const bench = pickBench(rest);
+    expect(bench.map((p) => p.id)).toEqual(['c#1', 'c#3', 'c#4', 'c#5', 'c#6', 'c#7', 'c#8']);
+    expect(bench.filter((p) => p.position === 'GK')).toHaveLength(1);
+  });
+
+  it('takes a second goalkeeper only when outfield players run out', () => {
+    const rest = squad('c', [
+      ['GK', 75],
+      ['GK', 74],
+      ['GK', 50],
+      ['CB', 70],
+      ['ST', 60],
     ]);
+    expect(pickBench(rest).map((p) => p.id)).toEqual(['c#1', 'c#2', 'c#4', 'c#5', 'c#3']);
   });
 
   it('takes 7 outfield players without a goalkeeper, and everyone when fewer than 7 are left', () => {
@@ -509,8 +586,11 @@ describe('captain and takers (step 6)', () => {
 
 describe('tactic by profile (ia-clubes.md, "Perfis na 1a")', () => {
   const fresh = 100;
-  const t = (profile: AiProfile, delta: number, venue: 'home' | 'away' | 'neutral') =>
-    profileTactic(profile, delta, venue, fresh, AI);
+  const t = (
+    profile: Exclude<AiProfile, 'chaotic'>,
+    delta: number,
+    venue: 'home' | 'away' | 'neutral',
+  ) => profileTactic(profile, delta, venue, fresh, AI);
 
   it('Δ = own + 4 at home − opponent − 4 away (the example of the doc)', () => {
     expect(strengthDelta(76, 64, 'home')).toBe(16);
@@ -549,8 +629,9 @@ describe('tactic by profile (ia-clubes.md, "Perfis na 1a")', () => {
   });
 
   it('an unknown profile plays as traditional', () => {
-    expect(t('galáctico' as AiProfile, -4, 'away')).toEqual(t('traditional', -4, 'away'));
-    expect(t('galáctico' as AiProfile, 20, 'home')).toEqual(t('traditional', 20, 'home'));
+    const unknown = 'galáctico' as Exclude<AiProfile, 'chaotic'>;
+    expect(t(unknown, -4, 'away')).toEqual(t('traditional', -4, 'away'));
+    expect(t(unknown, 20, 'home')).toEqual(t('traditional', 20, 'home'));
   });
 
   it('chaotic: posture 50/30/20 and pressure 50/30/20, whatever Δ and the venue', () => {
@@ -565,7 +646,12 @@ describe('tactic by profile (ia-clubes.md, "Perfis na 1a")', () => {
       expect(count[value] / n).toBeGreaterThan(weight - 0.015);
       expect(count[value] / n).toBeLessThan(weight + 0.015);
     }
-    expect(() => profileTactic('chaotic', 0, 'home', fresh, AI)).toThrow();
+  });
+
+  it('never throws: the compiler refuses the chaotic profile without an Rng', () => {
+    // @ts-expect-error the chaotic profile needs an Rng (a cast is the only way in).
+    const tactic = profileTactic('chaotic', -4, 'away', fresh, AI);
+    expect(tactic).toEqual(t('traditional', -4, 'away'));
   });
 
   it('a tired XI (mean condition below ai.tiredTeamCondition) presses low, in every profile', () => {
@@ -654,6 +740,54 @@ describe('suggestSheet: tactic from the state', () => {
     expect(suggestSheet(away, params, 'c', 'o')).toEqual(
       suggestSheet(traditional, params, 'c', 'o'),
     );
+  });
+});
+
+describe('the coach\'s club (ia-clubes.md, "Clube do técnico humano")', () => {
+  it("reads a chaotic or academy profile as traditional, with the club's preferred formations", () => {
+    const human = { controller: 'human' } as const;
+    for (const profile of ['chaotic', 'academy', 'ambitious'] as const) {
+      for (let round = 1; round <= 20; round++) {
+        for (const venue of ['home', 'away'] as const) {
+          const options = { formations: ['4-3-3', '3-4-3'] as const, venue, round };
+          const own = build(fullSquad('c', 66), { ...options, profile }).state;
+          const traditional = build(fullSquad('c', 66), {
+            ...options,
+            profile: 'traditional',
+          }).state;
+          const sheet = suggestSheet(own, params, 'c', 'o', human);
+          expect(sheet).toEqual(suggestSheet(traditional, params, 'c', 'o'));
+          expect(['4-3-3', '3-4-3']).toContain(sheet.lineup.formation);
+          // A chaotic sheet would draw a formation among the six and press 50% high.
+          expect(sheet.tactic.pressure).toBe('medium');
+        }
+      }
+    }
+  });
+
+  it('in the match, the human side gets the traditional half-time talk, never a chaotic draw', () => {
+    const game = testGame();
+    const base = fixtureInput(game, firstDerby(game));
+    for (let seed = 0; seed < 60; seed++) {
+      const human = simulateMatch(
+        { ...base, seed, home: { ...base.home, profile: 'chaotic', controller: 'human' } },
+        params,
+      );
+      const traditional = simulateMatch(
+        { ...base, seed, home: { ...base.home, profile: 'traditional', controller: 'ai' } },
+        params,
+      );
+      // Same events byte for byte: no chaotic draw shifted the match Rng.
+      expect(JSON.stringify(human)).toBe(JSON.stringify(traditional));
+    }
+  });
+
+  it('is the default AI sheet with controller ai or no options', () => {
+    const { state } = build(fullSquad('c'), { profile: 'academy', venue: 'home' });
+    expect(suggestSheet(state, params, 'c', 'o', { controller: 'ai' })).toEqual(
+      suggestSheet(state, params, 'c', 'o'),
+    );
+    expect(suggestSheet(state, params, 'c', 'o').tactic.pressure).toBe('high');
   });
 });
 
@@ -777,6 +911,30 @@ describe('validateLineup', () => {
     expect(validateLineup(injured(b, 'injuryRounds'), 'c', good)).toMatchObject({
       error: 'unavailable',
       detail: { player: b, part: 'bench' },
+    });
+  });
+
+  it('an unknown club is wrong-club at its first starter, not wrong-count', () => {
+    expect(validateLineup(state, 'nobody', good)).toEqual({
+      ok: false,
+      error: 'wrong-club',
+      detail: { reason: 'wrong-club', player: starters[0], part: 'starters' },
+    });
+  });
+
+  it('a club with nobody available accepts no sheet: an empty XI is wrong-count', () => {
+    const out = fullSquad('c').map(([p, o]): Spec => [p, o, { injuryRounds: 1 }]);
+    const none = build(out).state;
+    const empty = suggestSheet(none, params, 'c');
+    expect(empty.lineup.starters).toEqual([]);
+    expect(validateLineup(none, 'c', empty)).toEqual({
+      ok: false,
+      error: 'wrong-count',
+      detail: { reason: 'wrong-count', count: 0, part: 'starters' },
+    });
+    expect(validateLineup(none, 'c', good)).toMatchObject({
+      error: 'unavailable',
+      detail: { player: starters[0], part: 'starters' },
     });
   });
 

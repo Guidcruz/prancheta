@@ -6,12 +6,15 @@ import type { Formation, PlayerId, Posture, Pressure } from './types.ts';
  * takers) are in ai.ts (T-011).
  */
 
+/** Bench size (partida.md, "Substituições": `match.benchSize = 7`, a rule constant). */
+export const BENCH_SIZE = 7;
+
 /** The team the coach (or the AI) puts on the pitch. */
 export interface Lineup {
   readonly formation: Formation;
   /** 11, in the slot order of `FORMATION_SLOTS[formation]`. */
   readonly starters: readonly PlayerId[];
-  /** Up to `match.benchSize` (7). */
+  /** Up to {@link BENCH_SIZE} (7). */
   readonly bench: readonly PlayerId[];
   /** Ordered lists: the first one on the pitch takes the armband or the kick. */
   readonly captains: readonly PlayerId[];

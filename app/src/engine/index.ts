@@ -111,6 +111,7 @@ export {
   homeAdvantage,
   moraleMultiplier,
   sectorStrengths,
+  shownEleven,
   strengthsFromRatings,
   teamFactor,
   teamStrength,
@@ -128,7 +129,6 @@ export type {
 } from './strength.ts';
 export {
   BENCH_LINES,
-  BENCH_SIZE,
   CHAOTIC_POSTURE_WEIGHTS,
   CHAOTIC_PRESSURE_WEIGHTS,
   PROFILE_POSTURE,
@@ -145,6 +145,7 @@ export {
 export type {
   PreMatchPosture,
   SheetProblem,
+  SuggestOptions,
   SuggestState,
   ValidateLineupResult,
   Venue,
@@ -207,6 +208,7 @@ export type {
   MissOutcome,
   TeamInput,
 } from './match/types.ts';
+export { BENCH_SIZE } from './lineup.ts';
 export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {

@@ -1,18 +1,19 @@
 import { AI_PROFILES } from './clubs.ts';
 import { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS } from './formations.ts';
 import type { ClubState, GameState } from './game.ts';
-import { bestEleven } from './generation.ts';
-import type { Lineup, Tactic, TeamSheet } from './lineup.ts';
+import { BENCH_SIZE, type Lineup, type Tactic, type TeamSheet } from './lineup.ts';
 import { MARKERS } from './match/rules.ts';
 import type { AiParams, GameParams } from './params.ts';
 import { attributeOf, fit, type Player } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
 import {
+  GOALKEEPER_SLOT,
   STARTERS_COUNT,
   effectiveRating,
   isAvailable,
   resolveStarters,
+  shownEleven,
   type LineupProblem,
 } from './strength.ts';
 import type {
@@ -34,11 +35,9 @@ import type {
  * own stream `${seed}-s${season}-r${round}-ai-${clubId}`, three draws in this order: formation
  * (`Rng.int(0, 5)` over FORMATIONS), posture (`Rng.next()` over CHAOTIC_POSTURE_WEIGHTS), pressure
  * (`Rng.next()` over CHAOTIC_PRESSURE_WEIGHTS). The pressure is drawn even when the tired-team
- * rule then makes it low, so the consumption is fixed. The other profiles never touch an Rng.
+ * rule then makes it low, so the consumption is fixed. The other profiles never touch an Rng, and
+ * neither does the coach's club (`controller: 'human'`), which plays as `traditional`.
  */
-
-/** Bench size (partida.md, "Substituições": `match.benchSize = 7`, a rule constant). */
-export const BENCH_SIZE = 7;
 
 /**
  * Where the club plays the match it is preparing for: `neutral` when the state has no fixture
@@ -141,11 +140,16 @@ function availablePlayers(state: Pick<GameState, 'players' | 'squads'>, clubId: 
  * The XI of a formation (ia-clubes.md, "Escalação", steps 3 and 4):
  * 1. slot by slot in formation order (GOL, ZAG, LAT, VOL, MEI, ATA), the available player not yet
  *    chosen with the highest selection value (ties: higher overall, younger, lower ID); a slot
- *    with no natural player takes the best of any position, with the fit;
+ *    with no natural player takes the best of any position, with the fit. **Without an available
+ *    goalkeeper** the goal is filled last: first the 10 outfield slots, then the goal takes the
+ *    best for goal (`fit` 0.40) of those left, so the best outfield player is not sent to goal;
  * 2. rotation, in slot order: a starter with condition below `ai.rotationCondition` gives way to
- *    the best player left for his slot when that one's selection value is at least
- *    `ai.rotationMinRatio` of his. A rested player is not picked again for another slot.
- * With fewer than 11 available the last slots stay empty (`partida.md`, "Casos de borda").
+ *    the best player left for his slot **among those with condition of at least
+ *    `ai.rotationCondition`**, when that one's selection value is at least `ai.rotationMinRatio`
+ *    of his. A rested player is not picked again for another slot (he may go to the bench).
+ * With fewer than 11 available the last slots stay empty (`partida.md`, "Casos de borda"); without
+ * a goalkeeper the goal still gets one of them (the last left), so the goal is never the empty
+ * slot and `starters` stays in slot order.
  */
 export function pickEleven(
   available: readonly Player[],
@@ -154,20 +158,40 @@ export function pickEleven(
 ): { starters: Player[]; rested: Player[] } {
   const slots = FORMATION_SLOTS[formation];
   const chosen = new Set<PlayerId>();
-  const starters: Player[] = [];
-  for (const slot of slots) {
-    const best = bestForSlot(available, slot, (p) => chosen.has(p.id));
-    if (best === undefined) break;
+  const placed: (Player | undefined)[] = slots.map(() => undefined);
+  const take = (index: number): boolean => {
+    const best = bestForSlot(available, slots[index]!, (p) => chosen.has(p.id));
+    if (best === undefined) return false;
     chosen.add(best.id);
-    starters.push(best);
+    placed[index] = best;
+    return true;
+  };
+  if (available.some((p) => p.position === 'GK')) {
+    for (let i = 0; i < slots.length; i++) if (!take(i)) break;
+  } else {
+    // Goal last; with 10 or fewer available, one is kept for the goal.
+    const outfield = Math.min(slots.length - 1, available.length - 1);
+    for (let i = 0; i < outfield; i++) take(i + 1);
+    take(GOALKEEPER_SLOT);
   }
+  const starters: Player[] = [];
+  for (const player of placed) {
+    if (player === undefined) break;
+    starters.push(player);
+  }
+
   const rested: Player[] = [];
   const restedIds = new Set<PlayerId>();
   for (let i = 0; i < starters.length; i++) {
     const starter = starters[i]!;
     if (!(correctedCondition(starter) < ai.rotationCondition)) continue;
     const slot = slots[i]!;
-    const reserve = bestForSlot(available, slot, (p) => chosen.has(p.id) || restedIds.has(p.id));
+    const reserve = bestForSlot(
+      available,
+      slot,
+      (p) =>
+        chosen.has(p.id) || restedIds.has(p.id) || correctedCondition(p) < ai.rotationCondition,
+    );
     if (reserve === undefined) continue;
     if (selectionValue(reserve, slot) < ai.rotationMinRatio * selectionValue(starter, slot)) {
       continue;
@@ -204,28 +228,32 @@ function byOverall(players: readonly Player[]): Player[] {
 }
 
 /**
- * The bench (ia-clubes.md, "Escalação", step 5): the goalkeeper of highest overall among those
- * left, then the 6 of highest overall among the rest, with at least one defender, one midfielder
- * and one attacker (BENCH_LINES) when there is one: the best of each missing line goes in first.
- * With no goalkeeper left the bench takes 7 outfield players. Order: the goalkeeper, then by
- * overall. Fewer than 7 left → all of them.
+ * The bench (ia-clubes.md, "Escalação", step 5): 1 goalkeeper and 6 outfield players.
+ * - The goalkeeper of highest overall among those left. A second goalkeeper only comes in when
+ *   there are not enough outfield players to fill the bench.
+ * - The outfield players: first the best (overall) of each line not yet on the bench (BENCH_LINES:
+ *   defence, midfield, attack), then the best of the rest.
+ * - Order: the goalkeeper, then by overall (ties: younger, lower ID). No goalkeeper left → 7
+ *   outfield players; fewer than 7 left → all of them.
  */
 export function pickBench(rest: readonly Player[]): Player[] {
   const ranked = byOverall(rest);
   const taken = new Set<PlayerId>();
   const goalkeeper = ranked.find((p) => p.position === 'GK');
   if (goalkeeper !== undefined) taken.add(goalkeeper.id);
+  const outfield = ranked.filter((p) => p.position !== 'GK');
   for (const line of ['def', 'mid', 'atk'] as const) {
     if (taken.size >= BENCH_SIZE) break;
-    const best = ranked.find((p) => !taken.has(p.id) && BENCH_LINES[p.position] === line);
+    const best = outfield.find((p) => !taken.has(p.id) && BENCH_LINES[p.position] === line);
     if (best !== undefined) taken.add(best.id);
   }
-  for (const player of ranked) {
+  // Outfield players first; the other goalkeepers only when they run out.
+  for (const player of [...outfield, ...ranked.filter((p) => p.position === 'GK')]) {
     if (taken.size >= BENCH_SIZE) break;
     taken.add(player.id);
   }
-  const outfield = ranked.filter((p) => p !== goalkeeper && taken.has(p.id));
-  return goalkeeper === undefined ? outfield : [goalkeeper, ...outfield];
+  const others = ranked.filter((p) => p !== goalkeeper && taken.has(p.id));
+  return goalkeeper === undefined ? others : [goalkeeper, ...others];
 }
 
 /**
@@ -269,9 +297,10 @@ export function pickCaptainAndTakers(
 }
 
 /**
- * "Força" of a set of starters in their slots (balance-targets.md): `overall × fit` summed over
- * the occupied slots and divided by 11, so an empty slot counts as 0 (with 11 starters it is the
- * displayed strength, `teamStrength`, to the bit).
+ * "Força" of a set of starters in their slots for `Δ` (balance-targets.md; ia-clubes.md, "Força
+ * no Δ"): `overall × fit` summed over the occupied slots and **divided by 11**, so an empty slot
+ * counts as 0 and a team with fewer than 11 sees itself (and is seen) weaker. With 11 starters it
+ * is the displayed strength, `teamStrength`, to the bit.
  */
 function shownStrength(
   eleven: readonly { player: Pick<Player, 'position' | 'overall'>; slot: Position }[],
@@ -282,18 +311,16 @@ function shownStrength(
 }
 
 /**
- * The opponent's displayed strength as the AI sees it before the match: the best XI of his
- * available players in his first preferred formation, everyone fresh (`teamStrength` without a
- * lineup), with an empty slot as 0. Undefined for an unknown club.
+ * The opponent's strength for `Δ`: his displayed strength without a lineup, from the same XI that
+ * `teamStrength` reads (`shownEleven`; today the best fresh XI of his available players, from the
+ * T-013 whatever `teamStrength` reads), with an empty slot as 0. Undefined for an unknown club.
  */
 function opponentStrength(
   state: Pick<GameState, 'clubs' | 'players' | 'squads'>,
   opponentId: ClubId,
 ): number | undefined {
-  const club = state.clubs[opponentId];
-  if (club === undefined) return undefined;
-  const formation = preferredFormations(club)[0]!;
-  return shownStrength(bestEleven(availablePlayers(state, opponentId), formation));
+  const eleven = shownEleven(state, opponentId);
+  return eleven === undefined ? undefined : shownStrength(eleven);
 }
 
 /**
@@ -338,8 +365,28 @@ function drawWeighted<T>(rng: Rng, weights: readonly (readonly [T, number])[]): 
  * venue, pressure from the venue; the chaotic profile draws both from `rng` (posture first). Then
  * "cansaço manda na pressão": with the mean condition of the XI below `ai.tiredTeamCondition`,
  * the pressure is low in every profile. `meanCondition` undefined (no starters) skips that rule.
- * An unknown profile plays as `traditional`. `rng` is required only for the chaotic profile.
+ * An unknown profile plays as `traditional`.
+ *
+ * The overloads make `rng` required whenever the profile may be chaotic, so the compiler refuses
+ * a chaotic call without it. Never throws: a chaotic call that still arrives without `rng` (only
+ * through a cast) plays as `traditional`.
  */
+export function profileTactic(
+  profile: Exclude<AiProfile, 'chaotic'>,
+  delta: number,
+  venue: Venue,
+  meanCondition: number | undefined,
+  ai: Pick<AiParams, 'tiredTeamCondition'>,
+  rng?: Rng,
+): Tactic;
+export function profileTactic(
+  profile: AiProfile,
+  delta: number,
+  venue: Venue,
+  meanCondition: number | undefined,
+  ai: Pick<AiParams, 'tiredTeamCondition'>,
+  rng: Rng,
+): Tactic;
 export function profileTactic(
   profile: AiProfile,
   delta: number,
@@ -348,20 +395,20 @@ export function profileTactic(
   ai: Pick<AiParams, 'tiredTeamCondition'>,
   rng?: Rng,
 ): Tactic {
-  const known = knownProfile(profile);
+  let known = knownProfile(profile);
+  if (known === 'chaotic' && rng === undefined) known = 'traditional';
   let posture: PreMatchPosture;
   let pressure: Pressure;
-  if (known === 'chaotic') {
-    if (rng === undefined) throw new Error('the chaotic profile needs an Rng');
+  if (known === 'chaotic' && rng !== undefined) {
     posture = drawWeighted(rng, CHAOTIC_POSTURE_WEIGHTS);
     pressure = drawWeighted(rng, CHAOTIC_PRESSURE_WEIGHTS);
   } else {
-    const rule = PROFILE_POSTURE[known];
+    const rule = PROFILE_POSTURE[known === 'chaotic' ? 'traditional' : known];
     const defensive = delta <= rule.defensiveUpTo && (!rule.defensiveOnlyAway || venue === 'away');
     if (rule.attackingFrom !== undefined && delta >= rule.attackingFrom) posture = 'attacking';
     else if (defensive) posture = 'defensive';
     else posture = 'balanced';
-    const press = PROFILE_PRESSURE[known];
+    const press = PROFILE_PRESSURE[known === 'chaotic' ? 'traditional' : known];
     pressure = venue === 'home' ? press.home : press.elsewhere;
   }
   if (meanCondition !== undefined && meanCondition < ai.tiredTeamCondition) pressure = 'low';
@@ -374,6 +421,17 @@ export function aiSeed(
   clubId: ClubId,
 ): number {
   return seedFromString(`${state.seed}-s${state.season}-r${state.round}-ai-${clubId}`);
+}
+
+/** Options of {@link suggestSheet}. */
+export interface SuggestOptions {
+  /**
+   * `'human'` for the coach's club ("Sugerir escalação", a coach who did not pick a lineup, a
+   * human who did not confirm online): the profile is read as `traditional`, whatever the club's
+   * profile, and no Rng is created; the formation still comes from the club's two preferred ones
+   * (ia-clubes.md, "Clube do técnico humano"). Default `'ai'`.
+   */
+  readonly controller?: 'ai' | 'human';
 }
 
 /** What `suggestSheet` reads from the state. */
@@ -395,15 +453,19 @@ export type SuggestState = Pick<
  *   current round (home points: `MARKERS.homePoints`, as the `zebra` marker). Without an
  *   opponent (none given and no fixture this round) `Δ = 0` on neutral ground.
  *
+ * - The coach's club (`options.controller = 'human'`) plays as `traditional` (SuggestOptions).
+ *
  * Never throws: fewer than 11 available players give a shorter `starters` (the match plays with
  * empty slots, partida.md), and an unknown club gets an empty sheet in the first formation,
- * balanced, medium. The same state and club always give the same sheet.
+ * balanced, medium. An unknown profile plays as `traditional` without a warning (the match warns,
+ * once per side). The same state, club and options always give the same sheet.
  */
 export function suggestSheet(
   state: SuggestState,
   params: Pick<GameParams, 'ai'>,
   clubId: ClubId,
   opponentId?: ClubId,
+  options: SuggestOptions = {},
 ): TeamSheet {
   const club = state.clubs[clubId];
   if (club === undefined) {
@@ -419,7 +481,8 @@ export function suggestSheet(
       tactic: { posture: 'balanced', pressure: 'medium' },
     };
   }
-  const profile = knownProfile(club.profile);
+  const profile: AiProfile =
+    options.controller === 'human' ? 'traditional' : knownProfile(club.profile);
   const rng = profile === 'chaotic' ? new Rng(aiSeed(state, clubId)) : undefined;
   const available = availablePlayers(state, clubId);
 
@@ -460,7 +523,16 @@ export function suggestSheet(
     for (const p of starters) sum += correctedCondition(p);
     meanCondition = sum / starters.length;
   }
-  const tactic = profileTactic(profile, delta, venue, meanCondition, params.ai, rng);
+  const tactic =
+    rng === undefined
+      ? profileTactic(
+          profile === 'chaotic' ? 'traditional' : profile,
+          delta,
+          venue,
+          meanCondition,
+          params.ai,
+        )
+      : profileTactic(profile, delta, venue, meanCondition, params.ai, rng);
 
   return {
     lineup: {
@@ -486,26 +558,45 @@ export type ValidateLineupResult =
   | (Extract<ValidateBase, { ok: false }> & { detail: SheetProblem });
 
 /**
- * Checks a team sheet of a club before it reaches the match (docs/02-architecture.md, 4.1): what
- * the lineup screen and the online server accept. Refuses with the first problem found, in this
- * order:
- * 1. the XI, as `sectorStrengths` does: a known formation (`no-formation`), 11 starters
- *    (`wrong-count`), then each starter in slot order: repeated (`duplicate`), not in the club's
- *    squad (`wrong-club`), injured or suspended (`unavailable`);
+ * Checks a team sheet of a club before it reaches the match (docs/02-architecture.md, 4.1;
+ * ia-clubes.md, "Validação da ficha"): what the lineup screen and the online server accept. The
+ * sheet is valid when the XI is valid and the bench has at most 7 available players of the club,
+ * nobody repeated; the rest the match fixes by itself. Refuses with the first problem found, the
+ * XI before the bench, saying the part (`starters` or `bench`):
+ * 1. the XI, with the reasons and order of `sectorStrengths`: a known formation (`no-formation`),
+ *    `min(11, available players of the squad)` starters (`wrong-count`: 11, or all the available
+ *    ones when the squad has 1 to 10, as `suggestSheet` lines them up; with nobody available, 11,
+ *    so no sheet is valid and an empty XI is `wrong-count`), then each starter in slot
+ *    order: repeated (`duplicate`), not in the club's squad (`wrong-club`), injured or suspended
+ *    (`unavailable`);
  * 2. the bench: at most BENCH_SIZE players (`wrong-count`), then each one in order: a starter or
  *    repeated (`duplicate`), not in the squad (`wrong-club`), injured or suspended (`unavailable`).
- * The captain and taker lists are not checked: the match uses the first of each list who is on
- * the pitch and falls back to its own rule (partida.md, "Capitão e cobradores"). An unknown club
- * has an empty squad, so its first starter is `wrong-club`. Returns the same sheet when valid.
+ *    A bench with fewer than 7, empty or without a goalkeeper is valid.
+ *
+ * **Does not check** the captain and taker lists (the match takes the first of each list who is
+ * on the pitch, otherwise its own rule: partida.md, "Capitão e cobradores") nor the tactic (an
+ * unknown posture or pressure becomes balanced or medium in the match, with a warning: "Valor
+ * desconhecido na entrada"). An unknown club has an empty squad, so its first starter is
+ * `wrong-club`. Returns the same sheet when valid.
  */
 export function validateLineup(
   state: Pick<GameState, 'players' | 'squads'>,
   clubId: ClubId,
   sheet: TeamSheet,
 ): ValidateLineupResult {
-  const squad = new Set(state.squads[clubId] ?? []);
+  const squadIds = state.squads[clubId] ?? [];
+  const squad = new Set(squadIds);
   const lookup = (id: PlayerId) => (squad.has(id) ? state.players[id] : undefined);
-  const resolved = resolveStarters(sheet.lineup, lookup, true);
+  let available = 0;
+  for (const id of squad) {
+    const player = state.players[id];
+    if (player !== undefined && isAvailable(player)) available += 1;
+  }
+  // Fewer than 11 available: exactly all of them. None at all (an unknown club has an empty
+  // squad): 11 still, so an unknown club's first starter is `wrong-club` and an empty XI of a
+  // club with nobody available is `wrong-count` (the match ends that one as abandoned).
+  const count = available === 0 ? STARTERS_COUNT : Math.min(STARTERS_COUNT, available);
+  const resolved = resolveStarters(sheet.lineup, lookup, true, count);
   if ('reason' in resolved) {
     return { ok: false, error: resolved.reason, detail: { ...resolved, part: 'starters' } };
   }
