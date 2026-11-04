@@ -12,12 +12,14 @@ BottomSheet de altura total no celular (painel lateral no desktop), com endereç
 
 1. Avatar gerado, nome, posição, idade, nota geral.
 2. Situação (StatusBadge): apto, suspenso, lesionado com rodadas restantes.
-3. Forma, moral e fadiga.
+3. Condição (0 a 100, 100 = descansado), moral e forma, cada uma com número e rótulo.
 4. Os 6 atributos da posição (AttributeBar: rótulo, número, barra).
 5. Traço de personalidade em texto (com frase curta de explicação, do conteúdo).
 6. Temporada: jogos e gols.
 
-Sem contrato, salário, valor ou potencial na 1a.
+7. Rótulo "promessa" (StatusBadge, ícone + texto) ao lado da idade, quando o jogador se enquadra na regra do `game-designer` (`docs/design/jogadores.md`, seção do potencial). **Depende do CEO:** a US-016 diz que o potencial não aparece em nenhuma tela; o rótulo não mostra o número, mas revela que ele é alto. Até o ok, a casca do componente aceita o rótulo, e a tela não o usa.
+
+Sem contrato, salário, valor nem o número do potencial na 1a.
 
 ## Ao alcance do polegar
 

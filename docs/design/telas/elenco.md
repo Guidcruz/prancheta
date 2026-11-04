@@ -8,16 +8,16 @@ Ver o estado de todos os atletas de uma vez para decidir quem joga.
 
 ## O que o jogador faz
 
-Lê o elenco, ordena por posição, nota ou fadiga e toca num atleta para ver o card completo.
+Lê o elenco, ordena por posição, nota ou condição e toca num atleta para ver o card completo.
 
 ## Conteúdo
 
 1. SegmentedControl no topo: **Elenco** | Escalação | Tática (a mesma aba; a última escolhida é lembrada).
-2. SegmentedControl de ordenação: posição, nota, fadiga.
-3. ScrollTable: coluna fixa com posição e nome (e StatusBadge de situação); colunas que rolam para o lado: idade, nota geral, forma, moral, fadiga. Forma, moral e fadiga em número ou ícone com rótulo, conforme a escala do `game-designer`.
+2. SegmentedControl de ordenação: posição, nota, condição (ordenar por condição põe os mais cansados primeiro).
+3. ScrollTable: coluna fixa com posição e nome (e StatusBadge de situação); colunas que rolam para o lado: idade, nota geral, forma, moral, condição. Condição e moral em número de 0 a 100 (condição 100 = descansado, `docs/design/jogadores.md`); forma em número ou ícone com rótulo, conforme a escala do `game-designer`.
 4. Titulares e reservas separados por um cabeçalho de grupo, para o jogador ver quem está escalado.
 
-Potencial não aparece em lugar nenhum.
+O número do potencial não aparece em lugar nenhum. Se o CEO aprovar a proposta do `game-designer`, jovens com potencial alto levam o StatusBadge "promessa" na coluna fixa (regra em `docs/design/jogadores.md`; ver jogador.md).
 
 ## Ao alcance do polegar
 
