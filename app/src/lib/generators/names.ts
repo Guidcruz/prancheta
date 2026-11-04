@@ -1,9 +1,11 @@
 import { Rng } from '@engine/rng';
 
 /**
- * Fictional player names (US-003). The engine keeps only `Player.nameSeed`; the name is produced
- * here, outside the engine, and is a pure function of (nameSeed, lists, exclusions): same inputs,
- * same name, forever.
+ * Fictional player names (US-003). The name is produced here, outside the engine, and is a pure
+ * function of (nameSeed, lists, exclusions): the same seed gives the same name only while the
+ * lists and exclusions stay the same. Adding, removing or reordering an entry changes the result,
+ * so a player's name is resolved once, when the player is created (lib/generators/identity.ts),
+ * and stored in `Player.name` (ADR-0012); no screen regenerates an existing player's name.
  *
  * Browser-safe on purpose (no node:crypto, no hashes in the bundle). Combinations that would match
  * a real athlete are listed BY INDEX in app/src/content/names/br.exclusions.json, generated in
@@ -276,16 +278,30 @@ export function nameFromSeed(
  * name is skipped the same way every time, and each result carries the seed that reproduces it
  * alone through `nameFromSeed`. Never throws: with degenerate lists it gives up after 200 tries,
  * numbers the display ("Nome 2") and marks the name `degraded`; only happens in tests.
+ *
+ * `existing` are the names already in the squad (another nationality, a player joining later):
+ * the same rules apply against them, and they are not part of the result.
  */
 export function namesForSquad(
   seed: number,
   count: number,
   lists: NameLists,
   exclusions?: NameExclusions,
+  existing: readonly Pick<PlayerName, 'display' | 'family'>[] = [],
 ): PlayerName[] {
   const rng = new Rng(seed);
   const displays = new Set<string>();
   const perFamily = new Map<string, { count: number; bare: boolean }>();
+  const remember = (name: Pick<PlayerName, 'display' | 'family'>) => {
+    const key = normalizeNameKey(name.display);
+    const familyKey = normalizeNameKey(name.family);
+    displays.add(key);
+    const entry = perFamily.get(familyKey) ?? { count: 0, bare: false };
+    entry.count++;
+    entry.bare ||= key === familyKey;
+    perFamily.set(familyKey, entry);
+  };
+  for (const name of existing) remember(name);
   const result: PlayerName[] = [];
   for (let i = 0; i < count; i++) {
     let chosen: PlayerName | undefined;
@@ -311,13 +327,7 @@ export function namesForSquad(
       while (displays.has(normalizeNameKey(`${base.display} ${n}`))) n++;
       chosen = { ...base, display: `${base.display} ${n}`, degraded: true };
     }
-    const key = normalizeNameKey(chosen.display);
-    const familyKey = normalizeNameKey(chosen.family);
-    displays.add(key);
-    const entry = perFamily.get(familyKey) ?? { count: 0, bare: false };
-    entry.count++;
-    entry.bare ||= key === familyKey;
-    perFamily.set(familyKey, entry);
+    remember(chosen);
     result.push(chosen);
   }
   return result;

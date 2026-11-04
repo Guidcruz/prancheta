@@ -9,8 +9,9 @@ import type { ClubId, PlayerId, Position, Result, Trait } from './types.ts';
  * (`fit`), the trait and potential draws, the "promessa" label and the structural validator.
  *
  * Name and face are resolved once, when a player is created, by an IdentitySource received as an
- * argument (ADR-0012); the engine never imports lib/ nor content/. Squad generation, `newGame`
- * and the idol rule are T-006; evolution at the end of the season is T-017.
+ * argument (ADR-0012); the engine never imports lib/ nor content/. Squad generation, the joia
+ * and the idol live in generation.ts and `newGame` in game.ts (T-006); evolution at the end of
+ * the season is T-017.
  */
 
 /** Attributes of outfield players (docs/design/jogadores.md, "Atributos e nota geral"). */

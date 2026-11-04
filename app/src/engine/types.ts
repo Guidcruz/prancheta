@@ -7,8 +7,8 @@
  *
  * This file starts with the foundations (T-001). The bigger contracts arrive with the task that
  * implements them: GameParams (T-002, in params.ts), ClubDef (T-003, in clubs.ts), Player (T-005,
- * in players.ts), MatchInput/MatchEvent/MatchResult (T-009), MatchCommand (T-012),
- * GameState/RoundReport/Fact (T-013).
+ * in players.ts), GameState/ClubState (T-006, in game.ts; completed by T-007, T-013 and T-017),
+ * MatchInput/MatchEvent/MatchResult (T-009), MatchCommand (T-012), RoundReport/Fact (T-013).
  */
 
 /**

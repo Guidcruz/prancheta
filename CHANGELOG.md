@@ -28,6 +28,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Modelo do jogador (T-005, US-004) em `app/src/engine/players.ts`: tipos `Player`, `PlayerNameText`, `PlayerIdentity` e `IdentitySource` (ADR-0012); `computeOverall`, `fit`/`fitLevel`, `drawTrait`, `drawPotential`, `drawGrowthCurve`, `isProspect` (rótulo "promessa"), `fitAttributesToOverall`, `attributeOf` e `validatePlayer` (nunca lança); constantes `SQUAD_COMPOSITION`, `POTENTIAL_MAX` e limites dos campos.
 - Fontes de teste do motor `testing/identity.ts` e `testing/players.ts` e golden `__golden__/players.json` (`ENGINE_VERSION` continua 1).
 - Desenho e textos aprovados do site novo (`docs/design/site.md`, `docs/content/site/`); a implementação vem em PR próprio.
+- Geração dos elencos e novo jogo (T-006, US-004): `newGame` e `generateSquad` em `app/src/engine/`, com formações, números de camisa realistas, joia e ídolo por clube; nome e rosto vêm da `IdentitySource` recebida por argumento (ADR-0012).
+- `app/src/lib/generators/identity.ts`: fonte de identidade do jogo, com rosto placeholder até a T-027.
+- ADR-0013 aceito: liga online da 1b com até 20 humanos, um por clube; liga online com Séries A e B antecipada para a Etapa 2.
 
 ### Alterado
 
@@ -42,3 +45,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - O tamanho do elenco (25) deixou de ser parâmetro e virou constante.
 - O escudo gerado passa a mostrar a sigla do clube (`abbreviation`) no símbolo de letra; `shieldSpecFor` ganhou o 4º argumento opcional.
 - Porte (grandes, médios, pequenos) separado da força: o porte vem de títulos, história e torcida; a força, da tabela do Brasileirão 2026 parcial (33ª rodada), numa escada única de 20 degraus.
+
+### Corrigido
+
+- Site: espaços em volta de elementos inline ("eLiga", "oroteiro"), com teste geral em `site/src/lib/dist.test.ts`.
+- Site: tamanho da liga passa a "Até 20 (um técnico por clube da Série A)"; removida frase desatualizada sobre números ajustáveis.

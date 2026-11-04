@@ -98,7 +98,7 @@ Não prometemos data. Cada etapa recebe uma estimativa quando a anterior termina
 
 ### O que vai ter, além da Série A?
 
-Séries B a D, Copa do Brasil, mercado, finanças, clubes de outros países da América do Sul e ligas maiores. Cada coisa tem a sua etapa no [roteiro](roadmap).
+Séries B a D, Copa do Brasil, mercado, finanças, clubes de outros países da América do Sul e ligas com Série A e B (Etapa 2). Cada coisa tem a sua etapa no [roteiro](roadmap).
 
 ### O nome {config.name} é definitivo?
 

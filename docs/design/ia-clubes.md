@@ -26,7 +26,7 @@ A mesma IA monta o time do jogador quando ele não escala (ver `partida.md`, cas
 
 - Δ usa a força exibida (`balance-targets.md`) e +4 para o mandante, a mesma conta dos marcadores de `partida.md`.
 - **Cansaço manda na pressão:** se a condição média do XI escalado for menor que `ai.tiredTeamCondition = 85`, a pressão vira baixa, em qualquer perfil.
-- **Formação do jogo:** das duas preferidas, a que dá a maior soma de `eff` no XI montado (abaixo); empate fica com a primeira. O "Caótico" sorteia.
+- **Formação do jogo:** das duas preferidas (`preferredFormations`, a primeira é a sorteada na geração e a do elenco), a que dá a maior soma de `eff` no XI montado (abaixo); empate fica com a primeira. O "Caótico" sorteia entre as seis a cada jogo; as duas que ele recebe na geração só moldam o elenco.
 - **Perfil por porte** (padrão, se a lista de clubes não disser), sorteado com os pesos da Série A atual (`clubes-serie-a.md`): grandes → Grande ambicioso 4, Tradicional 4, Formador 3, Vendedor 1; médios → Formador 2, Tradicional 1, Vendedor 1, Caótico 1; pequenos → Vendedor 2, Tradicional 1. Sorteio por clube com a semente da carreira. O perfil depende do porte, nunca da força: um grande fraco pode ser ambicioso.
 
 **Exemplo.** Ambicioso de força 76 recebe um clube de força 64: Δ = 76 + 4 − 64 = 16 → ofensiva, pressão alta. O mesmo clube visitando um de força 77: Δ = 76 − 77 − 4 = −5 → equilibrada, pressão média.

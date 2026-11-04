@@ -165,18 +165,34 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 **Elenco de 25 (constante):** 3 GOL, 5 ZAG, 4 LAT, 4 VOL, 4 MEI, 5 ATA. O tamanho sai da composição; não há parâmetro de tamanho de elenco (ver "Parâmetros").
 
-| Grupo     | Quantos                                   | Overall                        | Idade                  |
-| --------- | ----------------------------------------- | ------------------------------ | ---------------------- |
-| Titulares | 11 (vagas da formação preferida do clube) | `strength + Normal(0, 3)`      | 22 a 33, mais comum 27 |
-| Reservas  | 7                                         | `strength − 5 + Normal(0, 3)`  | 19 a 34                |
-| Elenco    | 4                                         | `strength − 10 + Normal(0, 4)` | 23 a 33                |
-| Jovens    | 3                                         | `strength − 12 + Normal(0, 4)` | 17 a 20                |
+| Grupo     | Quantos                                   | Overall                        | Idade                |
+| --------- | ----------------------------------------- | ------------------------------ | -------------------- |
+| Titulares | 11 (vagas da formação preferida do clube) | `strength + Normal(0, 3)`      | 22 a 33, moda 27 (1) |
+| Reservas  | 7                                         | `strength − 5 + Normal(0, 3)`  | 19 a 34              |
+| Elenco    | 4                                         | `strength − 10 + Normal(0, 4)` | 23 a 33              |
+| Jovens    | 3                                         | `strength − 12 + Normal(0, 4)` | 17 a 20              |
 
-- Overall sempre entre 35 e 92. Depois de gerar, o motor desloca todos os overall do elenco pelo mesmo valor para que a força do melhor XI na formação preferida fique a 0,5 ponto da `strength` efetiva.
-- **Atributos:** cada atributo com peso > 0 = `overall + perfil + Normal(0, 6)`; atributos de peso 0 = `overall − 20 + Normal(0, 8)`; todos entre 1 e 99; depois o "Ajuste fino" (seção "Ajuste ao alvo") leva a fórmula ao `overall` gerado. O deslocamento do elenco para a força-alvo é o "Deslocamento grosso" seguido do ajuste fino, jogador a jogador.
-- **Potencial:** até 23 anos, `overall + round(U^1.5 × (30 − 2 × (idade − 17)))` com `U = Rng.next()`; de 24 a 26, `overall + Rng.int(0, 4)`; 27 ou mais, igual ao overall. Máximo 95. Um dos jovens de cada clube é a **joia**: potencial de pelo menos `strength + 8` (a história do jovem que vira craque precisa existir em todo clube). O potencial é sorteado **depois** do deslocamento do elenco (sobre o overall final), para valer `potential ≥ overall`; a joia é o jovem de maior potencial e, se ficar abaixo de `strength + 8`, sobe para esse valor (máximo 95). Joia e ídolo são regras do elenco (T-006), não do jogador avulso.
-- **Nacionalidade:** 90% brasileiros, 10% de outros países da América do Sul. Nomes e avatares vêm de `app/src/lib/generators/` (fora do motor), sempre fictícios; o motor só guarda a semente do nome e do rosto.
-- **Formação preferida:** sorteada entre as duas do perfil do clube (ver `ia-clubes.md`).
+(1) Triangular contínua em [22, 34) com pico em 27,5, arredondada para baixo: inteiros de 22 a 33, o 27 é o mais comum. Os outros grupos são uniformes inteiros na faixa (`Rng.int(min, max)`).
+
+- **Posições fora do XI:** os 11 titulares ocupam as vagas da formação preferida; dos 14 que sobram da composição 3/5/4/4/4/5, os reservas recebem um de cada posição (o 2º goleiro entre eles) mais um sorteado entre os restantes; os 7 que sobram são embaralhados entre elenco (4) e jovens (3). Toda formação usa no máximo 3 ZAG, 2 LAT, 2 VOL, 3 MEI e 3 ATA, então sempre há um reserva de cada posição.
+- Overall sempre entre 35 e 92. Depois de gerar, o motor desloca todos os overall do elenco pelo mesmo valor `d` (inteiro) para que a força do melhor XI na formação preferida fique a 0,5 ponto da `strength` efetiva. Como o improvisado anda `d × fit` e o XI pode mudar, o motor mede os `d` vizinhos de `round(alvo − força)` e fica com o mais perto (empate: menor `|d|`, depois o menor `d`). **Plano B** (cerca de 2 em 1.000 elencos, quando nenhum `d` cai na janela): os titulares do melhor XI andam 1 ponto cada, vaga a vaga, na direção do alvo, até entrar na janela (cada ponto move a média cerca de 0,09). Aceito: o efeito é invisível e a força continua exata.
+- **Força efetiva** não é arredondada nem cortada (é real); a janela de 0,5 e o piso da joia a usam como está.
+- **Atributos:** cada atributo com peso > 0 = `overall + Normal(0, 6)` (não há termo de perfil: o ruído de 6 já faz o atacante rápido e o atacante finalizador; um "estilo" de jogador seria um sistema a mais que ninguém sente no resultado); atributos de peso 0 = `overall − 20 + Normal(0, 8)`; todos entre 1 e 99; depois o "Ajuste fino" (seção "Ajuste ao alvo") leva a fórmula ao `overall` gerado. O deslocamento do elenco para a força-alvo é o "Deslocamento grosso" seguido do ajuste fino, jogador a jogador.
+- **Potencial:** até 23 anos, `overall + round(U^1.5 × (30 − 2 × (idade − 17)))` com `U = Rng.next()`; de 24 a 26, `overall + Rng.int(0, 4)`; 27 ou mais, igual ao overall. Máximo 95. Um dos jovens de cada clube é a **joia**: potencial de pelo menos `strength + 8` (a história do jovem que vira craque precisa existir em todo clube). O potencial é sorteado **depois** do deslocamento do elenco (sobre o overall final), para valer `potential ≥ overall`; a joia é o jovem de maior potencial e, se ficar abaixo do piso `min(95, ceil(strength efetiva + 8))`, sobe para ele (e nunca abaixo do próprio overall). Joia e ídolo são regras do elenco (T-006), não do jogador avulso. **Desempates** (ídolo com o mesmo overall, joia com o mesmo potencial): o primeiro na ordem do elenco (XI por vaga, reservas, elenco, jovens).
+- **Nacionalidade:** 90% brasileiros, 10% de outros países da América do Sul, divididos igualmente entre os 9 outros países da CONMEBOL (Argentina, Bolívia, Chile, Colômbia, Equador, Paraguai, Peru, Uruguai, Venezuela). Pesos iguais de propósito: é só o nome e a bandeira, e uma tabela de pesos não muda nenhuma meta. Enquanto não houver lista de nomes em espanhol (pedido ao `content-writer`, passa pelo CEO), o gerador usa nomes brasileiros para eles. Nomes e avatares vêm de `app/src/lib/generators/` (fora do motor), sempre fictícios; o motor só guarda a semente do nome e do rosto.
+- **Formação preferida:** sorteada entre as duas do perfil do clube (ver `ia-clubes.md`); a sorteada vai primeiro em `preferredFormations`, o elenco é montado para ela e ela vence o empate da IA. O Caótico recebe duas formações distintas sorteadas entre as seis; elas só moldam o elenco, porque no jogo ele continua sorteando a cada partida.
+- **Camisas** (uma por jogador, únicas no clube, fixas na carreira). Titulares, na ordem GOL, LAT, ZAG, VOL, MEI, ATA (dentro da posição, na ordem das vagas), pegam o primeiro número livre da sua lista; se nenhum estiver livre, o menor livre de 2 a 11. Os 11 titulares sempre ficam com 1 a 11.
+
+  | Posição | Lista    |
+  | ------- | -------- |
+  | GOL     | 1        |
+  | LAT     | 2, 6     |
+  | ZAG     | 3, 4     |
+  | VOL     | 5, 8     |
+  | MEI     | 10, 8, 7 |
+  | ATA     | 9, 11, 7 |
+
+  Reservas: o goleiro leva 12; os outros, na ordem do elenco, o menor livre a partir de 13. Elenco: o menor livre a partir de 13. Jovens: o menor livre a partir de 30. Ex.: 4-3-3 dá LAT 2 e 6, ZAG 3 e 4, VOL 5, MEI 10 e 8, ATA 9, 11 e 7. Por quê: o 10 do meia e o 9 do centroavante são parte da história que o jogador conta; custa uma tabela.
 
 ## Parâmetros
 

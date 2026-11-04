@@ -1954,7 +1954,7 @@ Cenário: dono da liga apaga a conta
 
 **Prioridade:** Must
 **Depende de:** US-049, US-012
-**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) e [Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais). Opções da 1b: nome da liga (filtrado como o apelido), modo (ao vivo ou assíncrono, com prazo por rodada), número de humanos (2 até o limite do modo, padrão 8 ao vivo e 30 assíncrono, lido de configuração e não fixo no código; numa liga só de Série A o máximo efetivo é 20), escolha de clubes (US-053, US-054), inatividade (US-060), mensagens prontas ligadas ou desligadas (US-062), duração (US-063). Decisão P12: prazos fixos por modo, ao vivo com 1, 2 ou 5 minutos (padrão 2) e assíncrono com 12, 24 ou 48 horas (padrão 24). Competições: só Série A. As escolhas viram "última configuração".
+**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) e [Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais). Opções da 1b: nome da liga (filtrado como o apelido), modo (ao vivo ou assíncrono, com prazo por rodada), número de humanos (2 até o limite do modo, padrão 20 no ao vivo e no assíncrono, um por clube, lido de configuração e não fixo no código; ADR-0013 substitui para a 1b o padrão de 8 e 30 do PROJETO.md), escolha de clubes (US-053, US-054), inatividade (US-060), mensagens prontas ligadas ou desligadas (US-062), duração (US-063). Decisão P12: prazos fixos por modo, ao vivo com 1, 2 ou 5 minutos (padrão 2) e assíncrono com 12, 24 ou 48 horas (padrão 24). Competições: só Série A. As escolhas viram "última configuração".
 
 ### Critérios de aceite
 

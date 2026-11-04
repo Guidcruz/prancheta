@@ -31,14 +31,14 @@ A rodada roda no servidor, com o mesmo motor da carreira. Ninguém mexe no resul
 
 ### Ao vivo ou assíncrono
 
-|                 | Ao vivo                             | Assíncrono                  |
-| --------------- | ----------------------------------- | --------------------------- |
-| Prazo da rodada | Curto, por exemplo 2 minutos        | Longo, por exemplo 24 horas |
-| Quem está lá    | Todo mundo ao mesmo tempo           | Cada um entra quando puder  |
-| O que se vê     | Placares ao vivo, mensagens prontas | Aviso de rodada processada  |
-| Tamanho padrão  | Até 8 jogadores                     | Até 30 jogadores            |
+|                 | Ao vivo                                  | Assíncrono                               |
+| --------------- | ---------------------------------------- | ---------------------------------------- |
+| Prazo da rodada | Curto, por exemplo 2 minutos             | Longo, por exemplo 24 horas              |
+| Quem está lá    | Todo mundo ao mesmo tempo                | Cada um entra quando puder               |
+| O que se vê     | Placares ao vivo, mensagens prontas      | Aviso de rodada processada               |
+| Tamanho         | Até 20 (um técnico por clube da Série A) | Até 20 (um técnico por clube da Série A) |
 
-Os números são o padrão e podem ser ajustados. O dono da liga pode trocar de ao vivo para assíncrono (e o contrário) no meio da temporada.
+O dono da liga pode trocar de ao vivo para assíncrono (e o contrário) no meio da temporada.
 
 ### Conta sem dados pessoais
 
