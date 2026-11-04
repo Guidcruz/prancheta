@@ -4,7 +4,7 @@
   "containerEnv": {
     "ASTRO_TELEMETRY_DISABLED": "1"
   },
-  "postCreateCommand": "npm ci",
+  "postCreateCommand": "bash -lc '. \"${NVM_DIR:-/usr/local/share/nvm}/nvm.sh\" && nvm install \"$(cat .nvmrc)\" && nvm alias default \"$(cat .nvmrc)\" && nvm use default && node -v && npm ci'",
   "forwardPorts": [5173, 4321],
   "portsAttributes": {
     "5173": { "label": "Jogo (app)" },
