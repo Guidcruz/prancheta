@@ -69,6 +69,8 @@ scripts/             balance.ts, content-check.mjs, template-repeat.ts, check-pr
 - A validação (20 clubes, ids e siglas únicos, campos, `titles`, `strength` inteiro de 55 a 85, rivalidade simétrica, escudo gerado sem erro, nenhum hash bloqueado) roda como teste Vitest e em `npm run content:check`.
 - `check.ts` e `blocklist.ts` fazem o SHA-256 só no Node (nunca no motor nem no navegador).
 - `npm run blocklist:hash -- <arquivo>` (`scripts/hash-blocklist.mjs`) gera os hashes a partir de uma lista de nomes reais que fica **fora do repositório**; o arquivo de nomes nunca é commitado.
+- `npm run blocklist:hash:athletes` faz o mesmo e grava em `athletes-blocklist.sha256.json` (nomes de atletas reais, usado pelo teste dos nomes).
+- `npm run names:exclusions` (`scripts/name-exclusions.mjs`) recalcula `app/src/content/names/br.exclusions.json` (pares, sobrenomes e triplas, só por índice). `NAMES_FULL_CHECK=1 npm test -w app` roda a verificação completa dos nomes (cerca de 2 minutos): antes de release e quando as listas mudarem.
 
 ### Interface (`app/src/ui/`)
 
@@ -152,8 +154,10 @@ export interface ClubDef {
 export interface Player {
   id: PlayerId;
   clubId: ClubId;
-  nameSeed: number;
-  faceSeed: number;
+  nameSeed: number; // só para gerar (e regerar em renameRetired); nunca para exibir (ADR-0012)
+  faceSeed: number; // idem
+  name: PlayerNameText; // resolvido na criação pela IdentitySource e guardado
+  face: string; // FaceSpec codificada (T-027), opaca para o motor, ≤ 32 caracteres
   nationality: string; // ISO 3166-1 alfa-2; nome e rosto são gerados fora do motor
   position: Position;
   attributes: Record<AttributeKey, number>; // 6 por posição, 1..99
@@ -209,8 +213,33 @@ export interface Fixture {
   result?: MatchSummary;
 }
 
+export interface PlayerNameText {
+  display: string; // nome exibido
+  full: string; // "Nome Sobrenome" ou "Nome Sobrenome Sobrenome2"
+  family: string; // primeiro sobrenome (regra de no máximo 3 por sobrenome no elenco)
+}
+
+export interface PlayerIdentity extends PlayerNameText {
+  nameSeed: number;
+  faceSeed: number;
+  face: string;
+}
+
+// Fonte de identidade (ADR-0012): função pura recebida por argumento, implementada fora do motor
+// em lib/generators/identity.ts; nos testes do motor, uma fonte fixa do próprio motor.
+export interface IdentitySource {
+  retiredRev: number; // revisão de content/names/retired.json; vai para GameState.retiredNamesRev
+  squad(req: {
+    seed: number;
+    nationality: string;
+    count: number;
+    existing: readonly PlayerNameText[]; // elenco atual, para as regras de nome repetido e sobrenome
+  }): PlayerIdentity[];
+}
+
 export interface GameState {
   engineVersion: number; // ENGINE_VERSION que gravou por último (diagnóstico)
+  retiredNamesRev: number; // revisão de nomes retirados já aplicada (ADR-0012); o motor só copia
   seed: number; // semente da carreira ou da liga
   year: number;
   season: number; // season começa em 1
@@ -360,6 +389,7 @@ export function newGame(
   setup: { seed: number; year: number; realism: 'full' | 'simplified' },
   clubs: readonly ClubDef[],
   params: GameParams,
+  identities: IdentitySource,
 ): Result<GameState, 'invalid-clubs'>;
 export function prepareRound(
   state: GameState,
@@ -399,6 +429,7 @@ export function endSeason(
 export function startNextSeason(
   state: GameState,
   params: GameParams,
+  identities: IdentitySource,
   opts?: { incoming?: readonly ClubDef[] },
 ): Result<GameState, 'season-not-ended' | 'invalid-clubs'>;
 ```
@@ -409,7 +440,7 @@ Notas do contrato:
 - **Comandos:** mesma semente + mesmos comandos = mesmos eventos, byte a byte. A tela ao vivo reexecuta `simulateMatch` com a lista de comandos acumulada. Os eventos até o minuto do comando não mudam, porque o comando só vale a partir do minuto seguinte. Troca por lesão do lado humano: o motor aplica a regra da IA, salvo se houver um comando `substitution` com o mesmo `minute` e `out` igual ao lesionado.
 - **A tabela é derivada:** `getStandings` calcula a tabela a partir das `Fixture.result`, com os critérios de desempate de `docs/design/temporada.md`. Não existe uma tabela gravada que possa divergir dos resultados.
 - **Idempotência:** `playRound` com `input.round < state.round` devolve `round-already-played` e não muda nada.
-- **Elenco no motor, nome fora:** o motor guarda `nameSeed` e `faceSeed`. `lib/generators/names.ts` e `avatar.ts` produzem nome e rosto, que são estáveis para a mesma semente e a mesma nacionalidade.
+- **Nome e rosto resolvidos na criação (ADR-0012):** o motor não conhece listas de nomes nem o gerador de rosto. Quando cria jogadores (`newGame`, `startNextSeason` e, nas etapas seguintes, base e mercado), chama a `IdentitySource` recebida por argumento, e o `Player` guarda o resultado: `name` (exibição, completo, sobrenome) e `face` (especificação codificada). `nameSeed` e `faceSeed` servem só para gerar. **Nome e rosto não são função da semente ao longo do tempo:** o resultado de `nameFromSeed` depende do conteúdo, da ordem e do tamanho das listas, que mudam (lote anual da US-067, correções). Por isso nenhuma tela regera nome de jogador existente; lê `Player.name` e desenha com `renderFace(player.face)`. Um nome retirado (ofensivo ou coincidente com atleta real) sai também dos saves antigos: ao abrir ou importar, se `GameState.retiredNamesRev` é menor que a revisão de `content/names/retired.json` (hashes), `lib/generators/identity.ts › renameRetired` regera só os atingidos a partir do `nameSeed`, com as listas atuais e as regras de elenco. No online, o servidor resolve com a mesma fonte, o nome vai no estado do D1 e o cliente só lê.
 
 ### 4.2 Save (ADR-0006)
 
@@ -540,7 +571,7 @@ Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram r
   - `engine/**`: as regras que já existem e mais `**/params/**`, `**/data/**`, `@config`, `node:*` e o global `Intl` (depende da localidade). O TypeScript usa `erasableSyntaxOnly` para o motor rodar no Node sem compilação.
   - `lib/**` não importa `ui/**`.
   - `ui/**` não importa `lib/save/**` direto (só por `lib/career`).
-  - `server/**` importa do app só `app/src/engine/**` e `app/src/params/**`.
+  - `server/**` importa do app só `app/src/engine/**`, `app/src/params/**` e, pelo ADR-0012, `app/src/lib/generators/names.ts`, `identity.ts`, a especificação do rosto (sem o desenho) e `app/src/content/names/**`.
   - `.svelte` sem texto literal (regra local `no-raw-text`).
 - **Desempenho:**
   - Rodada completa (`playRound` + conteúdo + gravação) em menos de 2 s num celular simples. Medida no E2E com o Chromium a 4× de lentidão de CPU, com meta de 500 ms nessa condição.
@@ -570,72 +601,73 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 
 > O Orquestrador delega uma por vez ao `developer`. Tamanho: P (< 1 h), M (meio dia), G (dia ou mais; quebrar se puder ou usar `opus`). Caminho pelo critério do `CLAUDE.md`: tudo que toca `engine/`, `lib/save/`, `server/`, `config/` ou `.github/`, ou que tem mais de 5 arquivos, é `/feature`.
 
-| #     | Tarefa                                                                                                                                                         | Histórias                      | Etapa | Depende de   | Caminho    | Tamanho | Estado     |
-| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----- | ------------ | ---------- | ------- | ---------- |
-| T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos   | base de US-004..012            | 1a    | —            | `/feature` | M       | feita      |
-| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos             | base de US-007..013            | 1a    | T-001        | `/feature` | M       | feita      |
-| T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`  | US-001                         | 1a    | T-001        | `/feature` | M       | em revisão |
-| T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de sílabas/nomes                                                             | US-003                         | 1a    | —            | `/feature` | M       | a fazer    |
-| T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial                                                                              | US-004                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |
-| T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI)                                                                              | US-004                         | 1a    | T-003, T-005 | `/feature` | M       | a fazer    |
-| T-007 | Calendário: Berger, returno espelhado, mando ≤ 2 seguidos, datas (Data FIFA, meio de semana)                                                                   | US-006                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |
-| T-008 | Força por setor, nota efetiva, mando com termômetro (e `homeBase`), força exibida                                                                              | US-007, US-026 (mando)         | 1a    | T-005        | `/feature` | M       | a fazer    |
-| T-009 | `simulateMatch` núcleo: oportunidades, finalização, assistência, acréscimos, estatísticas, notas, marcadores, eventos, golden                                  | US-008                         | 1a    | T-008        | `/feature` | G       | a fazer    |
-| T-010 | Partida: cartões, lesões, pênaltis e faltas, cobradores e capitão, casos de borda (menos de 7, sem goleiro)                                                    | US-009                         | 1a    | T-009        | `/feature` | M       | a fazer    |
-| T-011 | IA pré-jogo: `suggestSheet` (escalação gulosa, rotação, banco, cobradores), tática por perfil, `validateLineup`                                                | US-011                         | 1a    | T-008        | `/feature` | M       | a fazer    |
-| T-012 | Comandos na partida: substituições, táticas, atalhos, conversa do intervalo, IA em jogo (regras 1–6)                                                           | US-021, US-022, US-011         | 1a    | T-010, T-011 | `/feature` | M       | a fazer    |
-| T-013 | `prepareRound`/`playRound`: 10 partidas, suspensões, lesões, recuperação por dias, idempotência, `getStandings` com desempate, fatos da tabela                 | US-012, US-019 (motor)         | 1a    | T-007, T-012 | `/feature` | G       | a fazer    |
-| T-014 | Moral e fadiga entre rodadas, termômetro da torcida, modo "realismo simplificado"                                                                              | US-010, US-026                 | 1a    | T-013        | `/feature` | M       | a fazer    |
-| T-015 | Golden da temporada inteira + testes de propriedade em 1.000 sementes                                                                                          | US-008, US-012                 | 1a    | T-014        | `/feature` | P       | a fazer    |
-| T-016 | `scripts/balance.ts` (liga, duelos calibrados, duelos táticos, `--seasons/--seed/--duels/--params`, tempo) e `npm run balance`                                 | US-013                         | 1a    | T-014        | `/feature` | M       | a fazer    |
-| T-017 | Fim de temporada: prêmios, resumo, evolução e idade, `endSeason`/`startNextSeason` (com `incoming` opcional para a opção B)                                    | US-025 (motor)                 | 1a    | T-014        | `/feature` | M       | a fazer    |
-| T-018 | Save: IndexedDB, snapshots gzip + SHA-256, gravação segura com 3 versões, abrir com volta, banco de teste, limite de 10 carreiras                              | US-032, US-034 (dados)         | 1a    | T-013        | `/feature` | M       | a fazer    |
-| T-019 | Versão do formato e migrações: cadeia, fixture v1, teste de forma, recusa de versão nova                                                                       | US-033                         | 1a    | T-018        | `/feature` | M       | a fazer    |
-| T-020 | Exportar e importar: arquivo `.txt`, compartilhar/baixar, limites, `valibot`, conflito de `careerId`                                                           | US-035, US-036                 | 1a    | T-019        | `/feature` | M       | a fazer    |
-| T-021 | Templates: renderizador, catálogo de placeholders, memória de 200, contexto; `scripts/content-check.mjs`; regra `no-raw-text`                                  | US-027, US-040 (parte)         | 1a    | —            | `/feature` | M       | a fazer    |
-| T-022 | i18n: idioma inicial, troca nas preferências, carregamento dinâmico, nome do jogo da configuração                                                              | US-040                         | 1a    | T-021        | `/feature` | P       | a fazer    |
-| T-023 | Casca da interface: `CareerService`, navegação (abas no celular, barra lateral no desktop), fronteira de erro, registro local de erros                         | US-015, US-045                 | 1a    | T-013, T-018 | `/feature` | M       | a fazer    |
-| T-024 | Infra de E2E: Playwright (Chromium + WebKit), `PRANCHETA_ENV=test`, primeiro teste, golden no WebKit, job no CI                                                | US-038 (base)                  | 1a    | T-023        | `/feature` | M       | a fazer    |
-| T-025 | Tela inicial (lista, continuar, apagar com confirmação dupla) e novo jogo (clube, apelido, realismo, modo de partida, última configuração)                     | US-034, US-014                 | 1a    | T-023, T-006 | `/feature` | M       | a fazer    |
-| T-026 | Uniformes gerados (`lib/generators/kit.ts`)                                                                                                                    | US-002                         | 1a    | T-003        | `/feature` | P       | a fazer    |
-| T-027 | Avatares gerados (`lib/generators/avatar.ts`), com limite de bytes do `art-director`                                                                           | US-005                         | 1a    | T-005        | `/feature` | M       | a fazer    |
-| T-028 | Tela do clube (com termômetro e rótulo de humor), elenco e card do jogador                                                                                     | US-015, US-016, US-026 (tela)  | 1a    | T-025, T-027 | `/feature` | M       | a fazer    |
-| T-029 | Escalação com arrastar e soltar, táticas, capitão e cobradores                                                                                                 | US-017, US-018                 | 1a    | T-028, T-011 | `/feature` | G       | a fazer    |
-| T-030 | Jogar rodada "só resultado": resumo, outros resultados, salvamento automático, fechar no meio                                                                  | US-019, US-032                 | 1a    | T-029        | `/feature` | M       | a fazer    |
-| T-031 | Tabela e calendário/resultados                                                                                                                                 | US-023, US-024                 | 1a    | T-030        | `/feature` | M       | a fazer    |
-| T-032 | Partida animada: canvas 2D, narração, pausa dramática, pular, reduzir movimento, vibração                                                                      | US-020                         | 1a    | T-030, T-026 | `/feature` | G       | a fazer    |
-| T-033 | Comandos, substituições e conversa do intervalo na tela da partida                                                                                             | US-021, US-022                 | 1a    | T-032        | `/feature` | M       | a fazer    |
-| T-034 | Notícias da rodada a partir dos fatos (`lib/content/news.ts`) e tela do jornal                                                                                 | US-028                         | 1a    | T-021, T-030 | `/feature` | M       | a fazer    |
-| T-035 | Rede social simples e entrevista pós-jogo (com `fanEffect`)                                                                                                    | US-029, US-030                 | 1a    | T-034        | `/feature` | M       | a fazer    |
-| T-036 | Ferramenta de repetição de templates (`scripts/template-repeat.ts`)                                                                                            | US-031                         | 1a    | T-034, T-016 | `/feature` | P       | a fazer    |
-| T-037 | Fim de temporada nas telas: cerimônia, prêmios, resumo, próxima temporada, lembrete de exportar                                                                | US-025, US-037 (lembrete)      | 1a    | T-017, T-031 | `/feature` | M       | a fazer    |
-| T-038 | Armazenamento persistente e aviso de persistência negada                                                                                                       | US-037                         | 1a    | T-020        | `/feature` | P       | a fazer    |
-| T-039 | PWA: `registerType: 'prompt'`, aviso de nova versão fora da partida, novidades, `check-precache` (< 10 MB) no CI, E2E offline                                  | US-038, US-039                 | 1a    | T-024, T-030 | `/feature` | M       | a fazer    |
-| T-040 | Espaços de patrocínio com marcas fictícias                                                                                                                     | US-041                         | 1a    | T-032        | `/feature` | P       | a fazer    |
-| T-041 | Tela "Sobre" e preferências (tema, vibração, aba da rede social, idioma, lembrete, copiar relatório de erros)                                                  | US-043, US-044, US-045         | 1a    | T-023, T-022 | `/feature` | M       | a fazer    |
-| T-042 | Tutorial e primeiros passos                                                                                                                                    | US-042                         | 1a    | T-030        | `/feature` | M       | a fazer    |
-| T-043 | Estatísticas sem cookies só no site (se a P11 for aprovada)                                                                                                    | US-046                         | 1a    | —            | `/quick`   | P       | a fazer    |
-| T-050 | Esqueleto do servidor: workspace `server/`, Hono, `Db` (D1 e `node:sqlite`), migração SQL 0001, erros, logs sem PII, teste de esquema de privacidade, lint, CI | US-064 (esquema)               | 1b    | T-013        | `/feature` | M       | a fazer    |
-| T-051 | Topologia: adaptador `functions/api/[[route]].ts`, Worker `prancheta-rooms` com o DO, `wrangler` de produção e prévia, `_headers`, `docs/04-deploy.md`         | ADR-0010                       | 1b    | T-050        | `/feature` | M       | a fazer    |
-| T-052 | Filtro de apelido e de nome de liga                                                                                                                            | US-047, US-051                 | 1b    | T-050        | `/feature` | M       | a fazer    |
-| T-053 | Criar conta: passkey + código de recuperação gerado no aparelho (verificador HKDF, HMAC com pepper), mostrar uma vez                                           | US-047, US-048                 | 1b    | T-052        | `/feature` | G       | a fazer    |
-| T-054 | Entrar, sessão, recuperar em outro aparelho, bloqueio por tentativas, reautenticação, código novo                                                              | US-049, US-048                 | 1b    | T-053        | `/feature` | M       | a fazer    |
-| T-055 | Apagar conta: remoção, clubes para a IA, apelido some, posse da liga passa adiante                                                                             | US-050                         | 1b    | T-054, T-056 | `/feature` | M       | a fazer    |
-| T-056 | Ligas: criar (configurações e limites da configuração do servidor), entrar por código, link de convite, `LeagueView`                                           | US-051, US-052                 | 1b    | T-054        | `/feature` | M       | a fazer    |
-| T-057 | Escolha de clubes livre e por sorteio; iniciar temporada (`newGame` no servidor, estado no D1)                                                                 | US-053                         | 1b    | T-056        | `/feature` | M       | a fazer    |
-| T-058 | `RoomCoordinator`: interface, `InMemoryRoom`, `LeagueRoomDO` (alarme de prazo), estados da rodada                                                              | US-056 (base)                  | 1b    | T-051, T-057 | `/feature` | M       | a fazer    |
-| T-059 | Rodada online: `PUT sheet`, prontos, processamento idempotente, escalação de reserva/IA, inatividade e volta, bancada de CPU                                   | US-055, US-056, US-060         | 1b    | T-058        | `/feature` | G       | a fazer    |
-| T-060 | Cliente online, conta: `lib/online`, telas de criar conta, código, entrar, recuperar, apagar                                                                   | US-047..US-050 (telas)         | 1b    | T-054, T-023 | `/feature` | M       | a fazer    |
-| T-061 | Cliente online, liga: criar/entrar, escolha de clube, preparar rodada e "Pronto" (reaproveita a escalação), cache offline                                      | US-051..US-053, US-055, US-059 | 1b    | T-059, T-060 | `/feature` | G       | a fazer    |
-| T-062 | Assíncrono: resumos das rodadas processadas, partida a partir dos eventos, notícias da liga no cliente                                                         | US-058, US-059                 | 1b    | T-061        | `/feature` | M       | a fazer    |
-| T-063 | Ao vivo: WebSocket com hibernação, `roundLive` com `startAt`, correção de relógio, reconexão, placares ao vivo                                                 | US-057                         | 1b    | T-062, T-032 | `/feature` | G       | a fazer    |
-| T-064 | Dono troca o modo; fim de temporada e duração da liga                                                                                                          | US-061, US-063                 | 1b    | T-062, T-017 | `/feature` | M       | a fazer    |
-| T-065 | Mensagens prontas e emojis (catálogo por id, desligar na liga e para si, limite de envio)                                                                      | US-062                         | 1b    | T-061        | `/feature` | M       | a fazer    |
-| T-066 | Denúncia mínima de apelido e nome de liga (se a P7 for aprovada)                                                                                               | US-065                         | 1b    | T-056        | `/feature` | P       | a fazer    |
-| T-067 | Draft                                                                                                                                                          | US-054                         | 1b    | T-057, T-058 | `/feature` | M       | a fazer    |
-| T-068 | Auditoria de privacidade da 1b (`security-auditor`) e política do site atualizada                                                                              | US-064                         | 1b    | T-050..T-066 | `/feature` | M       | a fazer    |
+| #     | Tarefa                                                                                                                                                                                               | Histórias                      | Etapa | Depende de   | Caminho    | Tamanho | Estado     |
+| ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----- | ------------ | ---------- | ------- | ---------- |
+| T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos                                         | base de US-004..012            | 1a    | —            | `/feature` | M       | feita      |
+| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos                                                   | base de US-007..013            | 1a    | T-001        | `/feature` | M       | feita      |
+| T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`                                        | US-001                         | 1a    | T-001        | `/feature` | M       | feita      |
+| T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de nomes                                                                                                           | US-003                         | 1a    | —            | `/feature` | M       | em revisão |
+| T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial; `Player.name`/`face`, `IdentitySource` e fonte de teste do motor (ADR-0012)                                       | US-004                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |
+| T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI); `newGame` com `identities` e `lib/generators/identity.ts` (ADR-0012)                                              | US-004                         | 1a    | T-003, T-005 | `/feature` | M       | a fazer    |
+| T-007 | Calendário: Berger, returno espelhado, mando ≤ 2 seguidos, datas (Data FIFA, meio de semana)                                                                                                         | US-006                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |
+| T-008 | Força por setor, nota efetiva, mando com termômetro (e `homeBase`), força exibida                                                                                                                    | US-007, US-026 (mando)         | 1a    | T-005        | `/feature` | M       | a fazer    |
+| T-009 | `simulateMatch` núcleo: oportunidades, finalização, assistência, acréscimos, estatísticas, notas, marcadores, eventos, golden                                                                        | US-008                         | 1a    | T-008        | `/feature` | G       | a fazer    |
+| T-010 | Partida: cartões, lesões, pênaltis e faltas, cobradores e capitão, casos de borda (menos de 7, sem goleiro)                                                                                          | US-009                         | 1a    | T-009        | `/feature` | M       | a fazer    |
+| T-011 | IA pré-jogo: `suggestSheet` (escalação gulosa, rotação, banco, cobradores), tática por perfil, `validateLineup`                                                                                      | US-011                         | 1a    | T-008        | `/feature` | M       | a fazer    |
+| T-012 | Comandos na partida: substituições, táticas, atalhos, conversa do intervalo, IA em jogo (regras 1–6)                                                                                                 | US-021, US-022, US-011         | 1a    | T-010, T-011 | `/feature` | M       | a fazer    |
+| T-013 | `prepareRound`/`playRound`: 10 partidas, suspensões, lesões, recuperação por dias, idempotência, `getStandings` com desempate, fatos da tabela                                                       | US-012, US-019 (motor)         | 1a    | T-007, T-012 | `/feature` | G       | a fazer    |
+| T-014 | Moral e fadiga entre rodadas, termômetro da torcida, modo "realismo simplificado"                                                                                                                    | US-010, US-026                 | 1a    | T-013        | `/feature` | M       | a fazer    |
+| T-015 | Golden da temporada inteira + testes de propriedade em 1.000 sementes                                                                                                                                | US-008, US-012                 | 1a    | T-014        | `/feature` | P       | a fazer    |
+| T-016 | `scripts/balance.ts` (liga, duelos calibrados, duelos táticos, `--seasons/--seed/--duels/--params`, tempo) e `npm run balance`                                                                       | US-013                         | 1a    | T-014        | `/feature` | M       | a fazer    |
+| T-017 | Fim de temporada: prêmios, resumo, evolução e idade, `endSeason`/`startNextSeason` (com `incoming` opcional para a opção B; `identities` para os clubes que entram)                                  | US-025 (motor)                 | 1a    | T-014        | `/feature` | M       | a fazer    |
+| T-018 | Save: IndexedDB, snapshots gzip + SHA-256, gravação segura com 3 versões, abrir com volta, banco de teste, limite de 10 carreiras                                                                    | US-032, US-034 (dados)         | 1a    | T-013        | `/feature` | M       | a fazer    |
+| T-019 | Versão do formato e migrações: cadeia, fixture v1 (com `name`, `face`, `retiredNamesRev`), teste de forma, recusa de versão nova                                                                     | US-033                         | 1a    | T-018, T-027 | `/feature` | M       | a fazer    |
+| T-020 | Exportar e importar: arquivo `.txt`, compartilhar/baixar, limites, `valibot`, conflito de `careerId`                                                                                                 | US-035, US-036                 | 1a    | T-019        | `/feature` | M       | a fazer    |
+| T-021 | Templates: renderizador, catálogo de placeholders, memória de 200, contexto; `scripts/content-check.mjs`; regra `no-raw-text`                                                                        | US-027, US-040 (parte)         | 1a    | —            | `/feature` | M       | a fazer    |
+| T-022 | i18n: idioma inicial, troca nas preferências, carregamento dinâmico, nome do jogo da configuração                                                                                                    | US-040                         | 1a    | T-021        | `/feature` | P       | a fazer    |
+| T-023 | Casca da interface: `CareerService`, navegação (abas no celular, barra lateral no desktop), fronteira de erro, registro local de erros                                                               | US-015, US-045                 | 1a    | T-013, T-018 | `/feature` | M       | a fazer    |
+| T-024 | Infra de E2E: Playwright (Chromium + WebKit), `PRANCHETA_ENV=test`, primeiro teste, golden no WebKit, job no CI                                                                                      | US-038 (base)                  | 1a    | T-023        | `/feature` | M       | a fazer    |
+| T-025 | Tela inicial (lista, continuar, apagar com confirmação dupla) e novo jogo (clube, apelido, realismo, modo de partida, última configuração)                                                           | US-034, US-014                 | 1a    | T-023, T-006 | `/feature` | M       | a fazer    |
+| T-026 | Uniformes gerados (`lib/generators/kit.ts`)                                                                                                                                                          | US-002                         | 1a    | T-003        | `/feature` | P       | a fazer    |
+| T-027 | Avatares gerados (`lib/generators/avatar.ts`): `faceSpecFromSeed` separada de `renderFace`, codificação de `Player.face`, limite de bytes do `art-director` (ADR-0012)                               | US-005                         | 1a    | T-005        | `/feature` | M       | a fazer    |
+| T-028 | Tela do clube (com termômetro e rótulo de humor), elenco e card do jogador                                                                                                                           | US-015, US-016, US-026 (tela)  | 1a    | T-025, T-027 | `/feature` | M       | a fazer    |
+| T-029 | Escalação com arrastar e soltar, táticas, capitão e cobradores                                                                                                                                       | US-017, US-018                 | 1a    | T-028, T-011 | `/feature` | G       | a fazer    |
+| T-030 | Jogar rodada "só resultado": resumo, outros resultados, salvamento automático, fechar no meio                                                                                                        | US-019, US-032                 | 1a    | T-029        | `/feature` | M       | a fazer    |
+| T-031 | Tabela e calendário/resultados                                                                                                                                                                       | US-023, US-024                 | 1a    | T-030        | `/feature` | M       | a fazer    |
+| T-032 | Partida animada: canvas 2D, narração, pausa dramática, pular, reduzir movimento, vibração                                                                                                            | US-020                         | 1a    | T-030, T-026 | `/feature` | G       | a fazer    |
+| T-033 | Comandos, substituições e conversa do intervalo na tela da partida                                                                                                                                   | US-021, US-022                 | 1a    | T-032        | `/feature` | M       | a fazer    |
+| T-034 | Notícias da rodada a partir dos fatos (`lib/content/news.ts`) e tela do jornal                                                                                                                       | US-028                         | 1a    | T-021, T-030 | `/feature` | M       | a fazer    |
+| T-035 | Rede social simples e entrevista pós-jogo (com `fanEffect`)                                                                                                                                          | US-029, US-030                 | 1a    | T-034        | `/feature` | M       | a fazer    |
+| T-036 | Ferramenta de repetição de templates (`scripts/template-repeat.ts`)                                                                                                                                  | US-031                         | 1a    | T-034, T-016 | `/feature` | P       | a fazer    |
+| T-037 | Fim de temporada nas telas: cerimônia, prêmios, resumo, próxima temporada, lembrete de exportar                                                                                                      | US-025, US-037 (lembrete)      | 1a    | T-017, T-031 | `/feature` | M       | a fazer    |
+| T-038 | Armazenamento persistente e aviso de persistência negada                                                                                                                                             | US-037                         | 1a    | T-020        | `/feature` | P       | a fazer    |
+| T-039 | PWA: `registerType: 'prompt'`, aviso de nova versão fora da partida, novidades, `check-precache` (< 10 MB) no CI, E2E offline                                                                        | US-038, US-039                 | 1a    | T-024, T-030 | `/feature` | M       | a fazer    |
+| T-040 | Espaços de patrocínio com marcas fictícias                                                                                                                                                           | US-041                         | 1a    | T-032        | `/feature` | P       | a fazer    |
+| T-041 | Tela "Sobre" e preferências (tema, vibração, aba da rede social, idioma, lembrete, copiar relatório de erros)                                                                                        | US-043, US-044, US-045         | 1a    | T-023, T-022 | `/feature` | M       | a fazer    |
+| T-042 | Tutorial e primeiros passos                                                                                                                                                                          | US-042                         | 1a    | T-030        | `/feature` | M       | a fazer    |
+| T-043 | Estatísticas sem cookies só no site (se a P11 for aprovada)                                                                                                                                          | US-046                         | 1a    | —            | `/quick`   | P       | a fazer    |
+| T-044 | Nomes retirados: `content/names/retired.json` (hashes + `rev`), `npm run names:retire`, `renameRetired` ao abrir e importar, aviso nas novidades, testes (ADR-0012)                                  | US-003, US-033                 | 1a    | T-004, T-019 | `/feature` | P       | a fazer    |
+| T-050 | Esqueleto do servidor: workspace `server/`, Hono, `Db` (D1 e `node:sqlite`), migração SQL 0001, erros, logs sem PII, teste de esquema de privacidade, lint (fronteira com a exceção do ADR-0012), CI | US-064 (esquema)               | 1b    | T-013        | `/feature` | M       | a fazer    |
+| T-051 | Topologia: adaptador `functions/api/[[route]].ts`, Worker `prancheta-rooms` com o DO, `wrangler` de produção e prévia, `_headers`, `docs/04-deploy.md`                                               | ADR-0010                       | 1b    | T-050        | `/feature` | M       | a fazer    |
+| T-052 | Filtro de apelido e de nome de liga                                                                                                                                                                  | US-047, US-051                 | 1b    | T-050        | `/feature` | M       | a fazer    |
+| T-053 | Criar conta: passkey + código de recuperação gerado no aparelho (verificador HKDF, HMAC com pepper), mostrar uma vez                                                                                 | US-047, US-048                 | 1b    | T-052        | `/feature` | G       | a fazer    |
+| T-054 | Entrar, sessão, recuperar em outro aparelho, bloqueio por tentativas, reautenticação, código novo                                                                                                    | US-049, US-048                 | 1b    | T-053        | `/feature` | M       | a fazer    |
+| T-055 | Apagar conta: remoção, clubes para a IA, apelido some, posse da liga passa adiante                                                                                                                   | US-050                         | 1b    | T-054, T-056 | `/feature` | M       | a fazer    |
+| T-056 | Ligas: criar (configurações e limites da configuração do servidor), entrar por código, link de convite, `LeagueView`                                                                                 | US-051, US-052                 | 1b    | T-054        | `/feature` | M       | a fazer    |
+| T-057 | Escolha de clubes livre e por sorteio; iniciar temporada (`newGame` no servidor, estado no D1)                                                                                                       | US-053                         | 1b    | T-056        | `/feature` | M       | a fazer    |
+| T-058 | `RoomCoordinator`: interface, `InMemoryRoom`, `LeagueRoomDO` (alarme de prazo), estados da rodada                                                                                                    | US-056 (base)                  | 1b    | T-051, T-057 | `/feature` | M       | a fazer    |
+| T-059 | Rodada online: `PUT sheet`, prontos, processamento idempotente, escalação de reserva/IA, inatividade e volta, bancada de CPU                                                                         | US-055, US-056, US-060         | 1b    | T-058        | `/feature` | G       | a fazer    |
+| T-060 | Cliente online, conta: `lib/online`, telas de criar conta, código, entrar, recuperar, apagar                                                                                                         | US-047..US-050 (telas)         | 1b    | T-054, T-023 | `/feature` | M       | a fazer    |
+| T-061 | Cliente online, liga: criar/entrar, escolha de clube, preparar rodada e "Pronto" (reaproveita a escalação), cache offline                                                                            | US-051..US-053, US-055, US-059 | 1b    | T-059, T-060 | `/feature` | G       | a fazer    |
+| T-062 | Assíncrono: resumos das rodadas processadas, partida a partir dos eventos, notícias da liga no cliente                                                                                               | US-058, US-059                 | 1b    | T-061        | `/feature` | M       | a fazer    |
+| T-063 | Ao vivo: WebSocket com hibernação, `roundLive` com `startAt`, correção de relógio, reconexão, placares ao vivo                                                                                       | US-057                         | 1b    | T-062, T-032 | `/feature` | G       | a fazer    |
+| T-064 | Dono troca o modo; fim de temporada e duração da liga                                                                                                                                                | US-061, US-063                 | 1b    | T-062, T-017 | `/feature` | M       | a fazer    |
+| T-065 | Mensagens prontas e emojis (catálogo por id, desligar na liga e para si, limite de envio)                                                                                                            | US-062                         | 1b    | T-061        | `/feature` | M       | a fazer    |
+| T-066 | Denúncia mínima de apelido e nome de liga (se a P7 for aprovada)                                                                                                                                     | US-065                         | 1b    | T-056        | `/feature` | P       | a fazer    |
+| T-067 | Draft                                                                                                                                                                                                | US-054                         | 1b    | T-057, T-058 | `/feature` | M       | a fazer    |
+| T-068 | Auditoria de privacidade da 1b (`security-auditor`) e política do site atualizada                                                                                                                    | US-064                         | 1b    | T-050..T-066 | `/feature` | M       | a fazer    |
 
-**Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). Os números T-044 a T-049 ficam livres para tarefas que surgirem na 1a.
+**Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). A T-044 entrou pelo ADR-0012; os números T-045 a T-049 ficam livres para tarefas que surgirem na 1a.
 
 ## 8. Decisões pendentes do CEO
 
@@ -646,6 +678,7 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 5. **Plano pago dos Workers (US$ 5/mês) se a bancada da T-059 passar de 10 ms de CPU por rodada:** _Recomendação:_ autorizar só se a bancada mostrar a necessidade, primeiro tentando enxugar o estado.
 6. **Fim de temporada na 1a:** a P2 do `product-manager` (mesmos 20 clubes, sem efeito) e a decisão 5 do `game-designer` (opção B, com 4 clubes abstratos da Série B, que exige a lista de 4 a 8 clubes extras) divergem. O motor suporta as duas (`startNextSeason` com `incoming` opcional). _Recomendação:_ começar pela P2, que não depende de lista nova, e ligar a opção B quando a lista de clubes extras for aprovada.
 7. **Dependência nova `valibot`** (cliente e servidor) e, na 1b, **`@simplewebauthn/server` e `/browser`** e **`hono`**. _Recomendação:_ aprovar. São maduras, pequenas e sem telemetria.
+8. **ADR-0012, nome e rosto do jogador guardados no estado:** o save guarda o nome resolvido e a especificação do rosto, e as listas podem mudar sem renomear ninguém. Um nome retirado por ser ofensivo, ou por coincidir com o de um atleta real, some também dos saves antigos: o jogador atingido ganha um nome novo, e o jogo avisa sem citar o nome. _Recomendação:_ aprovar as duas partes. A alternativa para a segunda parte é deixar os saves antigos como estão, com risco de imagem e jurídico.
 
 ## 9. Riscos
 

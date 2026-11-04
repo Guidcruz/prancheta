@@ -16,8 +16,18 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Dados dos clubes (T-003, US-001): `ClubDef` e `validateClubs` em `app/src/engine/clubs.ts` (nunca lança), com `abbreviation` de 3 letras única, `titles` (`league`, `cup`, `libertadores`, `sudamericana`) e `strength` inteiro de 55 a 85, sem relação com o porte (ausente vale 70, com aviso).
 - `app/src/data/` com `clubs.serie-a.json` (20 clubes fictícios aprovados), `blocklist.sha256.json` (1.443 hashes de nomes reais; nenhum nome real em texto), `check.ts` e `blocklist.ts` (SHA-256 só no Node).
 - `npm run content:check` e `npm run blocklist:hash -- <arquivo fora do repositório>` (`scripts/hash-blocklist.mjs`).
+- Gerador de nomes (T-004, US-003) em `app/src/lib/generators/names.ts`: sete formas de exibição, forma curta coerente com o prenome, sem duplicata no elenco, no máximo 3 jogadores por sobrenome, `familyNoSolo`, origem "X de Y", determinístico por semente e exclusões por índice; em esgotamento das listas devolve resultado marcado `degraded`.
+- Listas de nomes fictícios `app/src/content/names/br.json` (412 prenomes, 19, 407, 123, 130 e 49 itens nas demais listas) e `br.exclusions.json` (57 pares, 6 sobrenomes e 3 triplas, só índices).
+- `app/src/data/athletes-blocklist.sha256.json` (469 hashes de nomes de atletas reais; nenhum nome em texto).
+- `npm run names:exclusions` (`scripts/name-exclusions.mjs`) e `npm run blocklist:hash:athletes`.
+- Teste completo dos nomes com `NAMES_FULL_CHECK=1 npm test -w app` (cerca de 2 minutos), para rodar antes de release e quando as listas mudarem.
+- ADR-0012 aceito: nome e rosto resolvidos na criação ficam no estado e no save; nome retirado também sai dos saves antigos.
 
 ### Alterado
+
+- Lint impede `lib/` e `ui/` de importar arquivos só do Node e os hashes de bloqueio.
+- Metas de placar do balanceamento: 0×0 de 6% a 9%, goleada de 8% a 13%, diferença de 5 ou mais gols de 0,5% a 2%.
+- Regra de nomes reais: documentos de trabalho em `docs/` podem citá-los só como referência; no jogo, código, dados e site a regra continua absoluta.
 
 - Lint de fronteira do motor ampliado: sem `ui`, `lib`, `content`, `params`, `data`, DOM, `Intl`, `process` nem `node:*`; sem `Math.random`, `Date.now`, `localeCompare` e `toLocale*`; imports relativos com extensão `.ts`; código de produção não importa `testing/`. Fora do motor: `ui` não importa `lib/save` e `lib` não importa `ui`.
 - `erasableSyntaxOnly` ligado em `app/tsconfig.json`.

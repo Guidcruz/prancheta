@@ -158,6 +158,14 @@ const appTestingImports = {
   message: 'engine/testing/ is test-only; production code cannot import it.',
 };
 
+// Hashes, the blocklist and Node modules are build/CI tools: they never reach the browser bundle
+// (names are screened by app/src/content/names/br.exclusions.json, indices only).
+const appBuildOnlyImports = {
+  group: ['**/data/name-exclusions*', '**/data/blocklist*', '**/*.sha256.json', 'node:*'],
+  message:
+    'Blocklist hashes and node:* are CI/build tools; production lib/ and ui/ must not import them.',
+};
+
 export default [
   { ignores: ['dist/**', 'dev-dist/**', 'node_modules/**'] },
   ...tseslint.configs.recommended,
@@ -200,7 +208,10 @@ export default [
   {
     files: ['src/lib/**/*.{ts,svelte}'],
     rules: {
-      'no-restricted-imports': ['error', { patterns: [libPatterns.noUi, appTestingImports] }],
+      'no-restricted-imports': [
+        'error',
+        { patterns: [libPatterns.noUi, appTestingImports, appBuildOnlyImports] },
+      ],
     },
   },
   {
@@ -209,7 +220,7 @@ export default [
       'no-restricted-imports': [
         'error',
         {
-          patterns: [uiPatterns.noSave, appTestingImports],
+          patterns: [uiPatterns.noSave, appTestingImports, appBuildOnlyImports],
         },
       ],
     },
