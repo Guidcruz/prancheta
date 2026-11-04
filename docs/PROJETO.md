@@ -182,15 +182,29 @@ O `game-designer` detalha fórmulas e parâmetros em cada etapa; o `content-writ
 
 Parâmetros iniciais: `salary.lateMoralePenalty = 5/mês`, `salary.strikeMonth = 2`, `salary.freeAgentMonth = 3`, chance de um jogador rescindir no mês 3: `0.35 × (1 − moral/100)`.
 
-#### Transfer ban (Etapa 3)
+#### Transfer ban e fair play financeiro (Etapa 3)
 
-- Compras de jogadores de outros clubes podem ser parceladas (até 4 parcelas em 12 meses).
-- Parcela atrasada 60 dias: o credor notifica (aviso na caixa de mensagens). Mais 30 dias: transfer ban até quitar.
-- Com ban: não registra jogadores novos (contratação ou empréstimo); pode renovar contratos e reintegrar emprestados; jovens da base promovidos contam como registro e ficam bloqueados.
-- Três bans acumulados na mesma gestão: multa de 5% da receita anual e a diretoria cobra a demissão (confiança −30).
-- Você como credor: clube da IA atrasado entra em ban; você escolhe renegociar (recebe 70% já) ou esperar (100%, com risco de novo atraso).
+Três origens de dívida levam ao ban, como no Brasil de 2026:
 
-Parâmetros: `ban.noticeDays = 60`, `ban.banDays = 90`, `ban.maxBansBeforePenalty = 3`, `ban.renegotiateRate = 0.7`.
+| Dívida                              | Com quem                              | Como nasce no jogo                                                                                                                                 |
+| ----------------------------------- | ------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Parcela de compra                   | Outro clube (nacional ou do exterior) | Compras parceladas em até 4 vezes em 12 meses                                                                                                      |
+| Salário, direito de imagem ou multa | Jogador ou ex-jogador                 | Atrasar salários; rescisão indireta; multa rescisória não paga; jogador vendido com pendência cobra do antigo clube                                |
+| Mecanismo de solidariedade          | Clube formador                        | Ao comprar um jogador, 6% do valor (nacional) ou 5% (do exterior) vai aos clubes que o formaram dos 12 aos 23 anos; não pagar vira dívida com eles |
+
+- **Fair play da CBF (aviso antes da punição):** duas vezes por ano há uma data de corte. Quem tem dívida vencida recebe 45 dias para quitar; dívida com atleta ainda leva multa. É a chance de resolver antes do ban, com a lista das pendências na caixa de mensagens.
+- **Ban:** vencido o prazo, o clube não registra jogadores novos (contratação, empréstimo ou promoção da base) por **três janelas ou até quitar**, o que vier antes. Pode renovar contratos e reintegrar emprestados.
+- **Acúmulo:** cada ban conta; o segundo seguido traz multa de 5% da receita anual, e o terceiro faz a diretoria cobrar a demissão (confiança −30).
+- **Você como credor:** clube da IA atrasado com você entra no mesmo rito; você escolhe renegociar (recebe 70% já) ou esperar (100%, com risco de novo atraso). Jogadores seus vendidos continuam gerando solidariedade quando são revendidos.
+
+Parâmetros: `ban.cutoffDates = [30/06, 31/12]`, `ban.graceDays = 45`, `ban.windows = 3`, `ban.playerDebtFine = 1% da receita anual`, `ban.repeatFine = 5%`, `ban.maxBansBeforePenalty = 3`, `ban.renegotiateRate = 0.7`, `solidarity.national = 0.06`, `solidarity.international = 0.05`.
+
+#### Vitrine e formação (Etapa 3; vitrine continental na Etapa 5)
+
+- **Vitrine:** o valor de mercado de um jogador sobe com destaque em jogos de peso: gol ou melhor em campo em clássico (+3%), fase de mata-mata nacional (+5%), Libertadores e Sul-Americana (+8%), convocação para a seleção (+15%). Depois de uma vitrine, propostas do exterior ficam 2× mais prováveis por 3 rodadas. O técnico sente isso na mão: escalar o jovem na Libertadores é investimento.
+- **Clube formador:** quem revela um jogador (base ou chegada antes dos 19 anos) recebe solidariedade em toda venda futura dele, pela vida inteira da carreira, mesmo depois de ele sair. Para clubes pequenos, é a receita que faz a base valer a pena.
+- **Certificado de clube formador:** com categoria de base nível 3 ou mais, o clube também recebe indenização por formação quando um jovem sai antes do primeiro contrato profissional.
+- **No online:** a solidariedade entre humanos é automática, cobrada pelo servidor na hora da venda.
 
 #### STJD (Etapa 2, com o calendário completo)
 
