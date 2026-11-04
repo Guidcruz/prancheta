@@ -5,7 +5,15 @@
 // from fontconfig and does not read WOFF/WOFF2, so the Barlow Condensed WOFF files from
 // @fontsource are unpacked to TTF in a temp folder and a private fonts.conf points to it.
 // A font proof fails the build if the weights are not found: no image with a wrong font.
-import { readFileSync, writeFileSync, mkdirSync, existsSync, statSync } from 'node:fs';
+import {
+  readFileSync,
+  writeFileSync,
+  mkdirSync,
+  mkdtempSync,
+  rmSync,
+  existsSync,
+  statSync,
+} from 'node:fs';
 import { createHash } from 'node:crypto';
 import { inflateSync } from 'node:zlib';
 import { registerHooks } from 'node:module';
@@ -71,10 +79,22 @@ export function woffToSfnt(woff) {
 }
 
 let sharpPromise;
+let fontDir;
+/** Removes the temporary font folder (also done when the process exits). */
+export function cleanupFonts() {
+  if (fontDir) rmSync(fontDir, { recursive: true, force: true });
+  fontDir = undefined;
+  sharpPromise = undefined;
+}
+process.on('exit', () => {
+  if (fontDir) rmSync(fontDir, { recursive: true, force: true });
+});
 /** Writes the TTF files and a private fonts.conf, then loads sharp (env must come first). */
 function loadSharp() {
   sharpPromise ??= (async () => {
-    const dir = join(tmpdir(), 'prancheta-og-fonts');
+    // One folder per process: parallel builds never share or delete each other's fonts.
+    const dir = mkdtempSync(join(tmpdir(), 'prancheta-og-fonts-'));
+    fontDir = dir;
     mkdirSync(join(dir, 'cache'), { recursive: true });
     for (const weight of [700, 800]) {
       const src = resolve(
@@ -114,13 +134,18 @@ async function proveFonts(sharp) {
   const w800 = await measureWith(sharp, 'PRANCHETA', 84, 800, FONT_FAMILY_800);
   const w700 = await measureWith(sharp, 'PRANCHETA', 84, 700);
   const wNone = await measureWith(sharp, 'PRANCHETA', 84, 800, 'Sem Fonte Prancheta');
+  const w700None = await measureWith(sharp, 'PRANCHETA', 84, 700, 'Sem Fonte Prancheta');
+  if (Math.abs(w700 - w700None) <= 2)
+    throw new Error(
+      `og: ${FONT_FAMILY} weight 700 was not found (700: ${w700}, fallback: ${w700None})`,
+    );
   if (Math.abs(w800 - wNone) <= 2)
     throw new Error(
       `og: ${FONT_FAMILY_800} was not found by the rasterizer (800: ${w800}, fallback: ${wNone})`,
     );
   if (Math.abs(w800 - w700) <= 2)
     throw new Error(`og: ${FONT_FAMILY} weight 800 was not found (800: ${w800}, 700: ${w700})`);
-  return { w800, w700, wNone };
+  return { w800, w700, wNone, w700None };
 }
 
 /** Font proof, exported for the tests. Throws when the fonts are not found. */
@@ -158,12 +183,48 @@ export async function layoutTitle(title, measure) {
     for (const w of words) widest = Math.max(widest, await measure(w, size));
     if (widest <= SAFE_WIDTH) break;
   }
+  // Same number of lines as the greedy fill, but with the widest line as short as possible.
+  const balance = async (n, sz) => {
+    const cache = new Map();
+    const width = async (a, b) => {
+      const key = `${a}-${b}`;
+      if (!cache.has(key)) cache.set(key, await measure(words.slice(a, b).join(' '), sz));
+      return cache.get(key);
+    };
+    let best;
+    const walk = async (start, left, cuts) => {
+      if (left === 1) {
+        const all = [...cuts, words.length];
+        let widest = 0;
+        let from = 0;
+        for (const c of all) {
+          widest = Math.max(widest, await width(from, c));
+          from = c;
+        }
+        if (widest <= SAFE_WIDTH && (!best || widest < best.widest)) best = { widest, all };
+        return;
+      }
+      for (let c = start + 1; c <= words.length - left + 1; c++)
+        await walk(c, left - 1, [...cuts, c]);
+    };
+    await walk(0, n, []);
+    if (!best) return undefined;
+    let from = 0;
+    return best.all.map((c) => {
+      const line = words.slice(from, c).join(' ');
+      from = c;
+      return line;
+    });
+  };
   let lines = await greedy(size);
+  if (lines.length > 1 && lines.length <= words.length)
+    lines = (await balance(lines.length, size)) ?? lines;
   if (lines.length <= 2) {
     return { size, step: 76, lines, baselines: lines.length === 1 ? [242] : [204, 280] };
   }
   size = 68;
   lines = await greedy(size);
+  if (lines.length === 3) lines = (await balance(3, size)) ?? lines;
   if (lines.length > 3) {
     const kept = lines.slice(0, 2);
     const rest = lines.slice(2).join(' ').split(' ');
@@ -175,27 +236,15 @@ export async function layoutTitle(title, measure) {
 
 // ---------------------------------------------------------------- inputs
 
-registerHooks({
-  // The shield generator imports the engine's Rng through the "@engine" alias (Vite/TS paths).
-  resolve(specifier, context, nextResolve) {
-    if (specifier.startsWith('@engine/')) {
-      const file = resolve(root, 'app/src/engine', `${specifier.slice(8)}.ts`);
-      return nextResolve(pathToFileURL(file).href, context);
-    }
-    return nextResolve(specifier, context);
-  },
-});
-
 const tokens = JSON.parse(readFileSync(resolve(root, 'design/tokens.json'), 'utf8'));
 const night = (name) => {
   const t = tokens.color.tokens.find((x) => x.name === name);
   if (!t) throw new Error(`Unknown token: ${name}`);
   return typeof t.value === 'string' ? t.value : t.value.noite;
 };
-const beamRgb = night('beam')
-  .match(/rgba\((\d+),\s*(\d+),\s*(\d+)/)
-  ?.slice(1, 4)
-  .join(',');
+const beamMatch = night('beam').match(/^rgba\((\d+),\s*(\d+),\s*(\d+),/);
+if (!beamMatch) throw new Error(`og: token "beam" must be rgba(r,g,b,a), got ${night('beam')}`);
+const beamRgb = beamMatch.slice(1, 4).join(',');
 
 // ---------------------------------------------------------------- composition
 
@@ -282,7 +331,21 @@ ${shieldSvgs}
 }
 
 /** Loads the build-time modules (shield generator, shared tower geometry, share texts). */
+let hooked = false;
 async function loadModules() {
+  if (!hooked) {
+    hooked = true;
+    registerHooks({
+      // The shield generator imports the engine's Rng through the "@engine" alias (Vite/TS paths).
+      resolve(specifier, context, nextResolve) {
+        if (specifier.startsWith('@engine/')) {
+          const file = resolve(root, 'app/src/engine', `${specifier.slice(8)}.ts`);
+          return nextResolve(pathToFileURL(file).href, context);
+        }
+        return nextResolve(specifier, context);
+      },
+    });
+  }
   const url = (p) => pathToFileURL(resolve(root, p)).href;
   const [{ config }, { share }, { tower }, shield, rng] = await Promise.all([
     import(url('config/prancheta.config.ts')),

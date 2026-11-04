@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
-import { mkdtempSync, readFileSync } from 'node:fs';
+import { afterAll, describe, expect, it } from 'vitest';
+import { config } from '../../../config/prancheta.config';
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -7,17 +8,34 @@ import { join } from 'node:path';
 const ogUrl = new URL('../../../scripts/og.mjs', import.meta.url).href;
 const load = async () => (await import(/* @vite-ignore */ ogUrl)) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
+const tempDirs: string[] = [];
+afterAll(async () => {
+  for (const d of tempDirs) rmSync(d, { recursive: true, force: true });
+  (await load()).cleanupFonts();
+});
+
+describe('slogan.short', () => {
+  it('is the end of the slogan in every language', () => {
+    for (const lang of config.languages) {
+      const full = config.slogan[lang].replace(/\.$/, '').toLocaleLowerCase();
+      expect(full.endsWith(config.slogan.short[lang].toLocaleLowerCase()), lang).toBe(true);
+    }
+  });
+});
+
 describe('share images', () => {
   it('proves the Barlow Condensed weights are found by the rasterizer', async () => {
     const og = await load();
     const p = await og.fontProof();
     expect(Math.abs(p.w800 - p.wNone)).toBeGreaterThan(2);
     expect(Math.abs(p.w800 - p.w700)).toBeGreaterThan(2);
+    expect(Math.abs(p.w700 - p.w700None)).toBeGreaterThan(2);
   }, 30000);
 
   it('renders all nine pages at 1200x630, under 300 KB, same bytes on every run', async () => {
     const og = await load();
     const dir = mkdtempSync(join(tmpdir(), 'og-test-'));
+    tempDirs.push(dir);
     const a = await og.generate({ outDir: dir });
     const b = await og.generate({ outDir: dir });
     expect(a).toHaveLength(9);
@@ -52,5 +70,7 @@ describe('share images', () => {
     expect(l.lines[l.lines.length - 1].endsWith('…')).toBe(true);
     const short = await og.layoutTitle('Privacidade', w);
     expect(short.lines).toEqual(['Privacidade']);
+    const home = await og.layoutTitle('O Brasil inteiro na prancheta', w);
+    expect(home.lines).toEqual(['O Brasil inteiro', 'na prancheta']);
   }, 30000);
 });
