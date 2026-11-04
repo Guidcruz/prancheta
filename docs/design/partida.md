@@ -244,12 +244,20 @@ Primeiro tempo: `Rng.int(0, 3)` minutos; segundo tempo: `Rng.int(2, 6)`, sortead
 ## Estatísticas e notas
 
 - **Finalizações:** oportunidades criadas. **No alvo:** gols + defesas do goleiro.
-- **Posse de bola** (só exibição): `clamp(50 + 1.5 × (Mid(t) − Mid(o)) + Rng.int(−3, 3), 30, 70)`, calculada no fim de cada tempo e somando 100 entre os dois.
-- **Nota do jogador** (0 a 10, uma casa decimal): `6.0 + 1.0 × gols + 0.6 × assistências + 0.3 × defesas (goleiro) − 0.25 × gols sofridos (goleiro e defesa) − 0.5 × amarelo − 1.5 × vermelho + 0.4 (vitória) / −0.4 (derrota) + Rng ±0.5`, entre 3,0 e 10,0. Quem jogou menos de 15 minutos fica "sem nota". **Melhor em campo:** maior nota (desempate: mais gols, depois o time vencedor, depois menor número da camisa).
+- **Posse de bola** (só exibição): `clamp(50 + 1.5 × (MidSemMando(t) − MidSemMando(o)) + Rng.int(−3, 3), 30, 70)` para o mandante, calculada no fim de cada tempo (depois dos acréscimos) com o `Mid` daquele momento. `MidSemMando` é o `Mid` com `home(t) = 0` (energia, vagas vazias, pressão e conversa do intervalo continuam valendo). A posse do jogo é a média dos dois tempos arredondada para inteiro (`Math.round`; o meio ponto vai para o mandante), e o visitante fica com `100 − posse do mandante`.
+  - Por quê sem mando: com o `Mid` cheio, dois times iguais davam 60,9% de posse ao mandante (2.000 duelos de força 70, termômetro 60), porque o mando multiplica o meio inteiro. Posse é só exibição; uma estatística que mostra 61% × 39% num jogo entre iguais engana quem lê. Sem o mando, iguais ficam em 50%.
+- **Minutos jogados:** só os regulamentares (1 a 90; o jogo inteiro vale 90). O minuto de acréscimo não conta. A evolução (`jogadores.md`, "Minutos") e a regra de "sem nota" usam essa conta. "Jogou", para a moral, é ter entrado em campo, mesmo só nos acréscimos (`jogadores.md`, "Moral por rodada").
+- **Nota do jogador** (0 a 10, uma casa decimal): `6.0 + 1.0 × gols + 0.6 × assistências + 0.3 × defesas (goleiro) − 0.25 × gols sofridos (goleiro e defesa) − 0.5 × amarelo − 1.5 × vermelho + 0.4 (vitória) / −0.4 (derrota) + ruído`, arredondada para uma casa e cortada entre 3,0 e 10,0. Quem jogou menos de 15 minutos regulamentares fica "sem nota" e não gasta sorteio.
+  - **Ruído:** uniforme em [−0,5; 0,5) (`(Rng.next() × 2 − 1) × 0.5`), um sorteio por jogador com nota, mandante primeiro, cada time na ordem de entrada em campo.
+  - **Gols sofridos:** contam para quem estava em campo, no momento do gol, na vaga do gol ou numa vaga do **setor** de defesa da formação (a tabela "Formações"). Ala do 3-5-2 e do 3-4-3 está no meio e não conta; LAT do 5-3-2 está na defesa e conta. Jogador de linha no gol conta como goleiro.
+- **Melhor em campo:** maior nota entre os que têm nota. Desempate, nesta ordem: mais gols; jogador do time vencedor; menor número da camisa; o do mandante (só sobra empate com camisas iguais nos dois times). Sem ninguém com nota (impossível com 7 ou mais em campo), não há melhor em campo.
 
 ## Eventos (o que a partida animada, a narração, as notícias e a rede social consomem)
 
 Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os campos abaixo. A lista é a saída do motor e é igual para a mesma semente e os mesmos comandos.
+
+- `kickoff` sai uma vez só, no minuto 0 do primeiro tempo. O começo do segundo tempo é o evento seguinte a `halftimeTalk`; a narração e a animação usam `halftime` para os dois lados do intervalo.
+- `stoppage` sai sempre no fim de cada tempo (minuto 45 ou 90, antes dos acréscimos), mesmo com 0 minuto: a narração precisa de um texto para "sem acréscimo", que acontece em 25% dos primeiros tempos.
 
 | Evento           | Campos                                                                           | Importância (para "só lances principais")      |
 | ---------------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
@@ -275,11 +283,15 @@ Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os
 | `goleada`       | diferença de 3 gols ou mais                                                                      |
 | `virada`        | o vencedor esteve perdendo em algum momento                                                      |
 | `zebra`         | o vencedor tinha força + mando (4 pontos para o mandante) pelo menos 8 pontos abaixo do perdedor |
-| `golNoFim`      | gol decisivo (mudou o resultado) a partir do minuto 85                                           |
+| `golNoFim`      | o último gol que mudou o resultado do jogo saiu aos 85' ou depois (acréscimos incluídos)         |
 | `hatTrick`      | um jogador com 3 gols ou mais                                                                    |
 | `semSofrerGols` | por time                                                                                         |
 | `classico`      | os dois clubes são rivais                                                                        |
-| `estreia`       | jogador na primeira partida pelo clube                                                           |
+| `estreia`       | jogador que entrou em campo com `clubAppearances = 0` (regra abaixo)                             |
+
+- O `kind` de cada marcador é o nome da primeira coluna, sem tradução: é a chave que os templates do `content-writer` e a arquitetura (`docs/02-architecture.md`, `MatchMarker`) já usam.
+- **`golNoFim`, em detalhe.** "Mudar o resultado" é mudar quem está vencendo: de empate para vitória de alguém, de vitória para empate (o empate no fim conta) ou de um vencedor para o outro. O gol que só amplia a vantagem (2×1 para 3×1) e o que só diminui (2×0 para 2×1) não mudam. Vale o **último** gol que mudou o resultado: se ele saiu aos 85' ou depois (o 45+2 do primeiro tempo é minuto 45 e não conta; o 90+3 conta), o marcador sai com o time, o autor e o minuto desse gol. Exemplo: 1×1 aos 80', o mandante faz 2×1 aos 88' e o visitante empata aos 90+2' → `golNoFim` do visitante (o empate). 0×0, o mandante faz 1×0 aos 86' e 2×0 aos 89' → `golNoFim` do gol dos 86'.
+- **`estreia`, em detalhe.** O marcador conta a história de quem chegou: o jovem que sobe da base e o reforço. O elenco inicial de uma carreira já jogava pelo clube antes dela, então não estreia: na geração (`jogadores.md`, "Geração de elencos"), titulares, reservas e elenco começam com `clubAppearances = 1` (`PRE_CAREER_APPEARANCES`, constante: "já estreou antes da carreira", sem histórico inventado) e os 3 jovens com 0. Depois, `clubAppearances` soma 1 a cada partida em que o jogador entra em campo pelo clube. Na 1a, então, só os 3 jovens de cada clube estreiam, quando o técnico ou a IA os põe em campo (com a IA, raro: o banco leva os de maior overall); reforços (Etapa 3) e jovens promovidos da base (Etapa 4) chegam com 0, pela mesma regra. Na interface da 1a, `clubAppearances` não aparece como "jogos pelo clube" (o 1 é convenção, não estatística).
 
 ## Modo "Realismo simplificado" (configuração do novo jogo)
 
@@ -313,6 +325,9 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Cobrador escolhido fora de campo                    | regra de "Capitão e cobradores"                                                                                                        |
 | Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
 | Comando no mesmo minuto de um gol                   | vale a partir do minuto seguinte, sempre                                                                                               |
+| Valor desconhecido na entrada (save danificado)     | 4-4-2, `balanced`, `medium`, perfil "Tradicional"; aviso (abaixo)                                                                      |
+
+**Valor desconhecido na entrada:** formação vira 4-4-2, postura vira `balanced`, pressão vira `medium` e perfil desconhecido joga como "Tradicional" em tudo o que o perfil decide (a conversa do intervalo agora; tática e comandos na T-011). Cada valor trocado gera um aviso por time no apito inicial, inclusive o perfil.
 
 ## Parâmetros (`app/src/params/match.json`)
 

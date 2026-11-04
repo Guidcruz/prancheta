@@ -25,6 +25,7 @@ A mesma IA monta o time do jogador quando ele não escala (ver `partida.md`, cas
 | Caótico          | sorteia entre as 6 a cada jogo | sorteia: ofensiva 50%, equilibrada 30%, defensiva 20%       | sorteia (alta 50%, média 30%, baixa 20%) | sorteia                                     |
 
 - Δ usa a força exibida (`balance-targets.md`) e +4 para o mandante, a mesma conta dos marcadores de `partida.md`.
+- **Intervalo do "Caótico":** sorteia uma das três conversas com 1/3 cada, sem olhar o placar (`Rng.int(0, 2)` sobre motivar, cobrar, acalmar, nessa ordem; um sorteio por time caótico, mandante primeiro). Ele pode cobrar quem está ganhando e perder 3% no segundo tempo: é o perfil. Sem pesos porque nenhuma opção é "a do caótico"; o tempero dele já está na postura e na pressão.
 - **Cansaço manda na pressão:** se a condição média do XI escalado for menor que `ai.tiredTeamCondition = 85`, a pressão vira baixa, em qualquer perfil.
 - **Formação do jogo:** das duas preferidas (`preferredFormations`, a primeira é a sorteada na geração e a do elenco), a que dá a maior soma de `eff` no XI montado (abaixo); empate fica com a primeira. O "Caótico" sorteia entre as seis a cada jogo; as duas que ele recebe na geração só moldam o elenco.
 - **Perfil por porte** (padrão, se a lista de clubes não disser), sorteado com os pesos da Série A atual (`clubes-serie-a.md`): grandes → Grande ambicioso 4, Tradicional 4, Formador 3, Vendedor 1; médios → Formador 2, Tradicional 1, Vendedor 1, Caótico 1; pequenos → Vendedor 2, Tradicional 1. Sorteio por clube com a semente da carreira. O perfil depende do porte, nunca da força: um grande fraco pode ser ambicioso.
@@ -76,6 +77,7 @@ O "Caótico" segue as mesmas regras, mas a 3 acontece já a partir do minuto 60.
 | Banco sem goleiro                           | o banco fica com 7 de linha                                         |
 | Regras 3 e 5 no mesmo minuto                | impossível (placar diferente); as regras 1 e 2 vêm antes de 3 a 5   |
 | Sem substituição restante                   | as regras de troca são ignoradas; os comandos de postura continuam  |
+| Perfil desconhecido (save danificado, bug)  | joga como "Tradicional", com aviso (`partida.md`, "Casos de borda") |
 
 ## Pedido ao `developer` (critérios de aceite)
 
