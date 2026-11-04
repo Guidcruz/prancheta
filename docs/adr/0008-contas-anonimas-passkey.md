@@ -1,6 +1,6 @@
 # ADR-0008: Contas anônimas com passkey e código de recuperação
 
-- **Status:** proposta
+- **Status:** aceita (CEO, 2026-11-04)
 - **Data:** 2026-11-04
 - **Decisores:** architect (propôs), security-auditor (revisa), CEO (aprova)
 
