@@ -64,18 +64,21 @@
   --type-subtitulo: 600 20px/24px var(--font-display);
   --type-numero: 600 18px/20px var(--font-display);
   --type-rotulo: 700 12px/16px var(--font-display);
+  --type-display-xl: 700 64px/60px var(--font-display);
+  --type-display-lg: 700 40px/44px var(--font-display);
+  --type-botao: 700 20px/24px var(--font-display);
   --type-body: 400 15px/22px var(--font-body);
   --type-body-strong: 600 15px/22px var(--font-body);
   --type-caption: 500 12px/16px var(--font-body);
-  --type-display-xl: 700 64px/60px var(--font-display);
 }
 .placar-xl { font-family: var(--font-display); font-size: 56px; line-height: 56px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .titulo { font-family: var(--font-display); font-size: 28px; line-height: 32px; font-weight: 700; }
 .subtitulo { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 600; }
 .numero { font-family: var(--font-display); font-size: 18px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .rotulo { font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.display-xl { font-family: var(--font-display); font-size: 64px; line-height: 60px; font-weight: 700; text-transform: uppercase; }
+.display-lg { font-family: var(--font-display); font-size: 40px; line-height: 44px; font-weight: 700; text-transform: uppercase; }
+.botao { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
 .body { font-family: var(--font-body); font-size: 15px; line-height: 22px; font-weight: 400; }
 .body-strong { font-family: var(--font-body); font-size: 15px; line-height: 22px; font-weight: 600; }
 .caption { font-family: var(--font-body); font-size: 12px; line-height: 16px; font-weight: 500; }
-.botao { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
-.display-xl { font-family: var(--font-display); font-size: 64px; line-height: 60px; font-weight: 700; text-transform: uppercase; }
