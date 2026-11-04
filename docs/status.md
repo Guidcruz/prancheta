@@ -57,13 +57,14 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                                                                                          |
-| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                      |
-| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                         |
-| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                         |
-| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                             |
-| T-005  | feita (PR #10); entregue, aguardando merge (modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1) |
+| Tarefa | Estado                                                                                                                                                                                                     |
+| ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                 |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                    |
+| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                    |
+| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                        |
+| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                |
+| T-006  | entregue, aguardando merge (code review e QA aprovados, 450 testes): `newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027 |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -95,7 +96,28 @@ Desenho (`docs/design/site.md`) e textos (`docs/content/site/`) aprovados, com 8
 7. Tokens `layout`.
 8. `@astrojs/sitemap`.
 
-A implementação sai em PR próprio.
+Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
+
+## Decisões do CEO em 2026-11-04 (T-006 e liga online)
+
+1. Camisas realistas nos elencos, desenhadas pelo `game-designer`.
+2. ADR-0013 aceito: liga da 1b com até 20 humanos, um por clube; liga online com Séries A e B antecipada para a Etapa 2.
+3. Site com "Até 20 (um técnico por clube da Série A)" no tamanho da liga.
+4. Site novo entregue (implementação do desenho aprovado), com correção dos espaços em volta de elementos inline.
+
+## Perguntas abertas para a Etapa 2
+
+1. **No online, o que acontece quando um técnico humano é rebaixado?** (pergunta do CEO)
+   - A: liga com Séries A e B; quem cai joga a B na mesma liga.
+   - B: liga só da Série A; quem cai assume um dos clubes que subiram.
+   - C: liga só da Série A com rebaixamento desligado.
+   - Recomendação do Orquestrador: o dono escolhe ao criar a liga entre "Série A e B" e "Só Série A"; na "Só Série A" ele também escolhe se o rebaixamento vale (B como alternativa). Na carreira offline, cair é jogar a Série B.
+
+## Observações do QA para revisar depois
+
+- Nomes de exibição longos: tratar a truncagem na tela do elenco (T-028).
+- Alguns nomes lembram pessoas notórias (ex.: "Cartola", "Dudek", "Carlos Alberto"): revisão de conteúdo.
+- Estrangeiros saem com nome brasileiro até existir a lista em espanhol.
 
 ## Pendências abertas
 
@@ -106,4 +128,4 @@ A implementação sai em PR próprio.
 
 ## Próximo
 
-T-005 mergeada. Site novo entregue, aguardando merge do CEO (PR próprio). Depois: T-006 (elencos e novo jogo). Pendências do site: bloco "Patrocine aqui" em `/apoiar/` (`/quick`) e a passada `REQUIRE_SITE_DIST=1` no CI depois do build (`devops-engineer`). Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+T-006 aguardando merge do CEO. Depois: T-007 (calendário). Pendências do site: bloco "Patrocine aqui" em `/apoiar/` (`/quick`) e a passada `REQUIRE_SITE_DIST=1` no CI depois do build (`devops-engineer`). Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
