@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Cartões, lesões, pênaltis e faltas na partida (T-010, US-009) em `app/src/engine/match/`:
+  - Cartões amarelos e vermelhos, com o segundo amarelo virando vermelho e a suspensão devolvida em `newSuspensions` (1 a 2 jogos); o contador de amarelos volta em `yellowCounts`, só de quem entrou em campo.
+  - Lesões ligadas ao cansaço, com gravidade (`InjurySeverity`) e rodadas fora devolvidas em `newInjuries`.
+  - Pênaltis e faltas diretas com cobradores; o fator casa também vale neles.
+  - Capitão de traço líder: o efeito positivo da conversa do intervalo fica maior (`halftimeBoost` ganhou o 4º parâmetro opcional).
+  - Jogo encerrado com menos de 7 em campo (`fulltime.abandoned`): vale 3×0 contra quem ficou com menos de 7, ou o placar do momento se a diferença já passava de 3. Os gols reais contam para a artilharia e o jogo não gera `goleada`, `virada` nem `golNoFim`.
+  - Reserva entra no apito no lugar de titular lesionado ou suspenso, com aviso `lineup-unavailable-player`.
+  - `ENGINE_VERSION` 5: os sorteios de cartões e lesões entram na ordem de cada minuto, e os goldens de partida mudam.
+
 - Partida simulada minuto a minuto (T-009, US-008) em `app/src/engine/match/`: `simulateMatch(input, params)` gera as oportunidades de cada minuto (chance, finalização, defesa do goleiro e assistência), o cansaço, os acréscimos, a conversa do intervalo e o fechamento com estatísticas, notas, melhor em campo, marcadores do resultado (goleada, virada, zebra, gol no fim, hat-trick, clássico, estreia) e a lista de eventos. Mesma semente dá a mesma partida, byte a byte. Cartões, lesões, pênaltis e faltas ficam para a T-010.
 - Goldens de partida novos (`__golden__`) e `ENGINE_VERSION` 4 (a geração do elenco passou a marcar as aparições pelo clube, o que muda o golden de novo jogo).
 - Decisão do CEO (2026-11-04): o fator casa vale também na finalização, no chute do mandante e na defesa do goleiro do mandante, sem parâmetro novo (nota no ADR-0011 e em `docs/design/partida.md`, "Mando na finalização").
