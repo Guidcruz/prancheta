@@ -14,7 +14,7 @@ Cada estilo está aplicado aos 20 clubes de `app/src/data/clubs.serie-a.json` (c
 - Cores sempre as do clube. A cor do símbolo/texto é a outra cor do clube; se der menos de 3:1, cai para preto ou branco neutro. Contraste mínimo medido nos 20 clubes: 3,14:1.
 - 13 símbolos genéricos desenhados por nós (torre, onda, pinheiro, montanha, ponte, âncora, engrenagem, sol, chave, concha, raio, coroa, roda). Nenhum animal, estrela solitária, cruz ou ave, de propósito.
 - Padrões: xadrez, faixa diagonal, chevron, gomos radiais, faixa transversal, três listras assimétricas, aspa, metade, chefe, bolinhas. Nada de listras iguais nem tricolor.
-- Estrelas de títulos (`titles.league`): 1 estrela a cada 2,5 títulos, máximo 5 (A e C). Sempre acompanhadas do escudo, nunca sozinhas como símbolo.
+- Estrelas de títulos (`titles.league`): no protótipo v1, 1 estrela a cada 2,5 títulos, máximo 5 (A e C). **Substituída pela regra da v3** (seção "Contagem das estrelas" abaixo e ADR-0014). Sempre acompanhadas do escudo, nunca sozinhas como símbolo.
 - Sombra suave por cópia deslocada com opacidade (sem `filter`), contorno escuro grosso. Cada SVG tem de 2 a 4 KB.
 
 ## A, Brasão
@@ -74,6 +74,8 @@ Seis formatos: clássico arredondado, francês com ponta, suíço com recorte no
 `brasaoV2(club, shape, size)` troca sozinho para a versão simples quando `size <= 32`: sem gradiente, sem reflexo, sem sombras, sem borda dupla; só formato, cor chapada, padrão grosso (diagonal, chevron, metade, faixa, chefe; padrões finos como xadrez, bolinhas, gomos e listras somem), medalhão com símbolo, contorno simples com fio metálico e no máximo 3 estrelas maiores. Para listas pequenas (tabela), o C continua como variante opcional.
 
 ## Regra das estrelas (explícita)
+
+> **Histórico, substituída pela regra da v3** (seção "Contagem das estrelas" abaixo), que é a aprovada pelo CEO e a usada em `app/src/lib/generators/shield.ts`.
 
 O protótipo v1 usava `ceil(títulos / 2,5)`, máximo 5 (12 títulos e 6 títulos davam resultados confusos). Regra proposta e usada na v2, com `titles.league`:
 
