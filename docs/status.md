@@ -20,6 +20,8 @@ Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do 
 
 ## Decisões pendentes do CEO (da auditoria do dia 1)
 
+> 2026-11-04: no `/kickoff`, o CEO adiou os itens 4 a 8 (não bloqueiam o planejamento da Etapa 1); o item 9 ficou resolvido com o uso do `/kickoff` adaptado.
+
 1. Caminho leve por PR, com a `main` protegida (aplicado como padrão; para voltar ao merge local, mudar o hook e o `/quick`).
 2. Apagar branches só pelo CEO (aplicado: `ALLOW_BRANCH_DELETE=0`).
 3. Fontes hospedadas no próprio site, sem Google Fonts (aplicado, por privacidade).
@@ -28,7 +30,7 @@ Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do 
 6. Publicar o nome "Prancheta" no site antes da conferência no INPI, ou esperar.
 7. Licença do código.
 8. Confirmar que o alias de modelo `fable` existe na sua instalação do Claude Code (usado pelo `project-auditor`); senão, trocar por `opus`.
-9. Versão adaptada do `/kickoff` (passo 0) antes do primeiro uso.
+9. ~~Versão adaptada do `/kickoff` (passo 0) antes do primeiro uso.~~ Resolvido em 2026-11-04.
 
 ## Próximo
 
