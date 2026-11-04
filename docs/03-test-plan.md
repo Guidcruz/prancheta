@@ -209,13 +209,18 @@ Siglas de camada: **U** unitário, **I** integração, **G** golden, **P** propr
 
 ### Dia 1
 
-| História | Critério                       | Teste (arquivo::nome)                   | Camada | Estado |
-| -------- | ------------------------------ | --------------------------------------- | ------ | ------ |
-| dia 1    | Rng determinístico e golden    | `app/src/engine/rng.test.ts`            | U, G   | feito  |
-| dia 1    | textos iguais nos três idiomas | `app/src/lib/i18n.test.ts`              | U      | feito  |
-| dia 1    | escudo estável e seguro        | `app/src/lib/generators/shield.test.ts` | U      | feito  |
-| dia 1    | contraste dos tokens           | `scripts/tokens-to-css.mjs`             | build  | feito  |
-| dia 1    | hook de travas                 | `scripts/test-hook.sh`                  | CI     | feito  |
+| História | Critério                                                                                     | Teste (arquivo::nome)                                                 | Camada | Estado |
+| -------- | -------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ | ------ |
+| dia 1    | Rng determinístico e golden                                                                  | `app/src/engine/rng.test.ts`                                          | U, G   | feito  |
+| dia 1    | textos iguais nos três idiomas                                                               | `app/src/lib/i18n.test.ts`                                            | U      | feito  |
+| dia 1    | escudo estável e seguro                                                                      | `app/src/lib/generators/shield.test.ts`                               | U      | feito  |
+| dia 1    | contraste dos tokens                                                                         | `scripts/tokens-to-css.mjs`                                           | build  | feito  |
+| dia 1    | hook de travas                                                                               | `scripts/test-hook.sh`                                                | CI     | feito  |
+| T-001    | Tipos e `Result` (4.1), exports do `index.ts`                                                | `app/src/engine/result.test.ts`, `index.test.ts`                      | U      | feito  |
+| T-001    | `ENGINE_VERSION` inteiro e ligado ao golden                                                  | `app/src/engine/version.test.ts`                                      | U, G   | feito  |
+| T-001    | `clamp` (NaN, limites), `exp` ponto único, `normal` com 6 sorteios fixos                     | `app/src/engine/math.test.ts`                                         | U      | feito  |
+| T-001    | Golden: falha se ausente, versão diferente ou saída mudada; update recusa sem subir a versão | `app/src/engine/testing/golden.test.ts`, `foundations.golden.test.ts` | G      | feito  |
+| T-001    | Lint de fronteira do motor, `.ts` nos imports, ui ↛ lib/save, lib ↛ ui, `erasableSyntaxOnly` | `app/src/engine/boundary.test.ts`; `npm run lint`                     | U, CI  | feito  |
 
 ### Etapa 1a (US-001 a US-046)
 

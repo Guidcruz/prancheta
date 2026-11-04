@@ -2,7 +2,11 @@
 
 Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-03 (Dia 1).
 
-## Etapa atual: 0 — Dia 1
+## Etapa atual: 1a — Brasileirão Série A (em andamento)
+
+A Etapa 0 (Dia 1) está concluída; o que resta dela são pendências do CEO, listadas abaixo. A tabela a seguir é o estado da Etapa 0.
+
+### Etapa 0 — Dia 1
 
 | Item                           | Estado     | Observação                                                                           |
 | ------------------------------ | ---------- | ------------------------------------------------------------------------------------ |
@@ -51,6 +55,14 @@ Telas da 1a (`docs/design/telas/`):
 5. Depois da rodada 38, nova temporada com os mesmos 20 clubes (P2); subida de 4 clubes fica para quando houver lista aprovada.
 6. Demais perguntas do `product-manager` (P3 a P13) e do `qa-engineer` (Q1 a Q10): aceitas as recomendações dos documentos.
 
+## Etapa 1a: andamento das tarefas
+
+| Tarefa | Estado                                                                                                                     |
+| ------ | -------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | entregue, aguardando merge (branch `claude/kickoff-i22gas`; passou no code review e no QA); fundações do motor             |
+| T-002  | próxima (`GameParams` e `validateParams`)                                                                                  |
+| T-003  | próxima, em paralelo à T-002 (dados dos clubes; lista dos 20 aprovada em `docs/content/lotes/2026-11-04-nomes-serie-a.md`) |
+
 ## Próximo
 
-`/feature T-001` (fundações do motor) Lista dos 20 clubes da Série A 2026 aprovada pelo CEO em 2026-11-04 (`docs/content/lotes/2026-11-04-nomes-serie-a.md`); entra no jogo na T-003. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+`/feature T-002` e `/feature T-003` depois do merge da T-001. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
