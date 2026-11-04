@@ -18,8 +18,8 @@ import type { ClubId, FixtureId, Result } from './types.ts';
  * The canonical Berger order, mirrored, gives two clubs three games in a row at the turn (their
  * break falls on rounds 1-2, so it comes back inverted on rounds 20-21 right after round 19).
  * The first half therefore starts at the first rotation of the Berger rounds whose mirrored
- * season has no club with more than two home or away games in a row (BERGER_START, found once
- * at load; it does not depend on the seed, since the shuffle only relabels the slots).
+ * season has no club with more than two home or away games in a row (BERGER_START = 3, proved
+ * by fixtures.test.ts; it does not depend on the seed, since the shuffle only relabels the slots).
  */
 
 /** A league match (docs/02-architecture.md, 4.1). `result` arrives with the rounds (T-013). */
@@ -72,7 +72,7 @@ export type SlotPair = readonly [number, number];
  * and slot r + k with slot r − k (mod teams − 1), k = 1..teams/2 − 1. The fixed slot plays at
  * home on odd r; the other pairs alternate by k, which makes every slot alternate home and away.
  */
-function bergerRounds(teams: number): SlotPair[][] {
+export function bergerRounds(teams: number): SlotPair[][] {
   const rotating = teams - 1;
   const rounds: SlotPair[][] = [];
   for (let r = 0; r < rotating; r++) {
@@ -88,7 +88,7 @@ function bergerRounds(teams: number): SlotPair[][] {
 }
 
 /** The whole season of a first half: the half, then the same rounds with the venues swapped. */
-function mirrored(half: readonly (readonly SlotPair[])[]): SlotPair[][] {
+export function mirrored(half: readonly (readonly SlotPair[])[]): SlotPair[][] {
   return [
     ...half.map((round) => [...round]),
     ...half.map((round) => round.map(([home, away]): SlotPair => [away, home])),
@@ -113,19 +113,13 @@ export function longestVenueRun(rounds: readonly (readonly SlotPair[])[], teams:
   return longest;
 }
 
-/** First rotation of the Berger rounds that keeps every run within MAX_SAME_VENUE_RUN. */
-function findBergerStart(teams: number): number {
-  const rounds = bergerRounds(teams);
-  for (let start = 0; start < rounds.length; start++) {
-    const half = [...rounds.slice(start), ...rounds.slice(0, start)];
-    if (longestVenueRun(mirrored(half), teams) <= MAX_SAME_VENUE_RUN) return start;
-  }
-  // Unreachable for 20 clubs (fixtures.test.ts pins the value); a bug if it ever happens.
-  throw new Error(`no Berger rotation keeps runs within ${MAX_SAME_VENUE_RUN} for ${teams}`);
-}
-
-/** Index of the Berger round that opens the season (see the header). */
-export const BERGER_START = findBergerStart(SERIE_A_CLUBS);
+/**
+ * Index of the Berger round that opens the season (see the header): 3, the first rotation of
+ * the Berger rounds whose mirrored season keeps every club within MAX_SAME_VENUE_RUN. The
+ * canonical order (0) gives two clubs three games in a row at the turn. Fixed here rather than
+ * searched at load; fixtures.test.ts runs the search and proves 3 is the first valid rotation.
+ */
+export const BERGER_START = 3;
 
 /** The 38 rounds of the season as slot pairs, before the clubs are drawn into the slots. */
 export function seasonSlotTable(): SlotPair[][] {
@@ -214,6 +208,8 @@ export function seasonCalendar(
   }
   const fifa = new Set(season.fifaWeeks);
   const midweek = new Set(season.midweekWeeks);
+  // Same rules as checkSeason() in params.ts (plus the week-list shape of PARAM_RANGES): keep the
+  // two in step. This copy exists so the engine never builds a calendar from unvalidated params.
   if (
     !isWeekList(season.fifaWeeks) ||
     !isWeekList(season.midweekWeeks) ||
@@ -278,10 +274,7 @@ export function generateFixtures(
 
   const rng = new Rng(seedFromString(`${request.seed >>> 0}-fixtures-${request.season}`));
   const slots = sorted;
-  for (let i = slots.length - 1; i > 0; i--) {
-    const j = rng.int(0, i);
-    [slots[i], slots[j]] = [slots[j]!, slots[i]!];
-  }
+  rng.shuffle(slots);
 
   const fixtures: Fixture[] = [];
   seasonSlotTable().forEach((pairs, index) => {

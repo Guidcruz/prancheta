@@ -84,18 +84,15 @@ export {
 } from './generation.ts';
 export type { GeneratedSquad, SquadGroup, SquadProblem, SquadRequest } from './generation.ts';
 export {
-  BERGER_START,
   HALF_ROUNDS,
   MAX_SAME_VENUE_RUN,
   YEAR_RANGE,
   daysBetween,
   fixtureId,
   generateFixtures,
-  longestVenueRun,
   seasonCalendar,
-  seasonSlotTable,
 } from './fixtures.ts';
-export type { Fixture, FixturesError, FixturesRequest, RoundSlot, SlotPair } from './fixtures.ts';
+export type { Fixture, FixturesError, FixturesRequest, RoundSlot } from './fixtures.ts';
 export { newGame } from './game.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {

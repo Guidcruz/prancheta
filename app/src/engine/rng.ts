@@ -33,6 +33,18 @@ export class Rng {
     return items[this.int(0, items.length - 1)];
   }
 
+  /**
+   * Shuffles the array in place (Fisher-Yates, from the last index down, one `int(0, i)` per
+   * step) and returns it. The number and order of draws are part of the determinism contract.
+   */
+  shuffle<T>(items: T[]): T[] {
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = this.int(0, i);
+      [items[i], items[j]] = [items[j]!, items[i]!];
+    }
+    return items;
+  }
+
   /** Current internal state, to be stored in a save. */
   getState(): number {
     return this.state;

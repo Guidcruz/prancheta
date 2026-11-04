@@ -3,10 +3,12 @@ import {
   BERGER_START,
   HALF_ROUNDS,
   MAX_SAME_VENUE_RUN,
+  bergerRounds,
   daysBetween,
   fixtureId,
   generateFixtures,
   longestVenueRun,
+  mirrored,
   seasonCalendar,
   seasonSlotTable,
   type Fixture,
@@ -110,7 +112,12 @@ describe('generateFixtures: valid table (US-006)', () => {
 
 describe('generateFixtures: the slot table', () => {
   it('opens on the 4th Berger round, the first rotation that keeps runs within 2', () => {
-    expect(BERGER_START).toBe(3);
+    const rounds = bergerRounds(20);
+    const valid = rounds
+      .map((_, start) => mirrored([...rounds.slice(start), ...rounds.slice(0, start)]))
+      .map((season) => longestVenueRun(season, 20) <= MAX_SAME_VENUE_RUN);
+    expect(valid.indexOf(true)).toBe(3);
+    expect(BERGER_START).toBe(valid.indexOf(true));
     expect(longestVenueRun(seasonSlotTable(), 20)).toBe(MAX_SAME_VENUE_RUN);
   });
 
