@@ -4,7 +4,7 @@ import { bestEleven, elevenStrength } from './generation.ts';
 import type { Lineup } from './lineup.ts';
 import { clamp } from './math.ts';
 import type { GameParams, MatchParams } from './params.ts';
-import { fit, type Player } from './players.ts';
+import { attributeOf, fit, type Player } from './players.ts';
 import type { ClubId, Formation, PlayerId, Position, Posture, Pressure, Result } from './types.ts';
 
 /*
@@ -72,6 +72,13 @@ export const MORALE_MULT = { base: 0.95, span: 0.1 } as const;
 export const CONDITION_MULT = { base: 0.8, span: 0.2 } as const;
 /** Players on the pitch of a full team; `faltando(t)` counts from here. */
 export const STARTERS_COUNT = 11;
+/** Index of the goalkeeper slot in every formation (`FORMATION_SLOTS[f][0]` is always `GK`). */
+export const GOALKEEPER_SLOT = 0;
+/**
+ * A sector with nobody left plays at this share of the mean outfield `eff` (partida.md, "Vaga
+ * vazia"): the "improvisado" fit of the position table (0.90), as someone covers the role.
+ */
+export const EMPTY_SECTOR_FIT = 0.9;
 
 /** Morale multiplier of the effective rating; the morale is clipped to 0..100. */
 export function moraleMultiplier(morale: number): number {
@@ -166,16 +173,33 @@ export interface StrengthTactic {
 }
 
 /**
- * Sector strengths from the effective ratings of the 11 slots, in slot order of the formation.
- * The building block of {@link sectorStrengths}, for the match loop that keeps the ratings up to
- * date minute by minute. `ratings` must have one value per slot; a different length is a
- * programming error (the validated entry point is {@link sectorStrengths}).
+ * The inputs of `T(t)` for {@link strengthsFromRatings}: `faltando(t)` is not one of them,
+ * because it is always the number of empty slots ("Vaga vazia": with N on the pitch, exactly
+ * 11 − N slots are empty).
+ */
+export type RatingFactors = Omit<StrengthFactors, 'missing'>;
+
+/**
+ * Sector strengths from the effective ratings of the 11 slots, in slot order of the formation
+ * (partida.md, "Forças de setor" and "Vaga vazia"). The building block of
+ * {@link sectorStrengths}, for the match loop that keeps the ratings up to date minute by minute.
+ *
+ * An `undefined` rating is an empty slot (red card, injury without a substitute):
+ * - each sector mean is over its occupied slots only, and every empty slot counts once in
+ *   `faltando(t)` of `T(t)`;
+ * - a sector with nobody left is worth `EMPTY_SECTOR_FIT × mean(eff of every outfield player on
+ *   the pitch)`, still times `formation.*`, `pressure.mid` (midfield) and `T(t)`;
+ * - with no outfield player at all (never in a match: it ends below 7) an empty sector is 0, so
+ *   nothing is ever NaN.
+ *
+ * Programming errors (they throw): `ratings` of a length other than 11, or an empty goalkeeper
+ * slot (the caller first sends an outfield player to goal with {@link fillEmptyGoal}).
  */
 export function strengthsFromRatings(
   formation: Formation,
   tactic: StrengthTactic,
-  ratings: readonly number[],
-  factors: StrengthFactors,
+  ratings: readonly (number | undefined)[],
+  factors: RatingFactors,
   match: Pick<MatchParams, 'midWeight' | 'missingPlayerPenalty'>,
 ): TeamStrengths {
   const sectors = FORMATION_SECTORS[formation];
@@ -186,17 +210,31 @@ export function strengthsFromRatings(
   }
   const sum = { gk: 0, def: 0, mid: 0, atk: 0 };
   const count = { gk: 0, def: 0, mid: 0, atk: 0 };
+  let empty = 0;
   for (let i = 0; i < sectors.length; i++) {
+    const rating = ratings[i];
+    if (rating === undefined) {
+      empty += 1;
+      continue;
+    }
     const sector = sectors[i]!;
-    sum[sector] += ratings[i]!;
+    sum[sector] += rating;
     count[sector] += 1;
   }
-  const t = teamFactor(factors, match);
+  if (count.gk === 0) {
+    throw new RangeError('the goalkeeper slot is empty: call fillEmptyGoal first');
+  }
+  const outfield = count.def + count.mid + count.atk;
+  const outfieldMean = outfield > 0 ? (sum.def + sum.mid + sum.atk) / outfield : 0;
+  const mean = (sector: 'def' | 'mid' | 'atk') =>
+    count[sector] > 0 ? sum[sector] / count[sector] : EMPTY_SECTOR_FIT * outfieldMean;
+
+  const t = teamFactor({ ...factors, missing: empty }, match);
   const shape = FORMATION_MULTIPLIERS[formation];
   const posture = POSTURE_EFFECTS[tactic.posture];
-  const def = (sum.def / count.def) * shape.def * t;
-  const mid = (sum.mid / count.mid) * shape.mid * PRESSURE_EFFECTS[tactic.pressure].mid * t;
-  const atk = (sum.atk / count.atk) * shape.atk * t;
+  const def = mean('def') * shape.def * t;
+  const mid = mean('mid') * shape.mid * PRESSURE_EFFECTS[tactic.pressure].mid * t;
+  const atk = mean('atk') * shape.atk * t;
   return {
     goalkeeper: sum.gk / count.gk,
     def,
@@ -206,6 +244,36 @@ export function strengthsFromRatings(
     defense: def * posture.def,
     factor: t,
   };
+}
+
+/**
+ * The goalkeeper slot never stays empty (partida.md, "Vaga vazia" and "Casos de borda"): when it
+ * is, the outfield player on the pitch with the highest `physical` moves to goal and **his** slot
+ * becomes the empty one. Ties keep the first in slot order. `slots` are the occupants of the 11
+ * slots in formation order (`undefined` = empty); returns a new array and the index of the slot
+ * that was vacated (`undefined` when nothing moved: the goalkeeper is there, or no one is left on
+ * the outfield).
+ */
+export function fillEmptyGoal<T extends Pick<Player, 'attributes' | 'overall'>>(
+  slots: readonly (T | undefined)[],
+): { slots: (T | undefined)[]; vacated?: number } {
+  const result = [...slots];
+  if (result[GOALKEEPER_SLOT] !== undefined) return { slots: result };
+  let best = -1;
+  let bestPhysical = -1;
+  for (let i = 0; i < result.length; i++) {
+    const occupant = result[i];
+    if (i === GOALKEEPER_SLOT || occupant === undefined) continue;
+    const physical = attributeOf(occupant, 'physical');
+    if (physical > bestPhysical) {
+      best = i;
+      bestPhysical = physical;
+    }
+  }
+  if (best < 0) return { slots: result };
+  result[GOALKEEPER_SLOT] = result[best];
+  result[best] = undefined;
+  return { slots: result, vacated: best };
 }
 
 /**
@@ -236,7 +304,7 @@ export interface StrengthSheet {
 }
 
 /** Match situation of a team for {@link sectorStrengths} (always 11 on the pitch). */
-export interface StrengthContext extends StrengthFactors {
+export interface StrengthContext extends RatingFactors {
   /** Energy on the pitch by player; a player not listed uses their condition. */
   readonly energy?: Readonly<Record<PlayerId, number>>;
 }

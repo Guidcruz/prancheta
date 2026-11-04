@@ -222,7 +222,7 @@ describe('T(t) (partida.md, "Forças de setor")', () => {
   it('multiplies the three sectors, and the goalkeeper eff stays plain', () => {
     const players = eleven('4-2-3-1', 66);
     const plain = strengthsOf(players, '4-2-3-1');
-    const context = { home: 0.08, missing: 1, halftimeBoost: 0.04 };
+    const context = { home: 0.08, halftimeBoost: 0.04 };
     const t = teamFactor(context, params.match);
     const s = strengthsOf(players, '4-2-3-1', context);
     expect(s.factor).toBe(t);

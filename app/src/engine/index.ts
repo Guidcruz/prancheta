@@ -96,14 +96,17 @@ export type { Fixture, FixturesError, FixturesRequest, RoundSlot } from './fixtu
 export { newGame } from './game.ts';
 export {
   CONDITION_MULT,
+  EMPTY_SECTOR_FIT,
   FORMATION_MULTIPLIERS,
   FORMATION_SECTORS,
+  GOALKEEPER_SLOT,
   MORALE_MULT,
   POSTURE_EFFECTS,
   PRESSURE_EFFECTS,
   STARTERS_COUNT,
   conditionMultiplier,
   effectiveRating,
+  fillEmptyGoal,
   homeAdvantage,
   moraleMultiplier,
   sectorStrengths,
@@ -113,6 +116,7 @@ export {
 } from './strength.ts';
 export type {
   LineupProblem,
+  RatingFactors,
   Sector,
   StrengthContext,
   StrengthFactors,
