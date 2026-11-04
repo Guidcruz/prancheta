@@ -19,8 +19,13 @@ export interface NameLists {
   givenCompound: readonly string[];
   /** Surnames. */
   family: readonly string[];
-  /** Short forms of first names (diminutives); never shown alone. */
+  /** Short forms of first names (diminutives); never shown alone. The union of the two below. */
   short: readonly string[];
+  /** Short form -> first names it belongs to ("Betinho": ["Alberto", "Roberto"]). For a compound
+   * first name the first word counts. Absent together with `shortGeneric`: every short form fits. */
+  shortOf?: Readonly<Record<string, readonly string[]>>;
+  /** Short forms that fit any first name. */
+  shortGeneric?: readonly string[];
   /** Base nicknames ("apelidos de boleiro"). */
   nicknames: readonly string[];
   /** Invented places, one word ("Vilacometa"); shown as "<first or short> de <origin>". */
@@ -78,6 +83,12 @@ export interface PlayerName {
   full: string;
   /** First surname, used by the squad rule of at most 3 per surname. */
   family: string;
+  /**
+   * Set only when the rules could not be met and a fallback was used: the exclusions kept
+   * rejecting for 50 reseeds (`nameFromSeed`), or the squad rules for 200 candidates
+   * (`namesForSquad`, which then numbers the display). Never happens with the real lists.
+   */
+  degraded?: true;
 }
 
 /** Cumulative weights of the seven display forms (30/25/15/10/8/7/5, docs/content/lotes). */
@@ -88,6 +99,8 @@ const MIN_SURNAME_ONLY_LETTERS = 4;
 const MAX_PER_FAMILY = 3;
 const MAX_ATTEMPTS = 200;
 const MAX_RESEEDS = 50;
+/** Share of the origin form shown with the first name; the rest uses a short form. */
+const ORIGIN_WITH_FIRST_SHARE = 0.5;
 
 /** The seven display forms, in the order of `FORM_LIMITS`. */
 export const DISPLAY_FORMS = [
@@ -120,15 +133,47 @@ function letterCount(name: string): number {
   return normalizeNameKey(name).replace(/[^\p{L}]/gu, '').length;
 }
 
+/**
+ * Short forms that fit a first name (coherent short form): those whose `shortOf` lists the first
+ * word of the name, plus `shortGeneric`. Indices into `lists.short`. Without `shortOf` and
+ * `shortGeneric` every short form fits. An empty result means no short form: the caller shows the
+ * first name instead ("Heitor Tavares" rather than an unrelated diminutive).
+ */
+const shortCache = new WeakMap<NameLists, Map<string, number[]>>();
+function shortsFor(lists: NameLists, given: string): number[] {
+  let byGiven = shortCache.get(lists);
+  if (byGiven === undefined) shortCache.set(lists, (byGiven = new Map()));
+  const word = normalizeNameKey(given.split(' ')[0] ?? '');
+  let found = byGiven.get(word);
+  if (found === undefined) {
+    const generic = new Set((lists.shortGeneric ?? []).map(normalizeNameKey));
+    const mapped = lists.shortOf;
+    found = [];
+    lists.short.forEach((short, i) => {
+      const key = normalizeNameKey(short);
+      const fits =
+        (mapped === undefined && lists.shortGeneric === undefined) ||
+        generic.has(key) ||
+        (mapped?.[short] ?? []).some((g) => normalizeNameKey(g) === word);
+      if (fits) found?.push(i);
+    });
+    byGiven.set(word, found);
+  }
+  return found;
+}
+
 interface Drawn {
   name: PlayerName;
   excluded: boolean;
 }
 
-/** One draw from a seed: always the same number of random draws, whatever the lists hold. */
+/** One draw from a seed: always the same number of random draws, even with empty lists. */
 function draw(nameSeed: number, lists: NameLists, ex: NameExclusions | undefined): Drawn {
   const rng = new Rng(nameSeed);
-  const index = (length: number) => (length > 0 ? rng.int(0, length - 1) : -1);
+  const index = (length: number) => {
+    const u = rng.next(); // drawn even for an empty list, to keep the draws fixed
+    return length > 0 ? Math.floor(u * length) : -1;
+  };
   const nGiven = lists.given.length;
   const nCompound = lists.givenCompound.length;
   const nFamily = lists.family.length;
@@ -144,14 +189,17 @@ function draw(nameSeed: number, lists: NameLists, ex: NameExclusions | undefined
   const hasSecond = rng.next() < SECOND_FAMILY_SHARE && nFamily > 1;
   const familyIdx2 = i2 >= i1 ? i2 + 1 : i2;
   const family2 = hasSecond ? (lists.family[familyIdx2] ?? '') : '';
-  const shortIdx = index(lists.short.length);
+  const fitting = shortsFor(lists, given);
+  const shortDraw = rng.next();
+  const shortIdx =
+    fitting.length > 0 ? (fitting[Math.floor(shortDraw * fitting.length)] ?? -1) : -1;
   const short = lists.short[shortIdx] ?? given;
   const shortFirst = shortIdx >= 0 ? nGiven + nCompound + shortIdx : firstIdx;
   const nickIdx = index(lists.nicknames.length);
   const nickname = lists.nicknames[nickIdx];
   const originIdx = index(lists.origins.length);
   const origin = lists.origins[originIdx];
-  const useShort = rng.next() < 0.5; // for the origin form: first name or short form
+  const useShort = rng.next() >= ORIGIN_WITH_FIRST_SHARE; // origin form: first name or short
   const roll = rng.next();
 
   const form = DISPLAY_FORMS[FORM_LIMITS.findIndex((limit) => roll < limit)] ?? 'given-family';
@@ -215,7 +263,9 @@ export function nameFromSeed(
   for (let i = 0; i < MAX_RESEEDS && current.excluded; i++) {
     current = draw(reseed.int(0, 0xffffffff), lists, exclusions);
   }
-  return { ...current.name, nameSeed: nameSeed >>> 0 };
+  // Still excluded after 50 reseeds (absurd exclusions): keep the last draw and say so.
+  const degraded = current.excluded ? ({ degraded: true } as const) : {};
+  return { ...current.name, nameSeed: nameSeed >>> 0, ...degraded };
 }
 
 /**
@@ -224,8 +274,8 @@ export function nameFromSeed(
  * another player of that surname, and vice versa; at most 3 players per first surname; and no
  * excluded (real-athlete) combination. Candidate seeds come from `seed` in order, so a rejected
  * name is skipped the same way every time, and each result carries the seed that reproduces it
- * alone through `nameFromSeed`. Never throws: with degenerate lists it gives up after 200 tries and
- * numbers the display ("Nome 2"), which only happens in tests.
+ * alone through `nameFromSeed`. Never throws: with degenerate lists it gives up after 200 tries,
+ * numbers the display ("Nome 2") and marks the name `degraded`; only happens in tests.
  */
 export function namesForSquad(
   seed: number,
@@ -259,7 +309,7 @@ export function namesForSquad(
       let n = 2;
       const base = last ?? nameFromSeed(0, lists, exclusions);
       while (displays.has(normalizeNameKey(`${base.display} ${n}`))) n++;
-      chosen = { ...base, display: `${base.display} ${n}` };
+      chosen = { ...base, display: `${base.display} ${n}`, degraded: true };
     }
     const key = normalizeNameKey(chosen.display);
     const familyKey = normalizeNameKey(chosen.family);
@@ -274,7 +324,13 @@ export function namesForSquad(
 }
 
 export type NameListProblem =
-  'empty-list' | 'blank-entry' | 'duplicate-entry' | 'has-hyphen' | 'not-in-family';
+  | 'empty-list'
+  | 'blank-entry'
+  | 'duplicate-entry'
+  | 'has-hyphen'
+  | 'not-in-family'
+  | 'not-in-short'
+  | 'unmapped-short';
 export interface NameListIssue {
   list: keyof NameLists;
   problem: NameListProblem;
@@ -312,6 +368,21 @@ export function checkNameLists(lists: NameLists): NameListIssue[] {
   for (const value of lists.familyNoSolo ?? []) {
     if (!families.has(normalizeNameKey(value))) {
       issues.push({ list: 'familyNoSolo', problem: 'not-in-family', value });
+    }
+  }
+  if (lists.shortOf !== undefined || lists.shortGeneric !== undefined) {
+    const shorts = new Set(lists.short.map(normalizeNameKey));
+    const declared = [...Object.keys(lists.shortOf ?? {}), ...(lists.shortGeneric ?? [])];
+    for (const value of declared) {
+      if (!shorts.has(normalizeNameKey(value))) {
+        issues.push({ list: 'short', problem: 'not-in-short', value });
+      }
+    }
+    const mapped = new Set(declared.map(normalizeNameKey));
+    for (const value of lists.short) {
+      if (!mapped.has(normalizeNameKey(value))) {
+        issues.push({ list: 'short', problem: 'unmapped-short', value });
+      }
     }
   }
   return issues;

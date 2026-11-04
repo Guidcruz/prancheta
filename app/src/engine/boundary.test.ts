@@ -84,6 +84,20 @@ describe('engine lint boundary', () => {
     expect(await ruleIds(alias, 'src/ui/fixture.test.ts')).toEqual([]);
   });
 
+  it('keeps blocklist hashes and node:* out of production lib/ and ui/, but not out of tests', async () => {
+    const imports = [
+      "import '../data/name-exclusions.ts';",
+      "import '../data/blocklist.ts';",
+      "import '../data/athletes-blocklist.sha256.json';",
+      "import 'node:crypto';",
+    ];
+    for (const code of imports) {
+      expect(await ruleIds(code, 'src/lib/fixture.ts')).toContain('no-restricted-imports');
+      expect(await ruleIds(code, 'src/ui/fixture.ts')).toContain('no-restricted-imports');
+      expect(await ruleIds(code, 'src/lib/fixture.test.ts')).toEqual([]);
+    }
+  });
+
   it('allows transcendental functions only in engine/math.ts', async () => {
     expect(
       await ruleIds('export const e = (x: number) => Math.exp(x) ** 2;', 'src/engine/math.ts'),

@@ -19,6 +19,11 @@ const lists: NameLists = {
   family: Array.from({ length: 50 }, (_, i) => `Sobrenometeste${i + 1}`),
   familyNoSolo: ['Sobrenometeste7'],
   short: Array.from({ length: 20 }, (_, i) => `Curtoteste${i + 1}`),
+  // Curtoteste1..10 belong to Nometeste1..10; Curtoteste11..20 fit any first name.
+  shortOf: Object.fromEntries(
+    Array.from({ length: 10 }, (_, i) => [`Curtoteste${i + 1}`, [`Nometeste${i + 1}`]]),
+  ),
+  shortGeneric: Array.from({ length: 10 }, (_, i) => `Curtoteste${i + 11}`),
   nicknames: Array.from({ length: 30 }, (_, i) => `Apelidoteste${i + 1}`),
   origins: Array.from({ length: 10 }, (_, i) => `Origemteste${i + 1}`),
 };
@@ -172,6 +177,29 @@ describe('name generator (US-003)', () => {
       expect(full).toContain(family);
     }
     expect(withSecond / n).toBeCloseTo(0.35, 1);
+  });
+
+  it('shows only a short form that fits the first name of the full name', () => {
+    let seen = 0;
+    for (let i = 0; i < 20_000; i++) {
+      const { display, full } = nameFromSeed(i * 40503, lists, exclusions);
+      const short = /^(Curtoteste\d+)/.exec(display)?.[1] ?? /de$/.exec(display)?.[0];
+      const match = /Curtoteste(\d+)/.exec(display);
+      if (!match) continue;
+      seen++;
+      const n = Number(match[1]);
+      const firstWord = full.split(' ')[0];
+      expect(short).toBeDefined();
+      expect(n > 10 || firstWord === `Nometeste${n}`).toBe(true);
+    }
+    expect(seen).toBeGreaterThan(1000);
+  });
+
+  it('flags short forms that are unmapped or unknown', () => {
+    const bad = { ...lists, shortGeneric: [...(lists.shortGeneric ?? []), 'Fantasma'] };
+    expect(
+      checkNameLists({ ...bad, short: [...lists.short, 'Solto'] }).map((i) => i.problem),
+    ).toEqual(['not-in-short', 'unmapped-short']);
   });
 
   it('never shows a familyNoSolo surname alone', () => {
