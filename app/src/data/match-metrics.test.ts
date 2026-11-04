@@ -21,8 +21,8 @@ import { fixedIdentitySource } from '../engine/testing/identity.ts';
 import { testParams } from '../engine/testing/params.ts';
 
 /*
- * Quick report of the match engine (T-009) with the 20 real clubs, against the 1a targets of
- * docs/design/balance-targets.md. It only REPORTS: tuning is the /balance's job (T-016), so the
+ * Quick report of the match engine (T-009; cards, injuries and set pieces since T-010) with the
+ * 20 real clubs, against the 1a targets of docs/design/balance-targets.md. It only REPORTS: tuning is the /balance's job (T-016), so the
  * assertions below are sanity bounds far outside the targets, never the targets themselves.
  *
  * The full report runs only with `MATCH_METRICS=1` (like NAMES_FULL_CHECK):
@@ -89,6 +89,15 @@ interface Tally {
   thrashings: number;
   bigMargins: number;
   scores: Map<string, number>;
+  yellows: number;
+  reds: number;
+  secondYellows: number;
+  injuries: number;
+  injuryRounds: number;
+  penalties: number;
+  penaltyGoals: number;
+  freeKicks: number;
+  abandoned: number;
 }
 
 function tally(): Tally {
@@ -101,6 +110,15 @@ function tally(): Tally {
     thrashings: 0,
     bigMargins: 0,
     scores: new Map(),
+    yellows: 0,
+    reds: 0,
+    secondYellows: 0,
+    injuries: 0,
+    injuryRounds: 0,
+    penalties: 0,
+    penaltyGoals: 0,
+    freeKicks: 0,
+    abandoned: 0,
   };
 }
 
@@ -115,11 +133,22 @@ function add(t: Tally, result: MatchResult): void {
   if (Math.abs(h - a) >= 5) t.bigMargins += 1;
   const key = `${h}x${a}`;
   t.scores.set(key, (t.scores.get(key) ?? 0) + 1);
+  t.yellows += result.stats.home.yellows + result.stats.away.yellows;
+  t.reds += result.stats.home.reds + result.stats.away.reds;
+  t.injuries += result.newInjuries.length;
+  for (const injury of result.newInjuries) t.injuryRounds += injury.rounds;
+  for (const e of result.events) {
+    if (e.type === 'red' && e.reason === 'secondYellow') t.secondYellows += 1;
+    if (e.type === 'penaltyAwarded') t.penalties += 1;
+    if (e.type === 'goal' && e.kind === 'penalty') t.penaltyGoals += 1;
+    if ((e.type === 'goal' || e.type === 'chance') && e.kind === 'freeKick') t.freeKicks += 1;
+    if (e.type === 'fulltime' && e.abandoned) t.abandoned += 1;
+  }
 }
 
 const pct = (n: number, d: number) => `${((100 * n) / d).toFixed(1)}%`;
 
-describe('T-009 match metrics with the 20 real clubs (report only, not the /balance)', () => {
+describe('T-009/T-010 match metrics with the 20 real clubs (report only, not the /balance)', () => {
   it(
     `simulates ${FULL ? 'at least 10,000' : 'a sample of'} league matches and the calibrated duels`,
     { timeout: 300_000 },
@@ -217,13 +246,18 @@ describe('T-009 match metrics with the 20 real clubs (report only, not the /bala
       const n = league.matches;
       const top = [...league.scores.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
       const lines = [
-        `[T-009 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}`,
+        `[T-010 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}`,
         `  goals per match        ${(league.goals / n).toFixed(3)}   target 2.65 (2.50–2.80)`,
         `  0x0                    ${pct(league.nilNil, n)}   target 7% (6–9%)`,
         `  draws                  ${pct(league.draws, n)}   target 26% (24–28%)`,
         `  home wins              ${pct(league.homeWins, n)}   target 47.5% (45–50%)`,
         `  margin >= 3 (goleada)  ${pct(league.thrashings, n)}   target 11% (8–13%)`,
         `  margin >= 5            ${pct(league.bigMargins, n)}   target 1% (0.5–2%)`,
+        `  yellows per match      ${(league.yellows / n).toFixed(2)}   target 4.0 (3.5–4.5)`,
+        `  reds per match         ${(league.reds / n).toFixed(3)}   target 0.18 (0.11–0.25); second yellows ${(league.secondYellows / n).toFixed(3)}, direct ${((league.reds - league.secondYellows) / n).toFixed(3)}`,
+        `  injuries per match     ${(league.injuries / n).toFixed(3)}   target 0.30 (0.20–0.40); mean rounds out ${(league.injuryRounds / (league.injuries || 1)).toFixed(2)} (target 2–3)`,
+        `  penalties per match    ${(league.penalties / n).toFixed(3)}   target 0.25 (0.17–0.33); converted ${pct(league.penaltyGoals, league.penalties || 1)} (target 72–82%)`,
+        `  direct free kicks      ${(league.freeKicks / n).toFixed(3)} per match (no target); abandoned matches ${league.abandoned}`,
         `  most common scores     ${top.map(([s, c]) => `${s} ${pct(c, n)}`).join(', ')}   target 1x1 and 1x0 in the top 3`,
         `  league, shown gap >= 10: ${gap10.matches} matches, stronger wins ${pct(gap10.strongerWins, gap10.matches || 1)}, draws ${pct(gap10.draws, gap10.matches || 1)}`,
         `  duel 80x60 (gap 20)    stronger wins ${pct(d20.strongWins, d20.matches)}   target 65% (62–68%); draws ${pct(d20.draws, d20.matches)}; goals ${(d20.goals / d20.matches).toFixed(2)}`,
