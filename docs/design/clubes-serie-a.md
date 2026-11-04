@@ -78,11 +78,15 @@ Sem o motor de partida, estimei com um modelo simplificado (Poisson, mando +4, 3
 | Campeão por porte: pequeno                  | 0,5%–3%       | 0%                              | ~1%                           | Bragantão (71) às vezes ganha                      |
 | Temporadas com ao menos um grande rebaixado | 1%–5%         | ~4%                             | **~97%**                      | **quebra a meta**: 2 dos 4 mais fracos são grandes |
 
-**Decisão do CEO (a meta "grande rebaixado" foi escrita quando porte e força eram a mesma coisa):** proponho trocar por "temporadas com ao menos um grande rebaixado: 40% a 80%" (no Brasil real é comum um grande cair; com 12 grandes e a tabela atual, ver um cair é a história, não a falha) e manter "campeão por porte: grande 50% a 85%", porque 4 dos 5 mais fortes são grandes. A alternativa é medir as duas métricas pela força (os 6 mais fortes), não pelo porte. Até a decisão, o `/balance` reporta as duas formas.
+**Decidido pelo CEO (2026-11-04):** "temporadas com ao menos um grande rebaixado" passa a 40% a 80% e "campeão é grande" a 50% a 85% (`balance-targets.md`). Pequeno ou médio campeão: raro, mas possível (tática, zebra, jovens; mercado e estrutura na Etapa 3). O `/balance` reporta as métricas pelo porte e, para comparação, pelos 6 mais fortes.
 
-### Expectativa da diretoria (proposta, precisa de ADR)
+### Expectativa da diretoria (decidido, ADR na Etapa 4)
 
-`PROJETO.md` diz que o porte define a meta da temporada (`temporada.md`: grande, ficar entre os 6). Com força baixa, Corinto (65, 17º mais forte) e Inter-Regional (64) quase nunca cumprem essa meta; na 1a a meta é só informativa, então isso é texto ("a diretoria cobra"), não demissão. **Para a Etapa 4 proponho (ADR):** a meta vem da força (`posição-alvo = posição de força + 2`, no máximo 16º) e o porte define a paciência e o tom da cobrança. Assim o grande mal está obrigado a melhorar, não a ser campeão.
+A meta vem da força (`targetPosition = min(strengthRank + 2, 16)`) e o porte dá a paciência e o tom da cobrança (`temporada.md`, "Expectativa da diretoria"). Corinto (17º em força) ouve "é obrigação ficar entre os 16", não "entre os 6". Na 1a muda só o texto; a ADR da Etapa 4 registra a troca da regra do `PROJETO.md`.
+
+### Porte na carreira (Etapa 4)
+
+O porte da tabela é o do início do jogo. Dentro da carreira ele pode crescer devagar com títulos e torcida (pequeno → médio → grande), guardado no save, sem mexer nestes dados (`temporada.md`, "Porte na carreira").
 
 ## Distribuição de perfis
 
