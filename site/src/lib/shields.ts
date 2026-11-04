@@ -10,7 +10,7 @@ export interface SiteClub extends ShieldClub {
 }
 
 /** A club colour must exist in the data; there is no literal fallback colour on the site. */
-function club1(color: string | undefined, id: string): string {
+function requireColor(color: string | undefined, id: string): string {
   if (!color) throw new Error(`Club ${id} is missing a colour`);
   return color;
 }
@@ -25,7 +25,7 @@ export function clubsById(ids: string[]): SiteClub[] {
       shortName: c.shortName,
       city: c.city,
       state: c.state,
-      colors: [club1(c.colors[0], id), club1(c.colors[1], id)],
+      colors: [requireColor(c.colors[0], id), requireColor(c.colors[1], id)],
       abbreviation: c.abbreviation,
       size: c.size as ShieldClub['size'],
       titles: { league: c.titles.league },

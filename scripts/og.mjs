@@ -217,8 +217,7 @@ export async function layoutTitle(title, measure) {
     });
   };
   let lines = await greedy(size);
-  if (lines.length > 1 && lines.length <= words.length)
-    lines = (await balance(lines.length, size)) ?? lines;
+  if (lines.length > 1) lines = (await balance(lines.length, size)) ?? lines;
   if (lines.length <= 2) {
     return { size, step: 76, lines, baselines: lines.length === 1 ? [242] : [204, 280] };
   }

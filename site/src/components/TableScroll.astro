@@ -80,6 +80,12 @@ const { label, minWidth = '520px', stack = false } = Astro.props;
       display: block;
       margin-top: var(--space-1);
     }
+    .stack :global(.inline-state .badge) {
+      height: auto;
+      min-height: 24px;
+      padding-block: 2px;
+      white-space: normal;
+    }
     .stack :global(tr > :first-child) {
       max-width: 40cqw;
     }

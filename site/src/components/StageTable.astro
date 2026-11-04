@@ -179,4 +179,18 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
     width: 1%;
     white-space: nowrap;
   }
+  /* Narrow screens: the badge may wrap instead of fixing the column at its full width. */
+  @media (max-width: 719.98px) {
+    .state {
+      width: auto;
+      white-space: normal;
+    }
+    .state :global(.badge),
+    .cards .badge :global(.badge) {
+      height: auto;
+      min-height: 24px;
+      padding-block: 2px;
+      white-space: normal;
+    }
+  }
 </style>

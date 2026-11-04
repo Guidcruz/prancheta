@@ -40,7 +40,10 @@ const ogPath = entry ? `${base}og/${entry.file}` : undefined;
 // Walk up from this file to the folder with astro.config.mjs (works in dev and in the bundled
 // build, where import.meta.url points to a chunk).
 let siteRoot = dirname(fileURLToPath(import.meta.url));
-while (!existsSync(join(siteRoot, 'astro.config.mjs')) && dirname(siteRoot) !== siteRoot)
+while (
+  !['astro.config.mjs', 'astro.config.ts'].some((f) => existsSync(join(siteRoot, f))) &&
+  dirname(siteRoot) !== siteRoot
+)
   siteRoot = dirname(siteRoot);
 const hasImage = ogPath !== undefined && existsSync(join(siteRoot, 'public/og', entry?.file ?? ''));
 const ogImage = hasImage && ogPath ? new URL(ogPath, `https://${config.domain}`).href : undefined;
@@ -151,6 +154,7 @@ const ogImage = hasImage && ogPath ? new URL(ogPath, `https://${config.domain}`)
     text-transform: uppercase;
     margin: 0 0 var(--space-4);
     overflow-wrap: break-word;
+    text-wrap: balance;
   }
   h3 {
     font: var(--type-subtitulo);
