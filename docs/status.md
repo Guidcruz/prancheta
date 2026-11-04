@@ -60,9 +60,9 @@ Telas da 1a (`docs/design/telas/`):
 | Tarefa | Estado                                                                                                                     |
 | ------ | -------------------------------------------------------------------------------------------------------------------------- |
 | T-001  | feita (PR #4 mergeado); fundações do motor                                                                                 |
-| T-002  | próxima (`GameParams` e `validateParams`)                                                                                  |
-| T-003  | próxima, em paralelo à T-002 (dados dos clubes; lista dos 20 aprovada em `docs/content/lotes/2026-11-04-nomes-serie-a.md`) |
+| T-002  | entregue, aguardando merge (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`; 182 testes)   |
+| T-003  | próxima (em paralelo à T-002 (dados dos clubes; lista dos 20 aprovada em `docs/content/lotes/2026-11-04-nomes-serie-a.md`) |
 
 ## Próximo
 
-`/quick` do devcontainer (Codespaces pronto, Node 22.18) aguardando merge; depois `/feature T-002` e `/feature T-003`. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+`/quick` do devcontainer (Codespaces pronto, Node 22.18) aguardando merge; a T-002 aguarda o merge do CEO; depois `/feature T-003`. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
