@@ -108,9 +108,12 @@ function check(input: MatchInput, result: MatchResult): void {
       expect(onPitch.has(e.out), `${e.out} on the pitch`).toBe(true);
       onPitch.delete(e.out);
       onPitch.add(e.in);
-      cameOn.set(e.in, e.minute);
-      // A tactical substitution takes effect at the start of its minute: he did not play it.
-      left.set(e.out, e.reason === 'injury' ? e.minute : e.minute - 1);
+      // The first regulation minute he played: an injury swap or a substitution in added time
+      // comes after his minute is counted.
+      cameOn.set(e.in, e.reason === 'injury' || e.added !== undefined ? e.minute + 1 : e.minute);
+      // A tactical substitution takes effect at the start of its minute: he did not play it (in
+      // added time, every regulation minute was already played).
+      left.set(e.out, e.reason === 'injury' || e.added !== undefined ? e.minute : e.minute - 1);
     }
     if (e.type === 'goal') goals[e.side]++;
     if (e.type === 'chance' || e.type === 'penaltyMissed') {
@@ -164,12 +167,7 @@ function check(input: MatchInput, result: MatchResult): void {
     expect(energy).toBeGreaterThanOrEqual(0);
     expect(energy).toBeLessThanOrEqual(condition.get(id)!);
   }
-  for (const [id, from] of cameOn) {
-    // On from the minute after an injury, or from the minute of a tactical substitution.
-    const injury = result.events.some(
-      (e) => e.type === 'substitution' && e.in === id && e.reason === 'injury',
-    );
-    const first = injury ? from + 1 : from;
+  for (const [id, first] of cameOn) {
     const until = left.get(id) ?? 90;
     expect(result.minutes[id]).toBe(Math.max(0, Math.min(90, until) - Math.min(first, 91) + 1));
     expect(result.finalEnergy[id]!).toBeLessThanOrEqual(condition.get(id)!);

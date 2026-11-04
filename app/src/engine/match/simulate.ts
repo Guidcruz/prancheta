@@ -36,7 +36,7 @@ import {
   sideCardRates,
   yellowProbability,
 } from './rules.ts';
-import { commandDetail, prepareCommands, type PendingCommand } from './commands.ts';
+import { commandDetail, commandKey, prepareCommands, type PendingCommand } from './commands.ts';
 import { aiDecision, injuryReserve } from './inplay.ts';
 import {
   bestOnPitch,
@@ -100,15 +100,16 @@ import type {
  * 4. end of each half: the added time (1), its minutes as in 2 and 3, then the possession noise
  *    (1);
  * 5. half time: the talk of each chaotic side (1 each, home first), drawn even when the coach chose
- *    the talk, so the choice changes only the talk;
+ *    the talk or `skip`, so the choice changes only the talk;
  * 6. full time, or the moment the match is abandoned: the possession noise of the half in
  *    progress, when abandoned (1), then the rating noise of each player with a rating (1 each;
  *    summary.ts).
  *
- * Before each regulation minute M + 1 (never in added time), with no draw: the commands of minute
- * M (commands.ts), then the AI's decisions after minute M for a side with `controller: 'ai'`
- * (inplay.ts, rules 2 to 6), home side first. So a command of minute M changes nothing up to
- * minute M, and the events up to it stay the same (partida.md, "Determinismo").
+ * Before each regulation minute M + 1 and each added minute 90+(k+1) of the second half (never in
+ * the first half's added time), with no draw: the commands given after the minute before
+ * (commands.ts), then the AI's decisions for a side with `controller: 'ai'` (inplay.ts, rules 2
+ * to 6, rule minute 90 in added time), home side first. So a command changes nothing up to its
+ * minute, and the events up to it stay the same (partida.md, "Quando um comando vale").
  */
 
 const SIDES: readonly Side[] = ['home', 'away'];
@@ -217,7 +218,11 @@ export function simulateMatch(
   }
   const home = kickoffTeam('home', input.home, warnings);
   const away = kickoffTeam('away', input.away, warnings);
-  const book = prepareCommands(commands, warnings);
+  const book = prepareCommands(
+    commands,
+    { home: input.home.controller, away: input.away.controller },
+    warnings,
+  );
   const teams = [home, away] as const;
   const teamOf = (side: Side) => (side === 'home' ? home : away);
   home.home = input.neutral ? 0 : homeAdvantage({ fans: home.fans, derby: input.derby }, params);
@@ -490,11 +495,13 @@ export function simulateMatch(
   }
 
   /**
-   * Between regulation minutes: the commands of minute `minute`, then the AI's decisions after it,
-   * home side first; they take effect at `clock`, the start of the next minute.
+   * Between two minutes (partida.md, "Quando um comando vale"): the commands given after the
+   * minute of `key` (`commandKey`), then the AI's decisions after it, with the rule minute
+   * `minute` (90 in the second half's added time), home side first; they take effect at `clock`,
+   * the start of the next minute.
    */
-  function between(minute: number, clock: Clock): void {
-    const pending = book.byMinute.size === 0 ? undefined : book.byMinute.get(minute);
+  function between(key: number, minute: number, clock: Clock): void {
+    const pending = book.byMinute.size === 0 ? undefined : book.byMinute.get(key);
     // The AI's in-match rules start at minute 60: before it, only the commands can do anything.
     if (pending === undefined && minute < IN_MATCH_AI.chaoticChaseFrom) return;
     for (const team of teams) {
@@ -509,7 +516,10 @@ export function simulateMatch(
       const theirs = teamOf(team.side === 'home' ? 'away' : 'home').goals;
       const decision = aiDecision(team, minute, team.goals, theirs, params.ai);
       const sub = decision.substitution;
-      if (sub !== undefined) substitution(clock, team, sub.index, sub.reserve, sub.reason);
+      if (sub !== undefined) {
+        substitution(clock, team, sub.index, sub.reserve, sub.reason);
+        if (sub.reason === 'tactical') team.chased = true; // rule 3's, once a match
+      }
       const tactic = decision.tactic;
       if (tactic !== undefined) {
         setTactic(clock, team, { formation: team.formation, ...tactic }, tactic.preset);
@@ -526,7 +536,7 @@ export function simulateMatch(
   function replaceInjured(clock: Clock, team: TeamState, index: number, app: Appearance): void {
     let reserve: Player | undefined;
     const pending = book.byMinute
-      .get(clock.minute)
+      .get(commandKey(clock.minute, clock.added))
       ?.find(
         (p) =>
           !p.done &&
@@ -685,12 +695,14 @@ export function simulateMatch(
 
   const possession: number[] = [];
   let end: Clock = { minute: 0, half: 1 };
+  /** The half-time talks were given (the match reached half time). */
+  let talked = false;
   if (abandoned === undefined) {
     play: for (const half of [1, 2] as const) {
       const last = half * HALF_MINUTES;
       for (let minute = last - HALF_MINUTES + 1; minute <= last; minute++) {
         end = { minute, half };
-        between(minute - 1, end);
+        between(commandKey(minute - 1), minute - 1, end);
         playMinute(end);
         if (abandoned !== undefined) break play;
       }
@@ -705,6 +717,9 @@ export function simulateMatch(
       end = { minute: last, ...(added > 0 ? { added } : {}), half };
       for (let extra = 1; extra <= added; extra++) {
         end = { minute: last, added: extra, half };
+        // In the second half's added time the commands of 90+(extra − 1) and the AI take effect
+        // too; in the first half's they wait for minute 46.
+        if (half === 2) between(commandKey(last, extra - 1), last, end);
         playMinute(end);
         if (abandoned !== undefined) break play;
       }
@@ -712,13 +727,14 @@ export function simulateMatch(
 
       if (half === 1) {
         events.push({ ...at(end), importance: 2, type: 'halftime', score: score() });
+        talked = true;
         // 5. Half-time talk: `halftimeBoost` of the second half, by the half-time score; a leader
         // captain on the pitch doubles a positive effect.
         for (const team of teams) {
           const theirs = teamOf(team.side === 'home' ? 'away' : 'home').goals;
           // The chaotic draw happens even when the coach chose: the choice changes only the talk.
           const ai = halftimeTalk(team, team.goals, theirs);
-          const talk = book.talks[team.side] ?? ai;
+          const talk = book.talks[team.side]?.talk ?? ai;
           const leader = captainOnPitch(team)?.player.trait === 'leader';
           team.talk = talk;
           team.halftimeBoost = halftimeBoost(talk, team.goals, theirs, leader);
@@ -729,9 +745,18 @@ export function simulateMatch(
   }
   // 6. An abandoned match closes the possession of the half in progress.
   if (abandoned !== undefined) possession.push(halfPossession());
-  // A command of minute 90 has no next minute (only the substitution of a player injured then).
-  if (abandoned === undefined) {
-    for (const p of book.byMinute.get(2 * HALF_MINUTES) ?? []) {
+  // Commands that never had a next minute: of minute 90 beyond the drawn added time, or of a
+  // moment an abandoned match never reached (the half-time talk too).
+  if (!talked) {
+    for (const side of SIDES) {
+      const t = book.talks[side];
+      if (t !== undefined) {
+        warnings.push({ code: 'command-too-late', detail: commandDetail(t.command, t.index) });
+      }
+    }
+  }
+  for (const key of [...book.byMinute.keys()].sort((a, b) => a - b)) {
+    for (const p of book.byMinute.get(key)!) {
       if (!p.done) {
         warnings.push({ code: 'command-too-late', detail: commandDetail(p.command, p.index) });
       }

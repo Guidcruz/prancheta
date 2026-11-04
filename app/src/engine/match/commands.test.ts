@@ -61,9 +61,17 @@ function playersIn(e: MatchEvent): string[] {
   }
 }
 
-/** The events up to regulation minute `minute` (45 and 90 with their added time). */
-const upTo = (events: readonly MatchEvent[], minute: number) =>
-  events.filter((e) => e.minute <= minute && e.type !== 'fulltime');
+/**
+ * The events up to the moment of a command: regulation minute `minute` (45 with its added time),
+ * or 90+`added` when `added` is given.
+ */
+const upTo = (events: readonly MatchEvent[], minute: number, added?: number) =>
+  events.filter(
+    (e) =>
+      e.type !== 'fulltime' &&
+      (e.minute < minute ||
+        (e.minute === minute && (added === undefined || (e.added ?? 0) <= added))),
+  );
 
 const sub = (minute: number, out: string, into: string, side: Side = 'home'): MatchCommand => ({
   minute,
@@ -314,13 +322,23 @@ describe('determinism: a command of minute M leaves the events up to M as they w
     }
   }
 
-  it('re-running with the accumulated list keeps the prefix, in 600 matches (both sides, AI on the other)', () => {
-    for (let seed = 0; seed < 600; seed++) {
-      const input = withSeed(coached, seed);
+  /** The coach on the away side, the AI on the home side. */
+  const coachedAway: MatchInput = {
+    ...coached,
+    home: aiTeamInput(state, plain, plain.homeId),
+    away: aiTeamInput(state, plain, plain.awayId, 'human'),
+  };
+
+  it('re-running with the accumulated list keeps the prefix, in 700 matches (coach on either side, also in added time)', () => {
+    for (let seed = 0; seed < 700; seed++) {
       const side: Side = seed % 3 === 0 ? 'away' : 'home';
+      const input = withSeed(side === 'home' ? coached : coachedAway, seed);
       const earlier: MatchCommand[] = [commandFor(seed + 1, 20, side, input)];
-      const minute = [30, 45, 61, 75, 89][seed % 5]!;
-      const added = commandFor(seed, minute, side, input);
+      const minute = [30, 45, 61, 75, 89, 90, 90][seed % 7]!;
+      const extra = minute === 90 ? seed % 3 : undefined;
+      const base = commandFor(seed, minute, side, input);
+      // commandFor never gives a half-time talk, so `added` always fits the command.
+      const added = (extra === undefined ? base : { ...base, added: extra }) as MatchCommand;
       const before = simulateMatch(input, params, earlier);
       const after = simulateMatch(input, params, [...earlier, added]);
       // The one exception: a substitution of a player injured in that very minute happens at once,
@@ -328,11 +346,17 @@ describe('determinism: a command of minute M leaves the events up to M as they w
       const injury =
         added.kind === 'substitution'
           ? before.events.findIndex(
-              (e) => e.type === 'injury' && e.player === added.out && e.minute === minute,
+              (e) =>
+                e.type === 'injury' &&
+                e.player === added.out &&
+                e.minute === minute &&
+                (minute !== 90 || (e.added ?? 0) === extra),
             )
           : -1;
-      const prefix = injury >= 0 ? before.events.slice(0, injury + 1) : upTo(before.events, minute);
+      const prefix =
+        injury >= 0 ? before.events.slice(0, injury + 1) : upTo(before.events, minute, extra);
       expect(JSON.stringify(after.events.slice(0, prefix.length))).toBe(JSON.stringify(prefix));
+      expect(after.warnings.filter((w) => w.code === 'command-ai-side')).toEqual([]);
     }
   });
 });
@@ -403,7 +427,6 @@ describe('tactics and shortcuts (partida.md, "Táticas" and "Comandos em jogo")'
 
 describe('invalid commands are ignored with a warning (partida.md, "Casos de borda")', () => {
   const plainRun = simulateMatch(coached, params);
-  const keeper = home.starters[0]!;
   const reserve = home.bench[2]!;
 
   function ignored(command: unknown, code: string, extra: Record<string, unknown> = {}) {
@@ -486,9 +509,126 @@ describe('invalid commands are ignored with a warning (partida.md, "Casos de bor
     );
   });
 
-  it('a command of minute 90: there is no next minute', () => {
-    ignored({ minute: 90, side: 'home', kind: 'preset', preset: 'allOut' }, 'command-too-late');
-    ignored(sub(90, keeper, reserve), 'command-too-late');
+  it('a bad `added`: with another minute than 90, negative, not an integer or above 6', () => {
+    for (const command of [
+      { minute: 45, added: 1, side: 'home', kind: 'preset', preset: 'press' },
+      { minute: 89, added: 0, side: 'home', kind: 'preset', preset: 'press' },
+      { minute: 90, added: -1, side: 'home', kind: 'preset', preset: 'press' },
+      { minute: 90, added: 1.5, side: 'home', kind: 'preset', preset: 'press' },
+      { minute: 90, added: 7, side: 'home', kind: 'preset', preset: 'press' },
+      { minute: 90, added: '2', side: 'home', kind: 'preset', preset: 'press' },
+    ]) {
+      ignored(command, 'command-invalid-minute');
+    }
+  });
+
+  it('a command for the side the AI plays: command-ai-side, nothing changes', () => {
+    ignored({ minute: 60, side: 'away', kind: 'preset', preset: 'allOut' }, 'command-ai-side');
+    ignored(
+      sub(30, coached.away.sheet.lineup.starters[3]!, coached.away.sheet.lineup.bench[2]!, 'away'),
+      'command-ai-side',
+    );
+  });
+
+  it('a command of minute 90 with `added` at or beyond the drawn added time: command-too-late', () => {
+    const stoppage = (plainRun.events.filter((e) => e.type === 'stoppage')[1] as Of<'stoppage'>)
+      .minutes;
+    ignored(
+      { minute: 90, added: stoppage, side: 'home', kind: 'preset', preset: 'allOut' },
+      'command-too-late',
+    );
+    ignored(
+      { minute: 90, added: 6, side: 'home', kind: 'preset', preset: 'allOut' },
+      'command-too-late',
+    );
+  });
+
+  it('commands after the match was abandoned: command-too-late, the half-time talk too', () => {
+    // A home side of 7 that loses one at once is abandoned in the first half.
+    const seven = coached.home.sheet.lineup.starters.slice(0, 7);
+    const short: MatchInput = {
+      ...coached,
+      home: {
+        ...coached.home,
+        sheet: {
+          ...coached.home.sheet,
+          lineup: { ...coached.home.sheet.lineup, starters: seven, bench: [] },
+        },
+      },
+    };
+    for (let seed = 0; seed < 2_000; seed++) {
+      const input = withSeed(short, seed);
+      const r = simulateMatch(input, params);
+      const fulltime = r.events.at(-1)!;
+      if (fulltime.type !== 'fulltime' || !fulltime.abandoned || fulltime.half !== 1) continue;
+      const late = simulateMatch(input, params, [
+        { minute: 45, side: 'home', kind: 'halftimeTalk', talk: 'calm' },
+        { minute: 70, side: 'home', kind: 'preset', preset: 'allOut' },
+      ]);
+      expect(JSON.stringify(late.events)).toBe(JSON.stringify(r.events));
+      expect(late.warnings.filter((w) => w.code.startsWith('command-'))).toEqual([
+        {
+          code: 'command-too-late',
+          detail: { command: 0, side: 'home', minute: 45, kind: 'halftimeTalk' },
+        },
+        {
+          code: 'command-too-late',
+          detail: { command: 1, side: 'home', minute: 70, kind: 'preset' },
+        },
+      ]);
+      return;
+    }
+    throw new Error('no match abandoned in the first half');
+  });
+});
+
+describe('commands in the added time of the second half (partida.md, "Quando um comando vale")', () => {
+  it('{ minute: 90 } takes effect at 90+1', () => {
+    const r = simulateMatch(coached, params, [
+      { minute: 90, side: 'home', kind: 'preset', preset: 'allOut' },
+    ]);
+    const change = r.events.find((e) => e.type === 'tacticChange' && e.side === 'home');
+    expect(change).toMatchObject({ minute: 90, added: 1, half: 2, preset: 'allOut' });
+    expect(r.warnings).toEqual([]);
+  });
+
+  it('{ minute: 90, added: 2 } with 4 of added time takes effect at 90+3, the same events up to 90+2', () => {
+    let checked = 0;
+    for (let seed = 0; seed < 400 && checked < 20; seed++) {
+      const input = withSeed(coached, seed);
+      const none = simulateMatch(input, params);
+      const stoppage = (
+        none.events.filter((e) => e.type === 'stoppage')[1] as Of<'stoppage'> | undefined
+      )?.minutes;
+      if (stoppage !== 4) continue;
+      checked++;
+      const r = simulateMatch(input, params, [
+        { minute: 90, added: 2, side: 'home', kind: 'preset', preset: 'holdResult' },
+      ]);
+      const prefix = upTo(none.events, 90, 2);
+      expect(JSON.stringify(r.events.slice(0, prefix.length))).toBe(JSON.stringify(prefix));
+      const change = r.events.find((e) => e.type === 'tacticChange' && e.side === 'home');
+      expect(change).toMatchObject({ minute: 90, added: 3, preset: 'holdResult' });
+    }
+    expect(checked).toBe(20);
+  });
+
+  it('a command of minute 45 takes effect at 46, with or without added time in the first half', () => {
+    let withAdded = 0;
+    let without = 0;
+    for (let seed = 0; seed < 100; seed++) {
+      const r = simulateMatch(withSeed(coached, seed), params, [
+        { minute: 45, side: 'home', kind: 'tactic', posture: 'attacking' },
+      ]);
+      const first = (r.events.filter((e) => e.type === 'stoppage')[0] as Of<'stoppage'>).minutes;
+      if (first > 0) withAdded++;
+      else without++;
+      const change = r.events.find((e) => e.type === 'tacticChange' && e.side === 'home');
+      expect(change).toMatchObject({ minute: 46, half: 2 });
+      expect(change?.added).toBeUndefined();
+    }
+    expect(withAdded).toBeGreaterThan(0);
+    expect(without).toBeGreaterThan(0);
   });
 });
 

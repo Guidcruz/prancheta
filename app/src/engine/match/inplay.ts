@@ -7,23 +7,28 @@ import { currentEff, slotEff, type TeamState } from './team.ts';
 import type { TacticPreset } from './types.ts';
 
 /*
- * The AI during the match (docs/design/ia-clubes.md, "Durante o jogo"; T-012). Pure decisions on
- * the team state, without any draw: the match loop (simulate.ts) applies them.
+ * The AI during the match (docs/design/ia-clubes.md, "Durante o jogo"; T-012). These functions
+ * only read the team state and never draw: they return what the AI decided, and the match loop
+ * (simulate.ts) applies it (and marks rule 3's substitution as made).
  *
- * | # | When                                              | What the AI does                         |
- * | 1 | injury                                            | the reserve with the highest selection   |
- * |   |                                                   | value for the slot, at once              |
- * | 2 | minutes 60 to 80, a player with energy < subEnergy | the best reserve for the slot, if his    |
- * |   |                                                   | eff beats the tired player's eff now     |
- * | 3 | from 70 (chaotic: 60), losing                     | lowest-eff DM or CB slot out for the best|
- * |   |                                                   | AM or ST of the bench; posture attacking |
- * | 4 | from 80, losing by 1                              | "todo mundo no ataque"                   |
- * | 5 | from 75 (ambitious: 80), winning by 1             | "segurar o resultado"                    |
- * | 6 | always                                            | keeps 1 substitution for an injury until |
- * |   |                                                   | minute 80                                |
+ * | # | When                                         | What the AI does                              |
+ * | 1 | injury                                       | the reserve with the highest selection value   |
+ * |   |                                              | for the slot, at once                          |
+ * | 2 | after minutes 60, 70 and 80                  | the starter with the lowest energy, below      |
+ * |   |                                              | `ai.subEnergy`, off for the best reserve for   |
+ * |   |                                              | the slot if his eff is at least                |
+ * |   |                                              | `ai.rotationMinRatio` of the starter's now     |
+ * | 3 | from 70 (chaotic: 60), losing                | attacking posture every minute (unless all     |
+ * |   |                                              | out); once a match, the lowest-eff AM or ST    |
+ * |   |                                              | slot off for the best AM or ST of the bench    |
+ * | 4 | from 80, losing by 1                         | "todo mundo no ataque"                         |
+ * | 5 | from 75 (ambitious: 80), winning by 1        | "segurar o resultado"                          |
+ * | 6 | always                                       | keeps 1 substitution for an injury until 80    |
  *
- * Rule 1 runs for both controllers (the coach's club too: ia-clubes.md, "Clube do técnico
- * humano", and docs/02-architecture.md, "Comandos"); rules 2 to 6 only for `controller: 'ai'`.
+ * The AI decides after every minute played, regulation or added time of the second half (rule
+ * minute 90), at most one tactical substitution (rules 2 and 3) per minute, and never changes the
+ * formation in 1a. Rule 1 runs for both controllers (the coach's club too: ia-clubes.md, "Clube do
+ * técnico humano"); rules 2 to 6 only for `controller: 'ai'`.
  */
 
 /** The reserve of rule 1 for the slot `index`: the highest selection value; none without a sub. */
@@ -32,7 +37,10 @@ export function injuryReserve(team: TeamState, index: number): Player | undefine
   return bestForSlot(team.bench, team.slots[index]!.position);
 }
 
-/** A substitution the AI decided: the player in slot `index` leaves, `reserve` comes on. */
+/**
+ * A substitution the AI decided: the player in slot `index` leaves, `reserve` comes on.
+ * `fatigue` is rule 2, `tactical` is rule 3 (the caller marks it as made).
+ */
 export interface AiSubstitution {
   readonly index: number;
   readonly reserve: Player;
@@ -61,38 +69,45 @@ function tacticalSubAllowed(team: TeamState, minute: number): boolean {
 }
 
 /**
- * Rule 2: in slot order, the first player on the pitch with energy below `ai.subEnergy` whose
- * best reserve for the slot (highest selection value) has a higher `eff` there than the tired
- * player has now.
+ * Rule 2: the starters on the pitch below `ai.subEnergy`, from the lowest energy (ties: slot
+ * order); the first whose best reserve for the slot (highest selection value) has an eff there of
+ * at least `ai.rotationMinRatio` of the starter's eff now. A substitute never goes off this way.
  */
 function fatigueSubstitution(
   team: TeamState,
-  ai: Pick<AiParams, 'subEnergy'>,
+  ai: Pick<AiParams, 'subEnergy' | 'rotationMinRatio'>,
 ): AiSubstitution | undefined {
   if (team.bench.length === 0) return undefined;
+  const tired: number[] = [];
   for (let i = 0; i < team.slots.length; i++) {
-    const slot = team.slots[i]!;
-    if (slot.app === undefined || !(slot.app.energy < ai.subEnergy)) continue;
-    const reserve = bestForSlot(team.bench, slot.position);
+    const app = team.slots[i]!.app;
+    if (app !== undefined && app.starter && app.energy < ai.subEnergy) tired.push(i);
+  }
+  // Stable sort: equal energies keep the slot order.
+  tired.sort((a, b) => team.slots[a]!.app!.energy - team.slots[b]!.app!.energy);
+  for (const i of tired) {
+    const position = team.slots[i]!.position;
+    const reserve = bestForSlot(team.bench, position);
     if (reserve === undefined) return undefined;
-    const fresh = slotEff(reserve, slot.position, correctedCondition(reserve));
-    if (fresh > currentEff(team, i)) return { index: i, reserve, reason: 'fatigue' };
+    const fresh = slotEff(reserve, position, correctedCondition(reserve));
+    if (fresh >= ai.rotationMinRatio * currentEff(team, i)) {
+      return { index: i, reserve, reason: 'fatigue' };
+    }
   }
   return undefined;
 }
 
 /**
- * Rule 3's substitution: the DM or CB slot (slot position) with the lowest `eff` now (ties: the
+ * Rule 3's substitution: the AM or ST slot (slot position) with the lowest `eff` now (ties: the
  * first in slot order) leaves for the AM or ST (natural position) of the bench with the highest
- * selection value for that slot, who takes the slot (partida.md, "Quem entra numa substituição
- * ocupa a vaga de quem saiu").
+ * selection value for that slot, who takes the slot.
  */
 function chaseSubstitution(team: TeamState): AiSubstitution | undefined {
   let out = -1;
   let outEff = 0;
   for (let i = 0; i < team.slots.length; i++) {
     const slot = team.slots[i]!;
-    if (slot.app === undefined || (slot.position !== 'DM' && slot.position !== 'CB')) continue;
+    if (slot.app === undefined || (slot.position !== 'AM' && slot.position !== 'ST')) continue;
     const eff = currentEff(team, i);
     if (out < 0 || eff < outEff) {
       out = i;
@@ -109,26 +124,26 @@ function chaseSubstitution(team: TeamState): AiSubstitution | undefined {
 }
 
 /**
- * The AI's decisions for `team` after regulation minute `minute` was played (rules 2 to 6, in
- * order), with the score of the moment; they take effect in the next minute. Rules 3 to 5 that
- * hit in the same minute leave one tactic, the last one (rule 3 then 4 is "todo mundo no ataque").
- * Without a substitution left, the substitution part of a rule is skipped and its tactic stays.
+ * The AI's decisions for `team` after a minute played (rules 2 to 6, in order), with the score of
+ * the moment; `minute` is the rule minute (90 in the second half's added time, which is never one
+ * of rule 2's moments). They take effect in the next minute. Rules 3 to 5 that hit in the same minute
+ * leave one tactic, the last one (rule 3 then 4 is "todo mundo no ataque"). Without a substitution
+ * left, the substitution part of a rule is skipped and its tactic stays.
  */
 export function aiDecision(
   team: TeamState,
   minute: number,
   own: number,
   theirs: number,
-  ai: Pick<AiParams, 'subEnergy'>,
+  ai: Pick<AiParams, 'subEnergy' | 'rotationMinRatio'>,
 ): AiDecision {
   if (minute < IN_MATCH_AI.chaoticChaseFrom) return NOTHING;
   const { profile } = team;
   let substitution: AiSubstitution | undefined;
 
-  // Rule 2: fatigue (at most one tactical substitution per minute).
+  // Rule 2: fatigue, only after minutes 60, 70 and 80.
   if (
-    minute >= IN_MATCH_AI.fatigueFrom &&
-    minute <= IN_MATCH_AI.fatigueTo &&
+    (IN_MATCH_AI.fatigueMinutes as readonly number[]).includes(minute) &&
     tacticalSubAllowed(team, minute)
   ) {
     substitution = fatigueSubstitution(team, ai);
@@ -137,14 +152,15 @@ export function aiDecision(
   let posture = team.tactic.posture;
   let pressure = team.tactic.pressure;
   let preset: TacticPreset | undefined;
-  const losing = own < theirs;
 
-  // Rule 3: going for the result, once a match; it waits a minute if rule 2 used this one.
+  // Rule 3: the attacking posture every minute losing; the substitution once, at the first
+  // minute it is possible (rule 6 allows it, no other tactical substitution, an AM or ST to come).
   const chaseFrom = profile === 'chaotic' ? IN_MATCH_AI.chaoticChaseFrom : IN_MATCH_AI.chaseFrom;
-  if (losing && minute >= chaseFrom && !team.chased && substitution === undefined) {
-    team.chased = true;
-    if (tacticalSubAllowed(team, minute)) substitution = chaseSubstitution(team);
+  if (own < theirs && minute >= chaseFrom) {
     if (posture !== 'allOut') posture = 'attacking';
+    if (!team.chased && substitution === undefined && tacticalSubAllowed(team, minute)) {
+      substitution = chaseSubstitution(team);
+    }
   }
 
   // Rule 4: "todo mundo no ataque" when losing by one.

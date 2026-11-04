@@ -1,7 +1,13 @@
 import { clamp, exp } from '../math.ts';
 import type { FansParams, MatchParams } from '../params.ts';
 import type { AiProfile, Position, Posture, Pressure, Side, Trait } from '../types.ts';
-import type { HalftimeTalk, InjurySeverity, MissOutcome, TacticPreset } from './types.ts';
+import type {
+  HalftimeChoice,
+  HalftimeTalk,
+  InjurySeverity,
+  MissOutcome,
+  TacticPreset,
+} from './types.ts';
 
 /*
  * Rule constants and small formulas of the match (docs/design/partida.md, "Chance de oportunidade
@@ -122,9 +128,12 @@ export const ABANDONED_SCORE = 3;
 /** A leader captain multiplies the positive effect of the half-time talk by this. */
 export const LEADER_CAPTAIN_TALK_MULT = 2;
 
-/** Effect of the half-time talk on the second half (`halftimeBoost`), by the half-time score. */
+/**
+ * Effect of the half-time talk on the second half (`halftimeBoost`), by the half-time score;
+ * `skip` ("Pular") is no talk: 0 at any score.
+ */
 export const HALFTIME_TALK_EFFECTS: {
-  readonly [T in HalftimeTalk]: {
+  readonly [T in HalftimeChoice]: {
     readonly losing: number;
     readonly drawing: number;
     readonly winning: number;
@@ -133,9 +142,12 @@ export const HALFTIME_TALK_EFFECTS: {
   motivate: { losing: 0.03, drawing: 0.02, winning: 0 },
   demand: { losing: 0.04, drawing: 0, winning: -0.03 },
   calm: { losing: -0.02, drawing: 0.01, winning: 0.02 },
+  skip: { losing: 0, drawing: 0, winning: 0 },
 };
 /** The talks in the order of the chaotic profile's draw. */
 export const HALFTIME_TALKS: readonly HalftimeTalk[] = ['motivate', 'demand', 'calm'];
+/** What the coach can choose at half time: the three talks or `skip`. */
+export const HALFTIME_CHOICES: readonly HalftimeChoice[] = [...HALFTIME_TALKS, 'skip'];
 /**
  * The AI's half-time talk by profile (ia-clubes.md, "Perfis na 1a", column "Intervalo");
  * the chaotic profile draws one of {@link HALFTIME_TALKS} instead.
@@ -170,19 +182,19 @@ export const TACTIC_PRESETS: {
 
 /**
  * The minutes of the AI's in-match rules (ia-clubes.md, "Durante o jogo"; constants, "ordem das
- * regras em jogo"). The AI decides after a regulation minute is played, and the decision takes
- * effect in the next one, like a coach's command:
- * - `fatigue` (rule 2): from `fatigueFrom` to `fatigueTo`, a player with energy below
- *   `ai.subEnergy` is replaced by a better reserve;
- * - `chase` (rule 3): from `chaseFrom` (`chaoticChaseFrom` for the chaotic profile), losing;
- * - `allOut` (rule 4): from `allOutFrom`, losing by `oneGoal`;
- * - `hold` (rule 5): from `holdFrom` (`ambitiousHoldFrom` for the ambitious profile), winning by
+ * regras em jogo"). The AI decides after each minute played, regulation or added time of the
+ * second half (whose rule minute is 90), and the decision takes effect in the next one, like a
+ * coach's command:
+ * - `fatigueMinutes` (rule 2): only after these three minutes, the most tired starter below
+ *   `ai.subEnergy` goes off for a reserve worth at least `ai.rotationMinRatio` of his eff;
+ * - `chaseFrom` (rule 3): from it (`chaoticChaseFrom` for the chaotic profile), losing;
+ * - `allOutFrom` (rule 4): from it, losing by `oneGoal`;
+ * - `holdFrom` (rule 5): from it (`ambitiousHoldFrom` for the ambitious profile), winning by
  *   `oneGoal`;
  * - rule 6: before `keepSubUntil`, a tactical substitution always leaves one for an injury.
  */
 export const IN_MATCH_AI = {
-  fatigueFrom: 60,
-  fatigueTo: 80,
+  fatigueMinutes: [60, 70, 80],
   chaseFrom: 70,
   chaoticChaseFrom: 60,
   allOutFrom: 80,
@@ -381,7 +393,7 @@ export function scoreState(own: number, other: number): 'losing' | 'drawing' | '
  * does not change.
  */
 export function halftimeBoost(
-  talk: HalftimeTalk,
+  talk: HalftimeChoice,
   own: number,
   other: number,
   leaderCaptain = false,

@@ -28,7 +28,7 @@ import type {
   Side,
 } from '../types.ts';
 import { FREE_KICK_GOAL_MULT, SUSPENSION, goalProbability, penaltyProbability } from './rules.ts';
-import type { HalftimeTalk, TeamInput } from './types.ts';
+import type { HalftimeChoice, TeamInput } from './types.ts';
 
 /*
  * A team on the pitch during a match: who is in each slot, their energy and what they did. The
@@ -40,6 +40,8 @@ import type { HalftimeTalk, TeamInput } from './types.ts';
 export interface Appearance {
   readonly player: Player;
   readonly side: Side;
+  /** Took the pitch at kick-off (a starter); false for a substitute (rule 2 never takes him off). */
+  readonly starter: boolean;
   /** Energy on the pitch, 0..100; starts at the player's condition. */
   energy: number;
   /** Attributes the match reads, through `attributeOf` ("Atributo ausente"). */
@@ -100,7 +102,7 @@ export interface TeamState {
   readonly bench: Player[];
   /** Substitutions made so far (at most `MAX_SUBS`). */
   subs: number;
-  /** The AI already went for the result (ia-clubes.md, "Durante o jogo", rule 3; once a match). */
+  /** The AI already made rule 3's substitution (ia-clubes.md, "Durante o jogo"; once a match). */
   chased: boolean;
   /**
    * The profile the match plays by (the half-time talk without a choice; the in-match rules of
@@ -120,7 +122,7 @@ export interface TeamState {
   /** `halftimeBoost(t)` of `T(t)`: 0 in the first half. */
   halftimeBoost: number;
   /** The half-time talk, once it was given (the second half of "Acalmar" has fewer yellows). */
-  talk: HalftimeTalk | undefined;
+  talk: HalftimeChoice | undefined;
   goals: number;
   shots: number;
   onTarget: number;
@@ -154,7 +156,12 @@ function inRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && value >= min && value <= max;
 }
 
-function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appearance {
+function appearance(
+  player: Player,
+  side: Side,
+  starter: boolean,
+  warnings: EngineWarning[],
+): Appearance {
   const energy = correctedCondition(player);
   if (!inRange(player.condition, 0, 100)) {
     warnings.push({
@@ -174,6 +181,7 @@ function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appe
   return {
     player,
     side,
+    starter,
     energy,
     finishing: attributeOf(player, 'finishing'),
     passing: attributeOf(player, 'passing'),
@@ -322,7 +330,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     const slot: Slot = { position, sector: sectors[i]!, app: undefined, ratingBase: 0 };
     const player = filled.slots[i];
     if (player !== undefined) {
-      const app = appearance(player, side, warnings);
+      const app = appearance(player, side, true, warnings);
       appearances.push(app);
       occupy(slot, app);
     }
@@ -385,7 +393,7 @@ export function substitute(
 ): void {
   const slot = team.slots[index]!;
   if (slot.app !== undefined) slot.app.onPitch = false;
-  const app = appearance(reserve, team.side, warnings);
+  const app = appearance(reserve, team.side, false, warnings);
   team.appearances.push(app);
   occupy(slot, app);
   team.bench.splice(team.bench.indexOf(reserve), 1);

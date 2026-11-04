@@ -26,7 +26,7 @@ export function testParams(overrides: { clubStrengthSd?: number } = {}): GamePar
     },
     players: { growthMin: 0.8, growthMax: 1.2 },
     generation: { clubStrengthSd: overrides.clubStrengthSd ?? 1.5 },
-    ai: { rotationCondition: 85, rotationMinRatio: 0.9, subEnergy: 65, tiredTeamCondition: 85 },
+    ai: { rotationCondition: 85, rotationMinRatio: 0.9, subEnergy: 85, tiredTeamCondition: 85 },
     season: { fifaWeeks: [9, 21, 25, 30], midweekWeeks: [3, 7, 12, 16, 19, 23, 28, 32] },
     fans: {
       homeBonusMin: 0.02,

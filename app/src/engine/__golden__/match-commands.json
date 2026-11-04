@@ -1,5 +1,5 @@
 {
-  "engineVersion": 6,
+  "engineVersion": 7,
   "name": "match-commands",
   "data": {
     "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
@@ -263,6 +263,16 @@
         "reason": "tactical"
       },
       {
+        "minute": 61,
+        "half": 2,
+        "importance": 1,
+        "type": "substitution",
+        "side": "away",
+        "out": "clube-teste-02#2",
+        "in": "clube-teste-02#25",
+        "reason": "fatigue"
+      },
+      {
         "minute": 65,
         "half": 2,
         "importance": 1,
@@ -287,9 +297,9 @@
         "importance": 1,
         "type": "substitution",
         "side": "away",
-        "out": "clube-teste-02#2",
+        "out": "clube-teste-02#8",
         "in": "clube-teste-02#16",
-        "reason": "tactical"
+        "reason": "fatigue"
       },
       {
         "minute": 71,
@@ -302,6 +312,16 @@
         "pressure": "medium"
       },
       {
+        "minute": 72,
+        "half": 2,
+        "importance": 1,
+        "type": "substitution",
+        "side": "away",
+        "out": "clube-teste-02#16",
+        "in": "clube-teste-02#21",
+        "reason": "tactical"
+      },
+      {
         "minute": 78,
         "half": 2,
         "importance": 1,
@@ -311,6 +331,16 @@
         "posture": "defensive",
         "pressure": "low",
         "preset": "holdResult"
+      },
+      {
+        "minute": 81,
+        "half": 2,
+        "importance": 1,
+        "type": "substitution",
+        "side": "away",
+        "out": "clube-teste-02#9",
+        "in": "clube-teste-02#15",
+        "reason": "fatigue"
       },
       {
         "minute": 90,
@@ -360,14 +390,14 @@
       "home": {
         "shots": 10,
         "onTarget": 5,
-        "possession": 56,
+        "possession": 58,
         "yellows": 4,
         "reds": 0
       },
       "away": {
         "shots": 4,
         "onTarget": 3,
-        "possession": 44,
+        "possession": 42,
         "yellows": 3,
         "reds": 0
       }
@@ -396,7 +426,10 @@
       "clube-teste-02#9": 5.7,
       "clube-teste-02#10": 5.4,
       "clube-teste-02#11": 5.9,
-      "clube-teste-02#16": 6
+      "clube-teste-02#25": 6,
+      "clube-teste-02#16": null,
+      "clube-teste-02#21": 5.4,
+      "clube-teste-02#15": null
     },
     "motm": "clube-teste-01#7",
     "minutes": {
@@ -414,16 +447,19 @@
       "clube-teste-01#25": 32,
       "clube-teste-02#1": 90,
       "clube-teste-02#3": 90,
-      "clube-teste-02#2": 70,
+      "clube-teste-02#2": 60,
       "clube-teste-02#14": 90,
       "clube-teste-02#4": 90,
       "clube-teste-02#6": 90,
       "clube-teste-02#7": 90,
-      "clube-teste-02#8": 90,
-      "clube-teste-02#9": 90,
+      "clube-teste-02#8": 70,
+      "clube-teste-02#9": 80,
       "clube-teste-02#10": 90,
       "clube-teste-02#11": 90,
-      "clube-teste-02#16": 20
+      "clube-teste-02#25": 30,
+      "clube-teste-02#16": 1,
+      "clube-teste-02#21": 19,
+      "clube-teste-02#15": 10
     },
     "finalEnergy": {
       "clube-teste-01#1": 90.57851199999958,
@@ -440,16 +476,19 @@
       "clube-teste-01#25": 88.91464000000008,
       "clube-teste-02#1": 91.77976000000064,
       "clube-teste-02#3": 74.01040000000069,
-      "clube-teste-02#2": 79.26400000000024,
+      "clube-teste-02#2": 82.1440000000002,
       "clube-teste-02#14": 72.5991999999998,
       "clube-teste-02#4": 73.65760000000012,
       "clube-teste-02#6": 73.42240000000066,
       "clube-teste-02#7": 72.71679999999952,
-      "clube-teste-02#8": 72.1287999999995,
-      "clube-teste-02#9": 72.36400000000035,
+      "clube-teste-02#8": 79.52319999999963,
+      "clube-teste-02#9": 76.87600000000029,
       "clube-teste-02#10": 72.48160000000007,
       "clube-teste-02#11": 73.54000000000039,
-      "clube-teste-02#16": 92.51200000000009
+      "clube-teste-02#25": 89.63200000000012,
+      "clube-teste-02#16": 99.712,
+      "clube-teste-02#21": 93.00999999999995,
+      "clube-teste-02#15": 95.73759999999993
     },
     "newInjuries": [],
     "newSuspensions": [],
@@ -477,7 +516,10 @@
       "clube-teste-02#9": 0,
       "clube-teste-02#10": 0,
       "clube-teste-02#11": 0,
-      "clube-teste-02#16": 0
+      "clube-teste-02#25": 0,
+      "clube-teste-02#16": 0,
+      "clube-teste-02#21": 0,
+      "clube-teste-02#15": 0
     },
     "markers": [
       {
@@ -491,6 +533,11 @@
         "kind": "estreia",
         "side": "home",
         "player": "clube-teste-01#25"
+      },
+      {
+        "kind": "estreia",
+        "side": "away",
+        "player": "clube-teste-02#25"
       }
     ],
     "attendance": 15810,

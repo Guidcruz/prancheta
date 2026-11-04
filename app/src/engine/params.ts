@@ -148,7 +148,7 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
   ai: {
     rotationCondition: num(50, 95),
     rotationMinRatio: num(0.7, 1),
-    subEnergy: num(40, 80),
+    subEnergy: num(50, 100),
     tiredTeamCondition: num(60, 100),
   },
   // temporada.md gives no range column: weeks must exist in the season, and the cross checks in
