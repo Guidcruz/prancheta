@@ -31,7 +31,7 @@ function validParams(): GameParams {
       cards: { yellowPerMinute: 0.002, redPerMinute: 0.00003, derbyMult: 1.2 },
     },
     players: { growthMin: 0.8, growthMax: 1.2 },
-    generation: { clubStrengthSd: 1.5, squadSize: 25 },
+    generation: { clubStrengthSd: 1.5 },
     ai: { rotationCondition: 85, rotationMinRatio: 0.9, subEnergy: 65, tiredTeamCondition: 85 },
     season: { fifaWeeks: [9, 21, 25, 30], midweekWeeks: [3, 7, 12, 16, 19, 23, 28, 32] },
     fans: {
@@ -102,8 +102,9 @@ describe('validateParams', () => {
     expect(result.value).not.toBe(raw);
     expect(result.value.match).not.toBe(raw.match);
     expect(result.value.season.fifaWeeks).not.toBe(raw.season.fifaWeeks);
-    raw.match.fatigue.drainPerMinute = 0.5;
-    raw.season.fifaWeeks.push(33);
+    // The types are read-only; the raw input is plain JSON and can still be changed.
+    ((raw.match as unknown as Json).fatigue as Json).drainPerMinute = 0.5;
+    (raw.season.fifaWeeks as number[]).push(33);
     expect(result.value.match.fatigue.drainPerMinute).toBe(0.3);
     expect(result.value.season.fifaWeeks).toEqual([9, 21, 25, 30]);
   });
@@ -160,17 +161,6 @@ describe('validateParams', () => {
     ]);
   });
 
-  it('refuses a fraction where an integer is expected', () => {
-    expect(issuesOf(withValue('generation.squadSize', 25.5))).toEqual([
-      {
-        path: 'generation.squadSize',
-        problem: 'not-an-integer',
-        value: 25.5,
-        range: { min: 22, max: 30 },
-      },
-    ]);
-  });
-
   it('keeps the ADR-0005 fan bonuses fixed', () => {
     expect(issuesOf(withValue('fans.homeBonusMin', 0.03))).toEqual([
       {
@@ -195,7 +185,7 @@ describe('validateParams', () => {
     ]);
   });
 
-  it.each(['economy', 'match.homeBonus', 'match.cards.blue', 'ai.extra'])(
+  it.each(['economy', 'match.homeBonus', 'match.cards.blue', 'ai.extra', 'generation.squadSize'])(
     'refuses the unknown key %s',
     (path) => {
       expect(issuesOf(withValue(path, 1))).toEqual([{ path, problem: 'unknown-key', value: 1 }]);
@@ -272,6 +262,19 @@ describe('validateParams', () => {
         path: 'season.fifaWeeks.1',
         problem: 'not-a-number',
       });
+    });
+
+    it('checks the holes of a sparse list instead of skipping them', () => {
+      const sparse = [9, 21, 25, 30];
+      delete sparse[1];
+      expect(issuesOf(withValue('season.fifaWeeks', sparse))).toEqual([
+        {
+          path: 'season.fifaWeeks.1',
+          problem: 'not-a-number',
+          value: undefined,
+          range: { min: 1, max: 34 },
+        },
+      ]);
     });
 
     it('refuses unsorted or repeated weeks', () => {

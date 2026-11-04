@@ -31,11 +31,21 @@ export function formatParamIssues(issues: readonly ParamIssue[]): string {
     .join('\n');
 }
 
+/** Freezes `value` and everything reachable from it; returns the same reference. */
+function deepFreeze<T>(value: T): T {
+  if (typeof value === 'object' && value !== null && !Object.isFrozen(value)) {
+    Object.freeze(value);
+    for (const child of Object.values(value)) deepFreeze(child);
+  }
+  return value;
+}
+
 let cached: GameParams | undefined;
 
 /**
- * The validated parameters of this build. The repository files are checked by a test in CI, so
- * an invalid set here is a programming error and throws.
+ * The validated parameters of this build, deeply frozen (the GameParams type is read-only too).
+ * The repository files are checked by a test in CI, so an invalid set here is a programming
+ * error and throws.
  */
 export function loadGameParams(): GameParams {
   if (cached) return cached;
@@ -43,6 +53,7 @@ export function loadGameParams(): GameParams {
   if (!result.ok) {
     throw new Error(`Invalid app/src/params:\n${formatParamIssues(result.detail)}`);
   }
-  cached = result.value;
+  // Shared by every caller for the whole session: frozen so no one can change it in place.
+  cached = deepFreeze(result.value);
   return cached;
 }

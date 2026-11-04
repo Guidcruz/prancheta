@@ -40,6 +40,24 @@ describe('app/src/params', () => {
     expect(params).toEqual(rawParams);
     expect(params.match).not.toBe(rawParams.match);
   });
+  it('are frozen all the way down, so a change fails and leaves the values intact', () => {
+    const params = loadGameParams();
+    expect(Object.isFrozen(params)).toBe(true);
+    expect(Object.isFrozen(params.match.fatigue)).toBe(true);
+    expect(Object.isFrozen(params.season.fifaWeeks)).toBe(true);
+    // ES modules run in strict mode: writing to a frozen object throws.
+    expect(() => {
+      (params.match as { homeBase: number }).homeBase = 0.08;
+    }).toThrow(TypeError);
+    expect(() => {
+      (params.match.fatigue as { drainPerMinute: number }).drainPerMinute = 0.6;
+    }).toThrow(TypeError);
+    expect(() => (params.season.fifaWeeks as number[]).push(33)).toThrow(TypeError);
+    expect(loadGameParams().match.homeBase).toBe(0.05);
+    expect(loadGameParams().match.fatigue.drainPerMinute).toBe(0.3);
+    expect(loadGameParams().season.fifaWeeks).toEqual([9, 21, 25, 30]);
+    expect(Object.isFrozen(rawParams.match)).toBe(false);
+  });
 });
 
 describe('formatParamIssues', () => {

@@ -1,4 +1,4 @@
-import type { EngineWarning } from './types.ts';
+import type { Result } from './types.ts';
 
 /*
  * Numeric parameters of the game (docs/02-architecture.md, 3 "Parâmetros" and 4.1; ADR-0007,
@@ -13,72 +13,78 @@ import type { EngineWarning } from './types.ts';
 
 /** app/src/params/match.json (docs/design/partida.md, "Parâmetros"). */
 export interface MatchParams {
-  baseChance: number;
-  kChance: number;
-  conversion: number;
-  kFinish: number;
-  midWeight: number;
-  dayFormSd: number;
+  readonly baseChance: number;
+  readonly kChance: number;
+  readonly conversion: number;
+  readonly kFinish: number;
+  readonly midWeight: number;
+  readonly dayFormSd: number;
   /** Fixed home advantage on top of the fans (ADR-0011, option A: 0.05). */
-  homeBase: number;
-  missingPlayerPenalty: number;
-  penaltyShare: number;
-  freeKickShare: number;
-  assistShare: number;
-  fatigue: { drainPerMinute: number; recoveryPerDay: number };
-  injury: { basePerMinute: number };
-  cards: { yellowPerMinute: number; redPerMinute: number; derbyMult: number };
+  readonly homeBase: number;
+  readonly missingPlayerPenalty: number;
+  readonly penaltyShare: number;
+  readonly freeKickShare: number;
+  readonly assistShare: number;
+  readonly fatigue: { readonly drainPerMinute: number; readonly recoveryPerDay: number };
+  readonly injury: { readonly basePerMinute: number };
+  readonly cards: {
+    readonly yellowPerMinute: number;
+    readonly redPerMinute: number;
+    readonly derbyMult: number;
+  };
 }
 
 /** app/src/params/players.json (docs/design/jogadores.md, "Parâmetros"). */
 export interface PlayersParams {
-  growthMin: number;
-  growthMax: number;
+  readonly growthMin: number;
+  readonly growthMax: number;
 }
 
 /** app/src/params/generation.json (docs/design/jogadores.md, "Parâmetros"). */
 export interface GenerationParams {
-  clubStrengthSd: number;
-  squadSize: number;
+  readonly clubStrengthSd: number;
 }
 
 /** app/src/params/ai.json (docs/design/ia-clubes.md, "Parâmetros"). */
 export interface AiParams {
-  rotationCondition: number;
-  rotationMinRatio: number;
-  subEnergy: number;
-  tiredTeamCondition: number;
+  readonly rotationCondition: number;
+  readonly rotationMinRatio: number;
+  readonly subEnergy: number;
+  readonly tiredTeamCondition: number;
 }
 
 /** app/src/params/season.json (docs/design/temporada.md, "Parâmetros"). Weeks are 1-based. */
 export interface SeasonParams {
-  fifaWeeks: number[];
-  midweekWeeks: number[];
+  readonly fifaWeeks: readonly number[];
+  readonly midweekWeeks: readonly number[];
 }
 
 /** app/src/params/fans.json (docs/design/torcida.md, "Parâmetros"). */
 export interface FansParams {
-  homeBonusMin: number;
-  homeBonusMax: number;
-  derbyBonus: number;
-  moraleDrift: number;
-  start: number;
-  baseline: number;
-  resultWeight: number;
-  derbyResultMult: number;
-  reversion: number;
-  decisionCap: number;
-  baseOccupancy: number;
+  readonly homeBonusMin: number;
+  readonly homeBonusMax: number;
+  readonly derbyBonus: number;
+  readonly moraleDrift: number;
+  readonly start: number;
+  readonly baseline: number;
+  readonly resultWeight: number;
+  readonly derbyResultMult: number;
+  readonly reversion: number;
+  readonly decisionCap: number;
+  readonly baseOccupancy: number;
 }
 
-/** Every numeric parameter of the game, one key per file of app/src/params/. */
+/**
+ * Every numeric parameter of the game, one key per file of app/src/params/. Read-only all the
+ * way down: the engine reads parameters and never changes them.
+ */
 export interface GameParams {
-  match: MatchParams;
-  players: PlayersParams;
-  generation: GenerationParams;
-  ai: AiParams;
-  season: SeasonParams;
-  fans: FansParams;
+  readonly match: MatchParams;
+  readonly players: PlayersParams;
+  readonly generation: GenerationParams;
+  readonly ai: AiParams;
+  readonly season: SeasonParams;
+  readonly fans: FansParams;
 }
 
 /** Valid range of a number parameter (inclusive on both ends). */
@@ -104,12 +110,6 @@ export type ParamRanges<T> = T extends readonly number[]
     : { readonly [K in keyof T]-?: ParamRanges<T[K]> };
 
 const num = (min: number, max: number): NumberRange => ({ kind: 'number', min, max });
-const int = (min: number, max: number): NumberRange => ({
-  kind: 'number',
-  min,
-  max,
-  integer: true,
-});
 /** A value fixed by an ADR: changing it is an ADR, not a parameter tweak. */
 const fixed = (value: number): NumberRange => num(value, value);
 
@@ -144,7 +144,7 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
     },
   },
   players: { growthMin: num(0.5, 1), growthMax: num(1, 1.5) },
-  generation: { clubStrengthSd: num(0, 4), squadSize: int(22, 30) },
+  generation: { clubStrengthSd: num(0, 4) },
   ai: {
     rotationCondition: num(50, 95),
     rotationMinRatio: num(0.7, 1),
@@ -194,9 +194,10 @@ export interface ParamIssue {
 }
 
 /** Result of {@link validateParams}: a `Result<GameParams, 'invalid-params'>` with typed detail. */
+type ParamsBase = Result<GameParams, 'invalid-params'>;
 export type ParamsResult =
-  | { ok: true; value: GameParams; warnings: EngineWarning[] }
-  | { ok: false; error: 'invalid-params'; detail: ParamIssue[] };
+  | Extract<ParamsBase, { ok: true }>
+  | (Extract<ParamsBase, { ok: false }> & { detail: ParamIssue[] });
 
 type AnyRange = NumberRange | IntListRange | { readonly [key: string]: AnyRange };
 
@@ -243,10 +244,11 @@ function checkIntList(
   const before = issues.length;
   const item: NumberRange = { kind: 'number', min: range.min, max: range.max, integer: true };
   const list: number[] = [];
-  value.forEach((entry: unknown, i) => {
-    const checked = checkNumber(`${path}.${i}`, entry, item, issues);
+  // Indexed loop, so holes of a sparse array are checked (as undefined) instead of skipped.
+  for (let i = 0; i < value.length; i++) {
+    const checked = checkNumber(`${path}.${i}`, value[i] as unknown, item, issues);
     if (checked !== undefined) list.push(checked);
-  });
+  }
   if (issues.length > before) return undefined;
   for (let i = 1; i < list.length; i++) {
     if (list[i]! <= list[i - 1]!) {
