@@ -31,9 +31,17 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Geração dos elencos e novo jogo (T-006, US-004): `newGame` e `generateSquad` em `app/src/engine/`, com formações, números de camisa realistas, joia e ídolo por clube; nome e rosto vêm da `IdentitySource` recebida por argumento (ADR-0012).
 - `app/src/lib/generators/identity.ts`: fonte de identidade do jogo, com rosto placeholder até a T-027.
 - ADR-0013 aceito: liga online da 1b com até 20 humanos, um por clube; liga online com Séries A e B antecipada para a Etapa 2.
+- Calendário da Série A (T-007, US-006) em `app/src/engine/fixtures.ts`: 380 jogos, Berger com `BERGER_START = 3`, returno espelhado, mando com no máximo 2 seguidos, 1ª rodada no domingo depois do 2º sábado de abril, 8 rodadas de quarta, sem Data FIFA e última rodada entre 26/11 e 02/12.
+- `newGame` devolve `fixtures` e o erro `'invalid-calendar'` (ano fora do intervalo ou calendário que não cabe); `Rng.shuffle` determinístico.
+- Nomes, revisão 2: listas revisadas pelo CEO, origens curtas e exclusões regeneradas.
+- Descrições curtas para compartilhar as páginas do site, aprovadas (clubes: "Clubes com trocadilho").
+- Propostas de três direções visuais do site (escolhida a A "Noite de estádio") e de três estilos de escudo (aguardando escolha).
 
 ### Alterado
 
+- `ENGINE_VERSION` passa a 2 (calendário no estado inicial).
+- Nome de exibição do jogador limitado a 22 caracteres: sorteia-se de novo a forma e, se preciso, o jogador.
+- ADR-0013 revisado: liga online ao vivo até 8 humanos e assíncrona até 20 por divisão; o site usa esses números.
 - Lint impede `lib/` e `ui/` de importar arquivos só do Node e os hashes de bloqueio.
 - Metas de placar do balanceamento: 0×0 de 6% a 9%, goleada de 8% a 13%, diferença de 5 ou mais gols de 0,5% a 2%.
 - Regra de nomes reais: documentos de trabalho em `docs/` podem citá-los só como referência; no jogo, código, dados e site a regra continua absoluta.

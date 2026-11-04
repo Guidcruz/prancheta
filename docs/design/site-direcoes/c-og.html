@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="dark light">
+<title>OG · Direção C</title>
+<style>
+@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;src:url(../../../node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow";font-style:normal;font-weight:600;font-display:swap;src:url(../../../node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2) format("woff2")}
+@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:800;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff2) format("woff2")}
+:root{--surface-0:#0f1a24;--surface-1:#172534;--surface-2:#20334a;--line:#2e4458;--ink:#f2f5f7;--ink-muted:#a3b3c0;--grass:#2fb866;--on-grass:#06200f;--grass-soft:#1b4a33;--floodlight:#ffc83d;--on-floodlight:#1c1500;--danger:#ff6b6b;--draw:#c3ced6;--info:#5fb0ff;--focus:#ffc83d;--pitch:#1e6b3f;--pitch-line:#9fdcb6;
+--font-display:"Barlow Condensed","Arial Narrow",sans-serif;--font-body:"Barlow",system-ui,sans-serif;
+--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--touch:44px;
+--radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-pill:999px;--layout-content-max:720px;--layout-wide-max:1040px;color-scheme:dark;--sticker:#fbf6e9;--on-sticker:#10202c;--sticker-muted:#4e5a63;--stripe:rgba(28,21,0,.07)}
+@media (prefers-color-scheme: light){:root{--surface-0:#f3f5f7;--surface-1:#ffffff;--surface-2:#e6ebf0;--line:#cfd8e0;--ink:#10202c;--ink-muted:#4e6170;--grass:#177a42;--on-grass:#ffffff;--grass-soft:#d9f2e3;--floodlight:#f0b429;--on-floodlight:#1c1500;--danger:#c62828;--draw:#51626f;--info:#1565c0;--focus:#1565c0;--pitch:#2d8f55;--pitch-line:#eaf7ef;color-scheme:light;}}
+body{margin:0;width:1200px;height:630px;overflow:hidden;background:#0f1a24}
+.og{position:absolute;inset:0;background:var(--floodlight) repeating-linear-gradient(-45deg,var(--stripe) 0 22px,transparent 22px 44px);clip-path:polygon(0 0,100% 0,100% 100%,0 100%);color:var(--on-floodlight);text-align:center;overflow:hidden}
+.ribbon{position:absolute;top:44px;left:50%;transform:translateX(-50%) rotate(-2deg);padding:8px 22px;background:var(--on-floodlight);color:var(--floodlight);font:800 36px/1 var(--font-display);letter-spacing:6px;text-transform:uppercase;box-shadow:6px 6px 0 var(--grass)}
+h1{position:absolute;top:128px;left:255px;width:690px;margin:0;font:800 96px/.86 var(--font-display);text-transform:uppercase}
+.band{position:absolute;left:-20px;right:-20px;bottom:-40px;height:150px;background:var(--grass);transform:rotate(-3deg)}
+.row{position:absolute;left:0;right:0;bottom:22px;height:200px}
+.stk{position:absolute;bottom:0;width:150px;padding:0 0 12px;background:var(--sticker);color:var(--on-sticker);border-radius:12px;text-align:center;box-shadow:0 14px 28px rgba(28,21,0,.35);overflow:hidden}
+.stk .band2{height:34px}
+.stk .no{position:absolute;top:8px;left:10px;padding:1px 6px;border-radius:4px;background:var(--sticker);font:800 14px/18px var(--font-display)}
+.stk .shield{width:76px;height:auto;margin:-14px auto 6px;--ink:#10202c}
+.stk b{display:block;font:800 22px/24px var(--font-display);text-transform:uppercase}
+.stk .city{display:block;font:500 12px/16px var(--font-body);color:var(--sticker-muted)}
+</style>
+</head>
+<body class="og-c">
+<div class="og"><div class="band"></div><div class="ribbon">Prancheta</div><h1>O Brasil inteiro na prancheta</h1><div class="row"><div class="stk" style="left:272px;transform:rotate(-7deg)"><div class="band2" style="background:linear-gradient(115deg,var(--c1) 0 55%,var(--c2) 55% 100%);--c1:#006437;--c2:#FFFFFF"></div><span class="no tab">Nº 03</span><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="32" cy="36" r="30" fill="#FFFFFF"/><rect x="2" y="26" width="60" height="20" fill="#006437"/><circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="var(--ink)"/></svg><b>Palmeral</b><span class="city">São Paulo · SP</span></div><div class="stk" style="left:440px;transform:rotate(-2deg)"><div class="band2" style="background:linear-gradient(115deg,var(--c1) 0 55%,var(--c2) 55% 100%);--c1:#C8102E;--c2:#111417"></div><span class="no tab">Nº 01</span><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="#C8102E"/><path d="M4 40 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40Z" fill="#111417"/><path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="none" stroke="var(--ink)" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="var(--ink)"/></svg><b>Flamingo</b><span class="city">Rio de Janeiro · RJ</span></div><div class="stk" style="left:608px;transform:rotate(3deg)"><div class="band2" style="background:linear-gradient(115deg,var(--c1) 0 55%,var(--c2) 55% 100%);--c1:#0033A0;--c2:#FFFFFF"></div><span class="no tab">Nº 11</span><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="32" cy="36" r="30" fill="#FFFFFF"/><rect x="2" y="26" width="60" height="20" fill="#0033A0"/><circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="32" cy="38" r="8" fill="var(--ink)"/></svg><b>Cruzador</b><span class="city">Belo Horizonte · MG</span></div><div class="stk" style="left:776px;transform:rotate(8deg)"><div class="band2" style="background:linear-gradient(115deg,var(--c1) 0 55%,var(--c2) 55% 100%);--c1:#0D80BF;--c2:#111417"></div><span class="no tab">Nº 06</span><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="32" cy="36" r="30" fill="#111417"/><rect x="2" y="26" width="60" height="20" fill="#0D80BF"/><circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="32" cy="38" r="8" fill="var(--ink)"/></svg><b>Grêmeos</b><span class="city">Porto Alegre · RS</span></div></div></div>
+</body>
+</html>

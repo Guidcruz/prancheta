@@ -140,3 +140,23 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 | Coluna da tabela de etapas | O que entra (mantido)                                                                                                                              |
 | Escudo (`aria-label`)      | Escudo: {nome do clube}. O artigo de "Escudo do …" erra o gênero com nomes como "Santões" ou "São Paulão"; os dois pontos resolvem todos os casos. |
 | Tabela com rolagem         | {nome da tabela} (tabela com rolagem) (mantido)                                                                                                    |
+
+## Descrições para compartilhar (revisão)
+
+> Status: **aprovado pelo CEO em 2026-11-04** (título de Clubes: "Clubes com trocadilho"). Motivo: a descrição da página inicial (o slogan, 86 caracteres) e as das demais páginas (141 a 150 caracteres nas quatro com texto longo) são cortadas na prévia do WhatsApp. Cada descrição abaixo tem no máximo 110 caracteres (contado com o nome já no lugar; o maior tem 104), sem nome real e sem data. Valem para `<meta name="description">` e `og:description`. `{config.name}` = nome de `config/prancheta.config.ts`.
+
+| Página      | Descrição (meta e Open Graph)                                                                                | Título da imagem de compartilhamento |
+| ----------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------ |
+| Início      | Técnico de futebol no celular, com clubes fictícios do Brasil. Acompanhe o {config.name} em construção.      | O Brasil inteiro na prancheta        |
+| O jogo      | Escale o time, ajuste a tática em três opções e acompanhe a partida minuto a minuto no {config.name}.        | Como é jogar                         |
+| Modos       | Carreira offline ou liga online com amigos, no seu ritmo ou em tempo real. Veja os modos do {config.name}.   | Carreira ou liga com amigos          |
+| Clubes      | Clubes fictícios com nomes em trocadilho e escudos desenhados por código. Conheça os times do {config.name}. | Clubes com trocadilho                |
+| Perguntas   | Preço, celular, privacidade e online: respostas diretas sobre o {config.name}.                               | Perguntas frequentes                 |
+| Roteiro     | As etapas do {config.name}, cada uma com uma versão jogável. Veja onde estamos.                              | O roteiro do jogo                    |
+| Devlog      | O diário de desenvolvimento do {config.name}: o que ficou pronto e o que vem a seguir.                       | Diário de desenvolvimento            |
+| Apoiar      | Como apoiar o desenvolvimento do {config.name}.                                                              | Apoie o projeto                      |
+| Privacidade | Política de privacidade do {config.name}: o que o jogo guarda e o que não guarda.                            | Privacidade                          |
+
+**Slogan na imagem.** O slogan completo (86 caracteres) é longo demais para a imagem e quebraria em quatro linhas. Versão curta para a imagem do Início: **"O Brasil inteiro na prancheta"** (29 caracteres), a última parte do próprio slogan. O slogan completo continua no site e no `<title>`.
+
+**Para a implementação (depois do ok):** hoje só `index.astro` usa o slogan como descrição; as demais páginas têm textos longos em `site/src/pages/*.astro` e o Devlog não passa descrição. A troca é de textos; o título curto da imagem pede um campo novo na configuração (por exemplo `slogan.short`), a cargo do Desenvolvimento.

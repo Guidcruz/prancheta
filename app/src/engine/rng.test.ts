@@ -71,3 +71,20 @@ describe('Rng', () => {
     expect(seedFromString('flamingo')).not.toBe(seedFromString('palmeirinha'));
   });
 });
+
+describe('Rng.shuffle', () => {
+  it('is Fisher-Yates with one int(0, i) per step, in place', () => {
+    const items = [1, 2, 3, 4, 5, 6, 7, 8];
+    const expected = [...items];
+    const ref = new Rng(7);
+    for (let i = expected.length - 1; i > 0; i--) {
+      const j = ref.int(0, i);
+      [expected[i], expected[j]] = [expected[j]!, expected[i]!];
+    }
+    const rng = new Rng(7);
+    expect(rng.shuffle(items)).toBe(items);
+    expect(items).toEqual(expected);
+    expect(rng.getState()).toBe(ref.getState());
+    expect(new Rng(1).shuffle([])).toEqual([]);
+  });
+});

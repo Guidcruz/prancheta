@@ -5,4 +5,5 @@
  * `npm run golden:update -w app`. The golden check fails while a stored golden was written by
  * another version, and the update refuses to overwrite a changed golden without a bump.
  */
-export const ENGINE_VERSION = 1;
+// 2: newGame also generates the season calendar (T-007), so the new-game golden changed.
+export const ENGINE_VERSION = 2;

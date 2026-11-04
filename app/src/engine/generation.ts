@@ -240,10 +240,7 @@ function squadPositions(rng: Rng, formation: Formation): Position[] {
   }
   const pool: Position[] = [];
   for (const position of POSITIONS) for (let i = 0; i < left[position]; i++) pool.push(position);
-  for (let i = pool.length - 1; i > 0; i--) {
-    const j = rng.int(0, i);
-    [pool[i], pool[j]] = [pool[j]!, pool[i]!];
-  }
+  rng.shuffle(pool);
   return [...starters, ...reserves, ...pool];
 }
 

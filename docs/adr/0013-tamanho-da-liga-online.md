@@ -1,6 +1,6 @@
 # ADR-0013: Tamanho da liga online (20 humanos na 1b; Séries A e B juntas na Etapa 2)
 
-- **Status:** aceita (CEO, 2026-11-04)
+- **Status:** aceita (CEO, 2026-11-04); revisada pelo CEO em 2026-11-04 (ver "Revisão (CEO, 2026-11-04)": até 8 humanos no ao vivo, até 20 no assíncrono)
 - **Data:** 2026-11-04
 - **Decisores:** architect (redigiu), CEO (decidiu em 2026-11-04)
 
@@ -40,3 +40,27 @@ O `docs/PROJETO.md` está congelado e não é editado; este ADR é o registro da
 ## Conformidade
 
 O limite de humanos vem só de `server/src/config.ts` e é sempre limitado pelo número de clubes da liga; um número fixo de humanos em outro lugar do código é BLOCKER na revisão. O servidor recusa entrada acima do limite mesmo que o cliente ofereça. A bancada da T-059 roda no CI com os dois casos (10 e 20 partidas).
+
+## Revisão (CEO, 2026-11-04)
+
+As seções acima ficam como registro da decisão original. Esta revisão substitui só o limite do modo ao vivo; o resto (Série A na 1b, um humano por clube, Séries A e B juntas na Etapa 2, `leagues.format`, limites lidos de `server/src/config.ts`) continua valendo.
+
+**Decisão nova:**
+
+- **Ao vivo:** até **8 humanos** por liga (os demais clubes ficam com a IA). Na Etapa 2, com Séries A e B, o limite do ao vivo continua 8 por liga, não por divisão.
+- **Assíncrono:** até **20 humanos** por divisão, um por clube da Série A (20 na 1b; 40 na Etapa 2 com Séries A e B).
+- A liga com Séries A e B continua na Etapa 2, como na decisão original.
+
+**Motivo:** no ao vivo, a rodada só avança quando todos confirmam "Pronto" ou o prazo acaba; com mais de 8 pessoas, a espera para todos confirmarem fica longa demais e a sessão perde o ritmo. No assíncrono o prazo é de horas e a espera não pesa, então o limite natural é um humano por clube.
+
+**Consequências da revisão:**
+
+- `server/src/config.ts`: padrões `maxHumans.live = 8` e `maxHumans.async = 20` (por divisão), sobrescrevíveis por variável do Cloudflare (US-051). O servidor aplica `min(config, clubes humanos possíveis)`; a configuração pode baixar o limite, nunca subir acima de um por clube.
+- **T-056:** criar liga oferece de 2 a 8 humanos no ao vivo e de 2 a 20 no assíncrono, lidos da configuração.
+- **T-059:** a bancada de CPU não muda (o custo de `processRound` depende do número de partidas, 10 ou 20, e não do número de humanos). A sala do Durable Object mantém até 8 WebSockets ativos no ao vivo; no assíncrono os humanos não ficam conectados esperando a rodada.
+- **US-061 (troca de modo no meio da temporada):** o cenário "limite de humanos" volta a acontecer com os padrões: uma liga assíncrona com 9 a 20 humanos não cabe no ao vivo. Regra recomendada: a troca de assíncrono para ao vivo é **recusada** pelo servidor quando a liga tem mais humanos que o limite do ao vivo, com o motivo em pt-BR ("a liga tem N técnicos; o ao vivo aceita até 8"); a opção aparece desabilitada com o mesmo motivo. O servidor não tira humanos da liga nem passa clubes à IA para caber. A troca de ao vivo para assíncrono é sempre permitida. Enquanto a liga estiver no ao vivo, entrar por código respeita o limite do ao vivo.
+- **Moderação:** sem mudança.
+- **Positivo:** o ao vivo mantém o ritmo de uma sessão entre amigos; o assíncrono continua com um humano por clube.
+- **Negativo:** volta a haver dois limites para explicar na tela de criar liga, e uma liga assíncrona grande não pode virar ao vivo.
+
+**Conformidade:** além do que está acima, há teste do servidor que recusa a troca de assíncrono para ao vivo com mais humanos que `maxHumans.live` e que aceita a troca inversa.

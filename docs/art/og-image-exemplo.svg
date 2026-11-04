@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <!-- Exemplo estático para aprovação. Cores = tokens do tema noite; fontes por família. Ver docs/art/og-image.md. -->
+  <rect width="1200" height="630" fill="#0f1a24"/>
+  <rect width="1200" height="12" fill="#ffc83d"/>
+  <rect y="440" width="1200" height="190" fill="#1e6b3f"/>
+  <rect y="440" width="1200" height="4" fill="#9fdcb6"/>
+  <circle cx="600" cy="630" r="120" fill="none" stroke="#9fdcb6" stroke-width="4"/>
+  <text x="600" y="118" text-anchor="middle" font-family="'Barlow Condensed', 'Arial Narrow', sans-serif" font-weight="700" font-size="44" letter-spacing="6" fill="#ffc83d">PRANCHETA</text>
+  <text text-anchor="middle" y="232" font-family="'Barlow Condensed', 'Arial Narrow', sans-serif" font-weight="700" font-size="64" fill="#f2f5f7">
+    <tspan x="600" dy="0">O jogo de técnico de futebol</tspan>
+    <tspan x="600" dy="62">para jogar no celular, com o</tspan>
+    <tspan x="600" dy="62">Brasil inteiro na prancheta.</tspan>
+  </text>
+  <svg x="348" y="476" width="96" height="108" viewBox="0 0 64 72"><path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="#C8102E"/><path d="M4 40 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40Z" fill="#111417"/><path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="none" stroke="#f2f5f7" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="#f2f5f7"/></svg>
+  <svg x="484" y="476" width="96" height="108" viewBox="0 0 64 72"><circle cx="32" cy="36" r="30" fill="#FFFFFF"/><rect x="2" y="26" width="60" height="20" fill="#006437"/><circle cx="32" cy="36" r="30" fill="none" stroke="#f2f5f7" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="#f2f5f7"/></svg>
+  <svg x="620" y="476" width="96" height="108" viewBox="0 0 64 72"><circle cx="32" cy="36" r="30" fill="#111417"/><rect x="2" y="26" width="60" height="20" fill="#0D80BF"/><circle cx="32" cy="36" r="30" fill="none" stroke="#f2f5f7" stroke-width="2"/><circle cx="32" cy="38" r="8" fill="#f2f5f7"/></svg>
+  <svg x="756" y="476" width="96" height="108" viewBox="0 0 64 72"><path d="M4 6h56v34c0 16-12 26-28 30C16 66 4 56 4 40Z" fill="#0057B8"/><path d="M12 6h8v60l-8-4Zm16 0h8v63l-8 1Zm16 0h8v52l-8 8Z" fill="#D6001C"/><path d="M4 6h56v34c0 16-12 26-28 30C16 66 4 56 4 40Z" fill="none" stroke="#f2f5f7" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="#f2f5f7"/></svg>
+</svg>
