@@ -349,7 +349,7 @@ Verificação de 2026-11-04 (branch `claude/kickoff-i22gas`). Critérios: `docs/
 
 O `dist.test.ts` é pulado se `site/dist` não existe (`npm test` roda antes do build no `test:all`). Para exigir o build: `npm run build && REQUIRE_SITE_DIST=1 npm test`. Sugestão ao Desenvolvimento: rodar essa segunda passada no CI depois do build.
 
-Regressão do site: BUG-SITE-001 (Brasileirão no site) ganha teste quando for corrigido (recusar "Brasileir" nas páginas do `dist`).
+Regressão do site: BUG-SITE-001 ("Brasileirão" no site) corrigido; o teste `never says "Brasileirão"` em `dist.test.ts` recusa "Brasileir" em qualquer página.
 
 ## Registro de regressão
 

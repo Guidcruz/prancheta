@@ -107,6 +107,11 @@ run('built site (site/dist)', () => {
     expect(offenders).toEqual([]);
   });
 
+  it('never says "Brasileirão" (CEO decision: "Série A"; BUG-SITE-001)', () => {
+    const bad = pages.filter((f) => /brasileir/i.test(readFileSync(f, 'utf8')));
+    expect(bad).toEqual([]);
+  });
+
   it('has one h1, a skip link, a main, lang and canonical per page', () => {
     for (const f of pages) {
       const h = readFileSync(f, 'utf8');
