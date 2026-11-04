@@ -13,6 +13,6 @@
 | 0009 | Liga online: estado no D1, Durable Object só coordena; rodada idempotente; ao vivo por linha do tempo com `startAt` comum                                                 | 2026-11-04 |
 | 0010 | Servidor da 1b em Pages Functions (`/api`, mesma origem) + Worker de salas com o Durable Object; deploy do Worker com aprovação do CEO                                    | 2026-11-04 |
 | 0011 | Fator casa fixo `match.homeBase = 0.05` além da torcida do ADR-0005 (mandante vence 45% a 50%)                                                                            | 2026-11-04 |
-| 0012 | (proposta) Nome e rosto do jogador resolvidos na criação e guardados no estado; sementes só geram; nome retirado sai também dos saves antigos                             | 2026-11-04 |
+| 0012 | Nome e rosto do jogador resolvidos na criação e guardados no estado; sementes só geram; nome retirado sai também dos saves antigos                                        | 2026-11-04 |
 
 Decisões pendentes: `docs/status.md`.

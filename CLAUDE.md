@@ -27,24 +27,26 @@
 - **Lint/format:** ESLint 10 + svelte-check + astro check + Prettier (`npm run lint` roda tudo e também os testes do hook; `npm run format`).
 - **Gerenciador:** npm com workspaces (`app`, `site`).
 
-| Ação                                                            | Comando                               |
-| --------------------------------------------------------------- | ------------------------------------- |
-| Instalar                                                        | `npm install`                         |
-| Rodar o jogo (dev)                                              | `npm run dev -w app`                  |
-| Rodar o site (dev)                                              | `npm run dev -w site`                 |
-| Testes unitários e do motor                                     | `npm test`                            |
-| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)     | `npm run golden:update -w app`        |
-| Regressão completa (lint + testes + build)                      | `npm run test:all`                    |
-| Lint                                                            | `npm run lint`                        |
-| Formatar                                                        | `npm run format`                      |
-| Build (site + jogo em `dist/`)                                  | `npm run build`                       |
-| Auditoria de dependências                                       | `npm audit --audit-level=high`        |
-| Ícones da PWA a partir do SVG                                   | `npm run icons`                       |
-| Testes do hook de travas                                        | `bash scripts/test-hook.sh`           |
-| Tokens do design system → CSS                                   | `npm run tokens`                      |
-| Balanceamento (simula N temporadas)                             | `npm run balance -- --seasons 200`    |
-| Conferir dados e conteúdo (clubes, lista bloqueada)             | `npm run content:check`               |
-| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo) | `npm run blocklist:hash -- <arquivo>` |
+| Ação                                                                   | Comando                               |
+| ---------------------------------------------------------------------- | ------------------------------------- |
+| Instalar                                                               | `npm install`                         |
+| Rodar o jogo (dev)                                                     | `npm run dev -w app`                  |
+| Rodar o site (dev)                                                     | `npm run dev -w site`                 |
+| Testes unitários e do motor                                            | `npm test`                            |
+| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)            | `npm run golden:update -w app`        |
+| Regressão completa (lint + testes + build)                             | `npm run test:all`                    |
+| Lint                                                                   | `npm run lint`                        |
+| Formatar                                                               | `npm run format`                      |
+| Build (site + jogo em `dist/`)                                         | `npm run build`                       |
+| Auditoria de dependências                                              | `npm audit --audit-level=high`        |
+| Ícones da PWA a partir do SVG                                          | `npm run icons`                       |
+| Testes do hook de travas                                               | `bash scripts/test-hook.sh`           |
+| Tokens do design system → CSS                                          | `npm run tokens`                      |
+| Balanceamento (simula N temporadas)                                    | `npm run balance -- --seasons 200`    |
+| Conferir dados e conteúdo (clubes, lista bloqueada)                    | `npm run content:check`               |
+| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo)        | `npm run blocklist:hash -- <arquivo>` |
+| Recalcular as exclusões do gerador de nomes                            | `npm run names:exclusions`            |
+| Teste completo dos nomes (antes de release e quando as listas mudarem) | `NAMES_FULL_CHECK=1 npm test -w app`  |
 
 ## Estrutura
 
@@ -71,7 +73,7 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 - Código, identificadores e comentários de API em inglês. Specs, commits de corpo longo, PRs, docs e devlog em **português do Brasil** (o CEO lê tudo). Textos do jogo em pt-BR, es e en, sempre em `app/src/content/<idioma>/`, nunca no código.
 - O motor é determinístico: toda aleatoriedade passa pelo `Rng` com semente; `Math.random()` e `Date.now()` são proibidos em `app/src/engine/` (lint bloqueia).
 - O formato de save tem número de versão e migração; mudar o formato exige ADR e teste de migração.
-- Nenhum nome de clube, jogador, veículo ou pessoa real em lugar nenhum. Nenhum escudo, uniforme, canção ou voz que imite um real.
+- Nenhum nome de clube, jogador, veículo ou pessoa real em lugar nenhum. Exceção: documentos de trabalho em `docs/` podem citar nomes reais só como referência; no jogo, código, dados e site a regra continua absoluta. Nenhum escudo, uniforme, canção ou voz que imite um real.
 - Nenhum dado pessoal novo sem ADR e revisão do `security-auditor` (LGPD). Sem analytics com identificação, sem cookies de terceiros.
 - Sem loot box, sem recompensa por tempo de uso, sem chat de texto livre (ECA Digital, Lei 15.211/2025).
 - Acessibilidade: alvos de toque ≥ 44px, contraste ≥ 4,5:1, resultado nunca só por cor, respeito a `prefers-reduced-motion`.

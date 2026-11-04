@@ -1,8 +1,8 @@
 # ADR-0012: Nome e rosto do jogador resolvidos na criação e guardados no estado
 
-- **Status:** proposta
+- **Status:** aceita (CEO, 2026-11-04)
 - **Data:** 2026-11-04
-- **Decisores:** architect (propôs, a partir do code review da T-004), CEO (aprova)
+- **Decisores:** architect (propôs, a partir do code review da T-004), CEO (aprovou em 2026-11-04)
 
 ## Contexto
 
