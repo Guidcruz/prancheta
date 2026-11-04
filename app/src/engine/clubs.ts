@@ -62,7 +62,13 @@ export const STRENGTH_RANGE_BY_SIZE: Readonly<
 };
 
 /** Text fields compared against the blocklist of real names (US-001). */
-export const BLOCKLIST_FIELDS = ['name', 'shortName', 'nickname', 'stadium.name'] as const;
+export const BLOCKLIST_FIELDS = [
+  'name',
+  'shortName',
+  'abbreviation',
+  'nickname',
+  'stadium.name',
+] as const;
 export type BlocklistField = (typeof BLOCKLIST_FIELDS)[number];
 
 export type ClubProblem =
@@ -347,6 +353,8 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
     const value = raw.strength;
     if (typeof value !== 'number' || !Number.isFinite(value)) {
       scope.add({ field: 'strength', problem: 'not-a-number', value });
+    } else if (!Number.isInteger(value)) {
+      scope.add({ field: 'strength', problem: 'not-an-integer', value });
     } else if (size !== undefined) {
       const range = STRENGTH_RANGE_BY_SIZE[size];
       if (value < range.min || value > range.max) {

@@ -181,6 +181,20 @@ describe('validateClubs', () => {
     ]);
   });
 
+  it('requires an integer strength', () => {
+    const raw = syntheticClubs();
+    raw[0]!.strength = 75.5;
+    expect(issuesOf(validateClubs(raw))).toEqual([
+      {
+        index: 0,
+        clubId: 'clube-teste-01',
+        field: 'strength',
+        problem: 'not-an-integer',
+        value: 75.5,
+      },
+    ]);
+  });
+
   it('requires a positive integer stadium capacity', () => {
     const raw = syntheticClubs();
     raw[0]!.stadium.capacity = 0;

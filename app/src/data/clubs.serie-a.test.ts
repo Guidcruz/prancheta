@@ -1,4 +1,4 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   STRENGTH_RANGE_BY_SIZE,
@@ -10,27 +10,21 @@ import { parseBlocklist } from './blocklist.ts';
 import { checkClubData, formatClubIssues } from './check.ts';
 
 /*
- * The real files of app/src/data/ (US-001), approved by the CEO on 2026-11-04. The suites are
- * guarded by the existence of the files, so they switched on by themselves when the data
- * arrived; the club list requires the blocklist next to it. The expected values are read from
+ * The real files of app/src/data/ (US-001), approved by the CEO on 2026-11-04. Both files are
+ * mandatory: deleting either one fails `npm test` and `npm run content:check`. The expected values are read from
  * the design table and the approved batch, so a drift in either side fails here.
  */
 const clubsUrl = new URL('./clubs.serie-a.json', import.meta.url);
 const blocklistUrl = new URL('./blocklist.sha256.json', import.meta.url);
-const hasClubs = existsSync(clubsUrl);
 const readJson = (url: URL): unknown => JSON.parse(readFileSync(url, 'utf8'));
 
-describe.skipIf(!existsSync(blocklistUrl))('app/src/data/blocklist.sha256.json', () => {
+describe('app/src/data/blocklist.sha256.json', () => {
   it('is a valid blocklist', () => {
     expect(parseBlocklist(readJson(blocklistUrl))).toMatchObject({ ok: true });
   });
 });
 
-describe.skipIf(!hasClubs)('app/src/data/clubs.serie-a.json', () => {
-  it('ships with the blocklist', () => {
-    expect(existsSync(blocklistUrl)).toBe(true);
-  });
-
+describe('app/src/data/clubs.serie-a.json', () => {
   it('passes the full check: 20 clubs, fields, derbies, shields, no real name', () => {
     const result = checkClubData(readJson(clubsUrl), readJson(blocklistUrl));
     if (!result.ok) throw new Error(formatClubIssues(result.issues));

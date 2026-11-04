@@ -13,7 +13,13 @@ import {
  * The scenarios of US-001 with synthetic clubs (`Clube Teste 01`...) and a blocklist of invented
  * names: the real names never appear in the repository, not even in tests.
  */
-const blocklist = buildBlocklist(['Clube Proibido', 'Arena Vetada', 'Vetadinhos', 'Proibidão']);
+const blocklist = buildBlocklist([
+  'Clube Proibido',
+  'Arena Vetada',
+  'Vetadinhos',
+  'Proibidão',
+  'zzq',
+]);
 
 function issuesOf(result: ClubDataResult): ClubDataIssue[] {
   if (result.ok) throw new Error('expected the club data to be refused');
@@ -80,6 +86,7 @@ describe('checkClubData (US-001)', () => {
   it.each([
     ['name', 'CLUBE PROIBIDO'],
     ['shortName', 'Proibidao'],
+    ['abbreviation', 'ZZQ'],
     ['nickname', '  vetadinhos '],
     ['stadium.name', 'Arena  Vetadá'],
   ] as const)('blocks a real %s regardless of accent, case and spaces', (field, value) => {
