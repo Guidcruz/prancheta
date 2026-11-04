@@ -108,7 +108,7 @@ run('built site (site/dist)', () => {
   });
 
   it('never says "Brasileirão" (CEO decision: "Série A"; BUG-SITE-001)', () => {
-    const bad = pages.filter((f) => /brasileir/i.test(readFileSync(f, 'utf8')));
+    const bad = pages.filter((f) => /brasileir(ão|ao)/i.test(readFileSync(f, 'utf8')));
     expect(bad).toEqual([]);
   });
 
