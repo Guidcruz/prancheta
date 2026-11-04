@@ -1,26 +1,25 @@
 ---
 import { config } from '../../../config/prancheta.config.ts';
 interface Props {
-  post: { id: string; data: { title: string; summary: string; date: Date; etapa: number } };
+  post: {
+    id: string;
+    data: { title: string; summary: string; date: Date; etapa: number };
+  };
 }
 const { post } = Astro.props;
 ---
 
 <article class="card">
-  <p class="caption meta">
+  <p class="rotulo meta">
     {post.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa {post.data.etapa}
   </p>
   <h3 class="subtitulo">
     <a href={`${config.paths.site}devlog/${post.id}/`}>{post.data.title}</a>
   </h3>
-  <p>{post.data.summary}</p>
+  <p class="summary">{post.data.summary}</p>
 </article>
 <style>
   .card {
-    background: var(--surface-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-md);
-    box-shadow: var(--shadow-card);
     padding: var(--space-4);
   }
   .meta {
@@ -29,13 +28,20 @@ const { post } = Astro.props;
   }
   h3 {
     margin: var(--space-1) 0 var(--space-2);
+    font-weight: 700;
   }
   h3 a {
     display: inline-flex;
     align-items: center;
     min-height: var(--touch);
   }
-  p {
+  .summary {
     margin: 0;
+    color: var(--ink-muted);
+  }
+  @media (min-width: 720px) {
+    .card {
+      padding: var(--space-6);
+    }
   }
 </style>

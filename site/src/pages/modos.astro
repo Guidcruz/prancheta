@@ -7,121 +7,128 @@ import RhythmCompare from '../components/RhythmCompare.astro';
 import StageTable from '../components/StageTable.astro';
 import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
+import PageHero from '../components/PageHero.astro';
+import GlassCard from '../components/GlassCard.astro';
 import { stages } from '../lib/roadmap';
 const base = config.paths.site;
 ---
 
-<Base
-  title="Modos de jogo"
-  current="modos"
-  description="Carreira offline para jogar sozinho, liga online com amigos por código de convite e dois ritmos: no meu ritmo ou em tempo real."
->
-  <h1>Modos de jogo</h1>
-  <p class="lead">
-    O {config.name} tem dois modos: <strong>Carreira</strong>, para jogar sozinho, e{' '}
-    <strong>Liga online</strong>, para jogar com os amigos. E dois ritmos, que você escolhe ao
-    começar: <strong>No meu ritmo</strong> e <strong>Tempo real</strong>.
-  </p>
-
-  <section aria-labelledby="carreira">
-    <h2 id="carreira">Carreira (offline)</h2>
-    <p>
-      Você, um clube e uma temporada pela frente. Tudo roda no seu aparelho: sem internet, sem
-      cadastro.
+<Base title="Modos de jogo" current="modos" share="modos">
+  <PageHero title="Modos de jogo">
+    <p class="lead">
+      O {config.name} tem dois modos: <strong>Carreira</strong>, para jogar sozinho, e{' '}
+      <strong>Liga online</strong>, para jogar com os amigos. E dois ritmos, que você escolhe ao
+      começar: <strong>No meu ritmo</strong> e <strong>Tempo real</strong>.
     </p>
-    <ul>
-      <li>Escolha o clube, escale, ajuste a tática e avance quando quiser.</li>
-      <li>O jogo salva sozinho ao fim de cada rodada.</li>
-      <li>Exporte o save quando quiser e leve para outro aparelho.</li>
-    </ul>
-    <p>
-      Estado: <StatusBadge recurso="carreira-offline" showStage />. Metas da diretoria, demissões e
-      propostas de outros clubes: <StatusBadge recurso="metas-diretoria" showStage />.
-    </p>
-  </section>
+  </PageHero>
 
-  <section aria-labelledby="liga">
-    <h2 id="liga">Liga online</h2>
-    <p>
-      Um amigo cria a liga, escolhe o jeito de jogar e passa um código de convite. Cada um assume um
-      clube. Os outros clubes ficam por conta do computador.
-    </p>
-    <p>A rodada roda no servidor, com o mesmo motor da carreira. Ninguém mexe no resultado.</p>
+  <div class="sec flow glow stack">
+    <GlassCard>
+      <section aria-labelledby="carreira">
+        <h2 id="carreira">Carreira (offline)</h2>
+        <p>
+          Você, um clube e uma temporada pela frente. Tudo roda no seu aparelho: sem internet, sem
+          cadastro.
+        </p>
+        <ul>
+          <li>Escolha o clube, escale, ajuste a tática e avance quando quiser.</li>
+          <li>O jogo salva sozinho ao fim de cada rodada.</li>
+          <li>Exporte o save quando quiser e leve para outro aparelho.</li>
+        </ul>
+        <p>
+          Estado: <StatusBadge recurso="carreira-offline" showStage />. Metas da diretoria,
+          demissões e propostas de outros clubes:{' '}
+          <StatusBadge recurso="metas-diretoria" showStage />.
+        </p>
+      </section>
+    </GlassCard>
 
-    <h3>Como é uma rodada</h3>
-    <StepList
-      steps={[
-        { title: 'Monte o time.', text: 'Cada um ajusta escalação e tática e aperta "Pronto".' },
-        {
-          title: 'Hora da rodada.',
-          text: 'Quando todos confirmam, ou quando o prazo acaba, o servidor joga a rodada.',
-        },
-        { title: 'Quem faltou.', text: 'Quem não confirmou joga com a última escalação salva.' },
-        { title: 'Resultado.', text: 'Resultados, tabela e notícias chegam para todo mundo.' },
-      ]}
-    />
+    <GlassCard>
+      <section aria-labelledby="liga">
+        <h2 id="liga">Liga online</h2>
+        <p>
+          Um amigo cria a liga, escolhe o jeito de jogar e passa um código de convite. Cada um
+          assume um clube. Os outros clubes ficam por conta do computador.
+        </p>
+        <p>A rodada roda no servidor, com o mesmo motor da carreira. Ninguém mexe no resultado.</p>
 
-    <h3>Ao vivo ou assíncrono</h3>
-    <TableScroll label="Ao vivo ou assíncrono">
-      <table>
-        <thead>
-          <tr>
-            <th scope="col">
-              <span class="sr-only">Característica</span>
-            </th>
-            <th scope="col">Ao vivo</th>
-            <th scope="col">Assíncrono</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr>
-            <th scope="row">Prazo da rodada</th>
-            <td>Curto, por exemplo 2 minutos</td>
-            <td>Longo, por exemplo 24 horas</td>
-          </tr>
-          <tr>
-            <th scope="row">Quem está lá</th>
-            <td>Todo mundo ao mesmo tempo</td>
-            <td>Cada um entra quando puder</td>
-          </tr>
-          <tr>
-            <th scope="row">O que se vê</th>
-            <td>Placares ao vivo, mensagens prontas</td>
-            <td>Aviso de rodada processada</td>
-          </tr>
-          <tr>
-            <th scope="row">Tamanho</th>
-            <td>Até 8 jogadores</td>
-            <td>Até 20 (um técnico por clube da Série A)</td>
-          </tr>
-        </tbody>
-      </table>
-    </TableScroll>
-    <p>
-      O dono da liga pode trocar de ao vivo para assíncrono (e o contrário) no meio da temporada.
-    </p>
+        <h3>Como é uma rodada</h3>
+        <StepList
+          steps={[
+            { title: 'Monte o time', text: 'Cada um ajusta escalação e tática e aperta "Pronto".' },
+            {
+              title: 'Hora da rodada',
+              text: 'Quando todos confirmam, ou quando o prazo acaba, o servidor joga a rodada.',
+            },
+            { title: 'Quem faltou', text: 'Quem não confirmou joga com a última escalação salva.' },
+            { title: 'Resultado', text: 'Resultados, tabela e notícias chegam para todo mundo.' },
+          ]}
+        />
 
-    <h3>Conta sem dados pessoais</h3>
-    <p>
-      Para jogar online você escolhe um apelido e usa a biometria do celular (passkey). Sem e-mail,
-      telefone, nome real ou data de nascimento. Você recebe um código de recuperação: guarde bem,
-      porque sem ele e sem o aparelho a conta se perde.
-    </p>
+        <h3>Ao vivo ou assíncrono</h3>
+        <TableScroll label="Ao vivo ou assíncrono">
+          <table>
+            <thead>
+              <tr>
+                <th scope="col">
+                  <span class="sr-only">Característica</span>
+                </th>
+                <th scope="col">Ao vivo</th>
+                <th scope="col">Assíncrono</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">Prazo da rodada</th>
+                <td>Curto, por exemplo 2 minutos</td>
+                <td>Longo, por exemplo 24 horas</td>
+              </tr>
+              <tr>
+                <th scope="row">Quem está lá</th>
+                <td>Todo mundo ao mesmo tempo</td>
+                <td>Cada um entra quando puder</td>
+              </tr>
+              <tr>
+                <th scope="row">O que se vê</th>
+                <td>Placares ao vivo, mensagens prontas</td>
+                <td>Aviso de rodada processada</td>
+              </tr>
+              <tr>
+                <th scope="row">Tamanho</th>
+                <td>Até 8 jogadores</td>
+                <td>Até 20 (um técnico por clube da Série A)</td>
+              </tr>
+            </tbody>
+          </table>
+        </TableScroll>
+        <p>
+          O dono da liga pode trocar de ao vivo para assíncrono (e o contrário) no meio da
+          temporada.
+        </p>
 
-    <h3>Conversa entre jogadores</h3>
-    <p>
-      Só mensagens prontas e emojis. Dá para desligar. Apelidos são filtrados e há botão de
-      denúncia.
-    </p>
-    <p>
-      Estado: liga da Série A entre amigos, por código,{' '}
-      <StatusBadge recurso="liga-amigos" showStage />. Ligas grandes com várias divisões e torneios
-      continentais: <StatusBadge recurso="ligas-grandes" showStage />. Mercado entre jogadores:{' '}
-      <StatusBadge recurso="mercado-entre-jogadores" showStage />.
-    </p>
-  </section>
+        <h3>Conta sem dados pessoais</h3>
+        <p>
+          Para jogar online você escolhe um apelido e usa a biometria do celular (passkey). Sem
+          e-mail, telefone, nome real ou data de nascimento. Você recebe um código de recuperação:
+          guarde bem, porque sem ele e sem o aparelho a conta se perde.
+        </p>
 
-  <section aria-labelledby="ritmos">
+        <h3>Conversa entre jogadores</h3>
+        <p>
+          Só mensagens prontas e emojis. Dá para desligar. Apelidos são filtrados e há botão de
+          denúncia.
+        </p>
+        <p>
+          Estado: liga da Série A entre amigos, por código,{' '}
+          <StatusBadge recurso="liga-amigos" showStage />. Ligas grandes com várias divisões e
+          torneios continentais: <StatusBadge recurso="ligas-grandes" showStage />. Mercado entre
+          jogadores: <StatusBadge recurso="mercado-entre-jogadores" showStage />.
+        </p>
+      </section>
+    </GlassCard>
+  </div>
+
+  <section class="sec flow" aria-labelledby="ritmos">
     <h2 id="ritmos">Os dois ritmos</h2>
     <RhythmCompare
       columns={['No meu ritmo (padrão)', 'Tempo real']}
@@ -135,7 +142,7 @@ const base = config.paths.site;
         },
         {
           label: 'Quando chega',
-          values: ['Etapa 1a, na carreira.', 'Etapa 4, na carreira e no online.'],
+          values: ['Etapa 1a, na carreira', 'Etapa 4, na carreira e no online'],
         },
       ]}
     />
@@ -157,7 +164,7 @@ const base = config.paths.site;
     </ul>
   </section>
 
-  <section aria-labelledby="qual">
+  <section class="sec flow" aria-labelledby="qual">
     <h2 id="qual">Qual escolher?</h2>
     <ul>
       <li>Dez minutos no ônibus: Carreira, no meu ritmo.</li>
@@ -167,11 +174,11 @@ const base = config.paths.site;
     </ul>
   </section>
 
-  <section aria-labelledby="etapas">
+  <section class="sec flow wide" aria-labelledby="etapas">
     <h2 id="etapas">O que entra em cada etapa</h2>
-    <StageTable {stages} text="summary" />
+    <StageTable {stages} variant="full" text="summary" />
     <p>
-      <a class="inline-link" href={`${base}roadmap/`}>
+      <a class="link" href={`${base}roadmap/`}>
         Ver o roteiro completo
       </a>
     </p>
@@ -180,26 +187,12 @@ const base = config.paths.site;
   <FinalCta />
 </Base>
 <style>
-  .lead {
-    margin-bottom: var(--space-4);
+  .stack {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-4);
   }
   .after {
     margin-top: var(--space-3);
-  }
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip-path: inset(50%);
-    white-space: nowrap;
-  }
-  .inline-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch);
-  }
-  section :global(ul) {
-    padding-left: var(--space-6);
   }
 </style>

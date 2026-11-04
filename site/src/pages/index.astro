@@ -2,11 +2,11 @@
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
 import { getCollection } from 'astro:content';
-import Button from '../components/Button.astro';
 import FeatureCard from '../components/FeatureCard.astro';
 import StepList from '../components/StepList.astro';
-import ShieldGrid from '../components/ShieldGrid.astro';
-import StageStrip from '../components/StageStrip.astro';
+import StadiumHero from '../components/StadiumHero.astro';
+import ClubShield from '../components/ClubShield.astro';
+import StageTable from '../components/StageTable.astro';
 import PostCard from '../components/PostCard.astro';
 import FinalCta from '../components/FinalCta.astro';
 import { clubsById, exampleClubIds } from '../lib/shields';
@@ -17,49 +17,48 @@ const posts = (await getCollection('devlog'))
   .slice(0, 3);
 const base = config.paths.site;
 const clubs = clubsById(exampleClubIds);
+const miniClubs = clubsById(['botafogueira', 'corinto', 'palmeral', 'coritibom']);
 ---
 
-<Base description={config.slogan['pt-BR']} wide>
-  <section class="hero">
-    <p class="rotulo kicker">Em desenvolvimento, em público</p>
-    <h1 class="hero-title">{config.name}</h1>
-    <p class="lead">{config.slogan['pt-BR']}</p>
-    <p class="intro">
-      Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela.
-      Tudo no celular, em rodadas de poucos minutos.
-    </p>
-    <p class="actions">
-      <Button href={`${config.paths.game}/`}>Abrir a versão atual (v{config.version})</Button>
-      <Button href={`${base}roadmap/`} variant="secondary">
-        Ver o roteiro
-      </Button>
-    </p>
-    <p class="caption muted notice">
-      O {config.name} está em desenvolvimento, em público. A versão que você abre hoje ainda é bem
-      pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.
-    </p>
-    <ShieldGrid clubs={clubs} size={56} decorative />
+<Base share="index">
+  <StadiumHero
+    title={config.name}
+    tag="Em desenvolvimento, em público"
+    slogan={config.slogan['pt-BR']}
+    sloganHighlight={config.slogan.short['pt-BR']}
+    lead="Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela. Tudo no celular, em rodadas de poucos minutos."
+    note={`O ${config.name} está em desenvolvimento, em público. A versão que você abre hoje ainda é bem pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.`}
+    primary={{
+      href: `${config.paths.game}/`,
+      label: `Abrir a versão atual (v${config.version})`,
+    }}
+    secondary={{ href: `${base}roadmap/`, label: 'Ver o roteiro' }}
+    {clubs}
+  />
+
+  <section class="sec wide what" aria-labelledby="oque">
+    <div>
+      <h2 id="oque">O que é</h2>
+    </div>
+    <div class="text">
+      <p>
+        O {config.name} é um jogo de técnico de futebol para jogar no navegador e instalar no
+        celular, como um app.
+      </p>
+      <p>
+        Os clubes são todos fictícios, com nomes em trocadilho: você reconhece o seu time pela
+        cidade, pelas cores e pela torcida, sem nenhuma marca oficial.
+      </p>
+      <p>
+        Não precisa de cadastro. Não tem pegadinha. Tem rodada, tabela e aquele frio na barriga de
+        domingo.
+      </p>
+    </div>
   </section>
 
-  <section class="prose" aria-labelledby="oque">
-    <h2 id="oque">O que é</h2>
-    <p>
-      O {config.name} é um jogo de técnico de futebol para jogar no navegador e instalar no celular,
-      como um app.
-    </p>
-    <p>
-      Os clubes são todos fictícios, com nomes em trocadilho: você reconhece o seu time pela cidade,
-      pelas cores e pela torcida, sem nenhuma marca oficial.
-    </p>
-    <p>
-      Não precisa de cadastro. Não tem pegadinha. Tem rodada, tabela e aquele frio na barriga de
-      domingo.
-    </p>
-  </section>
-
-  <section aria-labelledby="destaques">
+  <section class="sec wide glow" aria-labelledby="destaques">
     <h2 id="destaques">Destaques</h2>
-    <ul class="grid-cards">
+    <ul class="grid-cards four">
       <li>
         <FeatureCard
           title="Rodadas de poucos minutos"
@@ -67,6 +66,7 @@ const clubs = clubsById(exampleClubIds);
           recurso="rodadas-curtas"
           href={`${base}o-jogo/`}
           linkLabel="Conhecer o jogo"
+          interactive
         >
           <p>Escale, ajuste a tática e jogue uma rodada no tempo de uma viagem de ônibus.</p>
         </FeatureCard>
@@ -78,6 +78,7 @@ const clubs = clubsById(exampleClubIds);
           recurso="carreira-offline"
           href={`${base}modos/`}
           linkLabel="Ver os modos de jogo"
+          interactive
         >
           <p>Sua carreira fica no seu aparelho e funciona offline.</p>
         </FeatureCard>
@@ -90,6 +91,7 @@ const clubs = clubsById(exampleClubIds);
           showStage
           href={`${base}modos/`}
           linkLabel="Ver os modos de jogo"
+          interactive
         >
           <p>Cada um com um clube, no mesmo campeonato, por código de convite.</p>
         </FeatureCard>
@@ -101,62 +103,69 @@ const clubs = clubsById(exampleClubIds);
           recurso="clubes-ficticios"
           href={`${base}clubes/`}
           linkLabel="Ver os clubes"
+          interactive
         >
           <p>
             Flamingo, Corinto, Coritibom e mais: clubes fictícios que a gente reconhece de longe.
           </p>
+          <div class="mini" aria-hidden="true">
+            {miniClubs.map((club) => (
+              <ClubShield {club} size={30} decorative />
+            ))}
+          </div>
         </FeatureCard>
       </li>
     </ul>
   </section>
 
-  <section class="prose" aria-labelledby="comecar">
-    <h2 id="comecar">Como começar</h2>
-    <StepList
-      steps={[
-        { title: 'Abra o jogo.', text: 'Use o botão acima, no celular.' },
-        {
-          title: 'Instale na tela inicial.',
-          text: 'O navegador oferece; no iPhone, pelo botão de compartilhar.',
-        },
-        { title: 'Escolha um clube.', text: 'E jogue a primeira rodada.' },
-      ]}
-    />
-    <p class="after">
-      Hoje o passo 3 ainda não existe: a escolha de clube e as rodadas estão sendo construídas. Veja
-      o estado de cada coisa no <a href={`${base}roadmap/`}>roteiro</a>.
-    </p>
-  </section>
+  <div class="sec wide duo">
+    <section aria-labelledby="comecar">
+      <h2 id="comecar">Como começar</h2>
+      <StepList
+        steps={[
+          { title: 'Abra o jogo.', text: 'Use o botão acima, no celular.' },
+          {
+            title: 'Instale na tela inicial.',
+            text: 'O navegador oferece; no iPhone, pelo botão de compartilhar.',
+          },
+          { title: 'Escolha um clube.', text: 'E jogue a primeira rodada.' },
+        ]}
+      />
+      <p class="caption small">
+        Hoje o passo 3 ainda não existe: a escolha de clube e as rodadas estão sendo construídas.
+        Veja o estado de cada coisa no <a href={`${base}roadmap/`}>roteiro</a>.
+      </p>
+    </section>
+    <section aria-labelledby="onde">
+      <h2 id="onde">Onde estamos</h2>
+      <StageTable {stages} variant="compact" />
+      <p>
+        <a class="link" href={`${base}roadmap/`}>
+          Ver o roteiro completo
+        </a>
+      </p>
+    </section>
+  </div>
 
-  <section class="prose" aria-labelledby="jeito">
+  <section class="sec wide" aria-labelledby="jeito">
     <h2 id="jeito">Jeito de fazer</h2>
-    <ul>
+    <ul class="way">
       <li>
-        <strong>Sem pagar para ganhar.</strong> Nunca. Sem caixa de sorteio, sem recompensa por
-        tempo de uso.
+        <h3>Sem pagar para ganhar.</h3>
+        <p>Nunca. Sem caixa de sorteio, sem recompensa por tempo de uso.</p>
       </li>
       <li>
-        <strong>Seus dados são seus.</strong> O modo offline não pede cadastro, e nada sai do seu
-        aparelho.
+        <h3>Seus dados são seus.</h3>
+        <p>O modo offline não pede cadastro, e nada sai do seu aparelho.</p>
       </li>
       <li>
-        <strong>Feito em público.</strong> Um post por semana no devlog, com o que foi feito e o que
-        vem a seguir.
+        <h3>Feito em público.</h3>
+        <p>Um post por semana no devlog, com o que foi feito e o que vem a seguir.</p>
       </li>
     </ul>
   </section>
 
-  <section aria-labelledby="onde">
-    <h2 id="onde">Onde estamos</h2>
-    <StageStrip {stages} />
-    <p>
-      <a class="inline-link" href={`${base}roadmap/`}>
-        Ver o roteiro completo
-      </a>
-    </p>
-  </section>
-
-  <section aria-labelledby="ultimas">
+  <section class="sec wide" aria-labelledby="ultimas">
     <h2 id="ultimas">Últimas do devlog</h2>
     <ul class="grid-cards three">
       {posts.map((p) => (
@@ -166,13 +175,15 @@ const clubs = clubsById(exampleClubIds);
       ))}
     </ul>
     <p>
-      <a class="inline-link" href={`${base}devlog/`}>
+      <a class="link" href={`${base}devlog/`}>
         Todos os posts
       </a>
     </p>
   </section>
 
-  <section class="prose">
+  <FinalCta />
+
+  <section class="sec closing">
     <p>
       Quer acompanhar? Leia o <a href={`${base}devlog/`}>devlog</a>, veja o{' '}
       <a href={`${base}roadmap/`}>roteiro</a> e tire dúvidas nas{' '}
@@ -182,52 +193,90 @@ const clubs = clubsById(exampleClubIds);
       Quer ajudar o projeto a seguir de pé? Veja como <a href={`${base}apoiar/`}>apoiar</a>.
     </p>
   </section>
-
-  <FinalCta />
 </Base>
 <style>
-  .hero {
-    padding: var(--space-6) 0 var(--space-4);
-    max-width: var(--layout-content-max);
+  .what {
+    display: grid;
+    gap: 0;
   }
-  .kicker {
-    display: inline-block;
-    background: var(--floodlight);
-    color: var(--on-floodlight);
-    padding: var(--space-1) var(--space-3);
-    border-radius: var(--radius-pill);
-    margin: 0 0 var(--space-3);
-  }
-  .hero-title {
-    font: var(--type-display-xl);
-  }
-  .lead {
-    margin: 0 0 var(--space-4);
-  }
-  .intro {
+  .what h2 {
     margin-bottom: var(--space-4);
   }
-  .actions {
+  .text p {
+    max-width: 60ch;
+    margin: 0 0 var(--space-3);
+  }
+  .text p:first-child {
+    font: var(--type-subtitulo);
+    font-size: 24px;
+    line-height: 30px;
+    color: var(--ink);
+  }
+  .grid-cards.four {
+    isolation: isolate;
+  }
+  .mini {
     display: flex;
-    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: var(--space-1);
+  }
+  .duo {
+    display: grid;
+    gap: var(--space-8);
+  }
+  .small {
+    margin: var(--space-4) 0 0;
+    font-size: 14px;
+    line-height: 20px;
+    color: var(--ink-muted);
+  }
+  .way {
+    display: grid;
     gap: var(--space-3);
-    margin: 0 0 var(--space-4);
+    list-style: none;
+    margin: 0;
+    padding: 0;
   }
-  .notice {
-    margin-bottom: var(--space-6);
+  .way li {
+    padding: var(--space-4);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: linear-gradient(160deg, var(--surface-1), var(--surface-0));
   }
-  .prose {
-    max-width: var(--layout-content-max);
+  .way h3 {
+    margin: 0 0 var(--space-1);
+    text-transform: uppercase;
   }
-  .after {
-    margin-top: var(--space-3);
+  .way p {
+    margin: 0;
+    color: var(--ink-muted);
   }
-  .inline-link {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch);
+  .closing {
+    color: var(--ink-muted);
+    padding-block: var(--space-8) var(--space-4);
   }
-  .brand-note {
-    margin-top: var(--space-6);
+  @media (min-width: 600px) {
+    .grid-cards.four {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (min-width: 720px) {
+    .what {
+      grid-template-columns: 5fr 7fr;
+      gap: 48px;
+      align-items: start;
+    }
+    .duo {
+      grid-template-columns: 1fr 1fr;
+      gap: 48px;
+    }
+    .way {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (min-width: 960px) {
+    .grid-cards.four {
+      grid-template-columns: repeat(4, 1fr);
+    }
   }
 </style>

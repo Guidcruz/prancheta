@@ -2,8 +2,10 @@
 interface Props {
   kind: 'formation' | 'posture' | 'pressure';
   title: string;
+  /** `chalk`: board with chalk strokes (only on the "O jogo" page). */
+  variant?: 'pitch' | 'chalk';
 }
-const { kind, title } = Astro.props;
+const { kind, title, variant = 'pitch' } = Astro.props;
 // 433 as dots on a 100x64 pitch (own goal on the left).
 const formation = [
   [8, 32],
@@ -18,41 +20,153 @@ const formation = [
   [74, 32],
   [72, 52],
 ];
+// Chalk variant: 360x240 viewBox; the same dots mapped to it.
+const chalkDots = formation.map(([x, y]) => [12 + (x ?? 0) * 3.4, 12 + (y ?? 0) * 3.4]);
+const focus = chalkDots[9] ?? [0, 0];
+const arrows = [
+  'M60 66H304M290 56L304 66L290 76',
+  'M60 121H250M236 111L250 121L236 131',
+  'M60 176H182M168 166L182 176L168 186',
+];
+const filterId = `chalk-${kind}`;
 ---
 
-<svg viewBox="0 0 100 64" role="img" aria-labelledby={`t-${kind}`}>
-  <title id={`t-${kind}`}>{title}</title>
-  <rect width="100" height="64" rx="3" fill="var(--pitch)" />
-  <g fill="none" stroke="var(--pitch-line)" stroke-width="0.8">
-    <rect x="2" y="2" width="96" height="60" />
-    <line x1="50" y1="2" x2="50" y2="62" />
-    <circle cx="50" cy="32" r="8" />
-  </g>
-  {kind === 'formation' &&
-    formation.map(([x, y]) => <circle cx={x} cy={y} r="2.6" fill="var(--pitch-line)" />)}
-  {kind === 'posture' && (
-    <g stroke="var(--pitch-line)" stroke-width="2" fill="var(--pitch-line)">
-      <line x1="14" y1="16" x2="78" y2="16" />
-      <polygon points="86,16 78,12 78,20" stroke="none" />
-      <line x1="14" y1="32" x2="62" y2="32" />
-      <polygon points="70,32 62,28 62,36" stroke="none" />
-      <line x1="14" y1="48" x2="42" y2="48" />
-      <polygon points="50,48 42,44 42,52" stroke="none" />
+{variant === 'pitch' ? (
+  <svg viewBox="0 0 100 64" role="img" aria-labelledby={`t-${kind}`} class="pitch">
+    <title id={`t-${kind}`}>{title}</title>
+    <rect width="100" height="64" rx="3" fill="var(--pitch)" />
+    <g fill="none" stroke="var(--pitch-line)" stroke-width="0.8">
+      <rect x="2" y="2" width="96" height="60" />
+      <line x1="50" y1="2" x2="50" y2="62" />
+      <circle cx="50" cy="32" r="8" />
     </g>
-  )}
-  {kind === 'pressure' && (
-    <g>
-      <rect x="2" y="2" width="32" height="60" fill="var(--pitch-line)" opacity="0.18" />
-      <rect x="34" y="2" width="32" height="60" fill="var(--pitch-line)" opacity="0.38" />
-      <rect x="66" y="2" width="32" height="60" fill="var(--pitch-line)" opacity="0.62" />
+    {kind === 'formation' &&
+      formation.map(([x, y]) => <circle cx={x} cy={y} r="2.6" fill="var(--pitch-line)" />)}
+    {kind === 'posture' && (
+      <g stroke="var(--pitch-line)" stroke-width="2" fill="var(--pitch-line)">
+        <line x1="14" y1="16" x2="78" y2="16" />
+        <polygon points="86,16 78,12 78,20" stroke="none" />
+        <line x1="14" y1="32" x2="62" y2="32" />
+        <polygon points="70,32 62,28 62,36" stroke="none" />
+        <line x1="14" y1="48" x2="42" y2="48" />
+        <polygon points="50,48 42,44 42,52" stroke="none" />
+      </g>
+    )}
+    {kind === 'pressure' && (
+      <g>
+        <rect x="2" y="2" width="32" height="60" fill="var(--pitch-line)" opacity="0.18" />
+        <rect x="34" y="2" width="32" height="60" fill="var(--pitch-line)" opacity="0.38" />
+        <rect x="66" y="2" width="32" height="60" fill="var(--pitch-line)" opacity="0.62" />
+      </g>
+    )}
+  </svg>
+) : (
+  <svg viewBox="0 0 360 240" role="img" aria-labelledby={`t-${kind}`} class="chalk">
+    <title id={`t-${kind}`}>{title}</title>
+    <defs>
+      <filter id={filterId} x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" />
+      </filter>
+    </defs>
+    <rect width="360" height="240" rx="10" fill="var(--board)" />
+    <g filter={`url(#${filterId})`}>
+      <g fill="none" stroke="var(--chalk-line)" stroke-width="2">
+        <rect x="8" y="8" width="344" height="224" />
+        <line x1="180" y1="8" x2="180" y2="232" />
+        <circle cx="180" cy="120" r="34" />
+        <rect x="8" y="70" width="52" height="100" />
+        <rect x="300" y="70" width="52" height="100" />
+      </g>
+      {kind === 'formation' && (
+        <g>
+          {chalkDots.map(([x, y]) => (
+            <circle cx={x} cy={y} r="9" fill="var(--chalk)" />
+          ))}
+          <circle
+            cx={focus[0]}
+            cy={focus[1]}
+            r="15"
+            fill="none"
+            stroke="var(--mark)"
+            stroke-width="2"
+          />
+        </g>
+      )}
+      {kind === 'posture' && (
+        <g
+          fill="none"
+          stroke="var(--chalk)"
+          stroke-width="2.6"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
+          {arrows.map((d) => (
+            <path class="arrow" d={d} pathLength="1" />
+          ))}
+        </g>
+      )}
+      {kind === 'pressure' && (
+        <g fill="var(--chalk)">
+          <rect x="8" y="8" width="115" height="224" opacity="0.15" />
+          <rect x="123" y="8" width="115" height="224" opacity="0.35" />
+          <rect x="238" y="8" width="114" height="224" opacity="0.6" />
+        </g>
+      )}
     </g>
-  )}
-</svg>
+    {kind === 'formation' && (
+      <text
+        x="180"
+        y="224"
+        text-anchor="middle"
+        font-family="var(--font-display)"
+        font-weight="600"
+        font-size="18"
+        fill="var(--mark)"
+        aria-hidden="true"
+      >
+        4-3-3
+      </text>
+    )}
+  </svg>
+)}
 <style>
   svg {
     display: block;
     width: 100%;
     height: auto;
+  }
+  .pitch {
     border-radius: var(--radius-sm);
+  }
+  .chalk {
+    border-radius: var(--radius-md);
+  }
+  /* Chalk arrows draw themselves while the diagram scrolls into view; static otherwise. */
+  @media (prefers-reduced-motion: no-preference) {
+    @supports (animation-timeline: view()) {
+      .arrow {
+        stroke-dasharray: 1;
+        animation: draw linear both;
+        animation-timeline: view();
+      }
+      .arrow:nth-child(1) {
+        animation-range: entry 10% entry 60%;
+      }
+      .arrow:nth-child(2) {
+        animation-range: entry 25% entry 75%;
+      }
+      .arrow:nth-child(3) {
+        animation-range: entry 40% entry 90%;
+      }
+    }
+  }
+  @keyframes draw {
+    from {
+      stroke-dashoffset: 1;
+    }
+    to {
+      stroke-dashoffset: 0;
+    }
   }
 </style>

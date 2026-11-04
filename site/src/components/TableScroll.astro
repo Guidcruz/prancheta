@@ -16,20 +16,36 @@ const { label, minWidth = '520px' } = Astro.props;
   <slot />
 </div>
 <style>
+  /* Standings-table look: the container is the card, rows are 48px with a divider. */
   .scroll {
     overflow-x: auto;
+    background: var(--surface-1);
     border: 1px solid var(--line);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
+    padding: var(--space-2);
     margin-bottom: var(--space-3);
   }
   .scroll :global(table) {
     min-width: var(--table-min);
   }
+  .scroll :global(thead th) {
+    border-bottom: 1px solid var(--line);
+  }
+  .scroll :global(tbody td),
+  .scroll :global(tbody th) {
+    height: 48px;
+    vertical-align: middle;
+  }
+  .scroll :global(tbody tr:last-child > *) {
+    border-bottom: 0;
+  }
+  .scroll :global(tr) {
+    background: var(--surface-1);
+  }
   .scroll :global(tr > :first-child) {
     position: sticky;
     left: 0;
-    background: var(--surface-1);
-    border-right: 1px solid var(--line);
+    background: inherit;
   }
   .scroll :global(tbody th) {
     color: var(--ink);

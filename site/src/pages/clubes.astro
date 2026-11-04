@@ -1,7 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
-import ShieldGrid from '../components/ShieldGrid.astro';
+import StickerGrid from '../components/StickerGrid.astro';
+import PageHero from '../components/PageHero.astro';
 import StatusBadge from '../components/StatusBadge.astro';
 import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
@@ -18,18 +19,14 @@ const divisions = [
 ];
 ---
 
-<Base
-  title="Clubes"
-  current="clubes"
-  description={`Todos os clubes são fictícios, com nomes em trocadilho e escudos desenhados por código. Conheça a ideia por trás dos times do ${config.name}.`}
-  wide
->
-  <div class="prose">
-    <h1>Clubes</h1>
+<Base title="Clubes" current="clubes" share="clubes">
+  <PageHero title="Clubes com trocadilho">
     <p class="lead">
       No {config.name}, todos os clubes são fictícios. O nome é um trocadilho: você bate o olho e
       sabe quem é, mas ninguém copiou marca nenhuma.
     </p>
+  </PageHero>
+  <div class="sec flow">
     <p>
       Cidade, cores e apelido da torcida estão lá. O que você não vai achar é escudo, uniforme ou
       nome oficial de clube de verdade.
@@ -61,17 +58,17 @@ const divisions = [
     </ul>
   </div>
 
-  <section aria-labelledby="escudos">
+  <section class="sec flow wide" aria-labelledby="escudos">
     <h2 id="escudos">Alguns escudos de exemplo</h2>
-    <ShieldGrid {clubs} />
-    <p class="caption muted note">
+    <StickerGrid {clubs} />
+    <p class="note">
       Cada escudo é desenhado por código, a partir do formato, das cores e de um símbolo simples
       (estrela, bola ou letra), e é sempre o mesmo para o mesmo clube. Os 20 da Série A serão
       apresentados aqui em breve.
     </p>
   </section>
 
-  <div class="prose">
+  <div class="sec flow">
     <h2>Jogadores</h2>
     <p>
       Todos fictícios, com nome, nacionalidade, posição e atributos gerados pelo jogo. O rosto
@@ -124,14 +121,8 @@ const divisions = [
   <FinalCta />
 </Base>
 <style>
-  .prose {
-    max-width: var(--layout-content-max);
-  }
   .note {
-    margin-top: var(--space-4);
-    max-width: var(--layout-content-max);
-  }
-  .prose ul {
-    padding-left: var(--space-6);
+    margin-top: var(--space-6);
+    color: var(--ink-muted);
   }
 </style>

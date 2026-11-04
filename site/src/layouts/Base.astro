@@ -1,38 +1,46 @@
 ---
+import { existsSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { config } from '../../../config/prancheta.config.ts';
 import '@fontsource/barlow/400.css';
 import '@fontsource/barlow/500.css';
 import '@fontsource/barlow/600.css';
 import '@fontsource/barlow-condensed/600.css';
 import '@fontsource/barlow-condensed/700.css';
+import '@fontsource/barlow-condensed/800.css';
 import '../../../app/src/tokens.css';
 import '../theme-auto.css';
 import tokens from '../../../design/tokens.json';
+import { shareFor } from '../data/share';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 interface Props {
   title?: string;
+  /** Overrides the description of the share entry (devlog posts use their own summary). */
   description?: string;
+  /** Key of the entry in data/share.ts: sets the description and the share image. */
+  share?: string;
   /** Menu entry to mark as the current page (see lib/nav.ts). */
   current?: string;
   /** Open Graph type; posts use "article". */
   ogType?: 'website' | 'article';
-  /** Wide pages (grids) use the wide column. */
-  wide?: boolean;
 }
-const {
-  title,
-  description = config.slogan['pt-BR'],
-  current,
-  ogType = 'website',
-  wide = false,
-} = Astro.props;
+const { title, share, current, ogType = 'website' } = Astro.props;
+const entry = share ? shareFor(share) : undefined;
+const description = Astro.props.description ?? entry?.description ?? config.slogan['pt-BR'];
 const fullTitle = title ? `${title} · ${config.name}` : config.name;
 const base = config.paths.site;
 const lightBg = String(
   tokens.color.tokens.find((t) => t.name === 'surface-0')?.value.dia ?? config.colors.background,
 );
 const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
+// The share image is generated before the build (scripts/og.mjs); without the file, no tags.
+const ogPath = entry ? `${base}og/${entry.file}` : undefined;
+// Astro runs from the site folder (npm -w site); from the repository root the path differs.
+const ogDirs = [resolve(process.cwd(), 'public/og'), resolve(process.cwd(), 'site/public/og')];
+const hasImage =
+  ogPath !== undefined && ogDirs.some((d) => existsSync(resolve(d, entry?.file ?? '')));
+const ogImage = hasImage && ogPath ? new URL(ogPath, `https://${config.domain}`).href : undefined;
 ---
 
 <!doctype html>
@@ -50,6 +58,15 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     <meta property="og:locale" content="pt_BR" />
     <meta property="og:site_name" content={config.name} />
     <meta name="twitter:card" content="summary_large_image" />
+    {ogImage && (
+      <>
+        <meta property="og:image" content={ogImage} />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content={entry?.ogTitle} />
+        <meta name="twitter:image" content={ogImage} />
+      </>
+    )}
     <meta
       name="theme-color"
       content={config.colors.background}
@@ -69,7 +86,7 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
       Pular para o conteúdo
     </a>
     <SiteHeader {current} />
-    <main id="conteudo" class:list={{ wide }}>
+    <main id="conteudo">
       <slot />
     </main>
     <SiteFooter />
@@ -82,24 +99,22 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     box-sizing: border-box;
   }
   html {
-    scroll-behavior: smooth;
+    -webkit-text-size-adjust: 100%;
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    html {
+      scroll-behavior: smooth;
+    }
   }
   body {
     margin: 0;
     background: var(--surface-0);
     color: var(--ink);
     font: var(--type-body);
+    overflow-x: clip;
   }
-  main {
-    max-width: var(--layout-content-max);
-    margin: 0 auto;
-    padding: var(--space-6) var(--space-4) var(--space-8);
-  }
-  main.wide {
-    max-width: var(--layout-wide-max);
-  }
-  main.wide > * {
-    max-width: var(--layout-wide-max);
+  svg {
+    display: block;
   }
   a {
     color: var(--info);
@@ -117,7 +132,7 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     position: absolute;
     left: var(--space-2);
     top: -100px;
-    z-index: 20;
+    z-index: 50;
     padding: var(--space-3) var(--space-4);
     background: var(--surface-1);
     color: var(--ink);
@@ -127,16 +142,12 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
   .skip:focus {
     top: var(--space-2);
   }
-  h1 {
+  h1,
+  h2 {
     font: var(--type-display-lg);
     text-transform: uppercase;
     margin: 0 0 var(--space-4);
-    hyphens: auto;
     overflow-wrap: break-word;
-  }
-  h2 {
-    font: var(--type-titulo);
-    margin: var(--space-8) 0 var(--space-3);
   }
   h3 {
     font: var(--type-subtitulo);
@@ -147,10 +158,51 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
   ol {
     margin-top: 0;
   }
+  /* Page sections: reading column by default, wide for grids. */
+  .sec {
+    position: relative;
+    max-width: var(--layout-content-max);
+    margin: 0 auto;
+    padding: 48px var(--space-4);
+    font-size: 17px;
+    line-height: 26px;
+  }
+  .sec.wide {
+    max-width: var(--layout-wide-max);
+  }
+  .sec h2:not(:first-child) {
+    margin-top: var(--space-8);
+  }
+  .sec.wide > :where(p, ul:not([class]), ol:not([class])) {
+    max-width: var(--layout-content-max);
+  }
+  /* Inner pages: sections follow each other without doubling the padding. */
+  .sec.flow + .sec.flow {
+    padding-top: 0;
+  }
+  .sec :where(ul:not([class]), ol:not([class])) {
+    padding-left: var(--space-6);
+  }
+  /* Soft green glow behind glass cards (derivation allowed in docs/design/site.md). */
+  .glow {
+    isolation: isolate;
+  }
+  .glow::before {
+    content: '';
+    position: absolute;
+    inset: 10% 0;
+    z-index: -1;
+    pointer-events: none;
+    background: radial-gradient(
+      50% 50% at 50% 50%,
+      color-mix(in srgb, var(--grass) 15%, transparent),
+      transparent 70%
+    );
+  }
   .card {
     background: var(--surface-1);
     border: 1px solid var(--line);
-    border-radius: var(--radius-md);
+    border-radius: var(--radius-lg);
     padding: var(--space-4);
   }
   table {
@@ -186,9 +238,18 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
   .muted {
     color: var(--ink-muted);
   }
-  .lead {
-    font: var(--type-subtitulo);
-    color: var(--ink-muted);
+  .link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .grid-cards {
     display: grid;
@@ -198,6 +259,9 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     list-style: none;
   }
   @media (min-width: 720px) {
+    .sec {
+      padding: 72px var(--space-8);
+    }
     .grid-cards {
       grid-template-columns: repeat(2, 1fr);
     }
@@ -206,9 +270,6 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    html {
-      scroll-behavior: auto;
-    }
     *,
     *::before,
     *::after {

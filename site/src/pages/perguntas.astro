@@ -4,22 +4,21 @@ import { config } from '../../../config/prancheta.config.ts';
 import FaqItem from '../components/FaqItem.astro';
 import StatusBadge from '../components/StatusBadge.astro';
 import FinalCta from '../components/FinalCta.astro';
+import PageHero from '../components/PageHero.astro';
+import GlassCard from '../components/GlassCard.astro';
 const base = config.paths.site;
 const { supportEmail, discussionsUrl, repository } = config.contacts;
 ---
 
-<Base
-  title="Perguntas frequentes"
-  current="perguntas"
-  description={`Preço, celular, privacidade, clubes fictícios e online: respostas diretas às dúvidas mais comuns sobre o ${config.name}, sem enrolação.`}
->
-  <h1>Perguntas frequentes</h1>
-  <p class="lead">
-    Respostas diretas, sem enrolação. Não achou a sua? Veja o <a href={`${base}devlog/`}>devlog</a>{' '}
-    ou o <a href={`${base}roadmap/`}>roteiro</a>.
-  </p>
+<Base title="Perguntas frequentes" current="perguntas" share="perguntas">
+  <PageHero title="Perguntas frequentes" />
 
-  <section>
+  <section class="sec flow">
+    <!-- No links on the beam (docs/design/site.md, rule 1): the sentence starts the body. -->
+    <p class="intro">
+      Respostas diretas, sem enrolação. Não achou a sua? Veja o{' '}
+      <a href={`${base}devlog/`}>devlog</a> ou o <a href={`${base}roadmap/`}>roteiro</a>.
+    </p>
     <h2>O jogo</h2>
     <div class="list">
       <FaqItem question={`O que é o ${config.name}?`}>
@@ -53,7 +52,7 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
     </div>
   </section>
 
-  <section>
+  <section class="sec flow">
     <h2>Custo e anúncios</h2>
     <div class="list">
       <FaqItem question={`O jogo é grátis?`}>
@@ -84,7 +83,7 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
     </div>
   </section>
 
-  <section>
+  <section class="sec flow">
     <h2>Dados e privacidade</h2>
     <div class="list">
       <FaqItem question={`Preciso criar conta ou me cadastrar?`}>
@@ -126,7 +125,7 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
     </div>
   </section>
 
-  <section>
+  <section class="sec flow">
     <h2>Internet, celular e saves</h2>
     <div class="list">
       <FaqItem question={`Preciso de internet?`}>
@@ -163,7 +162,7 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
     </div>
   </section>
 
-  <section>
+  <section class="sec flow">
     <h2>Projeto</h2>
     <div class="list">
       <FaqItem question={`Quando sai a versão completa?`}>
@@ -195,32 +194,36 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
       )}
     </div>
   </section>
-  <section>
-    <h2>Não achou a sua pergunta?</h2>
-    {discussionsUrl && (
-      <p>
-        Escreva no mesmo lugar: as <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Se
-        preferir, acompanhe o <a href={`${base}devlog/`}>devlog</a>.
-      </p>
-    )}
-    {supportEmail && (
-      <p>
-        Contato: <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
-      </p>
-    )}
-    {!discussionsUrl && !supportEmail && (
-      <p>
-        Acompanhe o <a href={`${base}devlog/`}>devlog</a>
-        {repository && (
-          <>
-            {' '}
-            ou veja o <a href={repository}>repositório</a>
-          </>
+  <div class="sec flow glow">
+    <GlassCard>
+      <section aria-labelledby="fecho">
+        <h2 id="fecho">Não achou a sua pergunta?</h2>
+        {discussionsUrl && (
+          <p>
+            Escreva no mesmo lugar: as <a href={discussionsUrl}>Discussões do projeto no GitHub</a>.
+            Se preferir, acompanhe o <a href={`${base}devlog/`}>devlog</a>.
+          </p>
         )}
-        .
-      </p>
-    )}
-  </section>
+        {supportEmail && (
+          <p>
+            Contato: <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+          </p>
+        )}
+        {!discussionsUrl && !supportEmail && (
+          <p>
+            Acompanhe o <a href={`${base}devlog/`}>devlog</a>
+            {repository && (
+              <>
+                {' '}
+                ou veja o <a href={repository}>repositório</a>
+              </>
+            )}
+            .
+          </p>
+        )}
+      </section>
+    </GlassCard>
+  </div>
 
   <FinalCta />
 </Base>
@@ -229,7 +232,7 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
     display: grid;
     gap: var(--space-2);
   }
-  .lead {
-    margin-bottom: var(--space-4);
+  .intro {
+    margin-bottom: var(--space-6);
   }
 </style>

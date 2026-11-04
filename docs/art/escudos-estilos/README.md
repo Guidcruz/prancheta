@@ -210,3 +210,54 @@ Resumo de risco: 5 clubes em M (Flamingo, Minério, Grêmeos, Fluminário, Vasco
 ## Peso e o que muda no gerador
 
 SVG médio nos 20 clubes: cerca de 3,1 KB na versão grande e 1,6 KB na pequena (sem compressão). No gerador: `ShieldSpec` ganha `crestShape`, `crestPattern`, `crestBase` e `crestSymbol` vindos dos dados (sem sorteio); os caminhos dos símbolos e a tabela de caixas (`bbox.json`) viram constantes do módulo; o resto vale como na v3 (ids únicos por clube, atualizar o snapshot e os testes de `shield.test.ts`).
+
+---
+
+# Estilo A v5
+
+Arquivos: `estilo-a-brasao-v5.html`, `estilo-a-grade-v5.png` (367 KB), `estilo-a-zoom-v5.png` (135 KB); código em `prototipo/formas-v5.mjs` (só o mapa de formatos) e `prototipo/gerar-v5.cjs`. Símbolos, padrões, estrelas e tamanhos são os da v4, que foi mantida.
+
+## O que mudou
+
+Só o `crestShape` de cada clube: agora acompanha a silhueta geral do escudo do clube que o inspirou (redondo, clássico de fundo arredondado, francês com ponta, oval, com cantos). Só a silhueta; não há símbolo, monograma, sigla nem nome real, nem a mesma composição. As silhuetas reais abaixo são de memória, sem busca na internet; o CEO ou o jurídico deve conferir. Onde a memória é fraca, está marcado como "incerto" e o formato é de baixa informação.
+
+## Formato real → formato nosso
+
+| Clube          | Silhueta geral do real         | Nosso formato (`crestShape`) | Risco do formato              |
+| -------------- | ------------------------------ | ---------------------------- | ----------------------------- |
+| Flamingo       | escudo de fundo arredondado    | `rounded`                    | B (padrão da v4 continua M)   |
+| Corinto        | redondo                        | `disc`                       | B                             |
+| Palmeral       | escudo de fundo arredondado    | `rounded`                    | B                             |
+| São Paulão     | escudo com ponta suave embaixo | `french`                     | B                             |
+| Minério        | redondo                        | `disc`                       | B (clube segue M pelo padrão) |
+| Grêmeos        | oval alto, ponta embaixo       | `oval`                       | B (clube segue M)             |
+| Fluminário     | escudo francês com ponta       | `french`                     | B (clube segue M)             |
+| Botafogueira   | escudo de fundo arredondado    | `rounded`                    | B                             |
+| Vasconcelos    | escudo com cantos chanfrados   | `chamfer`                    | B (clube segue M)             |
+| Santões        | redondo                        | `disc`                       | B                             |
+| Cruzador       | redondo                        | `disc`                       | B                             |
+| Inter-Regional | escudo de fundo arredondado    | `rounded`                    | B                             |
+| Tufão          | escudo de fundo arredondado    | `rounded`                    | B                             |
+| Baião          | escudo de fundo arredondado    | `rounded`                    | B                             |
+| Coritibom      | redondo (pedido do CEO)        | `disc`                       | B                             |
+| Vitorioso      | escudo francês com ponta       | `french`                     | B                             |
+| Bragantão      | redondo                        | `disc`                       | B                             |
+| Miragol        | incerto (escudo simples)       | `chamfer` (mantido da v4)    | B                             |
+| Chapecão       | incerto (escudo com ponta)     | `french` (mantido da v4)     | B                             |
+| Remador        | oval                           | `oval`                       | B                             |
+
+O risco por clube da v4 não muda: os 5 em M (Flamingo, Minério, Grêmeos, Fluminário, Vasconcelos) seguem em M, e o CEO decidiu mantê-los, com revisão jurídica antes do lançamento. A silhueta, sozinha, é genérica (círculo, oval e escudo são formas de uso comum).
+
+## Rivais e clubes da mesma cidade com o mesmo formato
+
+Três pares ficaram com a mesma silhueta, o que o CEO aceitou desde que cor e padrão separem:
+
+- **Flamingo e Botafogueira** (Rio, ambos `rounded`): vermelho com três faixas horizontais pretas contra preto e branco em metades verticais; símbolos de ondas e de chama.
+- **Corinto e Santões** (São Paulo e Santos, ambos `disc`): o mais próximo dos três, porque as duas têm preto e branco. Corinto tem fundo preto com topo branco; Santões tem fundo branco com faixa preta no meio; símbolos de prédios e de contêineres; Corinto leva anel branco, Santões anel preto. Se quiser mais distância, o recuo mais barato é voltar Corinto para `swiss`.
+- **Atlético Minério e Cruzador** (Belo Horizonte, ambos `disc`): preto e branco em listras verticais contra azul liso com anel; símbolos de diamante e de arcos.
+
+Os demais pares de rivais (Palmeral, São Paulão e Corinto; Grêmeos e Inter-Regional; Tufão e Coritibom; Baião e Vitorioso; Fluminário, Vasconcelos e Flamingo) têm formatos diferentes. Formatos agora: 6 `rounded`, 6 `disc`, 4 `french`, 2 `oval`, 2 `chamfer`; o formato `swiss` não é mais usado, e fica no gerador para clubes futuros.
+
+## Gerador
+
+Mudança de dados: `crestShape` recebe os valores da tabela. O `assignShapes` da v2 já não é usado. O resto vale como na v4.

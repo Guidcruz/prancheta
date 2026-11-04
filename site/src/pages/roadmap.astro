@@ -1,17 +1,19 @@
 ---
 import Base from '../layouts/Base.astro';
 import StageTable from '../components/StageTable.astro';
+import PageHero from '../components/PageHero.astro';
+import FinalCta from '../components/FinalCta.astro';
 import { stages, roadmapNote } from '../lib/roadmap';
 // Single source: docs/roadmap.md (the table). Changed there, changed here on the next build.
 ---
 
-<Base
-  title="Roteiro"
-  current="roadmap"
-  description="As etapas do jogo, cada uma com uma versão jogável."
-  wide
->
-  <h1>Roteiro</h1>
-  <p>Cada etapa termina com uma versão jogável, publicada aqui. {roadmapNote}</p>
-  <StageTable stages={stages} />
+<Base title="Roteiro" current="roadmap" share="roadmap">
+  <PageHero
+    title="Roteiro"
+    lead={`Cada etapa termina com uma versão jogável, publicada aqui. ${roadmapNote}`}
+  />
+  <section class="sec flow wide" aria-label="Etapas do jogo">
+    <StageTable {stages} variant="full" />
+  </section>
+  <FinalCta />
 </Base>

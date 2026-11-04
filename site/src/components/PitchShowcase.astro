@@ -1,0 +1,99 @@
+---
+import { showcasePitch as p } from '../lib/stadium-geometry';
+import type { SiteClub } from '../lib/shields';
+import ClubShield from './ClubShield.astro';
+interface Props {
+  /** Five clubs, in a fixed order. */
+  clubs: SiteClub[];
+  /** Height override (CSS length); defaults to 190px on the phone and 300px on the desktop. */
+  height?: string;
+}
+const { clubs, height } = Astro.props;
+---
+
+<div class="showcase" aria-hidden="true" style={height ? `--showcase-h: ${height}` : undefined}>
+  <svg class="pitch" viewBox={p.viewBox} preserveAspectRatio="none" focusable="false">
+    <defs>
+      <linearGradient id="pitch-fade" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="var(--pitch)" stop-opacity="0"></stop>
+        <stop offset="0.35" stop-color="var(--pitch)"></stop>
+      </linearGradient>
+    </defs>
+    <path d={p.trapezoid} fill="url(#pitch-fade)"></path>
+    {p.stripes.map((d) => (
+      <path {d} fill="var(--pitch-line)" opacity="0.06"></path>
+    ))}
+    <g fill="none" stroke="var(--pitch-line)" stroke-width="3" opacity="0.75">
+      <path d={p.endLine}></path>
+      <path d={p.halfway}></path>
+      <ellipse cx={p.circle.cx} cy={p.circle.cy} rx={p.circle.rx} ry={p.circle.ry}></ellipse>
+      <circle cx={p.circle.cx} cy={p.circle.cy} r={p.spotRadius} fill="var(--pitch-line)"></circle>
+    </g>
+  </svg>
+  <div class="squad">
+    {clubs.map((club, i) => (
+      <span class={`s s${i + 1}`}>
+        <ClubShield {club} size={128} decorative />
+      </span>
+    ))}
+  </div>
+</div>
+<style>
+  .showcase {
+    position: relative;
+    height: var(--showcase-h, 190px);
+    margin: 28px calc(-1 * var(--space-4)) 0;
+  }
+  .pitch {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+  }
+  .squad {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    gap: 10px;
+  }
+  .s {
+    display: block;
+    filter: drop-shadow(var(--shadow-lift));
+    --shield-size: 54px;
+  }
+  .s2,
+  .s4 {
+    --shield-size: 64px;
+    margin-bottom: 18px;
+  }
+  .s3 {
+    --shield-size: 84px;
+    margin-bottom: 32px;
+  }
+  @media (min-width: 720px) {
+    .showcase {
+      height: var(--showcase-h, 300px);
+      margin: 40px 0 0;
+    }
+    .squad {
+      gap: 28px;
+      bottom: 50px;
+    }
+    .s {
+      --shield-size: 84px;
+    }
+    .s2,
+    .s4 {
+      --shield-size: 100px;
+      margin-bottom: 30px;
+    }
+    .s3 {
+      --shield-size: 128px;
+      margin-bottom: 54px;
+    }
+  }
+</style>

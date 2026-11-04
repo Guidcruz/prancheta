@@ -1,7 +1,7 @@
 ---
 import { config } from '../../../config/prancheta.config.ts';
 const base = config.paths.site;
-const { supportEmail, repository, discussionsUrl } = config.contacts;
+const { supportEmail, discussionsUrl } = config.contacts;
 ---
 
 <footer class="foot">
@@ -11,7 +11,7 @@ const { supportEmail, repository, discussionsUrl } = config.contacts;
         O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e
         patrocinadores do jogo são fictícios.
       </p>
-      <p>Versão {config.version}</p>
+      <p class="ver rotulo">Versão {config.version}</p>
     </div>
     <ul class="links">
       <li>
@@ -26,19 +26,14 @@ const { supportEmail, repository, discussionsUrl } = config.contacts;
       <li>
         <a href={`${base}devlog/`}>Devlog</a>
       </li>
-      <li>
-        <a href={`${base}devlog/rss.xml`}>RSS do devlog</a>
-      </li>
       {discussionsUrl && (
         <li>
           <a href={discussionsUrl}>Discussões</a>
         </li>
       )}
-      {repository && (
-        <li>
-          <a href={repository}>Repositório</a>
-        </li>
-      )}
+      <li class="apart">
+        <a href={`${base}devlog/rss.xml`}>RSS do devlog</a>
+      </li>
     </ul>
     {supportEmail && (
       <p>
@@ -49,18 +44,22 @@ const { supportEmail, repository, discussionsUrl } = config.contacts;
 </footer>
 <style>
   .foot {
+    background: var(--surface-0);
     border-top: 1px solid var(--line);
     color: var(--ink-muted);
   }
   .inner {
     max-width: var(--layout-wide-max);
     margin: 0 auto;
-    padding: var(--space-6) var(--space-4);
+    padding: var(--space-6) var(--space-4) var(--space-8);
     display: grid;
     gap: var(--space-4);
   }
   p {
     margin: 0 0 var(--space-1);
+  }
+  .ver {
+    font-variant-numeric: tabular-nums;
   }
   .links {
     list-style: none;
@@ -68,16 +67,23 @@ const { supportEmail, repository, discussionsUrl } = config.contacts;
     padding: 0;
     display: flex;
     flex-wrap: wrap;
-    gap: var(--space-2) var(--space-3);
+    gap: 0 var(--space-3);
   }
   .links a {
     display: inline-flex;
     align-items: center;
     min-height: var(--touch);
+    padding: var(--space-1) 0;
+    color: var(--ink);
+  }
+  .apart {
+    margin-left: auto;
   }
   @media (min-width: 720px) {
     .inner {
-      grid-template-columns: 1fr auto auto;
+      grid-template-columns: 2fr 3fr;
+      gap: var(--space-8);
+      padding: var(--space-8) var(--space-8) 48px;
       align-items: start;
     }
   }

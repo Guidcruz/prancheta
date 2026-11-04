@@ -1,0 +1,142 @@
+---
+import type { SiteClub } from '../lib/shields';
+import Button from './Button.astro';
+import FloodlightTower from './FloodlightTower.astro';
+import GlassCard from './GlassCard.astro';
+import PitchShowcase from './PitchShowcase.astro';
+interface Props {
+  title: string;
+  slogan: string;
+  /** Tail of the slogan to highlight (config.slogan.short); matched ignoring case. */
+  sloganHighlight: string;
+  lead: string;
+  note?: string;
+  /** Text of the tag above the title. */
+  tag?: string;
+  primary: { href: string; label: string };
+  secondary?: { href: string; label: string };
+  clubs: SiteClub[];
+}
+const { title, slogan, sloganHighlight, lead, note, tag, primary, secondary, clubs } = Astro.props;
+// The cut point comes from the configuration, not from a fixed index.
+const cleanHighlight = sloganHighlight.replace(/[.\s]+$/, '').toLocaleLowerCase('pt-BR');
+const at = slogan.toLocaleLowerCase('pt-BR').lastIndexOf(cleanHighlight);
+const before = at >= 0 ? slogan.slice(0, at) : slogan;
+const marked = at >= 0 ? slogan.slice(at) : '';
+---
+
+<section class="hero" aria-labelledby="hero-title">
+  <FloodlightTower side="left" />
+  <FloodlightTower side="right" />
+  {tag && (
+    <GlassCard as="span" variant="pill">
+      <span class="dot" aria-hidden="true"></span>
+      <span class="rotulo">{tag}</span>
+    </GlassCard>
+  )}
+  <h1 id="hero-title">{title}</h1>
+  <p class="slogan">
+    {before}
+    {marked && <strong>{marked}</strong>}
+  </p>
+  <p class="lead">{lead}</p>
+  <p class="ctas">
+    <Button href={primary.href} glow>
+      {primary.label}
+    </Button>
+    {secondary && (
+      <Button href={secondary.href} variant="secondary">
+        {secondary.label}
+      </Button>
+    )}
+  </p>
+  {note && <p class="note caption">{note}</p>}
+  <PitchShowcase {clubs} />
+</section>
+<style>
+  .hero {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+    padding: var(--space-8) var(--space-4) 0;
+    text-align: center;
+  }
+  /* Four beam layers; no image noise (it would only add weight). */
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    z-index: -2;
+    pointer-events: none;
+    background:
+      radial-gradient(70% 55% at 0% 0%, var(--beam), transparent 70%),
+      radial-gradient(70% 55% at 100% 0%, var(--beam), transparent 70%),
+      linear-gradient(118deg, transparent 30%, var(--beam) 45%, transparent 58%),
+      linear-gradient(242deg, transparent 30%, var(--beam) 45%, transparent 58%);
+  }
+  @media (prefers-reduced-motion: no-preference) {
+    .hero::before {
+      animation: lights 1.2s ease-out both;
+    }
+  }
+  @keyframes lights {
+    from {
+      opacity: 0;
+    }
+  }
+  .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--floodlight);
+    box-shadow: 0 0 0 4px color-mix(in srgb, var(--floodlight) 30%, transparent);
+  }
+  h1 {
+    margin: 18px 0 0;
+    font: var(--type-display-xl);
+    letter-spacing: -0.01em;
+    text-shadow: 0 0 48px var(--beam);
+  }
+  .slogan {
+    max-width: 30ch;
+    margin: 14px auto 0;
+    font: var(--type-titulo);
+  }
+  .slogan strong {
+    color: var(--floodlight);
+    font-weight: 700;
+  }
+  .lead {
+    max-width: 46ch;
+    margin: 14px auto 0;
+    font-size: 17px;
+    line-height: 26px;
+  }
+  .ctas {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--space-3);
+    max-width: 360px;
+    margin: var(--space-6) auto 0;
+  }
+  .note {
+    max-width: 46ch;
+    margin: var(--space-4) auto 0;
+  }
+  @media (prefers-color-scheme: light) {
+    .slogan strong {
+      color: var(--grass);
+    }
+  }
+  @media (min-width: 720px) {
+    .hero {
+      padding-top: 72px;
+    }
+    .ctas {
+      flex-direction: row;
+      justify-content: center;
+      max-width: none;
+    }
+  }
+</style>

@@ -1,51 +1,54 @@
 ---
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
+import PageHero from '../components/PageHero.astro';
 ---
 
-<Base title="Privacidade" description={`Política de privacidade do ${config.name}.`}>
-  <h1>Privacidade</h1>
-  <p>
-    Versão de 3 de novembro de 2026. Curta de propósito: o {config.name} coleta o mínimo possível.
-  </p>
-  <h2>O que o jogo guarda</h2>
-  <ul>
-    <li>
-      <strong>No modo offline:</strong> nada sai do seu aparelho. Os saves ficam no seu navegador ou
-      no app instalado. Não há cadastro.
-    </li>
-    <li>
-      <strong>Neste site:</strong> não usamos cookies de rastreamento nem analytics que identifique
-      pessoas. Fontes e demais arquivos são servidos pelo próprio site, sem chamadas a terceiros. Se
-      um dia contarmos visitas, será de forma agregada e anônima (Cloudflare Web Analytics, sem
-      cookies), e esta página dirá.
-    </li>
-    <li>
-      <strong>No modo online (quando existir):</strong> apenas um apelido escolhido por você e uma
-      chave de acesso do seu aparelho. Sem e-mail, telefone, nome real ou data de nascimento. Saves
-      sincronizados são cifrados no seu aparelho antes de subir.
-    </li>
-  </ul>
-  <h2>Infraestrutura</h2>
-  <p>
-    O site e o jogo são servidos pela Cloudflare, que processa endereços IP para entregar as
-    páginas, conforme a política de privacidade dela. O jogo não grava endereços IP.
-  </p>
-  <h2>Suporte</h2>
-  <p>
-    Se você escrever para o suporte, a mensagem fica guardada só pelo tempo necessário para
-    responder e é apagada depois de 90 dias do encerramento. Não envie dados sensíveis.
-  </p>
-  <h2>Menores de idade</h2>
-  <p>
-    O jogo não tem caixas de recompensa, compras aleatórias, recompensas por tempo de uso nem chat
-    de texto livre. Toda interação entre jogadores usa mensagens prontas e pode ser desligada.
-  </p>
-  <h2>Contato</h2>
-  <p>
-    Responsável: {config.legal.responsible}, {config.legal.city}.
-    {config.contacts.supportEmail
-      ? ` E-mail: ${config.contacts.supportEmail}.`
-      : ' Um canal de contato será publicado aqui assim que existir.'}
-  </p>
+<Base title="Privacidade" share="privacidade">
+  <PageHero title="Privacidade" />
+  <div class="sec flow">
+    <p>
+      Versão de 3 de novembro de 2026. Curta de propósito: o {config.name} coleta o mínimo possível.
+    </p>
+    <h2>O que o jogo guarda</h2>
+    <ul>
+      <li>
+        <strong>No modo offline:</strong> nada sai do seu aparelho. Os saves ficam no seu navegador
+        ou no app instalado. Não há cadastro.
+      </li>
+      <li>
+        <strong>Neste site:</strong> não usamos cookies de rastreamento nem analytics que
+        identifique pessoas. Fontes e demais arquivos são servidos pelo próprio site, sem chamadas a
+        terceiros. Se um dia contarmos visitas, será de forma agregada e anônima (Cloudflare Web
+        Analytics, sem cookies), e esta página dirá.
+      </li>
+      <li>
+        <strong>No modo online (quando existir):</strong> apenas um apelido escolhido por você e uma
+        chave de acesso do seu aparelho. Sem e-mail, telefone, nome real ou data de nascimento.
+        Saves sincronizados são cifrados no seu aparelho antes de subir.
+      </li>
+    </ul>
+    <h2>Infraestrutura</h2>
+    <p>
+      O site e o jogo são servidos pela Cloudflare, que processa endereços IP para entregar as
+      páginas, conforme a política de privacidade dela. O jogo não grava endereços IP.
+    </p>
+    <h2>Suporte</h2>
+    <p>
+      Se você escrever para o suporte, a mensagem fica guardada só pelo tempo necessário para
+      responder e é apagada depois de 90 dias do encerramento. Não envie dados sensíveis.
+    </p>
+    <h2>Menores de idade</h2>
+    <p>
+      O jogo não tem caixas de recompensa, compras aleatórias, recompensas por tempo de uso nem chat
+      de texto livre. Toda interação entre jogadores usa mensagens prontas e pode ser desligada.
+    </p>
+    <h2>Contato</h2>
+    <p>
+      Responsável: {config.legal.responsible}, {config.legal.city}.
+      {config.contacts.supportEmail
+        ? ` E-mail: ${config.contacts.supportEmail}.`
+        : ' Um canal de contato será publicado aqui assim que existir.'}
+    </p>
+  </div>
 </Base>

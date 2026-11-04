@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import PageHero from '../../components/PageHero.astro';
 import { getCollection, render } from 'astro:content';
 export async function getStaticPaths() {
   const posts = await getCollection('devlog');
@@ -7,14 +8,46 @@ export async function getStaticPaths() {
 }
 const { post } = Astro.props;
 const { Content } = await render(post);
+const kicker = `${post.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa ${post.data.etapa}`;
 ---
 
-<Base title={post.data.title} description={post.data.summary} current="devlog" ogType="article">
-  <article>
-    <p class="caption" style="color: var(--ink-muted); margin: 0">
-      {post.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa {post.data.etapa}
-    </p>
-    <h1>{post.data.title}</h1>
+<Base
+  title={post.data.title}
+  description={post.data.summary}
+  share="devlog"
+  current="devlog"
+  ogType="article"
+>
+  <PageHero title={post.data.title} {kicker} />
+  <article class="sec flow post">
     <Content />
   </article>
 </Base>
+<style is:global>
+  .post pre,
+  .post table,
+  .post blockquote {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+  .post pre {
+    padding: var(--space-3) var(--space-4);
+    overflow-x: auto;
+  }
+  .post pre code {
+    background: none;
+    padding: 0;
+  }
+  .post table {
+    display: block;
+    overflow-x: auto;
+  }
+  .post blockquote {
+    margin: 0 0 var(--space-4);
+    padding: var(--space-3) var(--space-4);
+  }
+  .post h2 {
+    margin-top: var(--space-8);
+  }
+</style>
