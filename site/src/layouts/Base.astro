@@ -1,6 +1,7 @@
 ---
 import { existsSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { config } from '../../../config/prancheta.config.ts';
 import '@fontsource/barlow/400.css';
 import '@fontsource/barlow/500.css';
@@ -36,10 +37,12 @@ const lightBg = String(
 const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
 // The share image is generated before the build (scripts/og.mjs); without the file, no tags.
 const ogPath = entry ? `${base}og/${entry.file}` : undefined;
-// Astro runs from the site folder (npm -w site); from the repository root the path differs.
-const ogDirs = [resolve(process.cwd(), 'public/og'), resolve(process.cwd(), 'site/public/og')];
-const hasImage =
-  ogPath !== undefined && ogDirs.some((d) => existsSync(resolve(d, entry?.file ?? '')));
+// Walk up from this file to the folder with astro.config.mjs (works in dev and in the bundled
+// build, where import.meta.url points to a chunk).
+let siteRoot = dirname(fileURLToPath(import.meta.url));
+while (!existsSync(join(siteRoot, 'astro.config.mjs')) && dirname(siteRoot) !== siteRoot)
+  siteRoot = dirname(siteRoot);
+const hasImage = ogPath !== undefined && existsSync(join(siteRoot, 'public/og', entry?.file ?? ''));
 const ogImage = hasImage && ogPath ? new URL(ogPath, `https://${config.domain}`).href : undefined;
 ---
 
@@ -164,8 +167,7 @@ const ogImage = hasImage && ogPath ? new URL(ogPath, `https://${config.domain}`)
     max-width: var(--layout-content-max);
     margin: 0 auto;
     padding: 48px var(--space-4);
-    font-size: 17px;
-    line-height: 26px;
+    font: var(--type-body-lg);
   }
   .sec.wide {
     max-width: var(--layout-wide-max);
@@ -175,6 +177,9 @@ const ogImage = hasImage && ogPath ? new URL(ogPath, `https://${config.domain}`)
   }
   .sec.wide > :where(p, ul:not([class]), ol:not([class])) {
     max-width: var(--layout-content-max);
+  }
+  .page-hero + .sec {
+    padding-top: var(--space-4);
   }
   /* Inner pages: sections follow each other without doubling the padding. */
   .sec.flow + .sec.flow {

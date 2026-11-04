@@ -14,7 +14,7 @@ const { stages, variant = 'full', text = 'delivery' } = Astro.props;
 const full = variant === 'full';
 ---
 
-<TableScroll label="Etapas do jogo" minWidth={full ? '640px' : '0px'}>
+<TableScroll label="Etapas do jogo" minWidth="0px">
   <table class:list={['stages', variant]}>
     <thead>
       <tr>
@@ -27,7 +27,7 @@ const full = variant === 'full';
             O que entra
           </th>
         )}
-        <th scope="col" class="state">
+        <th scope="col" class:list={['state', { 'col-state': full }]}>
           Estado
         </th>
       </tr>
@@ -43,11 +43,18 @@ const full = variant === 'full';
             <th scope="row" class="et">
               {s.id}
             </th>
-            <td class="name body-strong">{s.name}</td>
+            <td class="name body-strong">
+              {s.name}
+              {full && (
+                <div class="inline-state">
+                  <StatusBadge status={s.status} />
+                </div>
+              )}
+            </td>
             {full && (
               <td class="what">{text === 'summary' ? (stageSummaries[s.id] ?? '') : s.delivery}</td>
             )}
-            <td class="state">
+            <td class:list={['state', { 'col-state': full }]}>
               <StatusBadge status={s.status} />
             </td>
           </tr>
@@ -84,12 +91,27 @@ const full = variant === 'full';
     background: var(--grass-soft);
   }
   .name {
-    min-width: 0;
-    overflow-wrap: anywhere;
+    min-width: 96px;
+    overflow-wrap: break-word;
     color: var(--ink);
   }
+  .inline-state {
+    display: block;
+    margin-top: var(--space-1);
+  }
+  /* Wide screens: the state has its own column. */
+  @media (min-width: 720px) {
+    .inline-state {
+      display: none;
+    }
+  }
+  @media (max-width: 719.98px) {
+    .col-state {
+      display: none;
+    }
+  }
   .what {
-    min-width: 220px;
+    min-width: 160px;
     color: var(--ink-muted);
   }
   .state {

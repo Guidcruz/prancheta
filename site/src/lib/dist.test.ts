@@ -140,6 +140,18 @@ run('built site (site/dist)', () => {
     }
   });
 
+  it('has an og:image on every page, pointing to an existing file in dist/og', () => {
+    for (const f of pages) {
+      const h = readFileSync(f, 'utf8');
+      const m = h.match(/<meta property="og:image" content="([^"]+)"/);
+      expect(m, `${f} og:image`).not.toBeNull();
+      const url = m?.[1] ?? '';
+      expect(url.startsWith(`${own}/og/`), `${f} ${url}`).toBe(true);
+      expect(existsSync(join(dist, url.slice(own.length))), `${f} ${url}`).toBe(true);
+      expect(h, `${f} twitter:image`).toContain(`<meta name="twitter:image" content="${url}"`);
+    }
+  });
+
   it('has a sitemap listing every page and a robots.txt pointing to it', () => {
     const sm = readFileSync(join(dist, 'sitemap-0.xml'), 'utf8');
     for (const f of pages) {

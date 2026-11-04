@@ -19,7 +19,17 @@ const { label, minWidth = '520px' } = Astro.props;
   /* Standings-table look: the container is the card, rows are 48px with a divider. */
   .scroll {
     overflow-x: auto;
-    background: var(--surface-1);
+    /* Scroll hint: edge shadows that show only where there is more to scroll to. */
+    background:
+      linear-gradient(to right, var(--surface-1), var(--surface-1)) left center / 16px 100% local
+        no-repeat,
+      linear-gradient(to left, var(--surface-1), var(--surface-1)) right center / 16px 100% local
+        no-repeat,
+      linear-gradient(to right, color-mix(in srgb, var(--ink) 16%, transparent), transparent) left
+        center / 16px 100% scroll no-repeat,
+      linear-gradient(to left, color-mix(in srgb, var(--ink) 16%, transparent), transparent) right
+        center / 16px 100% scroll no-repeat,
+      var(--surface-1);
     border: 1px solid var(--line);
     border-radius: var(--radius-lg);
     padding: var(--space-2);
