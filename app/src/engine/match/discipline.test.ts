@@ -230,6 +230,32 @@ describe('US-009: accumulated yellows', () => {
     expect(result.yellowCounts[red.player]).toBe(0);
   });
 
+  it('keeps the counter of a player sent off directly without a yellow: 1 game', () => {
+    // "qualquer, vermelho direto sem amarelo" with the counter one below the limit.
+    const { result } = firstMatch(
+      inputFor,
+      (r) =>
+        ofType(r, 'red').some(
+          (e) =>
+            e.side === 'home' &&
+            e.reason === 'direct' &&
+            !ofType(r, 'yellow').some((y) => y.player === e.player),
+        ),
+      tuned({ cards: { redPerMinute: 0.0002 } }),
+    );
+    const red = ofType(result, 'red').find(
+      (e) =>
+        e.side === 'home' &&
+        e.reason === 'direct' &&
+        !ofType(result, 'yellow').some((y) => y.player === e.player),
+    )!;
+    expect(result.yellowCounts[red.player]).toBe(limit - 1);
+    expect(result.newSuspensions).toContainEqual({
+      player: red.player,
+      games: SUSPENSION.redGames,
+    });
+  });
+
   it('corrects a damaged counter outside 0..2, with a warning', () => {
     const odd = mapPlayers(base.home, (p, i) => (i === 0 ? { ...p, yellowCount: 7 } : p));
     const result = simulateMatch({ ...base, home: odd }, params);

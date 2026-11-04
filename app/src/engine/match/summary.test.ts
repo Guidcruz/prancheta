@@ -6,6 +6,7 @@ import { testLineup } from '../testing/match.ts';
 import type { Side } from '../types.ts';
 import {
   bestOnPitch,
+  cardConsequences,
   playerRatings,
   resultMarkers,
   winnerOf,
@@ -15,7 +16,10 @@ import {
 import { kickoffTeam, type Appearance, type TeamState } from './team.ts';
 
 /** A 4-4-2 side of 11 hand-made players `${side}#1`..`#11`, shirts 1..11. */
-function side(name: Side, overrides: { clubAppearances?: number } = {}): TeamState {
+function side(
+  name: Side,
+  overrides: { clubAppearances?: number; yellowCount?: number } = {},
+): TeamState {
   const players = FORMATION_SLOTS['4-4-2'].map((position, i) =>
     testPlayer({
       id: `${name}#${i + 1}`,
@@ -23,6 +27,7 @@ function side(name: Side, overrides: { clubAppearances?: number } = {}): TeamSta
       position,
       shirt: i + 1,
       clubAppearances: overrides.clubAppearances ?? 10,
+      yellowCount: overrides.yellowCount ?? 0,
     }),
   );
   const team = kickoffTeam(
@@ -295,5 +300,59 @@ describe('abandoned match (partida.md, "Jogo encerrado"; Pedido ao developer, it
     expect(k).toContain('zebra');
     expect(k).toContain('classico');
     expect(k).toContain('estreia');
+  });
+});
+
+describe('suspensions (partida.md, "Cartões e suspensão": one test per row of the table)', () => {
+  function booked(
+    count: number,
+    cards: { yellow: boolean; red?: 'direct' | 'secondYellow' },
+  ): ReturnType<typeof cardConsequences> {
+    const home = side('home', { yellowCount: count });
+    const app = home.appearances[3]!;
+    app.yellows = cards.yellow ? 1 : 0;
+    if (cards.red !== undefined) {
+      app.reds = 1;
+      app.redReason = cards.red;
+    }
+    return cardConsequences([home, side('away')]);
+  }
+  const id = 'home#4';
+
+  it('2, gets a yellow → counter 0, 1 game (3 yellows)', () => {
+    const r = booked(2, { yellow: true });
+    expect(r.yellowCounts[id]).toBe(0);
+    expect(r.newSuspensions).toEqual([{ player: id, games: 1 }]);
+  });
+
+  it('2, gets a yellow and then a direct red → counter 0, 2 games (3 yellows + red)', () => {
+    const r = booked(2, { yellow: true, red: 'direct' });
+    expect(r.yellowCounts[id]).toBe(0);
+    expect(r.newSuspensions).toEqual([{ player: id, games: 2 }]);
+  });
+
+  it('2, gets a yellow and then the second yellow → counter 2, 1 game (only the red)', () => {
+    const r = booked(2, { yellow: true, red: 'secondYellow' });
+    expect(r.yellowCounts[id]).toBe(2);
+    expect(r.newSuspensions).toEqual([{ player: id, games: 1 }]);
+  });
+
+  it('any counter, direct red without a yellow → same counter, 1 game', () => {
+    for (const count of [0, 1, 2]) {
+      const r = booked(count, { yellow: false, red: 'direct' });
+      expect(r.yellowCounts[id]).toBe(count);
+      expect(r.newSuspensions).toEqual([{ player: id, games: 1 }]);
+    }
+  });
+
+  it('keeps the counter of everyone else, and suspends nobody without a card', () => {
+    const r = cardConsequences([
+      side('home', { yellowCount: 2 }),
+      side('away', { yellowCount: 1 }),
+    ]);
+    expect(r.newSuspensions).toEqual([]);
+    expect(Object.keys(r.yellowCounts)).toHaveLength(22);
+    expect(r.yellowCounts['home#1']).toBe(2);
+    expect(r.yellowCounts['away#1']).toBe(1);
   });
 });
