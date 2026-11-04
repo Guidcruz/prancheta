@@ -44,4 +44,4 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Próximo
 
-`/kickoff` para o `product-manager` e o `architect` transformarem `docs/PROJETO.md` em `docs/01-requirements.md` e `docs/02-architecture.md` da Etapa 1 (1a carreira offline, 1b online mínimo), com a quebra técnica.
+PR do `/kickoff` (planejamento da Etapa 1) aberto para o CEO revisar e fazer merge. Depois do merge, `/feature T-001` (fundações do motor). Antes da T-013/T-016, o CEO responde o desempate (P1), o fim de temporada (P2) e o fator casa (ADR-0011).
