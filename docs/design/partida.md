@@ -99,16 +99,31 @@ Se cria, o **tipo** da oportunidade:
 | Jogada       | o resto                     | sorteado pelos pesos abaixo         | `pGoal`                                                 |
 
 ```
-shot  = finishing do finalizador × fit × moraleMult × condMult
-gkEff = eff do goleiro adversário
+shot  = finishing do finalizador × fit × moraleMult × condMult × (1 + home(time do finalizador))
+gkEff = eff do goleiro adversário × (1 + home(time do goleiro))
 pGoal = clamp(match.conversion × exp(match.kFinish × (shot − gkEff) / 10), 0.04, 0.40)
 ```
+
+**Mando na finalização.** O mando também vale no chute e na defesa do goleiro: o finalizador do mandante chuta com `shot × (1 + home)`, e o goleiro do mandante defende com `gkEff × (1 + home)`. O `home(t)` é o mesmo da seção "Mando de campo e clássico", calculado uma vez no apito inicial; o visitante e os dois times em campo neutro têm `home = 0`, e o fator vira 1.
+
+- Entra só o fator de mando, `(1 + home(t))`, e não o `T(t)` inteiro: jogador a menos e conversa do intervalo continuam mexendo só nas forças de setor (criação de chances), nunca no chute nem no goleiro.
+- Vale nos três tipos de oportunidade: na jogada (`shot`), na falta direta (`shot` com `technique` no lugar de `finishing`, depois o `× 0.45`) e no pênalti, em que o `finishing` do cobrador do mandante vira `finishing × (1 + home)` e o `gkEff` do goleiro do mandante vira `gkEff × (1 + home)` na mesma fórmula da tabela.
+- O fator entra antes do `clamp`; os limites de `pGoal` (0,04 a 0,40) e do pênalti (0,60 a 0,92) não mudam.
+- Por quê: com o mando só na criação de chances, o mandante cria mais, mas cada chute dele vale o mesmo que o do visitante, e a vantagem de casa fica fraca no placar. Pôr o mesmo fator nas duas pontas da finalização faz o mando aparecer no resultado sem parâmetro novo.
 
 Peso de cada jogador de linha para ser o finalizador de uma jogada: `shooterWeight[setor da vaga em que joga] × finishing / 60`, com ATA 3,0, MEI 1,6, VOL 0,6, LAT 0,5, ZAG 0,4 (cabeçada em escanteio), GOL 0.
 
 Se não é gol: trave 7%, defesa do goleiro 48%, para fora 45%. Na jogada que termina em gol, há assistência em 70% dos casos (`match.assistShare`), de um companheiro sorteado com peso `assistWeight[setor] × passing / 60` (MEI 3,0, LAT 1,5, ATA 1,5, VOL 1,2, ZAG 0,5; GOL 0), também pelo setor da vaga. Atributo que o jogador não tem (goleiro na linha) vale `round(0.4 × overall)` ("Atributo ausente" em `jogadores.md`); a força do goleiro é sempre o `eff`, então jogador de linha no gol não precisa de `reflexes`.
 
-**Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Com um atacante de finishing 78 contra goleiro de eff 66: `pGoal = 0.15 × exp(0.09 × 1.2) = 0.167`.
+**Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Na finalização, com atacantes de finishing 78 (fit 1, moral 50, descansados) e goleiros de eff 66 nos dois times:
+
+| Quem chuta | `shot`            | `gkEff` do goleiro que defende | `pGoal`                                       |
+| ---------- | ----------------- | ------------------------------ | --------------------------------------------- |
+| Mandante   | 78 × 1,106 = 86,3 | 66 (visitante, `home = 0`)     | `0.15 × exp(0.09 × 2.03) = 0.180`             |
+| Visitante  | 78                | 66 × 1,106 = 73,0              | `0.15 × exp(0.09 × 0.50) = 0.157`             |
+| Neutro     | 78                | 66                             | `0.15 × exp(0.09 × 1.2) = 0.167` (referência) |
+
+Cada chute do mandante vale cerca de 8% a mais e cada chute do visitante cerca de 6% a menos que em campo neutro. No pênalti, com os mesmos 78 e 66: mandante `0.78 + 0.004 × 20.3 = 0.861`, visitante `0.78 + 0.004 × 5.0 = 0.800`, neutro 0,828.
 
 ## Táticas
 
@@ -159,7 +174,12 @@ O técnico também pode trocar formação, postura e pressão diretamente a qual
 home(mandante) = match.homeBase + fans.homeBonusMin + (fans.homeBonusMax − fans.homeBonusMin) × termômetro / 100
                + (clássico ? fans.derbyBonus : 0)
 home(visitante) = 0
+home(campo neutro) = 0 para os dois times
 ```
+
+**Onde o mando entra (regra em uma frase):** o mesmo `home(t)` multiplica as forças de setor do mandante (por `T(t)`, mais chances criadas), o chute do mandante (`shot × (1 + home)`) e a defesa do goleiro do mandante (`gkEff × (1 + home)`); ver "Mando na finalização". A posse de bola exibida não leva mando ("Estatísticas e notas").
+
+**Valor aprovado e meta.** Os +5% de `match.homeBase` do ADR-0011 continuam sendo o valor aprovado; a fórmula de onde o mando entra é desta página, não do ADR. A meta é o mandante vencer cerca de 47% dos jogos (faixa 45% a 50%, `balance-targets.md`). Se o `/balance` com o mando na finalização sair da faixa, o ajuste é em `match.homeBase` dentro de 0 a 0,08, um por vez, sem mexer na regra.
 
 `fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase = 0.05` (ADR-0011, opção A, aceita pelo CEO; faixa 0 a 0,08: mudar dentro da faixa é ajuste de parâmetro, fora dela é ADR). Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os cartões ficam ×1,2 para os dois lados (`cards.derbyMult`). Altitude: Etapa 5.
 
