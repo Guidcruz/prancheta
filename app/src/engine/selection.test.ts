@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
+import { FORMATION_SLOTS } from './formations.ts';
+import { kickoffTeam } from './match/team.ts';
+import type { EngineWarning } from './types.ts';
 import { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
+import { testLineup } from './testing/match.ts';
 import { testPlayer } from './testing/players.ts';
 
 describe('selectionValue (ia-clubes.md, "Escalação", step 2)', () => {
@@ -54,5 +58,47 @@ describe('bestForSlot and the tie-break (step 3)', () => {
     expect(bestForSlot([a, b], 'ST', (p) => p.id === 'c#1')?.id).toBe('c#2');
     expect(bestForSlot([a], 'ST', () => true)).toBeUndefined();
     expect(bestForSlot([], 'GK')).toBeUndefined();
+  });
+});
+
+describe('the match replaces an unavailable starter by the same tie-break (kickoffTeam)', () => {
+  it('takes c#2 before c#10 when the two reserves tie on value, overall and age', () => {
+    // XI in 4-4-2 with ids that skip #2 and #10; the striker in slot 9 (c#12) is injured. The
+    // bench lists c#10 first: a text comparison of the ids would pick him.
+    const ids = ['c#1', 'c#3', 'c#4', 'c#5', 'c#6', 'c#7', 'c#8', 'c#9', 'c#11', 'c#12', 'c#13'];
+    const xi = FORMATION_SLOTS['4-4-2'].map((position, i) =>
+      testPlayer({
+        id: ids[i]!,
+        clubId: 'c',
+        position,
+        overall: 70,
+        shirt: i + 1,
+        injuryRounds: ids[i] === 'c#12' ? 2 : 0,
+      }),
+    );
+    const reserve = (id: string, shirt: number) =>
+      testPlayer({ id, clubId: 'c', position: 'ST', overall: 68, age: 25, shirt });
+    const bench = [reserve('c#10', 20), reserve('c#2', 21)];
+    const warnings: EngineWarning[] = [];
+    const team = kickoffTeam(
+      'home',
+      {
+        clubId: 'c',
+        controller: 'ai',
+        profile: 'traditional',
+        fans: 60,
+        players: [...xi, ...bench],
+        sheet: {
+          lineup: { ...testLineup('4-4-2', ids), bench: ['c#10', 'c#2'] },
+          tactic: { posture: 'balanced', pressure: 'medium' },
+        },
+      },
+      warnings,
+    );
+    expect(team.slots[9]!.app?.player.id).toBe('c#2');
+    expect(warnings).toContainEqual({
+      code: 'lineup-unavailable-player',
+      detail: { side: 'home', player: 'c#12', replacement: 'c#2' },
+    });
   });
 });
