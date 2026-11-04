@@ -1,0 +1,303 @@
+# Partida e táticas
+
+> Mantido pelo `game-designer`. Fonte das decisões: `docs/PROJETO.md`, "Táticas" e "Cálculo da partida"; mando de campo pela torcida em `docs/design/brasilidades.md` ("Torcida dentro do jogo"). Metas em `balance-targets.md`. Parâmetros em `app/src/params/match.json` (nomes `match.*`, `fatigue.*`, `cards.*`, `injury.*`).
+
+**Regra em uma frase:** a cada minuto, cada time tem uma chance de criar uma oportunidade que cresce com a diferença entre o seu meio e ataque e a defesa do adversário; cada oportunidade vira gol, defesa, trave ou chute para fora conforme o finalizador contra o goleiro.
+
+## Escopo
+
+| Entra na 1a                                                                         | Fica para depois                                                       |
+| ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
+| Formação, postura e pressão; comandos em jogo; até 5 substituições                  | Altitude e clima (Etapa 5, "Mando de campo, altitude e clima")         |
+| Mando de campo pelo termômetro da torcida (+ fator casa, se aprovado)               | Treino semanal e comissão técnica mexendo em fadiga e lesões (Etapa 3) |
+| Cansaço dentro do jogo e entre jogos; lesões simples; cartões e suspensão de 1 jogo | STJD: agressão, efeito suspensivo, escalação irregular (Etapa 2)       |
+| Pênaltis e faltas diretas; capitão e cobradores; conversa no intervalo              | Calendário congestionado com copas (Etapa 2)                           |
+| Clássicos (rivalidade)                                                              | Incidentes de torcida, portões fechados (Etapa 2/3)                    |
+
+## Visão geral do cálculo
+
+1. **Antes do apito:** calcula a nota efetiva de cada titular, as forças de setor (defesa, meio, ataque) de cada time, o bônus de mando e a "forma do dia".
+2. **Minuto a minuto** (1 a 45 + acréscimos, intervalo, 46 a 90 + acréscimos): para cada time, na ordem mandante e depois visitante, sorteia se cria oportunidade; se cria, sorteia tipo, finalizador, resultado e assistência. Depois sorteia cartões e lesões de cada jogador em campo, na ordem da escalação, e desconta energia.
+3. **Comandos** (do técnico ou da IA) valem a partir do minuto seguinte.
+4. **Fim:** placar, eventos, estatísticas, notas dos jogadores, condição final e novas lesões e suspensões.
+
+## Nota efetiva de um jogador em campo
+
+```
+eff = overall × fit(posição natural, posição da vaga) × moraleMult × condMult
+moraleMult = 0.95 + 0.10 × moral / 100           (moral 0 → 0,95; 50 → 1,00; 100 → 1,05)
+condMult   = 0.80 + 0.20 × energy / 100          (energia 100 → 1,00; 70 → 0,94)
+```
+
+`overall`, `fit` (tabela de posições) e `moral` estão em `jogadores.md`. `energy` começa na condição do jogador e cai durante o jogo (ver "Cansaço").
+
+## Formações
+
+Cada vaga tem uma posição e um setor. Os laterais na linha de três (3-5-2, 3-4-3) são alas e contam no meio.
+
+| Formação | Defesa (vagas) | Meio (vagas)        | Ataque | `def` | `mid` | `atk` |
+| -------- | -------------- | ------------------- | ------ | ----- | ----- | ----- |
+| 4-4-2    | 2 ZAG, 2 LAT   | 2 VOL, 2 MEI        | 2 ATA  | 1,00  | 1,00  | 1,00  |
+| 4-3-3    | 2 ZAG, 2 LAT   | 1 VOL, 2 MEI        | 3 ATA  | 0,99  | 0,96  | 1,06  |
+| 4-2-3-1  | 2 ZAG, 2 LAT   | 2 VOL, 3 MEI        | 1 ATA  | 1,01  | 1,04  | 0,95  |
+| 3-5-2    | 3 ZAG          | 2 LAT, 2 VOL, 1 MEI | 2 ATA  | 0,96  | 1,06  | 1,00  |
+| 3-4-3    | 3 ZAG          | 2 LAT, 2 VOL        | 3 ATA  | 0,95  | 0,98  | 1,10  |
+| 5-3-2    | 3 ZAG, 2 LAT   | 2 VOL, 1 MEI        | 2 ATA  | 1,05  | 0,95  | 0,97  |
+
+Sempre 1 GOL. Os multiplicadores representam quantos jogadores pesam em cada setor; foram escolhidos para que nenhuma formação seja melhor com elencos iguais (protótipo: todas entre −1,9 e +1,5 ponto de saldo contra o 4-4-2). A formação certa é a que encaixa os melhores jogadores do elenco nas suas posições.
+
+## Forças de setor e poder de ataque
+
+```
+Def(t)  = média(eff das vagas de defesa) × formation.def × T(t)
+Mid(t)  = média(eff das vagas de meio)   × formation.mid × pressure.mid × T(t)
+Atk(t)  = média(eff das vagas de ataque) × formation.atk × T(t)
+Power(t)   = (match.midWeight × Mid(t) + (1 − match.midWeight) × Atk(t)) × posture.power
+Defense(t) = Def(t) × posture.def
+T(t) = (1 + home(t)) × (1 − match.missingPlayerPenalty × faltando(t)) × (1 + halftimeBoost(t))
+```
+
+Depois disso soma-se a **forma do dia** `dayForm(t)`, sorteada uma vez no apito inicial, a `Power` e a `Defense` do time: `dayForm ~ Normal(0, match.dayFormSd)`, em pontos (aproximação por soma de 6 uniformes, que o `Rng` dá de forma determinística).
+
+`faltando(t)` = jogadores a menos que 11 (expulsão ou lesão sem substituição disponível).
+
+## Chance de oportunidade e finalização
+
+Por minuto, para o time `t` contra o adversário `o`:
+
+```
+pChance = clamp(match.baseChance × exp(match.kChance × (Power(t) − Defense(o)) / 10), 0.01, 0.30)
+```
+
+Se cria, o **tipo** da oportunidade:
+
+| Tipo         | Probabilidade               | Quem finaliza                       | Chance de gol                                           |
+| ------------ | --------------------------- | ----------------------------------- | ------------------------------------------------------- |
+| Pênalti      | `match.penaltyShare` = 1,5% | cobrador de pênalti                 | `clamp(0.78 + 0.004 × (finishing − gkEff), 0.60, 0.92)` |
+| Falta direta | `match.freeKickShare` = 6%  | cobrador de falta (usa `technique`) | `pGoal × 0.45`                                          |
+| Jogada       | o resto                     | sorteado pelos pesos abaixo         | `pGoal`                                                 |
+
+```
+shot  = finishing do finalizador × fit × moraleMult × condMult
+gkEff = eff do goleiro adversário
+pGoal = clamp(match.conversion × exp(match.kFinish × (shot − gkEff) / 10), 0.04, 0.40)
+```
+
+Peso de cada jogador de linha para ser o finalizador de uma jogada: `shooterWeight[setor da posição] × finishing / 60`, com ATA 3,0, MEI 1,6, VOL 0,6, LAT 0,5, ZAG 0,4 (cabeçada em escanteio), GOL 0.
+
+Se não é gol: trave 7%, defesa do goleiro 48%, para fora 45%. Na jogada que termina em gol, há assistência em 70% dos casos (`match.assistShare`), de um companheiro sorteado com peso `assistWeight[setor] × passing / 60` (MEI 3,0, LAT 1,5, ATA 1,5, VOL 1,2, ZAG 0,5).
+
+**Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Com um atacante de finishing 78 contra goleiro de eff 66: `pGoal = 0.15 × exp(0.09 × 1.2) = 0.167`.
+
+## Táticas
+
+| Ajuste  | Opção                               | Efeito                                                      | Parâmetros                             |
+| ------- | ----------------------------------- | ----------------------------------------------------------- | -------------------------------------- |
+| Postura | Defensiva                           | Menos chances criadas, menos sofridas                       | `power` 0,95 · `def` 1,05              |
+|         | Equilibrada                         | Referência                                                  | 1,00 · 1,00                            |
+|         | Ofensiva                            | Mais chances criadas, mais sofridas                         | 1,05 · 0,95                            |
+|         | Tudo no ataque (só comando em jogo) | Aposta para buscar o resultado                              | 1,10 · 0,85                            |
+| Pressão | Baixa                               | Meio rende menos, cansa menos, menos cartões                | `mid` 0,96 · `drain` 0,8 · `cards` 0,7 |
+|         | Média                               | Referência                                                  | 1,00 · 1,0 · 1,0                       |
+|         | Alta                                | Meio rende mais (bola recuperada), cansa mais, mais cartões | 1,05 · 1,4 · 1,4                       |
+
+Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 37,6% com 2,79 gols; defensiva × equilibrada, 36,4% / 28,1% / 35,6% com 2,37 gols; pressão alta, 37,6% / 25,9% / 36,5%. Nenhuma opção domina; o que muda é o tipo de jogo, e a escolha certa depende do placar e do adversário.
+
+**Comandos em jogo** (botões; equivalem a ajustes, aplicados no minuto seguinte):
+
+| Comando              | O que faz                               |
+| -------------------- | --------------------------------------- |
+| Pressionar           | pressão alta                            |
+| Segurar o resultado  | postura defensiva + pressão baixa       |
+| Todo mundo no ataque | postura "tudo no ataque" + pressão alta |
+
+O técnico também pode trocar formação, postura e pressão diretamente a qualquer momento.
+
+## Mando de campo e clássico
+
+```
+home(mandante) = match.homeBase + fans.homeBonusMin + (fans.homeBonusMax − fans.homeBonusMin) × termômetro / 100
+               + (clássico ? fans.derbyBonus : 0)
+home(visitante) = 0
+```
+
+`fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase` é a decisão 1 de `balance-targets.md`: proposto 0,05; 0 sem aprovação do CEO. Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os cartões ficam ×1,2 para os dois lados (`cards.derbyMult`). Altitude: Etapa 5.
+
+## Cansaço
+
+Dentro do jogo, por minuto, cada jogador em campo perde:
+
+```
+drain = fatigue.drainPerMinute × pressure.drain × (1.2 − 0.4 × physical / 100)
+```
+
+Com `fatigue.drainPerMinute = 0.30`, um jogador de físico 50 em pressão média termina os 90 minutos com cerca de 72 de energia; em pressão alta, com cerca de 62. Goleiro gasta 30% disso. Quem entra no segundo tempo começa com a própria condição.
+
+Entre jogos: `condição final = energia ao fim do jogo`; depois recupera `fatigue.recoveryPerDay = 7` por dia até 100. Com 3 dias entre jogos (rodada no meio da semana), quem terminou com 72 volta com 93; com 7 dias, volta inteiro. É isso que obriga rotação nas semanas com dois jogos.
+
+## Lesões (versão simples da 1a)
+
+Por minuto, cada jogador em campo:
+
+```
+pInjury = injury.basePerMinute × (1 + 2 × (1 − energy / 100))
+```
+
+`injury.basePerMinute = 0.00012` (cerca de 0,3 lesão por partida, os dois times). Um jogador cansado (energia 60) tem 1,8× o risco de um descansado. Gravidade sorteada:
+
+| Gravidade | Probabilidade | Rodadas fora |
+| --------- | ------------- | ------------ |
+| Leve      | 60%           | 1            |
+| Média     | 25%           | 2 a 3        |
+| Séria     | 12%           | 4 a 8        |
+| Grave     | 3%            | 10 a 20      |
+
+O lesionado sai na hora: o técnico (ou a IA) escolhe o substituto; sem substituição sobrando, o time fica com um a menos. Uma lesão que passa do fim da temporada termina no fim da temporada (na 1a não há pré-temporada).
+
+## Cartões e suspensão
+
+Por minuto, cada jogador em campo:
+
+```
+pYellow = cards.yellowPerMinute × pressure.cards × positionMult × traitMult × (já tem amarelo ? 0.5 : 1)
+          × (clássico ? cards.derbyMult : 1) × (acalmar no intervalo e 2º tempo ? 0.75 : 1)
+pRed    = cards.redPerMinute × pressure.cards × positionMult × traitMult
+```
+
+| Posição        | GOL | ZAG | LAT | VOL | MEI | ATA |
+| -------------- | --- | --- | --- | --- | --- | --- |
+| `positionMult` | 0,2 | 1,3 | 1,1 | 1,3 | 0,9 | 0,8 |
+
+`traitMult` = 1,5 para temperamental, 1,0 para os outros. `cards.yellowPerMinute = 0.0020` (cerca de 4 amarelos por jogo), `cards.redPerMinute = 0.00003` (cerca de 0,06 vermelho direto; com os segundos amarelos, cerca de 0,18 por jogo). O fator 0,5 depois do amarelo é o jogador "jogando pendurado".
+
+Segundo amarelo vira vermelho. Expulso sai e não é substituído; o time joga com um a menos (`match.missingPlayerPenalty = 0.07` em todos os setores por jogador a menos).
+
+**Suspensão na 1a:** 3 amarelos acumulados = 1 jogo de suspensão (e o contador zera); vermelho = 1 jogo. Os dois amarelos que viraram vermelho não entram no acúmulo. Suspensão por agressão, julgamento e recurso: Etapa 2 (STJD).
+
+## Substituições
+
+- Até 5 por jogo (`match.maxSubs = 5`), sem limite de paradas; banco de 7 (`match.benchSize = 7`).
+- Quem sai não volta. O reserva entra com a sua condição.
+- Substituição pedida pelo técnico vale no minuto seguinte. A IA do adversário segue as regras de `ia-clubes.md`.
+
+## Capitão e cobradores
+
+- O técnico escolhe capitão, cobrador de pênalti e cobrador de falta como listas ordenadas de titulares (a tela de Tática): cobra o primeiro da lista que está em campo. Sem lista, ou com a lista toda fora de campo, cobra quem está em campo com maior `finishing` (pênalti) ou maior `technique` (falta); a braçadeira vai para o líder em campo, senão o mais velho.
+- O capitão com traço **líder** dobra o efeito positivo da conversa do intervalo. É o único efeito mecânico do capitão na 1a; o resto é notícia.
+
+## Conversa no intervalo
+
+O técnico escolhe uma de três; o efeito é `halftimeBoost` (multiplica as forças do time no segundo tempo), conforme o placar no intervalo:
+
+| Opção   | Perdendo | Empatando | Ganhando | Efeito extra                                          |
+| ------- | -------- | --------- | -------- | ----------------------------------------------------- |
+| Motivar | +3%      | +2%       | 0%       | —                                                     |
+| Cobrar  | +4%      | 0%        | −3%      | temperamentais em campo perdem 3 de moral após o jogo |
+| Acalmar | −2%      | +1%       | +2%      | amarelos ×0,75 no segundo tempo                       |
+
+Sem escolha (modo "só resultado" ou técnico ausente), vale a escolha da IA (ver `ia-clubes.md`). Cada opção tem um placar em que é a melhor; a interface mostra o efeito em palavras ("o time voltou ligado"), nunca o número.
+
+## Acréscimos
+
+Primeiro tempo: `Rng.int(0, 3)` minutos; segundo tempo: `Rng.int(2, 6)`, sorteados no fim de cada tempo e anunciados como evento. Os minutos de acréscimo são simulados como os outros.
+
+## Estatísticas e notas
+
+- **Finalizações:** oportunidades criadas. **No alvo:** gols + defesas do goleiro.
+- **Posse de bola** (só exibição): `clamp(50 + 1.5 × (Mid(t) − Mid(o)) + Rng.int(−3, 3), 30, 70)`, calculada no fim de cada tempo e somando 100 entre os dois.
+- **Nota do jogador** (0 a 10, uma casa decimal): `6.0 + 1.0 × gols + 0.6 × assistências + 0.3 × defesas (goleiro) − 0.25 × gols sofridos (goleiro e defesa) − 0.5 × amarelo − 1.5 × vermelho + 0.4 (vitória) / −0.4 (derrota) + Rng ±0.5`, entre 3,0 e 10,0. Quem jogou menos de 15 minutos fica "sem nota". **Melhor em campo:** maior nota (desempate: mais gols, depois o time vencedor, depois menor número da camisa).
+
+## Eventos (o que a partida animada, a narração, as notícias e a rede social consomem)
+
+Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os campos abaixo. A lista é a saída do motor e é igual para a mesma semente e os mesmos comandos.
+
+| Evento           | Campos                                                                           | Importância (para "só lances principais")      |
+| ---------------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
+| `kickoff`        | —                                                                                | 1                                              |
+| `chance`         | finalizador, tipo (jogada/falta/pênalti), resultado (defesa/trave/fora), `pGoal` | 2 se `pGoal ≥ 0,25`, trave ou pênalti; senão 1 |
+| `goal`           | autor, assistência, tipo, placar depois                                          | 3                                              |
+| `penaltyAwarded` | cobrador                                                                         | 3                                              |
+| `penaltyMissed`  | cobrador, resultado (defesa/fora/trave)                                          | 3                                              |
+| `yellow`         | jogador, se é o terceiro da série (gera suspensão)                               | 1                                              |
+| `red`            | jogador, motivo (`direct` / `secondYellow`)                                      | 3                                              |
+| `injury`         | jogador, gravidade                                                               | 2                                              |
+| `substitution`   | sai, entra, motivo (`tactical` / `fatigue` / `injury`)                           | 1                                              |
+| `tacticChange`   | formação, postura, pressão novas; comando usado                                  | 1                                              |
+| `stoppage`       | minutos de acréscimo                                                             | 1                                              |
+| `halftime`       | placar                                                                           | 2                                              |
+| `halftimeTalk`   | opção escolhida                                                                  | 1                                              |
+| `fulltime`       | placar, estatísticas, notas, melhor em campo, marcadores (abaixo)                | 3                                              |
+
+**Marcadores do resultado** (calculados no `fulltime`, para o `content-writer` escolher o template):
+
+| Marcador        | Regra                                                                                            |
+| --------------- | ------------------------------------------------------------------------------------------------ |
+| `goleada`       | diferença de 3 gols ou mais                                                                      |
+| `virada`        | o vencedor esteve perdendo em algum momento                                                      |
+| `zebra`         | o vencedor tinha força + mando (4 pontos para o mandante) pelo menos 8 pontos abaixo do perdedor |
+| `golNoFim`      | gol decisivo (mudou o resultado) a partir do minuto 85                                           |
+| `hatTrick`      | um jogador com 3 gols ou mais                                                                    |
+| `semSofrerGols` | por time                                                                                         |
+| `classico`      | os dois clubes são rivais                                                                        |
+| `estreia`       | jogador na primeira partida pelo clube                                                           |
+
+## Modo "Realismo simplificado" (configuração do novo jogo)
+
+| Sistema | Ligado (padrão recomendado)          | Simplificado                                                    |
+| ------- | ------------------------------------ | --------------------------------------------------------------- |
+| Fadiga  | como acima                           | dentro do jogo igual; entre jogos todos voltam a 100            |
+| Lesões  | como acima                           | o lesionado sai do jogo, mas está disponível na rodada seguinte |
+| Cartões | suspensão por 3 amarelos ou vermelho | cartões e expulsão no jogo, sem suspensão                       |
+
+O modo escolhido vale para todos os clubes da carreira, não só para o do jogador, para a tabela não ficar desigual.
+
+## Determinismo
+
+- Cada partida tem a própria semente: `seedFromString("<seasonSeed>-r<rodada>-<mandanteId>-<visitanteId>")`. Mudar uma partida não muda as outras, e as 10 partidas da rodada podem ser simuladas em qualquer ordem.
+- Ordem fixa dos sorteios em cada minuto: mandante (chance, tipo, finalizador, resultado, assistência), visitante (idem), depois cartões e lesões de cada jogador em campo na ordem da escalação, mandante primeiro. Forma do dia: no apito inicial, mandante e depois visitante. O `developer` pode mudar a ordem, desde que seja fixa e testada.
+- Os comandos entram como lista `(minuto, time, comando)`. Mesma semente + mesmos comandos = mesma partida. Isso dá o replay e a partida do servidor na 1b.
+
+## Casos de borda (o motor nunca lança; resolve assim)
+
+| Caso                                                | Regra                                                                                                                                  |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| Escalação com jogador suspenso ou lesionado         | a interface bloqueia; se chegar ao motor, ele troca pelo melhor reserva disponível e registra aviso (escalação irregular é da Etapa 2) |
+| Escalação ausente (técnico não montou)              | a IA monta pelo perfil "Tradicional"                                                                                                   |
+| Sem goleiro disponível                              | joga o jogador de linha com maior `physical`, com `fit` 0,40                                                                           |
+| Goleiro expulso ou lesionado sem substituição       | idem, durante o jogo                                                                                                                   |
+| Menos de 11 disponíveis no elenco                   | joga com os que há (`missingPlayerPenalty` por jogador a menos)                                                                        |
+| Menos de 7 em campo em qualquer momento             | partida encerrada; o adversário vence por 3×0, ou pelo placar do momento se vencia por mais                                            |
+| Cobrador escolhido fora de campo                    | regra de "Capitão e cobradores"                                                                                                        |
+| Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
+| Comando no mesmo minuto de um gol                   | vale a partir do minuto seguinte, sempre                                                                                               |
+
+## Parâmetros (`app/src/params/match.json`)
+
+| Parâmetro                    | Valor inicial                        | Faixa válida | Por quê                                                    |
+| ---------------------------- | ------------------------------------ | ------------ | ---------------------------------------------------------- |
+| `match.baseChance`           | 0,090                                | 0,03–0,20    | cerca de 8,6 oportunidades por time em jogo equilibrado    |
+| `match.kChance`              | 0,14                                 | 0,05–0,40    | 20 pontos de diferença → 65% de vitória (protótipo 66,9%)  |
+| `match.conversion`           | 0,15                                 | 0,05–0,30    | cerca de 1,3 gol por time em jogo equilibrado              |
+| `match.kFinish`              | 0,09                                 | 0,00–0,30    | finalizador e goleiro pesam, sem dominar                   |
+| `match.midWeight`            | 0,5                                  | 0,3–0,7      | meio e ataque pesam igual na criação, como no `PROJETO.md` |
+| `match.dayFormSd`            | 3                                    | 0–6          | dia bom e dia ruim; botão secundário da zebra              |
+| `match.homeBase`             | 0,05 (pendente CEO; 0 sem aprovação) | 0–0,08       | leva o mandante a 47% de vitórias                          |
+| `match.missingPlayerPenalty` | 0,07                                 | 0,03–0,12    | um a menos pesa, sem decidir o jogo sozinho                |
+| `match.penaltyShare`         | 0,015                                | 0–0,05       | cerca de 0,25 pênalti por jogo                             |
+| `match.freeKickShare`        | 0,06                                 | 0–0,15       | falta perigosa de vez em quando                            |
+| `match.assistShare`          | 0,70                                 | 0–1          | maioria dos gols com assistência                           |
+| `fatigue.drainPerMinute`     | 0,30                                 | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
+| `fatigue.recoveryPerDay`     | 7                                    | 3–15         | 3 dias não bastam para voltar inteiro                      |
+| `injury.basePerMinute`       | 0,00012                              | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
+| `cards.yellowPerMinute`      | 0,0020                               | 0–0,005      | cerca de 4 amarelos por jogo                               |
+| `cards.redPerMinute`         | 0,00003                              | 0–0,0002     | cerca de 0,18 vermelho por jogo somando segundo amarelo    |
+| `cards.derbyMult`            | 1,2                                  | 1–1,5        | clássico é mais quente                                     |
+
+**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5`, `benchSize = 7`, limite de suspensão (3 amarelos), `condMult` e `moraleMult`.
+
+## Pedido ao `developer` (critérios de aceite)
+
+1. Motor da partida com a assinatura "estado inicial + parâmetros + semente + comandos → eventos + resultado", sem `Math.random` nem `Date`.
+2. Teste: mesma semente e mesmos comandos dão a mesma lista de eventos, byte a byte; semente diferente dá resultados diferentes em ao menos 95 de 100 partidas.
+3. `scripts/balance.ts` com os três modos de `balance-targets.md` (liga, duelos calibrados, duelos táticos), imprimindo cada métrica com meta, tolerância e "ok/falha", e aceitando `--seasons`, `--seed` e `--duels`.
+4. 200 temporadas rodam em menos de 3 minutos no CI (o `/balance` precisa ser usado a cada ajuste).
