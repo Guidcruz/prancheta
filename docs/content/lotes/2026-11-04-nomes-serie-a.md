@@ -21,27 +21,27 @@ Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). 
 | 4   | grande  | São Paulão Futebol Clube        | São Paulão     | SPL   | São Paulo, SP         | vermelho `#E4002B`, preto `#111417`  | Tricoloridos       | São Paulo     |
 | 5   | grande  | Atlético Minério Clube          | Minério        | AMN   | Belo Horizonte, MG    | preto `#111417`, branco `#FFFFFF`    | Minerários         | Atlético-MG   |
 | 6   | grande  | Grêmeos Futebol Porto-Alegrense | Grêmeos        | GRM   | Porto Alegre, RS      | azul `#0D80BF`, preto `#111417`      | Gemada             | Grêmio        |
-| 7   | médio   | Fluminário Futebol Clube        | Fluminário     | FLM   | Rio de Janeiro, RJ    | grená `#8B1A2E`, verde `#00704A`     | Tricolorada        | Fluminense    |
-| 8   | médio   | Botafogueira Futebol Clube      | Botafogueira   | BTG   | Rio de Janeiro, RJ    | preto `#111417`, branco `#FFFFFF`    | Fogueirada         | Botafogo      |
-| 9   | médio   | Vasconcelos Atlético Clube      | Vasconcelos    | VSC   | Rio de Janeiro, RJ    | preto `#111417`, branco `#FFFFFF`    | Vasconcelistas     | Vasco         |
-| 10  | médio   | Santões Futebol Clube           | Santões        | SNT   | Santos, SP            | branco `#FFFFFF`, preto `#111417`    | Praieiros          | Santos        |
-| 11  | médio   | Cruzador Esporte Clube          | Cruzador       | CRZ   | Belo Horizonte, MG    | azul `#0033A0`, branco `#FFFFFF`     | Celestinos         | Cruzeiro      |
-| 12  | médio   | Inter-Regional Futebol Clube    | Inter-Regional | IRG   | Porto Alegre, RS      | vermelho `#E5050F`, branco `#FFFFFF` | Vermelhada         | Internacional |
+| 7   | grande  | Fluminário Futebol Clube        | Fluminário     | FLM   | Rio de Janeiro, RJ    | grená `#8B1A2E`, verde `#00704A`     | Tricolorada        | Fluminense    |
+| 8   | grande  | Botafogueira Futebol Clube      | Botafogueira   | BTG   | Rio de Janeiro, RJ    | preto `#111417`, branco `#FFFFFF`    | Fogueirada         | Botafogo      |
+| 9   | grande  | Vasconcelos Atlético Clube      | Vasconcelos    | VSC   | Rio de Janeiro, RJ    | preto `#111417`, branco `#FFFFFF`    | Vasconcelistas     | Vasco         |
+| 10  | grande  | Santões Futebol Clube           | Santões        | SNT   | Santos, SP            | branco `#FFFFFF`, preto `#111417`    | Praieiros          | Santos        |
+| 11  | grande  | Cruzador Esporte Clube          | Cruzador       | CRZ   | Belo Horizonte, MG    | azul `#0033A0`, branco `#FFFFFF`     | Celestinos         | Cruzeiro      |
+| 12  | grande  | Inter-Regional Futebol Clube    | Inter-Regional | IRG   | Porto Alegre, RS      | vermelho `#E5050F`, branco `#FFFFFF` | Vermelhada         | Internacional |
 | 13  | médio   | Tufão Esporte Clube             | Tufão          | TUF   | Curitiba, PR          | vermelho `#C8102E`, preto `#111417`  | Ventania           | Athletico-PR  |
 | 14  | médio   | Baião Esporte Clube             | Baião          | BAO   | Salvador, BA          | azul `#0057B8`, vermelho `#D6001C`   | Baianada           | Bahia         |
-| 15  | pequeno | Coritibom Futebol Clube         | Coritibom      | CTB   | Curitiba, PR          | verde `#00553A`, branco `#FFFFFF`    | Verdeiros          | Coritiba      |
-| 16  | pequeno | Vitorioso Esporte Clube         | Vitorioso      | VTR   | Salvador, BA          | vermelho `#C8102E`, preto `#111417`  | Barrenses          | Vitória       |
+| 15  | médio   | Coritibom Futebol Clube         | Coritibom      | CTB   | Curitiba, PR          | verde `#00553A`, branco `#FFFFFF`    | Verdeiros          | Coritiba      |
+| 16  | médio   | Vitorioso Esporte Clube         | Vitorioso      | VTR   | Salvador, BA          | vermelho `#C8102E`, preto `#111417`  | Barrenses          | Vitória       |
 | 17  | pequeno | Bragantão Futebol Clube         | Bragantão      | BRG   | Bragança Paulista, SP | branco `#FFFFFF`, vermelho `#D81E2B` | Bragantistas       | Bragantino    |
 | 18  | pequeno | Miragol Futebol Clube           | Miragol        | MRG   | Mirassol, SP          | amarelo `#FFD400`, verde `#0A7A3D`   | Miragolenses       | Mirassol      |
 | 19  | pequeno | Chapecão Esporte Clube          | Chapecão       | CHP   | Chapecó, SC           | verde `#00A650`, branco `#FFFFFF`    | Oestinos           | Chapecoense   |
-| 20  | pequeno | Remador Futebol Clube           | Remador        | RMD   | Belém, PA             | azul `#003A8C`, branco `#FFFFFF`     | Remeiros           | Remo          |
+| 20  | médio   | Remador Futebol Clube           | Remador        | RMD   | Belém, PA             | azul `#003A8C`, branco `#FFFFFF`     | Remeiros           | Remo          |
 
-### Por que esses portes (6 grandes, 8 médios, 6 pequenos)
+### Critério do porte (rodada 3)
 
-- **Grandes (6):** as maiores torcidas e os maiores orçamentos do país: Flamingo, Corinto, Palmeral, São Paulão, Atlético Minério e Grêmeos. Os três paulistas e o carioca de maior torcida são consenso; Atlético Minério e Grêmeos entram pelo peso de torcida e títulos nacionais e continentais recentes.
-- **Médios (8):** tradição e torcida grandes, mas hoje menos folga financeira ou oscilação recente: Fluminário, Botafogueira, Vasconcelos, Santões, Cruzador, Inter-Regional, Tufão e Baião. Cruzador, Botafogueira e Inter-Regional são candidatos a "médio forte"; se o `game-designer` quiser, sobem de `strength` dentro da faixa do porte.
-- **Pequenos (6):** clubes de menor orçamento e torcida: Coritibom, Vitorioso, Bragantão, Miragol, Chapecão e Remador. Coritibom e Vitorioso são os "pequenos de torcida grande"; Miragol, Bragantão, Chapecão e Remador são os pequenos de verdade, como no desenho da temporada (meta "não cair" para pequeno).
-- Essa distribuição deixa dois grandes (Corinto e Palmeral, ou Flamingo e Atlético Minério) brigando por título, e Gre-Nal e Fla-Flu com porte diferente (grande contra médio), o que dá azarão em clássico.
+- Porte vem de **história e torcida** (títulos, tradição, tamanho da torcida), não da colocação atual. A força na tabela é outro dado (`strength`), definido em `docs/design/clubes-serie-a.md`.
+- **Grandes (12):** Flamingo, Palmeral, Cruzador, Fluminário, Atlético Minério, Santões, São Paulão, Botafogueira, Vasconcelos, Grêmeos, Corinto e Inter-Regional.
+- **Médios (5):** Tufão, Baião, Coritibom, Vitorioso e Remador.
+- **Pequenos (3):** Bragantão, Miragol e Chapecão.
 
 ## Trocadilho e conferência, clube por clube
 
@@ -128,3 +128,7 @@ Clássicos da reserva: **Seará x Fortaleça** = **Clássico-Reino** (de Clássi
 
 10. Remador: apelido da torcida "Azulinos" vira **Remeiros** (o antigo é apelido real do Remo).
 11. Goiabada (reserva): sigla "GOI" vira **GBD** (GOI é a sigla real do Goiás).
+
+## Ajustes do CEO (2026-11-04), rodada 3
+
+12. Porte por história e torcida, não pela colocação: 12 grandes, 5 médios e 3 pequenos, como em `docs/design/clubes-serie-a.md`. Só a coluna Porte da tabela principal mudou.
