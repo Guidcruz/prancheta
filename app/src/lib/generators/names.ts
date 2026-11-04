@@ -2,13 +2,13 @@ import { Rng } from '@engine/rng';
 
 /**
  * Fictional player names (US-003). The engine keeps only `Player.nameSeed`; the name is produced
- * here, outside the engine, and is a pure function of (nameSeed, lists): same seed, same lists,
+ * here, outside the engine, and is a pure function of (nameSeed, lists, exclusions): same inputs,
  * same name, forever.
  *
- * Browser-safe on purpose (no node:crypto): the blocklist of real athletes is consulted through an
- * injected `isBlocked` predicate. In production the predicate is not needed, because CI proves the
- * lists cannot produce a blocked name (see `findBlockedNames`); tests and CI build the predicate
- * from app/src/data/athletes-blocklist.sha256.json with the Node-only helpers of data/blocklist.ts.
+ * Browser-safe on purpose (no node:crypto, no hashes in the bundle). Combinations that would match
+ * a real athlete are listed BY INDEX in app/src/content/names/br.exclusions.json, generated in
+ * Node by `npm run names:exclusions` (app/src/data/name-exclusions.ts) from the hashed blocklist.
+ * The generator skips them deterministically; a test keeps the file in sync with the lists.
  */
 
 /** Content lists, one set per nationality (Etapa 1: only Brazilian). All entries are fictional. */
@@ -23,12 +23,54 @@ export interface NameLists {
   short: readonly string[];
   /** Base nicknames ("apelidos de boleiro"). */
   nicknames: readonly string[];
-  /** Invented places ("Vale Cometa"), shown after a first name or short form. */
+  /** Invented places, one word ("Vilacometa"); shown as "<first or short> de <origin>". */
   origins: readonly string[];
+  /** Surnames (also in `family`) that never appear alone as a display name. */
+  familyNoSolo?: readonly string[];
+}
+
+/**
+ * Forbidden combinations as indices, no text. `first` indexes `given`, then `givenCompound`, then
+ * `short` (concatenated, in this order). Triples use only the `given` and `givenCompound` part.
+ */
+export interface NameExclusionsFile {
+  /** [first, family]: "First Surname" (display or full name) matches a real athlete. */
+  firstFamily: [number, number][];
+  /** [first, nickname]. */
+  firstNickname: [number, number][];
+  /** [first, origin]: "First de Origin". */
+  firstOrigin: [number, number][];
+  /** Nickname alone matches. */
+  nickname: number[];
+  /** Surname alone matches (beyond `familyNoSolo`). */
+  family: number[];
+  /** [first, family, family2]: full name with a second surname matches. */
+  triples: [number, number, number][];
+}
+
+export interface NameExclusions {
+  firstFamily: ReadonlySet<string>;
+  firstNickname: ReadonlySet<string>;
+  firstOrigin: ReadonlySet<string>;
+  nickname: ReadonlySet<number>;
+  family: ReadonlySet<number>;
+  triples: ReadonlySet<string>;
+}
+
+export function compileExclusions(file: NameExclusionsFile): NameExclusions {
+  const key = (t: readonly number[]) => t.join(',');
+  return {
+    firstFamily: new Set(file.firstFamily.map(key)),
+    firstNickname: new Set(file.firstNickname.map(key)),
+    firstOrigin: new Set(file.firstOrigin.map(key)),
+    nickname: new Set(file.nickname),
+    family: new Set(file.family),
+    triples: new Set(file.triples.map(key)),
+  };
 }
 
 export interface PlayerName {
-  /** Seed that reproduces exactly this name through `nameFromSeed`; store it in `Player.nameSeed`. */
+  /** Seed that reproduces exactly this name through `nameFromSeed` (same lists and exclusions). */
   nameSeed: number;
   /** Name shown in the UI (one of the seven forms of `DISPLAY_FORMS`). */
   display: string;
@@ -38,9 +80,6 @@ export interface PlayerName {
   family: string;
 }
 
-/** True when the name matches a real athlete. Receives the display and the full name separately. */
-export type IsBlocked = (name: string) => boolean;
-
 /** Cumulative weights of the seven display forms (30/25/15/10/8/7/5, docs/content/lotes). */
 const FORM_LIMITS = [0.3, 0.55, 0.7, 0.8, 0.88, 0.95, 1] as const;
 const COMPOUND_SHARE = 0.04;
@@ -48,6 +87,7 @@ const SECOND_FAMILY_SHARE = 0.35;
 const MIN_SURNAME_ONLY_LETTERS = 4;
 const MAX_PER_FAMILY = 3;
 const MAX_ATTEMPTS = 200;
+const MAX_RESEEDS = 50;
 
 /** The seven display forms, in the order of `FORM_LIMITS`. */
 export const DISPLAY_FORMS = [
@@ -80,57 +120,118 @@ function letterCount(name: string): number {
   return normalizeNameKey(name).replace(/[^\p{L}]/gu, '').length;
 }
 
-/**
- * The name for a seed. Pure; does not look at any blocklist. Always consumes the same draws, so
- * each choice depends only on the seed and its own list.
- */
-export function nameFromSeed(nameSeed: number, lists: NameLists): PlayerName {
+interface Drawn {
+  name: PlayerName;
+  excluded: boolean;
+}
+
+/** One draw from a seed: always the same number of random draws, whatever the lists hold. */
+function draw(nameSeed: number, lists: NameLists, ex: NameExclusions | undefined): Drawn {
   const rng = new Rng(nameSeed);
-  const compound = rng.next() < COMPOUND_SHARE ? rng.pick(lists.givenCompound) : undefined;
-  const simple = rng.pick(lists.given);
-  const given = compound ?? simple ?? '';
-  const familyCount = lists.family.length;
-  const i1 = rng.int(0, Math.max(0, familyCount - 1));
-  const i2 = rng.int(0, Math.max(0, familyCount - 2));
+  const index = (length: number) => (length > 0 ? rng.int(0, length - 1) : -1);
+  const nGiven = lists.given.length;
+  const nCompound = lists.givenCompound.length;
+  const nFamily = lists.family.length;
+
+  const useCompound = rng.next() < COMPOUND_SHARE && nCompound > 0;
+  const compoundIdx = index(nCompound);
+  const simpleIdx = index(nGiven);
+  const firstIdx = useCompound ? nGiven + compoundIdx : simpleIdx;
+  const given = (useCompound ? lists.givenCompound[compoundIdx] : lists.given[simpleIdx]) ?? '';
+  const i1 = index(nFamily);
+  const i2 = rng.int(0, Math.max(0, nFamily - 2));
   const family = lists.family[i1] ?? '';
-  const hasSecond = rng.next() < SECOND_FAMILY_SHARE && familyCount > 1;
-  const family2 = hasSecond ? (lists.family[i2 >= i1 ? i2 + 1 : i2] ?? '') : '';
-  const short = rng.pick(lists.short) ?? given;
-  const nickname = rng.pick(lists.nicknames);
-  const origin = rng.pick(lists.origins);
+  const hasSecond = rng.next() < SECOND_FAMILY_SHARE && nFamily > 1;
+  const familyIdx2 = i2 >= i1 ? i2 + 1 : i2;
+  const family2 = hasSecond ? (lists.family[familyIdx2] ?? '') : '';
+  const shortIdx = index(lists.short.length);
+  const short = lists.short[shortIdx] ?? given;
+  const shortFirst = shortIdx >= 0 ? nGiven + nCompound + shortIdx : firstIdx;
+  const nickIdx = index(lists.nicknames.length);
+  const nickname = lists.nicknames[nickIdx];
+  const originIdx = index(lists.origins.length);
+  const origin = lists.origins[originIdx];
   const useShort = rng.next() < 0.5; // for the origin form: first name or short form
   const roll = rng.next();
 
   const form = DISPLAY_FORMS[FORM_LIMITS.findIndex((limit) => roll < limit)] ?? 'given-family';
   const join = (...parts: (string | undefined)[]) => parts.filter(Boolean).join(' ');
+  const noSolo = new Set((lists.familyNoSolo ?? []).map(normalizeNameKey));
+  const soloOk =
+    letterCount(family) >= MIN_SURNAME_ONLY_LETTERS &&
+    !noSolo.has(normalizeNameKey(family)) &&
+    !ex?.family.has(i1);
+
+  // Default display: "First Surname" (also the fallback when a form cannot be shown).
   let display = join(given, family);
-  if (form === 'family' && letterCount(family) >= MIN_SURNAME_ONLY_LETTERS) display = family;
-  else if (form === 'short-family') display = join(short, family);
-  else if (form === 'nickname' && nickname !== undefined) display = nickname;
-  else if (form === 'name-origin' && origin !== undefined) {
-    display = join(useShort ? short : given, origin);
+  let defaultDisplay = true;
+  let excluded = hasSecond
+    ? (ex?.triples.has(`${firstIdx},${i1},${familyIdx2}`) ?? false)
+    : (ex?.firstFamily.has(`${firstIdx},${i1}`) ?? false);
+  if (form === 'family' && soloOk) {
+    display = family;
+    defaultDisplay = false;
+  } else if (form === 'short-family') {
+    display = join(short, family);
+    defaultDisplay = false;
+    excluded ||= ex?.firstFamily.has(`${shortFirst},${i1}`) ?? false;
+  } else if (form === 'nickname' && nickname !== undefined) {
+    display = nickname;
+    defaultDisplay = false;
+    excluded ||= ex?.nickname.has(nickIdx) ?? false;
+  } else if (form === 'name-origin' && origin !== undefined) {
+    display = join(useShort ? short : given, 'de', origin);
+    defaultDisplay = false;
+    const first = useShort ? shortFirst : firstIdx;
+    excluded ||= ex?.firstOrigin.has(`${first},${originIdx}`) ?? false;
   } else if (form === 'given-nickname' && nickname !== undefined) {
     display = join(given, nickname);
+    defaultDisplay = false;
+    excluded ||= ex?.firstNickname.has(`${firstIdx},${nickIdx}`) ?? false;
   } else if (form === 'short-nickname' && nickname !== undefined) {
     display = join(short, nickname);
+    defaultDisplay = false;
+    excluded ||= ex?.firstNickname.has(`${shortFirst},${nickIdx}`) ?? false;
   }
-  return { nameSeed: nameSeed >>> 0, display, full: join(given, family, family2), family };
+  if (defaultDisplay) excluded ||= ex?.firstFamily.has(`${firstIdx},${i1}`) ?? false;
+  return {
+    name: { nameSeed: nameSeed >>> 0, display, full: join(given, family, family2), family },
+    excluded,
+  };
+}
+
+/**
+ * The name for a seed. Pure. When the drawn combination is in `exclusions`, it is replaced by the
+ * next draw of a generator seeded with `nameSeed` itself (deterministic; at most 50 times), and the
+ * result still carries the original `nameSeed`, so storing it reproduces the name.
+ */
+export function nameFromSeed(
+  nameSeed: number,
+  lists: NameLists,
+  exclusions?: NameExclusions,
+): PlayerName {
+  let current = draw(nameSeed, lists, exclusions);
+  const reseed = new Rng(nameSeed ^ 0x9e3779b9);
+  for (let i = 0; i < MAX_RESEEDS && current.excluded; i++) {
+    current = draw(reseed.int(0, 0xffffffff), lists, exclusions);
+  }
+  return { ...current.name, nameSeed: nameSeed >>> 0 };
 }
 
 /**
  * Names for a whole squad. Rules, all deterministic: no two with the same display name (accents,
  * case and hyphens ignored); a bare surname display ("Tavares") does not share the squad with
  * another player of that surname, and vice versa; at most 3 players per first surname; and no
- * display or full name blocked. Candidate seeds come from `seed` in order, so a rejected name is
- * skipped the same way every time, and each result carries the seed that reproduces it alone
- * through `nameFromSeed`. Never throws: with degenerate lists it gives up after 200 tries and
+ * excluded (real-athlete) combination. Candidate seeds come from `seed` in order, so a rejected
+ * name is skipped the same way every time, and each result carries the seed that reproduces it
+ * alone through `nameFromSeed`. Never throws: with degenerate lists it gives up after 200 tries and
  * numbers the display ("Nome 2"), which only happens in tests.
  */
 export function namesForSquad(
   seed: number,
   count: number,
   lists: NameLists,
-  isBlocked?: IsBlocked,
+  exclusions?: NameExclusions,
 ): PlayerName[] {
   const rng = new Rng(seed);
   const displays = new Set<string>();
@@ -140,7 +241,7 @@ export function namesForSquad(
     let chosen: PlayerName | undefined;
     let last: PlayerName | undefined;
     for (let attempt = 0; attempt < MAX_ATTEMPTS && chosen === undefined; attempt++) {
-      const candidate = nameFromSeed(rng.int(0, 0xffffffff), lists);
+      const candidate = nameFromSeed(rng.int(0, 0xffffffff), lists, exclusions);
       last = candidate;
       const key = normalizeNameKey(candidate.display);
       const familyKey = normalizeNameKey(candidate.family);
@@ -152,12 +253,11 @@ export function namesForSquad(
           (sameFamily.count >= MAX_PER_FAMILY ||
             (bare && sameFamily.count > 0) ||
             sameFamily.bare));
-      const blocked = isBlocked?.(candidate.display) || isBlocked?.(candidate.full);
-      if (!clash && !blocked) chosen = candidate;
+      if (!clash) chosen = candidate;
     }
     if (chosen === undefined) {
       let n = 2;
-      const base = last ?? nameFromSeed(0, lists);
+      const base = last ?? nameFromSeed(0, lists, exclusions);
       while (displays.has(normalizeNameKey(`${base.display} ${n}`))) n++;
       chosen = { ...base, display: `${base.display} ${n}` };
     }
@@ -173,56 +273,8 @@ export function namesForSquad(
   return result;
 }
 
-export type NameKind =
-  'nickname' | 'family' | 'first-family' | 'first-nickname' | 'first-origin' | 'second-family';
-
-/**
- * Every string the lists can show as a display name or a full name (each form of
- * `DISPLAY_FORMS`, and "First Surname Surname2" for simple or compound first names), with the
- * kind of form that makes it. The `second-family` kind is the bulk (|first names| x |surnames|^2),
- * so it can be skipped.
- */
-export function* labeledNames(
-  lists: NameLists,
-  { withSecondFamily = true } = {},
-): Generator<{ name: string; kind: NameKind }> {
-  const givens = [...lists.given, ...lists.givenCompound];
-  const initials = [...givens, ...lists.short];
-  for (const name of lists.nicknames) yield { name, kind: 'nickname' };
-  for (const name of lists.family) yield { name, kind: 'family' };
-  for (const f of lists.family) {
-    for (const g of initials) yield { name: `${g} ${f}`, kind: 'first-family' };
-  }
-  for (const n of lists.nicknames) {
-    for (const g of initials) yield { name: `${g} ${n}`, kind: 'first-nickname' };
-  }
-  for (const o of lists.origins) {
-    for (const g of initials) yield { name: `${g} ${o}`, kind: 'first-origin' };
-  }
-  if (!withSecondFamily) return;
-  for (const g of givens) {
-    for (const f of lists.family) {
-      for (const f2 of lists.family) {
-        if (f2 !== f) yield { name: `${g} ${f} ${f2}`, kind: 'second-family' };
-      }
-    }
-  }
-}
-
-/** Names the lists can produce that the predicate blocks, with their kind. Empty means clean. */
-export function findBlockedNames(
-  lists: NameLists,
-  isBlocked: IsBlocked,
-  options?: { withSecondFamily?: boolean },
-): { name: string; kind: NameKind }[] {
-  const found = new Map<string, NameKind>();
-  for (const { name, kind } of labeledNames(lists, options)) {
-    if (!found.has(name) && isBlocked(name)) found.set(name, kind);
-  }
-  return [...found].map(([name, kind]) => ({ name, kind }));
-}
-
-export type NameListProblem = 'empty-list' | 'blank-entry' | 'duplicate-entry' | 'has-hyphen';
+export type NameListProblem =
+  'empty-list' | 'blank-entry' | 'duplicate-entry' | 'has-hyphen' | 'not-in-family';
 export interface NameListIssue {
   list: keyof NameLists;
   problem: NameListProblem;
@@ -240,7 +292,8 @@ const LIST_KEYS = [
 
 /**
  * Structural check of the lists: not empty, no blanks, no repeats after normalization, no hyphens
- * (the blocklist hash does not turn hyphens into spaces, so a hyphenated entry could slip past).
+ * (the blocklist hash does not turn hyphens into spaces, so a hyphenated entry could slip past),
+ * and every `familyNoSolo` entry is also a surname.
  */
 export function checkNameLists(lists: NameLists): NameListIssue[] {
   const issues: NameListIssue[] = [];
@@ -253,6 +306,12 @@ export function checkNameLists(lists: NameLists): NameListIssue[] {
       else if (seen.has(key)) issues.push({ list, problem: 'duplicate-entry', value });
       if (value.includes('-')) issues.push({ list, problem: 'has-hyphen', value });
       seen.add(key);
+    }
+  }
+  const families = new Set(lists.family.map(normalizeNameKey));
+  for (const value of lists.familyNoSolo ?? []) {
+    if (!families.has(normalizeNameKey(value))) {
+      issues.push({ list: 'familyNoSolo', problem: 'not-in-family', value });
     }
   }
   return issues;

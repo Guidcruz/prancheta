@@ -1,14 +1,14 @@
-import { createHash } from 'node:crypto';
 import { existsSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { buildBlocklist, hashName, normalizeName, parseBlocklist } from '../../data/blocklist.ts';
+import { computeExclusions } from '../../data/name-exclusions.ts';
 import {
   checkNameLists,
-  findBlockedNames,
+  compileExclusions,
   nameFromSeed,
   namesForSquad,
   normalizeNameKey,
-  type IsBlocked,
+  type NameExclusionsFile,
   type NameLists,
 } from './names';
 
@@ -17,9 +17,10 @@ const lists: NameLists = {
   given: Array.from({ length: 40 }, (_, i) => `Nometeste${i + 1}`),
   givenCompound: ['Nomeum Nomedois', 'Nomeum Nometres'],
   family: Array.from({ length: 50 }, (_, i) => `Sobrenometeste${i + 1}`),
+  familyNoSolo: ['Sobrenometeste7'],
   short: Array.from({ length: 20 }, (_, i) => `Curtoteste${i + 1}`),
   nicknames: Array.from({ length: 30 }, (_, i) => `Apelidoteste${i + 1}`),
-  origins: Array.from({ length: 10 }, (_, i) => `Vale Origemteste${i + 1}`),
+  origins: Array.from({ length: 10 }, (_, i) => `Origemteste${i + 1}`),
 };
 
 /* Blocked names that the lists CAN produce, so the skipping is really exercised. */
@@ -29,22 +30,26 @@ const blocklist = buildBlocklist([
   'Sobrenometeste3',
   'Apelidoteste4',
   'Curtoteste1 Apelidoteste1',
+  'Curtoteste1 de Origemteste1',
+  'Nometeste6 Apelidoteste2',
   'Nometeste5 Sobrenometeste5 Sobrenometeste6',
   ...Array.from({ length: 10 }, (_, i) => `Nometeste${i + 3} Sobrenometeste${i + 3}`),
 ]);
 const blockedHashes = new Set(blocklist.hashes);
-const isBlocked: IsBlocked = (name) => blockedHashes.has(hashName(name));
+const isBlocked = (name: string) => blockedHashes.has(hashName(name));
+const exclusionsFile = computeExclusions(lists, blockedHashes);
+const exclusions = compileExclusions(exclusionsFile);
 
 describe('name generator (US-003)', () => {
   it('is deterministic: 500 names twice are identical', () => {
-    const run = () => namesForSquad(2026, 500, lists, isBlocked);
+    const run = () => namesForSquad(2026, 500, lists, exclusions);
     expect(run()).toEqual(run());
     expect(run()).toHaveLength(500);
   });
 
   it('reproduces any squad name alone from its nameSeed', () => {
-    for (const n of namesForSquad(7, 50, lists, isBlocked)) {
-      expect(nameFromSeed(n.nameSeed, lists)).toEqual(n);
+    for (const n of namesForSquad(7, 50, lists, exclusions)) {
+      expect(nameFromSeed(n.nameSeed, lists, exclusions)).toEqual(n);
     }
   });
 
@@ -55,13 +60,31 @@ describe('name generator (US-003)', () => {
   it('never produces a blocked display or full name in 10,000 names', () => {
     let total = 0;
     for (let seed = 1; seed <= 500; seed++) {
-      for (const n of namesForSquad(seed * 7919, 20, lists, isBlocked)) {
+      for (const n of namesForSquad(seed * 7919, 20, lists, exclusions)) {
         total++;
         expect(blockedHashes.has(hashName(n.display))).toBe(false);
         expect(blockedHashes.has(hashName(n.full))).toBe(false);
       }
     }
     expect(total).toBe(10_000);
+  });
+
+  it('exclusions come out as indices only and cover every kind of form', () => {
+    expect(exclusionsFile.firstFamily.length).toBeGreaterThanOrEqual(12);
+    expect(exclusionsFile.firstNickname).toHaveLength(2);
+    expect(exclusionsFile.firstOrigin).toHaveLength(1);
+    expect(exclusionsFile.nickname).toEqual([3]);
+    expect(exclusionsFile.family).toEqual([2]);
+    expect(exclusionsFile.triples).toEqual([[4, 4, 5]]);
+    expect(Object.values(exclusionsFile).flat(2).every(Number.isInteger)).toBe(true);
+  });
+
+  it('nameFromSeed skips excluded combinations by itself, keeping the original seed', () => {
+    for (let seed = 1; seed <= 20_000; seed++) {
+      const n = nameFromSeed(seed, lists, exclusions);
+      expect(n.nameSeed).toBe(seed);
+      expect(isBlocked(n.display) || isBlocked(n.full)).toBe(false);
+    }
   });
 
   it('really skips blocked candidates (the unfiltered run would hit them)', () => {
@@ -76,7 +99,7 @@ describe('name generator (US-003)', () => {
 
   it('has no duplicate display name inside a squad, accents and case ignored', () => {
     for (let seed = 1; seed <= 300; seed++) {
-      const names = namesForSquad(seed, 28, lists, isBlocked).map((n) =>
+      const names = namesForSquad(seed, 28, lists, exclusions).map((n) =>
         normalizeNameKey(n.display),
       );
       expect(new Set(names).size).toBe(28);
@@ -151,6 +174,12 @@ describe('name generator (US-003)', () => {
     expect(withSecond / n).toBeCloseTo(0.35, 1);
   });
 
+  it('never shows a familyNoSolo surname alone', () => {
+    for (let i = 0; i < 5000; i++) {
+      expect(nameFromSeed(i, lists).display).not.toBe('Sobrenometeste7');
+    }
+  });
+
   it('shows a bare surname only when it has 4 letters or more', () => {
     const shortSurnames: NameLists = { ...lists, family: ['Li', 'Xu', 'Abc'] };
     for (let i = 0; i < 2000; i++) {
@@ -177,29 +206,15 @@ describe('name generator (US-003)', () => {
 });
 
 describe('list checks', () => {
-  it('finds blocked names anywhere in the space the lists can produce', () => {
-    const found = findBlockedNames(lists, isBlocked).map((b) => b.name);
-    expect(found).toContain('Sobrenometeste3');
-    expect(found).toContain('Apelidoteste4');
-    expect(found).toContain('Nometeste1 Sobrenometeste1');
-    expect(found).toContain('Curtoteste1 Apelidoteste1');
-    expect(found).toContain('Nometeste5 Sobrenometeste5 Sobrenometeste6');
-    const noSecond = findBlockedNames(lists, isBlocked, { withSecondFamily: false });
-    expect(noSecond.map((b) => b.name)).not.toContain('Nometeste5 Sobrenometeste5 Sobrenometeste6');
-    expect(findBlockedNames(lists, () => false)).toEqual([]);
-    expect(findBlockedNames(lists, isBlocked).find((b) => b.name === 'Apelidoteste4')?.kind).toBe(
-      'nickname',
-    );
-  });
-
   it('flags empty lists, blanks, repeats and hyphens', () => {
     expect(checkNameLists(lists)).toEqual([]);
-    const bad = { ...lists, given: [], family: ['A', 'á', ' ', 'B-C'] };
+    const bad = { ...lists, given: [], family: ['A', 'á', ' ', 'B-C'], familyNoSolo: ['Z'] };
     expect(checkNameLists(bad).map((i) => i.problem)).toEqual([
       'empty-list',
       'duplicate-entry',
       'blank-entry',
       'has-hyphen',
+      'not-in-family',
     ]);
   });
 
@@ -220,52 +235,53 @@ describe('list checks', () => {
 const listsPath = new URL('../../content/names/br.json', import.meta.url);
 const athletesPath = new URL('../../data/athletes-blocklist.sha256.json', import.meta.url);
 
+const exclusionsPath = new URL('../../content/names/br.exclusions.json', import.meta.url);
+
 describe.skipIf(!existsSync(listsPath) || !existsSync(athletesPath))('real name lists', () => {
   const real = () => JSON.parse(readFileSync(listsPath, 'utf8')) as NameLists;
-
-  it('are well formed', () => {
-    expect(checkNameLists(real())).toEqual([]);
-  });
-
-  /* Counts by kind, never the names: they are real people. */
-  function collisionsByKind(withSecondFamily: boolean, hashes: ReadonlySet<string>) {
-    const lists = real();
-    // Normalize each entry once; the join of normalized pieces equals the normalized join.
-    const norm = (items: readonly string[]) => items.map(normalizeName);
-    const normalized: NameLists = {
-      given: norm(lists.given),
-      givenCompound: norm(lists.givenCompound),
-      family: norm(lists.family),
-      short: norm(lists.short),
-      nicknames: norm(lists.nicknames),
-      origins: norm(lists.origins),
-    };
-    const isReal: IsBlocked = (name) =>
-      hashes.has(createHash('sha256').update(name, 'utf8').digest('hex'));
-    const byKind: Record<string, number> = {};
-    for (const { kind } of findBlockedNames(normalized, isReal, { withSecondFamily })) {
-      byKind[kind] = (byKind[kind] ?? 0) + 1;
-    }
-    return byKind;
-  }
   const athleteHashes = () => {
     const parsed = parseBlocklist(JSON.parse(readFileSync(athletesPath, 'utf8')));
     if (!parsed.ok) throw new Error(JSON.stringify(parsed.issues));
     return parsed.hashes;
   };
+  const onDisk = () => JSON.parse(readFileSync(exclusionsPath, 'utf8')) as NameExclusionsFile;
 
-  it('cannot produce a real athlete name as display or as "First Surname" (~270k names)', () => {
-    expect(collisionsByKind(false, athleteHashes())).toEqual({});
+  it('are well formed', () => {
+    expect(checkNameLists(real())).toEqual([]);
+  });
+
+  it('have an exclusions file in sync with the lists and the blocklist (fast forms)', () => {
+    // Regenerate with `npm run names:exclusions` after changing br.json or the blocklist.
+    const fresh = computeExclusions(real(), athleteHashes(), { withTriples: false });
+    const withoutTriples = (f: NameExclusionsFile) => ({ ...f, triples: [] });
+    const stored = withoutTriples(onDisk());
+    const expected = withoutTriples(fresh);
+    expect(stored).toEqual(expected);
+  });
+
+  it('generate no real athlete name: 10,000 names, display and full, with the exclusions', () => {
+    const hashes = athleteHashes();
+    const ex = compileExclusions(onDisk());
+    const l = real();
+    let total = 0;
+    for (let seed = 1; seed <= 500; seed++) {
+      for (const n of namesForSquad(seed * 7919, 20, l, ex)) {
+        total++;
+        expect(hashes.has(hashName(n.display))).toBe(false);
+        expect(hashes.has(hashName(n.full))).toBe(false);
+      }
+    }
+    expect(total).toBe(10_000);
   });
 
   /*
-   * "First Surname Surname2" is ~74M strings (about 1 to 4 minutes of SHA-256), too slow for every
-   * run: opt in with NAMES_FULL_CHECK=1 (release gate / scheduled job).
+   * The whole space, including "First Surname Surname2" (~74M hashes, 2 to 4 minutes): opt in with
+   * NAMES_FULL_CHECK=1 (release gate / scheduled job).
    */
   it.skipIf(process.env.NAMES_FULL_CHECK !== '1')(
-    'cannot produce a real athlete name with a second surname (~74M names)',
+    'exclusions file is complete, second surname included (~74M names)',
     () => {
-      expect(collisionsByKind(true, athleteHashes())).toEqual({});
+      expect(onDisk()).toEqual(computeExclusions(real(), athleteHashes()));
     },
     1_800_000,
   );
