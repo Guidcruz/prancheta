@@ -89,6 +89,39 @@ function numberLeaves(): [string, number, number, boolean][] {
   return out;
 }
 
+/** Inputs whose reading throws: a getter, an ownKeys trap and a revoked Proxy. */
+function hostileInputs(base: object): unknown[] {
+  const getter = Object.defineProperty({ ...base }, 'zzz', {
+    enumerable: true,
+    get() {
+      throw new Error('boom');
+    },
+  });
+  const trap = new Proxy(base, {
+    ownKeys() {
+      throw new Error('boom');
+    },
+    get() {
+      throw new Error('boom');
+    },
+  });
+  const revoked = Proxy.revocable({}, {});
+  revoked.revoke();
+  return [getter, trap, revoked.proxy];
+}
+
+describe('validateParams on hostile input', () => {
+  it('never throws when reading the input throws', () => {
+    for (const raw of hostileInputs(validParams())) {
+      const result = validateParams(raw);
+      expect(result.ok).toBe(false);
+      if (!result.ok) {
+        expect(result.detail).toEqual([{ path: '', problem: 'unreadable', value: undefined }]);
+      }
+    }
+  });
+});
+
 describe('validateParams', () => {
   it('accepts the initial values of the design documents', () => {
     const result = validateParams(validParams());

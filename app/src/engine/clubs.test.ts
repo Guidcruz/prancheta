@@ -20,6 +20,52 @@ function issuesOf(result: ClubsResult): ClubIssue[] {
   return result.detail;
 }
 
+/** Inputs whose reading throws: a getter, an ownKeys trap and a revoked Proxy. */
+function hostileInputs(base: object): unknown[] {
+  const getter = Object.defineProperty({ ...base }, 'zzz', {
+    enumerable: true,
+    get() {
+      throw new Error('boom');
+    },
+  });
+  const trap = new Proxy(base, {
+    ownKeys() {
+      throw new Error('boom');
+    },
+    get() {
+      throw new Error('boom');
+    },
+  });
+  const revoked = Proxy.revocable({}, {});
+  revoked.revoke();
+  return [getter, trap, revoked.proxy];
+}
+
+describe('validateClubs on hostile input', () => {
+  it('never throws when reading the input throws', () => {
+    const clubs = syntheticClubs();
+    const getterClub = Object.defineProperty({ ...clubs[0]! }, 'name', {
+      enumerable: true,
+      get() {
+        throw new Error('boom');
+      },
+    });
+    // The spread getter of hostileInputs makes a plain object (a plain "not-a-list"), so the list
+    // gets its own getter on an index.
+    const [, trap, revoked] = hostileInputs(clubs);
+    const getterList = Object.defineProperty([...clubs], 0, {
+      get() {
+        throw new Error('boom');
+      },
+    });
+    for (const raw of [trap, revoked, getterList, [getterClub, ...clubs.slice(1)]]) {
+      const result = validateClubs(raw);
+      expect(result.ok).toBe(false);
+      if (!result.ok) expect(result.detail).toEqual([{ field: '', problem: 'unreadable' }]);
+    }
+  });
+});
+
 describe('validateClubs', () => {
   it('accepts 20 valid clubs and returns a fresh copy', () => {
     const raw = syntheticClubs();

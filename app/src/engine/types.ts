@@ -6,9 +6,9 @@
  * Wrangler bundle (ADR-0007, rule 6). Closed sets are string-literal unions, never enums.
  *
  * This file starts with the foundations (T-001). The bigger contracts arrive with the task that
- * implements them: GameParams (T-002, in params.ts), ClubDef (T-003, in clubs.ts), Player (T-005),
- * MatchInput/MatchEvent/MatchResult (T-009), MatchCommand (T-012), GameState/RoundReport/Fact
- * (T-013).
+ * implements them: GameParams (T-002, in params.ts), ClubDef (T-003, in clubs.ts), Player (T-005,
+ * in players.ts), MatchInput/MatchEvent/MatchResult (T-009), MatchCommand (T-012),
+ * GameState/RoundReport/Fact (T-013).
  */
 
 /**

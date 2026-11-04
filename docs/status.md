@@ -57,12 +57,13 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                                 |
-| ------ | -------------------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                             |
-| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                |
-| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                |
-| T-004  | entregue, aguardando merge (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes, 345 com `NAMES_FULL_CHECK=1`) |
+| Tarefa | Estado                                                                                                                                                                          |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                      |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                         |
+| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                         |
+| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                             |
+| T-005  | entregue, aguardando merge (modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1) |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -81,6 +82,21 @@ Telas da 1a (`docs/design/telas/`):
 3. ADR-0012 aceito: nome e rosto resolvidos ficam no estado e no save; nome retirado também sai dos saves antigos.
 4. Exceção à regra de nomes reais: documentos de trabalho em `docs/` podem citá-los só como referência; no jogo, código, dados e site a regra continua absoluta.
 
+## Decisões do CEO sobre o site novo (2026-11-04)
+
+Desenho (`docs/design/site.md`) e textos (`docs/content/site/`) aprovados, com 8 decisões:
+
+1. "Série A" no lugar de "Brasileirão".
+2. Só exemplos de clubes.
+3. Nome provisório numa linha.
+4. Discussions do GitHub via `contacts.discussionsUrl`.
+5. Sem citar advogado.
+6. Tema dia, seguindo o sistema.
+7. Tokens `layout`.
+8. `@astrojs/sitemap`.
+
+A implementação sai em PR próprio.
+
 ## Pendências abertas
 
 - `/balance` da T-016 deve medir "grande rebaixado" (estimativa grosseira ~97% contra a meta de 40% a 80%).
@@ -90,4 +106,4 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Próximo
 
-`/quick` do devcontainer (Codespaces pronto, Node 22.18) aguardando merge; a T-004 aguarda o merge do CEO; depois T-005. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+T-005 aguarda o merge do CEO; depois, implementação do site novo (PR próprio) e T-006. Antes disso, o `/quick` do devcontainer segue aguardando merge; a T-004 aguarda o merge do CEO; depois T-005. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).

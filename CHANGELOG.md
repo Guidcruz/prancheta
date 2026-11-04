@@ -22,6 +22,9 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - `npm run names:exclusions` (`scripts/name-exclusions.mjs`) e `npm run blocklist:hash:athletes`.
 - Teste completo dos nomes com `NAMES_FULL_CHECK=1 npm test -w app` (cerca de 2 minutos), para rodar antes de release e quando as listas mudarem.
 - ADR-0012 aceito: nome e rosto resolvidos na criação ficam no estado e no save; nome retirado também sai dos saves antigos.
+- Modelo do jogador (T-005, US-004) em `app/src/engine/players.ts`: tipos `Player`, `PlayerNameText`, `PlayerIdentity` e `IdentitySource` (ADR-0012); `computeOverall`, `fit`/`fitLevel`, `drawTrait`, `drawPotential`, `drawGrowthCurve`, `isProspect` (rótulo "promessa"), `fitAttributesToOverall`, `attributeOf` e `validatePlayer` (nunca lança); constantes `SQUAD_COMPOSITION`, `POTENTIAL_MAX` e limites dos campos.
+- Fontes de teste do motor `testing/identity.ts` e `testing/players.ts` e golden `__golden__/players.json` (`ENGINE_VERSION` continua 1).
+- Desenho e textos aprovados do site novo (`docs/design/site.md`, `docs/content/site/`); a implementação vem em PR próprio.
 
 ### Alterado
 
@@ -31,6 +34,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 - Lint de fronteira do motor ampliado: sem `ui`, `lib`, `content`, `params`, `data`, DOM, `Intl`, `process` nem `node:*`; sem `Math.random`, `Date.now`, `localeCompare` e `toLocale*`; imports relativos com extensão `.ts`; código de produção não importa `testing/`. Fora do motor: `ui` não importa `lib/save` e `lib` não importa `ui`.
 - `erasableSyntaxOnly` ligado em `app/tsconfig.json`.
+- `attributes` do jogador é parcial (6 chaves por posição) e `potential` é guardado até 99; o teto 95 vale só na geração (`docs/02-architecture.md` §4.1).
 - `engines.node` passa a exigir `>= 22.18`.
 - O tamanho do elenco (25) deixou de ser parâmetro e virou constante.
 - O escudo gerado passa a mostrar a sigla do clube (`abbreviation`) no símbolo de letra; `shieldSpecFor` ganhou o 4º argumento opcional.
