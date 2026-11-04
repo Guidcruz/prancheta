@@ -1,6 +1,6 @@
 # Lote 2026-11-04: estádios da Série A (20 clubes) e da reserva (7 clubes, 6 estádios)
 
-Autor: `content-writer`. Pedido: T-003 (dados dos clubes, US-001). Status: **aguardando ok do CEO**. Nada foi gravado em `app/src/`.
+Autor: `content-writer`. Pedido: T-003 (dados dos clubes, US-001). Status: **aprovado pelo CEO em 2026-11-04 (com ajustes)**. Nada foi gravado em `app/src/`.
 
 ## Como ler
 
@@ -15,7 +15,7 @@ Autor: `content-writer`. Pedido: T-003 (dados dos clubes, US-001). Status: **agu
 | --- | -------------- | ----------------------- | ------------- | ------------------------------ | ---------------------------------------------------------------- | ----- |
 | 1   | Flamingo       | Estádio Maracatu        | Maracatu      | Maracanã (compartilhado)       | ritmo pernambucano no lugar do nome tupi; mesmo tamanho de som   | M     |
 | 2   | Corinto        | Arena Itaquerê          | Itaquerê      | Neo Química Arena (Itaquerão)  | bairro de Itaquera com "-rê" de chamar a bola, sem a marca       | M     |
-| 3   | Palmeral       | Parque dos Aliados      | Aliados       | Allianz Parque                 | "Allianz" lido como "aliança"; vira "aliados", sem a marca       | M     |
+| 3   | Palmeral       | Arena do Palmeiral      | Palmeiral     | Allianz Parque                 | o trocadilho do clube aplicado a "arena do clube", sem a marca   | B     |
 | 4   | São Paulão     | Estádio do Morumbom     | Morumbom      | Morumbi                        | "Morumbi" mais "bom"                                             | B     |
 | 5   | Minério        | Arena Veio de Minério   | Veio          | Arena MRV                      | veio de minério no lugar da construtora; mineiro e "o veio"      | B     |
 | 6   | Grêmeos        | Arena dos Grêmeos       | Arena Grêmeos | Arena do Grêmio                | o trocadilho do clube aplicado à "arena do clube"                | M     |
@@ -29,14 +29,14 @@ Autor: `content-writer`. Pedido: T-003 (dados dos clubes, US-001). Status: **agu
 | 14  | Baião          | Arena Fonte Novelo      | Fonte Novelo  | Arena Fonte Nova               | "nova" virou "novelo" de linha; ainda tem fonte no nome          | B     |
 | 15  | Coritibom      | Estádio Couve-Pera      | Couve-Pera    | Couto Pereira                  | "Couto Pereira" (pessoa) vira "couve" e "pera"; horta no gramado | B     |
 | 16  | Vitorioso      | Estádio Barrancão       | Barrancão     | Barradão                       | "barra" virou "barranco"; mesmo som, outro terreno               | B     |
-| 17  | Bragantão      | Estádio Abriu Cedo      | Abriu Cedo    | Nabi Abi Chedid                | só o som de "Abi Chedid" em "abriu cedo"; sem o nome da pessoa   | M     |
+| 17  | Bragantão      | Arena Bragança          | Bragança      | Nabi Abi Chedid                | nome da cidade-sede, sem pessoa por trás                         | B     |
 | 18  | Miragol        | Estádio Maionão         | Maionão       | Maião                          | "Maião" aumentado com cheiro de maionese de churrasco            | B     |
 | 19  | Chapecão       | Arena Condão            | Condão        | Arena Condá                    | "Condá" virou "condão", a varinha mágica                         | B     |
 | 20  | Remador        | Estádio Batelão         | Batelão       | Baenão                         | "Baenão" virou "batelão", barco grande que combina com remo      | B     |
 
 Compartilhamento: **Flamingo e Fluminário dividem o Estádio Maracatu**, como Flamengo e Fluminense dividem o Maracanã. Os demais têm casa própria. Atlético Minério e Cruzador não dividem estádio.
 
-Notas ao `art-director` e ao `game-designer`: Chapecão, Arena Condão: nenhuma alusão à história do clube real. Bragantão: o nome "Abriu Cedo" é só sonoro; nada de marca de bebida.
+Notas ao `art-director` e ao `game-designer`: Chapecão, Arena Condão: nenhuma alusão à história do clube real. Bragantão: "Arena Bragança" vem da cidade (substituiu "Abriu Cedo", que soava como o nome de uma pessoa real); nada de marca de bebida.
 
 ## Reserva (Série B): 7 clubes, 6 estádios distintos
 
@@ -57,3 +57,11 @@ Compartilhamento: **Seará e Fortaleça dividem o Estádio Castelinho** (os dois
 1. Aprovar ou ajustar os 26 nomes (20 + 6 distintos da reserva, 7 clubes); marcados M primeiro na consulta ao INPI.
 2. Juvenília: não achei trocadilho sonoro sem usar o nome da pessoa do estádio real; "Parreiral" é o mais próximo em ideia (terra de vinho). Alternativa: "Estádio Uvalhada".
 3. Maracatu como casa de Flamingo e Fluminário: aceita o compartilhamento? Se não, Fluminário ganha "Estádio Maracajá".
+
+## Ajustes do CEO (2026-11-04)
+
+1. Bragantão: "Abriu Cedo" sai; fica **Arena Bragança** (escolha minha: "Estádio da Serrinha" é nome do estádio real do Goiás e colidiria com a lista bloqueada).
+2. Palmeral: "Parque dos Aliados" sai; fica **Arena do Palmeiral** ("Parque das Palmeiras Altas" contém o nome do clube real).
+3. Couve-Pera, Maionão e Batelão ficam.
+4. Maracatu segue dividido entre Flamingo e Fluminário.
+5. "Clássico Vovó" fica; o real já saiu da lista bloqueada.
