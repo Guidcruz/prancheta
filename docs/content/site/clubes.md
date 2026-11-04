@@ -33,8 +33,6 @@ Os 20 da Série A serão apresentados aqui assim que a lista for aprovada para p
 
 ## Aviso
 
-Clubes, jogadores, estádios e patrocinadores do jogo são fictícios. Qualquer semelhança é trocadilho, não ligação.
+Clubes, jogadores, estádios e marcas do jogo são fictícios. Qualquer semelhança é trocadilho, não ligação.
 
-## Patrocinadores
-
-Marcas reais poderão aparecer só em espaços do cenário (placas em volta do campo, placar, telas de carregamento) e sempre identificadas como publicidade. Enquanto nenhum espaço estiver vendido, o jogo mostra marcas fictícias. Quer anunciar? Em breve haverá uma página para isso.
+<!-- Seção "Patrocinadores" removida; aprovado pelo CEO em 2026-11-04 (ADR-0015). -->

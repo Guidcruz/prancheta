@@ -15,7 +15,7 @@
 
 | Onde                         | Texto                                                                                                                             |
 | ---------------------------- | --------------------------------------------------------------------------------------------------------------------------------- |
-| Selo do topo                 | Em desenvolvimento, em público (mantido)                                                                                          |
+| Selo do topo                 | Em desenvolvimento · acompanhe no devlog (aprovado pelo CEO em 2026-11-04)                                                        |
 | Título da seção              | Destaques (mantido)                                                                                                               |
 | Link do cartão 1             | Conhecer o jogo (mantido)                                                                                                         |
 | Link dos cartões 2 e 3       | Ver os modos de jogo (mantido)                                                                                                    |
@@ -127,7 +127,7 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 
 ## Rodapé
 
-- **Texto (aprovado em `inicio.md`):** O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e patrocinadores do jogo são fictícios.
+- **Texto (aprovado em `inicio.md`):** O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e marcas do jogo são fictícios (aprovado pelo CEO em 2026-11-04).
 - **Linha de versão:** Versão {config.version}
 - **Links, nesta ordem:** Privacidade, Apoiar, Roteiro, Devlog, Discussões (e, à parte, "RSS do devlog").
 - Troca em relação ao código: sai "é um jogo independente, em desenvolvimento", que não foi aprovado; entra o texto acima. "Roteiro" e "Devlog" precisam entrar na lista de links do rodapé.
