@@ -260,11 +260,22 @@ P(segundo amarelo) = (1 − exp(−λ × T / 2))²        (vale só com BOOKED_M
 λ = cards.yellowPerMinute × positionMult × traitMult × pressure.cards
 ```
 
-Somando os 22 jogadores do 4-4-2 (`Σ positionMult² = 12,1` por time), com 15% de temperamentais e pressão média, dá 4,0 amarelos, 0,23 segundo amarelo e 0,07 vermelho direto por jogo; o motor dá 0,205, um pouco menos, porque a IA usa pressão baixa com o time cansado e quem sai de campo não leva mais cartão. Para o total dar 0,18 com 4 amarelos, o segundo amarelo teria de ficar em cerca de 0,12, o que o fator 0,5 não dá.
+Somando os 22 jogadores do 4-4-2 (`Σ positionMult² = 12,1` por time), com 15% de temperamentais e pressão média, dá 4,0 amarelos, 0,23 segundo amarelo e 0,07 vermelho direto por jogo; o motor dá 0,205, um pouco menos, porque quem sai de campo (substituído ou expulso) não leva mais cartão. Para o total dar 0,18 com 4 amarelos, o segundo amarelo teria de ficar em cerca de 0,12, o que o fator 0,5 não dá.
 
 - **Não é erro de regra:** é calibragem, e fica para a T-016 (um ajuste por vez, com o `/balance`).
 - **Botão certo:** o fator do pendurado. Ele é o único que mexe só no segundo amarelo: `cards.yellowPerMinute` tiraria amarelos (3,89 já está perto do centro de 4) e `cards.redPerMinute` só alcança 0,07 do total.
-- **Proposta para a T-016:** promover `BOOKED_MULT` a parâmetro, `cards.bookedMult`, faixa 0 a 1, e baixar de 0,5 para 0,30. Conta: segundo amarelo de 0,205 para cerca de 0,125, total de 0,27 para cerca de 0,19. Métrica que deve mudar: vermelhos por partida, para dentro de 0,11 a 0,25. Métricas que não podem piorar: amarelos por partida (3,5 a 4,5), gols por partida, goleada e zebra com 30 pontos.
+- **Com a IA escalando os dois lados (T-011)** os vermelhos sobem de 0,272 para 0,349 (segundo amarelo 0,272, direto 0,077) e os amarelos de 3,89 para 4,36. A causa inteira é a pressão alta (cartões ×1,4; o segundo amarelo cresce com o quadrado da taxa, cerca de ×1,9): cerca de 38% das fichas da liga vão em pressão alta (`ia-clubes.md`, "Pressão alta por perfil"). Com a mesma IA e a pressão forçada em média, dá 0,269 e 3,88, o mesmo de antes; formação e postura não mexem nos cartões. Com as 38 rodadas em sequência e a condição levada de uma para a outra, nada muda (37,6% de pressão alta, 0,349): a rotação mantém o XI acima de 85 e a regra do cansaço não dispara.
+- **Medido no relatório de 30 temporadas** (11.400 jogos, IA nos dois lados, só o fator trocado na cópia de teste; amarelos 4,36, gols 2,73 a 2,75 e goleada 14,3% a 14,5% em todos):
+
+| Fator do pendurado | Segundo amarelo | Vermelhos (total) | Meta 0,11 a 0,25  |
+| ------------------ | --------------- | ----------------- | ----------------- |
+| 0,50 (hoje)        | 0,272           | 0,349             | falha             |
+| 0,30               | 0,165           | 0,242             | no limite         |
+| 0,25               | 0,139           | 0,215             | ok                |
+| 0,20               | 0,111           | 0,189             | ok, perto de 0,18 |
+
+- **Proposta para a T-016 (revista):** promover `BOOKED_MULT` a parâmetro, `cards.bookedMult`, faixa 0 a 1, e baixar de 0,5 para **0,20** (não mais 0,30). Os 0,30 ficam em 0,242, a 0,008 do teto, sem margem para as três sementes nem para os comandos da T-012 ("todo mundo no ataque" põe pressão alta no fim do jogo). Com 0,20, o segundo amarelo fica em 0,11 e o vermelho direto em 0,08. Métrica que deve mudar: vermelhos por partida, para perto de 0,18. Métricas que não podem piorar: amarelos por partida (3,5 a 4,5; o fator não mexe neles), gols por partida, goleada e zebra com 30 pontos. Medir depois da T-012, com o `/balance` jogando as rodadas em sequência (`ia-clubes.md`, "Pedido ao `developer`", item 5).
+- **O que não fazer:** baixar `pressure.cards` da pressão alta (1,4) tiraria o custo da pressão alta e mexeria nos amarelos e no equilíbrio tático; mudar a pressão dos perfis tiraria a identidade do Formador. Os dois ficam como estão.
 
 ## Substituições
 
@@ -381,7 +392,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Caso                                                | Regra                                                                                                                                  |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Escalação com jogador suspenso ou lesionado         | a interface bloqueia; se chegar ao motor, ele troca pelo melhor reserva disponível e registra aviso (escalação irregular é da Etapa 2) |
-| Escalação ausente (técnico não montou)              | a IA monta pelo perfil "Tradicional"                                                                                                   |
+| Escalação ausente (técnico não montou)              | a rotina da IA (`suggestSheet`) monta, com o perfil lido como "Tradicional" (`ia-clubes.md`, "Clube do técnico humano")                |
 | Melhor reserva para a vaga de um titular fora       | maior valor de seleção para a vaga (`ia-clubes.md`, "Escalação"); empate: maior overall, mais novo, menor ID                           |
 | Goleiro titular fora e nenhum goleiro no banco      | a mesma regra do reserva: entra o reserva de maior valor de seleção para o gol (`fit` 0,40); os 10 de linha ficam nas vagas            |
 | Sem goleiro e sem reserva nenhum no banco           | joga no gol o titular de linha com maior `physical`, com `fit` 0,40, e a vaga dele fica vazia                                          |
