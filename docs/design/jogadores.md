@@ -140,7 +140,7 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 **Variação por carreira:** `strength` efetiva = `strength + Normal(0, generation.clubStrengthSd)`, com `generation.clubStrengthSd = 1.5` (decisão 3 de `balance-targets.md`).
 
-**Elenco de 25:** 3 GOL, 5 ZAG, 4 LAT, 4 VOL, 4 MEI, 5 ATA.
+**Elenco de 25 (constante):** 3 GOL, 5 ZAG, 4 LAT, 4 VOL, 4 MEI, 5 ATA. O tamanho sai da composição; não há parâmetro de tamanho de elenco (ver "Parâmetros").
 
 | Grupo     | Quantos                                   | Overall                        | Idade                  |
 | --------- | ----------------------------------------- | ------------------------------ | ---------------------- |
@@ -157,14 +157,17 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 ## Parâmetros
 
-| Parâmetro                   | Valor inicial | Faixa   | Por quê                                                 |
-| --------------------------- | ------------- | ------- | ------------------------------------------------------- |
-| `players.growthMin`         | 0,8           | 0,5–1,0 | curvas diferentes entre jogadores                       |
-| `players.growthMax`         | 1,2           | 1,0–1,5 | idem                                                    |
-| `generation.clubStrengthSd` | 1,5           | 0–4     | cada carreira com favoritos um pouco diferentes         |
-| `generation.squadSize`      | 25            | 22–30   | dá para rodar o time sem a lista ficar longa no celular |
+| Parâmetro                   | Valor inicial | Faixa   | Por quê                                         |
+| --------------------------- | ------------- | ------- | ----------------------------------------------- |
+| `players.growthMin`         | 0,8           | 0,5–1,0 | curvas diferentes entre jogadores               |
+| `players.growthMax`         | 1,2           | 1,0–1,5 | idem                                            |
+| `generation.clubStrengthSd` | 1,5           | 0–4     | cada carreira com favoritos um pouco diferentes |
 
-**Constantes:** tabelas de posição, pesos, curva de idade, chances de traço, efeitos de moral, composição do elenco.
+**Constantes:** tabelas de posição, pesos, curva de idade, chances de traço, efeitos de moral, composição do elenco (3/5/4/4/4/5 = 25, com os grupos titulares 11, reservas 7, elenco 4, jovens 3), faixas de overall por grupo, limiar de "promessa" (até 23 anos e `potential − overall ≥ 10`) e a regra de suspensão (3 amarelos ou 1 vermelho, em `partida.md`). Ficam no código, documentados aqui, porque são regra do jogo e não botão do `/balance`; viram parâmetro só se uma rodada do `/balance` precisar mexer neles.
+
+**Por que não há `generation.squadSize`:** tamanho sem composição não diz ao motor quantos de cada posição gerar, e uma composição parametrizável seria uma tabela a mais para validar sem nenhuma meta de `balance-targets.md` que dependa dela. 25 cabe numa tela do celular e dá rotação para as 8 quartas da temporada.
+
+**Pedido ao `developer`:** tirar `squadSize` de `app/src/params/generation.json`, do tipo e da tabela de faixas em `app/src/engine/params.ts`; a composição vira constante no motor (`SQUAD_COMPOSITION`, soma 25). Aceite: `generation.json` só com `clubStrengthSd`; todo elenco gerado tem exatamente 3/5/4/4/4/5 em 200 temporadas; o validador recusa `squadSize` como chave extra.
 
 ## Casos de borda
 

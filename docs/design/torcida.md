@@ -81,21 +81,21 @@ O torcedor fanático exagera: usa a faixa acima ou abaixo da real, na direção 
 
 ## Parâmetros (`app/src/params/fans.json`)
 
-| Parâmetro              | Valor inicial | Faixa      | Por quê                                      |
-| ---------------------- | ------------- | ---------- | -------------------------------------------- |
-| `fans.homeBonusMin`    | 0,02          | (ADR-0005) | torcida fria                                 |
-| `fans.homeBonusMax`    | 0,08          | (ADR-0005) | torcida em festa                             |
-| `fans.derbyBonus`      | 0,02          | (ADR-0005) | clássico                                     |
-| `fans.moraleDrift`     | 1             | (ADR-0005) | moral segue a torcida devagar                |
-| `fans.start`           | 60            | 30–80      | esperança de início de temporada             |
-| `fans.baseline`        | 55            | 40–70      | para onde o humor volta sem resultados       |
-| `fans.resultWeight`    | 4             | 1–8        | uma vitória inesperada vale cerca de +7      |
-| `fans.derbyResultMult` | 1,5           | 1–3        | clássico mexe mais                           |
-| `fans.reversion`       | 0,08          | 0–0,2      | mantém os extremos raros (protótipo)         |
-| `fans.decisionCap`     | 4             | 0–10       | decisões contam, sem virar fazenda de pontos |
-| `fans.baseOccupancy`   | 0,62          | 0,3–1      | 61% de ocupação com humor médio              |
+| Parâmetro              | Valor inicial | Faixa           | Por quê                                      |
+| ---------------------- | ------------- | --------------- | -------------------------------------------- |
+| `fans.homeBonusMin`    | 0,02          | fixo (ADR-0005) | torcida fria                                 |
+| `fans.homeBonusMax`    | 0,08          | fixo (ADR-0005) | torcida em festa                             |
+| `fans.derbyBonus`      | 0,02          | fixo (ADR-0005) | clássico                                     |
+| `fans.moraleDrift`     | 1             | fixo (ADR-0005) | moral segue a torcida devagar                |
+| `fans.start`           | 60            | 30–80           | esperança de início de temporada             |
+| `fans.baseline`        | 55            | 40–70           | para onde o humor volta sem resultados       |
+| `fans.resultWeight`    | 4             | 1–8             | uma vitória inesperada vale cerca de +7      |
+| `fans.derbyResultMult` | 1,5           | 1–3             | clássico mexe mais                           |
+| `fans.reversion`       | 0,08          | 0–0,2           | mantém os extremos raros (protótipo)         |
+| `fans.decisionCap`     | 4             | 0–10            | decisões contam, sem virar fazenda de pontos |
+| `fans.baseOccupancy`   | 0,62          | 0,3–1           | 61% de ocupação com humor médio              |
 
-Os quatro primeiros são decisão da ADR-0005: mudar é ADR. **Constantes:** extras de goleada, jejum e zona; multiplicador de clássico do público; faixas de humor.
+Os quatro primeiros são valores fixos da ADR-0005 (o `match.homeBase` da ADR-0011 soma por fora): o validador aceita só o valor exato (faixa = valor), e mudar é ADR, não `/balance`. Ficam no JSON para o motor recebê-los como argumento junto com o resto. **Constantes:** extras de goleada, jejum e zona; multiplicador de clássico do público; faixas de humor.
 
 ## Casos de borda
 

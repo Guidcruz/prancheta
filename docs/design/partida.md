@@ -121,7 +121,7 @@ home(mandante) = match.homeBase + fans.homeBonusMin + (fans.homeBonusMax − fan
 home(visitante) = 0
 ```
 
-`fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase` é a decisão 1 de `balance-targets.md`: proposto 0,05; 0 sem aprovação do CEO. Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os cartões ficam ×1,2 para os dois lados (`cards.derbyMult`). Altitude: Etapa 5.
+`fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase = 0.05` (ADR-0011, opção A, aceita pelo CEO; faixa 0 a 0,08: mudar dentro da faixa é ajuste de parâmetro, fora dela é ADR). Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os cartões ficam ×1,2 para os dois lados (`cards.derbyMult`). Altitude: Etapa 5.
 
 ## Cansaço
 
@@ -273,27 +273,29 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 
 ## Parâmetros (`app/src/params/match.json`)
 
-| Parâmetro                    | Valor inicial                        | Faixa válida | Por quê                                                    |
-| ---------------------------- | ------------------------------------ | ------------ | ---------------------------------------------------------- |
-| `match.baseChance`           | 0,090                                | 0,03–0,20    | cerca de 8,6 oportunidades por time em jogo equilibrado    |
-| `match.kChance`              | 0,14                                 | 0,05–0,40    | 20 pontos de diferença → 65% de vitória (protótipo 66,9%)  |
-| `match.conversion`           | 0,15                                 | 0,05–0,30    | cerca de 1,3 gol por time em jogo equilibrado              |
-| `match.kFinish`              | 0,09                                 | 0,00–0,30    | finalizador e goleiro pesam, sem dominar                   |
-| `match.midWeight`            | 0,5                                  | 0,3–0,7      | meio e ataque pesam igual na criação, como no `PROJETO.md` |
-| `match.dayFormSd`            | 3                                    | 0–6          | dia bom e dia ruim; botão secundário da zebra              |
-| `match.homeBase`             | 0,05 (pendente CEO; 0 sem aprovação) | 0–0,08       | leva o mandante a 47% de vitórias                          |
-| `match.missingPlayerPenalty` | 0,07                                 | 0,03–0,12    | um a menos pesa, sem decidir o jogo sozinho                |
-| `match.penaltyShare`         | 0,015                                | 0–0,05       | cerca de 0,25 pênalti por jogo                             |
-| `match.freeKickShare`        | 0,06                                 | 0–0,15       | falta perigosa de vez em quando                            |
-| `match.assistShare`          | 0,70                                 | 0–1          | maioria dos gols com assistência                           |
-| `fatigue.drainPerMinute`     | 0,30                                 | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
-| `fatigue.recoveryPerDay`     | 7                                    | 3–15         | 3 dias não bastam para voltar inteiro                      |
-| `injury.basePerMinute`       | 0,00012                              | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
-| `cards.yellowPerMinute`      | 0,0020                               | 0–0,005      | cerca de 4 amarelos por jogo                               |
-| `cards.redPerMinute`         | 0,00003                              | 0–0,0002     | cerca de 0,18 vermelho por jogo somando segundo amarelo    |
-| `cards.derbyMult`            | 1,2                                  | 1–1,5        | clássico é mais quente                                     |
+**Organização do arquivo.** Cansaço, lesões e cartões são grupos dentro de `match.json`: `fatigue.*`, `injury.*` e `cards.*` deste documento são, no arquivo e no código, `match.fatigue.*`, `match.injury.*` e `match.cards.*` (ex.: `match.fatigue.drainPerMinute`, `match.cards.derbyMult`). No texto, a forma curta vale como apelido da completa.
 
-**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5`, `benchSize = 7`, limite de suspensão (3 amarelos), `condMult` e `moraleMult`.
+| Parâmetro                    | Valor inicial            | Faixa válida | Por quê                                                    |
+| ---------------------------- | ------------------------ | ------------ | ---------------------------------------------------------- |
+| `match.baseChance`           | 0,090                    | 0,03–0,20    | cerca de 8,6 oportunidades por time em jogo equilibrado    |
+| `match.kChance`              | 0,14                     | 0,05–0,40    | 20 pontos de diferença → 65% de vitória (protótipo 66,9%)  |
+| `match.conversion`           | 0,15                     | 0,05–0,30    | cerca de 1,3 gol por time em jogo equilibrado              |
+| `match.kFinish`              | 0,09                     | 0,00–0,30    | finalizador e goleiro pesam, sem dominar                   |
+| `match.midWeight`            | 0,5                      | 0,3–0,7      | meio e ataque pesam igual na criação, como no `PROJETO.md` |
+| `match.dayFormSd`            | 3                        | 0–6          | dia bom e dia ruim; botão secundário da zebra              |
+| `match.homeBase`             | 0,05 (ADR-0011, opção A) | 0–0,08       | leva o mandante a 47% de vitórias                          |
+| `match.missingPlayerPenalty` | 0,07                     | 0,03–0,12    | um a menos pesa, sem decidir o jogo sozinho                |
+| `match.penaltyShare`         | 0,015                    | 0–0,05       | cerca de 0,25 pênalti por jogo                             |
+| `match.freeKickShare`        | 0,06                     | 0–0,15       | falta perigosa de vez em quando                            |
+| `match.assistShare`          | 0,70                     | 0–1          | maioria dos gols com assistência                           |
+| `fatigue.drainPerMinute`     | 0,30                     | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
+| `fatigue.recoveryPerDay`     | 7                        | 3–15         | 3 dias não bastam para voltar inteiro                      |
+| `injury.basePerMinute`       | 0,00012                  | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
+| `cards.yellowPerMinute`      | 0,0020                   | 0–0,005      | cerca de 4 amarelos por jogo                               |
+| `cards.redPerMinute`         | 0,00003                  | 0–0,0002     | cerca de 0,18 vermelho por jogo somando segundo amarelo    |
+| `cards.derbyMult`            | 1,2                      | 1–1,5        | clássico é mais quente                                     |
+
+**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult` e `moraleMult`.
 
 ## Pedido ao `developer` (critérios de aceite)
 
