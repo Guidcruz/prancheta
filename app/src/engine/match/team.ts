@@ -25,8 +25,8 @@ import type {
   Pressure,
   Side,
 } from '../types.ts';
-import { goalProbability } from './rules.ts';
-import type { TeamInput } from './types.ts';
+import { FREE_KICK_GOAL_MULT, SUSPENSION, goalProbability, penaltyProbability } from './rules.ts';
+import type { HalftimeTalk, TeamInput } from './types.ts';
 
 /*
  * A team on the pitch during a match: who is in each slot, their energy and what they did. The
@@ -43,7 +43,10 @@ export interface Appearance {
   /** Attributes the match reads, through `attributeOf` ("Atributo ausente"). */
   readonly finishing: number;
   readonly passing: number;
+  readonly technique: number;
   readonly physical: number;
+  /** Accumulated yellows before the match (`Player.yellowCount`, corrected to 0..2). */
+  readonly yellowCount: number;
   /** Regulation minutes on the pitch. */
   minutes: number;
   goals: number;
@@ -52,8 +55,13 @@ export interface Appearance {
   saves: number;
   /** Goals conceded while in goal or in a defence slot. */
   conceded: number;
+  /** Yellows of this match: 0 or 1 (a second yellow is a red with reason `secondYellow`). */
   yellows: number;
   reds: number;
+  /** Why he was sent off, when he was. */
+  redReason?: 'direct' | 'secondYellow';
+  /** False once he left the pitch (red card or injury); he never comes back. */
+  onPitch: boolean;
 }
 
 /** One of the 11 slots of the formation; `app` is undefined when the slot is empty. */
@@ -77,6 +85,8 @@ export interface TeamState {
   readonly slots: Slot[];
   /** Scratch list of the 11 effective ratings, reused every minute. */
   readonly ratings: (number | undefined)[];
+  /** Scratch list of who is in each slot when the cards and injuries step begins. */
+  readonly order: (Appearance | undefined)[];
   /** Everyone who took the pitch, in order of entry (starters by slot first). */
   readonly appearances: Appearance[];
   /** The AI profile; an unknown one plays as `traditional` (partida.md, "Casos de borda"). */
@@ -92,6 +102,8 @@ export interface TeamState {
   dayForm: number;
   /** `halftimeBoost(t)` of `T(t)`: 0 in the first half. */
   halftimeBoost: number;
+  /** The half-time talk, once it was given (the second half of "Acalmar" has fewer yellows). */
+  talk: HalftimeTalk | undefined;
   goals: number;
   shots: number;
   onTarget: number;
@@ -135,13 +147,24 @@ function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appe
     });
     energy = clamp(energy, 0, 100);
   }
+  let yellowCount = player.yellowCount;
+  const maxCount = SUSPENSION.yellowLimit - 1;
+  if (!(Number.isInteger(yellowCount) && inRange(yellowCount, 0, maxCount))) {
+    warnings.push({
+      code: 'player-invalid-yellow-count',
+      detail: { side, player: player.id, yellowCount: String(yellowCount) },
+    });
+    yellowCount = clamp(Math.floor(yellowCount), 0, maxCount);
+  }
   return {
     player,
     side,
     energy,
     finishing: attributeOf(player, 'finishing'),
     passing: attributeOf(player, 'passing'),
+    technique: attributeOf(player, 'technique'),
     physical: attributeOf(player, 'physical'),
+    yellowCount,
     minutes: 0,
     goals: 0,
     assists: 0,
@@ -149,7 +172,46 @@ function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appe
     conceded: 0,
     yellows: 0,
     reds: 0,
+    onPitch: true,
   };
+}
+
+/** Injured or suspended: cannot play this match (jogadores.md, "Estados que mudam"). */
+function unavailable(player: Player): boolean {
+  return player.injuryRounds > 0 || player.suspendedGames > 0;
+}
+
+/**
+ * Selection value of a player for a slot (ia-clubes.md, "Escalação"):
+ * `overall × fit × (0.80 + 0.20 × condition / 100)`.
+ */
+function selectionValue(player: Player, slot: Position): number {
+  return player.overall * fit(player.position, slot) * conditionMultiplier(player.condition);
+}
+
+/**
+ * The best available bench player for `slot` (partida.md, "Casos de borda": a suspended or
+ * injured starter is replaced by the best available reserve): the highest selection value; ties
+ * by higher overall, then younger, then lower ID (ia-clubes.md, "Escalação").
+ */
+function bestReserve(bench: readonly Player[], slot: Position): Player | undefined {
+  let best: Player | undefined;
+  let bestValue = -1;
+  for (const player of bench) {
+    const value = selectionValue(player, slot);
+    const better =
+      best === undefined ||
+      value > bestValue ||
+      (value === bestValue &&
+        (player.overall > best.overall ||
+          (player.overall === best.overall &&
+            (player.age < best.age || (player.age === best.age && player.id < best.id)))));
+    if (better) {
+      best = player;
+      bestValue = value;
+    }
+  }
+  return best;
 }
 
 /** Puts `app` in `slot` (or empties it) and refreshes the cached part of its rating. */
@@ -166,11 +228,14 @@ export function occupy(slot: Slot, app: Appearance | undefined): void {
 /**
  * The team at kick-off, from its sheet. Never throws: a sheet that cannot be played as given is
  * played as well as possible, with a warning for each fix (an invalid sheet only reaches the
- * match through a bug or a damaged save; replacing injured or suspended starters is T-010):
+ * match through a bug or a damaged save):
  * - unknown formation → `4-4-2`; unknown posture → `balanced`; unknown pressure → `medium`;
  *   unknown profile → `traditional` (one warning per side for each);
  * - fans or a player's condition that is NaN or outside 0..100 → clipped (NaN to 0);
  * - a starter who is not in the squad, a repeated starter or a missing one → empty slot;
+ * - an injured or suspended starter → the best available bench player for his slot
+ *   (`bestReserve`), in slot order; without one, an empty slot;
+ * - a player's `yellowCount` outside 0..2 or not an integer → clipped;
  * - an empty goalkeeper slot → the outfield player with the highest `physical` goes in goal
  *   (`fillEmptyGoal`) and his slot is the empty one.
  */
@@ -232,6 +297,29 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     used.add(id);
     return player;
   });
+  // Injured or suspended starters: the best available reserve takes the slot.
+  const bench: Player[] = [];
+  for (const id of lineup.bench) {
+    const player = byId.get(id);
+    if (player === undefined || used.has(id) || unavailable(player)) continue;
+    if (bench.some((p) => p.id === id)) continue;
+    bench.push(player);
+  }
+  for (let i = 0; i < occupants.length; i++) {
+    const player = occupants[i];
+    if (player === undefined || !unavailable(player)) continue;
+    const reserve = bestReserve(bench, positions[i]!);
+    warnings.push({
+      code: 'lineup-unavailable-player',
+      detail: {
+        side,
+        player: player.id,
+        ...(reserve === undefined ? {} : { replacement: reserve.id }),
+      },
+    });
+    occupants[i] = reserve;
+    if (reserve !== undefined) bench.splice(bench.indexOf(reserve), 1);
+  }
   const filled = fillEmptyGoal(occupants);
   if (filled.vacated !== undefined) {
     const keeper = filled.slots[GOALKEEPER_SLOT]!;
@@ -256,12 +344,14 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     tactic: { posture, pressure },
     slots,
     ratings: new Array<number | undefined>(slots.length).fill(undefined),
+    order: new Array<Appearance | undefined>(slots.length).fill(undefined),
     appearances,
     profile,
     fans,
     home: 0,
     dayForm: 0,
     halftimeBoost: 0,
+    talk: undefined,
     goals: 0,
     shots: 0,
     onTarget: 0,
@@ -319,4 +409,124 @@ export function openPlayGoalProbability(
     conditionMultiplier(shooter.energy) *
     (1 + team.home);
   return goalProbability(shot, theirs.goalkeeper * (1 + opponent.home), match);
+}
+
+/** Players on the pitch now. */
+export function playersOnPitch(team: TeamState): number {
+  let count = 0;
+  for (const slot of team.slots) if (slot.app !== undefined) count += 1;
+  return count;
+}
+
+/**
+ * Takes the player in slot `index` off the pitch for good (red card or injury; there are no
+ * substitutions until T-012): his slot stays empty ("Vaga vazia"). When it is the goal, the
+ * outfield player with the highest `physical` goes in goal and **his** slot is the empty one
+ * (partida.md, "Casos de borda": goalkeeper sent off or injured without a substitution).
+ */
+export function leavePitch(team: TeamState, index: number): void {
+  const slot = team.slots[index]!;
+  if (slot.app !== undefined) slot.app.onPitch = false;
+  occupy(slot, undefined);
+  if (index !== GOALKEEPER_SLOT) return;
+  const filled = fillEmptyGoal(team.slots.map((s) => s.app?.player));
+  if (filled.vacated === undefined) return;
+  const from = team.slots[filled.vacated]!;
+  const keeper = from.app;
+  occupy(from, undefined);
+  occupy(team.slots[GOALKEEPER_SLOT]!, keeper);
+}
+
+/**
+ * Who takes a set piece (partida.md, "Capitão e cobradores"): the first of the coach's ordered
+ * list who is on the pitch; with no list, or nobody of it on the pitch, the player on the pitch
+ * with the highest `attribute` (`finishing` for penalties, `technique` for free kicks); ties keep
+ * the first in slot order. Undefined only with nobody on the pitch.
+ */
+export function setPieceTaker(
+  team: TeamState,
+  list: readonly string[],
+  attribute: 'finishing' | 'technique',
+): number | undefined {
+  for (const id of list) {
+    const index = team.slots.findIndex((s) => s.app?.player.id === id);
+    if (index >= 0) return index;
+  }
+  let best: number | undefined;
+  let bestValue = -1;
+  team.slots.forEach((slot, i) => {
+    if (slot.app !== undefined && slot.app[attribute] > bestValue) {
+      best = i;
+      bestValue = slot.app[attribute];
+    }
+  });
+  return best;
+}
+
+/**
+ * The captain on the pitch now (partida.md, "Capitão e cobradores"): the first of the coach's
+ * list who is on the pitch; otherwise the leader on the pitch (the one with the highest overall,
+ * as in ia-clubes.md, "Escalação"), otherwise the oldest; ties keep the first in slot order.
+ */
+export function captainOnPitch(team: TeamState): Appearance | undefined {
+  for (const id of team.input.sheet.lineup.captains) {
+    const slot = team.slots.find((s) => s.app?.player.id === id);
+    if (slot !== undefined) return slot.app;
+  }
+  let leader: Appearance | undefined;
+  let oldest: Appearance | undefined;
+  for (const { app } of team.slots) {
+    if (app === undefined) continue;
+    if (
+      app.player.trait === 'leader' &&
+      (leader === undefined || app.player.overall > leader.player.overall)
+    ) {
+      leader = app;
+    }
+    if (oldest === undefined || app.player.age > oldest.player.age) oldest = app;
+  }
+  return leader ?? oldest;
+}
+
+/**
+ * `pGoal` of a penalty taken by the player in `slot` of `team` (partida.md, table "Tipo" and
+ * "Mando na finalização"): `clamp(0.78 + 0.004 × (finishing × (1 + home(team)) − gkEff × (1 +
+ * home(opponent))), 0.60, 0.92)`, with the taker's own `finishing` (no fit, morale nor energy:
+ * the formula reads the attribute) and the eff of the opponent's goalkeeper.
+ */
+export function penaltyGoalProbability(
+  team: TeamState,
+  slot: Slot,
+  opponent: TeamState,
+  theirs: Pick<TeamStrengths, 'goalkeeper'>,
+): number {
+  const taker = slot.app!;
+  return penaltyProbability(
+    taker.finishing * (1 + team.home),
+    theirs.goalkeeper * (1 + opponent.home),
+  );
+}
+
+/**
+ * `pGoal` of a direct free kick taken by the player in `slot` (partida.md, table "Tipo"): the
+ * open-play `pGoal` with `technique` in place of `finishing`, home factor included and clamped,
+ * then `× 0.45`.
+ */
+export function freeKickGoalProbability(
+  team: TeamState,
+  slot: Slot,
+  opponent: TeamState,
+  theirs: Pick<TeamStrengths, 'goalkeeper'>,
+  match: Pick<MatchParams, 'conversion' | 'kFinish'>,
+): number {
+  const taker = slot.app!;
+  const shot =
+    taker.technique *
+    fit(taker.player.position, slot.position) *
+    moraleMultiplier(taker.player.morale) *
+    conditionMultiplier(taker.energy) *
+    (1 + team.home);
+  return (
+    goalProbability(shot, theirs.goalkeeper * (1 + opponent.home), match) * FREE_KICK_GOAL_MULT
+  );
 }

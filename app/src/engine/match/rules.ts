@@ -1,12 +1,13 @@
 import { clamp, exp } from '../math.ts';
 import type { FansParams, MatchParams } from '../params.ts';
-import type { AiProfile, Position, Pressure } from '../types.ts';
-import type { HalftimeTalk, MissOutcome } from './types.ts';
+import type { AiProfile, Position, Pressure, Side, Trait } from '../types.ts';
+import type { HalftimeTalk, InjurySeverity, MissOutcome } from './types.ts';
 
 /*
  * Rule constants and small formulas of the match (docs/design/partida.md, "Chance de oportunidade
- * e finalização", "Cansaço", "Acréscimos", "Estatísticas e notas", "Conversa no intervalo",
- * "Marcadores do resultado"; docs/design/torcida.md, "Público"). The tables are constants of
+ * e finalização", "Cansaço", "Lesões", "Cartões e suspensão", "Acréscimos", "Estatísticas e
+ * notas", "Conversa no intervalo", "Marcadores do resultado", "Casos de borda";
+ * docs/design/torcida.md, "Público"). The tables are constants of
  * partida.md ("Constantes"), not /balance knobs; the knobs come in `MatchParams`.
  */
 
@@ -51,6 +52,11 @@ export const MISS_OUTCOMES: readonly { readonly outcome: MissOutcome; readonly s
   { outcome: 'wide', share: 0.45 },
 ];
 
+/** Penalty: `clamp(0.78 + 0.004 × (finishing − gkEff), 0.60, 0.92)`. */
+export const PENALTY = { base: 0.78, perPoint: 0.004, min: 0.6, max: 0.92 } as const;
+/** Direct free kick: `pGoal` (with `technique` in place of `finishing`) times this. */
+export const FREE_KICK_GOAL_MULT = 0.45;
+
 /** `pGoal` from which a missed chance is a big one (importance 2). */
 export const BIG_CHANCE_P_GOAL = 0.25;
 
@@ -62,6 +68,59 @@ export const PRESSURE_DRAIN: { readonly [P in Pressure]: number } = {
 };
 /** The player in goal spends this share of an outfield player's drain. */
 export const GOALKEEPER_DRAIN_SHARE = 0.3;
+
+/** Card multiplier of each pressure (partida.md, "Táticas"). */
+export const PRESSURE_CARDS: { readonly [P in Pressure]: number } = {
+  low: 0.7,
+  medium: 1.0,
+  high: 1.4,
+};
+/** Card multiplier of the position of the slot the player is in (partida.md, "Cartões"). */
+export const CARD_POSITION_MULT: { readonly [P in Position]: number } = {
+  GK: 0.2,
+  CB: 1.3,
+  FB: 1.1,
+  DM: 1.3,
+  AM: 0.9,
+  ST: 0.8,
+};
+/**
+ * The other card factors (partida.md, "Cartões e suspensão" and "Conversa no intervalo"):
+ * - `hothead`: `traitMult` of the temperamental trait (1 for the others);
+ * - `booked`: a player who already has a yellow ("pendurado") gets the next one at half the rate;
+ * - `calm`: yellows of a side that heard "Acalmar" at half time, in the second half.
+ */
+export const CARD_FACTORS = { hothead: 1.5, booked: 0.5, calm: 0.75 } as const;
+/**
+ * Suspension in 1a: the 3rd accumulated yellow suspends for 1 game and resets the counter; a red
+ * suspends for 1 game. The two yellows of a second-yellow red never enter the accumulation.
+ */
+export const SUSPENSION = { yellowLimit: 3, yellowGames: 1, redGames: 1 } as const;
+
+/** `pInjury = injury.basePerMinute × (1 + fatigueWeight × (1 − energy / 100))`. */
+export const INJURY_FATIGUE_WEIGHT = 2;
+/** Injury severities, in the order of the cumulative draw, with the rounds out (inclusive). */
+export const INJURY_SEVERITIES: readonly {
+  readonly severity: InjurySeverity;
+  readonly share: number;
+  readonly minRounds: number;
+  readonly maxRounds: number;
+}[] = [
+  { severity: 'light', share: 0.6, minRounds: 1, maxRounds: 1 },
+  { severity: 'medium', share: 0.25, minRounds: 2, maxRounds: 3 },
+  { severity: 'serious', share: 0.12, minRounds: 4, maxRounds: 8 },
+  { severity: 'severe', share: 0.03, minRounds: 10, maxRounds: 20 },
+];
+
+/**
+ * Fewer players than this on the pitch ends the match (partida.md, "Casos de borda"): the other
+ * side wins {@link ABANDONED_SCORE}×0, or by the score of the moment if it was winning by more.
+ */
+export const MIN_PLAYERS_ON_PITCH = 7;
+export const ABANDONED_SCORE = 3;
+
+/** A leader captain multiplies the positive effect of the half-time talk by this. */
+export const LEADER_CAPTAIN_TALK_MULT = 2;
 
 /** Effect of the half-time talk on the second half (`halftimeBoost`), by the half-time score. */
 export const HALFTIME_TALK_EFFECTS: {
@@ -164,6 +223,94 @@ export function goalProbability(
 }
 
 /**
+ * `pGoal` of a penalty: `clamp(0.78 + 0.004 × (finishing − gkEff), 0.60, 0.92)`. The caller puts
+ * the home factor in both sides first ("Mando na finalização"): finishing 78 against 66 gives
+ * 0.861 for the home taker (home 0.106), 0.800 for the away one and 0.828 on neutral ground.
+ */
+export function penaltyProbability(finishing: number, goalkeeper: number): number {
+  return clamp(
+    PENALTY.base + PENALTY.perPoint * (finishing - goalkeeper),
+    PENALTY.min,
+    PENALTY.max,
+  );
+}
+
+/** The per-minute card rates of a side, before the player's own factors. */
+export interface SideCardRates {
+  /** `cards.yellowPerMinute × pressure.cards × (derby ? cards.derbyMult : 1) × (calm ? 0.75 : 1)`. */
+  readonly yellow: number;
+  /** `cards.redPerMinute × pressure.cards`. */
+  readonly red: number;
+}
+
+/**
+ * Card rates of a side in a minute (partida.md, "Cartões e suspensão"): its pressure, the derby
+ * (yellows only, as in the formula) and, in the second half of a side that heard "Acalmar",
+ * yellows × 0.75. Computed once per side and minute.
+ */
+export function sideCardRates(
+  pressure: Pressure,
+  derby: boolean,
+  calm: boolean,
+  match: Pick<MatchParams, 'cards'>,
+): SideCardRates {
+  const p = PRESSURE_CARDS[pressure];
+  return {
+    yellow:
+      match.cards.yellowPerMinute *
+      p *
+      (derby ? match.cards.derbyMult : 1) *
+      (calm ? CARD_FACTORS.calm : 1),
+    red: match.cards.redPerMinute * p,
+  };
+}
+
+/** The highest `positionMult × traitMult` of any player (a hothead centre-back or midfielder). */
+export const MAX_PLAYER_CARD_MULT =
+  Math.max(...Object.values(CARD_POSITION_MULT)) * CARD_FACTORS.hothead;
+
+/** `positionMult × traitMult` of a player: the position of his slot, 1.5 for a hothead. */
+export function playerCardMult(position: Position, trait: Trait): number {
+  return CARD_POSITION_MULT[position] * (trait === 'hothead' ? CARD_FACTORS.hothead : 1);
+}
+
+/**
+ * Yellow card in one minute: `pYellow = side yellow rate × positionMult × traitMult × (already
+ * booked ? 0.5 : 1)`, clamped to 0..1 (a second yellow is a red).
+ */
+export function yellowProbability(rates: SideCardRates, mult: number, booked: boolean): number {
+  return clamp(rates.yellow * mult * (booked ? CARD_FACTORS.booked : 1), 0, 1);
+}
+
+/**
+ * Direct red card in one minute: `pRed = side red rate × positionMult × traitMult`, clamped to
+ * 0..1 (the formula has no derby nor booked factor).
+ */
+export function redProbability(rates: SideCardRates, mult: number): number {
+  return clamp(rates.red * mult, 0, 1);
+}
+
+/**
+ * Injury in one minute (partida.md, "Lesões"): `injury.basePerMinute × (1 + 2 × (1 − energy /
+ * 100))`, with the energy of the moment, clamped to 0..1. Energy 60 → 1.8 times the risk of 100.
+ */
+export function injuryProbability(energy: number, match: Pick<MatchParams, 'injury'>): number {
+  const p = match.injury.basePerMinute * (1 + INJURY_FATIGUE_WEIGHT * (1 - energy / 100));
+  return clamp(p, 0, 1);
+}
+
+/**
+ * Final score of a match abandoned because `short` fell below {@link MIN_PLAYERS_ON_PITCH}: the
+ * other side wins 3×0, or keeps the score of the moment if it was already winning by more than 3.
+ */
+export function abandonedScore(score: readonly [number, number], short: Side): [number, number] {
+  const [home, away] = score;
+  const margin = short === 'home' ? away - home : home - away;
+  if (margin > ABANDONED_SCORE) return [home, away];
+  return short === 'home' ? [0, ABANDONED_SCORE] : [ABANDONED_SCORE, 0];
+}
+
+/**
  * Energy a player loses in one minute (partida.md, "Cansaço"):
  * `fatigue.drainPerMinute × pressure.drain × (1.2 − 0.4 × physical / 100)`, times
  * {@link GOALKEEPER_DRAIN_SHARE} for the player in goal.
@@ -187,10 +334,18 @@ export function scoreState(own: number, other: number): 'losing' | 'drawing' | '
 
 /**
  * `halftimeBoost` of a side for the second half: the effect of its talk at its half-time score
- * (partida.md, "Conversa no intervalo"). The leader captain's double positive effect is T-010.
+ * (partida.md, "Conversa no intervalo"). With a captain who has the leader trait, a positive
+ * effect counts {@link LEADER_CAPTAIN_TALK_MULT} times ("Capitão e cobradores"); a negative one
+ * does not change.
  */
-export function halftimeBoost(talk: HalftimeTalk, own: number, other: number): number {
-  return HALFTIME_TALK_EFFECTS[talk][scoreState(own, other)];
+export function halftimeBoost(
+  talk: HalftimeTalk,
+  own: number,
+  other: number,
+  leaderCaptain = false,
+): number {
+  const effect = HALFTIME_TALK_EFFECTS[talk][scoreState(own, other)];
+  return leaderCaptain && effect > 0 ? effect * LEADER_CAPTAIN_TALK_MULT : effect;
 }
 
 /**

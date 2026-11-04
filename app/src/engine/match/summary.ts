@@ -1,13 +1,14 @@
 import { clamp } from '../math.ts';
 import type { Rng } from '../rng.ts';
 import type { PlayerId, Side } from '../types.ts';
-import { MARKERS, RATING } from './rules.ts';
+import { MARKERS, RATING, SUSPENSION } from './rules.ts';
 import type { Appearance, TeamState } from './team.ts';
 import type { MatchMarker } from './types.ts';
 
 /*
- * Full-time summary of a match (docs/design/partida.md, "Estatísticas e notas" and "Marcadores do
- * resultado"): player ratings, best on the pitch and result markers.
+ * Full-time summary of a match (docs/design/partida.md, "Estatísticas e notas", "Marcadores do
+ * resultado" and "Cartões e suspensão"): player ratings, best on the pitch, result markers and
+ * what the cards mean for the next games.
  */
 
 /** A goal as the markers read it. */
@@ -191,4 +192,39 @@ export function resultMarkers(
     }
   }
   return markers;
+}
+
+/** What the cards of a match mean for the club's next games (MatchResult). */
+export interface CardConsequences {
+  readonly newSuspensions: { readonly player: PlayerId; readonly games: number }[];
+  readonly yellowCounts: Record<PlayerId, number>;
+}
+
+/**
+ * Suspensions and accumulated yellows after the match (partida.md, "Cartões e suspensão"; 1a):
+ * - a yellow counts toward the accumulation unless the player was sent off with a second yellow
+ *   (the two yellows of that red never count);
+ * - reaching 3 accumulated yellows suspends for 1 game and resets the counter to 0;
+ * - a red (direct or second yellow) suspends for 1 game;
+ * - a player who reaches 3 yellows and is also sent off with a direct red gets both games.
+ * Every player who took the pitch gets his counter, home first, in order of entry.
+ */
+export function cardConsequences(teams: readonly [TeamState, TeamState]): CardConsequences {
+  const newSuspensions: { player: PlayerId; games: number }[] = [];
+  const yellowCounts: Record<PlayerId, number> = {};
+  for (const team of teams) {
+    for (const app of team.appearances) {
+      const counts = app.yellows > 0 && app.redReason !== 'secondYellow' ? 1 : 0;
+      let yellowCount = app.yellowCount + counts;
+      let games = 0;
+      if (yellowCount >= SUSPENSION.yellowLimit) {
+        games += SUSPENSION.yellowGames;
+        yellowCount = 0;
+      }
+      if (app.reds > 0) games += SUSPENSION.redGames;
+      yellowCounts[app.player.id] = yellowCount;
+      if (games > 0) newSuspensions.push({ player: app.player.id, games });
+    }
+  }
+  return { newSuspensions, yellowCounts };
 }

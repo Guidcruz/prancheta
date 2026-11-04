@@ -13,7 +13,14 @@ import {
 } from '../testing/match.ts';
 import { testParams } from '../testing/params.ts';
 import type { Side } from '../types.ts';
-import { AI_HALFTIME_TALK, GOAL_BOUNDS, RATING, STOPPAGE, scoreState } from './rules.ts';
+import {
+  AI_HALFTIME_TALK,
+  FREE_KICK_GOAL_MULT,
+  GOAL_BOUNDS,
+  RATING,
+  STOPPAGE,
+  scoreState,
+} from './rules.ts';
 import { simulateMatch } from './simulate.ts';
 import type { MatchEvent, MatchInput, MatchResult, TeamInput } from './types.ts';
 
@@ -39,7 +46,7 @@ type Of<T extends MatchEvent['type']> = Extract<MatchEvent, { type: T }>;
 const ofType = <T extends MatchEvent['type']>(result: MatchResult, type: T): Of<T>[] =>
   result.events.filter((e): e is Of<T> => e.type === type);
 
-/** Starters of a side, as given in the sheet (there are no substitutions in T-009). */
+/** Starters of a side, as given in the sheet (there are no substitutions until T-012). */
 const startersOf = (input: MatchInput, side: Side) => new Set(input[side].sheet.lineup.starters);
 
 describe('simulateMatch: determinism (US-008)', () => {
@@ -135,32 +142,61 @@ describe('simulateMatch: structure of the match (US-008)', () => {
         const onPitch = startersOf(input, side);
         const chances = ofType(result, 'chance').filter((e) => e.side === side);
         const goals = ofType(result, 'goal').filter((e) => e.side === side);
+        const missed = ofType(result, 'penaltyMissed').filter((e) => e.side === side);
         const stats = result.stats[side];
-        expect(stats.shots).toBe(chances.length + goals.length);
-        expect(stats.onTarget).toBe(
-          goals.length + chances.filter((c) => c.outcome === 'saved').length,
-        );
+        expect(stats.shots).toBe(chances.length + goals.length + missed.length);
+        const saved = [...chances, ...missed].filter((c) => c.outcome === 'saved').length;
+        expect(stats.onTarget).toBe(goals.length + saved);
         expect(result.score[side === 'home' ? 0 : 1]).toBe(goals.length);
         for (const chance of chances) {
           expect(onPitch.has(chance.shooter)).toBe(true);
           expect(['saved', 'post', 'wide']).toContain(chance.outcome);
-          expect(chance.kind).toBe('open');
-          expect(chance.pGoal).toBeGreaterThanOrEqual(GOAL_BOUNDS.min);
-          expect(chance.pGoal).toBeLessThanOrEqual(GOAL_BOUNDS.max);
+          expect(['open', 'freeKick']).toContain(chance.kind);
+          const scale = chance.kind === 'freeKick' ? FREE_KICK_GOAL_MULT : 1;
+          expect(chance.pGoal).toBeGreaterThanOrEqual(GOAL_BOUNDS.min * scale);
+          expect(chance.pGoal).toBeLessThanOrEqual(GOAL_BOUNDS.max * scale);
           const big = chance.pGoal >= 0.25 || chance.outcome === 'post';
           expect(chance.importance).toBe(big ? 2 : 1);
         }
         for (const goal of goals) {
           expect(onPitch.has(goal.scorer)).toBe(true);
-          expect(goal.kind).toBe('open');
           expect(goal.importance).toBe(3);
           if (goal.assist !== undefined) {
+            expect(goal.kind).toBe('open');
             expect(onPitch.has(goal.assist)).toBe(true);
             expect(goal.assist).not.toBe(goal.scorer);
           }
         }
+        // Every penalty is awarded, then scored or missed by the same taker in the same minute.
+        const awarded = ofType(result, 'penaltyAwarded').filter((e) => e.side === side);
+        const scored = goals.filter((g) => g.kind === 'penalty');
+        expect(awarded).toHaveLength(scored.length + missed.length);
+        for (const penalty of awarded) {
+          const next = result.events[result.events.indexOf(penalty) + 1]!;
+          expect(next.minute).toBe(penalty.minute);
+          if (next.type === 'goal')
+            expect([next.kind, next.scorer]).toEqual(['penalty', penalty.taker]);
+          else expect(next).toMatchObject({ type: 'penaltyMissed', taker: penalty.taker });
+        }
       }
     }
+  });
+
+  it('has penalties and direct free kicks among the chances (match.penaltyShare, freeKickShare)', () => {
+    let chances = 0;
+    let penalties = 0;
+    let freeKicks = 0;
+    for (const { result } of results) {
+      for (const e of result.events) {
+        if (e.type === 'penaltyAwarded') penalties++;
+        if ((e.type === 'chance' || e.type === 'goal') && e.kind === 'freeKick') freeKicks++;
+      }
+      chances += result.stats.home.shots + result.stats.away.shots;
+    }
+    expect(penalties / chances).toBeGreaterThan(0.005);
+    expect(penalties / chances).toBeLessThan(0.03);
+    expect(freeKicks / chances).toBeGreaterThan(0.04);
+    expect(freeKicks / chances).toBeLessThan(0.08);
   });
 
   it('splits the misses into about 7% post, 48% saved and 45% wide', () => {
@@ -194,7 +230,9 @@ describe('simulateMatch: structure of the match (US-008)', () => {
   });
 
   it('gives assists in about 70% of the open-play goals (match.assistShare)', () => {
-    const goals = results.flatMap(({ result }) => ofType(result, 'goal'));
+    const goals = results
+      .flatMap(({ result }) => ofType(result, 'goal'))
+      .filter((g) => g.kind === 'open');
     const share = goals.filter((g) => g.assist !== undefined).length / goals.length;
     expect(goals.length).toBeGreaterThan(300);
     expect(share).toBeGreaterThan(0.62);
@@ -261,13 +299,21 @@ describe('simulateMatch: statistics, ratings and markers', () => {
     }
   });
 
-  it('rates the 22 starters, who played the 90 regulation minutes, between 3.0 and 10.0', () => {
+  it('rates the 22 starters, who played until they left or the 90 minutes, between 3.0 and 10.0', () => {
     const starters = [...startersOf(derbyInput, 'home'), ...startersOf(derbyInput, 'away')];
     for (const r of many) {
       expect(Object.keys(r.ratings).sort()).toEqual([...starters].sort());
+      const left = new Map<string, number>();
+      for (const e of r.events)
+        if (e.type === 'red' || e.type === 'injury') left.set(e.player, e.minute);
       for (const id of starters) {
-        expect(r.minutes[id]).toBe(90);
-        const rating = r.ratings[id]!;
+        expect(r.minutes[id]).toBe(left.get(id) ?? 90);
+        const rating = r.ratings[id];
+        expect(rating).toBeDefined();
+        if (rating === null || rating === undefined) {
+          expect(r.minutes[id]).toBeLessThan(RATING.minMinutes);
+          continue;
+        }
         expect(rating).toBeGreaterThanOrEqual(RATING.min);
         expect(rating).toBeLessThanOrEqual(RATING.max);
         expect(Math.round(rating * 10) / 10).toBe(rating);
@@ -313,18 +359,23 @@ describe('simulateMatch: statistics, ratings and markers', () => {
     }
   });
 
-  it('has no cards, injuries nor penalties yet (T-010)', () => {
+  it('counts the cards in the statistics and lists every injury in newInjuries (T-010)', () => {
+    let yellows = 0;
+    let injuries = 0;
     for (const r of many) {
-      expect(r.newInjuries).toEqual([]);
       for (const side of ['home', 'away'] as const) {
-        expect(r.stats[side].yellows).toBe(0);
-        expect(r.stats[side].reds).toBe(0);
+        expect(r.stats[side].yellows).toBe(
+          ofType(r, 'yellow').filter((e) => e.side === side).length,
+        );
+        expect(r.stats[side].reds).toBe(ofType(r, 'red').filter((e) => e.side === side).length);
+        yellows += r.stats[side].yellows;
       }
-      const types = new Set(r.events.map((e) => e.type));
-      for (const t of ['yellow', 'red', 'injury', 'penaltyAwarded', 'penaltyMissed'] as const) {
-        expect(types.has(t)).toBe(false);
-      }
+      const injured = ofType(r, 'injury');
+      injuries += injured.length;
+      expect(r.newInjuries.map((i) => i.player)).toEqual(injured.map((e) => e.player));
     }
+    expect(yellows / many.length).toBeGreaterThan(2);
+    expect(injuries).toBeGreaterThan(0);
   });
 
   it('marks the derby, the clean sheets, the thrashings, the hat-tricks and the debuts', () => {
@@ -638,6 +689,8 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
       'dayFormSd',
       'homeBase',
       'missingPlayerPenalty',
+      'penaltyShare',
+      'freeKickShare',
       'assistShare',
     ] as const;
     for (const edge of ['min', 'max'] as const) {
@@ -646,6 +699,12 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
       match.fatigue = {
         ...params.match.fatigue,
         drainPerMinute: ranges.fatigue.drainPerMinute[edge],
+      };
+      match.injury = { basePerMinute: ranges.injury.basePerMinute[edge] };
+      match.cards = {
+        yellowPerMinute: ranges.cards.yellowPerMinute[edge],
+        redPerMinute: ranges.cards.redPerMinute[edge],
+        derbyMult: ranges.cards.derbyMult[edge],
       };
       const edgeParams = { ...params, match } as unknown as GameParams;
       for (let seed = 0; seed < 30; seed++) {
