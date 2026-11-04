@@ -1,12 +1,11 @@
 import clubsData from '../../../app/src/data/clubs.serie-a.json';
+import type { ShieldClub } from '../../../app/src/lib/generators/shield';
 
 /** What the site needs of a fictitious club (build time only). */
-export interface SiteClub {
-  id: string;
+export interface SiteClub extends ShieldClub {
   shortName: string;
   city: string;
   state: string;
-  colors: [string, string];
   abbreviation?: string;
 }
 
@@ -22,6 +21,12 @@ export function clubsById(ids: string[]): SiteClub[] {
       state: c.state,
       colors: [c.colors[0] ?? '#777777', c.colors[1] ?? '#777777'],
       abbreviation: c.abbreviation,
+      size: c.size as ShieldClub['size'],
+      titles: { league: c.titles.league },
+      crestShape: c.crestShape as ShieldClub['crestShape'],
+      crestPattern: c.crestPattern as ShieldClub['crestPattern'],
+      crestBase: c.crestBase as ShieldClub['crestBase'],
+      crestSymbol: c.crestSymbol as ShieldClub['crestSymbol'],
     };
   });
 }

@@ -1,6 +1,5 @@
 ---
-// The only place of the site that draws a club shield. When the new shield generator
-// replaces lib/generators/shield.ts, swap the import and the call below; nothing else changes.
+// The only place of the site that draws a club shield (style A v5 generator of the game).
 import { shieldSpecFor, shieldSvg } from '../../../app/src/lib/generators/shield';
 import type { SiteClub } from '../lib/shields';
 interface Props {
@@ -12,10 +11,8 @@ interface Props {
 }
 const { club, size = 96, decorative = false } = Astro.props;
 // Generated at build time; no JavaScript reaches the browser.
-const svg = shieldSvg(
-  shieldSpecFor(club.id, club.colors[0], club.colors[1], club.abbreviation),
-  size,
-);
+// `instance` keeps gradient ids unique when the same club appears twice on one page.
+const svg = shieldSvg(shieldSpecFor(club), size, { instance: String(size) });
 ---
 
 <span

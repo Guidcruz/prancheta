@@ -67,7 +67,7 @@ function checkBlockedNames(
 
 /** The shield of the game for a club (lib/generators/shield.ts). */
 export function renderClubShield(club: ClubDef): string {
-  return shieldSvg(shieldSpecFor(club.id, club.colors[0], club.colors[1], club.abbreviation));
+  return shieldSvg(shieldSpecFor(club));
 }
 
 /** Every club must render its shield without error. On a valid list, index = position. */

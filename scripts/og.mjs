@@ -304,15 +304,11 @@ export async function generate({ outDir = resolve(root, 'site/public/og'), slugs
   const { config, share, tower, shield, rng, clubs } = await loadModules();
   mkdirSync(outDir, { recursive: true });
   const measure = (text, size) => measureWith(sharp, text, size, 800, FONT_FAMILY_800);
-  const inkHex = night('ink');
   const out = [];
   for (const entry of share.filter((e) => !slugs || slugs.includes(e.slug))) {
     const layout = await layoutTitle(entry.ogTitle, measure);
     const shields = pickClubs(clubs, entry.slug, rng.Rng, rng.seedFromString).map((c) =>
-      shield
-        .shieldSvg(shield.shieldSpecFor(c.id, c.colors[0], c.colors[1], c.abbreviation), 96)
-        .replaceAll('var(--ink)', inkHex)
-        .replaceAll('var(--font-display)', `'${FONT_FAMILY}'`),
+      shield.shieldSvg(shield.shieldSpecFor(c), 96),
     );
     const svg = buildSvg({ name: config.name, title: entry.ogTitle, layout, shields, tower });
     const png = await sharp(Buffer.from(svg))
