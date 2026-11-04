@@ -1,6 +1,6 @@
 # Perguntas frequentes
 
-> Status: **aguardando ok do CEO**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Respostas conforme `docs/PROJETO.md` (Privacidade, Monetização, Saves) e `docs/status.md`. Formato: acordeão, uma pergunta por item. Itens marcados com [revisar] dependem de decisão pendente do CEO.
+> Status: **aprovado pelo CEO em 2026-11-04**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Respostas conforme `docs/PROJETO.md` (Privacidade, Monetização, Saves) e `docs/status.md`. Formato: acordeão, uma pergunta por item. Campo novo de configuração: `config.links.discussions` (URL das Discussions do repositório); o developer deve criá-lo em `config/prancheta.config.ts` se não existir.
 
 ## Abertura
 
@@ -44,7 +44,7 @@ Não, e nunca vai dar. Sem caixa de sorteio, sem item aleatório pago, sem recom
 
 ### Como ajudo o projeto?
 
-Pela página [Apoiar](apoiar). O apoio é voluntário e, no futuro, poderá render itens de enfeite (como nome nos créditos), nunca vantagem em campo. Apoio com recompensas está **planejado (Etapa 6)**. [revisar] Se você é menor de idade, peça ajuda a um responsável.
+Pela página [Apoiar](apoiar). O apoio é voluntário e, no futuro, poderá render itens de enfeite (como nome nos créditos), nunca vantagem em campo. Apoio com recompensas está **planejado (Etapa 6)**. O jogo é grátis; apoiar é opcional.
 
 ## Dados e privacidade
 
@@ -62,7 +62,7 @@ Coletar o mínimo é a nossa forma de respeitar a lei. Os detalhes, em linguagem
 
 ### Crianças e adolescentes podem jogar?
 
-O jogo foi pensado para ser seguro para menores: sem caixa de sorteio, sem recompensa por tempo de uso, sem chat de texto livre. No online, só mensagens prontas e emojis, que dá para desligar, com apelidos filtrados e botão de denúncia. A meta é a classificação indicativa Livre. [revisar] Parte disso será conferida por advogado antes de qualquer cobrança.
+O jogo foi pensado para ser seguro para menores: sem caixa de sorteio, sem recompensa por tempo de uso, sem chat de texto livre. No online, só mensagens prontas e emojis, que dá para desligar, com apelidos filtrados e botão de denúncia. A meta é a classificação indicativa Livre.
 
 ### Perdi o código de recuperação. E agora?
 
@@ -102,8 +102,8 @@ Séries B a D, Copa do Brasil, mercado, finanças, clubes de outros países da A
 
 ### O nome {config.name} é definitivo?
 
-[revisar] Por enquanto é um nome provisório, até a conferência de marca. Se mudar, o site e o jogo mudam juntos.
+Por enquanto o nome é provisório, até a conferência de marca. Se mudar, o site e o jogo mudam juntos.
 
 ### Achei um erro ou tenho uma ideia. Para onde vou?
 
-[revisar] O canal de contato ainda não foi definido; será publicado na página de [Privacidade](privacidade) assim que existir.
+Abra um tópico nas [Discussões do projeto no GitHub]({config.links.discussions}). Lá cabem relatos de erro, ideias e perguntas.

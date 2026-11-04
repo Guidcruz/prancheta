@@ -1,6 +1,6 @@
 # Modos de jogo
 
-> Status: **aguardando ok do CEO**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Fonte: `docs/PROJETO.md` (Modo online, Ritmo, Saves). Nenhuma data prometida.
+> Status: **aprovado pelo CEO em 2026-11-04**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Fonte: `docs/PROJETO.md` (Modo online, Ritmo, Saves). Nenhuma data prometida.
 
 ## Abertura
 
@@ -60,7 +60,7 @@ Estado: **em desenvolvimento** (Etapa 1a, na carreira).
 
 ### Tempo real
 
-A temporada acompanha as datas do futebol brasileiro: estaduais no começo do ano, Brasileirão de abril a dezembro, copas nas semanas certas.
+A temporada acompanha as datas do futebol brasileiro: estaduais no começo do ano, a Série A de abril a dezembro, copas nas semanas certas.
 
 - No dia da rodada, você recebe o aviso, monta o time e joga. Nos outros dias, cuida do clube.
 - Perdeu o dia? Sem drama: a partida é jogada com a última escalação e o resultado espera por você.

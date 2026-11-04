@@ -1,6 +1,6 @@
 # Página inicial
 
-> Status: **aguardando ok do CEO**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome lido de `config/prancheta.config.ts`; `{config.slogan}` = slogan pt-BR. Estados dos recursos conforme `docs/status.md` e `docs/roadmap.md`. Estrutura e componentes: `docs/design/site.md`.
+> Status: **aprovado pelo CEO em 2026-11-04**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome lido de `config/prancheta.config.ts`; `{config.slogan}` = slogan pt-BR. Estados dos recursos conforme `docs/status.md` e `docs/roadmap.md`. Estrutura e componentes: `docs/design/site.md`.
 
 ## Topo (hero)
 
@@ -60,4 +60,4 @@ Quer ajudar o projeto a seguir de pé? Veja como [apoiar](apoiar).
 
 ## Rodapé
 
-Clubes, jogadores e patrocinadores do jogo são fictícios. Links: Privacidade, Apoiar, Roteiro, Devlog.
+O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e patrocinadores do jogo são fictícios. Links: Privacidade, Apoiar, Roteiro, Devlog.

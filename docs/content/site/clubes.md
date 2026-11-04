@@ -1,6 +1,6 @@
 # Clubes
 
-> Status: **aguardando ok do CEO**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Exemplos apenas do nosso lado, conforme `docs/content/lotes/2026-11-04-nomes-serie-a.md` e `...-estadios-serie-a.md` (aprovados). Não citar os clubes reais que inspiraram. A lista dos 20 só vai ao ar depois do ok do CEO e da conferência de marca.
+> Status: **aprovado pelo CEO em 2026-11-04**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Exemplos apenas do nosso lado, conforme `docs/content/lotes/2026-11-04-nomes-serie-a.md` e `...-estadios-serie-a.md` (aprovados). Não citar os clubes reais que inspiraram. Sem a lista dos 20 (decisão do CEO): só exemplos.
 
 ## Abertura
 

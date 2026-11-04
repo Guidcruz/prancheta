@@ -1,6 +1,6 @@
 # O jogo
 
-> Status: **aguardando ok do CEO**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Selos de estado: "disponível", "em desenvolvimento" ou "planejado (Etapa N)". Hoje nada além da versão zero está "disponível"; os itens da Etapa 1a estão "em desenvolvimento" (`docs/status.md`).
+> Status: **aprovado pelo CEO em 2026-11-04**. Autor: `tech-writer`. Só pt-BR. `{config.name}` = nome de `config/prancheta.config.ts`. Selos de estado: "disponível", "em desenvolvimento" ou "planejado (Etapa N)". Hoje nada além da versão zero está "disponível"; os itens da Etapa 1a estão "em desenvolvimento" (`docs/status.md`).
 
 ## Abertura
 
