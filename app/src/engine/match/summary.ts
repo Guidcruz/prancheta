@@ -1,13 +1,14 @@
 import { clamp } from '../math.ts';
 import type { Rng } from '../rng.ts';
 import type { PlayerId, Side } from '../types.ts';
-import { MARKERS, RATING } from './rules.ts';
+import { MARKERS, RATING, SUSPENSION } from './rules.ts';
 import type { Appearance, TeamState } from './team.ts';
 import type { MatchMarker } from './types.ts';
 
 /*
- * Full-time summary of a match (docs/design/partida.md, "Estatísticas e notas" and "Marcadores do
- * resultado"): player ratings, best on the pitch and result markers.
+ * Full-time summary of a match (docs/design/partida.md, "Estatísticas e notas", "Marcadores do
+ * resultado" and "Cartões e suspensão"): player ratings, best on the pitch, result markers and
+ * what the cards mean for the next games.
  */
 
 /** A goal as the markers read it. */
@@ -97,8 +98,15 @@ export function bestOnPitch(
 
 /** What the markers need besides the teams. */
 export interface MarkerContext {
+  /** The final score: the awarded one when the match was abandoned (`abandonedScore`). */
   readonly score: readonly [number, number];
+  /** The goals actually scored, in order. */
   readonly goals: readonly GoalRecord[];
+  /**
+   * The match ended with fewer than 7 on one side (partida.md, "Jogo encerrado"): no `goleada`,
+   * `virada` nor `golNoFim`. Absent = false.
+   */
+  readonly abandoned?: boolean;
   readonly derby: boolean;
   readonly neutral: boolean;
   /** Displayed strength of each kick-off XI (mean `overall × fit`). */
@@ -116,9 +124,13 @@ const sign = (n: number) => (n > 0 ? 1 : n < 0 ? -1 : 0);
  * - `golNoFim`: the last goal that changed the result (win, draw or loss) came at minute 85 or
  *   later, added time included; it names that goal;
  * - `hatTrick`: each player with 3 goals or more;
- * - `semSofrerGols`: each side that conceded nothing;
+ * - `semSofrerGols`: each side that conceded no real goal;
  * - `classico`: the clubs are rivals;
  * - `estreia`: each player in his first match for the club.
+ *
+ * An abandoned match (partida.md, "Jogo encerrado"): the awarded score decides the winner (so
+ * `zebra`), the real goals count as goals (`hatTrick`, `semSofrerGols`), and `goleada`, `virada`
+ * and `golNoFim` never come out: the story of that match is the abandonment.
  */
 export function resultMarkers(
   teams: readonly [TeamState, TeamState],
@@ -126,9 +138,14 @@ export function resultMarkers(
 ): MatchMarker[] {
   const markers: MatchMarker[] = [];
   const { score, goals } = context;
+  const abandoned = context.abandoned === true;
   const winner = winnerOf(score);
 
-  if (winner !== undefined && Math.abs(score[0] - score[1]) >= MARKERS.thrashingMargin) {
+  if (
+    !abandoned &&
+    winner !== undefined &&
+    Math.abs(score[0] - score[1]) >= MARKERS.thrashingMargin
+  ) {
     markers.push({ kind: 'goleada', side: winner });
   }
 
@@ -139,7 +156,7 @@ export function resultMarkers(
       diff += goal.side === 'home' ? 1 : -1;
       if ((winner === 'home' ? diff : -diff) < 0) behind = true;
     }
-    if (behind) markers.push({ kind: 'virada', side: winner });
+    if (behind && !abandoned) markers.push({ kind: 'virada', side: winner });
 
     const homePoints = (side: Side) =>
       side === 'home' && !context.neutral ? MARKERS.homePoints : 0;
@@ -156,7 +173,7 @@ export function resultMarkers(
     diff += goal.side === 'home' ? 1 : -1;
     if (sign(diff) !== before) decisive = goal;
   }
-  if (decisive !== undefined && decisive.minute >= MARKERS.lateGoalMinute) {
+  if (!abandoned && decisive !== undefined && decisive.minute >= MARKERS.lateGoalMinute) {
     markers.push({
       kind: 'golNoFim',
       side: decisive.side,
@@ -179,7 +196,7 @@ export function resultMarkers(
     }
   }
   for (const team of teams) {
-    const conceded = team.side === 'home' ? score[1] : score[0];
+    const conceded = goals.filter((g) => g.side !== team.side).length;
     if (conceded === 0) markers.push({ kind: 'semSofrerGols', side: team.side });
   }
   if (context.derby) markers.push({ kind: 'classico' });
@@ -191,4 +208,39 @@ export function resultMarkers(
     }
   }
   return markers;
+}
+
+/** What the cards of a match mean for the club's next games (MatchResult). */
+export interface CardConsequences {
+  readonly newSuspensions: { readonly player: PlayerId; readonly games: number }[];
+  readonly yellowCounts: Record<PlayerId, number>;
+}
+
+/**
+ * Suspensions and accumulated yellows after the match (partida.md, "Cartões e suspensão"; 1a):
+ * - a yellow counts toward the accumulation unless the player was sent off with a second yellow
+ *   (the two yellows of that red never count);
+ * - reaching 3 accumulated yellows suspends for 1 game and resets the counter to 0;
+ * - a red (direct or second yellow) suspends for 1 game;
+ * - a player who reaches 3 yellows and is also sent off with a direct red gets both games.
+ * Every player who took the pitch gets his counter, home first, in order of entry.
+ */
+export function cardConsequences(teams: readonly [TeamState, TeamState]): CardConsequences {
+  const newSuspensions: { player: PlayerId; games: number }[] = [];
+  const yellowCounts: Record<PlayerId, number> = {};
+  for (const team of teams) {
+    for (const app of team.appearances) {
+      const counts = app.yellows > 0 && app.redReason !== 'secondYellow' ? 1 : 0;
+      let yellowCount = app.yellowCount + counts;
+      let games = 0;
+      if (yellowCount >= SUSPENSION.yellowLimit) {
+        games += SUSPENSION.yellowGames;
+        yellowCount = 0;
+      }
+      if (app.reds > 0) games += SUSPENSION.redGames;
+      yellowCounts[app.player.id] = yellowCount;
+      if (games > 0) newSuspensions.push({ player: app.player.id, games });
+    }
+  }
+  return { newSuspensions, yellowCounts };
 }

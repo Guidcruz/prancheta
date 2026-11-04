@@ -11,4 +11,6 @@
 // 4: the initial squad starts with clubAppearances = 1 (only the youth at 0), and the match
 //    (T-009) applies the home advantage to the shot and the goalkeeper; new-game and match
 //    goldens changed.
-export const ENGINE_VERSION = 4;
+// 5: the match (T-010) draws the chance kind (penalties, direct free kicks), cards and injuries
+//    every minute, and ends a match with fewer than 7 on one side; the match goldens changed.
+export const ENGINE_VERSION = 5;

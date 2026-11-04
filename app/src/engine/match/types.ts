@@ -50,6 +50,7 @@ export interface MatchInput {
 export type ChanceKind = 'open' | 'freeKick' | 'penalty';
 export type MissOutcome = 'saved' | 'post' | 'wide';
 export type HalftimeTalk = 'motivate' | 'demand' | 'calm';
+export type InjurySeverity = 'light' | 'medium' | 'serious' | 'severe';
 
 /**
  * What happened, minute by minute. `minute` is the regulation minute (45 or 90 in added time,
@@ -67,7 +68,8 @@ export type MatchEvent = {
       readonly type: 'chance';
       readonly side: Side;
       readonly shooter: PlayerId;
-      readonly kind: ChanceKind;
+      /** Never `penalty`: a penalty is `penaltyAwarded`, then `goal` or `penaltyMissed`. */
+      readonly kind: Exclude<ChanceKind, 'penalty'>;
       readonly outcome: MissOutcome;
       readonly pGoal: number;
     }
@@ -102,7 +104,7 @@ export type MatchEvent = {
       readonly type: 'injury';
       readonly side: Side;
       readonly player: PlayerId;
-      readonly severity: 'light' | 'medium' | 'serious' | 'severe';
+      readonly severity: InjurySeverity;
     }
   | {
       readonly type: 'substitution';
@@ -179,7 +181,23 @@ export interface MatchResult {
   readonly minutes: Readonly<Record<PlayerId, number>>;
   /** Energy at the final whistle, for every player who took the pitch. */
   readonly finalEnergy: Readonly<Record<PlayerId, number>>;
+  /**
+   * Players injured in the match, in order of the injuries, with the rounds out drawn for the
+   * severity (partida.md, "Lesões"). Counting the rounds down is the round's job (T-013).
+   */
   readonly newInjuries: readonly { readonly player: PlayerId; readonly rounds: number }[];
+  /**
+   * Players suspended for the club's next games (partida.md, "Cartões e suspensão"): 1 game for
+   * a red, 1 for reaching 3 accumulated yellows; a player with both gets the sum. In order of
+   * entry, home first. Serving the suspension is the round's job (T-013).
+   */
+  readonly newSuspensions: readonly { readonly player: PlayerId; readonly games: number }[];
+  /**
+   * The accumulated yellow counter (`Player.yellowCount`, 0..2) of every player who took the
+   * pitch, after this match: +1 for a yellow that counts, back to 0 when it reaches 3 (which
+   * suspends). The two yellows of a second-yellow red never count.
+   */
+  readonly yellowCounts: Readonly<Record<PlayerId, number>>;
   readonly markers: readonly MatchMarker[];
   readonly attendance: number;
   readonly warnings: readonly EngineWarning[];

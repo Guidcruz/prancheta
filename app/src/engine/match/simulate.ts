@@ -1,6 +1,6 @@
 import { elevenStrength } from '../generation.ts';
 import { clamp, normal } from '../math.ts';
-import type { GameParams } from '../params.ts';
+import type { GameParams, MatchParams } from '../params.ts';
 import { Rng } from '../rng.ts';
 import { GOALKEEPER_SLOT, homeAdvantage, type TeamStrengths } from '../strength.ts';
 import type { EngineWarning, PlayerId, Side } from '../types.ts';
@@ -10,28 +10,54 @@ import {
   BIG_CHANCE_P_GOAL,
   HALFTIME_TALKS,
   HALF_MINUTES,
+  INJURY_FATIGUE_WEIGHT,
+  INJURY_SEVERITIES,
+  MAX_PLAYER_CARD_MULT,
+  MIN_PLAYERS_ON_PITCH,
   MISS_OUTCOMES,
   POSSESSION,
   SHOOTER_WEIGHTS,
   STOPPAGE,
+  SUSPENSION,
   WEIGHT_ATTRIBUTE_SCALE,
+  abandonedScore,
   attendance,
   chanceProbability,
   energyDrain,
   halftimeBoost,
+  injuryProbability,
+  playerCardMult,
+  redProbability,
   scoreState,
+  sideCardRates,
+  yellowProbability,
 } from './rules.ts';
-import { bestOnPitch, playerRatings, resultMarkers, winnerOf, type GoalRecord } from './summary.ts';
 import {
+  bestOnPitch,
+  cardConsequences,
+  playerRatings,
+  resultMarkers,
+  winnerOf,
+  type GoalRecord,
+} from './summary.ts';
+import {
+  captainOnPitch,
   currentStrengths,
+  freeKickGoalProbability,
   kickoffTeam,
+  leavePitch,
   openPlayGoalProbability,
+  penaltyGoalProbability,
+  playersOnPitch,
+  setPieceTaker,
+  type Appearance,
   type Slot,
   type TeamState,
 } from './team.ts';
 import type {
   ChanceKind,
   HalftimeTalk,
+  InjurySeverity,
   MatchEvent,
   MatchInput,
   MatchResult,
@@ -39,25 +65,35 @@ import type {
 } from './types.ts';
 
 /*
- * The match, minute by minute (docs/design/partida.md, "Visão geral do cálculo"; T-009).
+ * The match, minute by minute (docs/design/partida.md, "Visão geral do cálculo"; T-009, T-010).
  *
  * One Rng per match, seeded with `input.seed`, and a fixed order of draws (partida.md,
  * "Determinismo"; the goldens of simulate.golden.test.ts pin it):
- * 1. kick-off: day form of the home side, then of the away side (6 draws each, `normal`);
- * 2. each minute, home side first, then away side: chance (1 draw); if there is one, shooter
- *    (1), goal (1), then the miss outcome (1) or, on a goal, whether it has an assist (1) and
- *    who gives it (1, when there is someone to give it);
- * 3. end of each half: the added time (1), its minutes as in 2, then the possession noise (1);
- * 4. half time: the talk of each chaotic side (1 each, home first);
- * 5. full time: the rating noise of each player with a rating (1 each; summary.ts).
+ * 1. kick-off: day form of the home side, then of the away side (6 draws each, `normal`); a side
+ *    with fewer than 7 on the pitch ends the match right there (step 6);
+ * 2. each minute, home side first, then away side: chance (1 draw); if there is one, its kind
+ *    (1: penalty `match.penaltyShare`, direct free kick `match.freeKickShare`, else open play);
+ *    - open play: shooter (1), goal (1), then the miss outcome (1) or, on a goal, whether it has
+ *      an assist (1) and who gives it (1, when there is someone to give it);
+ *    - penalty and free kick: the taker is chosen without a draw (`setPieceTaker`), then goal
+ *      (1) and, on a miss, the miss outcome (1); no assist;
+ * 3. then, home side first, each player who was on the pitch when the step began, in slot
+ *    order: one draw that is a direct red, a yellow (a second yellow is a red), an injury or
+ *    nothing, in this order of the cumulative probabilities; an injury then draws its severity
+ *    (1) and its rounds out (1, `Rng.int`, also when the range has a single value). A player who
+ *    leaves the pitch leaves his slot empty (the goalkeeper's is filled from the outfield, without
+ *    a draw); a side that falls below 7 ends the match at once (step 6), with no more draws;
+ *    then the energy drain of everyone on the pitch (no draw);
+ * 4. end of each half: the added time (1), its minutes as in 2 and 3, then the possession noise
+ *    (1);
+ * 5. half time: the talk of each chaotic side (1 each, home first);
+ * 6. full time, or the moment the match is abandoned: the possession noise of the half in
+ *    progress, when abandoned (1), then the rating noise of each player with a rating (1 each;
+ *    summary.ts).
  *
- * Extension points, so the next tasks fit without rewriting the loop:
- * - T-010 draws the chance kind (penalty `match.penaltyShare`, direct free kick
- *   `match.freeKickShare`) in `chanceKind`, and cards and injuries of every player on the pitch
- *   after both sides attacked and before the energy drain, in `playMinute`;
- * - T-012 applies the commands at the start of the minute after the one they were given in, and
- *   the coach's half-time talk in `halftimeTalk`.
- * Until then every chance is open play and no draw is spent on the kind, cards or injuries.
+ * Extension point: T-012 applies the commands (substitutions included, so an injured player can
+ * be replaced) at the start of the minute after the one they were given in, and the coach's
+ * half-time talk in `halftimeTalk`. Until then a player who leaves is never replaced.
  */
 
 const SIDES: readonly Side[] = ['home', 'away'];
@@ -97,18 +133,31 @@ function missOutcome(rng: Rng): MissOutcome {
 }
 
 /**
- * Kind of a chance (partida.md, table "Tipo"). Penalties and direct free kicks, with their takers,
- * are T-010; until then every chance is open play ("Jogada") and no draw is spent here.
- *
- * T-010: the home factor of the finish ("Mando na finalização") applies to both new kinds too, as
- * in `openPlayGoalProbability`: the free kick uses `technique × fit × moraleMult × condMult ×
- * (1 + home)` against `gkEff × (1 + home(keeper's side))`, then `× 0.45`; the penalty uses
- * `finishing × (1 + home)` and `gkEff × (1 + home)` in `clamp(0.78 + 0.004 × (finishing −
- * gkEff), 0.60, 0.92)`. Document example (78 against 66, home 0.106): 0.861 for the home taker,
- * 0.800 for the away one, 0.828 on neutral ground.
+ * Kind of a chance (partida.md, table "Tipo"; one draw): penalty with `match.penaltyShare`,
+ * direct free kick with `match.freeKickShare`, open play ("Jogada") otherwise.
  */
-function chanceKind(): ChanceKind {
+function chanceKind(
+  rng: Rng,
+  match: Pick<MatchParams, 'penaltyShare' | 'freeKickShare'>,
+): ChanceKind {
+  const u = rng.next();
+  if (u < match.penaltyShare) return 'penalty';
+  if (u < match.penaltyShare + match.freeKickShare) return 'freeKick';
   return 'open';
+}
+
+/** Severity and rounds out of an injury (partida.md, "Lesões"; two draws). */
+function injuryOutcome(rng: Rng): { severity: InjurySeverity; rounds: number } {
+  let u = rng.next();
+  let row = INJURY_SEVERITIES[INJURY_SEVERITIES.length - 1]!;
+  for (const candidate of INJURY_SEVERITIES) {
+    if (u < candidate.share) {
+      row = candidate;
+      break;
+    }
+    u -= candidate.share;
+  }
+  return { severity: row.severity, rounds: rng.int(row.minRounds, row.maxRounds) };
 }
 
 /** Displayed strength of the kick-off XI (balance-targets.md, "Força"): mean `overall × fit`. */
@@ -126,11 +175,11 @@ function displayedStrength(team: TeamState): number {
  * Never throws because of a game situation; a sheet that cannot be played as given is fixed and
  * reported in `warnings` (team.ts, `kickoffTeam`).
  *
- * Not yet in this version: cards, injuries, penalties, free kicks and the abandoned match
- * (T-010); the coach's commands, substitutions and the coach's half-time talk (T-012). The
- * half-time talk is the AI's choice for both sides (ia-clubes.md, "Intervalo"), as partida.md
- * says when there is no choice; the leader captain's double effect arrives with the captain
- * (T-010).
+ * Cards, injuries, penalties and free kicks are drawn every minute (T-010); a player sent off or
+ * injured leaves his slot empty, since substitutions arrive with the coach's commands (T-012).
+ * A side with fewer than 7 on the pitch ends the match (`abandoned`). The half-time talk is the
+ * AI's choice for both sides (ia-clubes.md, "Intervalo"), as partida.md says when there is no
+ * choice; a leader captain doubles its positive effect.
  */
 export function simulateMatch(input: MatchInput, params: GameParams): MatchResult {
   const { match } = params;
@@ -138,6 +187,7 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   const warnings: EngineWarning[] = [];
   const events: MatchEvent[] = [];
   const goals: GoalRecord[] = [];
+  const newInjuries: { player: PlayerId; rounds: number }[] = [];
 
   let capacity = input.capacity;
   if (capacity !== undefined && !(Number.isFinite(capacity) && capacity >= 0)) {
@@ -158,37 +208,32 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     half: clock.half,
   });
 
+  /** The side that fell below 7 on the pitch, once the match is abandoned. */
+  let abandoned: Side | undefined;
+  const checkShort = (team: TeamState) => {
+    if (abandoned === undefined && playersOnPitch(team) < MIN_PLAYERS_ON_PITCH) {
+      abandoned = team.side;
+    }
+  };
+
   // 1. Kick-off: the day form, home then away.
   for (const team of teams) team.dayForm = normal(rng, 0, match.dayFormSd);
   events.push({ ...at({ minute: 0, half: 1 }), importance: 1, type: 'kickoff' });
+  for (const team of teams) checkShort(team);
 
-  /** One chance of `team` against `opponent` in this minute (partida.md, "Chance de oportunidade"). */
-  function attack(
+  /**
+   * How a shot ends: goal or miss (and, for open play, the assist). `kind` decides the events: a
+   * missed penalty is `penaltyMissed`, any other miss is `chance`.
+   */
+  function finish(
     clock: Clock,
     team: TeamState,
-    own: TeamStrengths,
     opponent: TeamState,
-    theirs: TeamStrengths,
+    shooterIndex: number,
+    kind: ChanceKind,
+    pGoal: number,
   ): void {
-    const pChance = chanceProbability(
-      own.power + team.dayForm,
-      theirs.defense + opponent.dayForm,
-      match,
-    );
-    if (!rng.chance(pChance)) return;
-    const kind = chanceKind();
-    const shooterIndex = weightedIndex(
-      rng,
-      team.slots.map((slot) =>
-        slot.app === undefined
-          ? 0
-          : (SHOOTER_WEIGHTS[slot.position] * slot.app.finishing) / WEIGHT_ATTRIBUTE_SCALE,
-      ),
-    );
-    if (shooterIndex === undefined) return; // nobody who can shoot (no outfield player)
-    const slot = team.slots[shooterIndex]!;
-    const shooter = slot.app!;
-    const pGoal = openPlayGoalProbability(team, slot, opponent, theirs, match);
+    const shooter = team.slots[shooterIndex]!.app!;
     team.shots += 1;
     const keeper = opponent.slots[GOALKEEPER_SLOT]!.app;
 
@@ -197,6 +242,17 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
       if (outcome === 'saved') {
         team.onTarget += 1;
         if (keeper !== undefined) keeper.saves += 1;
+      }
+      if (kind === 'penalty') {
+        events.push({
+          ...at(clock),
+          importance: 3,
+          type: 'penaltyMissed',
+          side: team.side,
+          taker: shooter.player.id,
+          outcome,
+        });
+        return;
       }
       const big = pGoal >= BIG_CHANCE_P_GOAL || outcome === 'post';
       events.push({
@@ -216,7 +272,7 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     team.onTarget += 1;
     shooter.goals += 1;
     let assist: PlayerId | undefined;
-    if (rng.chance(match.assistShare)) {
+    if (kind === 'open' && rng.chance(match.assistShare)) {
       const assistIndex = weightedIndex(
         rng,
         team.slots.map((s, i) =>
@@ -247,6 +303,148 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     });
   }
 
+  /** One chance of `team` against `opponent` in this minute (partida.md, "Chance de oportunidade"). */
+  function attack(
+    clock: Clock,
+    team: TeamState,
+    own: TeamStrengths,
+    opponent: TeamState,
+    theirs: TeamStrengths,
+  ): void {
+    const pChance = chanceProbability(
+      own.power + team.dayForm,
+      theirs.defense + opponent.dayForm,
+      match,
+    );
+    if (!rng.chance(pChance)) return;
+    const kind = chanceKind(rng, match);
+    if (kind === 'open') {
+      const shooterIndex = weightedIndex(
+        rng,
+        team.slots.map((slot) =>
+          slot.app === undefined
+            ? 0
+            : (SHOOTER_WEIGHTS[slot.position] * slot.app.finishing) / WEIGHT_ATTRIBUTE_SCALE,
+        ),
+      );
+      if (shooterIndex === undefined) return; // nobody who can shoot (no outfield player)
+      const slot = team.slots[shooterIndex]!;
+      const pGoal = openPlayGoalProbability(team, slot, opponent, theirs, match);
+      finish(clock, team, opponent, shooterIndex, kind, pGoal);
+      return;
+    }
+    const { lineup } = team.input.sheet;
+    const takerIndex =
+      kind === 'penalty'
+        ? setPieceTaker(team, lineup.penaltyTakers, 'finishing')
+        : setPieceTaker(team, lineup.freeKickTakers, 'technique');
+    if (takerIndex === undefined) return; // nobody on the pitch (never with 7 or more)
+    const slot = team.slots[takerIndex]!;
+    if (kind === 'penalty') {
+      events.push({
+        ...at(clock),
+        importance: 3,
+        type: 'penaltyAwarded',
+        side: team.side,
+        taker: slot.app!.player.id,
+      });
+    }
+    const pGoal =
+      kind === 'penalty'
+        ? penaltyGoalProbability(team, slot, opponent, theirs)
+        : freeKickGoalProbability(team, slot, opponent, theirs, match);
+    finish(clock, team, opponent, takerIndex, kind, pGoal);
+  }
+
+  /** A red card: the player leaves the pitch and is not replaced (partida.md, "Cartões"). */
+  function sendOff(
+    clock: Clock,
+    team: TeamState,
+    index: number,
+    app: Appearance,
+    reason: 'direct' | 'secondYellow',
+  ): void {
+    app.reds += 1;
+    app.redReason = reason;
+    events.push({
+      ...at(clock),
+      importance: 3,
+      type: 'red',
+      side: team.side,
+      player: app.player.id,
+      reason,
+    });
+    leavePitch(team, index);
+  }
+
+  /**
+   * Cards and injuries of every player of `team` who was on the pitch when the step began, in
+   * slot order: one draw each, split into direct red, yellow and injury (partida.md, "Cartões e
+   * suspensão" and "Lesões"). Stops as soon as the side falls below 7 (the match is over).
+   */
+  function bookingsAndInjuries(clock: Clock, team: TeamState): void {
+    const order = team.order;
+    for (let k = 0; k < order.length; k++) order[k] = team.slots[k]!.app;
+    const rates = sideCardRates(
+      team.tactic.pressure,
+      input.derby,
+      clock.half === 2 && team.talk === 'calm',
+      match,
+    );
+    // Nothing happens to a player whose draw is at or above what any player of this side could
+    // get (the worst position and trait, energy 0): skipping the sums then changes no outcome.
+    const ceiling =
+      (Math.max(0, rates.red) * MAX_PLAYER_CARD_MULT +
+        Math.max(0, rates.yellow) * MAX_PLAYER_CARD_MULT +
+        Math.max(0, match.injury.basePerMinute) * (1 + INJURY_FATIGUE_WEIGHT)) *
+      (1 + 1e-9);
+    for (let k = 0; k < order.length; k++) {
+      const app = order[k];
+      if (app === undefined || !app.onPitch) continue;
+      const u = rng.next();
+      if (u >= ceiling) continue;
+      // The slot only changes when an outfield player went in goal earlier in this step.
+      const index = team.slots[k]!.app === app ? k : team.slots.findIndex((s) => s.app === app);
+      const mult = playerCardMult(team.slots[index]!.position, app.player.trait);
+      const pRed = redProbability(rates, mult);
+      const pYellow = pRed + yellowProbability(rates, mult, app.yellows > 0);
+      const pInjury = pYellow + injuryProbability(app.energy, match);
+      if (u >= pInjury) continue;
+      if (u < pRed) {
+        sendOff(clock, team, index, app, 'direct');
+      } else if (u < pYellow) {
+        if (app.yellows > 0) {
+          sendOff(clock, team, index, app, 'secondYellow');
+        } else {
+          app.yellows = 1;
+          events.push({
+            ...at(clock),
+            importance: 1,
+            type: 'yellow',
+            side: team.side,
+            player: app.player.id,
+            triggersSuspension: app.yellowCount + 1 >= SUSPENSION.yellowLimit,
+          });
+          continue;
+        }
+      } else {
+        const injury = injuryOutcome(rng);
+        newInjuries.push({ player: app.player.id, rounds: injury.rounds });
+        events.push({
+          ...at(clock),
+          importance: 2,
+          type: 'injury',
+          side: team.side,
+          player: app.player.id,
+          severity: injury.severity,
+        });
+        leavePitch(team, index);
+      }
+      checkShort(team);
+      if (abandoned !== undefined) return;
+    }
+  }
+
   /** Energy drain of everyone on the pitch (partida.md, "Cansaço"). */
   function drain(team: TeamState): void {
     team.slots.forEach((slot: Slot, i) => {
@@ -262,14 +460,18 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   }
 
   function playMinute(clock: Clock): void {
-    const strengths = { home: currentStrengths(home, match), away: currentStrengths(away, match) };
-    attack(clock, home, strengths.home, away, strengths.away);
-    attack(clock, away, strengths.away, home, strengths.home);
-    // T-010: cards and injuries of every player on the pitch, home first, in slot order.
-    for (const team of teams) drain(team);
+    // Everyone on the pitch when the minute starts played it, even if he leaves during it.
     if (clock.added === undefined) {
       for (const team of teams) for (const slot of team.slots) if (slot.app) slot.app.minutes += 1;
     }
+    const strengths = { home: currentStrengths(home, match), away: currentStrengths(away, match) };
+    attack(clock, home, strengths.home, away, strengths.away);
+    attack(clock, away, strengths.away, home, strengths.home);
+    for (const team of teams) {
+      bookingsAndInjuries(clock, team);
+      if (abandoned !== undefined) return;
+    }
+    for (const team of teams) drain(team);
   }
 
   /**
@@ -293,52 +495,75 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   }
 
   const possession: number[] = [];
-  let stoppage2 = 0;
-  for (const half of [1, 2] as const) {
-    const last = half * HALF_MINUTES;
-    for (let minute = last - HALF_MINUTES + 1; minute <= last; minute++) {
-      playMinute({ minute, half });
-    }
-    // 3. Added time, drawn at the end of the half and announced, then played like any minute.
-    const added = rng.int(STOPPAGE[half].min, STOPPAGE[half].max);
-    if (half === 2) stoppage2 = added;
-    events.push({ ...at({ minute: last, half }), importance: 1, type: 'stoppage', minutes: added });
-    for (let extra = 1; extra <= added; extra++) playMinute({ minute: last, added: extra, half });
-    possession.push(halfPossession());
+  let end: Clock = { minute: 0, half: 1 };
+  if (abandoned === undefined) {
+    play: for (const half of [1, 2] as const) {
+      const last = half * HALF_MINUTES;
+      for (let minute = last - HALF_MINUTES + 1; minute <= last; minute++) {
+        end = { minute, half };
+        playMinute(end);
+        if (abandoned !== undefined) break play;
+      }
+      // 4. Added time, drawn at the end of the half and announced, then played like any minute.
+      const added = rng.int(STOPPAGE[half].min, STOPPAGE[half].max);
+      events.push({
+        ...at({ minute: last, half }),
+        importance: 1,
+        type: 'stoppage',
+        minutes: added,
+      });
+      end = { minute: last, ...(added > 0 ? { added } : {}), half };
+      for (let extra = 1; extra <= added; extra++) {
+        end = { minute: last, added: extra, half };
+        playMinute(end);
+        if (abandoned !== undefined) break play;
+      }
+      possession.push(halfPossession());
 
-    if (half === 1) {
-      const end = { minute: last, ...(added > 0 ? { added } : {}), half } as const;
-      events.push({ ...at(end), importance: 2, type: 'halftime', score: score() });
-      // 4. Half-time talk: `halftimeBoost` of the second half, by the half-time score.
-      for (const team of teams) {
-        const theirs = teamOf(team.side === 'home' ? 'away' : 'home').goals;
-        const talk = halftimeTalk(team, team.goals, theirs);
-        team.halftimeBoost = halftimeBoost(talk, team.goals, theirs);
-        events.push({ ...at(end), importance: 1, type: 'halftimeTalk', side: team.side, talk });
+      if (half === 1) {
+        events.push({ ...at(end), importance: 2, type: 'halftime', score: score() });
+        // 5. Half-time talk: `halftimeBoost` of the second half, by the half-time score; a leader
+        // captain on the pitch doubles a positive effect.
+        for (const team of teams) {
+          const theirs = teamOf(team.side === 'home' ? 'away' : 'home').goals;
+          const talk = halftimeTalk(team, team.goals, theirs);
+          const leader = captainOnPitch(team)?.player.trait === 'leader';
+          team.talk = talk;
+          team.halftimeBoost = halftimeBoost(talk, team.goals, theirs, leader);
+          events.push({ ...at(end), importance: 1, type: 'halftimeTalk', side: team.side, talk });
+        }
       }
     }
   }
+  // 6. An abandoned match closes the possession of the half in progress.
+  if (abandoned !== undefined) possession.push(halfPossession());
 
-  const final = score();
-  const end = {
-    minute: 2 * HALF_MINUTES,
-    ...(stoppage2 > 0 ? { added: stoppage2 } : {}),
-    half: 2,
-  } as const;
-  events.push({ ...at(end), importance: 3, type: 'fulltime', score: final, abandoned: false });
+  const final = abandoned === undefined ? score() : abandonedScore(score(), abandoned);
+  events.push({
+    ...at(end),
+    importance: 3,
+    type: 'fulltime',
+    score: final,
+    abandoned: abandoned !== undefined,
+  });
 
-  // 5. Summary.
+  // Summary.
   const ratings = playerRatings(teams, final, rng);
   const motm = bestOnPitch(ratings, winnerOf(final));
+  // The awarded score decides the result; the real goals count as goals ("Jogo encerrado").
   const markers = resultMarkers(teams, {
     score: final,
     goals,
+    abandoned: abandoned !== undefined,
     derby: input.derby,
     neutral: input.neutral,
     strength: kickoffStrength,
   });
+  const cards = cardConsequences(teams);
 
-  const homePossession = Math.round((possession[0]! + possession[1]!) / 2);
+  let possessionSum = 0;
+  for (const value of possession) possessionSum += value;
+  const homePossession = Math.round(possessionSum / possession.length);
   const count = (side: Side, type: 'yellow' | 'red') =>
     events.filter((e) => e.type === type && e.side === side).length;
   const stats = Object.fromEntries(
@@ -375,7 +600,9 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     ...(motm === undefined ? {} : { motm: motm.player.id }),
     minutes,
     finalEnergy,
-    newInjuries: [],
+    newInjuries,
+    newSuspensions: cards.newSuspensions,
+    yellowCounts: cards.yellowCounts,
     markers,
     attendance: attendance(capacity, home.fans, input.derby, params.fans),
     warnings,
