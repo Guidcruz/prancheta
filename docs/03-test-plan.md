@@ -333,6 +333,24 @@ Siglas de camada: **U** unitário, **I** integração, **G** golden, **P** propr
 - Também a cada release: conferir que `dist/` não tem hashes de atletas, `node:crypto` nem listas de nomes reais (hoje trivial, pois nada no app importa `names.ts`; reconferir quando a T-005 passar a importá-lo).
 - Regressão permanente: a fronteira de lint (importar hash/`name-exclusions`/`node:*` em `src/lib` ou `src/ui` é erro).
 
+## 11. Site público (Astro, `site/`)
+
+Verificação de 2026-11-04 (branch `claude/kickoff-i22gas`). Critérios: `docs/design/site.md`, textos em `docs/content/site/` e decisões do CEO em `docs/status.md`.
+
+| Cenário                                                                                                                                               | Tipo        | Onde                                                 |
+| ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------- | ---------------------------------------------------- |
+| As 9 páginas (e o post do devlog) existem em `site/dist/`                                                                                             | automático  | `site/src/lib/dist.test.ts`                          |
+| Nenhum `<script>` nas páginas; nenhum cookie, `localStorage`, `sessionStorage`, analytics ou fonte de terceiros                                       | automático  | `site/src/lib/dist.test.ts`                          |
+| URLs externas só para o repositório/Discussions (`config.contacts`), o próprio domínio e namespaces XML; nenhum recurso remoto (img, link, `@import`) | automático  | `site/src/lib/dist.test.ts`                          |
+| Um `h1`, skip link, um `main`, `lang="pt-BR"` e canonical por página; tabelas dentro de região rolável focável                                        | automático  | `site/src/lib/dist.test.ts`                          |
+| Sitemap lista todas as páginas; `robots.txt` aponta para o sitemap; sem link interno quebrado (exceto `/jogo`, que é outro build)                     | automático  | `site/src/lib/dist.test.ts`                          |
+| Parser do roteiro e mapeamento estado -> selo                                                                                                         | unitário    | `site/src/lib/roadmap.test.ts`                       |
+| Textos visíveis contra os aprovados, nomes reais contra as colunas "inspirado em" dos lotes, selo vs `recursos.ts`/`roadmap.md`, tokens do jogo       | manual (QA) | feito na verificação de 2026-11-04, não automatizado |
+
+O `dist.test.ts` é pulado se `site/dist` não existe (`npm test` roda antes do build no `test:all`). Para exigir o build: `npm run build && REQUIRE_SITE_DIST=1 npm test`. Sugestão ao Desenvolvimento: rodar essa segunda passada no CI depois do build.
+
+Regressão do site: BUG-SITE-001 (Brasileirão no site) ganha teste quando for corrigido (recusar "Brasileir" nas páginas do `dist`).
+
 ## Registro de regressão
 
 | Bug | Origem | Teste | Data |
@@ -355,3 +373,5 @@ Siglas de camada: **U** unitário, **I** integração, **G** golden, **P** propr
 - [ ] (1b) Criar conta com passkey, perder o aparelho e recuperar com o código, em aparelho real
 - [ ] (1b) Liga ao vivo com 2 pessoas em redes diferentes: as partidas aparecem juntas? E no assíncrono, o aviso chega na hora certa?
 - [ ] (1b) Ler a política de privacidade do site e conferir se bate com o que o jogo coleta
+
+- [ ] (site) Prévia do Cloudflare no celular: ver o roteiro de teste manual do relatório de QA do site (2026-11-04)
