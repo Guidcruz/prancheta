@@ -71,12 +71,12 @@ reference(club) = posição na tabela de referência (1..20)
 
 Sem o motor de partida, estimei com um modelo simplificado (Poisson, mando +4, 300 temporadas, `clubStrengthSd = 1,5`): serve para a direção da mudança, não para o número.
 
-| Métrica (`balance-targets.md`)              | Meta          | Antes (6/8/6, escada por porte) | Depois (12/5/3, escada única) | Leitura                                            |
-| ------------------------------------------- | ------------- | ------------------------------- | ----------------------------- | -------------------------------------------------- |
-| Pontos do campeão / do 17º                  | 72–82 / 40–46 | sem mudança                     | sem mudança                   | mesma escada                                       |
-| Campeão por porte: grande                   | 50%–75%       | ~92% no modelo                  | ~87% no modelo                | cai um pouco; o modelo exagera os dois             |
-| Campeão por porte: pequeno                  | 0,5%–3%       | 0%                              | ~1%                           | Bragantão (71) às vezes ganha                      |
-| Temporadas com ao menos um grande rebaixado | 1%–5%         | ~4%                             | **~97%**                      | **quebra a meta**: 2 dos 4 mais fracos são grandes |
+| Métrica (`balance-targets.md`)              | Meta          | Antes (6/8/6, escada por porte) | Depois (12/5/3, escada única) | Leitura                                         |
+| ------------------------------------------- | ------------- | ------------------------------- | ----------------------------- | ----------------------------------------------- |
+| Pontos do campeão / do 17º                  | 72–82 / 40–46 | sem mudança                     | sem mudança                   | mesma escada                                    |
+| Campeão por porte: grande                   | 50%–85%       | ~92% no modelo                  | ~87% no modelo                | cai um pouco; o modelo exagera os dois          |
+| Campeão por porte: pequeno                  | 0,5%–3%       | 0%                              | ~1%                           | Bragantão (71) às vezes ganha                   |
+| Temporadas com ao menos um grande rebaixado | 40%–80%       | ~4%                             | **~97%**                      | acima da meta no modelo; conferir no `/balance` |
 
 **Decidido pelo CEO (2026-11-04):** "temporadas com ao menos um grande rebaixado" passa a 40% a 80% e "campeão é grande" a 50% a 85% (`balance-targets.md`). Pequeno ou médio campeão: raro, mas possível (tática, zebra, jovens; mercado e estrutura na Etapa 3). O `/balance` reporta as métricas pelo porte e, para comparação, pelos 6 mais fortes.
 
