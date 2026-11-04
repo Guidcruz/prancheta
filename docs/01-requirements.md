@@ -1954,7 +1954,7 @@ Cenário: dono da liga apaga a conta
 
 **Prioridade:** Must
 **Depende de:** US-049, US-012
-**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) e [Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais). Opções da 1b: nome da liga (filtrado como o apelido), modo (ao vivo ou assíncrono, com prazo por rodada), número de humanos (2 até o limite do modo, padrão 20 no ao vivo e no assíncrono, um por clube, lido de configuração e não fixo no código; ADR-0013 substitui para a 1b o padrão de 8 e 30 do PROJETO.md), escolha de clubes (US-053, US-054), inatividade (US-060), mensagens prontas ligadas ou desligadas (US-062), duração (US-063). Decisão P12: prazos fixos por modo, ao vivo com 1, 2 ou 5 minutos (padrão 2) e assíncrono com 12, 24 ou 48 horas (padrão 24). Competições: só Série A. As escolhas viram "última configuração".
+**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) e [Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais). Opções da 1b: nome da liga (filtrado como o apelido), modo (ao vivo ou assíncrono, com prazo por rodada), número de humanos (2 até o limite do modo, padrão 8 no ao vivo e 20 no assíncrono, um por clube, lido de configuração e não fixo no código; ADR-0013, revisado pelo CEO em 2026-11-04, substitui para a 1b o padrão de 8 e 30 do PROJETO.md), escolha de clubes (US-053, US-054), inatividade (US-060), mensagens prontas ligadas ou desligadas (US-062), duração (US-063). Decisão P12: prazos fixos por modo, ao vivo com 1, 2 ou 5 minutos (padrão 2) e assíncrono com 12, 24 ou 48 horas (padrão 24). Competições: só Série A. As escolhas viram "última configuração".
 
 ### Critérios de aceite
 
@@ -1967,7 +1967,7 @@ Cenário: criar com padrões
 Cenário: limite por modo vem da configuração
   Dado o limite do modo ao vivo alterado na configuração do servidor
   Quando o jogador cria uma liga ao vivo
-  Então o máximo de humanos oferecido é o novo limite, sem mudança de código, e nunca passa de 20
+  Então o máximo de humanos oferecido é o novo limite, sem mudança de código, e nunca passa de 20 (um por clube)
 
 Cenário: nome filtrado
   Dado um nome de liga com termo bloqueado, link, e-mail ou telefone
@@ -2308,7 +2308,7 @@ Cenário: volta do jogador (P10)
 
 **Prioridade:** Should
 **Depende de:** US-057, US-058
-**Notas:** [PROJETO.md › Modo online › Regras da liga](PROJETO.md#modo-online) (o dono pode trocar o modo no meio da temporada). A rodada seguinte abre com o prazo padrão do novo modo (P12).
+**Notas:** [PROJETO.md › Modo online › Regras da liga](PROJETO.md#modo-online) (o dono pode trocar o modo no meio da temporada). A rodada seguinte abre com o prazo padrão do novo modo (P12). Com os padrões do ADR-0013 revisado (8 no ao vivo, 20 no assíncrono), o cenário "limite de humanos" acontece de fato: uma liga assíncrona com mais de 8 humanos não pode passar para ao vivo. Recomendação do `architect`: o servidor recusa a troca com o motivo em pt-BR e a opção aparece desabilitada com o mesmo motivo; ninguém é tirado da liga nem passado à IA para caber. A troca de ao vivo para assíncrono é sempre permitida.
 
 ### Critérios de aceite
 

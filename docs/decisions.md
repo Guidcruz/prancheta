@@ -14,6 +14,6 @@
 | 0010 | Servidor da 1b em Pages Functions (`/api`, mesma origem) + Worker de salas com o Durable Object; deploy do Worker com aprovação do CEO                                    | 2026-11-04 |
 | 0011 | Fator casa fixo `match.homeBase = 0.05` além da torcida do ADR-0005 (mandante vence 45% a 50%)                                                                            | 2026-11-04 |
 | 0012 | Nome e rosto do jogador resolvidos na criação e guardados no estado; sementes só geram; nome retirado sai também dos saves antigos                                        | 2026-11-04 |
-| 0013 | Liga online: até 20 humanos por divisão (um por clube) no ao vivo e no assíncrono; Séries A e B juntas na Etapa 2                                                         | 2026-11-04 |
+| 0013 | Liga online: até 8 humanos no ao vivo e até 20 por divisão (um por clube) no assíncrono (revisão do CEO); Séries A e B juntas na Etapa 2                                  | 2026-11-04 |
 
 Decisões pendentes: `docs/status.md`.
