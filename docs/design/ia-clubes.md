@@ -55,7 +55,7 @@ A mesma IA monta o time do jogador quando ele não escala (ver `partida.md`, cas
 
 **Regra em uma frase:** a ficha vale se o XI é válido e o banco tem no máximo 7 jogadores do clube, aptos e sem repetir ninguém; o resto a partida corrige sozinha.
 
-- **XI:** formação conhecida, 11 titulares, cada um do elenco, sem repetir, sem lesão nem suspensão (os mesmos motivos de `sectorStrengths`).
+- **XI:** formação conhecida, `min(11, aptos)` titulares (sem nenhum apto, exige 11, então nenhuma ficha vale), cada um do elenco, sem repetir, sem lesão nem suspensão (os mesmos motivos de `sectorStrengths`).
 - **Banco:** no máximo 7; cada um do elenco, nem titular nem repetido, sem lesão nem suspensão. Banco com menos de 7, vazio ou sem goleiro é válido.
 - Recusa com o primeiro problema, o XI antes do banco, dizendo a parte (`starters` ou `bench`).
 - **Não confere** capitão, cobradores nem tática: a partida usa o primeiro da lista que está em campo e senão a regra de `partida.md` ("Capitão e cobradores"), e postura ou pressão desconhecida vira equilibrada ou média com aviso ("Valor desconhecido na entrada"). Nenhum desses erros dá vantagem a quem o comete. No online (1b), recusar tática desconhecida no servidor é decisão do `security-auditor`, não regra de jogo.
