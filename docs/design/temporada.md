@@ -18,11 +18,12 @@ Na 1a o ritmo é sempre "No meu ritmo": a rodada avança quando o jogador toca e
 
 ## Tabela de jogos
 
-1. Embaralha os 20 clubes com uma semente própria de cada temporada: `seedFromString("<seed>-fixtures-<season>")`, em que `<season>` é o ano da temporada. Cada temporada tem o seu sorteio (na opção B do fim de temporada, a tabela muda de um ano para o outro), e a mesma carreira no mesmo ano dá sempre a mesma tabela.
+1. Embaralha os 20 clubes com uma semente própria de cada temporada: `seedFromString("<seed>-fixtures-<season>")`, em que `<season>` é o número da temporada na carreira (1, 2, …, o mesmo de `GameState.season`; a primeira usa `<seed>-fixtures-1`), não o ano. Cada temporada tem o seu sorteio (na opção B do fim de temporada, a tabela muda de uma temporada para a outra), e a mesma carreira na mesma temporada dá sempre a mesma tabela.
 2. Turno (rodadas 1 a 19) pelo método do círculo (tabela de Berger), começando na 4ª rotação da ordem canônica (`BERGER_START = 3`, contando de 0) e seguindo as 19 rotações em ciclo a partir dali.
 3. Returno (rodadas 20 a 38) espelhado: a rodada `19 + n` repete os confrontos da rodada `n` com o mando invertido, como na CBF.
+4. Sem restrição de clássico na 1a. Se dois clubes da mesma cidade forem mandantes na mesma rodada, não há problema (cada um tem o seu estádio na lista de clubes).
 
-**Limite de mando:** nenhum clube joga mais de 2 vezes seguidas em casa ou fora em toda a temporada, incluindo a virada do turno (rodadas 19, 20 e 21). Motivo do `BERGER_START = 3`: na ordem canônica de Berger (começando da 1ª rotação), o espelho do returno faz 2 clubes terem 3 mandos iguais seguidos nas rodadas 19 a 21; Berger sozinho garante o limite dentro do turno, não na emenda com o returno. A 4ª rotação é a primeira a partir da qual o turno respeita o limite também na virada. É constante (não parâmetro); o teste do calendário confere o limite nas 38 rodadas. 4. Sem restrição de clássico na 1a. Se dois clubes da mesma cidade forem mandantes na mesma rodada, não há problema (cada um tem o seu estádio na lista de clubes).
+**Limite de mando:** nenhum clube joga mais de 2 vezes seguidas em casa ou fora em toda a temporada, incluindo a virada do turno (rodadas 19, 20 e 21). Motivo do `BERGER_START = 3`: na ordem canônica de Berger (começando da 1ª rotação), o espelho do returno faz 2 clubes terem 3 mandos iguais seguidos nas rodadas 19 a 21; Berger sozinho garante o limite dentro do turno, não na emenda com o returno. A 4ª rotação é a primeira a partir da qual o turno respeita o limite também na virada. É constante (não parâmetro); o teste do calendário confere o limite nas 38 rodadas.
 
 ## Datas
 
