@@ -55,8 +55,19 @@
   --radius-md: 10px;
   --radius-lg: 16px;
   --radius-pill: 999px;
+  --layout-content-max: 720px;
+  --layout-wide-max: 1040px;
   --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
   --font-body: "Barlow", system-ui, sans-serif;
+  --type-placar-xl: 700 56px/56px var(--font-display);
+  --type-titulo: 700 28px/32px var(--font-display);
+  --type-subtitulo: 600 20px/24px var(--font-display);
+  --type-numero: 600 18px/20px var(--font-display);
+  --type-rotulo: 700 12px/16px var(--font-display);
+  --type-body: 400 15px/22px var(--font-body);
+  --type-body-strong: 600 15px/22px var(--font-body);
+  --type-caption: 500 12px/16px var(--font-body);
+  --type-display-xl: 700 64px/60px var(--font-display);
 }
 .placar-xl { font-family: var(--font-display); font-size: 56px; line-height: 56px; font-weight: 700; font-variant-numeric: tabular-nums; }
 .titulo { font-family: var(--font-display); font-size: 28px; line-height: 32px; font-weight: 700; }
