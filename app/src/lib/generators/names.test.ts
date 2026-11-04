@@ -138,7 +138,7 @@ describe('name generator (US-003)', () => {
     const counts = new Map<string, number>();
     const n = 20_000;
     for (let i = 0; i < n; i++) {
-      const { display } = nameFromSeed(i * 2654435761, lists);
+      const { display } = nameFromSeed(i * 2654435761, lists, undefined, Infinity);
       const form = display.startsWith('Apel')
         ? 'nickname'
         : /^Sobr\d+$/.test(display)
@@ -229,6 +229,30 @@ describe('name generator (US-003)', () => {
         if (group.some((n) => n.display === n.family)) expect(group).toHaveLength(1);
       }
     }
+  });
+});
+
+describe('display length limit', () => {
+  it('swaps the form when that is enough, and the player when it is not', () => {
+    let formOnly = 0;
+    let playerSwapped = 0;
+    for (let seed = 1; seed <= 3000; seed++) {
+      const free = nameFromSeed(seed, lists, undefined, Infinity);
+      const capped = nameFromSeed(seed, lists, undefined, 12);
+      if (free.display.length <= 12) continue;
+      expect(capped.degraded).toBeUndefined();
+      expect(capped.display.length).toBeLessThanOrEqual(12);
+      if (capped.full === free.full) formOnly++;
+      else playerSwapped++;
+    }
+    expect(formOnly).toBeGreaterThan(0);
+    expect(playerSwapped).toBeGreaterThan(0);
+  });
+
+  it('returns a degraded name, without throwing, when no draw can fit', () => {
+    const n = nameFromSeed(5, lists, undefined, 3);
+    expect(n.degraded).toBe(true);
+    expect(n.nameSeed).toBe(5);
   });
 });
 

@@ -86,8 +86,8 @@ export interface PlayerName {
   /** First surname, used by the squad rule of at most 3 per surname. */
   family: string;
   /**
-   * Set only when the rules could not be met and a fallback was used: the exclusions kept
-   * rejecting for 50 reseeds (`nameFromSeed`), or the squad rules for 200 candidates
+   * Set only when the rules could not be met and a fallback was used: the exclusions or the
+   * 22-character limit (`tooLong`) kept rejecting for 50 reseeds (`nameFromSeed`), or the squad rules for 200 candidates
    * (`namesForSquad`, which then numbers the display). Never happens with the real lists.
    */
   degraded?: true;
@@ -279,10 +279,11 @@ function draw(
 }
 
 /**
- * The name for a seed. Pure. When the drawn combination is in `exclusions`, or the display passes 22 characters even after
- * redrawing the form (8 times), the player is replaced by the
- * next draw of a generator seeded with `nameSeed` itself (deterministic; at most 50 times), and the
- * result still carries the original `nameSeed`, so storing it reproduces the name.
+ * The name for a seed. Pure. The drawn name is replaced when its combination is in `exclusions`, or
+ * when its display passes `maxLength` (default 22) even after redrawing the form up to 8 times
+ * (same player). Replacing means the next draw of a generator seeded with `nameSeed` itself
+ * (deterministic; at most 50 times). The result still carries the original `nameSeed`, so storing
+ * it reproduces the name. A NaN `maxLength` turns the limit off (every comparison is false).
  */
 export function nameFromSeed(
   nameSeed: number,
@@ -295,7 +296,8 @@ export function nameFromSeed(
   for (let i = 0; i < MAX_RESEEDS && (current.excluded || current.tooLong); i++) {
     current = draw(reseed.int(0, 0xffffffff), lists, exclusions, maxLength);
   }
-  // Still excluded after 50 reseeds (absurd exclusions): keep the last draw and say so.
+  // Still excluded or too long after 50 reseeds (absurd exclusions or limit): keep the last draw
+  // and say so.
   const degraded = current.excluded || current.tooLong ? ({ degraded: true } as const) : {};
   return { ...current.name, nameSeed: nameSeed >>> 0, ...degraded };
 }
