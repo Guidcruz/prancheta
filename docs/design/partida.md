@@ -134,6 +134,25 @@ Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 3
 
 O técnico também pode trocar formação, postura e pressão diretamente a qualquer momento.
 
+### Troca de formação durante o jogo
+
+**Regra:** quem já joga numa posição que existe na formação nova fica nela; quem sobra preenche as vagas livres, uma a uma, na ordem da formação; as vagas que ficam sem ninguém são as últimas vagas livres dessa ordem.
+
+1. **Fica na posição.** Na ordem das vagas da formação atual, cada jogador em campo ocupa a primeira vaga livre da formação nova com a **mesma posição** da vaga em que ele está (ZAG → ZAG, LAT → LAT etc.). Vale também para quem está no gol, mesmo jogador de linha: o gol nunca muda de dono numa troca de formação.
+2. **Quem sobra.** Na ordem das vagas da formação nova (GOL, ZAG, LAT, VOL, MEI, ATA, como em `FORMATION_SLOTS`), cada vaga ainda livre recebe, entre os que sobraram, o de maior `eff` naquela vaga (com a energia e a moral do momento). Empate: maior overall, depois mais novo, depois menor ID (o mesmo de `ia-clubes.md`, "Escalação").
+3. **Vagas vazias.** Com `N` em campo, ficam vazias exatamente `11 − N` vagas: as que sobram no fim do passo 2. Elas seguem a regra de "Vaga vazia".
+
+- Vale para o técnico e para a IA. Depois da troca, o técnico pode trocar dois jogadores de vaga entre si (vagas ocupadas), mas não escolhe quais vagas ficam vazias. Assim ninguém esvazia um setor fraco de propósito para receber os 0,90 da média da linha.
+- Trocar para a formação em que o time já está não é troca: nada muda, nem a vaga vazia.
+- Expulsão ou lesão sem substituição, sem troca de formação, deixa vazia a vaga de quem saiu, onde ela estiver. Quem entra numa substituição ocupa a vaga de quem saiu.
+
+**Exemplo.** 4-4-2 com 10 em campo (um ATA expulso), todos com moral 50 e energia 100; os VOL têm eff 70 e 66, nessa ordem de vaga, e o ATA que ficou tem eff 76. O técnico muda para 4-3-3 (ZAG 2, LAT 2, VOL 1, MEI 2, ATA 3).
+
+- Passo 1: os 2 ZAG, os 2 LAT e os 2 MEI ficam nas suas posições; o VOL da primeira vaga (70) fica na única vaga de VOL; o ATA ocupa a primeira vaga de ATA.
+- Passo 2: sobra o VOL de 66; a segunda vaga de ATA o recebe (`66 × fit(VOL, ATA) 0,75 = 49,5`).
+- Passo 3: a terceira vaga de ATA fica vazia.
+- `Atk = média(76; 49,5) × 1,06 × 0,93 = 61,9`, contra `76 × 1,00 × 0,93 = 70,7` se ficasse no 4-4-2. Abrir o time com um a menos e sem atacante no banco custa ataque: a troca é uma decisão, não um ganho automático.
+
 ## Mando de campo e clássico
 
 ```
@@ -289,6 +308,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Menos de 11 disponíveis no elenco                   | joga com os que há (`missingPlayerPenalty` por jogador a menos)                                                                        |
 | Vaga vazia (expulsão, lesão sem substituição)       | sai da média do setor; só o `missingPlayerPenalty` ("Vaga vazia")                                                                      |
 | Setor sem ninguém (ex.: o único ATA do 4-2-3-1)     | média do setor = `EMPTY_SECTOR_FIT` (0,90) × média do `eff` dos jogadores de linha em campo ("Vaga vazia")                             |
+| Troca de formação com menos de 11 em campo          | "Troca de formação durante o jogo": ficam vazias as últimas vagas livres da ordem da formação                                          |
 | Menos de 7 em campo em qualquer momento             | partida encerrada; o adversário vence por 3×0, ou pelo placar do momento se vencia por mais                                            |
 | Cobrador escolhido fora de campo                    | regra de "Capitão e cobradores"                                                                                                        |
 | Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
@@ -327,3 +347,4 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 3. `scripts/balance.ts` com os três modos de `balance-targets.md` (liga, duelos calibrados, duelos táticos), imprimindo cada métrica com meta, tolerância e "ok/falha", e aceitando `--seasons`, `--seed` e `--duels`.
 4. 200 temporadas rodam em menos de 3 minutos no CI (o `/balance` precisa ser usado a cada ajuste).
 5. Vaga vazia ("Vaga vazia"): as forças de setor aceitam vagas vazias e reproduzem os dois exemplos daquela seção (65,1; 55,7 e 61,7, com tolerância de 0,05); nenhum setor dá `NaN` ou divide por zero em nenhuma formação com 7 a 11 em campo (teste que esvazia cada setor de cada formação).
+6. Troca de formação ("Troca de formação durante o jogo"): reproduz o exemplo daquela seção (61,9 com tolerância de 0,05); para cada par das 6 × 6 formações e cada `N` de 7 a 11, nunca lança, deixa exatamente `11 − N` vagas vazias, mantém o goleiro no gol e é determinística; trocar para a formação atual não muda nenhuma vaga.
