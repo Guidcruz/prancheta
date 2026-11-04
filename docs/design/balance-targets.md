@@ -24,6 +24,9 @@ Legenda da coluna Etapa: **1a** vale agora e bloqueia a entrega; **futura** é m
 | Empates                                     | 26%                                                                 | 24% a 28%                                                                    | proporção nas 200 temporadas                                             | 1a           | próprio  |
 | Vitórias do mandante                        | 47,5%                                                               | 45% a 50%                                                                    | proporção nas 200 temporadas (sem altitude na 1a)                        | 1a           | próprio  |
 | Placar mais comum                           | 1×1 e 1×0                                                           | os dois entre os 3 placares mais frequentes                                  | distribuição de placares mandante×visitante (0×1 e 1×0 contam separados) | 1a           | próprio  |
+| 0×0                                         | 7%                                                                  | 6% a 9% dos jogos (decisão do CEO, 2026-11-04)                               | proporção nas 200 temporadas                                             | 1a           | CEO      |
+| Goleada (diferença ≥ 3)                     | 11%                                                                 | 8% a 13% dos jogos (CEO pediu 7% a 11%; ajustada pela conta abaixo)          | proporção nas 200 temporadas                                             | 1a           | CEO      |
+| Placar grande (diferença ≥ 5)               | 1%                                                                  | 0,5% a 2% dos jogos (raro, mas presente)                                     | proporção nas 200 temporadas                                             | 1a           | CEO      |
 | Pontos do campeão                           | 77                                                                  | média entre 72 e 82                                                          | média dos campeões nas 200 temporadas                                    | 1a           | próprio  |
 | Pontos do 17º colocado                      | 43                                                                  | média entre 40 e 46                                                          | média nas 200 temporadas                                                 | 1a           | próprio  |
 | Amarelos por partida                        | 4,0                                                                 | 3,5 a 4,5                                                                    | média nas 200 temporadas, os dois times                                  | 1a           | próprio  |
@@ -55,6 +58,18 @@ Os valores iniciais dos parâmetros em `partida.md` foram escolhidos num protót
 | Amarelos / lesões por partida | 4,07 / 0,31          | 3,5–4,5 / 0,2–0,4 |
 
 Sem o fator casa (só os 2% a 8% da torcida), o mandante vence 42,4%: abaixo da meta. Postura, pressão e formações ficaram entre −1,5 e +1,9 ponto de saldo contra a referência. O motor real, com jogadores, posições e substituições, vai deslocar esses números; o primeiro `/balance` do motor recalibra `match.baseChance`, `match.kChance` e `match.kFinish`, nesta ordem e um por vez.
+
+**Metas de placar (T-016), conferidas contra as outras metas.** O protótipo antigo não mediu 0×0 nem goleadas; refiz a conta com gols de Poisson por time, a escada de força da Série A, `kChance` calibrado para 20 pontos → 66% e mando dando 46% de vitórias do mandante (modelo de conferência, não o motor):
+
+| Gols por partida | 0×0  | Diferença ≥ 3 | Diferença ≥ 5 | Empates |
+| ---------------- | ---- | ------------- | ------------- | ------- |
+| 2,50             | 8,2% | 12,6%         | 1,0%          | 25,9%   |
+| 2,65             | 7,1% | 13,8%         | 1,2%          | 24,9%   |
+| 2,80             | 6,1% | 14,9%         | 1,5%          | 24,0%   |
+
+- **0×0 em 6% a 9%:** coerente com 2,50 a 2,80 gols; mantida.
+- **Goleada:** com 2,65 gols e a escada atual, a conta dá cerca de 14%; 7% a 11% exigiria menos gols (abaixo de 2,5) ou menos diferença entre os clubes (menos zebra contrária e campeão com menos pontos). O motor deve ficar um pouco abaixo do Poisson, porque o time que ganha por 2 ou mais segura o resultado a partir dos 75' (`ia-clubes.md`) e o que perde arrisca mais e também sofre. Por isso a faixa fica em **8% a 13%**, centro 11%: abaixo da conta pura, sem conflitar com gols por partida nem com a vitória do mais forte. Se o `/balance` do motor der acima de 13%, o primeiro ajuste é o efeito de "segurar o resultado", não `kChance` (que mexe na zebra).
+- **Diferença ≥ 5 em 0,5% a 2%:** a conta dá 1,0% a 1,5% (cerca de 4 a 6 jogos por temporada de 380); o 0,3% a 1,5% do exemplo cortaria o próprio centro da conta perto de 2,8 gols.
 
 ## Decisões de diversão (do CEO)
 
