@@ -25,19 +25,25 @@ import { testParams } from '../engine/testing/params.ts';
  * docs/design/balance-targets.md. It only REPORTS: tuning is the /balance's job (T-016), so the
  * assertions below are sanity bounds far outside the targets, never the targets themselves.
  *
+ * The full report runs only with `MATCH_METRICS=1` (like NAMES_FULL_CHECK):
+ * `MATCH_METRICS=1 npm test -w app -- --silent=false src/data/match-metrics.test.ts`. Without it,
+ * a short version (2 careers, 500 duels of each) checks the same sanity bounds in a second.
+ *
  * - League: 30 careers (seeds 1..30) × the 380 matches of season 1 = 11,400 matches, both sides
  *   with the best XI of their first preferred formation, balanced posture and medium pressure
  *   (the AI's pre-match tactic is T-011), thermometer at its start value.
  * - Calibrated duels (balance-targets.md, "Duelos calibrados"): squads generated with exact
  *   strength (clubStrengthSd = 0), both in 4-4-2, balanced, medium, neutral ground, thermometer
- *   55; DUEL_MATCHES at 20 points of difference (80 × 60) and as many at 30 (85 × 55). The
- *   /balance runs 20,000 of each; 5,000 keeps this report quick (standard error under 0.7 point).
+ *   55; 20,000 matches at 20 points of difference (80 × 60) and as many at 30 (85 × 55), as the
+ *   /balance does.
  */
 const clubs = JSON.parse(
   readFileSync(new URL('./clubs.serie-a.json', import.meta.url), 'utf8'),
 ) as ClubDef[];
 const params = testParams();
-const DUEL_MATCHES = 5_000;
+const FULL = process.env.MATCH_METRICS === '1';
+const CAREERS = FULL ? 30 : 2;
+const DUEL_MATCHES = FULL ? 20_000 : 500;
 const TACTIC = { posture: 'balanced', pressure: 'medium' } as const;
 
 function teamInput(
@@ -115,12 +121,12 @@ const pct = (n: number, d: number) => `${((100 * n) / d).toFixed(1)}%`;
 
 describe('T-009 match metrics with the 20 real clubs (report only, not the /balance)', () => {
   it(
-    'simulates at least 10,000 league matches and the calibrated duels',
-    { timeout: 120_000 },
+    `simulates ${FULL ? 'at least 10,000' : 'a sample of'} league matches and the calibrated duels`,
+    { timeout: 300_000 },
     () => {
       const league = tally();
       let gap10 = { matches: 0, strongerWins: 0, draws: 0 };
-      for (let career = 1; career <= 30; career++) {
+      for (let career = 1; career <= CAREERS; career++) {
         const created = newGame(
           { seed: career, year: 2026, realism: 'full' },
           clubs,
@@ -211,7 +217,7 @@ describe('T-009 match metrics with the 20 real clubs (report only, not the /bala
       const n = league.matches;
       const top = [...league.scores.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
       const lines = [
-        `[T-009 metrics] league: ${n} matches (30 careers × 380), duels: ${d20.matches} + ${d30.matches}`,
+        `[T-009 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}`,
         `  goals per match        ${(league.goals / n).toFixed(3)}   target 2.65 (2.50–2.80)`,
         `  0x0                    ${pct(league.nilNil, n)}   target 7% (6–9%)`,
         `  draws                  ${pct(league.draws, n)}   target 26% (24–28%)`,
@@ -226,7 +232,8 @@ describe('T-009 match metrics with the 20 real clubs (report only, not the /bala
       console.info(lines.join('\n'));
 
       // Sanity only (a broken loop, not a tuning question): far outside every target.
-      expect(n).toBeGreaterThanOrEqual(10_000);
+      expect(n).toBe(CAREERS * 380);
+      if (FULL) expect(n).toBeGreaterThanOrEqual(10_000);
       expect(league.goals / n).toBeGreaterThan(1.5);
       expect(league.goals / n).toBeLessThan(4.5);
       expect(league.homeWins / n).toBeGreaterThan(0.3);
