@@ -13,4 +13,7 @@
 //    goldens changed.
 // 5: the match (T-010) draws the chance kind (penalties, direct free kicks), cards and injuries
 //    every minute, and ends a match with fewer than 7 on one side; the match goldens changed.
-export const ENGINE_VERSION = 5;
+// 6: the match (T-012) takes the coach's commands and plays the AI's in-match rules (injury and
+//    fatigue substitutions, going for the result, "todo mundo no ataque", "segurar o resultado"),
+//    so the match goldens changed.
+export const ENGINE_VERSION = 6;

@@ -773,8 +773,9 @@ describe('the coach\'s club (ia-clubes.md, "Clube do técnico humano")', () => {
         { ...base, seed, home: { ...base.home, profile: 'chaotic', controller: 'human' } },
         params,
       );
+      // The other human side: the AI's in-match rules 2 to 6 never play for the coach (T-012).
       const traditional = simulateMatch(
-        { ...base, seed, home: { ...base.home, profile: 'traditional', controller: 'ai' } },
+        { ...base, seed, home: { ...base.home, profile: 'traditional', controller: 'human' } },
         params,
       );
       // Same events byte for byte: no chaotic draw shifted the match Rng.

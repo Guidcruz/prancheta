@@ -1,5 +1,5 @@
 {
-  "engineVersion": 5,
+  "engineVersion": 6,
   "name": "match-short-handed",
   "data": {
     "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
@@ -297,6 +297,16 @@
         "minute": 71,
         "half": 2,
         "importance": 1,
+        "type": "tacticChange",
+        "side": "home",
+        "formation": "4-4-2",
+        "posture": "attacking",
+        "pressure": "medium"
+      },
+      {
+        "minute": 71,
+        "half": 2,
+        "importance": 1,
         "type": "chance",
         "side": "away",
         "shooter": "clube-teste-02#10",
@@ -353,6 +363,28 @@
         ]
       },
       {
+        "minute": 82,
+        "half": 2,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "home",
+        "formation": "4-4-2",
+        "posture": "allOut",
+        "pressure": "high",
+        "preset": "allOut"
+      },
+      {
+        "minute": 82,
+        "half": 2,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "away",
+        "formation": "4-4-2",
+        "posture": "defensive",
+        "pressure": "low",
+        "preset": "holdResult"
+      },
+      {
         "minute": 83,
         "half": 2,
         "importance": 1,
@@ -361,7 +393,7 @@
         "shooter": "clube-teste-01#4",
         "kind": "open",
         "outcome": "wide",
-        "pGoal": 0.12675750804118802
+        "pGoal": 0.12674076574239418
       },
       {
         "minute": 90,
@@ -380,7 +412,7 @@
         "shooter": "clube-teste-01#10",
         "kind": "open",
         "outcome": "saved",
-        "pGoal": 0.1746807467365752
+        "pGoal": 0.17435215840712256
       },
       {
         "minute": 90,
@@ -392,7 +424,7 @@
         "shooter": "clube-teste-02#8",
         "kind": "open",
         "outcome": "wide",
-        "pGoal": 0.20573284180840443
+        "pGoal": 0.20595514003305415
       },
       {
         "minute": 90,
@@ -404,7 +436,7 @@
         "shooter": "clube-teste-02#9",
         "kind": "open",
         "outcome": "saved",
-        "pGoal": 0.19531566935943992
+        "pGoal": 0.19554782062991896
       },
       {
         "minute": 90,
@@ -423,14 +455,14 @@
       "home": {
         "shots": 10,
         "onTarget": 8,
-        "possession": 37,
+        "possession": 41,
         "yellows": 2,
         "reds": 0
       },
       "away": {
         "shots": 15,
         "onTarget": 9,
-        "possession": 63,
+        "possession": 59,
         "yellows": 4,
         "reds": 0
       }
@@ -481,26 +513,26 @@
       "clube-teste-02#11": 90
     },
     "finalEnergy": {
-      "clube-teste-01#7": 92.56960000000026,
-      "clube-teste-01#2": 74.77120000000014,
-      "clube-teste-01#3": 74.6560000000004,
-      "clube-teste-01#4": 74.77120000000014,
-      "clube-teste-01#5": 74.42559999999958,
-      "clube-teste-01#6": 75.23200000000043,
-      "clube-teste-01#9": 74.6560000000004,
-      "clube-teste-01#8": 73.73439999999982,
-      "clube-teste-01#10": 73.96480000000065,
-      "clube-teste-02#1": 91.94752000000062,
-      "clube-teste-02#3": 74.54080000000067,
-      "clube-teste-02#2": 72.35200000000032,
-      "clube-teste-02#14": 73.1583999999998,
-      "clube-teste-02#4": 74.19520000000011,
-      "clube-teste-02#6": 73.96480000000065,
-      "clube-teste-02#7": 73.27359999999953,
-      "clube-teste-02#8": 72.69759999999951,
-      "clube-teste-02#9": 72.92800000000034,
-      "clube-teste-02#10": 73.04320000000007,
-      "clube-teste-02#11": 74.08000000000038
+      "clube-teste-01#7": 92.10520000000015,
+      "clube-teste-01#2": 73.19440000000014,
+      "clube-teste-01#3": 73.07200000000026,
+      "clube-teste-01#4": 73.19440000000014,
+      "clube-teste-01#5": 72.82719999999955,
+      "clube-teste-01#6": 73.68400000000041,
+      "clube-teste-01#9": 73.07200000000026,
+      "clube-teste-01#8": 72.09279999999994,
+      "clube-teste-01#10": 72.33760000000065,
+      "clube-teste-02#1": 92.19916000000052,
+      "clube-teste-02#3": 75.33640000000061,
+      "clube-teste-02#2": 73.21600000000022,
+      "clube-teste-02#14": 73.99719999999981,
+      "clube-teste-02#4": 75.00160000000007,
+      "clube-teste-02#6": 74.77840000000054,
+      "clube-teste-02#7": 74.10879999999968,
+      "clube-teste-02#8": 73.55079999999961,
+      "clube-teste-02#9": 73.77400000000029,
+      "clube-teste-02#10": 73.88560000000015,
+      "clube-teste-02#11": 74.89000000000041
     },
     "newInjuries": [],
     "newSuspensions": [],

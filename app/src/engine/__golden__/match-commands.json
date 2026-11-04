@@ -1,0 +1,510 @@
+{
+  "engineVersion": 6,
+  "name": "match-commands",
+  "data": {
+    "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
+    "score": [
+      2,
+      0
+    ],
+    "events": [
+      {
+        "minute": 0,
+        "half": 1,
+        "importance": 1,
+        "type": "kickoff"
+      },
+      {
+        "minute": 4,
+        "half": 1,
+        "importance": 1,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#7",
+        "kind": "open",
+        "outcome": "saved",
+        "pGoal": 0.1670234053798075
+      },
+      {
+        "minute": 4,
+        "half": 1,
+        "importance": 1,
+        "type": "chance",
+        "side": "away",
+        "shooter": "clube-teste-02#11",
+        "kind": "open",
+        "outcome": "saved",
+        "pGoal": 0.13664408461911665
+      },
+      {
+        "minute": 5,
+        "half": 1,
+        "importance": 1,
+        "type": "chance",
+        "side": "away",
+        "shooter": "clube-teste-02#4",
+        "kind": "open",
+        "outcome": "saved",
+        "pGoal": 0.10654502339307621
+      },
+      {
+        "minute": 14,
+        "half": 1,
+        "importance": 1,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#8",
+        "kind": "open",
+        "outcome": "saved",
+        "pGoal": 0.16715953592846
+      },
+      {
+        "minute": 16,
+        "half": 1,
+        "importance": 1,
+        "type": "chance",
+        "side": "away",
+        "shooter": "clube-teste-02#9",
+        "kind": "open",
+        "outcome": "saved",
+        "pGoal": 0.1255069793142445
+      },
+      {
+        "minute": 16,
+        "half": 1,
+        "importance": 1,
+        "type": "yellow",
+        "side": "home",
+        "player": "clube-teste-01#5",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 19,
+        "half": 1,
+        "importance": 1,
+        "type": "yellow",
+        "side": "away",
+        "player": "clube-teste-02#14",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 26,
+        "half": 1,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "home",
+        "formation": "4-4-2",
+        "posture": "balanced",
+        "pressure": "high"
+      },
+      {
+        "minute": 27,
+        "half": 1,
+        "importance": 2,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#11",
+        "kind": "open",
+        "outcome": "post",
+        "pGoal": 0.16188512009507997
+      },
+      {
+        "minute": 29,
+        "half": 1,
+        "importance": 1,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#6",
+        "kind": "open",
+        "outcome": "wide",
+        "pGoal": 0.1329337632471233
+      },
+      {
+        "minute": 34,
+        "half": 1,
+        "importance": 2,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#9",
+        "kind": "open",
+        "outcome": "post",
+        "pGoal": 0.16828763960253182
+      },
+      {
+        "minute": 35,
+        "half": 1,
+        "importance": 3,
+        "type": "goal",
+        "side": "home",
+        "scorer": "clube-teste-01#7",
+        "assist": "clube-teste-01#11",
+        "kind": "open",
+        "score": [
+          1,
+          0
+        ]
+      },
+      {
+        "minute": 42,
+        "half": 1,
+        "importance": 1,
+        "type": "yellow",
+        "side": "away",
+        "player": "clube-teste-02#8",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 45,
+        "half": 1,
+        "importance": 1,
+        "type": "stoppage",
+        "minutes": 2
+      },
+      {
+        "minute": 45,
+        "added": 2,
+        "half": 1,
+        "importance": 2,
+        "type": "halftime",
+        "score": [
+          1,
+          0
+        ]
+      },
+      {
+        "minute": 45,
+        "added": 2,
+        "half": 1,
+        "importance": 1,
+        "type": "halftimeTalk",
+        "side": "home",
+        "talk": "motivate"
+      },
+      {
+        "minute": 45,
+        "added": 2,
+        "half": 1,
+        "importance": 1,
+        "type": "halftimeTalk",
+        "side": "away",
+        "talk": "demand"
+      },
+      {
+        "minute": 49,
+        "half": 2,
+        "importance": 1,
+        "type": "yellow",
+        "side": "home",
+        "player": "clube-teste-01#10",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 52,
+        "half": 2,
+        "importance": 3,
+        "type": "goal",
+        "side": "home",
+        "scorer": "clube-teste-01#8",
+        "assist": "clube-teste-01#4",
+        "kind": "open",
+        "score": [
+          2,
+          0
+        ]
+      },
+      {
+        "minute": 52,
+        "half": 2,
+        "importance": 1,
+        "type": "yellow",
+        "side": "home",
+        "player": "clube-teste-01#8",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 54,
+        "half": 2,
+        "importance": 1,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#10",
+        "kind": "open",
+        "outcome": "wide",
+        "pGoal": 0.17586532352986745
+      },
+      {
+        "minute": 55,
+        "half": 2,
+        "importance": 1,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#10",
+        "kind": "open",
+        "outcome": "saved",
+        "pGoal": 0.17577046580174766
+      },
+      {
+        "minute": 58,
+        "half": 2,
+        "importance": 1,
+        "type": "yellow",
+        "side": "home",
+        "player": "clube-teste-01#2",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 59,
+        "half": 2,
+        "importance": 1,
+        "type": "substitution",
+        "side": "home",
+        "out": "clube-teste-01#9",
+        "in": "clube-teste-01#25",
+        "reason": "tactical"
+      },
+      {
+        "minute": 65,
+        "half": 2,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "home",
+        "formation": "3-5-2",
+        "posture": "attacking",
+        "pressure": "high"
+      },
+      {
+        "minute": 68,
+        "half": 2,
+        "importance": 1,
+        "type": "yellow",
+        "side": "away",
+        "player": "clube-teste-02#3",
+        "triggersSuspension": false
+      },
+      {
+        "minute": 71,
+        "half": 2,
+        "importance": 1,
+        "type": "substitution",
+        "side": "away",
+        "out": "clube-teste-02#2",
+        "in": "clube-teste-02#16",
+        "reason": "tactical"
+      },
+      {
+        "minute": 71,
+        "half": 2,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "away",
+        "formation": "4-4-2",
+        "posture": "attacking",
+        "pressure": "medium"
+      },
+      {
+        "minute": 78,
+        "half": 2,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "home",
+        "formation": "3-5-2",
+        "posture": "defensive",
+        "pressure": "low",
+        "preset": "holdResult"
+      },
+      {
+        "minute": 90,
+        "half": 2,
+        "importance": 1,
+        "type": "stoppage",
+        "minutes": 6
+      },
+      {
+        "minute": 90,
+        "added": 3,
+        "half": 2,
+        "importance": 1,
+        "type": "chance",
+        "side": "away",
+        "shooter": "clube-teste-02#6",
+        "kind": "freeKick",
+        "outcome": "wide",
+        "pGoal": 0.061909121897443097
+      },
+      {
+        "minute": 90,
+        "added": 4,
+        "half": 2,
+        "importance": 1,
+        "type": "chance",
+        "side": "home",
+        "shooter": "clube-teste-01#11",
+        "kind": "open",
+        "outcome": "wide",
+        "pGoal": 0.15751095014892763
+      },
+      {
+        "minute": 90,
+        "added": 6,
+        "half": 2,
+        "importance": 3,
+        "type": "fulltime",
+        "score": [
+          2,
+          0
+        ],
+        "abandoned": false
+      }
+    ],
+    "stats": {
+      "home": {
+        "shots": 10,
+        "onTarget": 5,
+        "possession": 56,
+        "yellows": 4,
+        "reds": 0
+      },
+      "away": {
+        "shots": 4,
+        "onTarget": 3,
+        "possession": 44,
+        "yellows": 3,
+        "reds": 0
+      }
+    },
+    "ratings": {
+      "clube-teste-01#1": 7.6,
+      "clube-teste-01#2": 5.6,
+      "clube-teste-01#3": 6.5,
+      "clube-teste-01#4": 6.7,
+      "clube-teste-01#5": 6.3,
+      "clube-teste-01#7": 7.8,
+      "clube-teste-01#6": 6.5,
+      "clube-teste-01#9": 6.2,
+      "clube-teste-01#8": 6.8,
+      "clube-teste-01#10": 6.2,
+      "clube-teste-01#11": 7,
+      "clube-teste-01#25": 6.8,
+      "clube-teste-02#1": 5.7,
+      "clube-teste-02#3": 4.2,
+      "clube-teste-02#2": 5,
+      "clube-teste-02#14": 4.2,
+      "clube-teste-02#4": 5.4,
+      "clube-teste-02#6": 5.3,
+      "clube-teste-02#7": 5.7,
+      "clube-teste-02#8": 4.7,
+      "clube-teste-02#9": 5.7,
+      "clube-teste-02#10": 5.4,
+      "clube-teste-02#11": 5.9,
+      "clube-teste-02#16": 6
+    },
+    "motm": "clube-teste-01#7",
+    "minutes": {
+      "clube-teste-01#1": 90,
+      "clube-teste-01#2": 90,
+      "clube-teste-01#3": 90,
+      "clube-teste-01#4": 90,
+      "clube-teste-01#5": 90,
+      "clube-teste-01#7": 90,
+      "clube-teste-01#6": 90,
+      "clube-teste-01#9": 58,
+      "clube-teste-01#8": 90,
+      "clube-teste-01#10": 90,
+      "clube-teste-01#11": 90,
+      "clube-teste-01#25": 32,
+      "clube-teste-02#1": 90,
+      "clube-teste-02#3": 90,
+      "clube-teste-02#2": 70,
+      "clube-teste-02#14": 90,
+      "clube-teste-02#4": 90,
+      "clube-teste-02#6": 90,
+      "clube-teste-02#7": 90,
+      "clube-teste-02#8": 90,
+      "clube-teste-02#9": 90,
+      "clube-teste-02#10": 90,
+      "clube-teste-02#11": 90,
+      "clube-teste-02#16": 20
+    },
+    "finalEnergy": {
+      "clube-teste-01#1": 90.57851199999958,
+      "clube-teste-01#2": 69.56776000000016,
+      "clube-teste-01#3": 69.42879999999971,
+      "clube-teste-01#4": 69.56776000000016,
+      "clube-teste-01#5": 69.15087999999949,
+      "clube-teste-01#7": 70.12360000000025,
+      "clube-teste-01#6": 70.12360000000025,
+      "clube-teste-01#9": 80.46399999999991,
+      "clube-teste-01#8": 68.3171200000003,
+      "clube-teste-01#10": 68.59504000000052,
+      "clube-teste-01#11": 69.15087999999949,
+      "clube-teste-01#25": 88.91464000000008,
+      "clube-teste-02#1": 91.77976000000064,
+      "clube-teste-02#3": 74.01040000000069,
+      "clube-teste-02#2": 79.26400000000024,
+      "clube-teste-02#14": 72.5991999999998,
+      "clube-teste-02#4": 73.65760000000012,
+      "clube-teste-02#6": 73.42240000000066,
+      "clube-teste-02#7": 72.71679999999952,
+      "clube-teste-02#8": 72.1287999999995,
+      "clube-teste-02#9": 72.36400000000035,
+      "clube-teste-02#10": 72.48160000000007,
+      "clube-teste-02#11": 73.54000000000039,
+      "clube-teste-02#16": 92.51200000000009
+    },
+    "newInjuries": [],
+    "newSuspensions": [],
+    "yellowCounts": {
+      "clube-teste-01#1": 0,
+      "clube-teste-01#2": 1,
+      "clube-teste-01#3": 0,
+      "clube-teste-01#4": 0,
+      "clube-teste-01#5": 1,
+      "clube-teste-01#7": 0,
+      "clube-teste-01#6": 0,
+      "clube-teste-01#9": 0,
+      "clube-teste-01#8": 1,
+      "clube-teste-01#10": 1,
+      "clube-teste-01#11": 0,
+      "clube-teste-01#25": 0,
+      "clube-teste-02#1": 0,
+      "clube-teste-02#3": 1,
+      "clube-teste-02#2": 0,
+      "clube-teste-02#14": 1,
+      "clube-teste-02#4": 0,
+      "clube-teste-02#6": 0,
+      "clube-teste-02#7": 0,
+      "clube-teste-02#8": 1,
+      "clube-teste-02#9": 0,
+      "clube-teste-02#10": 0,
+      "clube-teste-02#11": 0,
+      "clube-teste-02#16": 0
+    },
+    "markers": [
+      {
+        "kind": "semSofrerGols",
+        "side": "home"
+      },
+      {
+        "kind": "classico"
+      },
+      {
+        "kind": "estreia",
+        "side": "home",
+        "player": "clube-teste-01#25"
+      }
+    ],
+    "attendance": 15810,
+    "warnings": [
+      {
+        "code": "command-player-not-on-bench",
+        "detail": {
+          "command": 5,
+          "side": "home",
+          "minute": 80,
+          "kind": "substitution",
+          "player": "clube-teste-01#25"
+        }
+      }
+    ]
+  }
+}

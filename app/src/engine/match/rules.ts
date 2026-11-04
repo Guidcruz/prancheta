@@ -1,7 +1,7 @@
 import { clamp, exp } from '../math.ts';
 import type { FansParams, MatchParams } from '../params.ts';
-import type { AiProfile, Position, Pressure, Side, Trait } from '../types.ts';
-import type { HalftimeTalk, InjurySeverity, MissOutcome } from './types.ts';
+import type { AiProfile, Position, Posture, Pressure, Side, Trait } from '../types.ts';
+import type { HalftimeTalk, InjurySeverity, MissOutcome, TacticPreset } from './types.ts';
 
 /*
  * Rule constants and small formulas of the match (docs/design/partida.md, "Chance de oportunidade
@@ -152,6 +152,45 @@ export const AI_HALFTIME_TALK: {
   seller: { losing: 'motivate', drawing: 'motivate', winning: 'calm' },
   traditional: { losing: 'demand', drawing: 'motivate', winning: 'calm' },
 };
+
+/** Substitutions per side and match (partida.md, "Substituições": `match.maxSubs = 5`, a rule). */
+export const MAX_SUBS = 5;
+
+/**
+ * What each in-match shortcut sets (partida.md, "Comandos em jogo"): "Pressionar" only the
+ * pressure; "Segurar o resultado" and "Todo mundo no ataque" the posture and the pressure.
+ */
+export const TACTIC_PRESETS: {
+  readonly [P in TacticPreset]: { readonly posture?: Posture; readonly pressure: Pressure };
+} = {
+  press: { pressure: 'high' },
+  holdResult: { posture: 'defensive', pressure: 'low' },
+  allOut: { posture: 'allOut', pressure: 'high' },
+};
+
+/**
+ * The minutes of the AI's in-match rules (ia-clubes.md, "Durante o jogo"; constants, "ordem das
+ * regras em jogo"). The AI decides after a regulation minute is played, and the decision takes
+ * effect in the next one, like a coach's command:
+ * - `fatigue` (rule 2): from `fatigueFrom` to `fatigueTo`, a player with energy below
+ *   `ai.subEnergy` is replaced by a better reserve;
+ * - `chase` (rule 3): from `chaseFrom` (`chaoticChaseFrom` for the chaotic profile), losing;
+ * - `allOut` (rule 4): from `allOutFrom`, losing by `oneGoal`;
+ * - `hold` (rule 5): from `holdFrom` (`ambitiousHoldFrom` for the ambitious profile), winning by
+ *   `oneGoal`;
+ * - rule 6: before `keepSubUntil`, a tactical substitution always leaves one for an injury.
+ */
+export const IN_MATCH_AI = {
+  fatigueFrom: 60,
+  fatigueTo: 80,
+  chaseFrom: 70,
+  chaoticChaseFrom: 60,
+  allOutFrom: 80,
+  holdFrom: 75,
+  ambitiousHoldFrom: 80,
+  keepSubUntil: 80,
+  oneGoal: 1,
+} as const;
 
 /** Possession (display only): `clamp(50 + 1.5 × (Mid − Mid_opp) + Rng.int(−3, 3), 30, 70)`. */
 export const POSSESSION = { base: 50, perMid: 1.5, noise: 3, min: 30, max: 70 } as const;

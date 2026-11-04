@@ -15,7 +15,7 @@ import type {
 
 /*
  * Match contracts (docs/02-architecture.md, 4.1 "Partida"; docs/design/partida.md, "Eventos" and
- * "Estatísticas e notas"). `MatchCommand` arrives with the coach's commands (T-012).
+ * "Estatísticas e notas"). `MatchCommand` carries the coach's decisions during the match (T-012).
  */
 
 /** One side of a match, as `prepareRound` builds it. */
@@ -50,6 +50,46 @@ export interface MatchInput {
 export type ChanceKind = 'open' | 'freeKick' | 'penalty';
 export type MissOutcome = 'saved' | 'post' | 'wide';
 export type HalftimeTalk = 'motivate' | 'demand' | 'calm';
+/** The shortcuts of partida.md ("Comandos em jogo"): pressionar, segurar o resultado, tudo ao ataque. */
+export type TacticPreset = 'press' | 'holdResult' | 'allOut';
+
+/**
+ * A decision of the coach during the match (docs/02-architecture.md, 4.1; partida.md, "Comandos
+ * em jogo", "Substituições" and "Conversa no intervalo"). `minute` is the regulation minute the
+ * coach decided in (after it was played; 45 and 90 also cover their added time), and the command
+ * takes effect at the start of the next regulation minute: a command of minute 45 at the start of
+ * the second half, one of minute 90 never (it is ignored with a warning). The one exception is the
+ * substitution of a player injured in that same `minute`, which happens at once. The same seed and
+ * the same commands give the same match; an invalid command is ignored with a warning.
+ */
+export type MatchCommand =
+  | {
+      readonly minute: number;
+      readonly side: Side;
+      readonly kind: 'substitution';
+      readonly out: PlayerId;
+      readonly in: PlayerId;
+    }
+  | {
+      readonly minute: number;
+      readonly side: Side;
+      readonly kind: 'tactic';
+      readonly formation?: Formation;
+      readonly posture?: Posture;
+      readonly pressure?: Pressure;
+    }
+  | {
+      readonly minute: number;
+      readonly side: Side;
+      readonly kind: 'preset';
+      readonly preset: TacticPreset;
+    }
+  | {
+      readonly minute: 45;
+      readonly side: Side;
+      readonly kind: 'halftimeTalk';
+      readonly talk: HalftimeTalk;
+    };
 export type InjurySeverity = 'light' | 'medium' | 'serious' | 'severe';
 
 /**
@@ -119,7 +159,8 @@ export type MatchEvent = {
       readonly formation: Formation;
       readonly posture: Posture;
       readonly pressure: Pressure;
-      readonly preset?: string;
+      /** The shortcut that caused it, when it was one (the coach's or the AI's). */
+      readonly preset?: TacticPreset;
     }
   | { readonly type: 'stoppage'; readonly minutes: number }
   | { readonly type: 'halftime'; readonly score: readonly [number, number] }
