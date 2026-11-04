@@ -18,14 +18,15 @@ Na 1a o ritmo é sempre "No meu ritmo": a rodada avança quando o jogador toca e
 
 ## Tabela de jogos
 
-1. Embaralha os 20 clubes com a semente da carreira (`seedFromString("<seed>-fixtures")`).
-2. Turno (rodadas 1 a 19) pelo método do círculo (tabela de Berger), que dá a cada clube no máximo 2 jogos seguidos em casa ou fora.
+1. Embaralha os 20 clubes com uma semente própria de cada temporada: `seedFromString("<seed>-fixtures-<season>")`, em que `<season>` é o ano da temporada. Cada temporada tem o seu sorteio (na opção B do fim de temporada, a tabela muda de um ano para o outro), e a mesma carreira no mesmo ano dá sempre a mesma tabela.
+2. Turno (rodadas 1 a 19) pelo método do círculo (tabela de Berger), começando na 4ª rotação da ordem canônica (`BERGER_START = 3`, contando de 0) e seguindo as 19 rotações em ciclo a partir dali.
 3. Returno (rodadas 20 a 38) espelhado: a rodada `19 + n` repete os confrontos da rodada `n` com o mando invertido, como na CBF.
-4. Sem restrição de clássico na 1a. Se dois clubes da mesma cidade forem mandantes na mesma rodada, não há problema (cada um tem o seu estádio na lista de clubes).
+
+**Limite de mando:** nenhum clube joga mais de 2 vezes seguidas em casa ou fora em toda a temporada, incluindo a virada do turno (rodadas 19, 20 e 21). Motivo do `BERGER_START = 3`: na ordem canônica de Berger (começando da 1ª rotação), o espelho do returno faz 2 clubes terem 3 mandos iguais seguidos nas rodadas 19 a 21; Berger sozinho garante o limite dentro do turno, não na emenda com o returno. A 4ª rotação é a primeira a partir da qual o turno respeita o limite também na virada. É constante (não parâmetro); o teste do calendário confere o limite nas 38 rodadas. 4. Sem restrição de clássico na 1a. Se dois clubes da mesma cidade forem mandantes na mesma rodada, não há problema (cada um tem o seu estádio na lista de clubes).
 
 ## Datas
 
-A temporada começa no 2º sábado de abril do ano escolhido no novo jogo (o ano entra como argumento; o motor nunca lê a data do aparelho) e dura 34 semanas.
+A temporada começa no 2º sábado de abril do ano escolhido no novo jogo (o ano entra como argumento; o motor nunca lê a data do aparelho) e dura 34 semanas; cada semana vai de sábado a sexta. A rodada 1 é no domingo seguinte ao 2º sábado de abril (entre 9 e 15 de abril; em 2026, 12/04).
 
 | Item                      | Regra                                                  | Parâmetro                                              |
 | ------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
@@ -33,7 +34,7 @@ A temporada começa no 2º sábado de abril do ano escolhido no novo jogo (o ano
 | Data FIFA (sem rodada)    | semanas 9, 21, 25 e 30 da temporada                    | `season.fifaWeeks = [9, 21, 25, 30]`                   |
 | Rodadas no meio da semana | quarta-feira das semanas 3, 7, 12, 16, 19, 23, 28 e 32 | `season.midweekWeeks = [3, 7, 12, 16, 19, 23, 28, 32]` |
 
-Conta: 34 − 4 = 30 rodadas de domingo + 8 de quarta = 38. Domingo → quarta são 3 dias de recuperação; quarta → domingo, 4. A rodada 38 termina na primeira semana de dezembro. Todos os jogos de uma rodada acontecem no mesmo dia (a hora é só texto).
+Conta: 34 − 4 = 30 rodadas de domingo + 8 de quarta = 38. Domingo → quarta são 3 dias de recuperação; quarta → domingo, 4. A rodada 38 é o domingo da semana 34, 231 dias depois da rodada 1: cai entre 26/11 e 02/12 conforme o ano (2026: 29/11). Todos os jogos de uma rodada acontecem no mesmo dia (a hora é só texto).
 
 ## Pontos e tabela
 
