@@ -1,0 +1,24 @@
+{
+  "extends": "@tsconfig/svelte/tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "noUncheckedIndexedAccess": true,
+    "resolveJsonModule": true,
+    "allowJs": false,
+    "isolatedModules": true,
+    "skipLibCheck": true,
+    "types": ["vite/client", "vite-plugin-pwa/svelte", "node"],
+    "paths": {
+      "@config": ["../config/prancheta.config.ts"],
+      "@engine/*": ["./src/engine/*"],
+      "@lib/*": ["./src/lib/*"]
+    },
+    "baseUrl": ".",
+    "allowImportingTsExtensions": true,
+    "noEmit": true
+  },
+  "include": ["src/**/*", "../config/*.ts", "vite.config.ts"]
+}

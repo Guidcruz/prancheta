@@ -1,0 +1,7 @@
+app/src/tokens.css
+app/public/icons/*.png
+dist/
+**/dist/
+.astro/
+node_modules/
+package-lock.json

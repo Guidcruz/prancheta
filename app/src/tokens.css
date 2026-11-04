@@ -1,0 +1,70 @@
+/* Prancheta — generated from design/tokens.json by scripts/tokens-to-css.mjs. Do not edit. */
+:root, [data-theme="noite"] {
+  --surface-0: #0f1a24;
+  --surface-1: #172534;
+  --surface-2: #20334a;
+  --line: #2e4458;
+  --ink: #f2f5f7;
+  --ink-muted: #a3b3c0;
+  --grass: #2fb866;
+  --on-grass: #06200f;
+  --grass-soft: #1b4a33;
+  --floodlight: #ffc83d;
+  --on-floodlight: #1c1500;
+  --danger: #ff6b6b;
+  --danger-soft: #4a1f24;
+  --draw: #c3ced6;
+  --info: #5fb0ff;
+  --focus: #ffc83d;
+  --pitch: #1e6b3f;
+  --pitch-line: #9fdcb6;
+  --shadow-card: 0 1px 0 rgba(255,255,255,0.04);
+  color-scheme: dark;
+}
+[data-theme="dia"] {
+  --surface-0: #f3f5f7;
+  --surface-1: #ffffff;
+  --surface-2: #e6ebf0;
+  --line: #cfd8e0;
+  --ink: #10202c;
+  --ink-muted: #4e6170;
+  --grass: #177a42;
+  --on-grass: #ffffff;
+  --grass-soft: #d9f2e3;
+  --floodlight: #f0b429;
+  --on-floodlight: #1c1500;
+  --danger: #c62828;
+  --danger-soft: #fbe3e3;
+  --draw: #51626f;
+  --info: #1565c0;
+  --focus: #1565c0;
+  --pitch: #2d8f55;
+  --pitch-line: #eaf7ef;
+  --shadow-card: 0 1px 2px rgba(16,32,44,0.08);
+  color-scheme: light;
+}
+:root {
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --touch: 44px;
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+  --font-display: "Barlow Condensed", "Arial Narrow", sans-serif;
+  --font-body: "Barlow", system-ui, sans-serif;
+}
+.placar-xl { font-family: var(--font-display); font-size: 56px; line-height: 56px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.titulo { font-family: var(--font-display); font-size: 28px; line-height: 32px; font-weight: 700; }
+.subtitulo { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 600; }
+.numero { font-family: var(--font-display); font-size: 18px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.rotulo { font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
+.body { font-family: var(--font-body); font-size: 15px; line-height: 22px; font-weight: 400; }
+.body-strong { font-family: var(--font-body); font-size: 15px; line-height: 22px; font-weight: 600; }
+.caption { font-family: var(--font-body); font-size: 12px; line-height: 16px; font-weight: 500; }
+.botao { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }
+.display-xl { font-family: var(--font-display); font-size: 64px; line-height: 60px; font-weight: 700; text-transform: uppercase; }

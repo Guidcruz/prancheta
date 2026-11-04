@@ -1,0 +1,48 @@
+# Mantenha o nome do job `ci`: é o status check obrigatório na proteção de branch.
+name: ci
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+env:
+  ASTRO_TELEMETRY_DISABLED: 1
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: '22', cache: 'npm' }
+      - name: Instalar
+        run: npm ci
+      - name: Tokens do design system (falha se o contraste cair ou se o CSS commitado estiver desatualizado)
+        run: npm run tokens && git diff --exit-code app/src/tokens.css
+      - name: Lint, tipos, formatação e testes do hook
+        run: npm run lint
+      - name: Testes unitários e do motor
+        run: npm test
+      - name: Auditoria de dependências
+        run: npm audit --audit-level=high
+      - name: Build do site e do jogo
+        run: npm run build
+      - name: Conferir a saída
+        run: |
+          test -f dist/index.html
+          test -f dist/jogo/index.html
+          test -f dist/jogo/manifest.webmanifest
+          test -f dist/jogo/icons/icon-192.png
+          test -f dist/jogo/icons/icon-512.png
+          test -f dist/devlog/rss.xml
+          ! grep -rl "fonts.googleapis.com" dist/ || (echo "chamada a terceiros no build" && exit 1)

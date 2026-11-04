@@ -1,0 +1,42 @@
+---
+import Base from '../layouts/Base.astro';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+// Fonte única: docs/roadmap.md (a tabela). Mudou lá, muda aqui no próximo build.
+const md = readFileSync(resolve(process.cwd(), '..', 'docs', 'roadmap.md'), 'utf8');
+const rows = md
+  .split('\n')
+  .filter((l) => l.startsWith('|') && !l.startsWith('|---') && !l.startsWith('| Etapa'))
+  .map((l) =>
+    l
+      .split('|')
+      .slice(1, -1)
+      .map((c) => c.trim().replace(/`/g, '')),
+  );
+const nota = md.split('\n').find((l) => l.startsWith('Sem datas')) ?? '';
+---
+
+<Base title="Roteiro" description="As etapas do jogo, cada uma com uma versão jogável.">
+  <h1>Roteiro</h1>
+  <p>Cada etapa termina com uma versão jogável, publicada aqui. {nota}</p>
+  <table>
+    <thead>
+      <tr>
+        <th>Etapa</th>
+        <th>Nome</th>
+        <th>Entrega</th>
+        <th>Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {rows.map(([n, nome, entrega, estado]) => (
+        <tr>
+          <td class="numero">{n}</td>
+          <td class="body-strong">{nome}</td>
+          <td>{entrega}</td>
+          <td>{estado}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</Base>

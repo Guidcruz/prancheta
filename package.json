@@ -1,0 +1,32 @@
+{
+  "name": "prancheta",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Jogo de técnico de futebol para o celular (PWA): site, devlog e jogo.",
+  "workspaces": [
+    "app",
+    "site"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w app",
+    "build": "node scripts/build.mjs",
+    "tokens": "node scripts/tokens-to-css.mjs",
+    "test": "npm test -w app",
+    "test:all": "npm run lint && npm test && npm run build",
+    "lint": "npm run lint -w app && npm run check -w app && npm run check -w site && prettier --check \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\" && bash scripts/test-hook.sh",
+    "format": "prettier --write \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\"",
+    "balance": "echo \"scripts/balance.ts ainda não existe (tarefa da Etapa 1)\" && exit 1",
+    "content:check": "echo \"scripts/content-check.mjs ainda não existe (tarefa da Etapa 1)\" && exit 1",
+    "icons": "node scripts/icons.mjs"
+  },
+  "devDependencies": {
+    "prettier": "^3.9.10",
+    "prettier-plugin-astro": "^1.1.2",
+    "prettier-plugin-svelte": "^4.1.1",
+    "sharp": "^0.35.5"
+  },
+  "engines": {
+    "node": ">=22"
+  },
+  "type": "module"
+}

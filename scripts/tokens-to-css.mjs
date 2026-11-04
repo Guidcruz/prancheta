@@ -1,0 +1,84 @@
+// Compiles design/tokens.json (exported from the Prancheta design system) into app/src/tokens.css.
+// Usage: node scripts/tokens-to-css.mjs
+import { readFileSync, writeFileSync } from 'node:fs';
+import { resolve, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const tokens = JSON.parse(readFileSync(resolve(root, 'design/tokens.json'), 'utf8'));
+const themes = tokens.color.themes.map((t) => t.id);
+const first = themes[0];
+const val = (t, theme) =>
+  typeof t.value === 'string' ? t.value : (t.value[theme] ?? t.value[first]);
+
+let css = `/* ${tokens.name} — generated from design/tokens.json by scripts/tokens-to-css.mjs. Do not edit. */\n`;
+css += `:root, [data-theme="${first}"] {\n`;
+for (const t of tokens.color.tokens) css += `  --${t.name}: ${val(t, first)};\n`;
+for (const t of tokens.shadow?.tokens ?? []) css += `  --${t.name}: ${val(t, first)};\n`;
+css += `  color-scheme: ${first === 'noite' ? 'dark' : 'light'};\n}\n`;
+for (const theme of themes.slice(1)) {
+  css += `[data-theme="${theme}"] {\n`;
+  for (const t of tokens.color.tokens) css += `  --${t.name}: ${val(t, theme)};\n`;
+  for (const t of tokens.shadow?.tokens ?? []) css += `  --${t.name}: ${val(t, theme)};\n`;
+  css += `  color-scheme: ${theme === 'noite' ? 'dark' : 'light'};\n}\n`;
+}
+css += `:root {\n`;
+for (const t of tokens.spacing.tokens) css += `  --${t.name}: ${t.value};\n`;
+for (const t of tokens.radius.tokens) css += `  --${t.name}: ${t.value};\n`;
+for (const [k, v] of Object.entries(tokens.type.families)) css += `  --font-${k}: ${v};\n`;
+css += `}\n`;
+for (const g of tokens.type.groups) {
+  for (const s of g.styles) {
+    css += `.${s.name} { font-family: var(--font-${s.family ?? g.family}); font-size: ${s.fontSize}; line-height: ${s.lineHeight}; font-weight: ${s.fontWeight};`;
+    if (s.letterSpacing) css += ` letter-spacing: ${s.letterSpacing};`;
+    if (['placar-xl', 'numero'].includes(s.name)) css += ` font-variant-numeric: tabular-nums;`;
+    if (s.name === 'rotulo') css += ` text-transform: uppercase;`;
+    css += ` }\n`;
+  }
+}
+// Utility classes derived from the scale (not tokens of their own).
+css += `.botao { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.02em; }\n`;
+css += `.display-xl { font-family: var(--font-display); font-size: 64px; line-height: 60px; font-weight: 700; text-transform: uppercase; }\n`;
+
+// Contrast check of the pairs the usage notes promise (WCAG 2, 4.5:1 for text).
+const lum = (hex) => {
+  const [r, g, b] = [1, 3, 5]
+    .map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
+    .map((c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4));
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+};
+const ratio = (a, b) => {
+  const [x, y] = [lum(a), lum(b)].sort((p, q) => q - p);
+  return (x + 0.05) / (y + 0.05);
+};
+const byName = Object.fromEntries(tokens.color.tokens.map((t) => [t.name, t]));
+const pairs = [
+  ['ink', 'surface-0'],
+  ['ink', 'surface-1'],
+  ['ink', 'surface-2'],
+  ['ink-muted', 'surface-0'],
+  ['ink-muted', 'surface-1'],
+  ['ink-muted', 'surface-2'],
+  ['on-grass', 'grass'],
+  ['on-floodlight', 'floodlight'],
+  ['draw', 'surface-1'],
+  ['draw', 'surface-2'],
+  ['info', 'surface-0'],
+  ['info', 'surface-1'],
+  ['danger', 'surface-1'],
+  ['ink', 'grass-soft'],
+  ['ink', 'danger-soft'],
+];
+const failures = [];
+for (const theme of themes)
+  for (const [fg, bg] of pairs) {
+    const r = ratio(val(byName[fg], theme), val(byName[bg], theme));
+    if (r < 4.5) failures.push(`${theme}: ${fg} on ${bg} = ${r.toFixed(2)}:1`);
+  }
+if (failures.length) {
+  console.error('Contrast below 4.5:1:\n  ' + failures.join('\n  '));
+  process.exit(1);
+}
+
+writeFileSync(resolve(root, 'app/src/tokens.css'), css);
+console.log(`tokens.css written (${themes.length} themes, ${tokens.color.tokens.length} colors)`);

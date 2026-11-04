@@ -1,0 +1,57 @@
+---
+import Base from '../layouts/Base.astro';
+import { config } from '../../../config/prancheta.config.ts';
+import { getCollection } from 'astro:content';
+const posts = (await getCollection('devlog'))
+  .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
+  .slice(0, 3);
+const base = config.paths.site;
+---
+
+<Base>
+  <section class="hero">
+    <p class="rotulo" style="color: var(--floodlight)">
+      Em desenvolvimento, em público
+    </p>
+    <h1 class="display-xl">{config.name}</h1>
+    <p class="lead subtitulo">{config.slogan['pt-BR']}</p>
+    <p>
+      Um jogo de técnico de futebol no estilo dos clássicos, só com clubes fictícios em trocadilho,
+      para jogar no celular em rodadas de poucos minutos. Carreira offline e ligas com amigos.
+    </p>
+    <p>
+      <a class="btn botao" href={config.paths.game + '/'}>
+        Abrir a versão atual (v{config.version})
+      </a>
+    </p>
+    <p class="caption" style="color: var(--ink-muted)">
+      A versão atual é a zero: uma tela e um botão. Cada semana ela cresce. Veja o{' '}
+      <a href={`${base}roadmap/`}>roteiro</a>.
+    </p>
+  </section>
+  <section>
+    <h2>Devlog</h2>
+    {posts.map((p) => (
+      <article class="card" style="margin-bottom: var(--space-3)">
+        <p class="caption" style="color: var(--ink-muted); margin: 0">
+          {p.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa {p.data.etapa}
+        </p>
+        <h3 style="margin-top: var(--space-1)">
+          <a href={`${base}devlog/${p.id}/`}>{p.data.title}</a>
+        </h3>
+        <p style="margin: 0">{p.data.summary}</p>
+      </article>
+    ))}
+    <p>
+      <a href={`${base}devlog/`}>Todos os posts</a>
+    </p>
+  </section>
+</Base>
+<style>
+  .hero {
+    padding: var(--space-6) 0;
+  }
+  .lead {
+    color: var(--ink-muted);
+  }
+</style>
