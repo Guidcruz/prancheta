@@ -166,3 +166,26 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 > Status: **aprovado pelo CEO em 2026-11-04** (escudos estilo A v5, ADR-0014). Substitui a frase que citava "um símbolo simples (estrela, bola ou letra)".
 
 Cada escudo tem o formato, as cores e um símbolo da cidade do clube, com uma estrela para cada título. Tudo desenhado por código.
+
+## Página Clubes: lista "Como um clube nasce" (revisão do item Escudo)
+
+> Status: **aguardando o CEO**. Autor: `content-writer`. Só pt-BR. Motivo: o item "Escudo" ainda descreve o gerador antigo ("símbolo simples (estrela, bola ou letra)"). A regra vigente é a do ADR-0014 e do gerador v5. Não repete a frase aprovada do topo da página (formato, cores, símbolo da cidade, estrela por título); detalha o que ela não diz: de onde vêm silhueta, cores e padrão, e a cor das estrelas. Os demais itens da lista (Nome, Cidade e cores, Uniforme, Estádio, Torcida) foram lidos e não estão desatualizados quanto ao escudo; ficam como estão.
+
+**Antes** (`site/src/pages/clubes.astro`, linhas 44 a 47):
+
+> **Escudo:** desenhado por código, combinando formato, cores, faixas e um símbolo simples (estrela, bola ou letra). Nunca imita um escudo real.
+
+**Depois (proposto):**
+
+> **Escudo:** desenhado por código. A silhueta, as cores e o tipo de padrão lembram o clube que inspirou o time, mas o desenho é sempre novo. O símbolo vem da cidade, e as estrelas são douradas para títulos da Série A e prateadas para os da Série B.
+
+Notas:
+
+- Sai a frase "Nunca imita um escudo real": a palavra "real" sugeria comparação. A ideia (lembra na forma, não copia) fica em "o desenho é sempre novo".
+- Não cita sigla, letra, nome nem símbolo de nenhum clube (ADR-0014).
+- 241 caracteres, cabe em um item de lista sem quebrar o layout.
+
+**Pendências fora do pedido, para o CEO decidir:**
+
+1. A "Frase sob os escudos" da seção "Clubes" deste arquivo (acima) também cita "um símbolo simples (estrela, bola ou letra)". Já foi substituída pela frase aprovada em 2026-11-04; confirmar que o site usa a nova e não a antiga.
+2. O item "Nome" da lista exemplifica com "Coritibom" e "Botafogueira", que ficam muito perto de nomes de clubes existentes. Sugiro trocar por exemplos mais distantes, em outro lote, se o CEO concordar.
