@@ -6,8 +6,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
-- ADR-0015 aceito: patrocínio real desligado e não anunciado; marcas fictícias só como cenário (`brandForSlot` como ponto único); receita só com apoio voluntário. Substitui em parte a seção "Monetização e apoio" do `docs/PROJETO.md`.
-- `config.sponsorship.enabled = false` em `config/prancheta.config.ts` (no lugar de `placeholderSponsor`), com teste de conformidade (`app/src/lib/sponsorship.test.ts`, em revisão) que falha se o valor mudar ou se aparecerem convites como "Patrocine aqui" em `app/src/content/`, `site/src/` e `config/`.
+- ADR-0015 aceito: patrocínio real desligado e não anunciado; marcas fictícias só como cenário (`brandForSlot` como ponto único, a implementar na T-040); receita só com apoio voluntário. Substitui em parte a seção "Monetização e apoio" do `docs/PROJETO.md`.
+- `config.sponsorship.enabled = false` em `config/prancheta.config.ts` (no lugar de `placeholderSponsor`), com teste de conformidade (`app/src/lib/sponsorship.test.ts`) que falha se o valor mudar ou se aparecerem convites como "Patrocine aqui" em `app/src/content/`, `site/src/` e `config/`.
 - Força por setor (T-008, US-007) em `app/src/engine/strength.ts`: nota efetiva do jogador na vaga (overall, adequação à posição, moral e condição) e forças de defesa, meio e ataque a partir da formação, da postura e da pressão. Escalação inválida devolve o erro tipado `invalid-lineup`, sem lançar. Tipos `Lineup`, `Tactic` e `TeamSheet` em `lineup.ts`.
 - Fator casa: 5% fixo (`match.homeBase`) mais a parte do termômetro da torcida do mandante, mais o bônus de clássico; o visitante e o campo neutro não recebem nada.
 - Força exibida (`teamStrength`): média de `overall` com adequação dos 11 titulares, sem condição, moral nem mando; sem escalação definida, usa o melhor time disponível do clube.

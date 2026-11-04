@@ -1587,7 +1587,7 @@ Cenário: nome do jogo
 
 **Prioridade:** Must
 **Depende de:** US-020, US-019
-**Notas:** [PROJETO.md › Monetização e apoio](PROJETO.md#monetização-e-apoio), alterado pelo [ADR-0015](adr/0015-patrocinio-desligado.md). A possibilidade técnica de patrocínio real fica, mas desligada. O jogo e o site não anunciam nem mostram patrocínio, e não há convite "Patrocine aqui" ou "Anuncie aqui" em lugar nenhum. Placas em volta do campo, placar, camisa, nome de competição e de estádio, telas de carregamento e resumo da rodada usam marcas fictícias, só como cenário, iguais para todos; nada de aposta nem bebida alcoólica. A receita vem só do apoio voluntário, com recompensa só cosmética. A lista de marcas fictícias é conteúdo, aprovada pelo CEO. Mapa dos lugares por tela em `docs/design/telas/README.md`. Não há patrocinador real nem busca de marcas no servidor; o formato do espaço permite a troca futura, desligada por padrão.
+**Notas:** [PROJETO.md › Monetização e apoio](PROJETO.md#monetização-e-apoio), alterado pelo [ADR-0015](adr/0015-patrocinio-desligado.md). A possibilidade técnica de patrocínio real fica, mas desligada. O jogo e o site não anunciam nem mostram patrocínio, e não há convite "Patrocine aqui" ou "Anuncie aqui" em lugar nenhum. Placas em volta do campo, placar, telas de carregamento e resumo da rodada usam marcas fictícias (a camisa fica para depois da 1a; o nome do estádio e o da competição não são espaços de marca), só como cenário, iguais para todos; nada de aposta nem bebida alcoólica. A receita vem só do apoio voluntário, com recompensa só cosmética. A lista de marcas fictícias é conteúdo, aprovada pelo CEO. Mapa dos lugares por tela em `docs/design/telas/README.md`. Não há patrocinador real nem busca de marcas no servidor; o formato do espaço permite a troca futura, desligada por padrão.
 
 ### Critérios de aceite
 
@@ -1604,7 +1604,7 @@ Cenário: nenhum convite para patrocinar ou anunciar (ADR-0015)
 
 Cenário: igual para todos
   Dado dois saves diferentes na mesma rodada e no mesmo estádio
-  Então a escolha da marca depende só do espaço, da rodada e do clube, nunca de dado do jogador
+  Então a escolha da marca depende só do espaço, da rodada, do clube e do estádio, nunca de dado do jogador
 
 Cenário: categorias proibidas
   Dado a lista de marcas fictícias
@@ -1678,7 +1678,7 @@ Cenário: aviso de ficção
 
 Cenário: versão e links (P13)
   Dado a tela "Sobre"
-  Então mostra o número da versão do app, o link da política de privacidade do site, o link do canal com a comunidade
+  Então mostra o número da versão do app, o link da política de privacidade do site e o link do canal com a comunidade
   E nenhum item convida a patrocinar ou anunciar (ADR-0015)
   E todos os links vêm de config/prancheta.config.ts
 
@@ -1688,7 +1688,7 @@ Cenário: link de apoio com aviso
   Então antes de sair do jogo aparece o aviso de que é uma página externa e de que menores precisam de um responsável
 
 Cenário: contato ou link vazio
-  Dado o e-mail de suporte, o link do canal vazio na configuração
+  Dado o e-mail de suporte ou o link do canal vazio na configuração
   Então a tela não mostra o item correspondente, nem campo de e-mail quebrado nem link vazio
 ```
 
