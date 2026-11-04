@@ -82,36 +82,92 @@ describe('app/src/data/clubs.serie-a.json', () => {
 
   it('has titles as integers of at least 0 for every club', () => {
     for (const { id, titles } of clubs()) {
-      expect(Number.isInteger(titles.league) && titles.league >= 0, id).toBe(true);
-      expect(Number.isInteger(titles.cup) && titles.cup >= 0, id).toBe(true);
+      expect(Object.keys(titles).sort(), id).toEqual([
+        'cup',
+        'league',
+        'libertadores',
+        'sudamericana',
+      ]);
+      for (const count of Object.values(titles)) {
+        expect(Number.isInteger(count) && count >= 0, id).toBe(true);
+      }
     }
   });
 
+  /** Rows of the markdown table whose header has `column`, keyed by the header cells. */
+  const table = (text: string, column: string): Record<string, string>[] => {
+    const lines = text.split('\n').map((line) => line.split('|').map((cell) => cell.trim()));
+    const start = lines.findIndex((cells) => cells.includes(column));
+    if (start < 0) throw new Error(`no table with a "${column}" column`);
+    const header = lines[start]!;
+    const rows: Record<string, string>[] = [];
+    for (const cells of lines.slice(start + 2)) {
+      if (cells.length !== header.length) break;
+      rows.push(Object.fromEntries(header.map((name, i) => [name.replace(/`/g, ''), cells[i]!])));
+    }
+    return rows;
+  };
+  const n = (cell: string) => Number(cell.replace(/\./g, ''));
+
   // docs/design/clubes-serie-a.md, "Tabela": size, strength, profile, capacity and titles.
   const sizes: Record<string, ClubSize> = { grande: 'big', médio: 'medium', pequeno: 'small' };
-  const designRows = tableRows(doc('design/clubes-serie-a.md'), /^\d+$/).filter(
-    (cells) => cells.length >= 10,
-  );
+  const designRows = table(doc('design/clubes-serie-a.md'), 'Ref. 2026');
   it('reads the 20 rows of the design table', () => {
     expect(designRows).toHaveLength(20);
   });
-  it.each(designRows.map((cells) => [cells[2]!, cells]))(
-    '%s matches the design table',
-    (_, cells) => {
-      const club = byName(cells[2]!);
-      const n = (cell: string) => Number(cell.replace(/\./g, ''));
+  it.each(designRows.map((row) => [row.Clube!, row]))('%s matches the design table', (_, row) => {
+    const club = byName(row.Clube!);
+    expect({
+      size: club.size,
+      strength: club.strength,
+      aiProfile: club.aiProfile,
+      capacity: club.stadium.capacity,
+      titles: club.titles,
+    }).toEqual({
+      size: sizes[row.Porte!],
+      strength: n(row.strength!),
+      aiProfile: row.aiProfile!.replace(/`/g, ''),
+      capacity: n(row['stadium.capacity']!),
+      titles: {
+        league: n(row.Brasileiro!),
+        cup: n(row['Copa do Brasil']!),
+        libertadores: n(row.Libertadores!),
+        sudamericana: n(row['Sul-Americana']!),
+      },
+    });
+  });
+
+  // docs/content/lotes/2026-11-04-nomes-serie-a.md, "Os 20 clubes": names, colours, nickname.
+  const batchRows = table(doc('content/lotes/2026-11-04-nomes-serie-a.md'), 'Apelido da torcida');
+  it('reads the 20 rows of the names batch', () => {
+    expect(batchRows).toHaveLength(20);
+  });
+  it.each(batchRows.map((row) => [row['Nome curto']!, row]))(
+    '%s matches the names batch',
+    (_, row) => {
+      const club = byName(row['Nome curto']!);
+      const [city, state] = row['Cidade / UF']!.split(', ');
+      const colors = [
+        ...row['Cores (principal, secundária)']!.matchAll(/`(#[0-9A-Fa-f]{6})`/g),
+      ].map((m) => m[1]);
       expect({
+        name: club.name,
+        shortName: club.shortName,
+        abbreviation: club.abbreviation,
+        city: club.city,
+        state: club.state,
+        colors: club.colors,
+        nickname: club.nickname,
         size: club.size,
-        strength: club.strength,
-        aiProfile: club.aiProfile,
-        capacity: club.stadium.capacity,
-        titles: club.titles,
       }).toEqual({
-        size: sizes[cells[3]!],
-        strength: n(cells[4]!),
-        aiProfile: cells[5]!.replace(/`/g, ''),
-        capacity: n(cells[6]!),
-        titles: { league: n(cells[7]!), cup: n(cells[8]!) },
+        name: row['Nome completo'],
+        shortName: row['Nome curto'],
+        abbreviation: row.Sigla,
+        city,
+        state,
+        colors,
+        nickname: row['Apelido da torcida'],
+        size: sizes[row.Porte!],
       });
     },
   );

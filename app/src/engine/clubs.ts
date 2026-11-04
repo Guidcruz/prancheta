@@ -31,10 +31,18 @@ export interface ClubDef {
   /** Derbies. May be empty; when present, both clubs list each other. */
   readonly rivals: readonly ClubId[];
   /**
-   * Titles won before the first season (Brasileiro, Copa do Brasil). Static content for news and
-   * club cards; the engine computes nothing from it (docs/design/clubes-serie-a.md).
+   * Titles won before the first season: Brasileiro, Copa do Brasil, Libertadores and
+   * Sul-Americana. Static content for news and club cards; the engine computes nothing from it
+   * (docs/design/clubes-serie-a.md).
    */
-  readonly titles: { readonly league: number; readonly cup: number };
+  readonly titles: ClubTitles;
+}
+
+export interface ClubTitles {
+  readonly league: number;
+  readonly cup: number;
+  readonly libertadores: number;
+  readonly sudamericana: number;
 }
 
 /** Clubs in a Série A season (SEASON_ROUNDS = 2 × (SERIE_A_CLUBS − 1)). */
@@ -143,7 +151,7 @@ const CLUB_KEYS = [
 ] as const;
 const OPTIONAL_KEYS: ReadonlySet<string> = new Set(['aiProfile', 'strength']);
 const STADIUM_KEYS = ['name', 'capacity'] as const;
-const TITLE_KEYS = ['league', 'cup'] as const;
+const TITLE_KEYS = ['league', 'cup', 'libertadores', 'sudamericana'] as const;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -256,20 +264,22 @@ function checkCount(
   return undefined;
 }
 
-function checkTitles(
-  scope: ClubScope,
-  value: unknown,
-): { league: number; cup: number } | undefined {
+function checkTitles(scope: ClubScope, value: unknown): ClubTitles | undefined {
   if (!isPlainObject(value)) {
     scope.add({ field: 'titles', problem: 'not-an-object', value });
     return undefined;
   }
   checkKeys(scope, 'titles.', value, TITLE_KEYS);
-  const count = (key: (typeof TITLE_KEYS)[number]) =>
-    Object.hasOwn(value, key) ? checkCount(scope, `titles.${key}`, value[key], 0) : undefined;
-  const league = count('league');
-  const cup = count('cup');
-  return league !== undefined && cup !== undefined ? { league, cup } : undefined;
+  const titles: Record<string, number> = {};
+  let complete = true;
+  for (const key of TITLE_KEYS) {
+    const count = Object.hasOwn(value, key)
+      ? checkCount(scope, `titles.${key}`, value[key], 0)
+      : undefined;
+    if (count === undefined) complete = false;
+    else titles[key] = count;
+  }
+  return complete ? (titles as unknown as ClubTitles) : undefined;
 }
 
 function checkRivalList(scope: ClubScope, value: unknown): string[] | undefined {

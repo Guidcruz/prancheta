@@ -17,7 +17,7 @@ export type MutableClubDef = {
       : K extends 'stadium'
         ? { name: string; capacity: number }
         : K extends 'titles'
-          ? { league: number; cup: number }
+          ? { league: number; cup: number; libertadores: number; sudamericana: number }
           : ClubDef[K];
 };
 
@@ -61,7 +61,7 @@ export function syntheticClubs(count = 20): MutableClubDef[] {
       strength: STRENGTH[size],
       stadium: { name: `Estádio Teste ${n}`, capacity: 20_000 + i * 1_000 },
       rivals: [],
-      titles: { league: i % 3, cup: 0 },
+      titles: { league: i % 3, cup: 0, libertadores: i % 2, sudamericana: 0 },
     });
   }
   const paired = Math.max(0, count - 4);

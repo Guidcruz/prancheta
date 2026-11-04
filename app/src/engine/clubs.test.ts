@@ -241,18 +241,23 @@ describe('validateClubs', () => {
 
   it('requires titles as integers of at least 0, zero included', () => {
     const raw = syntheticClubs();
-    raw[0]!.titles = { league: 0, cup: 0 };
-    raw[1]!.titles = { league: -1, cup: 1.5 };
-    (raw[2] as { titles: unknown }).titles = { league: 2 };
-    (raw[3] as { titles: unknown }).titles = { league: 1, cup: 0, libertadores: 1 };
+    const zero = { league: 0, cup: 0, libertadores: 0, sudamericana: 0 };
+    raw[0]!.titles = { ...zero };
+    raw[1]!.titles = { ...zero, league: -1, cup: 1.5 };
+    (raw[2] as { titles: unknown }).titles = { league: 2, cup: 1 };
+    (raw[3] as { titles: unknown }).titles = { ...zero, recopa: 1 };
     (raw[4] as { titles: unknown }).titles = 3;
+    raw[5]!.titles = { ...zero, libertadores: -2, sudamericana: '1' as unknown as number };
     const problems = issuesOf(validateClubs(raw)).map((i) => [i.clubId, i.field, i.problem]);
     expect(problems).toEqual([
       ['clube-teste-02', 'titles.league', 'out-of-range'],
       ['clube-teste-02', 'titles.cup', 'not-an-integer'],
-      ['clube-teste-03', 'titles.cup', 'missing'],
-      ['clube-teste-04', 'titles.libertadores', 'unknown-key'],
+      ['clube-teste-03', 'titles.libertadores', 'missing'],
+      ['clube-teste-03', 'titles.sudamericana', 'missing'],
+      ['clube-teste-04', 'titles.recopa', 'unknown-key'],
       ['clube-teste-05', 'titles', 'not-an-object'],
+      ['clube-teste-06', 'titles.libertadores', 'out-of-range'],
+      ['clube-teste-06', 'titles.sudamericana', 'not-a-number'],
     ]);
   });
 

@@ -18,6 +18,7 @@ export type {
   ClubDef,
   ClubIssue,
   ClubProblem,
+  ClubTitles,
   ClubsResult,
   ValidateClubsOptions,
 } from './clubs.ts';
