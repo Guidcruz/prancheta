@@ -41,6 +41,6 @@ CareerCard, Button, LinkRow, Banner, Skeleton.
 
 Botões ≥ 44px; um único primário; o aviso de ficção é texto real (não imagem) com contraste ≥ 4,5:1; nenhuma animação de entrada obrigatória.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

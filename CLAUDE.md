@@ -94,7 +94,7 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 - Dois modos (Carreira offline, Liga online) e dois ritmos (No meu ritmo, Tempo real).
 - Três ajustes táticos (formação, postura, pressão); partida simulada minuto a minuto; meta de 2,5 a 2,8 gols por jogo; time 20 pontos mais forte vence cerca de 65% das vezes.
 - Mercado com janelas, empréstimos, multa rescisória, olheiros e o resto do mundo como mercado abstrato.
-- Patrocínios reais só em espaços do cenário, vindos do servidor, com marca fictícia quando vazios.
+- Patrocínio real desligado e não anunciado (ADR-0015): placas, placar e camisas mostram só marcas fictícias, como cenário; nada de "Patrocine aqui" no jogo nem no site; a receita é só o apoio voluntário, com recompensa cosmética; ligar exige ADR novo e revisão do `security-auditor`.
 
 ## Restrições do CEO
 

@@ -41,6 +41,6 @@ ScreenHeader, Crest, MatchCard, TableRow, FanThermometer, NewsCard, SocialPost, 
 
 Duas colunas: próximo jogo e tabela à esquerda; termômetro, notícias e rede à direita.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

@@ -10,10 +10,12 @@
 
 Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela. Tudo no celular, em rodadas de poucos minutos.
 
+**Etiqueta:** Em desenvolvimento · acompanhe no devlog <!-- aprovado pelo CEO em 2026-11-04 -->
+
 **Botão principal:** Abrir a versão atual (v{config.version})
 **Botão secundário:** Ver o roteiro
 
-**Aviso sob os botões:** O {config.name} está em desenvolvimento, em público. A versão que você abre hoje ainda é bem pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.
+**Aviso sob os botões:** O {config.name} está em desenvolvimento. A versão que você abre hoje ainda é bem pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog. <!-- aprovado pelo CEO em 2026-11-04 -->
 
 ## Faixa "O que é"
 
@@ -46,7 +48,7 @@ Hoje o passo 3 ainda não existe: a escolha de clube e as rodadas estão sendo c
 
 - **Sem pagar para ganhar.** Nunca. Sem caixa de sorteio, sem recompensa por tempo de uso.
 - **Seus dados são seus.** O modo offline não pede cadastro, e nada sai do seu aparelho.
-- **Feito em público.** Um post por semana no devlog, com o que foi feito e o que vem a seguir.
+- **Dá para acompanhar.** Um post por semana no devlog, com o que foi feito e o que vem a seguir. <!-- aprovado pelo CEO em 2026-11-04 -->
 
 ## Faixa "Últimas do devlog"
 
@@ -60,4 +62,4 @@ Quer ajudar o projeto a seguir de pé? Veja como [apoiar](apoiar).
 
 ## Rodapé
 
-O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e patrocinadores do jogo são fictícios. Links: Privacidade, Apoiar, Roteiro, Devlog.
+O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e marcas do jogo são fictícios. <!-- aprovado pelo CEO em 2026-11-04 --> Links: Privacidade, Apoiar, Roteiro, Devlog.

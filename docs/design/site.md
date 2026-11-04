@@ -8,7 +8,7 @@ Especificação do `ux-designer` para o site em `site/` (Astro, só pt-BR). Defi
 
 Princípios: celular primeiro (360px), leitura com uma mão, cara de estádio à noite (tema `noite`), simples antes de bonito. Sem capturas de tela até existirem telas do jogo: a parte visual vem dos escudos gerados, do logo, da tipografia e de desenhos em CSS e SVG inline.
 
-Referência visual: `docs/design/site-direcoes/a-noite-de-estadio.html` e as capturas `a-noite-de-estadio-*.png`. Onde esta especificação diverge do mockup (contraste, a grade "Onde estamos", cores literais), **vale esta especificação**.
+Referência visual: `docs/design/site-direcoes/a-noite-de-estadio.html` e as capturas `a-noite-de-estadio-*.png`. Onde esta especificação diverge do mockup (contraste, a grade "Onde estamos", cores literais, o aviso do rodapé), **vale esta especificação**. Os mockups das três direções ainda dizem "patrocinadores" no aviso do rodapé; desde o ADR-0015 o aviso diz "clubes, jogadores e marcas do jogo são fictícios" e nenhuma página do site fala em patrocínio.
 
 ## Mapa do site
 
@@ -21,7 +21,7 @@ Referência visual: `docs/design/site-direcoes/a-noite-de-estadio.html` e as cap
 | Perguntas frequentes | `/perguntas/`   | Responder dúvidas de preço, privacidade, celular, idiomas e clubes.         |
 | Roteiro              | `/roadmap/`     | Etapas e estado, lidos de `docs/roadmap.md`.                                |
 | Devlog               | `/devlog/`      | Diário semanal do desenvolvimento.                                          |
-| Apoiar               | `/apoiar/`      | Como apoiar e "Patrocine aqui".                                             |
+| Apoiar               | `/apoiar/`      | Como apoiar o projeto (apoio voluntário).                                   |
 | Privacidade          | `/privacidade/` | Política de privacidade.                                                    |
 | Jogo                 | `/jogo/`        | O próprio jogo (PWA, outro workspace).                                      |
 
@@ -44,7 +44,7 @@ A rota `/roadmap/` fica como está (o devlog e posts antigos já apontam para el
 
 ### Rodapé (todas as páginas)
 
-Texto e links conforme `complementos.md` ("Rodapé"). Dois blocos empilhados no celular, em duas colunas (2fr 3fr) no desktop: (1) aviso e linha de versão (`config.version`, em `rotulo`, `tabular-nums`); (2) links: Privacidade, Apoiar, Roteiro, Devlog, Discussões (só se `config.contacts.discussionsUrl` não for vazio) e, à parte, "RSS do devlog". Fundo `surface-0`, borda superior `line`, texto `ink-muted`, links em `ink` sublinhados com alvo ≥ 44px (padding vertical, não só a altura da linha). Sem vidro, sem feixe.
+Texto e links conforme `complementos.md` ("Rodapé"). Dois blocos empilhados no celular, em duas colunas (2fr 3fr) no desktop: (1) aviso de ficção ("clubes, jogadores e marcas do jogo são fictícios", ADR-0015; o texto final é o de `complementos.md`) e linha de versão (`config.version`, em `rotulo`, `tabular-nums`); (2) links: Privacidade, Apoiar, Roteiro, Devlog, Discussões (só se `config.contacts.discussionsUrl` não for vazio) e, à parte, "RSS do devlog". Fundo `surface-0`, borda superior `line`, texto `ink-muted`, links em `ink` sublinhados com alvo ≥ 44px (padding vertical, não só a altura da linha). Sem vidro, sem feixe.
 
 ### Pular para o conteúdo
 
@@ -279,7 +279,7 @@ Todas: `SiteHeader`, `PageHero` (exceto o Início, que usa o `StadiumHero`), cor
 - `PageHero`.
 - **Alguns escudos de exemplo**: `StickerGrid` com os clubes de exemplo, figurinhas `md` (no desktop, `lg`); a frase aprovada logo abaixo, em `body`, `ink-muted`.
 - **Quem está no jogo**: tabela com a coluna da divisão fixa, `StatusBadge` em todas as linhas.
-- Demais seções (Como um clube nasce, Jogadores, Aviso, Patrocinadores) em texto, sem mudança.
+- Demais seções (Como um clube nasce, Jogadores, Aviso) em texto, sem mudança. A seção "Patrocinadores" e o "Quer anunciar?" saem (ADR-0015); o aviso diz que clubes, jogadores e marcas do jogo são fictícios.
 - `FinalCta` novo.
 
 ### Perguntas (`/perguntas/`)
@@ -304,7 +304,7 @@ Todas: `SiteHeader`, `PageHero` (exceto o Início, que usa o `StadiumHero`), cor
 
 - `PageHero`.
 - Texto em coluna de leitura; o parágrafo principal ("a melhor forma de apoiar…") num `GlassCard` sobre o brilho verde; a nota sobre menores em `caption`, `ink-muted`, fora do cartão.
-- Se houver um bloco "Patrocine aqui", ele é um cartão `surface-1` comum, sem marca real.
+- Sem bloco de patrocínio: nada de "Patrocine aqui", "Anuncie aqui" nem equivalente (ADR-0015). A página trata só do apoio voluntário.
 - Sem `FinalCta` (o próprio texto é a chamada).
 
 ### Privacidade (`/privacidade/`)

@@ -40,6 +40,6 @@ BottomSheet, PlayerCard (`full`), Avatar, AttributeBar, StatusBadge, Button.
 
 Foco vai para o nome ao abrir e volta à linha de origem ao fechar; Esc fecha; barras dos atributos são decorativas (o número é o dado); folha sem animação de subida com reduced motion.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

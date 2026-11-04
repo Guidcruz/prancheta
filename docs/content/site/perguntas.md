@@ -28,15 +28,17 @@ Porque nome, escudo e imagem de atletas têm dono. Preferimos fazer um jogo orig
 
 O jogo está sendo feito em português, espanhol e inglês. Este site é só em português.
 
-## Custo e anúncios
+## Custo e apoio
 
 ### O jogo é grátis?
 
 Sim. Jogar não custa nada, e o projeto não vende vantagem dentro do jogo.
 
-### Vai ter pop-up, vídeo ou anúncio no meio do jogo?
+### Vai ter pop-up, vídeo ou propaganda no meio do jogo?
 
-Não. A publicidade fica só no cenário, como placas em volta do campo, no placar e em telas de carregamento. Sempre identificada como anúncio, nunca interrompendo a partida. Marcas de apostas e bebidas alcoólicas ficam de fora. Enquanto não houver patrocinador real, o jogo mostra marcas fictícias.
+Não. O jogo não tem anúncio, banner nem vídeo. As placas em volta do campo e o placar mostram marcas inventadas, só para o estádio parecer estádio.
+
+<!-- Texto revisado e aprovado pelo CEO em 2026-11-04. -->
 
 ### Dá para pagar para ganhar?
 

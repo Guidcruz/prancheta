@@ -44,7 +44,7 @@ Telas da 1a (`docs/design/telas/`):
 1. Rótulo "promessa" para jovens de potencial alto: aprovado, só o rótulo, nunca o número (ajustar US-016).
 2. Ícones próprios, desenhados pelo `art-director` (`/assets arte ícones`); até a aprovação, conjunto aberto provisório atrás do componente `Icon`.
 3. Tipo de partida (animada, lances principais, só resultado) pode ser trocado durante a carreira, nas Preferências e ao jogar a rodada; o "Realismo" fica fixo após criar a carreira.
-4. Patrocínio vazio no jogo mostra marcas fictícias; "Patrocine aqui" só no site e na tela Sobre.
+4. Substituído pelo [ADR-0015](adr/0015-patrocinio-desligado.md) (2026-11-04): patrocínio real desligado e não anunciado; só marcas fictícias no cenário; receita só com apoio voluntário.
 5. Menu "Mais" fica no topo na 1a, com as mesmas entradas no pé da tela Clube; revisar na Etapa 3, quando o Mercado virar a 5ª aba.
 
 ## Decisões do CEO depois do merge do `/kickoff` (2026-11-04)
@@ -67,7 +67,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                        |
 | T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                      |
 | T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
-| T-008  | em andamento (code review aprovado; PR em aberto): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                               |
+| T-008  | feita (PR #18 mergeado; code review aprovado): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                                   |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -160,14 +160,21 @@ Entregas do PR #16:
 
 ## Em andamento
 
-- **T-008** (força por setor, nota efetiva, mando com termômetro e força exibida): aprovada no code review, PR em aberto aguardando o merge do CEO. `ENGINE_VERSION` segue 3.
+- **T-009** (simulação da partida): próxima tarefa.
+- Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
+
+## Concluído em 2026-11-04 (T-008 e patrocínio)
+
+- PR #18: T-008 mergeada (força por setor, nota efetiva, mando com termômetro e força exibida). `ENGINE_VERSION` segue 3.
+- ADR-0015 aceito pelo CEO: patrocínio real desligado e não anunciado; marcas fictícias só como cenário; receita só com apoio voluntário.
+- Textos do site sem patrocínio e sem "em público" aprovados pelo CEO e aplicados no `site/` e nos três idiomas do jogo.
 
 ## Decisões novas do CEO em 2026-11-04 (patrocínio e marca)
 
 1. O patrocínio fica como possibilidade futura, desligada e não anunciada.
 2. O jogo e o site mostram só marcas fictícias no cenário.
 3. A receita vem só do apoio voluntário.
-4. O ADR e os ajustes do site vêm depois do PR da T-008.
+4. O ADR e os ajustes do site vieram depois do PR da T-008: ADR-0015 aceito e textos aplicados.
 
 **Marca:** o CEO avalia lançar sem registro no INPI. Recomendação: fazer pelo menos a busca gratuita antes do lançamento.
 
@@ -181,8 +188,7 @@ Entregas do PR #16:
 ## Próximo
 
 1. T-009: a simulação da partida.
-2. ADR do patrocínio e ajustes do site (depois do PR da T-008).
-3. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
-4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
-5. T-010 até T-016 da Etapa 1a.
-6. Lote de clubes de dezembro, com a tabela final de 2026.
+2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
+3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
+4. T-010 até T-016 da Etapa 1a.
+5. Lote de clubes de dezembro, com a tabela final de 2026.

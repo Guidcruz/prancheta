@@ -64,4 +64,4 @@ Mais divisões, copas, mercado de transferências, finanças, clubes de outros p
 
 ## Sem letra miúda
 
-Sem pagar para ganhar. Sem caixa de sorteio. Sem recompensa por tempo de uso. Sem chat livre. Todo clube, jogador e patrocinador é fictício.
+Sem pagar para ganhar. Sem caixa de sorteio. Sem recompensa por tempo de uso. Sem chat livre. Todo clube, jogador e marca é fictício. <!-- aprovado pelo CEO em 2026-11-04 -->

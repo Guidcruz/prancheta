@@ -43,6 +43,6 @@ ScreenHeader, CareerCard, Crest, Banner, BottomSheet, ConfirmSheet, Button, Empt
 
 Confirmação destrutiva nunca pré-focada no botão de apagar; mensagens de recusa ligadas por `aria-live`; nenhum ícone sozinho nas ações (sempre com rótulo).
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

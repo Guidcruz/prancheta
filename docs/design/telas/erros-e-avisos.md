@@ -35,6 +35,6 @@ ErrorState, Banner, BottomSheet, Button.
 
 Banners com ícone + texto e `role="status"` (erros com `role="alert"`); nada de aviso que cubra o "Jogar rodada" ou as abas; Banner sem animação de entrada com reduced motion.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

@@ -40,6 +40,6 @@ ScreenHeader, ScrollTable, TableRow, StatusBadge, Crest, Button.
 
 Todas as colunas visíveis, sem rolagem lateral.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum na 1a (o nome patrocinado da competição, se houver, ficaria no cabeçalho; não previsto na 1a).
+Nenhum. A competição usa só o nome fictício do conteúdo, sem marca.

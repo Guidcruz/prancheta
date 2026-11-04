@@ -35,6 +35,6 @@ AppShell, TabBar, PlayRoundButton, ScreenHeader, BottomSheet, LinkRow, Icon.
 - Troca de aba sem animação de deslizar quando `prefers-reduced-motion`.
 - Contraste da aba inativa (`ink-muted` sobre `surface-1`) ≥ 4,5:1 nos dois temas.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

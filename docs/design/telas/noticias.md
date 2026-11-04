@@ -32,6 +32,6 @@ ScreenHeader, SegmentedControl, NewsCard, EmptyState, Skeleton.
 
 Manchete como cabeçalho; card expansível com `aria-expanded`; texto em `body` com contraste ≥ 4,5:1; nenhum logo de veículo (só nome em texto).
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

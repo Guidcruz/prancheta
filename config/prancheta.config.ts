@@ -65,8 +65,8 @@ export const config = {
     privacyUrl: '/privacidade',
     termsUrl: '/termos',
   },
-  /** Placeholder sponsor shown in every empty sponsor slot. */
-  placeholderSponsor: { name: 'Patrocine aqui', url: '/apoiar' },
+  /** Real sponsorship (ADR-0015): off and not advertised. Turning it on needs a new ADR and a security-auditor review. */
+  sponsorship: { enabled: false },
   version: '0.0.1',
 } as const;
 

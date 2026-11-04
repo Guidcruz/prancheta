@@ -57,7 +57,7 @@ Convenções usadas nas histórias:
 | US-038 | PWA instalável e jogável offline                           | 1a    | Must       | pronta   |
 | US-039 | Aviso de nova versão e novidades no jogo                   | 1a    | Must       | pronta   |
 | US-040 | Estrutura de tradução e escolha de idioma                  | 1a    | Must       | pronta   |
-| US-041 | Espaços de patrocínio com marcas fictícias                 | 1a    | Must       | pronta   |
+| US-041 | Marcas fictícias no cenário                                | 1a    | Must       | pronta   |
 | US-042 | Tutorial e primeiros passos                                | 1a    | Should     | pronta   |
 | US-043 | Tela "Sobre": aviso de ficção, versão, privacidade e links | 1a    | Must       | pronta   |
 | US-044 | Preferências: tema, vibração, tipo de partida, rede social | 1a    | Should     | pronta   |
@@ -159,7 +159,7 @@ Cenário: SVG seguro
 ### Fora do escopo desta história
 
 - Editor de uniforme (recompensa de apoio, Etapa 6; editor local, Etapa 4).
-- Patrocínio na camisa (ver US-041).
+- Marca fictícia na camisa, só como cenário (ver US-041; patrocínio real desligado pelo ADR-0015).
 
 ---
 
@@ -1581,25 +1581,30 @@ Cenário: nome do jogo
 
 ---
 
-## US-041: Espaços de patrocínio com marcas fictícias
+## US-041: Marcas fictícias no cenário
 
-**Como** dono do produto, **quero** que o cenário do jogo já tenha os espaços de patrocínio ocupados por marcas fictícias, **para** poder vender esses espaços depois sem refazer as telas.
+**Como** jogador, **quero** ver marcas inventadas nas placas, no placar e no resumo da rodada, **para** o jogo ter clima de estádio sem nenhuma propaganda de verdade.
 
 **Prioridade:** Must
 **Depende de:** US-020, US-019
-**Notas:** [PROJETO.md › Monetização e apoio](PROJETO.md#monetização-e-apoio): placas em volta do campo, placar, camisa, nome de competição e de estádio, telas de carregamento, resumo da rodada; patrocínios só contextuais, iguais para todos ([backlog](PROJETO.md#backlog-de-recursos-por-etapa), "Anúncios e menores"); nada de apostas ou bebida alcoólica. Decisão do CEO: todo espaço vazio no jogo mostra uma marca fictícia; o convite "Patrocine aqui" aparece só no site e na tela Sobre (US-043), nunca num espaço do cenário. A lista de marcas fictícias é conteúdo, aprovada pelo CEO. Mapa dos espaços por tela em `docs/design/telas/README.md`. Na Etapa 1 não há patrocinador real nem busca de anúncios no servidor; o `architect` define o formato do espaço pensando na troca futura.
+**Notas:** [PROJETO.md › Monetização e apoio](PROJETO.md#monetização-e-apoio), alterado pelo [ADR-0015](adr/0015-patrocinio-desligado.md). A possibilidade técnica de patrocínio real fica, mas desligada. O jogo e o site não anunciam nem mostram patrocínio, e não há convite "Patrocine aqui" ou "Anuncie aqui" em lugar nenhum. Placas em volta do campo, placar, telas de carregamento e resumo da rodada usam marcas fictícias (a camisa fica para depois da 1a; o nome do estádio e o da competição não são espaços de marca), só como cenário, iguais para todos; nada de aposta nem bebida alcoólica. A receita vem só do apoio voluntário, com recompensa só cosmética. A lista de marcas fictícias é conteúdo, aprovada pelo CEO. Mapa dos lugares por tela em `docs/design/telas/README.md`. Não há patrocinador real nem busca de marcas no servidor; o formato do espaço permite a troca futura, desligada por padrão.
 
 ### Critérios de aceite
 
 ```gherkin
-Cenário: espaços preenchidos com marca fictícia
+Cenário: cenário preenchido com marca fictícia
   Dado uma partida animada e o resumo da rodada
   Então as placas do campo, o placar e o resumo mostram marcas da lista de marcas fictícias
-  E nenhum espaço de patrocínio do jogo mostra o convite "Patrocine aqui" nem fica vazio
+  E nenhum lugar fica vazio
+
+Cenário: nenhum convite para patrocinar ou anunciar (ADR-0015)
+  Dado os textos de interface em pt-BR, es e en
+  Quando a validação de conteúdo roda
+  Então ela falha se algum texto tiver um termo da lista de convites proibidos ("Patrocine aqui", "Anuncie aqui" e os equivalentes em es e en)
 
 Cenário: igual para todos
   Dado dois saves diferentes na mesma rodada e no mesmo estádio
-  Então a escolha da marca depende só do espaço, da rodada e do clube, nunca de dado do jogador
+  Então a escolha da marca depende só do espaço, da rodada, do clube e do estádio, nunca de dado do jogador
 
 Cenário: categorias proibidas
   Dado a lista de marcas fictícias
@@ -1613,8 +1618,9 @@ Cenário: sem rede e sem contagem
 
 ### Fora do escopo desta história
 
-- Patrocinadores reais, espaços vindos do servidor, contagem de impressões e painel de patrocínios (com o primeiro patrocinador real, depois da Etapa 1).
-- O convite "Patrocine aqui" no site (fica no `site/`, fora desta história).
+- Patrocinadores reais, espaços vindos do servidor, contagem de impressões e painel de patrocínios: a possibilidade técnica fica, mas desligada (ADR-0015); ligar depende de nova decisão do CEO.
+- Apoio voluntário e recompensas cosméticas (link "Apoiar" na US-043; PIX na Etapa 6).
+- Marca fictícia na camisa: depois da 1a, a menos que o CEO decida diferente.
 
 ---
 
@@ -1668,11 +1674,12 @@ Cenário: acessível
 ```gherkin
 Cenário: aviso de ficção
   Dado a tela de abertura e a tela "Sobre"
-  Então ambas mostram o aviso de que clubes, jogadores e patrocinadores do jogo são fictícios
+  Então ambas mostram o aviso de que clubes, jogadores e marcas do jogo são fictícios
 
 Cenário: versão e links (P13)
   Dado a tela "Sobre"
-  Então mostra o número da versão do app, o link da política de privacidade do site, o link do canal com a comunidade e o convite "Patrocine aqui"
+  Então mostra o número da versão do app, o link da política de privacidade do site e o link do canal com a comunidade
+  E nenhum item convida a patrocinar ou anunciar (ADR-0015)
   E todos os links vêm de config/prancheta.config.ts
 
 Cenário: link de apoio com aviso
@@ -1681,14 +1688,14 @@ Cenário: link de apoio com aviso
   Então antes de sair do jogo aparece o aviso de que é uma página externa e de que menores precisam de um responsável
 
 Cenário: contato ou link vazio
-  Dado o e-mail de suporte, o link do canal ou o link de "Patrocine aqui" vazio na configuração
+  Dado o e-mail de suporte ou o link do canal vazio na configuração
   Então a tela não mostra o item correspondente, nem campo de e-mail quebrado nem link vazio
 ```
 
 ### Fora do escopo desta história
 
 - Termos de uso e classificação indicativa (Etapa 6).
-- Apoio via PIX com recompensas (Etapa 6).
+- Apoio via PIX, com recompensas só cosméticas (Etapa 6).
 
 ---
 
@@ -2652,7 +2659,7 @@ Cenário: colocação na carreira não muda a força (D8)
 - América do Sul, olheiros, resto do mundo, altitude e clima, espanhol e inglês completos (Etapa 5).
 - Ligas grandes com várias divisões, notificações push, modo férias, bloqueio, página pública da liga, painel de admin completo, apoio via PIX, limites contra abuso (Etapa 6).
 - Áudio de qualquer tipo, efeitos e narração em voz (P5); estatísticas de uso dentro do jogo (P11); comandos durante a partida no online (P6).
-- Patrocinadores reais, chat de texto livre (este, nunca).
+- Patrocinadores reais e qualquer anúncio ou convite para patrocinar (desligados pelo ADR-0015); chat de texto livre (este, nunca).
 
 ## Decisões do CEO (2026-11-04)
 
@@ -2676,7 +2683,7 @@ Outras decisões do CEO que mudaram critérios:
 
 - **Rótulo "promessa":** aprovado para jovens de potencial alto, só o rótulo, nunca o número. (US-016)
 - **Tipo de partida:** pode ser trocado durante a carreira, nas Preferências e ao jogar a rodada; o realismo fica fixo depois de criar a carreira. (US-014, US-019, US-020, US-044)
-- **Patrocínio:** espaço vazio no jogo mostra marca fictícia; "Patrocine aqui" só no site e na tela Sobre. (US-041, US-043)
+- **Patrocínio:** desligado (ADR-0015). Placas, placar e camisas usam marcas fictícias, só como cenário; nem o jogo nem o site anunciam ou mostram patrocínio, sem "Patrocine aqui" em lugar nenhum; a receita vem só do apoio voluntário, com recompensa só cosmética. (US-041, US-043)
 - **Ícones próprios** do `art-director`, com conjunto aberto provisório atrás do componente `Icon` até a aprovação; **menu "Mais"** no topo, com as mesmas entradas no pé da tela Clube. (US-015)
 - **Fator casa:** ADR-0011, opção A (`match.homeBase = 0.05`; mandante vence 45% a 50%). (US-007, US-008, US-013, US-026)
 - **Dados de referência dos clubes:** atualizados uma vez por ano, por temporada base; o novo jogo usa a mais recente e carreiras existentes não mudam (ADR-0006); cada lote passa pelo CEO; títulos ganhos na carreira somam ao histórico e ficam no save; a força inicial segue a colocação de referência. (US-066, US-067, US-068, US-069)

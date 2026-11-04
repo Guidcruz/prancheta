@@ -34,6 +34,6 @@ ScreenHeader, SegmentedControl, LinkRow, Toggle, BottomSheet, Banner.
 
 Toggle com estado em texto; nomes dos idiomas escritos no próprio idioma; troca de tema sem transição animada com reduced motion; contraste conferido nos dois temas pelo `npm run tokens`.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.
