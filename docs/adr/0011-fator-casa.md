@@ -10,11 +10,11 @@ O `docs/PROJETO.md` e o ADR-0005 fixam o bônus de mando de campo pela torcida e
 
 ## Opções consideradas
 
-| Opção                                         | Prós                                                                                                   | Contras                                                                                 |
-| --------------------------------------------- | ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------- |
-| A: `match.homeBase = 0.05` (+5% fixo)          | mandante vence cerca de 47% (protótipo), como no futebol brasileiro; jogar em casa "pesa"               | o mando total vai a +7% a +13%; a torcida passa a ser uma parte menor do mando          |
-| B: `match.homeBase = 0` (só a torcida)         | mantém exatamente o ADR-0005; a torcida é todo o mando                                                  | mandante vence cerca de 42%; a meta precisa cair para 40% a 45%                          |
-| C: valor intermediário (ex.: 0,03)             | meio-termo                                                                                              | sem base de realismo; mais uma rodada de calibração                                      |
+| Opção                                  | Prós                                                                                      | Contras                                                                        |
+| -------------------------------------- | ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| A: `match.homeBase = 0.05` (+5% fixo)  | mandante vence cerca de 47% (protótipo), como no futebol brasileiro; jogar em casa "pesa" | o mando total vai a +7% a +13%; a torcida passa a ser uma parte menor do mando |
+| B: `match.homeBase = 0` (só a torcida) | mantém exatamente o ADR-0005; a torcida é todo o mando                                    | mandante vence cerca de 42%; a meta precisa cair para 40% a 45%                |
+| C: valor intermediário (ex.: 0,03)     | meio-termo                                                                                | sem base de realismo; mais uma rodada de calibração                            |
 
 ## Decisão
 

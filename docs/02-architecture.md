@@ -14,18 +14,18 @@ O coração do jogo é o **motor** (`app/src/engine/`): TypeScript puro, sem DOM
 
 ## 2. Stack
 
-| Camada            | Escolha                                                                 | Por quê                                                     | ADR             |
-| ----------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------- | --------------- |
-| Jogo              | Svelte 5 + Vite 8, PWA (`vite-plugin-pwa` 2)                            | app leve                                                    | ADR-0001        |
-| Site              | Astro 7                                                                 | Markdown vira página                                        | ADR-0001        |
-| Motor             | TypeScript puro, determinístico, só sintaxe apagável, imports relativos | roda igual no celular, no Node (balance) e no servidor      | ADR-0001, 0007  |
-| Saves             | IndexedDB (`idb`), snapshot gzip + SHA-256, 3 versões                   | carreira sem servidor e sem corromper                       | ADR-0006        |
-| Validação         | `valibot` (cliente e servidor)                                          | validar save importado e requisições; pequeno e tree-shaken | ADR-0006        |
-| Servidor (1b)     | Hono em Pages Functions (`/api`) + Worker de salas (Durable Objects)    | mesma origem, custo zero, portável                          | ADR-0002, 0010  |
-| Banco (1b)        | D1 (SQLite) atrás de uma interface `Db`; `node:sqlite` nos testes       | SQL padrão, troca simples para VPS                          | ADR-0002, 0009  |
-| Contas (1b)       | WebAuthn com `@simplewebauthn/server` e `/browser`; código de recuperação | sem e-mail nem senha; biblioteca madura                   | ADR-0008        |
-| Testes            | Vitest 5 (unitário, motor, golden, servidor); Playwright na 1a (Chromium e WebKit) | WebKit cobre o iPhone                            | ADR-0001, 0007  |
-| CI/CD             | GitHub Actions + Cloudflare Pages; deploy do Worker de salas com aprovação do CEO | produção só pelo CEO                              | ADR-0002, 0010  |
+| Camada        | Escolha                                                                            | Por quê                                                     | ADR            |
+| ------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------- | -------------- |
+| Jogo          | Svelte 5 + Vite 8, PWA (`vite-plugin-pwa` 2)                                       | app leve                                                    | ADR-0001       |
+| Site          | Astro 7                                                                            | Markdown vira página                                        | ADR-0001       |
+| Motor         | TypeScript puro, determinístico, só sintaxe apagável, imports relativos            | roda igual no celular, no Node (balance) e no servidor      | ADR-0001, 0007 |
+| Saves         | IndexedDB (`idb`), snapshot gzip + SHA-256, 3 versões                              | carreira sem servidor e sem corromper                       | ADR-0006       |
+| Validação     | `valibot` (cliente e servidor)                                                     | validar save importado e requisições; pequeno e tree-shaken | ADR-0006       |
+| Servidor (1b) | Hono em Pages Functions (`/api`) + Worker de salas (Durable Objects)               | mesma origem, custo zero, portável                          | ADR-0002, 0010 |
+| Banco (1b)    | D1 (SQLite) atrás de uma interface `Db`; `node:sqlite` nos testes                  | SQL padrão, troca simples para VPS                          | ADR-0002, 0009 |
+| Contas (1b)   | WebAuthn com `@simplewebauthn/server` e `/browser`; código de recuperação          | sem e-mail nem senha; biblioteca madura                     | ADR-0008       |
+| Testes        | Vitest 5 (unitário, motor, golden, servidor); Playwright na 1a (Chromium e WebKit) | WebKit cobre o iPhone                                       | ADR-0001, 0007 |
+| CI/CD         | GitHub Actions + Cloudflare Pages; deploy do Worker de salas com aprovação do CEO  | produção só pelo CEO                                        | ADR-0002, 0010 |
 
 ## 3. Componentes
 
@@ -112,11 +112,10 @@ Todas as funções são puras. Não mudam a entrada (devolvem cópias) e não la
 ```ts
 // Resultado tipado (o motor nunca lança por situação de jogo)
 export type Result<T, E extends string> =
-  | { ok: true; value: T; warnings: EngineWarning[] }
-  | { ok: false; error: E; detail?: unknown };
+  { ok: true; value: T; warnings: EngineWarning[] } | { ok: false; error: E; detail?: unknown };
 
-export type ClubId = string;    // slug estável do ClubDef, ex.: "tricolor-cerrado"
-export type PlayerId = string;  // estável na carreira: `${clubId}#${n}`
+export type ClubId = string; // slug estável do ClubDef, ex.: "tricolor-cerrado"
+export type PlayerId = string; // estável na carreira: `${clubId}#${n}`
 export type FixtureId = string; // `s${season}-r${round}-${homeId}-${awayId}`
 export type Position = 'GK' | 'CB' | 'FB' | 'DM' | 'AM' | 'ST';
 export type Formation = '4-4-2' | '4-3-3' | '4-2-3-1' | '3-5-2' | '3-4-3' | '5-3-2';
@@ -127,91 +126,175 @@ export type ClubSize = 'big' | 'medium' | 'small';
 export type AiProfile = 'ambitious' | 'academy' | 'seller' | 'traditional' | 'chaotic';
 export type Side = 'home' | 'away';
 
-export interface ClubDef {            // de app/src/data/, aprovado pelo CEO
-  id: ClubId; name: string; shortName: string; nickname: string;
-  city: string; state: string; colors: [string, string];
-  size: ClubSize; aiProfile?: AiProfile; strength?: number;
-  stadium: { name: string; capacity: number }; rivals: ClubId[];
+export interface ClubDef {
+  // de app/src/data/, aprovado pelo CEO
+  id: ClubId;
+  name: string;
+  shortName: string;
+  nickname: string;
+  city: string;
+  state: string;
+  colors: [string, string];
+  size: ClubSize;
+  aiProfile?: AiProfile;
+  strength?: number;
+  stadium: { name: string; capacity: number };
+  rivals: ClubId[];
 }
 
 export interface Player {
-  id: PlayerId; clubId: ClubId;
-  nameSeed: number; faceSeed: number; nationality: string; // ISO 3166-1 alfa-2; nome e rosto são gerados fora do motor
-  position: Position; attributes: Record<AttributeKey, number>; // 6 por posição, 1..99
-  overall: number; potential: number; age: number; peakAge: number; growth: number;
-  trait: Trait; shirt: number;
-  condition: number; morale: number;      // 0..100
-  injuryRounds: number; suspendedGames: number; yellowCount: number;
-  recentRatings: number[];                // últimos 5 (forma, só exibição)
-  benchStreak: number; clubAppearances: number;
+  id: PlayerId;
+  clubId: ClubId;
+  nameSeed: number;
+  faceSeed: number;
+  nationality: string; // ISO 3166-1 alfa-2; nome e rosto são gerados fora do motor
+  position: Position;
+  attributes: Record<AttributeKey, number>; // 6 por posição, 1..99
+  overall: number;
+  potential: number;
+  age: number;
+  peakAge: number;
+  growth: number;
+  trait: Trait;
+  shirt: number;
+  condition: number;
+  morale: number; // 0..100
+  injuryRounds: number;
+  suspendedGames: number;
+  yellowCount: number;
+  recentRatings: number[]; // últimos 5 (forma, só exibição)
+  benchStreak: number;
+  clubAppearances: number;
 }
 
 export interface Lineup {
   formation: Formation;
-  starters: PlayerId[];                   // 11, na ordem das vagas da formação
-  bench: PlayerId[];                      // até match.benchSize (7)
-  captains: PlayerId[]; penaltyTakers: PlayerId[]; freeKickTakers: PlayerId[]; // listas ordenadas
+  starters: PlayerId[]; // 11, na ordem das vagas da formação
+  bench: PlayerId[]; // até match.benchSize (7)
+  captains: PlayerId[];
+  penaltyTakers: PlayerId[];
+  freeKickTakers: PlayerId[]; // listas ordenadas
 }
-export interface Tactic { posture: Exclude<Posture, 'allOut'>; pressure: Pressure }
-export interface TeamSheet { lineup: Lineup; tactic: Tactic }
+export interface Tactic {
+  posture: Exclude<Posture, 'allOut'>;
+  pressure: Pressure;
+}
+export interface TeamSheet {
+  lineup: Lineup;
+  tactic: Tactic;
+}
 
 export interface ClubState {
-  def: ClubDef; profile: AiProfile; strength: number; // força-alvo efetiva desta carreira
+  def: ClubDef;
+  profile: AiProfile;
+  strength: number; // força-alvo efetiva desta carreira
   preferredFormations: [Formation, Formation];
-  fans: number;                                       // termômetro 0..100
+  fans: number; // termômetro 0..100
   idolBenchStreak: number;
 }
 
 export interface Fixture {
-  id: FixtureId; round: number; date: string; // "AAAA-MM-DD", calculada do ano passado em newGame
-  homeId: ClubId; awayId: ClubId; result?: MatchSummary;
+  id: FixtureId;
+  round: number;
+  date: string; // "AAAA-MM-DD", calculada do ano passado em newGame
+  homeId: ClubId;
+  awayId: ClubId;
+  result?: MatchSummary;
 }
 
 export interface GameState {
-  engineVersion: number;          // ENGINE_VERSION que gravou por último (diagnóstico)
-  seed: number;                   // semente da carreira ou da liga
-  year: number; season: number;   // season começa em 1
-  round: number;                  // próxima rodada a jogar (1..38); 39 = temporada terminada
+  engineVersion: number; // ENGINE_VERSION que gravou por último (diagnóstico)
+  seed: number; // semente da carreira ou da liga
+  year: number;
+  season: number; // season começa em 1
+  round: number; // próxima rodada a jogar (1..38); 39 = temporada terminada
   phase: 'season' | 'seasonEnd';
   rules: { realism: 'full' | 'simplified' };
   clubs: Record<ClubId, ClubState>;
   players: Record<PlayerId, Player>;
   squads: Record<ClubId, PlayerId[]>;
-  fixtures: Fixture[];                           // 380 da temporada atual
-  lastSheets: Record<ClubId, TeamSheet>;         // última escalação usada/confirmada
+  fixtures: Fixture[]; // 380 da temporada atual
+  lastSheets: Record<ClubId, TeamSheet>; // última escalação usada/confirmada
   seasonStats: Record<PlayerId, PlayerSeasonStats>;
-  lastRound?: RoundReport;                       // eventos completos só da última rodada
-  pastSeasons: SeasonSummary[];                  // campeão, rebaixados, prêmios (enxuto)
+  lastRound?: RoundReport; // eventos completos só da última rodada
+  pastSeasons: SeasonSummary[]; // campeão, rebaixados, prêmios (enxuto)
 }
 
 // Partida
 export interface TeamInput {
-  clubId: ClubId; sheet: TeamSheet; controller: 'ai' | 'human';
-  profile: AiProfile; fans: number; players: Player[]; // elenco do clube no apito inicial
+  clubId: ClubId;
+  sheet: TeamSheet;
+  controller: 'ai' | 'human';
+  profile: AiProfile;
+  fans: number;
+  players: Player[]; // elenco do clube no apito inicial
 }
 export interface MatchInput {
-  fixtureId: FixtureId; seed: number;  // seedFromString(`${state.seed}-s${season}-r${round}-${homeId}-${awayId}`)
-  home: TeamInput; away: TeamInput;
-  derby: boolean; neutral: boolean;    // neutral só no /balance (duelos)
+  fixtureId: FixtureId;
+  seed: number; // seedFromString(`${state.seed}-s${season}-r${round}-${homeId}-${awayId}`)
+  home: TeamInput;
+  away: TeamInput;
+  derby: boolean;
+  neutral: boolean; // neutral só no /balance (duelos)
   rules: GameState['rules'];
 }
-export type MatchCommand =             // valem a partir do minuto seguinte, salvo troca por lesão
+export type MatchCommand =
+  // valem a partir do minuto seguinte, salvo troca por lesão
   | { minute: number; side: Side; kind: 'substitution'; out: PlayerId; in: PlayerId }
-  | { minute: number; side: Side; kind: 'tactic'; formation?: Formation; posture?: Posture; pressure?: Pressure }
+  | {
+      minute: number;
+      side: Side;
+      kind: 'tactic';
+      formation?: Formation;
+      posture?: Posture;
+      pressure?: Pressure;
+    }
   | { minute: number; side: Side; kind: 'preset'; preset: 'press' | 'holdResult' | 'allOut' }
   | { minute: 45; side: Side; kind: 'halftimeTalk'; talk: 'motivate' | 'demand' | 'calm' };
 
 export type MatchEvent = { minute: number; added?: number; half: 1 | 2; importance: 1 | 2 | 3 } & (
   | { type: 'kickoff' }
-  | { type: 'chance'; side: Side; shooter: PlayerId; kind: 'open' | 'freeKick' | 'penalty'; outcome: 'saved' | 'post' | 'wide'; pGoal: number }
-  | { type: 'goal'; side: Side; scorer: PlayerId; assist?: PlayerId; kind: 'open' | 'freeKick' | 'penalty'; score: [number, number] }
+  | {
+      type: 'chance';
+      side: Side;
+      shooter: PlayerId;
+      kind: 'open' | 'freeKick' | 'penalty';
+      outcome: 'saved' | 'post' | 'wide';
+      pGoal: number;
+    }
+  | {
+      type: 'goal';
+      side: Side;
+      scorer: PlayerId;
+      assist?: PlayerId;
+      kind: 'open' | 'freeKick' | 'penalty';
+      score: [number, number];
+    }
   | { type: 'penaltyAwarded'; side: Side; taker: PlayerId }
   | { type: 'penaltyMissed'; side: Side; taker: PlayerId; outcome: 'saved' | 'post' | 'wide' }
   | { type: 'yellow'; side: Side; player: PlayerId; triggersSuspension: boolean }
   | { type: 'red'; side: Side; player: PlayerId; reason: 'direct' | 'secondYellow' }
-  | { type: 'injury'; side: Side; player: PlayerId; severity: 'light' | 'medium' | 'serious' | 'severe' }
-  | { type: 'substitution'; side: Side; out: PlayerId; in: PlayerId; reason: 'tactical' | 'fatigue' | 'injury' }
-  | { type: 'tacticChange'; side: Side; formation: Formation; posture: Posture; pressure: Pressure; preset?: string }
+  | {
+      type: 'injury';
+      side: Side;
+      player: PlayerId;
+      severity: 'light' | 'medium' | 'serious' | 'severe';
+    }
+  | {
+      type: 'substitution';
+      side: Side;
+      out: PlayerId;
+      in: PlayerId;
+      reason: 'tactical' | 'fatigue' | 'injury';
+    }
+  | {
+      type: 'tacticChange';
+      side: Side;
+      formation: Formation;
+      posture: Posture;
+      pressure: Pressure;
+      preset?: string;
+    }
   | { type: 'stoppage'; minutes: number }
   | { type: 'halftime'; score: [number, number] }
   | { type: 'halftimeTalk'; side: Side; talk: 'motivate' | 'demand' | 'calm' }
@@ -219,25 +302,43 @@ export type MatchEvent = { minute: number; added?: number; half: 1 | 2; importan
 );
 
 export interface MatchResult {
-  fixtureId: FixtureId; score: [number, number]; events: MatchEvent[];
-  stats: Record<Side, { shots: number; onTarget: number; possession: number; yellows: number; reds: number }>;
-  ratings: Record<PlayerId, number | null>; motm?: PlayerId;
-  minutes: Record<PlayerId, number>; finalEnergy: Record<PlayerId, number>;
+  fixtureId: FixtureId;
+  score: [number, number];
+  events: MatchEvent[];
+  stats: Record<
+    Side,
+    { shots: number; onTarget: number; possession: number; yellows: number; reds: number }
+  >;
+  ratings: Record<PlayerId, number | null>;
+  motm?: PlayerId;
+  minutes: Record<PlayerId, number>;
+  finalEnergy: Record<PlayerId, number>;
   newInjuries: { player: PlayerId; rounds: number }[];
-  markers: MatchMarker[];   // goleada, virada, zebra, golNoFim, hatTrick, semSofrerGols, classico, estreia
-  attendance: number; warnings: EngineWarning[];
+  markers: MatchMarker[]; // goleada, virada, zebra, golNoFim, hatTrick, semSofrerGols, classico, estreia
+  attendance: number;
+  warnings: EngineWarning[];
 }
 
 // Rodada
 export interface RoundInput {
-  round: number;                                         // rodada esperada (idempotência)
-  sheets: Partial<Record<ClubId, TeamSheet>>;            // clubes humanos; os ausentes ficam com a IA
-  commands: Partial<Record<FixtureId, MatchCommand[]>>;  // só na carreira (P6)
-  fanDecisions: Partial<Record<ClubId, number>>;         // soma das decisões do técnico (limitada por fans.decisionCap)
+  round: number; // rodada esperada (idempotência)
+  sheets: Partial<Record<ClubId, TeamSheet>>; // clubes humanos; os ausentes ficam com a IA
+  commands: Partial<Record<FixtureId, MatchCommand[]>>; // só na carreira (P6)
+  fanDecisions: Partial<Record<ClubId, number>>; // soma das decisões do técnico (limitada por fans.decisionCap)
 }
-export interface RoundPlan { round: number; matches: MatchInput[]; suggested: Record<ClubId, TeamSheet> }
-export interface RoundReport { season: number; round: number; results: MatchResult[]; facts: Fact[] }
-export type Fact =                                       // fatos da tabela e da rodada, para o conteúdo
+export interface RoundPlan {
+  round: number;
+  matches: MatchInput[];
+  suggested: Record<ClubId, TeamSheet>;
+}
+export interface RoundReport {
+  season: number;
+  round: number;
+  results: MatchResult[];
+  facts: Fact[];
+}
+export type Fact =
+  // fatos da tabela e da rodada, para o conteúdo
   | { kind: 'leadership'; clubId: ClubId; change: 'took' | 'lost' | 'kept'; rounds: number }
   | { kind: 'enteredZ4' | 'leftZ4'; clubId: ClubId }
   | { kind: 'unbeaten' | 'winless'; clubId: ClubId; games: number }
@@ -248,23 +349,51 @@ export type Fact =                                       // fatos da tabela e da
 
 export const ENGINE_VERSION: number;
 export function validateParams(raw: unknown): Result<GameParams, 'invalid-params'>;
-export function newGame(setup: { seed: number; year: number; realism: 'full' | 'simplified' },
-  clubs: readonly ClubDef[], params: GameParams): Result<GameState, 'invalid-clubs'>;
-export function prepareRound(state: GameState, params: GameParams,
-  sheets?: RoundInput['sheets']): Result<RoundPlan, 'season-over'>;
-export function simulateMatch(input: MatchInput, params: GameParams,
-  commands?: readonly MatchCommand[]): MatchResult;
-export function playRound(state: GameState, params: GameParams, input: RoundInput):
-  Result<{ state: GameState; report: RoundReport }, 'round-already-played' | 'round-not-open' | 'season-over'>;
-export function validateLineup(state: GameState, clubId: ClubId, sheet: TeamSheet):
-  Result<TeamSheet, 'wrong-club' | 'unavailable' | 'duplicate' | 'wrong-count' | 'no-formation'>;
-export function suggestSheet(state: GameState, params: GameParams, clubId: ClubId, opponentId?: ClubId): TeamSheet;
+export function newGame(
+  setup: { seed: number; year: number; realism: 'full' | 'simplified' },
+  clubs: readonly ClubDef[],
+  params: GameParams,
+): Result<GameState, 'invalid-clubs'>;
+export function prepareRound(
+  state: GameState,
+  params: GameParams,
+  sheets?: RoundInput['sheets'],
+): Result<RoundPlan, 'season-over'>;
+export function simulateMatch(
+  input: MatchInput,
+  params: GameParams,
+  commands?: readonly MatchCommand[],
+): MatchResult;
+export function playRound(
+  state: GameState,
+  params: GameParams,
+  input: RoundInput,
+): Result<
+  { state: GameState; report: RoundReport },
+  'round-already-played' | 'round-not-open' | 'season-over'
+>;
+export function validateLineup(
+  state: GameState,
+  clubId: ClubId,
+  sheet: TeamSheet,
+): Result<TeamSheet, 'wrong-club' | 'unavailable' | 'duplicate' | 'wrong-count' | 'no-formation'>;
+export function suggestSheet(
+  state: GameState,
+  params: GameParams,
+  clubId: ClubId,
+  opponentId?: ClubId,
+): TeamSheet;
 export function teamStrength(state: GameState, clubId: ClubId, lineup?: Lineup): number; // força exibida
-export function getStandings(state: GameState): StandingRow[];                           // derivada das partidas
-export function endSeason(state: GameState, params: GameParams):
-  Result<{ state: GameState; summary: SeasonSummary }, 'season-not-finished'>;
-export function startNextSeason(state: GameState, params: GameParams,
-  opts?: { incoming?: readonly ClubDef[] }): Result<GameState, 'season-not-ended' | 'invalid-clubs'>;
+export function getStandings(state: GameState): StandingRow[]; // derivada das partidas
+export function endSeason(
+  state: GameState,
+  params: GameParams,
+): Result<{ state: GameState; summary: SeasonSummary }, 'season-not-finished'>;
+export function startNextSeason(
+  state: GameState,
+  params: GameParams,
+  opts?: { incoming?: readonly ClubDef[] },
+): Result<GameState, 'season-not-ended' | 'invalid-clubs'>;
 ```
 
 Notas do contrato:
@@ -282,14 +411,21 @@ Notas do contrato:
 ```ts
 interface CareerSaveV1 {
   schemaVersion: 1;
-  careerId: string;            // UUID v4 gerado no aparelho
-  createdAt: string; updatedAt: string;   // ISO; o relógio fica fora do motor
-  appVersion: string; engineVersion: number; paramsHash: string;
+  careerId: string; // UUID v4 gerado no aparelho
+  createdAt: string;
+  updatedAt: string; // ISO; o relógio fica fora do motor
+  appVersion: string;
+  engineVersion: number;
+  paramsHash: string;
   career: {
-    coachName: string;          // único dado digitado pelo jogador; só no aparelho e no arquivo exportado
-    clubId: ClubId; matchMode: 'full' | 'highlights' | 'result';
-    news: NewsRef[]; social: SocialRef[]; phraseMemory: string[]; // ≤ 200 ids
-    pendingFanDecision: number; exportReminder: boolean;
+    coachName: string; // único dado digitado pelo jogador; só no aparelho e no arquivo exportado
+    clubId: ClubId;
+    matchMode: 'full' | 'highlights' | 'result';
+    news: NewsRef[];
+    social: SocialRef[];
+    phraseMemory: string[]; // ≤ 200 ids
+    pendingFanDecision: number;
+    exportReminder: boolean;
   };
   game: GameState;
 }
@@ -297,13 +433,13 @@ interface CareerSaveV1 {
 
 **IndexedDB** (banco `prancheta`; com `PRANCHETA_ENV=test`, banco `prancheta-test`; a versão de estrutura do banco é independente de `schemaVersion`):
 
-| Store         | Chave                    | Conteúdo                                                                                        |
-| ------------- | ------------------------ | ----------------------------------------------------------------------------------------------- |
-| `careers`     | `id`                     | resumo para a lista: clube, temporada, rodada, `updatedAt`, `headSeq`, `schemaVersion`          |
-| `snapshots`   | `[careerId, seq]`        | `{ schemaVersion, savedAt, sha256, bytes, blob }`; `blob` = gzip do JSON do `CareerSave`        |
-| `kv`          | `key`                    | última configuração de novo jogo, preferências, idioma, persistência concedida, novidades vistas |
-| `errors`      | auto                     | registro de erros, anel de 50 (US-045)                                                          |
-| `leagueCache` | `leagueId` (1b)          | última visão da liga recebida, com "atualizado em" (US-059)                                     |
+| Store         | Chave             | Conteúdo                                                                                         |
+| ------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| `careers`     | `id`              | resumo para a lista: clube, temporada, rodada, `updatedAt`, `headSeq`, `schemaVersion`           |
+| `snapshots`   | `[careerId, seq]` | `{ schemaVersion, savedAt, sha256, bytes, blob }`; `blob` = gzip do JSON do `CareerSave`         |
+| `kv`          | `key`             | última configuração de novo jogo, preferências, idioma, persistência concedida, novidades vistas |
+| `errors`      | auto              | registro de erros, anel de 50 (US-045)                                                           |
+| `leagueCache` | `leagueId` (1b)   | última visão da liga recebida, com "atualizado em" (US-059)                                      |
 
 **Gravação segura (US-032):** (1) serializa o JSON, calcula o SHA-256 e comprime com `CompressionStream('gzip')`; (2) numa transação `snapshots` + `careers`, grava `seq = headSeq + 1` e avança `headSeq`. A transação é atômica: se o app fechar no meio, nada muda. (3) Relê o snapshot, descomprime e confere o hash. Se bater, apaga os snapshots com `seq ≤ headSeq − 3`. Se não bater, apaga o novo, volta o `headSeq` e registra o erro. **Abrir:** tenta os snapshots do mais novo para o mais antigo. Vale o primeiro que passa por hash, parse, migração e validação, e o jogo avisa quantas rodadas foram perdidas. Se os três falharem, a carreira não abre e o jogo oferece importar.
 
@@ -315,34 +451,34 @@ interface CareerSaveV1 {
 
 Base `/api/v1`, JSON, mesma origem do jogo. Toda requisição leva o cabeçalho `X-Prancheta-Protocol: <n>`. Abaixo do mínimo, o servidor responde `426 { error: { code: 'client_outdated' } }`. Erros seguem `{ error: { code: string, fields?: string[] } }`, com códigos estáveis em `snake_case`. O cliente traduz por `content/<idioma>/errors.json`, e o servidor nunca envia texto ao jogador. Sessão em cookie `__Host-pz_session` (HttpOnly, Secure, SameSite=Strict). Rotas marcadas com ★ exigem reautenticação com passkey nos últimos 5 minutos.
 
-| Método e rota                                     | Corpo                                                         | Resposta (sucesso)                         | Erros principais                                       |
-| ------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------ | ------------------------------------------------------ |
-| `POST /accounts/register/options`                 | `{ nickname }`                                                | `{ flowId, options }` (criação, residente) | `nickname_invalid`, `nickname_taken`                   |
-| `POST /accounts/register/verify`                  | `{ flowId, credential, recoveryVerifier }`                    | `201 { account }` + cookie                 | `webauthn_failed`, `flow_expired`                      |
-| `POST /auth/login/options`                        | `{}`                                                          | `{ flowId, options }` (descoberta)         | —                                                      |
-| `POST /auth/login/verify`                         | `{ flowId, credential }`                                      | `{ account }` + cookie                     | `auth_failed` (genérico)                               |
-| `POST /auth/recover/options`                      | `{ nickname, recoveryVerifier }`                              | `{ flowId, options }` (criação)            | `auth_failed` (genérico), `too_many_attempts`          |
-| `POST /auth/recover/verify`                       | `{ flowId, credential }`                                      | `{ account }` + cookie (passkey nova)      | `webauthn_failed`                                      |
-| `POST /auth/reauth/options` · `/verify`           | `{}` · `{ flowId, credential }`                               | `204` (marca a sessão)                     | `auth_failed`                                          |
-| `POST /auth/logout`                               | —                                                             | `204`                                      | —                                                      |
-| `GET /me`                                         | —                                                             | `{ account, leagues: LeagueSummary[] }`    | `unauthenticated`                                      |
-| `PUT /me/recovery` ★                              | `{ recoveryVerifier }`                                        | `204` (o código antigo deixa de valer)     | `reauth_required`                                      |
-| `DELETE /me` ★                                    | —                                                             | `204`                                      | `reauth_required`                                      |
-| `POST /leagues`                                   | `LeagueSettings`                                              | `201 { league }`                           | `name_invalid`, `deadline_not_allowed`, `max_humans`   |
-| `POST /leagues/join`                              | `{ inviteCode }`                                              | `{ league }`                               | `invite_not_found`, `league_full`, `already_member`    |
-| `GET /leagues/:id`                                | —                                                             | `LeagueView` (membros, rodada, prontos, prazo, tabela) | `not_member`                               |
-| `GET /leagues/:id/snapshot`                       | — (`If-None-Match`)                                           | `GameState` gzip, `ETag: s<season>-r<round>` | `not_member`                                         |
-| `GET /leagues/:id/rounds?after=s:r`               | —                                                             | `RoundReport[]` (até 10)                   | `not_member`                                           |
-| `POST /leagues/:id/clubs`                         | `{ clubId }`                                                  | `{ clubId }`                               | `club_taken`, `wrong_phase`                            |
-| `POST /leagues/:id/draft/pick`                    | `{ clubId }`                                                  | `{ clubId }`                               | `not_your_turn`, `club_taken`                          |
-| `POST /leagues/:id/start` (dono)                  | —                                                             | `{ league }`                               | `not_owner`, `not_enough_humans`                       |
-| `PUT /leagues/:id/rounds/:season/:round/sheet`    | `TeamSheet`                                                   | `{ ready: true }`                          | `invalid_lineup` (+ `fields`), `round_closed`          |
-| `PATCH /leagues/:id` (dono)                       | `{ mode?, deadlineSeconds?, messagesEnabled? }`               | `{ league }` (vale na próxima rodada)      | `not_owner`, `max_humans`                              |
-| `POST /leagues/:id/seasons` (dono)                | —                                                             | `{ league }`                               | `season_not_finished`, `league_finished`               |
-| `PATCH /leagues/:id/me`                           | `{ messagesMuted }`                                           | `204`                                      | —                                                      |
-| `POST /leagues/:id/messages`                      | `{ messageId }` (id do catálogo)                              | `201`                                      | `unknown_message`, `messages_disabled`, `rate_limited` |
-| `POST /reports`                                   | `{ leagueId, target: 'nickname' \| 'leagueName', targetId, reason }` | `201` ou `200` (já existia)         | `unknown_reason`                                       |
-| `GET /leagues/:id/live` (WebSocket)               | —                                                             | ver 4.4                                    | `not_member`                                           |
+| Método e rota                                  | Corpo                                                                | Resposta (sucesso)                                     | Erros principais                                       |
+| ---------------------------------------------- | -------------------------------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------ |
+| `POST /accounts/register/options`              | `{ nickname }`                                                       | `{ flowId, options }` (criação, residente)             | `nickname_invalid`, `nickname_taken`                   |
+| `POST /accounts/register/verify`               | `{ flowId, credential, recoveryVerifier }`                           | `201 { account }` + cookie                             | `webauthn_failed`, `flow_expired`                      |
+| `POST /auth/login/options`                     | `{}`                                                                 | `{ flowId, options }` (descoberta)                     | —                                                      |
+| `POST /auth/login/verify`                      | `{ flowId, credential }`                                             | `{ account }` + cookie                                 | `auth_failed` (genérico)                               |
+| `POST /auth/recover/options`                   | `{ nickname, recoveryVerifier }`                                     | `{ flowId, options }` (criação)                        | `auth_failed` (genérico), `too_many_attempts`          |
+| `POST /auth/recover/verify`                    | `{ flowId, credential }`                                             | `{ account }` + cookie (passkey nova)                  | `webauthn_failed`                                      |
+| `POST /auth/reauth/options` · `/verify`        | `{}` · `{ flowId, credential }`                                      | `204` (marca a sessão)                                 | `auth_failed`                                          |
+| `POST /auth/logout`                            | —                                                                    | `204`                                                  | —                                                      |
+| `GET /me`                                      | —                                                                    | `{ account, leagues: LeagueSummary[] }`                | `unauthenticated`                                      |
+| `PUT /me/recovery` ★                           | `{ recoveryVerifier }`                                               | `204` (o código antigo deixa de valer)                 | `reauth_required`                                      |
+| `DELETE /me` ★                                 | —                                                                    | `204`                                                  | `reauth_required`                                      |
+| `POST /leagues`                                | `LeagueSettings`                                                     | `201 { league }`                                       | `name_invalid`, `deadline_not_allowed`, `max_humans`   |
+| `POST /leagues/join`                           | `{ inviteCode }`                                                     | `{ league }`                                           | `invite_not_found`, `league_full`, `already_member`    |
+| `GET /leagues/:id`                             | —                                                                    | `LeagueView` (membros, rodada, prontos, prazo, tabela) | `not_member`                                           |
+| `GET /leagues/:id/snapshot`                    | — (`If-None-Match`)                                                  | `GameState` gzip, `ETag: s<season>-r<round>`           | `not_member`                                           |
+| `GET /leagues/:id/rounds?after=s:r`            | —                                                                    | `RoundReport[]` (até 10)                               | `not_member`                                           |
+| `POST /leagues/:id/clubs`                      | `{ clubId }`                                                         | `{ clubId }`                                           | `club_taken`, `wrong_phase`                            |
+| `POST /leagues/:id/draft/pick`                 | `{ clubId }`                                                         | `{ clubId }`                                           | `not_your_turn`, `club_taken`                          |
+| `POST /leagues/:id/start` (dono)               | —                                                                    | `{ league }`                                           | `not_owner`, `not_enough_humans`                       |
+| `PUT /leagues/:id/rounds/:season/:round/sheet` | `TeamSheet`                                                          | `{ ready: true }`                                      | `invalid_lineup` (+ `fields`), `round_closed`          |
+| `PATCH /leagues/:id` (dono)                    | `{ mode?, deadlineSeconds?, messagesEnabled? }`                      | `{ league }` (vale na próxima rodada)                  | `not_owner`, `max_humans`                              |
+| `POST /leagues/:id/seasons` (dono)             | —                                                                    | `{ league }`                                           | `season_not_finished`, `league_finished`               |
+| `PATCH /leagues/:id/me`                        | `{ messagesMuted }`                                                  | `204`                                                  | —                                                      |
+| `POST /leagues/:id/messages`                   | `{ messageId }` (id do catálogo)                                     | `201`                                                  | `unknown_message`, `messages_disabled`, `rate_limited` |
+| `POST /reports`                                | `{ leagueId, target: 'nickname' \| 'leagueName', targetId, reason }` | `201` ou `200` (já existia)                            | `unknown_reason`                                       |
+| `GET /leagues/:id/live` (WebSocket)            | —                                                                    | ver 4.4                                                | `not_member`                                           |
 
 O **código de recuperação** é gerado no aparelho e o servidor nunca o recebe: o cliente envia `recoveryVerifier = HKDF-SHA256(código, "prancheta/auth/v1")` (ADR-0008).
 
@@ -369,19 +505,19 @@ interface RoomCoordinator {
 
 Só as colunas marcadas como "pessoa" se ligam a alguém. São exatamente a lista do US-064, e o teste de esquema falha se aparecer outra coluna ligada a conta.
 
-| Tabela                | Colunas principais                                                                                                                                                                                    | Pessoa                                  |
-| --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| `accounts`            | `id` (aleatório), `nickname`, `nickname_norm` UNIQUE, `recovery_hash` (HMAC do verificador), `recovery_failures`, `recovery_locked_until`                                                             | apelido, dados de recuperação           |
-| `credentials`         | `id` (credential id), `account_id`, `public_key`, `sign_count`, `transports`                                                                                                                          | chave pública                           |
-| `sessions`            | `token_hash` PK, `account_id`, `expires_at`, `reauth_at`                                                                                                                                              | sessão                                  |
-| `auth_flows`          | `id`, `challenge`, `purpose`, `account_id?`, `expires_at` (5 min; limpeza no próprio uso e por alarme)                                                                                                | temporário                              |
-| `leagues`             | `id`, `name`, `name_norm`, `owner_account_id`, `invite_code` UNIQUE, `mode`, `deadline_seconds`, `max_humans`, `club_pick`, `inactivity_rounds`, `messages_enabled`, `seasons_total?`, `season`, `round`, `round_state`, `deadline_at`, `status`, `seed`, `engine_version`, `params_hash` | dono (participação) |
-| `league_members`      | `league_id`, `account_id?` (NULL depois de apagada), `club_id?`, `joined_seq`, `controller` (`human`/`ai`), `missed_rounds`, `messages_muted`                                                         | participação                            |
-| `league_states`       | `league_id`, `season`, `round`, `state_gz` (GameState gzip), PK `(league_id, season, round)`; guarda a atual e a anterior                                                                              | —                                       |
-| `round_results`       | `league_id`, `season`, `round`, `report_gz`, `processed_at`, UNIQUE `(league_id, season, round)`                                                                                                      | —                                       |
-| `sheets`              | `league_id`, `club_id`, `season`, `round`, `sheet_json`, `confirmed_seq`                                                                                                                              | —                                       |
-| `messages`            | `id`, `league_id`, `account_id`, `message_id` (catálogo), `created_at`; apagadas com a conta; retenção de 30 dias                                                                                     | mensagens por id                        |
-| `reports`             | `id`, `league_id`, `target_type`, `target_id`, `reason`, `created_at`, `reporter_account_id`, UNIQUE `(reporter, target_type, target_id)`                                                             | participação (sem IP nem texto livre)   |
+| Tabela           | Colunas principais                                                                                                                                                                                                                                                                        | Pessoa                                |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| `accounts`       | `id` (aleatório), `nickname`, `nickname_norm` UNIQUE, `recovery_hash` (HMAC do verificador), `recovery_failures`, `recovery_locked_until`                                                                                                                                                 | apelido, dados de recuperação         |
+| `credentials`    | `id` (credential id), `account_id`, `public_key`, `sign_count`, `transports`                                                                                                                                                                                                              | chave pública                         |
+| `sessions`       | `token_hash` PK, `account_id`, `expires_at`, `reauth_at`                                                                                                                                                                                                                                  | sessão                                |
+| `auth_flows`     | `id`, `challenge`, `purpose`, `account_id?`, `expires_at` (5 min; limpeza no próprio uso e por alarme)                                                                                                                                                                                    | temporário                            |
+| `leagues`        | `id`, `name`, `name_norm`, `owner_account_id`, `invite_code` UNIQUE, `mode`, `deadline_seconds`, `max_humans`, `club_pick`, `inactivity_rounds`, `messages_enabled`, `seasons_total?`, `season`, `round`, `round_state`, `deadline_at`, `status`, `seed`, `engine_version`, `params_hash` | dono (participação)                   |
+| `league_members` | `league_id`, `account_id?` (NULL depois de apagada), `club_id?`, `joined_seq`, `controller` (`human`/`ai`), `missed_rounds`, `messages_muted`                                                                                                                                             | participação                          |
+| `league_states`  | `league_id`, `season`, `round`, `state_gz` (GameState gzip), PK `(league_id, season, round)`; guarda a atual e a anterior                                                                                                                                                                 | —                                     |
+| `round_results`  | `league_id`, `season`, `round`, `report_gz`, `processed_at`, UNIQUE `(league_id, season, round)`                                                                                                                                                                                          | —                                     |
+| `sheets`         | `league_id`, `club_id`, `season`, `round`, `sheet_json`, `confirmed_seq`                                                                                                                                                                                                                  | —                                     |
+| `messages`       | `id`, `league_id`, `account_id`, `message_id` (catálogo), `created_at`; apagadas com a conta; retenção de 30 dias                                                                                                                                                                         | mensagens por id                      |
+| `reports`        | `id`, `league_id`, `target_type`, `target_id`, `reason`, `created_at`, `reporter_account_id`, UNIQUE `(reporter, target_type, target_id)`                                                                                                                                                 | participação (sem IP nem texto livre) |
 
 Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram rota, código de status, código de erro e `leagueId` aleatório, mas não apelido, `accountId` nem credential id (US-064).
 
@@ -409,17 +545,17 @@ Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram r
 
 ## 6. Estratégia de testes (com `qa-engineer`)
 
-| Camada               | Escopo                                                                                                    | Ferramenta                                  | Roda em                   |
-| -------------------- | --------------------------------------------------------------------------------------------------------- | ------------------------------------------- | ------------------------- |
-| Unitário             | motor (cada sistema), geradores, i18n, conteúdo, save (com `fake-indexeddb`), validação dos clubes        | Vitest                                      | todo commit               |
-| Determinismo         | golden de partida, rodada, temporada inteira e virada (`engine/__golden__/`); mudar exige subir `ENGINE_VERSION` | Vitest                                | todo PR                   |
-| Propriedade          | invariantes em 1.000 sementes: estados em 0..100, 11 titulares, nenhum suspenso escalado, tabela consistente | Vitest                                   | todo PR                   |
-| Migração             | fixtures `vN` → atual; teste de forma do estado                                                           | Vitest                                      | todo PR                   |
-| Conteúdo             | chaves nos três idiomas, placeholders, lista bloqueada, faixas de `fanEffect`                              | `npm run content:check`                     | todo PR                   |
-| Servidor (1b)        | rotas com `SqliteDb` + `InMemoryRoom`; teste de esquema de privacidade; servidor × cliente dão o mesmo resultado | Vitest (Node)                          | todo PR                   |
-| E2E                  | jornadas do celular: novo jogo, rodada, partida animada, salvar, exportar/importar, offline, nova versão  | Playwright (Chromium e WebKit, `PRANCHETA_ENV=test`) | todo PR           |
-| Balanceamento        | metas da 1a de `balance-targets.md`, `--seasons 200 --seed 1` no CI; sementes 2 e 3 no `/balance`         | `scripts/balance.ts`                        | todo PR depois da T-016   |
-| Regressão            | todo bug passado (`tests/regression/`) + cenários de aceite                                               | tudo acima                                  | todo PR, antes de release |
+| Camada        | Escopo                                                                                                           | Ferramenta                                           | Roda em                   |
+| ------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------- |
+| Unitário      | motor (cada sistema), geradores, i18n, conteúdo, save (com `fake-indexeddb`), validação dos clubes               | Vitest                                               | todo commit               |
+| Determinismo  | golden de partida, rodada, temporada inteira e virada (`engine/__golden__/`); mudar exige subir `ENGINE_VERSION` | Vitest                                               | todo PR                   |
+| Propriedade   | invariantes em 1.000 sementes: estados em 0..100, 11 titulares, nenhum suspenso escalado, tabela consistente     | Vitest                                               | todo PR                   |
+| Migração      | fixtures `vN` → atual; teste de forma do estado                                                                  | Vitest                                               | todo PR                   |
+| Conteúdo      | chaves nos três idiomas, placeholders, lista bloqueada, faixas de `fanEffect`                                    | `npm run content:check`                              | todo PR                   |
+| Servidor (1b) | rotas com `SqliteDb` + `InMemoryRoom`; teste de esquema de privacidade; servidor × cliente dão o mesmo resultado | Vitest (Node)                                        | todo PR                   |
+| E2E           | jornadas do celular: novo jogo, rodada, partida animada, salvar, exportar/importar, offline, nova versão         | Playwright (Chromium e WebKit, `PRANCHETA_ENV=test`) | todo PR                   |
+| Balanceamento | metas da 1a de `balance-targets.md`, `--seasons 200 --seed 1` no CI; sementes 2 e 3 no `/balance`                | `scripts/balance.ts`                                 | todo PR depois da T-016   |
+| Regressão     | todo bug passado (`tests/regression/`) + cenários de aceite                                                      | tudo acima                                           | todo PR, antes de release |
 
 O E2E roda o golden da partida também dentro do WebKit, para detectar diferença de ponto flutuante entre motores JavaScript (item 9).
 
@@ -427,70 +563,70 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 
 > O Orquestrador delega uma por vez ao `developer`. Tamanho: P (< 1 h), M (meio dia), G (dia ou mais; quebrar se puder ou usar `opus`). Caminho pelo critério do `CLAUDE.md`: tudo que toca `engine/`, `lib/save/`, `server/`, `config/` ou `.github/`, ou que tem mais de 5 arquivos, é `/feature`.
 
-| #     | Tarefa                                                                                                                                              | Histórias                    | Etapa | Depende de          | Caminho    | Tamanho | Estado  |
-| ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------- | ----- | ------------------- | ---------- | ------- | ------- |
-| T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos | base de US-004..012    | 1a    | —                   | `/feature` | M       | a fazer |
-| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos     | base de US-007..013          | 1a    | T-001               | `/feature` | M       | a fazer |
-| T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs` | US-001                | 1a    | T-001               | `/feature` | M       | a fazer |
-| T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de sílabas/nomes                                                  | US-003                       | 1a    | —                   | `/feature` | M       | a fazer |
-| T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial                                                                   | US-004                       | 1a    | T-001, T-002        | `/feature` | M       | a fazer |
-| T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI)                                                                   | US-004                       | 1a    | T-003, T-005        | `/feature` | M       | a fazer |
-| T-007 | Calendário: Berger, returno espelhado, mando ≤ 2 seguidos, datas (Data FIFA, meio de semana)                                                        | US-006                       | 1a    | T-001, T-002        | `/feature` | M       | a fazer |
-| T-008 | Força por setor, nota efetiva, mando com termômetro (e `homeBase`), força exibida                                                                   | US-007, US-026 (mando)       | 1a    | T-005               | `/feature` | M       | a fazer |
-| T-009 | `simulateMatch` núcleo: oportunidades, finalização, assistência, acréscimos, estatísticas, notas, marcadores, eventos, golden                        | US-008                       | 1a    | T-008               | `/feature` | G       | a fazer |
-| T-010 | Partida: cartões, lesões, pênaltis e faltas, cobradores e capitão, casos de borda (menos de 7, sem goleiro)                                         | US-009                       | 1a    | T-009               | `/feature` | M       | a fazer |
-| T-011 | IA pré-jogo: `suggestSheet` (escalação gulosa, rotação, banco, cobradores), tática por perfil, `validateLineup`                                     | US-011                       | 1a    | T-008               | `/feature` | M       | a fazer |
-| T-012 | Comandos na partida: substituições, táticas, atalhos, conversa do intervalo, IA em jogo (regras 1–6)                                                | US-021, US-022, US-011       | 1a    | T-010, T-011        | `/feature` | M       | a fazer |
-| T-013 | `prepareRound`/`playRound`: 10 partidas, suspensões, lesões, recuperação por dias, idempotência, `getStandings` com desempate, fatos da tabela     | US-012, US-019 (motor)       | 1a    | T-007, T-012        | `/feature` | G       | a fazer |
-| T-014 | Moral e fadiga entre rodadas, termômetro da torcida, modo "realismo simplificado"                                                                   | US-010, US-026               | 1a    | T-013               | `/feature` | M       | a fazer |
-| T-015 | Golden da temporada inteira + testes de propriedade em 1.000 sementes                                                                               | US-008, US-012               | 1a    | T-014               | `/feature` | P       | a fazer |
-| T-016 | `scripts/balance.ts` (liga, duelos calibrados, duelos táticos, `--seasons/--seed/--duels/--params`, tempo) e `npm run balance`                      | US-013                       | 1a    | T-014               | `/feature` | M       | a fazer |
-| T-017 | Fim de temporada: prêmios, resumo, evolução e idade, `endSeason`/`startNextSeason` (com `incoming` opcional para a opção B)                         | US-025 (motor)               | 1a    | T-014               | `/feature` | M       | a fazer |
-| T-018 | Save: IndexedDB, snapshots gzip + SHA-256, gravação segura com 3 versões, abrir com volta, banco de teste, limite de 10 carreiras                  | US-032, US-034 (dados)       | 1a    | T-013               | `/feature` | M       | a fazer |
-| T-019 | Versão do formato e migrações: cadeia, fixture v1, teste de forma, recusa de versão nova                                                            | US-033                       | 1a    | T-018               | `/feature` | M       | a fazer |
-| T-020 | Exportar e importar: arquivo `.txt`, compartilhar/baixar, limites, `valibot`, conflito de `careerId`                                                | US-035, US-036               | 1a    | T-019               | `/feature` | M       | a fazer |
-| T-021 | Templates: renderizador, catálogo de placeholders, memória de 200, contexto; `scripts/content-check.mjs`; regra `no-raw-text`                       | US-027, US-040 (parte)       | 1a    | —                   | `/feature` | M       | a fazer |
-| T-022 | i18n: idioma inicial, troca nas preferências, carregamento dinâmico, nome do jogo da configuração                                                   | US-040                       | 1a    | T-021               | `/feature` | P       | a fazer |
-| T-023 | Casca da interface: `CareerService`, navegação (abas no celular, barra lateral no desktop), fronteira de erro, registro local de erros               | US-015, US-045               | 1a    | T-013, T-018        | `/feature` | M       | a fazer |
-| T-024 | Infra de E2E: Playwright (Chromium + WebKit), `PRANCHETA_ENV=test`, primeiro teste, golden no WebKit, job no CI                                     | US-038 (base)                | 1a    | T-023               | `/feature` | M       | a fazer |
-| T-025 | Tela inicial (lista, continuar, apagar com confirmação dupla) e novo jogo (clube, apelido, realismo, modo de partida, última configuração)          | US-034, US-014               | 1a    | T-023, T-006        | `/feature` | M       | a fazer |
-| T-026 | Uniformes gerados (`lib/generators/kit.ts`)                                                                                                         | US-002                       | 1a    | T-003               | `/feature` | P       | a fazer |
-| T-027 | Avatares gerados (`lib/generators/avatar.ts`), com limite de bytes do `art-director`                                                                | US-005                       | 1a    | T-005               | `/feature` | M       | a fazer |
-| T-028 | Tela do clube (com termômetro e rótulo de humor), elenco e card do jogador                                                                          | US-015, US-016, US-026 (tela)| 1a    | T-025, T-027        | `/feature` | M       | a fazer |
-| T-029 | Escalação com arrastar e soltar, táticas, capitão e cobradores                                                                                      | US-017, US-018               | 1a    | T-028, T-011        | `/feature` | G       | a fazer |
-| T-030 | Jogar rodada "só resultado": resumo, outros resultados, salvamento automático, fechar no meio                                                       | US-019, US-032               | 1a    | T-029               | `/feature` | M       | a fazer |
-| T-031 | Tabela e calendário/resultados                                                                                                                      | US-023, US-024               | 1a    | T-030               | `/feature` | M       | a fazer |
-| T-032 | Partida animada: canvas 2D, narração, pausa dramática, pular, reduzir movimento, vibração                                                           | US-020                       | 1a    | T-030, T-026        | `/feature` | G       | a fazer |
-| T-033 | Comandos, substituições e conversa do intervalo na tela da partida                                                                                  | US-021, US-022               | 1a    | T-032               | `/feature` | M       | a fazer |
-| T-034 | Notícias da rodada a partir dos fatos (`lib/content/news.ts`) e tela do jornal                                                                      | US-028                       | 1a    | T-021, T-030        | `/feature` | M       | a fazer |
-| T-035 | Rede social simples e entrevista pós-jogo (com `fanEffect`)                                                                                         | US-029, US-030               | 1a    | T-034               | `/feature` | M       | a fazer |
-| T-036 | Ferramenta de repetição de templates (`scripts/template-repeat.ts`)                                                                                 | US-031                       | 1a    | T-034, T-016        | `/feature` | P       | a fazer |
-| T-037 | Fim de temporada nas telas: cerimônia, prêmios, resumo, próxima temporada, lembrete de exportar                                                     | US-025, US-037 (lembrete)    | 1a    | T-017, T-031        | `/feature` | M       | a fazer |
-| T-038 | Armazenamento persistente e aviso de persistência negada                                                                                            | US-037                       | 1a    | T-020               | `/feature` | P       | a fazer |
-| T-039 | PWA: `registerType: 'prompt'`, aviso de nova versão fora da partida, novidades, `check-precache` (< 10 MB) no CI, E2E offline                       | US-038, US-039               | 1a    | T-024, T-030        | `/feature` | M       | a fazer |
-| T-040 | Espaços de patrocínio com marcas fictícias                                                                                                          | US-041                       | 1a    | T-032               | `/feature` | P       | a fazer |
-| T-041 | Tela "Sobre" e preferências (tema, vibração, aba da rede social, idioma, lembrete, copiar relatório de erros)                                       | US-043, US-044, US-045       | 1a    | T-023, T-022        | `/feature` | M       | a fazer |
-| T-042 | Tutorial e primeiros passos                                                                                                                         | US-042                       | 1a    | T-030               | `/feature` | M       | a fazer |
-| T-043 | Estatísticas sem cookies só no site (se a P11 for aprovada)                                                                                         | US-046                       | 1a    | —                   | `/quick`   | P       | a fazer |
-| T-050 | Esqueleto do servidor: workspace `server/`, Hono, `Db` (D1 e `node:sqlite`), migração SQL 0001, erros, logs sem PII, teste de esquema de privacidade, lint, CI | US-064 (esquema)  | 1b    | T-013               | `/feature` | M       | a fazer |
-| T-051 | Topologia: adaptador `functions/api/[[route]].ts`, Worker `prancheta-rooms` com o DO, `wrangler` de produção e prévia, `_headers`, `docs/04-deploy.md` | ADR-0010                | 1b    | T-050               | `/feature` | M       | a fazer |
-| T-052 | Filtro de apelido e de nome de liga                                                                                                                 | US-047, US-051               | 1b    | T-050               | `/feature` | M       | a fazer |
-| T-053 | Criar conta: passkey + código de recuperação gerado no aparelho (verificador HKDF, HMAC com pepper), mostrar uma vez                                 | US-047, US-048               | 1b    | T-052               | `/feature` | G       | a fazer |
-| T-054 | Entrar, sessão, recuperar em outro aparelho, bloqueio por tentativas, reautenticação, código novo                                                   | US-049, US-048               | 1b    | T-053               | `/feature` | M       | a fazer |
-| T-055 | Apagar conta: remoção, clubes para a IA, apelido some, posse da liga passa adiante                                                                  | US-050                       | 1b    | T-054, T-056        | `/feature` | M       | a fazer |
-| T-056 | Ligas: criar (configurações e limites da configuração do servidor), entrar por código, link de convite, `LeagueView`                                | US-051, US-052               | 1b    | T-054               | `/feature` | M       | a fazer |
-| T-057 | Escolha de clubes livre e por sorteio; iniciar temporada (`newGame` no servidor, estado no D1)                                                      | US-053                       | 1b    | T-056               | `/feature` | M       | a fazer |
-| T-058 | `RoomCoordinator`: interface, `InMemoryRoom`, `LeagueRoomDO` (alarme de prazo), estados da rodada                                                   | US-056 (base)                | 1b    | T-051, T-057        | `/feature` | M       | a fazer |
-| T-059 | Rodada online: `PUT sheet`, prontos, processamento idempotente, escalação de reserva/IA, inatividade e volta, bancada de CPU                         | US-055, US-056, US-060       | 1b    | T-058               | `/feature` | G       | a fazer |
-| T-060 | Cliente online, conta: `lib/online`, telas de criar conta, código, entrar, recuperar, apagar                                                        | US-047..US-050 (telas)       | 1b    | T-054, T-023        | `/feature` | M       | a fazer |
-| T-061 | Cliente online, liga: criar/entrar, escolha de clube, preparar rodada e "Pronto" (reaproveita a escalação), cache offline                           | US-051..US-053, US-055, US-059 | 1b  | T-059, T-060        | `/feature` | G       | a fazer |
-| T-062 | Assíncrono: resumos das rodadas processadas, partida a partir dos eventos, notícias da liga no cliente                                              | US-058, US-059               | 1b    | T-061               | `/feature` | M       | a fazer |
-| T-063 | Ao vivo: WebSocket com hibernação, `roundLive` com `startAt`, correção de relógio, reconexão, placares ao vivo                                      | US-057                       | 1b    | T-062, T-032        | `/feature` | G       | a fazer |
-| T-064 | Dono troca o modo; fim de temporada e duração da liga                                                                                               | US-061, US-063               | 1b    | T-062, T-017        | `/feature` | M       | a fazer |
-| T-065 | Mensagens prontas e emojis (catálogo por id, desligar na liga e para si, limite de envio)                                                           | US-062                       | 1b    | T-061               | `/feature` | M       | a fazer |
-| T-066 | Denúncia mínima de apelido e nome de liga (se a P7 for aprovada)                                                                                    | US-065                       | 1b    | T-056               | `/feature` | P       | a fazer |
-| T-067 | Draft                                                                                                                                               | US-054                       | 1b    | T-057, T-058        | `/feature` | M       | a fazer |
-| T-068 | Auditoria de privacidade da 1b (`security-auditor`) e política do site atualizada                                                                   | US-064                       | 1b    | T-050..T-066        | `/feature` | M       | a fazer |
+| #     | Tarefa                                                                                                                                                         | Histórias                      | Etapa | Depende de   | Caminho    | Tamanho | Estado  |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----- | ------------ | ---------- | ------- | ------- |
+| T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos   | base de US-004..012            | 1a    | —            | `/feature` | M       | a fazer |
+| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos             | base de US-007..013            | 1a    | T-001        | `/feature` | M       | a fazer |
+| T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`  | US-001                         | 1a    | T-001        | `/feature` | M       | a fazer |
+| T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de sílabas/nomes                                                             | US-003                         | 1a    | —            | `/feature` | M       | a fazer |
+| T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial                                                                              | US-004                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer |
+| T-006 | Geração dos elencos e `newGame` (escada de força, joia, ídolo, ajuste fino do XI)                                                                              | US-004                         | 1a    | T-003, T-005 | `/feature` | M       | a fazer |
+| T-007 | Calendário: Berger, returno espelhado, mando ≤ 2 seguidos, datas (Data FIFA, meio de semana)                                                                   | US-006                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer |
+| T-008 | Força por setor, nota efetiva, mando com termômetro (e `homeBase`), força exibida                                                                              | US-007, US-026 (mando)         | 1a    | T-005        | `/feature` | M       | a fazer |
+| T-009 | `simulateMatch` núcleo: oportunidades, finalização, assistência, acréscimos, estatísticas, notas, marcadores, eventos, golden                                  | US-008                         | 1a    | T-008        | `/feature` | G       | a fazer |
+| T-010 | Partida: cartões, lesões, pênaltis e faltas, cobradores e capitão, casos de borda (menos de 7, sem goleiro)                                                    | US-009                         | 1a    | T-009        | `/feature` | M       | a fazer |
+| T-011 | IA pré-jogo: `suggestSheet` (escalação gulosa, rotação, banco, cobradores), tática por perfil, `validateLineup`                                                | US-011                         | 1a    | T-008        | `/feature` | M       | a fazer |
+| T-012 | Comandos na partida: substituições, táticas, atalhos, conversa do intervalo, IA em jogo (regras 1–6)                                                           | US-021, US-022, US-011         | 1a    | T-010, T-011 | `/feature` | M       | a fazer |
+| T-013 | `prepareRound`/`playRound`: 10 partidas, suspensões, lesões, recuperação por dias, idempotência, `getStandings` com desempate, fatos da tabela                 | US-012, US-019 (motor)         | 1a    | T-007, T-012 | `/feature` | G       | a fazer |
+| T-014 | Moral e fadiga entre rodadas, termômetro da torcida, modo "realismo simplificado"                                                                              | US-010, US-026                 | 1a    | T-013        | `/feature` | M       | a fazer |
+| T-015 | Golden da temporada inteira + testes de propriedade em 1.000 sementes                                                                                          | US-008, US-012                 | 1a    | T-014        | `/feature` | P       | a fazer |
+| T-016 | `scripts/balance.ts` (liga, duelos calibrados, duelos táticos, `--seasons/--seed/--duels/--params`, tempo) e `npm run balance`                                 | US-013                         | 1a    | T-014        | `/feature` | M       | a fazer |
+| T-017 | Fim de temporada: prêmios, resumo, evolução e idade, `endSeason`/`startNextSeason` (com `incoming` opcional para a opção B)                                    | US-025 (motor)                 | 1a    | T-014        | `/feature` | M       | a fazer |
+| T-018 | Save: IndexedDB, snapshots gzip + SHA-256, gravação segura com 3 versões, abrir com volta, banco de teste, limite de 10 carreiras                              | US-032, US-034 (dados)         | 1a    | T-013        | `/feature` | M       | a fazer |
+| T-019 | Versão do formato e migrações: cadeia, fixture v1, teste de forma, recusa de versão nova                                                                       | US-033                         | 1a    | T-018        | `/feature` | M       | a fazer |
+| T-020 | Exportar e importar: arquivo `.txt`, compartilhar/baixar, limites, `valibot`, conflito de `careerId`                                                           | US-035, US-036                 | 1a    | T-019        | `/feature` | M       | a fazer |
+| T-021 | Templates: renderizador, catálogo de placeholders, memória de 200, contexto; `scripts/content-check.mjs`; regra `no-raw-text`                                  | US-027, US-040 (parte)         | 1a    | —            | `/feature` | M       | a fazer |
+| T-022 | i18n: idioma inicial, troca nas preferências, carregamento dinâmico, nome do jogo da configuração                                                              | US-040                         | 1a    | T-021        | `/feature` | P       | a fazer |
+| T-023 | Casca da interface: `CareerService`, navegação (abas no celular, barra lateral no desktop), fronteira de erro, registro local de erros                         | US-015, US-045                 | 1a    | T-013, T-018 | `/feature` | M       | a fazer |
+| T-024 | Infra de E2E: Playwright (Chromium + WebKit), `PRANCHETA_ENV=test`, primeiro teste, golden no WebKit, job no CI                                                | US-038 (base)                  | 1a    | T-023        | `/feature` | M       | a fazer |
+| T-025 | Tela inicial (lista, continuar, apagar com confirmação dupla) e novo jogo (clube, apelido, realismo, modo de partida, última configuração)                     | US-034, US-014                 | 1a    | T-023, T-006 | `/feature` | M       | a fazer |
+| T-026 | Uniformes gerados (`lib/generators/kit.ts`)                                                                                                                    | US-002                         | 1a    | T-003        | `/feature` | P       | a fazer |
+| T-027 | Avatares gerados (`lib/generators/avatar.ts`), com limite de bytes do `art-director`                                                                           | US-005                         | 1a    | T-005        | `/feature` | M       | a fazer |
+| T-028 | Tela do clube (com termômetro e rótulo de humor), elenco e card do jogador                                                                                     | US-015, US-016, US-026 (tela)  | 1a    | T-025, T-027 | `/feature` | M       | a fazer |
+| T-029 | Escalação com arrastar e soltar, táticas, capitão e cobradores                                                                                                 | US-017, US-018                 | 1a    | T-028, T-011 | `/feature` | G       | a fazer |
+| T-030 | Jogar rodada "só resultado": resumo, outros resultados, salvamento automático, fechar no meio                                                                  | US-019, US-032                 | 1a    | T-029        | `/feature` | M       | a fazer |
+| T-031 | Tabela e calendário/resultados                                                                                                                                 | US-023, US-024                 | 1a    | T-030        | `/feature` | M       | a fazer |
+| T-032 | Partida animada: canvas 2D, narração, pausa dramática, pular, reduzir movimento, vibração                                                                      | US-020                         | 1a    | T-030, T-026 | `/feature` | G       | a fazer |
+| T-033 | Comandos, substituições e conversa do intervalo na tela da partida                                                                                             | US-021, US-022                 | 1a    | T-032        | `/feature` | M       | a fazer |
+| T-034 | Notícias da rodada a partir dos fatos (`lib/content/news.ts`) e tela do jornal                                                                                 | US-028                         | 1a    | T-021, T-030 | `/feature` | M       | a fazer |
+| T-035 | Rede social simples e entrevista pós-jogo (com `fanEffect`)                                                                                                    | US-029, US-030                 | 1a    | T-034        | `/feature` | M       | a fazer |
+| T-036 | Ferramenta de repetição de templates (`scripts/template-repeat.ts`)                                                                                            | US-031                         | 1a    | T-034, T-016 | `/feature` | P       | a fazer |
+| T-037 | Fim de temporada nas telas: cerimônia, prêmios, resumo, próxima temporada, lembrete de exportar                                                                | US-025, US-037 (lembrete)      | 1a    | T-017, T-031 | `/feature` | M       | a fazer |
+| T-038 | Armazenamento persistente e aviso de persistência negada                                                                                                       | US-037                         | 1a    | T-020        | `/feature` | P       | a fazer |
+| T-039 | PWA: `registerType: 'prompt'`, aviso de nova versão fora da partida, novidades, `check-precache` (< 10 MB) no CI, E2E offline                                  | US-038, US-039                 | 1a    | T-024, T-030 | `/feature` | M       | a fazer |
+| T-040 | Espaços de patrocínio com marcas fictícias                                                                                                                     | US-041                         | 1a    | T-032        | `/feature` | P       | a fazer |
+| T-041 | Tela "Sobre" e preferências (tema, vibração, aba da rede social, idioma, lembrete, copiar relatório de erros)                                                  | US-043, US-044, US-045         | 1a    | T-023, T-022 | `/feature` | M       | a fazer |
+| T-042 | Tutorial e primeiros passos                                                                                                                                    | US-042                         | 1a    | T-030        | `/feature` | M       | a fazer |
+| T-043 | Estatísticas sem cookies só no site (se a P11 for aprovada)                                                                                                    | US-046                         | 1a    | —            | `/quick`   | P       | a fazer |
+| T-050 | Esqueleto do servidor: workspace `server/`, Hono, `Db` (D1 e `node:sqlite`), migração SQL 0001, erros, logs sem PII, teste de esquema de privacidade, lint, CI | US-064 (esquema)               | 1b    | T-013        | `/feature` | M       | a fazer |
+| T-051 | Topologia: adaptador `functions/api/[[route]].ts`, Worker `prancheta-rooms` com o DO, `wrangler` de produção e prévia, `_headers`, `docs/04-deploy.md`         | ADR-0010                       | 1b    | T-050        | `/feature` | M       | a fazer |
+| T-052 | Filtro de apelido e de nome de liga                                                                                                                            | US-047, US-051                 | 1b    | T-050        | `/feature` | M       | a fazer |
+| T-053 | Criar conta: passkey + código de recuperação gerado no aparelho (verificador HKDF, HMAC com pepper), mostrar uma vez                                           | US-047, US-048                 | 1b    | T-052        | `/feature` | G       | a fazer |
+| T-054 | Entrar, sessão, recuperar em outro aparelho, bloqueio por tentativas, reautenticação, código novo                                                              | US-049, US-048                 | 1b    | T-053        | `/feature` | M       | a fazer |
+| T-055 | Apagar conta: remoção, clubes para a IA, apelido some, posse da liga passa adiante                                                                             | US-050                         | 1b    | T-054, T-056 | `/feature` | M       | a fazer |
+| T-056 | Ligas: criar (configurações e limites da configuração do servidor), entrar por código, link de convite, `LeagueView`                                           | US-051, US-052                 | 1b    | T-054        | `/feature` | M       | a fazer |
+| T-057 | Escolha de clubes livre e por sorteio; iniciar temporada (`newGame` no servidor, estado no D1)                                                                 | US-053                         | 1b    | T-056        | `/feature` | M       | a fazer |
+| T-058 | `RoomCoordinator`: interface, `InMemoryRoom`, `LeagueRoomDO` (alarme de prazo), estados da rodada                                                              | US-056 (base)                  | 1b    | T-051, T-057 | `/feature` | M       | a fazer |
+| T-059 | Rodada online: `PUT sheet`, prontos, processamento idempotente, escalação de reserva/IA, inatividade e volta, bancada de CPU                                   | US-055, US-056, US-060         | 1b    | T-058        | `/feature` | G       | a fazer |
+| T-060 | Cliente online, conta: `lib/online`, telas de criar conta, código, entrar, recuperar, apagar                                                                   | US-047..US-050 (telas)         | 1b    | T-054, T-023 | `/feature` | M       | a fazer |
+| T-061 | Cliente online, liga: criar/entrar, escolha de clube, preparar rodada e "Pronto" (reaproveita a escalação), cache offline                                      | US-051..US-053, US-055, US-059 | 1b    | T-059, T-060 | `/feature` | G       | a fazer |
+| T-062 | Assíncrono: resumos das rodadas processadas, partida a partir dos eventos, notícias da liga no cliente                                                         | US-058, US-059                 | 1b    | T-061        | `/feature` | M       | a fazer |
+| T-063 | Ao vivo: WebSocket com hibernação, `roundLive` com `startAt`, correção de relógio, reconexão, placares ao vivo                                                 | US-057                         | 1b    | T-062, T-032 | `/feature` | G       | a fazer |
+| T-064 | Dono troca o modo; fim de temporada e duração da liga                                                                                                          | US-061, US-063                 | 1b    | T-062, T-017 | `/feature` | M       | a fazer |
+| T-065 | Mensagens prontas e emojis (catálogo por id, desligar na liga e para si, limite de envio)                                                                      | US-062                         | 1b    | T-061        | `/feature` | M       | a fazer |
+| T-066 | Denúncia mínima de apelido e nome de liga (se a P7 for aprovada)                                                                                               | US-065                         | 1b    | T-056        | `/feature` | P       | a fazer |
+| T-067 | Draft                                                                                                                                                          | US-054                         | 1b    | T-057, T-058 | `/feature` | M       | a fazer |
+| T-068 | Auditoria de privacidade da 1b (`security-auditor`) e política do site atualizada                                                                              | US-064                         | 1b    | T-050..T-066 | `/feature` | M       | a fazer |
 
 **Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). Os números T-044 a T-049 ficam livres para tarefas que surgirem na 1a.
 
@@ -506,16 +642,16 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 
 ## 9. Riscos
 
-| Risco                                                                                       | Efeito                                                         | Mitigação                                                                                                                                   |
-| ------------------------------------------------------------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- |
-| CPU de 10 ms do plano gratuito pouco para `processRound` (parse + 10 partidas + gzip)       | rodada falha no servidor ou exige US$ 5/mês                    | bancada no CI desde a T-059; estado enxuto (eventos completos só da última rodada); plano pago já previsto no ADR-0002 como saída          |
-| `Math.exp` e afins com o último bit diferente entre V8 (Chrome, Workers) e JavaScriptCore (Safari) | o mesmo save daria resultado diferente em outro aparelho | na carreira, o resultado é gravado e nunca recalculado em outro aparelho; no online, só o servidor simula; golden no WebKit pelo E2E; `exp` encapsulado em `engine/math.ts` para trocar por uma versão própria se precisar |
-| Safari apaga dados de sites pouco usados                                                    | perda de carreira                                              | `storage.persist`, incentivo à instalação, lembrete de exportar (US-037)                                                                    |
-| Mudança de domínio depois da 1b                                                             | passkeys param de funcionar; saves locais ficam no domínio antigo | decidir o domínio antes da 1b; código de recuperação registra passkey nova; exportar/importar                                            |
-| Golden quebrar a cada ajuste de regra                                                       | atrito no desenvolvimento                                      | subir `ENGINE_VERSION` e regenerar o golden é um passo explícito do PR; os saves são snapshots e não dependem do algoritmo                   |
-| Transmissão ao vivo manda o resultado inteiro de uma vez                                     | um jogador curioso vê o placar antes                           | sem comandos no online (P6), isso não muda nada no jogo; se incomodar, enviar em blocos de 15 minutos (custa mais tempo de DO)              |
-| Duas topologias de deploy (Pages + Worker de salas)                                         | mais configuração para o CEO                                   | um job de deploy com aprovação do CEO no GitHub; checklist em `docs/04-deploy.md`                                                           |
-| Vitest 5 sem suporte do `@cloudflare/vitest-pool-workers`                                   | não testar o runtime real                                      | testes do servidor em Node com `SqliteDb` + `InMemoryRoom`; teste de fumaça manual com `wrangler pages dev` na prévia                      |
+| Risco                                                                                              | Efeito                                                            | Mitigação                                                                                                                                                                                                                  |
+| -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CPU de 10 ms do plano gratuito pouco para `processRound` (parse + 10 partidas + gzip)              | rodada falha no servidor ou exige US$ 5/mês                       | bancada no CI desde a T-059; estado enxuto (eventos completos só da última rodada); plano pago já previsto no ADR-0002 como saída                                                                                          |
+| `Math.exp` e afins com o último bit diferente entre V8 (Chrome, Workers) e JavaScriptCore (Safari) | o mesmo save daria resultado diferente em outro aparelho          | na carreira, o resultado é gravado e nunca recalculado em outro aparelho; no online, só o servidor simula; golden no WebKit pelo E2E; `exp` encapsulado em `engine/math.ts` para trocar por uma versão própria se precisar |
+| Safari apaga dados de sites pouco usados                                                           | perda de carreira                                                 | `storage.persist`, incentivo à instalação, lembrete de exportar (US-037)                                                                                                                                                   |
+| Mudança de domínio depois da 1b                                                                    | passkeys param de funcionar; saves locais ficam no domínio antigo | decidir o domínio antes da 1b; código de recuperação registra passkey nova; exportar/importar                                                                                                                              |
+| Golden quebrar a cada ajuste de regra                                                              | atrito no desenvolvimento                                         | subir `ENGINE_VERSION` e regenerar o golden é um passo explícito do PR; os saves são snapshots e não dependem do algoritmo                                                                                                 |
+| Transmissão ao vivo manda o resultado inteiro de uma vez                                           | um jogador curioso vê o placar antes                              | sem comandos no online (P6), isso não muda nada no jogo; se incomodar, enviar em blocos de 15 minutos (custa mais tempo de DO)                                                                                             |
+| Duas topologias de deploy (Pages + Worker de salas)                                                | mais configuração para o CEO                                      | um job de deploy com aprovação do CEO no GitHub; checklist em `docs/04-deploy.md`                                                                                                                                          |
+| Vitest 5 sem suporte do `@cloudflare/vitest-pool-workers`                                          | não testar o runtime real                                         | testes do servidor em Node com `SqliteDb` + `InMemoryRoom`; teste de fumaça manual com `wrangler pages dev` na prévia                                                                                                      |
 
 ---
 

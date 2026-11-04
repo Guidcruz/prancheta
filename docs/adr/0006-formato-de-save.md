@@ -10,13 +10,13 @@ A carreira offline vive só no aparelho (IndexedDB). O `docs/PROJETO.md` ("Saves
 
 ## Opções consideradas
 
-| Opção                                                                 | Prós                                                                                  | Contras                                                                                                |
-| --------------------------------------------------------------------- | ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| A: snapshot do estado inteiro a cada rodada (JSON gzip + SHA-256)      | simples; não depende do algoritmo do motor; abrir é ler e conferir                     | 100 a 300 KB por versão; migração mexe na estrutura                                                     |
-| B: semente + log de decisões, refeito pelo motor ao abrir              | arquivo minúsculo; replay "de graça"                                                   | qualquer mudança no motor muda a carreira inteira de quem já joga; abrir fica lento no fim da temporada |
-| C: banco relacional no IndexedDB (uma store por entidade)              | gravação parcial                                                                       | atomicidade e conferência difíceis; migração muito mais trabalhosa                                     |
-| Arquivo exportado: JSON puro, `.json` ou `.gz`                         | legível                                                                                | o compartilhamento de arquivos do Chrome não aceita esses tipos; JSON puro é grande                     |
-| Arquivo exportado: texto `.txt` com cabeçalho + base64 do gzip         | aceito pelo compartilhamento no Android e no iPhone; pequeno; conferível               | não é legível a olho nu (não precisa ser)                                                               |
+| Opção                                                             | Prós                                                                     | Contras                                                                                                 |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------- |
+| A: snapshot do estado inteiro a cada rodada (JSON gzip + SHA-256) | simples; não depende do algoritmo do motor; abrir é ler e conferir       | 100 a 300 KB por versão; migração mexe na estrutura                                                     |
+| B: semente + log de decisões, refeito pelo motor ao abrir         | arquivo minúsculo; replay "de graça"                                     | qualquer mudança no motor muda a carreira inteira de quem já joga; abrir fica lento no fim da temporada |
+| C: banco relacional no IndexedDB (uma store por entidade)         | gravação parcial                                                         | atomicidade e conferência difíceis; migração muito mais trabalhosa                                      |
+| Arquivo exportado: JSON puro, `.json` ou `.gz`                    | legível                                                                  | o compartilhamento de arquivos do Chrome não aceita esses tipos; JSON puro é grande                     |
+| Arquivo exportado: texto `.txt` com cabeçalho + base64 do gzip    | aceito pelo compartilhamento no Android e no iPhone; pequeno; conferível | não é legível a olho nu (não precisa ser)                                                               |
 
 ## Decisão
 

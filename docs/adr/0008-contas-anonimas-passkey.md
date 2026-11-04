@@ -10,11 +10,11 @@ O `docs/PROJETO.md` ("Privacidade, LGPD e ECA Digital") e o ADR-0003 definem a c
 
 ## Opções consideradas
 
-| Opção                                                                                     | Prós                                                                                       | Contras                                                                               |
-| ----------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------- |
-| A: código gerado pelo servidor e guardado com hash lento (Argon2/scrypt)                   | modelo conhecido                                                                           | o servidor vê o código; KDF lenta não cabe nos 10 ms de CPU do Worker gratuito        |
-| B: código gerado no aparelho; o servidor recebe só um verificador derivado (HKDF) e guarda o HMAC dele com um pepper secreto | o servidor nunca vê o código; a chave da Etapa 4 sai de outro rótulo do HKDF; barato em CPU | sem o pepper e sem o código não há recuperação (é o que se quer)                       |
-| C: login só por código, sem passkey (P8)                                                  | funciona em qualquer aparelho                                                              | código vira senha; mais fraco contra roubo de conta                                   |
+| Opção                                                                                                                        | Prós                                                                                        | Contras                                                                        |
+| ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ |
+| A: código gerado pelo servidor e guardado com hash lento (Argon2/scrypt)                                                     | modelo conhecido                                                                            | o servidor vê o código; KDF lenta não cabe nos 10 ms de CPU do Worker gratuito |
+| B: código gerado no aparelho; o servidor recebe só um verificador derivado (HKDF) e guarda o HMAC dele com um pepper secreto | o servidor nunca vê o código; a chave da Etapa 4 sai de outro rótulo do HKDF; barato em CPU | sem o pepper e sem o código não há recuperação (é o que se quer)               |
+| C: login só por código, sem passkey (P8)                                                                                     | funciona em qualquer aparelho                                                               | código vira senha; mais fraco contra roubo de conta                            |
 
 ## Decisão
 

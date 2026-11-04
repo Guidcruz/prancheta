@@ -10,11 +10,11 @@ O ADR-0002 põe site e jogo no Cloudflare Pages (já configurado em `prancheta-a
 
 ## Opções consideradas
 
-| Opção                                                                                   | Prós                                                                                          | Contras                                                                                                |
-| --------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| A: Pages Functions em `/api/*` (Hono) + Worker `prancheta-rooms` só com o Durable Object | mesma origem do jogo (cookie primário, `rpId` igual, sem CORS); mantém o Pages e as prévias por PR | dois itens para publicar (Pages sozinho; Worker de salas por job com aprovação)                        |
-| B: Worker separado em `*.workers.dev` com toda a API                                      | um deploy de servidor                                                                         | outra origem: CORS e cookie de terceiro (bloqueado no Safari); sessão teria de ir em cabeçalho         |
-| C: migrar site e jogo para um Worker único com arquivos estáticos                         | um só deploy, com o DO no mesmo script                                                        | muda o ADR-0002 e a hospedagem já configurada; troca a origem (saves locais de teste se perdem)        |
+| Opção                                                                                    | Prós                                                                                               | Contras                                                                                         |
+| ---------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A: Pages Functions em `/api/*` (Hono) + Worker `prancheta-rooms` só com o Durable Object | mesma origem do jogo (cookie primário, `rpId` igual, sem CORS); mantém o Pages e as prévias por PR | dois itens para publicar (Pages sozinho; Worker de salas por job com aprovação)                 |
+| B: Worker separado em `*.workers.dev` com toda a API                                     | um deploy de servidor                                                                              | outra origem: CORS e cookie de terceiro (bloqueado no Safari); sessão teria de ir em cabeçalho  |
+| C: migrar site e jogo para um Worker único com arquivos estáticos                        | um só deploy, com o DO no mesmo script                                                             | muda o ADR-0002 e a hospedagem já configurada; troca a origem (saves locais de teste se perdem) |
 
 ## Decisão
 

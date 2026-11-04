@@ -8,4 +8,15 @@
 | 0004 | Caminho leve por PR; ninguém faz merge, push na main ou apaga branch além do CEO                                                                                          | 2026-11-03 |
 | 0005 | Brasilidades (salários, transfer ban, STJD, estrutura, SAF, sócios, torcida no jogo) como sistemas de consequência; comissão técnica e estrutura afetam treino e evolução | 2026-11-03 |
 
+## Propostas (aguardando o CEO)
+
+| ADR  | Decisão proposta                                                                                                                               | Status   | Data       |
+| ---- | ---------------------------------------------------------------------------------------------------------------------------------------------- | -------- | ---------- |
+| 0006 | Save como snapshot JSON gzip + SHA-256 no IndexedDB, 3 versões com gravação conferida, migração em cadeia, arquivo exportado `.txt`, `valibot` | proposta | 2026-11-04 |
+| 0007 | API do motor em funções puras com `Result`, semente por fluxo, comandos como lista, fatos em vez de texto, `ENGINE_VERSION` + golden           | proposta | 2026-11-04 |
+| 0008 | Conta anônima com passkey obrigatória; código de recuperação gerado no aparelho, servidor guarda só HMAC de um verificador HKDF                | proposta | 2026-11-04 |
+| 0009 | Liga online: estado no D1, Durable Object só coordena; rodada idempotente; ao vivo por linha do tempo com `startAt` comum                      | proposta | 2026-11-04 |
+| 0010 | Servidor da 1b em Pages Functions (`/api`, mesma origem) + Worker de salas com o Durable Object; deploy do Worker com aprovação do CEO         | proposta | 2026-11-04 |
+| 0011 | Fator casa fixo `match.homeBase` (+5% recomendado pelo game-designer, ou 0): decisão de diversão do CEO                                        | proposta | 2026-11-04 |
+
 Decisões pendentes: `docs/status.md`.

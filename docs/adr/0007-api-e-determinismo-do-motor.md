@@ -10,11 +10,11 @@ O ADR-0001 já decide o motor em TypeScript puro, sem DOM e com `Rng` semeado. F
 
 ## Opções consideradas
 
-| Opção                                                                                   | Prós                                                                                           | Contras                                                                         |
-| --------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- |
-| A: funções puras `(estado, params, entrada) → (estado novo, relatório)`; partida = `simulateMatch(entrada, params, comandos)` reexecutada a cada comando | uma única forma de rodar em todo lugar; trivial de testar; sem estado escondido | cada comando reexecuta a partida (cerca de 0,1 ms, irrelevante)                 |
-| B: motor com objeto de partida mutável, passo a passo (`step()`, `apply()`)               | natural para a tela ao vivo                                                                     | dois caminhos (passo a passo e completo) que podem divergir; difícil de comparar com o servidor |
-| C: um `Rng` único da carreira que atravessa tudo                                         | menos sementes                                                                                 | qualquer mudança desloca todos os sorteios seguintes; partidas dependem da ordem |
+| Opção                                                                                                                                                    | Prós                                                                            | Contras                                                                                         |
+| -------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| A: funções puras `(estado, params, entrada) → (estado novo, relatório)`; partida = `simulateMatch(entrada, params, comandos)` reexecutada a cada comando | uma única forma de rodar em todo lugar; trivial de testar; sem estado escondido | cada comando reexecuta a partida (cerca de 0,1 ms, irrelevante)                                 |
+| B: motor com objeto de partida mutável, passo a passo (`step()`, `apply()`)                                                                              | natural para a tela ao vivo                                                     | dois caminhos (passo a passo e completo) que podem divergir; difícil de comparar com o servidor |
+| C: um `Rng` único da carreira que atravessa tudo                                                                                                         | menos sementes                                                                  | qualquer mudança desloca todos os sorteios seguintes; partidas dependem da ordem                |
 
 ## Decisão
 
