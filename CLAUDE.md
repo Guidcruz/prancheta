@@ -12,7 +12,7 @@
 ## Visão geral
 
 - **O que é:** um jogo de técnico de futebol no estilo Brasfoot, só com clubes fictícios em trocadilho, rodando no navegador e instalável no celular; carreira offline e ligas online.
-- **Status:** Etapa 0 (Dia 1) em andamento; a Etapa 1 (1a carreira offline, 1b online mínimo) começa com o `/kickoff`.
+- **Status:** Etapa 1a em andamento (T-001 a T-003 feitas); ver `docs/status.md`.
 - **Documentos-chave:** `docs/PROJETO.md` (o documento de projeto congelado, fonte das decisões), `docs/00-vision.md`, `docs/01-requirements.md`, `docs/02-architecture.md`, `docs/adr/`, `docs/03-test-plan.md`, `docs/04-deploy.md`, `docs/roadmap.md`, `docs/status.md`.
 - **Design system:** artefato "Prancheta" no claude.ai; os tokens estão exportados em `design/tokens.json` e compilados para `app/src/tokens.css` por `scripts/tokens-to-css.mjs`. O `ux-designer` é o guardião.
 
@@ -27,22 +27,24 @@
 - **Lint/format:** ESLint 10 + svelte-check + astro check + Prettier (`npm run lint` roda tudo e também os testes do hook; `npm run format`).
 - **Gerenciador:** npm com workspaces (`app`, `site`).
 
-| Ação                                                        | Comando                            |
-| ----------------------------------------------------------- | ---------------------------------- |
-| Instalar                                                    | `npm install`                      |
-| Rodar o jogo (dev)                                          | `npm run dev -w app`               |
-| Rodar o site (dev)                                          | `npm run dev -w site`              |
-| Testes unitários e do motor                                 | `npm test`                         |
-| Atualizar golden do motor (recusa sem subir ENGINE_VERSION) | `npm run golden:update -w app`     |
-| Regressão completa (lint + testes + build)                  | `npm run test:all`                 |
-| Lint                                                        | `npm run lint`                     |
-| Formatar                                                    | `npm run format`                   |
-| Build (site + jogo em `dist/`)                              | `npm run build`                    |
-| Auditoria de dependências                                   | `npm audit --audit-level=high`     |
-| Ícones da PWA a partir do SVG                               | `npm run icons`                    |
-| Testes do hook de travas                                    | `bash scripts/test-hook.sh`        |
-| Tokens do design system → CSS                               | `npm run tokens`                   |
-| Balanceamento (simula N temporadas)                         | `npm run balance -- --seasons 200` |
+| Ação                                                            | Comando                               |
+| --------------------------------------------------------------- | ------------------------------------- |
+| Instalar                                                        | `npm install`                         |
+| Rodar o jogo (dev)                                              | `npm run dev -w app`                  |
+| Rodar o site (dev)                                              | `npm run dev -w site`                 |
+| Testes unitários e do motor                                     | `npm test`                            |
+| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)     | `npm run golden:update -w app`        |
+| Regressão completa (lint + testes + build)                      | `npm run test:all`                    |
+| Lint                                                            | `npm run lint`                        |
+| Formatar                                                        | `npm run format`                      |
+| Build (site + jogo em `dist/`)                                  | `npm run build`                       |
+| Auditoria de dependências                                       | `npm audit --audit-level=high`        |
+| Ícones da PWA a partir do SVG                                   | `npm run icons`                       |
+| Testes do hook de travas                                        | `bash scripts/test-hook.sh`           |
+| Tokens do design system → CSS                                   | `npm run tokens`                      |
+| Balanceamento (simula N temporadas)                             | `npm run balance -- --seasons 200`    |
+| Conferir dados e conteúdo (clubes, lista bloqueada)             | `npm run content:check`               |
+| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo) | `npm run blocklist:hash -- <arquivo>` |
 
 ## Estrutura
 
