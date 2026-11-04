@@ -195,8 +195,27 @@ describe('T(t) (partida.md, "Forças de setor")', () => {
     );
   });
 
-  it('never goes below 0 with an absurd number of missing players', () => {
-    expect(teamFactor({ home: 0.1, missing: 50 }, params.match)).toBe(0);
+  it('clips the missing players to 11 and never goes below 0', () => {
+    expect(teamFactor({ home: 0.1, missing: 50 }, params.match)).toBe(
+      teamFactor({ home: 0.1, missing: 11 }, params.match),
+    );
+    const harsh = { missingPlayerPenalty: 0.12 };
+    expect(teamFactor({ home: 0, missing: 11 }, harsh)).toBe(0);
+  });
+
+  it('ignores a negative or NaN number of missing players', () => {
+    expect(teamFactor({ home: 0.1, missing: -3 }, params.match)).toBe(
+      teamFactor({ home: 0.1 }, params.match),
+    );
+    expect(teamFactor({ home: 0.1, missing: Number.NaN }, params.match)).toBe(
+      teamFactor({ home: 0.1 }, params.match),
+    );
+  });
+
+  it('never turns negative or NaN with a half-time boost below −100%', () => {
+    expect(teamFactor({ home: 0.1, halftimeBoost: -1 }, params.match)).toBe(0);
+    expect(teamFactor({ home: 0.1, halftimeBoost: -5 }, params.match)).toBe(0);
+    expect(teamFactor({ home: 0.1, halftimeBoost: Number.NaN }, params.match)).toBe(0);
   });
 
   it('multiplies the three sectors, and the goalkeeper eff stays plain', () => {

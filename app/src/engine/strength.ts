@@ -129,15 +129,17 @@ export interface StrengthFactors {
 }
 
 /**
- * `T(t) = (1 + home) × (1 − match.missingPlayerPenalty × faltando) × (1 + halftimeBoost)`. The
- * middle factor never goes below 0, so a strange input cannot make a strength negative.
+ * `T(t) = (1 + home) × (1 − match.missingPlayerPenalty × faltando) × (1 + halftimeBoost)`.
+ * Strange inputs cannot make a strength negative or NaN: `missing` is clipped to 0..11 and
+ * `halftimeBoost` to −1 or more (NaN counts as the lower end of each), and the middle factor
+ * never goes below 0.
  */
 export function teamFactor(
   factors: StrengthFactors,
   match: Pick<MatchParams, 'missingPlayerPenalty'>,
 ): number {
-  const missing = factors.missing ?? 0;
-  const halftimeBoost = factors.halftimeBoost ?? 0;
+  const missing = clamp(factors.missing ?? 0, 0, STARTERS_COUNT);
+  const halftimeBoost = clamp(factors.halftimeBoost ?? 0, -1, Number.POSITIVE_INFINITY);
   const shortHanded = Math.max(0, 1 - match.missingPlayerPenalty * missing);
   return (1 + factors.home) * shortHanded * (1 + halftimeBoost);
 }
