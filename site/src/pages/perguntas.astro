@@ -184,19 +184,27 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
           mudam juntos.
         </p>
       </FaqItem>
+      {discussionsUrl && (
+        <FaqItem question="Achei um erro ou tenho uma ideia. Para onde vou?">
+          <p>
+            Abra um tópico nas <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Lá
+            cabem relatos de erro, ideias e perguntas.
+          </p>
+        </FaqItem>
+      )}
     </div>
   </section>
   <section>
     <h2>Não achou a sua pergunta?</h2>
     {discussionsUrl && (
       <p>
-        Abra um tópico nas <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Lá cabem
-        relatos de erro, ideias e perguntas.
+        Escreva no mesmo lugar: as <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Se
+        preferir, acompanhe o <a href={`${base}devlog/`}>devlog</a>.
       </p>
     )}
     {supportEmail && (
       <p>
-        Ou escreva para <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+        Contato: <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
       </p>
     )}
     {!discussionsUrl && !supportEmail && (

@@ -20,7 +20,7 @@ const items = clubs.map((c) => ({
     <li>
       <span
         role={decorative ? undefined : 'img'}
-        aria-label={decorative ? undefined : `Escudo do ${c.shortName}`}
+        aria-label={decorative ? undefined : `Escudo: ${c.shortName}`}
         set:html={c.svg}
       />
       {!decorative && <span class="caption name">{c.shortName}</span>}
