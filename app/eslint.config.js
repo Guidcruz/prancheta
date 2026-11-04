@@ -192,9 +192,9 @@ export default [
     },
   },
   {
-    // Engine tests and test helpers run only in Vitest (Node): they may read files, spawn Node
-    // and use any math, but stay free of the clock and Math.random.
-    files: ['src/engine/**/*.test.ts', 'src/engine/testing/**/*.ts'],
+    // Engine tests, benches and test helpers run only in Vitest (Node): they may read files,
+    // spawn Node and use any math, but stay free of the clock and Math.random.
+    files: ['src/engine/**/*.test.ts', 'src/engine/**/*.bench.ts', 'src/engine/testing/**/*.ts'],
     rules: {
       'no-restricted-globals': ['error', ...engineGlobals.filter((g) => g !== 'process')],
       'no-restricted-properties': ['error', ...randomAndClock],
