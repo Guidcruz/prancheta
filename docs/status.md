@@ -216,6 +216,12 @@ Fora da meta: goleada e zebra ficam para a T-011/T-012 ("segurar o resultado"); 
 - Domínio definitivo (bloqueia a US-047).
 - Quem trata as denúncias e em quanto tempo (bloqueia a US-065).
 
+## Ideias registradas para etapas futuras
+
+Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etapa chegar, e as regras passam pelo CEO antes de virar ADR ou requisito.
+
+- **Técnico interino e período sem técnico (Etapa 4, registrado em 2026-11-04):** quando um clube demite o técnico, o auxiliar assume como interino por 1 a 3 rodadas e joga no perfil "Tradicional"; "efeito técnico novo" com ganho de moral nos primeiros jogos; notícias e posts ("fulano é o interino", "diretoria busca nome no mercado"); no modo "técnico livre", o técnico humano demitido fica desempregado algumas rodadas até receber proposta. Vale para os clubes da IA e para o clube do técnico humano.
+
 ## Próximo
 
 1. T-011: IA pré-jogo (`suggestSheet`, escalação, tática por perfil, `validateLineup`).
