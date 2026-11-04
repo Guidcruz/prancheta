@@ -7,6 +7,7 @@ import '@fontsource/barlow-condensed/600.css';
 import '@fontsource/barlow-condensed/700.css';
 import '../../../app/src/tokens.css';
 import '../theme-auto.css';
+import tokens from '../../../design/tokens.json';
 import SiteHeader from '../components/SiteHeader.astro';
 import SiteFooter from '../components/SiteFooter.astro';
 interface Props {
@@ -28,6 +29,9 @@ const {
 } = Astro.props;
 const fullTitle = title ? `${title} · ${config.name}` : config.name;
 const base = config.paths.site;
+const lightBg = String(
+  tokens.color.tokens.find((t) => t.name === 'surface-0')?.value.dia ?? config.colors.background,
+);
 const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
 ---
 
@@ -51,7 +55,7 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
       content={config.colors.background}
       media="(prefers-color-scheme: dark)"
     />
-    <meta name="theme-color" content="#f3f5f7" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content={lightBg} media="(prefers-color-scheme: light)" />
     <link rel="icon" href={`${config.paths.game}/icons/icon.svg`} type="image/svg+xml" />
     <link
       rel="alternate"
@@ -102,9 +106,7 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     text-decoration: underline;
     text-underline-offset: 3px;
   }
-  a.botao,
-  nav a,
-  .links a {
+  a.botao {
     text-decoration: none;
   }
   :focus-visible {
@@ -126,7 +128,7 @@ const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
     top: var(--space-2);
   }
   h1 {
-    font: var(--type-display-xl);
+    font: var(--type-display-lg);
     text-transform: uppercase;
     margin: 0 0 var(--space-4);
     hyphens: auto;

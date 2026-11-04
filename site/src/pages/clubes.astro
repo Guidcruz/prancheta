@@ -3,16 +3,17 @@ import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
 import ShieldGrid from '../components/ShieldGrid.astro';
 import StatusBadge from '../components/StatusBadge.astro';
+import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
 import { clubsById, exampleClubIds } from '../lib/shields';
 const clubs = clubsById(exampleClubIds);
 const divisions = [
-  { name: 'Série A', clubs: '20 clubes fictícios', stage: '1a' },
-  { name: 'Séries B a D', clubs: 'lista ainda não aprovada', stage: '2' },
+  { name: 'Série A', clubs: '20 clubes fictícios', id: 'serie-a' },
+  { name: 'Séries B a D', clubs: 'lista ainda não aprovada', id: 'series-b-d' },
   {
     name: 'Outros países da América do Sul',
     clubs: 'Argentina, Uruguai, Colômbia, Chile e mais',
-    stage: '5',
+    id: 'america-do-sul',
   },
 ];
 ---
@@ -20,7 +21,7 @@ const divisions = [
 <Base
   title="Clubes"
   current="clubes"
-  description="Todos os clubes são fictícios, com nomes em trocadilho e escudos desenhados por código. Conheça a ideia por trás dos times do Prancheta."
+  description={`Todos os clubes são fictícios, com nomes em trocadilho e escudos desenhados por código. Conheça a ideia por trás dos times do ${config.name}.`}
   wide
 >
   <div class="prose">
@@ -78,26 +79,28 @@ const divisions = [
     </p>
 
     <h2>Quem está no jogo</h2>
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">Divisão</th>
-          <th scope="col">Clubes</th>
-          <th scope="col">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {divisions.map((d) => (
+    <TableScroll label="Quem está no jogo">
+      <table>
+        <thead>
           <tr>
-            <td class="body-strong">{d.name}</td>
-            <td>{d.clubs}</td>
-            <td>
-              <StatusBadge stage={d.stage} showStage />
-            </td>
+            <th scope="col">Divisão</th>
+            <th scope="col">Clubes</th>
+            <th scope="col">Estado</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {divisions.map((d) => (
+            <tr>
+              <th scope="row">{d.name}</th>
+              <td>{d.clubs}</td>
+              <td>
+                <StatusBadge recurso={d.id} showStage />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableScroll>
     <p>
       Os clubes se dividem em grandes, médios e pequenos, e o porte muda o tamanho da torcida e da
       história.

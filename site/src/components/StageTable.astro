@@ -1,10 +1,13 @@
 ---
 import StatusBadge from './StatusBadge.astro';
 import type { Stage } from '../lib/roadmap';
+import { stageSummaries } from '../data/etapas-resumo';
 interface Props {
   stages: Stage[];
+  /** 'delivery' shows the roadmap text; 'summary' shows the short text from data/etapas-resumo.ts. */
+  text?: 'delivery' | 'summary';
 }
-const { stages } = Astro.props;
+const { stages, text = 'delivery' } = Astro.props;
 ---
 
 <div class="scroll" tabindex="0" role="region" aria-label="Etapas do jogo (tabela com rolagem)">
@@ -24,7 +27,7 @@ const { stages } = Astro.props;
             {s.id}
           </th>
           <td class="body-strong">{s.name}</td>
-          <td>{s.delivery}</td>
+          <td>{text === 'summary' ? (stageSummaries[s.id] ?? '') : s.delivery}</td>
           <td>
             <StatusBadge status={s.status} />
           </td>
@@ -48,6 +51,7 @@ const { stages } = Astro.props;
     background: var(--surface-1);
     color: var(--ink);
     font: var(--type-numero);
+    font-variant-numeric: tabular-nums;
     text-transform: none;
     letter-spacing: 0;
     border-right: 1px solid var(--line);

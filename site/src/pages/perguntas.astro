@@ -11,12 +11,12 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
 <Base
   title="Perguntas frequentes"
   current="perguntas"
-  description="Preço, celular, privacidade, clubes fictícios e online: respostas diretas às dúvidas mais comuns sobre o Prancheta, sem enrolação."
+  description={`Preço, celular, privacidade, clubes fictícios e online: respostas diretas às dúvidas mais comuns sobre o ${config.name}, sem enrolação.`}
 >
   <h1>Perguntas frequentes</h1>
   <p class="lead">
     Respostas diretas, sem enrolação. Não achou a sua? Veja o <a href={`${base}devlog/`}>devlog</a>{' '}
-    ou o<a href={`${base}roadmap/`}>roteiro</a>.
+    ou o <a href={`${base}roadmap/`}>roteiro</a>.
   </p>
 
   <section>
@@ -77,8 +77,8 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
         <p>
           Pela página <a href={`${base}apoiar/`}>Apoiar</a>. O apoio é voluntário e, no futuro,
           poderá render itens de enfeite (como nome nos créditos), nunca vantagem em campo. Apoio
-          com recompensas está <StatusBadge stage="6" showStage />. O jogo é grátis; apoiar é
-          opcional.
+          com recompensas está <StatusBadge recurso="apoio-recompensas" showStage />. O jogo é
+          grátis; apoiar é opcional.
         </p>
       </FaqItem>
     </div>
@@ -90,7 +90,8 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
       <FaqItem question={`Preciso criar conta ou me cadastrar?`}>
         <p>
           Na carreira offline, não. Tudo fica no seu aparelho. Para a liga online, haverá uma conta
-          anônima: apelido mais a biometria do celular. <StatusBadge stage="1b" showStage />
+          anônima: apelido mais a biometria do celular.{' '}
+          <StatusBadge recurso="conta-anonima" showStage />
         </p>
       </FaqItem>
       <FaqItem question={`Que dados vocês guardam?`}>
@@ -149,7 +150,8 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
           Pode acontecer se o navegador limpar os dados do site, principalmente no iPhone. Por isso
           o jogo salva sozinho ao fim de cada rodada (guarda as 3 últimas versões), pede ao
           navegador para não apagar e deixa você exportar o save para um arquivo. Exporte de vez em
-          quando. Salvar entre aparelhos pela internet está <StatusBadge stage="4" showStage />.
+          quando. Salvar entre aparelhos pela internet está{' '}
+          <StatusBadge recurso="sincronizacao-saves" showStage />.
         </p>
       </FaqItem>
       <FaqItem question={`Posso jogar o mesmo save em dois aparelhos?`}>

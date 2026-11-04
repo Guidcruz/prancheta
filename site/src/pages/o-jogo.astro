@@ -7,6 +7,7 @@ import TacticDiagram from '../components/TacticDiagram.astro';
 import MatchSample from '../components/MatchSample.astro';
 import FanMeter from '../components/FanMeter.astro';
 import NewsSample from '../components/NewsSample.astro';
+import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
 
 const base = config.paths.site;
@@ -18,17 +19,17 @@ const toc = [
   { id: 'depois', label: 'O que vem depois' },
 ];
 const later = [
-  { name: 'Séries A a D, Copa do Brasil, estaduais', stage: '2' },
-  { name: 'Mercado, empréstimos, finanças, estádio', stage: '3' },
-  { name: 'Metas da diretoria, demissões, base', stage: '4' },
-  { name: 'Clubes sul-americanos e torneios continentais', stage: '5' },
+  { name: 'Séries A a D, Copa do Brasil, estaduais', id: 'piramide-nacional' },
+  { name: 'Mercado, empréstimos, finanças, estádio', id: 'mercado-financas' },
+  { name: 'Metas da diretoria, demissões, base', id: 'metas-diretoria' },
+  { name: 'Clubes sul-americanos e torneios continentais', id: 'america-do-sul' },
 ];
 ---
 
 <Base
   title="O jogo"
   current="o-jogo"
-  description="Uma temporada da Série A, tática em três ajustes e partida minuto a minuto, com notícias e torcida reagindo: veja como é jogar o Prancheta."
+  description={`Uma temporada da Série A, tática em três ajustes e partida minuto a minuto, com notícias e torcida reagindo: veja como é jogar o ${config.name}.`}
 >
   <h1>O jogo</h1>
   <p class="lead">
@@ -52,7 +53,7 @@ const later = [
     <p>Três ajustes táticos, e só. Dá para explicar cada um numa frase.</p>
     <ul class="grid-cards three tactics">
       <li>
-        <FeatureCard title="Formação" stage="1a">
+        <FeatureCard title="Formação" recurso="tatica">
           <TacticDiagram kind="formation" title="Diagrama de campo com onze jogadores em 4-3-3" />
           <p>
             4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3 ou 5-3-2. Define quantos jogadores pesam na defesa,
@@ -61,7 +62,7 @@ const later = [
         </FeatureCard>
       </li>
       <li>
-        <FeatureCard title="Postura" stage="1a">
+        <FeatureCard title="Postura" recurso="tatica">
           <TacticDiagram
             kind="posture"
             title="Diagrama de campo com três setas de ataque de tamanhos diferentes"
@@ -72,7 +73,7 @@ const later = [
         </FeatureCard>
       </li>
       <li>
-        <FeatureCard title="Pressão" stage="1a">
+        <FeatureCard title="Pressão" recurso="tatica">
           <TacticDiagram
             kind="pressure"
             title="Diagrama de campo com três faixas, cada uma mais escura que a anterior"
@@ -88,7 +89,7 @@ const later = [
       bate pênalti e falta.
     </p>
     <p class="state">
-      <StatusBadge stage="1a" showStage />
+      <StatusBadge recurso="tatica" showStage />
     </p>
   </section>
 
@@ -123,7 +124,7 @@ const later = [
       ]}
     />
     <p class="state">
-      <StatusBadge stage="1a" showStage />
+      <StatusBadge recurso="partida" showStage />
     </p>
   </section>
 
@@ -162,8 +163,9 @@ const later = [
       />
     </div>
     <p>
-      Estado: tabela, calendário e notícias, <StatusBadge stage="1a" showStage />. Rede social
-      completa com enquetes e reações do técnico: <StatusBadge stage="4" showStage />.
+      Estado: tabela, calendário e notícias, <StatusBadge recurso="tabela-noticias" showStage />.
+      Rede social completa com enquetes e reações do técnico:{' '}
+      <StatusBadge recurso="rede-social-completa" showStage />.
     </p>
   </section>
 
@@ -175,8 +177,8 @@ const later = [
       <li>Pedido ao navegador para não apagar seus dados. Instalar o app ajuda muito.</li>
     </ul>
     <p>
-      Estado: <StatusBadge stage="1a" showStage />. Sincronização opcional entre aparelhos:
-      <StatusBadge stage="4" showStage />.
+      Estado: <StatusBadge recurso="saves" showStage />. Sincronização opcional entre aparelhos:
+      <StatusBadge recurso="sincronizacao-saves" showStage />.
     </p>
   </section>
 
@@ -187,24 +189,26 @@ const later = [
       do Sul e ligas maiores com amigos. Cada coisa tem uma etapa no
       <a href={`${base}roadmap/`}>roteiro</a>, sem data prometida.
     </p>
-    <table>
-      <thead>
-        <tr>
-          <th scope="col">Recurso</th>
-          <th scope="col">Estado</th>
-        </tr>
-      </thead>
-      <tbody>
-        {later.map((l) => (
+    <TableScroll label="O que vem depois" minWidth="440px">
+      <table>
+        <thead>
           <tr>
-            <td>{l.name}</td>
-            <td>
-              <StatusBadge stage={l.stage} showStage />
-            </td>
+            <th scope="col">Recurso</th>
+            <th scope="col">Estado</th>
           </tr>
-        ))}
-      </tbody>
-    </table>
+        </thead>
+        <tbody>
+          {later.map((l) => (
+            <tr>
+              <th scope="row">{l.name}</th>
+              <td>
+                <StatusBadge recurso={l.id} showStage />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableScroll>
     <h3>Sem letra miúda</h3>
     <p>
       Sem pagar para ganhar. Sem caixa de sorteio. Sem recompensa por tempo de uso. Sem chat livre.

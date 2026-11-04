@@ -1,22 +1,26 @@
 ---
 import Icon from './Icon.astro';
-import { statusForStage, type FeatureStatus } from '../lib/roadmap';
+import { getRecurso, statusForRecurso } from '../data/recursos';
+import type { FeatureStatus } from '../lib/roadmap';
 interface Props {
-  /** Explicit status; when omitted it is derived from `stage` (docs/roadmap.md). */
+  /** Resource id in data/recursos.ts; status and stage come from there. */
+  recurso?: string;
+  /** Explicit status, for stage rows (StageTable, StageStrip). */
   status?: FeatureStatus;
-  stage?: string;
-  /** Show "Etapa X" in the label. */
+  /** Show "Etapa X" in the label (needs `recurso`). */
   showStage?: boolean;
 }
-const { stage, showStage = false } = Astro.props;
-const status: FeatureStatus = Astro.props.status ?? (stage ? statusForStage(stage) : 'planejado');
+const { recurso, showStage = false } = Astro.props;
+const status: FeatureStatus =
+  Astro.props.status ?? (recurso ? statusForRecurso(recurso) : 'planejado');
 const labels: Record<FeatureStatus, string> = {
   disponivel: 'Disponível',
   'em-desenvolvimento': 'Em desenvolvimento',
   planejado: 'Planejado',
 };
 const icons = { disponivel: 'check', 'em-desenvolvimento': 'gear', planejado: 'calendar' } as const;
-const label = labels[status] + (showStage && stage ? ` · Etapa ${stage}` : '');
+const label =
+  labels[status] + (showStage && recurso ? ` · Etapa ${getRecurso(recurso).stage}` : '');
 ---
 
 <span class:list={['badge', 'rotulo', status]}>

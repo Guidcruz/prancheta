@@ -91,7 +91,6 @@ const base = config.paths.site;
     background: var(--grass);
     color: var(--on-grass);
     text-decoration: none;
-    font-size: 16px;
   }
   .play:hover {
     filter: brightness(1.08);
@@ -131,6 +130,9 @@ const base = config.paths.site;
     text-decoration: none;
     border-left: 4px solid transparent;
   }
+  .mobile > nav a:focus-visible {
+    outline-offset: -2px;
+  }
   .mobile > nav a[aria-current='page'] {
     border-left-color: var(--grass);
     font-weight: 600;
@@ -148,7 +150,7 @@ const base = config.paths.site;
       flex-wrap: wrap;
       justify-content: center;
       flex: 1;
-      gap: 0 var(--space-1);
+      gap: 0 var(--space-2);
     }
     .desktop a {
       display: inline-flex;

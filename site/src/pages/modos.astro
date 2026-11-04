@@ -5,6 +5,7 @@ import StatusBadge from '../components/StatusBadge.astro';
 import StepList from '../components/StepList.astro';
 import RhythmCompare from '../components/RhythmCompare.astro';
 import StageTable from '../components/StageTable.astro';
+import TableScroll from '../components/TableScroll.astro';
 import FinalCta from '../components/FinalCta.astro';
 import { stages } from '../lib/roadmap';
 const base = config.paths.site;
@@ -34,8 +35,8 @@ const base = config.paths.site;
       <li>Exporte o save quando quiser e leve para outro aparelho.</li>
     </ul>
     <p>
-      Estado: <StatusBadge stage="1a" showStage />. Metas da diretoria, demissões e propostas de
-      outros clubes: <StatusBadge stage="4" showStage />.
+      Estado: <StatusBadge recurso="carreira-offline" showStage />. Metas da diretoria, demissões e
+      propostas de outros clubes: <StatusBadge recurso="metas-diretoria" showStage />.
     </p>
   </section>
 
@@ -61,12 +62,7 @@ const base = config.paths.site;
     />
 
     <h3>Ao vivo ou assíncrono</h3>
-    <div
-      class="table-wrap"
-      tabindex="0"
-      role="region"
-      aria-label="Ao vivo ou assíncrono (tabela com rolagem)"
-    >
+    <TableScroll label="Ao vivo ou assíncrono">
       <table>
         <thead>
           <tr>
@@ -100,7 +96,7 @@ const base = config.paths.site;
           </tr>
         </tbody>
       </table>
-    </div>
+    </TableScroll>
     <p>
       Os números são o padrão e podem ser ajustados. O dono da liga pode trocar de ao vivo para
       assíncrono (e o contrário) no meio da temporada.
@@ -119,9 +115,10 @@ const base = config.paths.site;
       denúncia.
     </p>
     <p>
-      Estado: liga da Série A entre amigos, por código, <StatusBadge stage="1b" showStage />. Ligas
-      grandes com várias divisões e torneios continentais: <StatusBadge stage="6" showStage />.
-      Mercado entre jogadores: <StatusBadge stage="3" showStage />.
+      Estado: liga da Série A entre amigos, por código,{' '}
+      <StatusBadge recurso="liga-amigos" showStage />. Ligas grandes com várias divisões e torneios
+      continentais: <StatusBadge recurso="ligas-grandes" showStage />. Mercado entre jogadores:{' '}
+      <StatusBadge recurso="mercado-entre-jogadores" showStage />.
     </p>
   </section>
 
@@ -144,8 +141,8 @@ const base = config.paths.site;
       ]}
     />
     <p class="after">
-      No meu ritmo: <StatusBadge stage="1a" showStage />, na carreira. Tempo real:
-      <StatusBadge stage="4" showStage />, na carreira e no online.
+      No meu ritmo: <StatusBadge recurso="ritmo-meu-ritmo" showStage />, na carreira. Tempo real:
+      <StatusBadge recurso="ritmo-tempo-real" showStage />, na carreira e no online.
     </p>
     <ul>
       <li>
@@ -173,7 +170,7 @@ const base = config.paths.site;
 
   <section aria-labelledby="etapas">
     <h2 id="etapas">O que entra em cada etapa</h2>
-    <StageTable {stages} />
+    <StageTable {stages} text="summary" />
     <p>
       <a class="inline-link" href={`${base}roadmap/`}>
         Ver o roteiro completo
@@ -189,19 +186,6 @@ const base = config.paths.site;
   }
   .after {
     margin-top: var(--space-3);
-  }
-  .table-wrap {
-    overflow-x: auto;
-    margin-bottom: var(--space-3);
-  }
-  .table-wrap table {
-    min-width: 520px;
-  }
-  tbody th {
-    color: var(--ink);
-    font: var(--type-body-strong);
-    text-transform: none;
-    letter-spacing: 0;
   }
   .sr-only {
     position: absolute;

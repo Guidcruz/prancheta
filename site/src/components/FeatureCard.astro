@@ -5,19 +5,19 @@ import type { FeatureStatus } from '../lib/roadmap';
 interface Props {
   title: string;
   icon?: 'phone' | 'offline' | 'users' | 'shield' | 'ball' | 'gear';
+  recurso?: string;
   status?: FeatureStatus;
-  stage?: string;
   showStage?: boolean;
   href?: string;
   linkLabel?: string;
 }
-const { title, icon, status, stage, showStage, href, linkLabel } = Astro.props;
+const { title, icon, recurso, status, showStage, href, linkLabel } = Astro.props;
 ---
 
 <article class="card">
   <div class="top">
     {icon && <Icon name={icon} size={24} />}
-    <StatusBadge {status} {stage} {showStage} />
+    <StatusBadge {recurso} {status} {showStage} />
   </div>
   <h3 class="subtitulo">{title}</h3>
   <div class="body">

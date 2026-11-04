@@ -11,22 +11,26 @@ export interface Stage {
 }
 
 /** Single source: the table in docs/roadmap.md, read at build time. */
-export const stages: Stage[] = md
-  .split('\n')
-  .filter((l) => l.startsWith('|') && !/^\|\s*:?-{3,}/.test(l) && !l.startsWith('| Etapa'))
-  .map((l) =>
-    l
-      .split('|')
-      .slice(1, -1)
-      .map((c) => c.trim().replace(/`/g, '')),
-  )
-  .map(([id, name, delivery, state]) => ({
-    id: id ?? '',
-    name: name ?? '',
-    delivery: delivery ?? '',
-    state: state ?? '',
-    status: stateToStatus(state ?? ''),
-  }));
+export const stages: Stage[] = parseStages(md);
+
+export function parseStages(source: string): Stage[] {
+  return source
+    .split('\n')
+    .filter((l) => l.startsWith('|') && !/^\|\s*:?-{3,}/.test(l) && !l.startsWith('| Etapa'))
+    .map((l) =>
+      l
+        .split('|')
+        .slice(1, -1)
+        .map((c) => c.trim().replace(/`/g, '')),
+    )
+    .map(([id, name, delivery, state]) => ({
+      id: id ?? '',
+      name: name ?? '',
+      delivery: delivery ?? '',
+      state: state ?? '',
+      status: stateToStatus(state ?? ''),
+    }));
+}
 
 export const roadmapNote = md.split('\n').find((l) => l.startsWith('Sem datas')) ?? '';
 
@@ -36,15 +40,9 @@ function stateToStatus(state: string): FeatureStatus {
   return 'planejado';
 }
 
-/**
- * Status of a feature, derived from its stage. A stage that is not finished is never
- * "disponivel", unless the feature is explicitly marked as published (`published`).
- */
-export function statusForStage(stageId: string, published = false): FeatureStatus {
-  if (published) return 'disponivel';
-  const stage = stages.find((s) => s.id === stageId);
-  if (!stage) return 'planejado';
-  return stage.status === 'disponivel' ? 'disponivel' : stage.status;
+/** Status of a stage from its state in docs/roadmap.md. Unknown stages are "planejado". */
+export function statusForStage(stageId: string, list: Stage[] = stages): FeatureStatus {
+  return list.find((s) => s.id === stageId)?.status ?? 'planejado';
 }
 
 export const currentStage = stages.find((s) => s.status === 'em-desenvolvimento');

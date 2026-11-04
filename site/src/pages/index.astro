@@ -22,7 +22,7 @@ const clubs = clubsById(exampleClubIds);
 <Base description={config.slogan['pt-BR']} wide>
   <section class="hero">
     <p class="rotulo kicker">Em desenvolvimento, em público</p>
-    <h1>{config.name}</h1>
+    <h1 class="hero-title">{config.name}</h1>
     <p class="lead">{config.slogan['pt-BR']}</p>
     <p class="intro">
       Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela.
@@ -64,7 +64,7 @@ const clubs = clubsById(exampleClubIds);
         <FeatureCard
           title="Rodadas de poucos minutos"
           icon="phone"
-          stage="1a"
+          recurso="rodadas-curtas"
           href={`${base}o-jogo/`}
           linkLabel="Conhecer o jogo"
         >
@@ -75,7 +75,7 @@ const clubs = clubsById(exampleClubIds);
         <FeatureCard
           title="Carreira sem internet"
           icon="offline"
-          stage="1a"
+          recurso="carreira-offline"
           href={`${base}modos/`}
           linkLabel="Ver os modos de jogo"
         >
@@ -86,7 +86,7 @@ const clubs = clubsById(exampleClubIds);
         <FeatureCard
           title="Liga com os amigos"
           icon="users"
-          stage="1b"
+          recurso="liga-amigos"
           showStage
           href={`${base}modos/`}
           linkLabel="Ver os modos de jogo"
@@ -98,7 +98,7 @@ const clubs = clubsById(exampleClubIds);
         <FeatureCard
           title="Clubes com cara de Brasil"
           icon="shield"
-          stage="1a"
+          recurso="clubes-ficticios"
           href={`${base}clubes/`}
           linkLabel="Ver os clubes"
         >
@@ -202,6 +202,9 @@ const clubs = clubsById(exampleClubIds);
     padding: var(--space-1) var(--space-3);
     border-radius: var(--radius-pill);
     margin: 0 0 var(--space-3);
+  }
+  .hero-title {
+    font: var(--type-display-xl);
   }
   .lead {
     margin: 0 0 var(--space-4);
