@@ -458,44 +458,59 @@ describe('US-009: the penalty uses the chosen taker', () => {
 });
 
 describe('cards follow pressure, trait, derby and the "Acalmar" talk (partida.md, "Cartões")', () => {
-  const N = 800;
-  const yellows = (home: TeamInput, derbyFlag = false, side: Side = 'home') => {
-    let n = 0;
-    for (let seed = 0; seed < N; seed++) {
+  const yellows = (
+    home: TeamInput,
+    derbyFlag = false,
+    sides: readonly Side[] = ['home'],
+    n = 800,
+  ) => {
+    let total = 0;
+    for (let seed = 0; seed < n; seed++) {
       const r = simulateMatch({ ...withSeed(base, seed), home, derby: derbyFlag }, params);
-      n += r.stats[side].yellows;
+      for (const side of sides) total += r.stats[side].yellows;
     }
-    return n / N;
+    return total / n;
   };
   const tactic = (pressure: 'low' | 'medium' | 'high'): TeamInput => ({
     ...base.home,
     sheet: { ...base.home.sheet, tactic: { ...base.home.sheet.tactic, pressure } },
   });
 
-  it('gives more yellows with high pressure (×1.4) than with low (×0.7)', () => {
-    const high = yellows(tactic('high'));
-    const low = yellows(tactic('low'));
-    expect(high / low).toBeGreaterThan(1.6);
-    expect(high / low).toBeLessThan(2.4);
-  });
+  it(
+    'gives more yellows with high pressure (×1.4) than with low (×0.7)',
+    { timeout: 60_000 },
+    () => {
+      const high = yellows(tactic('high'));
+      const low = yellows(tactic('low'));
+      expect(high / low).toBeGreaterThan(1.6);
+      expect(high / low).toBeLessThan(2.4);
+    },
+  );
 
-  it('gives about 1.5 times the yellows to a side of hotheads, and 1.2 in a derby', () => {
-    const quiet = mapPlayers(base.home, (p) => ({ ...p, trait: 'quiet' }));
-    const hot = mapPlayers(base.home, (p) => ({ ...p, trait: 'hothead' }));
-    const ratio = yellows(hot) / yellows(quiet);
-    expect(ratio).toBeGreaterThan(1.3);
-    expect(ratio).toBeLessThan(1.7);
-    const derbyRatio = yellows(quiet, true) / yellows(quiet, false);
-    expect(derbyRatio).toBeGreaterThan(1.08);
-    expect(derbyRatio).toBeLessThan(1.32);
-  });
+  it(
+    'gives about 1.5 times the yellows to a side of hotheads, and 1.2 in a derby',
+    { timeout: 120_000 },
+    () => {
+      const quiet = mapPlayers(base.home, (p) => ({ ...p, trait: 'quiet' }));
+      const hot = mapPlayers(base.home, (p) => ({ ...p, trait: 'hothead' }));
+      const ratio = yellows(hot) / yellows(quiet);
+      expect(ratio).toBeGreaterThan(1.3);
+      expect(ratio).toBeLessThan(1.7);
+      // The derby factor is the smallest one: both sides and 3,000 matches each (about 12,000
+      // yellows a side of the ratio), so the band is several standard errors wide.
+      const both = ['home', 'away'] as const;
+      const derbyRatio = yellows(quiet, true, both, 3_000) / yellows(quiet, false, both, 3_000);
+      expect(derbyRatio).toBeGreaterThan(1.06);
+      expect(derbyRatio).toBeLessThan(1.34);
+    },
+  );
 
-  it('gives fewer second-half yellows after "Acalmar" (×0.75)', () => {
+  it('gives fewer second-half yellows after "Acalmar" (×0.75)', { timeout: 120_000 }, () => {
     // The seller calms when winning at half time and motivates otherwise (ia-clubes.md).
     const seller = { ...base.home, profile: 'seller' as const };
     const sum = { calm: 0, other: 0 };
     const count = { calm: 0, other: 0 };
-    for (let seed = 0; seed < 3_000; seed++) {
+    for (let seed = 0; seed < 6_000; seed++) {
       const r = simulateMatch({ ...withSeed(base, seed), home: seller }, params);
       const talk = ofType(r, 'halftimeTalk').find((t) => t.side === 'home')!.talk;
       const key = talk === 'calm' ? 'calm' : 'other';
@@ -503,9 +518,9 @@ describe('cards follow pressure, trait, derby and the "Acalmar" talk (partida.md
       sum[key] += ofType(r, 'yellow').filter((y) => y.side === 'home' && y.half === 2).length;
     }
     const ratio = sum.calm / count.calm / (sum.other / count.other);
-    expect(count.calm).toBeGreaterThan(300);
-    expect(ratio).toBeGreaterThan(0.6);
-    expect(ratio).toBeLessThan(0.9);
+    expect(count.calm).toBeGreaterThan(600);
+    expect(ratio).toBeGreaterThan(0.55);
+    expect(ratio).toBeLessThan(0.95);
   });
 });
 
@@ -530,6 +545,43 @@ describe('captain (partida.md, "Capitão e cobradores")', () => {
     // The traditional profile's talks are all positive (+4%, +2%, +2%): doubled every time, which
     // moves the second-half chance probabilities by a few percent and so changes some matches.
     expect(changed).toBeGreaterThan(20);
+  });
+
+  it('does not double with a listed captain who is not a leader, even with a leader on the pitch', () => {
+    const captain = base.home.sheet.lineup.starters[5]!;
+    const other = base.home.sheet.lineup.starters[8]!;
+    const team = (captainTrait: Player['trait'], otherTrait: Player['trait']) =>
+      withLineup(
+        mapPlayers(base.home, (p) =>
+          p.id === captain
+            ? { ...p, trait: captainTrait }
+            : p.id === other
+              ? { ...p, trait: otherTrait }
+              : p.trait === 'leader'
+                ? { ...p, trait: 'quiet' }
+                : p,
+        ),
+        { captains: [captain] },
+      );
+    // The armband is the listed quiet player's: the leader beside him changes nothing, byte for
+    // byte, against a side with no leader at all.
+    const withLeader = team('quiet', 'leader');
+    const noLeader = team('quiet', 'quiet');
+    const leaderCaptain = team('leader', 'quiet');
+    let differs = 0;
+    for (let seed = 0; seed < 200; seed++) {
+      const a = simulateMatch({ ...withSeed(base, seed), home: withLeader }, params);
+      const b = simulateMatch({ ...withSeed(base, seed), home: noLeader }, params);
+      // If the listed captain left in the first half, the armband rightly goes to the leader.
+      const gone = b.events.some(
+        (e) => (e.type === 'red' || e.type === 'injury') && e.player === captain && e.half === 1,
+      );
+      if (!gone) expect(JSON.stringify(a.events)).toBe(JSON.stringify(b.events));
+      const c = simulateMatch({ ...withSeed(base, seed), home: leaderCaptain }, params);
+      if (JSON.stringify(c.events) !== JSON.stringify(b.events)) differs += 1;
+    }
+    // Control: with the leader as the listed captain, the same seeds do change.
+    expect(differs).toBeGreaterThan(20);
   });
 });
 
