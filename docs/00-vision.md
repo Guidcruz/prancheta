@@ -24,7 +24,7 @@ Uma pessoa instala o app, escolhe um clube e joga uma temporada inteira do Brasi
 2. Escalação e três ajustes táticos; partida simulada minuto a minuto, animada, com comandos durante o jogo.
 3. Tabela, calendário, notícias e rede social fictícia simples.
 4. PWA instalável, offline, com salvamento automático e exportar/importar save.
-5. Estrutura de três idiomas e espaços de patrocínio com marcas fictícias.
+5. Estrutura de três idiomas e marcas fictícias no cenário (patrocínio real desligado e não anunciado; [ADR-0015](adr/0015-patrocinio-desligado.md)).
 6. (1b) Online mínimo: conta anônima, liga da Série A entre amigos por código, ao vivo e assíncrono, servidor simulando as rodadas, mensagens prontas.
 
 ## Fora de escopo (Etapa 1)
