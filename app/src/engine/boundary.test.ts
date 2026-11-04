@@ -34,6 +34,13 @@ const cases: [string, string, string][] = [
   ['import @engine alias', "import '@engine/rng.ts';", 'no-restricted-imports'],
   ['import node:*', "import 'node:fs';", 'no-restricted-imports'],
   ['import svelte', "import 'svelte';", 'no-restricted-imports'],
+  [
+    'import from testing/',
+    "import { expectGolden } from './testing/golden.ts';\nexport const g = expectGolden;",
+    'no-restricted-imports',
+  ],
+  ['localeCompare', "export const c = 'a'.localeCompare('b');", 'no-restricted-syntax'],
+  ['toLocaleString', 'export const s = (1234.5).toLocaleString();', 'no-restricted-syntax'],
   ['relative import without .ts', "export { Rng } from './rng';", 'prancheta/relative-ts-imports'],
   [
     'relative import with .js',
@@ -61,6 +68,11 @@ describe('engine lint boundary', () => {
       'export const p = clamp(new Rng(1).next(), 0.01, 0.3);',
     ].join('\n');
     expect(await ruleIds(code)).toEqual([]);
+  });
+
+  it('lets engine tests import the golden helper', async () => {
+    const code = "import { expectGolden } from './testing/golden.ts';\nexpectGolden('x', 1);";
+    expect(await ruleIds(code, 'src/engine/__fixture__.test.ts')).toEqual([]);
   });
 
   it('allows transcendental functions only in engine/math.ts', async () => {

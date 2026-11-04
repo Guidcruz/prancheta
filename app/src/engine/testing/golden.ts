@@ -65,7 +65,7 @@ export function serializeGolden(data: unknown): string {
   });
 }
 
-function readGolden(file: string): GoldenFile | undefined {
+function readGolden(file: string, name: string): GoldenFile | undefined {
   try {
     const parsed: unknown = JSON.parse(readFileSync(file, 'utf8'));
     if (
@@ -73,6 +73,8 @@ function readGolden(file: string): GoldenFile | undefined {
       parsed !== null &&
       'engineVersion' in parsed &&
       'data' in parsed &&
+      'name' in parsed &&
+      parsed.name === name &&
       Number.isInteger(parsed.engineVersion)
     ) {
       return parsed as GoldenFile;
@@ -113,9 +115,13 @@ export function checkGolden(
     return { status: 'written', file, message: `golden "${name}" created` };
   }
 
-  const stored = readGolden(file);
+  const stored = readGolden(file, name);
   if (stored === undefined) {
-    return { status: 'invalid', file, message: `golden "${name}" is not a valid golden file` };
+    return {
+      status: 'invalid',
+      file,
+      message: `golden "${name}" is not a valid golden file (or its name does not match)`,
+    };
   }
   const same = serializeGolden(stored.data) === actual;
 

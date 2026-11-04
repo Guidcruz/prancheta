@@ -18,10 +18,16 @@ describe('engine public API', () => {
       `const r = new m.Rng(42);`,
       `process.stdout.write(JSON.stringify({ v: m.ENGINE_VERSION, n: r.next(), z: normal(r) }));`,
     ].join('\n');
-    const out = execFileSync(process.execPath, ['--input-type=module', '-e', script], {
-      encoding: 'utf8',
-      stdio: ['ignore', 'pipe', 'ignore'],
-    });
+    let out: string;
+    try {
+      out = execFileSync(process.execPath, ['--input-type=module', '-e', script], {
+        encoding: 'utf8',
+        stdio: ['ignore', 'pipe', 'pipe'],
+      });
+    } catch (error) {
+      const stderr = (error as { stderr?: string }).stderr ?? '';
+      throw new Error(`plain Node could not run the engine:\n${stderr}`, { cause: error });
+    }
     const r = new Rng(42);
     expect(JSON.parse(out)).toEqual({ v: ENGINE_VERSION, n: r.next(), z: normal(r) });
   });

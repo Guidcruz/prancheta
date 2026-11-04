@@ -73,6 +73,12 @@ describe('golden helper', () => {
     expect(checkGolden('broken', data, { dir, engineVersion: 1, update: false }).status).toBe(
       'invalid',
     );
+    // A file copied under another name is rejected too.
+    const copy = JSON.stringify({ engineVersion: 1, name: 'other', data });
+    writeFileSync(join(dir, 'copy.json'), copy, 'utf8');
+    expect(checkGolden('copy', data, { dir, engineVersion: 1, update: false }).status).toBe(
+      'invalid',
+    );
   });
 
   it('expectGolden throws on mismatch and passes on match', () => {

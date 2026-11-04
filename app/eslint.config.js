@@ -107,6 +107,20 @@ const exponentOperator = {
   message: 'Use engine/math.ts instead of ** (ADR-0007).',
 };
 
+// Locale-dependent string methods give different output per device, like Intl.
+const localeCall = {
+  selector:
+    'CallExpression[callee.property.name=/^(localeCompare|toLocaleString|toLocaleDateString|toLocaleTimeString|toLocaleUpperCase|toLocaleLowerCase)$/]',
+  message:
+    'Locale-dependent methods are not deterministic across devices; compare/format outside the engine.',
+};
+
+const testingImports = {
+  group: ['**/testing/**', '**/testing'],
+  message:
+    'engine/testing/ is test-only (node:fs, vitest); production engine code cannot import it.',
+};
+
 const engineImportPatterns = [
   {
     group: ['**/ui/**', '**/lib/**', '@lib/*', '**/content/**'],
@@ -139,8 +153,8 @@ export default [
       // The engine must be deterministic, free of the DOM and runnable without a build.
       'no-restricted-globals': ['error', ...engineGlobals],
       'no-restricted-properties': ['error', ...randomAndClock, ...transcendental],
-      'no-restricted-syntax': ['error', exponentOperator],
-      'no-restricted-imports': ['error', { patterns: engineImportPatterns }],
+      'no-restricted-syntax': ['error', exponentOperator, localeCall],
+      'no-restricted-imports': ['error', { patterns: [...engineImportPatterns, testingImports] }],
       'prancheta/relative-ts-imports': 'error',
     },
   },
@@ -149,7 +163,7 @@ export default [
     files: ['src/engine/math.ts'],
     rules: {
       'no-restricted-properties': ['error', ...randomAndClock],
-      'no-restricted-syntax': 'off',
+      'no-restricted-syntax': ['error', localeCall],
     },
   },
   {
@@ -159,7 +173,7 @@ export default [
     rules: {
       'no-restricted-globals': ['error', ...engineGlobals.filter((g) => g !== 'process')],
       'no-restricted-properties': ['error', ...randomAndClock],
-      'no-restricted-syntax': 'off',
+      'no-restricted-syntax': ['error', localeCall],
       'no-restricted-imports': [
         'error',
         { patterns: engineImportPatterns.filter((p) => !p.group.includes('node:*')) },
@@ -183,7 +197,7 @@ export default [
         {
           patterns: [
             {
-              group: ['**/lib/save/**', '@lib/save/*'],
+              group: ['**/lib/save', '**/lib/save/**', '@lib/save', '@lib/save/*'],
               message: 'ui/ reaches saves only through lib/career.',
             },
           ],
