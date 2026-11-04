@@ -10,7 +10,7 @@ O CEO quer que o jogo tenha o que acontece de verdade no futebol brasileiro: tra
 
 ## Decisão
 
-Entram como sistemas de consequência, descritos em `docs/design/brasilidades.md`: salários e transfer ban na Etapa 3 (finanças), STJD na Etapa 2 (calendário completo), estrutura e comissão técnica na Etapa 3, SAF e dívida herdada na Etapa 4. Comissão técnica e estrutura afetam treino, evolução, fadiga, lesões, base e olheiros por multiplicadores simples (0,8 a 1,2). Tudo com aviso antes da escolha; nada de azar puro; nada de doping, manipulação ou apostas.
+Entram como sistemas de consequência, descritos em `docs/design/brasilidades.md`: salários e transfer ban na Etapa 3 (finanças), STJD na Etapa 2 (calendário completo), estrutura e comissão técnica na Etapa 3, sócio-torcedor na Etapa 3, SAF e dívida herdada na Etapa 4; o termômetro da torcida volta para o jogo (mando de campo, público, moral, pressão) desde a Etapa 1a. Comissão técnica e estrutura afetam treino, evolução, fadiga, lesões, base e olheiros por multiplicadores simples (0,8 a 1,2). Tudo com aviso antes da escolha; nada de azar puro; nada de doping, manipulação ou apostas.
 
 ## Consequências
 

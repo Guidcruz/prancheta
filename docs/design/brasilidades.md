@@ -47,6 +47,31 @@ Parâmetros: `ban.noticeDays = 60`, `ban.banDays = 90`, `ban.maxBansBeforePenalt
 - **SAF (Etapa 4):** um investidor pode oferecer transformar o clube em SAF: injeção de caixa (uma temporada de receita) e obras em metade do tempo, em troca de metas mais duras, 30% das vendas e paciência menor (confiança cai 1,5× mais rápido). Recusar mantém a associação. É uma escolha apresentada ao técnico pela diretoria, não um evento automático. Probabilidade de oferta: 10% por temporada para clubes de porte médio e grande com caixa negativo.
 - **Dívida herdada:** cada clube nasce com dívida proporcional ao porte (grande: 1,5 receita anual; médio: 1,0; pequeno: 0,5) que consome 10% da receita por temporada; pagar antes libera orçamento; diretoria caótica tende a aumentá-la.
 
+## Torcida dentro do jogo (Etapa 1a o termômetro; efeitos completos na Etapa 3)
+
+O termômetro da torcida (0 a 100) sai da rede social, dos resultados e das decisões do técnico, e volta para o jogo:
+
+| Efeito                    | Regra                                                                           |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| Mando de campo            | Bônus de casa de +2% (torcida fria) a +8% (torcida em festa); clássico soma +2% |
+| Público                   | Multiplica a demanda por ingressos (0,6 a 1,3)                                  |
+| Moral do elenco           | Cada rodada, moral move 1 ponto na direção do termômetro                        |
+| Pressão sobre a diretoria | Abaixo de 25, a confiança cai mais rápido; enquetes "deve demitir?" aparecem    |
+| Incidentes                | Abaixo de 30 ou acima de 90 em clássico, risco de briga ou invasão (STJD)       |
+| Jogador contra a torcida  | Jogador vaiado (personalidade temperamental) pede para sair no fim da temporada |
+
+Parâmetros: `fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02`, `fans.moraleDrift = 1`.
+
+## Sócio-torcedor (Etapa 3)
+
+- Cada clube tem um plano de sócios com número de sócios (depende do porte, do termômetro e da fase) e uma mensalidade em três faixas (popular, normal, premium).
+- Receita mensal estável: a principal fonte de caixa de clubes pequenos e médios, como no Brasil.
+- Sócios sobem com vitórias, títulos, contratações de impacto e campanha promocional (custa caixa, dá sócios); caem com derrotas em sequência, salários atrasados e preço alto.
+- Benefícios dos sócios no jogo: desconto no ingresso (ocupa capacidade com menos bilheteria, mas enche o estádio) e voto simbólico em enquetes que a diretoria leva em conta.
+- Decisão do técnico/diretoria: lançar campanha, mudar faixa, dar ingresso grátis em jogo decisivo.
+
+Parâmetros: `members.base = {pequeno: 2000, médio: 15000, grande: 80000}`, `members.perWinPct = 0.5`, `members.perLossPct = -0.4`, `members.lateSalaryPct = -3`, `members.campaignCost = 2% da receita anual`, `members.campaignGainPct = 8`.
+
 ## O que fica de fora de propósito
 
 - Processos trabalhistas detalhados, dívidas fiscais, Profut: viram só a "dívida herdada".

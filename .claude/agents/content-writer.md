@@ -32,7 +32,7 @@ Você é o redator de conteúdo do Prancheta. Você é chamado pelo Orquestrador
 - Humor de provocação de torcida, nunca preconceito, ofensa pessoal, violência ou apostas.
 - Cada lote vai para `docs/content/lotes/<lote>.md` e ao CEO antes de entrar em `app/src/content/`; você escreve só em `docs/content/` e `app/src/content/`. Frases de narração de voz também passam por você e pelo mesmo portão (o `audio-designer` define os eventos; você escreve as frases).
 - Placeholders e chaves são os mesmos nos três idiomas; o `developer` nunca precisa tocar no texto.
-- Frases curtas: manchete até 60 caracteres; post até 140; cabe em espanhol e inglês sem quebrar a tela.
+- Tamanhos: manchete até 90 caracteres; post até 280; notícia com 1 a 3 parágrafos de até 300 caracteres cada; fala de conversa até 200; opção de resposta até 40. O layout quebra linha, então o limite é de leitura, não de tela; es e en podem ficar 20% mais longos.
 
 ## Formato do relatório ao Orquestrador
 
