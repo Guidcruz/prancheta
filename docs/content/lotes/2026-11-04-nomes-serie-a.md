@@ -34,7 +34,7 @@ Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). 
 | 17  | pequeno | Bragantão Futebol Clube         | Bragantão      | BRG   | Bragança Paulista, SP | branco `#FFFFFF`, vermelho `#D81E2B` | Bragantistas       | Bragantino    |
 | 18  | pequeno | Miragol Futebol Clube           | Miragol        | MRG   | Mirassol, SP          | amarelo `#FFD400`, verde `#0A7A3D`   | Miragolenses       | Mirassol      |
 | 19  | pequeno | Chapecão Esporte Clube          | Chapecão       | CHP   | Chapecó, SC           | verde `#00A650`, branco `#FFFFFF`    | Oestinos           | Chapecoense   |
-| 20  | pequeno | Remador Futebol Clube           | Remador        | RMD   | Belém, PA             | azul `#003A8C`, branco `#FFFFFF`     | Azulinos           | Remo          |
+| 20  | pequeno | Remador Futebol Clube           | Remador        | RMD   | Belém, PA             | azul `#003A8C`, branco `#FFFFFF`     | Remeiros           | Remo          |
 
 ### Por que esses portes (6 grandes, 8 médios, 6 pequenos)
 
@@ -106,7 +106,7 @@ Nenhum nome muda. Nomes de clássicos são conteúdo à parte (aparecem em notí
 | Juvenília Esporte Clube    | Juvenília   | JVL   | Caxias do Sul, RS | pequeno | verde `#00843D`, branco `#FFFFFF`   | Vinhateiros  | Juventude (reb.)           | "juventude" em tom de nome próprio         | B     |
 | Seará Sporting Clube       | Seará       | SEA   | Fortaleza, CE     | médio   | preto `#111417`, branco `#FFFFFF`   | Barulheira   | Ceará (rebaixado)          | "Ceará" com o som de "ser" ("será")        | M     |
 | Fortaleça Esporte Clube    | Fortaleça   | FRT   | Fortaleza, CE     | médio   | azul `#003399`, vermelho `#D6001C`  | Aliados      | Fortaleza (reb.)           | verbo "fortalecer" no imperativo           | M     |
-| Goiabada Esporte Clube     | Goiabada    | GOI   | Goiânia, GO       | médio   | verde `#00843D`, branco `#FFFFFF`   | Doceiros     | Goiás                      | fruta e doce no lugar de "Goiás"           | B     |
+| Goiabada Esporte Clube     | Goiabada    | GBD   | Goiânia, GO       | médio   | verde `#00843D`, branco `#FFFFFF`   | Doceiros     | Goiás                      | fruta e doce no lugar de "Goiás"           | B     |
 | Ilhéu Esporte Clube        | Ilhéu       | ILH   | Florianópolis, SC | pequeno | azul `#0057A8`, branco `#FFFFFF`    | Manezinhos   | Avaí                       | morador da ilha, no lugar de "Avaí"        | M     |
 | Ponte Velha Atlético Clube | Ponte Velha | PNV   | Campinas, SP      | médio   | preto `#111417`, branco `#FFFFFF`   | Pontistas    | Ponte Preta (Série B 2026) | "Ponte Preta" com a cor trocada pela idade | M     |
 
@@ -123,3 +123,8 @@ Clássicos da reserva: **Seará x Fortaleça** = **Clássico-Reino** (de Clássi
 7. Consulta ao INPI: pendente com o CEO (marcados M primeiro).
 8. Apelidos "Coríntios" e "Tricoloridos": mantidos.
 9. Lista bloqueada em hash: entra com a T-003. Estádios e capacidades: próximo lote. Nada foi gravado em `app/src/`; isso entra na T-003.
+
+## Ajustes do CEO (2026-11-04), rodada 2
+
+10. Remador: apelido da torcida "Azulinos" vira **Remeiros** (o antigo é apelido real do Remo).
+11. Goiabada (reserva): sigla "GOI" vira **GBD** (GOI é a sigla real do Goiás).

@@ -65,3 +65,5 @@ Compartilhamento: **Seará e Fortaleça dividem o Estádio Castelinho** (os dois
 3. Couve-Pera, Maionão e Batelão ficam.
 4. Maracatu segue dividido entre Flamingo e Fluminário.
 5. "Clássico Vovó" fica; o real já saiu da lista bloqueada.
+
+6. (2026-11-04, rodada 2) Remador: apelido da torcida passa a ser "Remeiros" e a sigla da reserva Goiabada passa a ser "GBD"; ver o lote de nomes. Nenhum estádio muda.
