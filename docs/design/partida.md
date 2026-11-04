@@ -83,9 +83,9 @@ gkEff = eff do goleiro adversário
 pGoal = clamp(match.conversion × exp(match.kFinish × (shot − gkEff) / 10), 0.04, 0.40)
 ```
 
-Peso de cada jogador de linha para ser o finalizador de uma jogada: `shooterWeight[setor da posição] × finishing / 60`, com ATA 3,0, MEI 1,6, VOL 0,6, LAT 0,5, ZAG 0,4 (cabeçada em escanteio), GOL 0.
+Peso de cada jogador de linha para ser o finalizador de uma jogada: `shooterWeight[setor da vaga em que joga] × finishing / 60`, com ATA 3,0, MEI 1,6, VOL 0,6, LAT 0,5, ZAG 0,4 (cabeçada em escanteio), GOL 0.
 
-Se não é gol: trave 7%, defesa do goleiro 48%, para fora 45%. Na jogada que termina em gol, há assistência em 70% dos casos (`match.assistShare`), de um companheiro sorteado com peso `assistWeight[setor] × passing / 60` (MEI 3,0, LAT 1,5, ATA 1,5, VOL 1,2, ZAG 0,5).
+Se não é gol: trave 7%, defesa do goleiro 48%, para fora 45%. Na jogada que termina em gol, há assistência em 70% dos casos (`match.assistShare`), de um companheiro sorteado com peso `assistWeight[setor] × passing / 60` (MEI 3,0, LAT 1,5, ATA 1,5, VOL 1,2, ZAG 0,5; GOL 0), também pelo setor da vaga. Atributo que o jogador não tem (goleiro na linha) vale `round(0.4 × overall)` ("Atributo ausente" em `jogadores.md`); a força do goleiro é sempre o `eff`, então jogador de linha no gol não precisa de `reflexes`.
 
 **Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Com um atacante de finishing 78 contra goleiro de eff 66: `pGoal = 0.15 × exp(0.09 × 1.2) = 0.167`.
 
