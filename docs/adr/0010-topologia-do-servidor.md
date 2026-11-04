@@ -1,6 +1,6 @@
 # ADR-0010: Topologia do servidor na 1b (Pages Functions + Worker de salas)
 
-- **Status:** proposta
+- **Status:** aceita (CEO, 2026-11-04)
 - **Data:** 2026-11-04
 - **Decisores:** architect (propôs), devops-engineer (implementa), CEO (aprova)
 

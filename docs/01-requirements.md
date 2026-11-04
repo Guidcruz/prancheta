@@ -1,6 +1,6 @@
 # Requisitos
 
-> Escrito pelo `product-manager` no `/kickoff`, a partir do backlog de `docs/PROJETO.md`. Cada história cabe num PR e cada critério de aceite vira um teste. IDs são estáveis: nunca renumerar, só acrescentar.
+> Escrito pelo `product-manager` no `/kickoff`, a partir do backlog de `docs/PROJETO.md`, e revisado em 2026-11-04 com as decisões do CEO (ver "Decisões do CEO (2026-11-04)" no fim). Cada história cabe num PR e cada critério de aceite vira um teste. IDs são estáveis: nunca renumerar, só acrescentar.
 
 Escopo deste arquivo: **Etapa 1** inteira, em duas metades (ADR-0003): **1a**, carreira offline da Série A; **1b**, online mínimo sobre o mesmo motor. Tudo o que não aparece aqui está fora do escopo da Etapa 1 (ver "Fora do escopo da Etapa 1" no fim e `docs/roadmap.md`).
 
@@ -9,7 +9,8 @@ Convenções usadas nas histórias:
 - **Números de jogo** (pesos, probabilidades, limiares) não são decididos aqui: vêm de `app/src/params/`, com metas em `docs/design/balance-targets.md` e regras nos documentos de sistema do `game-designer` em `docs/design/`. Os critérios dizem "o parâmetro X" quando o valor é dele.
 - **Textos** mostrados ao jogador vêm sempre de `app/src/content/<idioma>/`; nenhum critério aceita texto escrito no código.
 - **Acessibilidade** vale para toda tela: alvos de toque ≥ 44 px, contraste ≥ 4,5:1, resultado nunca indicado só por cor (sempre texto ou ícone junto), animações respeitam `prefers-reduced-motion`. Os critérios repetem isso só onde o risco é maior.
-- **Estado** `rascunho` = depende de uma pergunta aberta ao CEO (indicada em "Depende de"); `pronta` = pode ser implementada.
+- **Estado** `rascunho` = depende de uma decisão ou de um insumo do CEO ainda pendente (indicado em "Depende de"); `pronta` = pode ser implementada. A aprovação de cada lote de textos pelo CEO faz parte do PR de conteúdo e não deixa a história em rascunho.
+- **Decisões** já tomadas aparecem nos critérios como "(P1)", "(P2)" etc., com a resposta registrada em "Decisões do CEO (2026-11-04)".
 - **Ordem**: o índice segue a ordem em que as coisas precisam existir.
 
 ## Índice
@@ -27,9 +28,9 @@ Convenções usadas nas histórias:
 | US-009 | Motor: cartões, suspensões, lesões simples e pênaltis      | 1a    | Must       | pronta   |
 | US-010 | Forma, moral e fadiga entre rodadas                        | 1a    | Must       | pronta   |
 | US-011 | IA dos clubes: escalação, rotação e substituições          | 1a    | Must       | pronta   |
-| US-012 | Rodada completa e tabela de classificação com desempate    | 1a    | Must       | rascunho |
+| US-012 | Rodada completa e tabela de classificação com desempate    | 1a    | Must       | pronta   |
 | US-013 | Ferramenta de balanceamento (`npm run balance`)            | 1a    | Must       | pronta   |
-| US-014 | Novo jogo: configuração da carreira                        | 1a    | Must       | rascunho |
+| US-014 | Novo jogo: configuração da carreira                        | 1a    | Must       | pronta   |
 | US-015 | Navegação principal (celular e desktop) e tela do clube    | 1a    | Must       | pronta   |
 | US-016 | Tela do elenco e card do jogador                           | 1a    | Must       | pronta   |
 | US-017 | Escalação com arrastar e soltar                            | 1a    | Must       | pronta   |
@@ -40,7 +41,7 @@ Convenções usadas nas histórias:
 | US-022 | Conversa no intervalo                                      | 1a    | Should     | pronta   |
 | US-023 | Tela da tabela                                             | 1a    | Must       | pronta   |
 | US-024 | Tela do calendário e resultados                            | 1a    | Must       | pronta   |
-| US-025 | Fim de temporada e passagem para a seguinte                | 1a    | Must       | rascunho |
+| US-025 | Fim de temporada e passagem para a seguinte                | 1a    | Must       | pronta   |
 | US-026 | Termômetro da torcida e clássicos                          | 1a    | Must       | pronta   |
 | US-027 | Sistema de templates de texto                              | 1a    | Must       | pronta   |
 | US-028 | Notícias da rodada (jornal)                                | 1a    | Must       | pronta   |
@@ -55,34 +56,34 @@ Convenções usadas nas histórias:
 | US-037 | Armazenamento persistente e lembrete de exportar           | 1a    | Must       | pronta   |
 | US-038 | PWA instalável e jogável offline                           | 1a    | Must       | pronta   |
 | US-039 | Aviso de nova versão e novidades no jogo                   | 1a    | Must       | pronta   |
-| US-040 | Estrutura de tradução e escolha de idioma                  | 1a    | Must       | rascunho |
+| US-040 | Estrutura de tradução e escolha de idioma                  | 1a    | Must       | pronta   |
 | US-041 | Espaços de patrocínio com marcas fictícias                 | 1a    | Must       | pronta   |
 | US-042 | Tutorial e primeiros passos                                | 1a    | Should     | pronta   |
-| US-043 | Tela "Sobre": aviso de ficção, versão, privacidade e links | 1a    | Must       | rascunho |
-| US-044 | Preferências: tema, vibração e aba da rede social          | 1a    | Should     | pronta   |
-| US-045 | Tratamento e registro de erros sem dados pessoais          | 1a    | Must       | rascunho |
-| US-046 | Estatísticas de uso sem cookies                            | 1a    | Could      | rascunho |
+| US-043 | Tela "Sobre": aviso de ficção, versão, privacidade e links | 1a    | Must       | pronta   |
+| US-044 | Preferências: tema, vibração, tipo de partida, rede social | 1a    | Should     | pronta   |
+| US-045 | Tratamento e registro de erros sem dados pessoais          | 1a    | Must       | pronta   |
+| US-046 | Estatísticas de uso do site sem cookies                    | 1a    | Could      | pronta   |
 | US-047 | Criar conta anônima com apelido e passkey                  | 1b    | Must       | rascunho |
 | US-048 | Código de recuperação                                      | 1b    | Must       | pronta   |
 | US-049 | Entrar de novo e recuperar a conta em outro aparelho       | 1b    | Must       | pronta   |
 | US-050 | Apagar a conta                                             | 1b    | Must       | pronta   |
-| US-051 | Criar liga online da Série A                               | 1b    | Must       | rascunho |
-| US-052 | Entrar na liga por código de convite                       | 1b    | Must       | rascunho |
+| US-051 | Criar liga online da Série A                               | 1b    | Must       | pronta   |
+| US-052 | Entrar na liga por código de convite                       | 1b    | Must       | pronta   |
 | US-053 | Escolha de clubes: livre e sorteio                         | 1b    | Must       | pronta   |
 | US-054 | Escolha de clubes por draft                                | 1b    | Could      | pronta   |
 | US-055 | Preparar a rodada online e confirmar "Pronto"              | 1b    | Must       | pronta   |
 | US-056 | Servidor processa a rodada com o mesmo motor               | 1b    | Must       | pronta   |
-| US-057 | Modo ao vivo: partidas vistas juntas                       | 1b    | Must       | rascunho |
+| US-057 | Modo ao vivo: partidas vistas juntas                       | 1b    | Must       | pronta   |
 | US-058 | Modo assíncrono: aviso de rodada processada                | 1b    | Must       | pronta   |
 | US-059 | Resultados, tabela e notícias da liga para todos           | 1b    | Must       | pronta   |
-| US-060 | Inatividade: a IA assume o clube                           | 1b    | Must       | rascunho |
+| US-060 | Inatividade: a IA assume o clube                           | 1b    | Must       | pronta   |
 | US-061 | Dono da liga troca o modo no meio da temporada             | 1b    | Should     | pronta   |
 | US-062 | Mensagens prontas e emojis                                 | 1b    | Must       | pronta   |
-| US-063 | Fim de temporada e duração da liga online                  | 1b    | Must       | rascunho |
+| US-063 | Fim de temporada e duração da liga online                  | 1b    | Must       | pronta   |
 | US-064 | Lista de privacidade da 1b auditada e política atualizada  | 1b    | Must       | pronta   |
-| US-065 | Denunciar apelido ou nome de liga                          | 1b    | Should     | rascunho |
+| US-065 | Denunciar apelido ou nome de liga                          | 1b    | Must       | rascunho |
 
-Totais: 46 histórias da 1a (US-001 a US-046) e 19 da 1b (US-047 a US-065).
+Totais: 46 histórias da 1a (US-001 a US-046) e 19 da 1b (US-047 a US-065). Depois das decisões de 2026-11-04: 63 prontas e 2 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
 
 ---
 
@@ -91,8 +92,8 @@ Totais: 46 histórias da 1a (US-001 a US-046) e 19 da 1b (US-047 a US-065).
 **Como** equipe de conteúdo, **quero** um arquivo de dados dos 20 clubes da Série A com validação automática, **para** montar e revisar os clubes sem tocar no código e sem deixar escapar nome real.
 
 **Prioridade:** Must
-**Depende de:** lista de clubes aprovada pelo CEO (combinado do `CLAUDE.md`)
-**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade); item "Ferramenta de cadastro dos clubes" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). Cada clube tem: id, nome em trocadilho, nome curto, cidade, estado, cores, apelido, porte (grande, médio, pequeno), perfil de IA ([IA dos outros clubes](PROJETO.md#ia-dos-outros-clubes)), estádio fictício e capacidade, e lista de rivais (clássicos). O escudo é o gerador do dia 1 (`app/src/lib/generators/shield.ts`). Os valores de porte e capacidade são do `game-designer`.
+**Depende de:** lista dos 20 clubes, aprovada pelo CEO em 2026-11-04 (`docs/content/lotes/2026-11-04-nomes-serie-a.md`)
+**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade); item "Ferramenta de cadastro dos clubes" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). Cada clube tem: id, nome em trocadilho, nome curto, cidade, estado, cores, apelido, porte (grande, médio, pequeno), perfil de IA ([IA dos outros clubes](PROJETO.md#ia-dos-outros-clubes)), estádio fictício e capacidade, e lista de rivais (clássicos). O escudo é o gerador do dia 1 (`app/src/lib/generators/shield.ts`). Os valores de porte e capacidade são do `game-designer`. A lista aprovada está no lote de 2026-11-04; `rivals` pode ser vazio (Bragantão, Miragol, Chapecão, Remador).
 
 ### Critérios de aceite
 
@@ -198,7 +199,7 @@ Cenário: sem duplicata no mesmo clube
 
 **Prioridade:** Must
 **Depende de:** US-001, US-003
-**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado). Campos da Etapa 1: posição, 6 atributos por posição (1 a 99), nota geral, potencial (oculto na interface), idade, forma, moral, fadiga, um traço de personalidade (líder, temperamental, profissional, ídolo da torcida), número da camisa. Tamanho do elenco, distribuição por posição e faixa de notas por porte são parâmetros do `game-designer` em `app/src/params/`. Contrato e salário não entram na Etapa 1 (mercado e finanças são Etapa 3).
+**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado). Campos da Etapa 1: posição, 6 atributos por posição (1 a 99), nota geral, potencial (oculto na interface como número; ver o rótulo "promessa" em US-016), idade, forma, moral, fadiga, um traço de personalidade (líder, temperamental, profissional, ídolo da torcida), número da camisa. Tamanho do elenco, distribuição por posição e faixa de notas por porte são parâmetros do `game-designer` em `app/src/params/`. Contrato e salário não entram na Etapa 1 (mercado e finanças são Etapa 3).
 
 ### Critérios de aceite
 
@@ -303,7 +304,7 @@ Cenário: determinismo
 
 **Prioridade:** Must
 **Depende de:** US-004
-**Notas:** [PROJETO.md › Táticas](PROJETO.md#táticas) e [Cálculo da partida](PROJETO.md#cálculo-da-partida). Força de defesa, meio e ataque a partir dos titulares, ajustada por formação, postura, pressão, moral, fadiga, jogador fora de posição e mando de campo. Os pesos são do `game-designer` (documento de sistema da partida em `docs/design/`). Função pura em `app/src/engine/`, parâmetros por argumento.
+**Notas:** [PROJETO.md › Táticas](PROJETO.md#táticas) e [Cálculo da partida](PROJETO.md#cálculo-da-partida). Força de defesa, meio e ataque a partir dos titulares, ajustada por formação, postura, pressão, moral, fadiga, jogador fora de posição e mando de campo. O mando soma o fator fixo `match.homeBase` (ADR-0011, opção A, aprovada pelo CEO) à parte da torcida (US-026, ADR-0005). Os pesos são do `game-designer` (documento de sistema da partida em `docs/design/`). Função pura em `app/src/engine/`, parâmetros por argumento.
 
 ### Critérios de aceite
 
@@ -342,7 +343,7 @@ Cenário: escalação incompleta não quebra o motor
 
 **Prioridade:** Must
 **Depende de:** US-007
-**Notas:** [PROJETO.md › Cálculo da partida](PROJETO.md#cálculo-da-partida). Cada minuto: chance de oportunidade pela comparação meio/ataque contra defesa; cada oportunidade vira gol, defesa, trave ou fora pelo finalizador contra o goleiro. Metas de gols, empates, zebras e mando em [`docs/design/balance-targets.md`](design/balance-targets.md). Toda aleatoriedade pelo `Rng` com semente; `Math.random()` e `Date.now()` proibidos.
+**Notas:** [PROJETO.md › Cálculo da partida](PROJETO.md#cálculo-da-partida). Cada minuto: chance de oportunidade pela comparação meio/ataque contra defesa; cada oportunidade vira gol, defesa, trave ou fora pelo finalizador contra o goleiro. Metas de gols, empates, zebras e mando em [`docs/design/balance-targets.md`](design/balance-targets.md) (mandante vence 45% a 50%, pelo ADR-0011). Toda aleatoriedade pelo `Rng` com semente; `Math.random()` e `Date.now()` proibidos.
 
 ### Critérios de aceite
 
@@ -361,7 +362,7 @@ Cenário: estrutura da partida
 
 Cenário: metas de balanceamento
   Dado 200 temporadas simuladas pela ferramenta de US-013
-  Então gols por partida, empates, vitória do time 20 pontos mais forte e zebras ficam dentro das faixas de balance-targets.md
+  Então gols por partida, empates, vitória do mandante, vitória do time 20 pontos mais forte e zebras ficam dentro das faixas de balance-targets.md
 ```
 
 ### Fora do escopo desta história
@@ -493,8 +494,8 @@ Cenário: elenco sem reservas aptos
 **Como** jogador, **quero** que cada rodada simule os 10 jogos e atualize a tabela, **para** acompanhar o campeonato inteiro.
 
 **Prioridade:** Must
-**Depende de:** US-006, US-008, US-011; **P1** (critérios de desempate)
-**Notas:** [PROJETO.md › Competições e calendário](PROJETO.md#competições-e-calendário). Vitória 3 pontos, empate 1, derrota 0. A ordem dos critérios de desempate depende da resposta à P1; os cenários abaixo usam a recomendação. Desempenho: rodada em menos de 2 s num celular simples (requisitos não funcionais).
+**Depende de:** US-006, US-008, US-011
+**Notas:** [PROJETO.md › Competições e calendário](PROJETO.md#competições-e-calendário). Vitória 3 pontos, empate 1, derrota 0. Desempate pelos critérios da CBF para a Série A, com sorteio pela semente no fim (decisão P1). Desempenho: rodada em menos de 2 s num celular simples (requisitos não funcionais).
 
 ### Critérios de aceite
 
@@ -505,13 +506,13 @@ Cenário: rodada atualiza a tabela
   Então cada clube tem exatamente um jogo a mais
   E pontos, vitórias, empates, derrotas, gols pró, gols contra e saldo batem com os placares
 
-Cenário: desempate por vitórias e saldo (P1)
+Cenário: desempate pelos critérios da CBF (P1)
   Dado dois clubes com os mesmos pontos
   Quando a tabela é ordenada
   Então fica à frente o de mais vitórias; persistindo, o de maior saldo; depois mais gols pró; depois confronto direto (só entre dois clubes); depois menos vermelhos; depois menos amarelos
 
-Cenário: empate em todos os critérios
-  Dado dois clubes iguais em todos os critérios da P1
+Cenário: empate em todos os critérios (P1)
+  Dado dois clubes iguais em todos os critérios da CBF
   Quando a tabela é ordenada
   Então a ordem é decidida por sorteio com a semente do jogo, sempre igual para o mesmo save
 
@@ -534,7 +535,7 @@ Cenário: rodada não pode ser processada duas vezes
 
 **Prioridade:** Must
 **Depende de:** US-012
-**Notas:** item "Balanceamento automático" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa); metas em [`docs/design/balance-targets.md`](design/balance-targets.md); comando `/balance` em [PROJETO.md › Processo](PROJETO.md#processo-de-desenvolvimento-com-agentes). Usa só o motor, sem interface.
+**Notas:** item "Balanceamento automático" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa); metas em [`docs/design/balance-targets.md`](design/balance-targets.md); comando `/balance` em [PROJETO.md › Processo](PROJETO.md#processo-de-desenvolvimento-com-agentes). Usa só o motor, sem interface. A vitória do mandante é medida contra a meta do ADR-0011 (opção A: 45% a 50%).
 
 ### Critérios de aceite
 
@@ -567,8 +568,8 @@ Cenário: parâmetros alternativos
 **Como** jogador, **quero** começar uma carreira escolhendo meu clube e poucas opções já preenchidas, **para** jogar em menos de um minuto.
 
 **Prioridade:** Must
-**Depende de:** US-001, US-004, US-006; **P3** (opções de etapas futuras)
-**Notas:** [PROJETO.md › Novo jogo: configurações iniciais](PROJETO.md#novo-jogo-configurações-iniciais). Opções que funcionam na Etapa 1: apelido do técnico (texto livre, só no aparelho), clube (qualquer um dos 20), realismo (lesões, cartões e fadiga ligados ou simplificados, regra do `game-designer`), tipo de partida (animada completa, só lances principais, só resultado). Ritmo fica fixo em "No meu ritmo" e competições em "Só Brasil" (Série A). As demais opções seguem a P3. As escolhas viram "última configuração".
+**Depende de:** US-001, US-004, US-006
+**Notas:** [PROJETO.md › Novo jogo: configurações iniciais](PROJETO.md#novo-jogo-configurações-iniciais). Opções que funcionam na Etapa 1: apelido do técnico (texto livre, só no aparelho), clube (qualquer um dos 20), realismo (lesões, cartões e fadiga ligados ou simplificados, regra do `game-designer`), tipo de partida (animada completa, só lances principais, só resultado). Ritmo fica fixo em "No meu ritmo" e competições em "Só Brasil" (Série A). As opções de etapas futuras ficam escondidas (decisão P3). Decisão do CEO: o realismo fica fixo depois de criar a carreira; o tipo de partida pode ser trocado depois, nas Preferências (US-044) e ao jogar a rodada (US-019). As escolhas viram "última configuração".
 
 ### Critérios de aceite
 
@@ -589,15 +590,16 @@ Cenário: apelido inválido
   Quando o jogador deixa vazio, só com espaços, ou acima do limite de caracteres
   Então "Começar" fica desabilitado com a mensagem do arquivo de conteúdo, e o apelido não sai do aparelho
 
-Cenário: opções de etapas futuras (P3)
+Cenário: opções de etapas futuras escondidas (P3)
   Dado a tela de novo jogo na Etapa 1
-  Então ritmo "Tempo real", começar desempregado, técnico livre, Brasil + América do Sul, estilo e backup na nuvem não aparecem
+  Então ritmo "Tempo real", começar desempregado, técnico livre, Brasil + América do Sul, estilo e backup na nuvem não aparecem, nem desabilitados nem com "em breve"
 ```
 
 ### Fora do escopo desta história
 
 - Ritmo "Tempo real", começar desempregado, técnico livre e demissão (Etapa 4).
 - América do Sul (Etapa 5); backup na nuvem (Etapa 4).
+- Trocar o realismo de uma carreira já criada (fixo por decisão do CEO).
 - Configurações da liga online (US-051).
 
 ---
@@ -608,7 +610,7 @@ Cenário: opções de etapas futuras (P3)
 
 **Prioridade:** Must
 **Depende de:** US-014
-**Notas:** [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design) (abas Clube, Elenco, Tabela, Mercado, Calendário) e item "Layout de desktop" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). A aba Mercado não aparece na Etapa 1 (mercado é Etapa 3). A tela Clube mostra escudo, próximo jogo, posição na tabela, termômetro (US-026) e as últimas notícias (US-028). Design system: `docs/design/design-system.md`, guardado pelo `ux-designer`.
+**Notas:** [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design) (abas Clube, Elenco, Tabela, Mercado, Calendário) e item "Layout de desktop" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). A aba Mercado não aparece na Etapa 1 (mercado é Etapa 3). A tela Clube mostra escudo, próximo jogo, posição na tabela, termômetro (US-026) e as últimas notícias (US-028). Decisões do CEO: o menu "Mais" abre pelo ícone do cabeçalho, no topo, e as mesmas entradas aparecem no pé da tela Clube (revisar na Etapa 3, quando o Mercado virar a 5ª aba); os ícones são próprios, desenhados pelo `art-director`, e até a aprovação um conjunto aberto provisório fica atrás do componente `Icon`. Design system: `docs/design/design-system.md`, guardado pelo `ux-designer`; telas em `docs/design/telas/`.
 
 ### Critérios de aceite
 
@@ -616,8 +618,9 @@ Cenário: opções de etapas futuras (P3)
 Cenário: abas no celular
   Dado uma tela com largura de celular (até o breakpoint do design system)
   Quando o jogo está numa carreira
-  Então as abas Clube, Elenco, Tabela e Calendário aparecem na parte de baixo, cada uma com ícone e texto e alvo de toque ≥ 44 px
+  Então as abas Clube, Elenco, Tabela e Calendário aparecem na parte de baixo, cada uma com ícone do componente Icon e texto e alvo de toque ≥ 44 px
   E o botão "Jogar rodada" aparece fixo na metade de baixo da tela
+  E o ícone de menu no cabeçalho abre o menu "Mais" em qualquer aba
 
 Cenário: barra lateral no desktop
   Dado uma tela acima do breakpoint de desktop
@@ -631,12 +634,14 @@ Cenário: tela do clube
   Dado uma carreira na rodada 5
   Quando o jogador abre a aba Clube
   Então vê o próximo adversário com mando, a posição atual na tabela e o termômetro com valor em número
+  E o pé da tela mostra as mesmas entradas do menu "Mais"
 ```
 
 ### Fora do escopo desta história
 
 - Aba Mercado (Etapa 3).
 - Tamanho de fonte ajustável e leitor de tela completo (Etapa 2).
+- Desenho final dos ícones próprios (`/assets arte ícones`, com aprovação do CEO).
 
 ---
 
@@ -646,7 +651,7 @@ Cenário: tela do clube
 
 **Prioridade:** Must
 **Depende de:** US-004, US-009, US-010, US-015
-**Notas:** componente "card de jogador" de [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design). Potencial não aparece (só olheiros ou tempo; olheiros na Etapa 5). Tabelas no celular: coluna fixa e estatísticas rolando para o lado.
+**Notas:** componente "card de jogador" de [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design). O número do potencial nunca aparece (só olheiros ou tempo; olheiros na Etapa 5). Decisão do CEO: jovens que se enquadram na regra do `game-designer` ([jogadores › Potencial](design/jogadores.md#potencial); limiares em `app/src/params/`) levam o rótulo "promessa", só o rótulo, nunca o número. Tabelas no celular: coluna fixa e estatísticas rolando para o lado.
 
 ### Critérios de aceite
 
@@ -665,13 +670,19 @@ Cenário: detalhe do jogador
   Dado um atleta da lista
   Quando o jogador toca nele
   Então abre o card com os 6 atributos da posição, o traço de personalidade e gols e jogos na temporada
-  E o potencial não aparece em nenhuma tela
+
+Cenário: rótulo "promessa" sem o número
+  Dado um atleta que se enquadra na regra de promessa dos parâmetros e outro que não se enquadra
+  Quando o elenco e o card são mostrados
+  Então só o primeiro mostra o rótulo "promessa" com ícone e texto do arquivo de conteúdo
+  E a interface recebe do motor só o booleano de promessa, e nenhum número, faixa ou barra do potencial aparece em nenhuma tela
 ```
 
 ### Fora do escopo desta história
 
 - Contrato, salário e valor (Etapa 3).
 - Histórico de carreira do jogador (Etapa 4).
+- Potencial em número ou faixa (olheiros, Etapa 5).
 
 ---
 
@@ -756,16 +767,22 @@ Cenário: capitão e cobradores
 
 **Prioridade:** Must
 **Depende de:** US-012, US-017
-**Notas:** [PROJETO.md › Animações e engajamento saudável](PROJETO.md#animações-e-engajamento-saudável) (opção "só resultado") e [Fluxos de jogo](PROJETO.md#fluxos-de-jogo). É o fluxo base da rodada; a partida animada (US-020) se apoia nele. Ao fim, salvamento automático (US-032).
+**Notas:** [PROJETO.md › Animações e engajamento saudável](PROJETO.md#animações-e-engajamento-saudável) (opção "só resultado") e [Fluxos de jogo](PROJETO.md#fluxos-de-jogo). É o fluxo base da rodada; a partida animada (US-020) se apoia nele. Decisão do CEO: o tipo de partida pode ser trocado durante a carreira, também no momento de jogar a rodada; a troca vale para as rodadas seguintes e é a mesma opção mostrada nas Preferências (US-044). Ao fim, salvamento automático (US-032).
 
 ### Critérios de aceite
 
 ```gherkin
 Cenário: rodada em um toque
-  Dado uma carreira com escalação válida e o modo de partida "só resultado"
+  Dado uma carreira com escalação válida e o tipo de partida "só resultado"
   Quando o jogador toca "Jogar rodada"
   Então vê o placar do seu jogo, os autores dos gols e os outros 9 resultados
   E a rodada atual avança em 1 e a tabela é atualizada
+
+Cenário: trocar o tipo de partida ao jogar
+  Dado uma carreira com o tipo de partida "animada completa"
+  Quando o jogador escolhe "só resultado" no seletor de tipo de "Jogar rodada" e joga
+  Então a rodada vai direto ao resumo
+  E as rodadas seguintes continuam em "só resultado", que é o tipo mostrado nas Preferências
 
 Cenário: resultado com texto
   Dado o resumo da rodada
@@ -789,7 +806,7 @@ Cenário: fechar o app no meio
 
 **Prioridade:** Must
 **Depende de:** US-002, US-019
-**Notas:** [PROJETO.md › Animações e engajamento saudável](PROJETO.md#animações-e-engajamento-saudável): campo 2D em canvas, jogadores como bolinhas nas cores do uniforme, narração em texto rolando, pausa dramática antes de revelar se foi gol, comemoração com escudo e nome do artilheiro, vibração no Android. "Animada completa" mostra todos os lances que o motor marca como visíveis; "só lances principais" mostra só gols, chances claras, cartões vermelhos e pênaltis. A animação é desenhada a partir dos eventos do motor; nunca muda o resultado.
+**Notas:** [PROJETO.md › Animações e engajamento saudável](PROJETO.md#animações-e-engajamento-saudável): campo 2D em canvas, jogadores como bolinhas nas cores do uniforme, narração em texto rolando, pausa dramática antes de revelar se foi gol, comemoração com escudo e nome do artilheiro, vibração no Android. "Animada completa" mostra todos os lances que o motor marca como visíveis; "só lances principais" mostra só gols, chances claras, cartões vermelhos e pênaltis. A animação é desenhada a partir dos eventos do motor; nunca muda o resultado. O tipo de partida pode ser trocado entre rodadas (US-019, US-044). Sem áudio na Etapa 1, só vibração no Android (decisão P5).
 
 ### Critérios de aceite
 
@@ -799,6 +816,11 @@ Cenário: animação reflete os eventos
   Quando ela é mostrada em "animada completa"
   Então cada gol, cartão e substituição da lista aparece na narração no minuto certo
   E o placar final mostrado é igual ao do motor
+
+Cenário: tipo de partida não muda o resultado
+  Dado o mesmo save e a mesma semente, sem comandos durante a partida
+  Quando a rodada é jogada em "animada completa", "só lances principais" e "só resultado"
+  Então os eventos do motor e os placares são idênticos nos três tipos
 
 Cenário: pular para o fim
   Dado uma partida em andamento na tela
@@ -818,7 +840,7 @@ Cenário: vibração opcional
 
 ### Fora do escopo desta história
 
-- Narração em voz, torcida e efeitos sonoros (P5; voz fora da Etapa 1).
+- Áudio de qualquer tipo: efeitos (apito, rede, torcida) e narração em voz (decisão P5; só com lote aprovado pelo CEO com a estimativa de créditos).
 - Replay (Etapa 4).
 
 ---
@@ -858,7 +880,7 @@ Cenário: mesmas decisões, mesmo resultado
 
 ### Fora do escopo desta história
 
-- Comandos durante a partida no online (P6).
+- Comandos durante a partida no online (decisão P6: não na 1b).
 
 ---
 
@@ -967,8 +989,8 @@ Cenário: clássico identificado
 **Como** jogador, **quero** uma cerimônia ao fim das 38 rodadas e a chance de continuar, **para** comemorar o título ou planejar a volta por cima.
 
 **Prioridade:** Must
-**Depende de:** US-012, US-023; **P2** (o que acontece na virada da temporada sem Série B)
-**Notas:** [PROJETO.md › Animações](PROJETO.md#animações-e-engajamento-saudável) (cerimônia de título) e [Competições](PROJETO.md#competições-e-calendário) (4 caem). Como a Série B só existe na Etapa 2, os cenários abaixo seguem a recomendação da P2: mesmos 20 clubes na temporada seguinte, com envelhecimento e evolução pela curva de idade ([Jogadores](PROJETO.md#jogadores-contratos-e-mercado)).
+**Depende de:** US-012, US-023
+**Notas:** [PROJETO.md › Animações](PROJETO.md#animações-e-engajamento-saudável) (cerimônia de título) e [Competições](PROJETO.md#competições-e-calendário) (4 caem). Decisão P2: como a Série B só existe na Etapa 2, depois da rodada 38 começa uma nova temporada com os mesmos 20 clubes, com envelhecimento e evolução pela curva de idade ([Jogadores](PROJETO.md#jogadores-contratos-e-mercado)); o clube do jogador continua na Série A mesmo se terminar entre os 4 últimos. A subida de 4 clubes fica para quando houver lista de clubes aprovada pelo CEO.
 
 ### Critérios de aceite
 
@@ -996,7 +1018,7 @@ Cenário: determinismo da virada
 
 ### Fora do escopo desta história
 
-- Acesso e rebaixamento reais (Etapa 2); base, aposentadoria e histórico (Etapa 4).
+- Acesso e rebaixamento reais, com a troca dos 4 últimos por clubes que sobem (Etapa 2, depois da lista da Série B aprovada pelo CEO); base, aposentadoria e histórico (Etapa 4).
 - Metas e avaliação da diretoria (Etapa 4).
 
 ---
@@ -1007,7 +1029,7 @@ Cenário: determinismo da virada
 
 **Prioridade:** Must
 **Depende de:** US-010, US-012
-**Notas:** [brasilidades › Torcida dentro do jogo](design/brasilidades.md#torcida-dentro-do-jogo-etapa-1a-o-termômetro-efeitos-completos-na-etapa-3), ADR-0005, [Rede social do jogo](PROJETO.md#rede-social-do-jogo). Entradas na 1a: resultados, humor da rede social (US-029) e decisões do técnico (entrevista, US-030). Efeitos na 1a: bônus de mando (`fans.homeBonusMin` a `fans.homeBonusMax`, clássico soma `fans.derbyBonus`) e deriva da moral (`fans.moraleDrift`). Público, pressão sobre a diretoria, incidentes e jogador vaiado ficam para as etapas indicadas no documento. Valores são parâmetros; o termômetro existe para os 20 clubes (o da IA influencia o mando dela).
+**Notas:** [brasilidades › Torcida dentro do jogo](design/brasilidades.md#torcida-dentro-do-jogo-etapa-1a-o-termômetro-efeitos-completos-na-etapa-3), ADR-0005, ADR-0011, [Rede social do jogo](PROJETO.md#rede-social-do-jogo). Entradas na 1a: resultados, humor da rede social (US-029) e decisões do técnico (entrevista, US-030). Efeitos na 1a: mando (fator fixo `match.homeBase` do ADR-0011, opção A, mais a parte da torcida, de `fans.homeBonusMin` a `fans.homeBonusMax`; clássico soma `fans.derbyBonus`) e deriva da moral (`fans.moraleDrift`). Público, pressão sobre a diretoria, incidentes e jogador vaiado ficam para as etapas indicadas no documento. Valores são parâmetros; o termômetro existe para os 20 clubes (o da IA influencia o mando dela).
 
 ### Critérios de aceite
 
@@ -1021,7 +1043,7 @@ Cenário: termômetro reage aos resultados
 Cenário: bônus de mando
   Dado o mesmo jogo em casa com termômetro 0 e com termômetro 100
   Quando a força é calculada
-  Então o bônus de casa é fans.homeBonusMin no primeiro e fans.homeBonusMax no segundo
+  Então o bônus de casa é match.homeBase + fans.homeBonusMin no primeiro e match.homeBase + fans.homeBonusMax no segundo
   E num clássico os dois recebem mais fans.derbyBonus
 
 Cenário: deriva da moral
@@ -1086,7 +1108,7 @@ Cenário: contexto escolhe a variação
 
 **Prioridade:** Must
 **Depende de:** US-012, US-027
-**Notas:** [PROJETO.md › Notícias e mensagens](PROJETO.md#notícias-e-mensagens) (veículos com tom próprio). Eventos da 1a, no mínimo: vitória, derrota, empate, goleada, virada, zebra, clássico, lesão, suspensão, série de vitórias, série de derrotas, liderança, entrada na zona de rebaixamento, artilheiro da rodada, título. Cada lote de textos passa pelo CEO antes de entrar no jogo. Veículos com nomes inventados.
+**Notas:** [PROJETO.md › Notícias e mensagens](PROJETO.md#notícias-e-mensagens) (veículos com tom próprio). Eventos da 1a, no mínimo: vitória, derrota, empate, goleada, virada, zebra, clássico, lesão, suspensão, série de vitórias, série de derrotas, liderança, entrada na zona de rebaixamento, artilheiro da rodada, título. Cada lote de textos passa pelo CEO antes de entrar no jogo. Veículos com nomes inventados. Textos nos três idiomas, com menos variações em es e en na 1a (decisão P4, ver US-040).
 
 ### Critérios de aceite
 
@@ -1192,7 +1214,7 @@ Cenário: dispensar
 
 **Prioridade:** Should
 **Depende de:** US-027, US-028, US-029
-**Notas:** [PROJETO.md › Notícias e mensagens](PROJETO.md#notícias-e-mensagens) (meta: nenhuma repetição em menos de 40 rodadas). Script em `scripts/`; cobertura registrada em `docs/content/cobertura.md`.
+**Notas:** [PROJETO.md › Notícias e mensagens](PROJETO.md#notícias-e-mensagens) (meta: nenhuma repetição em menos de 40 rodadas). Script em `scripts/`; cobertura registrada em `docs/content/cobertura.md`. Na 1a, es e en têm menos variações por decisão (P4); o relatório mostra a repetição deles, mas a meta de 40 rodadas vale só para pt-BR até a Etapa 5.
 
 ### Critérios de aceite
 
@@ -1449,7 +1471,7 @@ Cenário: lembrete desligado
 
 **Prioridade:** Must
 **Depende de:** US-019
-**Notas:** [PROJETO.md › Visão geral](PROJETO.md#visão-geral) e [Configuração central da marca](PROJETO.md#configuração-central-da-marca) (manifest, ícones e cores gerados da configuração). Meta de instalação inicial abaixo de 10 MB (item do backlog). Fontes e tudo o mais servidos pelo próprio app.
+**Notas:** [PROJETO.md › Visão geral](PROJETO.md#visão-geral) e [Configuração central da marca](PROJETO.md#configuração-central-da-marca) (manifest, ícones e cores gerados da configuração). Meta de instalação inicial abaixo de 10 MB (item do backlog). Fontes e tudo o mais servidos pelo próprio app. Na 1a o jogo não tem estatísticas de uso nem envio de erros pela rede (decisão P11).
 
 ### Critérios de aceite
 
@@ -1467,9 +1489,9 @@ Cenário: tamanho da instalação
   Dado o build de produção
   Então o total pré-carregado pelo service worker é menor que 10 MB, e o CI falha se passar
 
-Cenário: sem terceiros
+Cenário: sem terceiros (P11)
   Dado uma sessão completa de carreira com a rede monitorada
-  Então nenhuma requisição sai para domínio diferente do próprio app (salvo o que a P11 aprovar)
+  Então nenhuma requisição sai para domínio diferente do próprio app
 ```
 
 ### Fora do escopo desta história
@@ -1521,21 +1543,21 @@ Cenário: save migrado na atualização
 **Como** jogador hispanofalante ou anglofalante, **quero** escolher o idioma do jogo, **para** jogar na minha língua; **como** equipe, **queremos** todos os textos fora do código, **para** traduzir sem programar.
 
 **Prioridade:** Must
-**Depende de:** — ; **P4** (o que fica traduzido na 1a)
-**Notas:** item "Idiomas" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) (estrutura na Etapa 1; três línguas completas até a Etapa 5) e política de idioma do `CLAUDE.md`. Base existente: `app/src/lib/i18n.ts` e `app/src/content/<idioma>/`. Nome do jogo sempre lido da configuração central.
+**Depende de:** —
+**Notas:** item "Idiomas" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) (estrutura na Etapa 1; três línguas completas até a Etapa 5) e política de idioma do `CLAUDE.md`. Decisão P4: a interface inteira em pt-BR, es e en desde a 1a; notícias, rede social e mensagens prontas também nos três, com menos variações em es e en (a recomendação aprovada citava cerca de 5 por evento, contra 15 a 20 em pt-BR), completando até a Etapa 5. Base existente: `app/src/lib/i18n.ts` e `app/src/content/<idioma>/`. Nome do jogo sempre lido da configuração central.
 
 ### Critérios de aceite
 
 ```gherkin
-Cenário: idioma inicial
+Cenário: idioma inicial (P4)
   Dado o primeiro acesso com o navegador em espanhol
-  Então o jogo abre em es, se a P4 liberar es; senão, em pt-BR
+  Então o jogo abre em es; com o navegador em inglês, em en; em qualquer outro idioma, em pt-BR
   E o jogador pode trocar o idioma nas preferências, sem reiniciar a carreira
 
-Cenário: chave faltando
-  Dado uma chave de interface presente em pt-BR e ausente em es
+Cenário: chave ou evento faltando (P4)
+  Dado uma chave de interface presente em pt-BR e ausente em es, ou um evento de notícia, rede social ou mensagem pronta da 1a sem nenhuma variação em en
   Quando a validação roda no CI
-  Então ela falha indicando a chave e o idioma
+  Então ela falha indicando a chave ou o evento e o idioma
 
 Cenário: texto escrito no código
   Dado um componente com texto visível fora dos arquivos de conteúdo
@@ -1549,7 +1571,7 @@ Cenário: nome do jogo
 
 ### Fora do escopo desta história
 
-- Espanhol e inglês completos em notícias e rede social (até a Etapa 5, conforme P4).
+- Espanhol e inglês com o mesmo número de variações do pt-BR em notícias e rede social (até a Etapa 5, decisão P4).
 - Narração em voz.
 
 ---
@@ -1560,14 +1582,15 @@ Cenário: nome do jogo
 
 **Prioridade:** Must
 **Depende de:** US-020, US-019
-**Notas:** [PROJETO.md › Monetização e apoio](PROJETO.md#monetização-e-apoio): placas em volta do campo, placar, camisa, nome de competição e de estádio, telas de carregamento, resumo da rodada; espaço vazio mostra marca fictícia; patrocínios só contextuais, iguais para todos ([backlog](PROJETO.md#backlog-de-recursos-por-etapa), "Anúncios e menores"); nada de apostas ou bebida alcoólica. A lista de marcas fictícias é conteúdo, aprovada pelo CEO. Na Etapa 1 não há patrocinador real nem busca de anúncios no servidor; o `architect` define o formato do espaço pensando na troca futura.
+**Notas:** [PROJETO.md › Monetização e apoio](PROJETO.md#monetização-e-apoio): placas em volta do campo, placar, camisa, nome de competição e de estádio, telas de carregamento, resumo da rodada; patrocínios só contextuais, iguais para todos ([backlog](PROJETO.md#backlog-de-recursos-por-etapa), "Anúncios e menores"); nada de apostas ou bebida alcoólica. Decisão do CEO: todo espaço vazio no jogo mostra uma marca fictícia; o convite "Patrocine aqui" aparece só no site e na tela Sobre (US-043), nunca num espaço do cenário. A lista de marcas fictícias é conteúdo, aprovada pelo CEO. Mapa dos espaços por tela em `docs/design/telas/README.md`. Na Etapa 1 não há patrocinador real nem busca de anúncios no servidor; o `architect` define o formato do espaço pensando na troca futura.
 
 ### Critérios de aceite
 
 ```gherkin
-Cenário: espaços preenchidos
+Cenário: espaços preenchidos com marca fictícia
   Dado uma partida animada e o resumo da rodada
   Então as placas do campo, o placar e o resumo mostram marcas da lista de marcas fictícias
+  E nenhum espaço de patrocínio do jogo mostra o convite "Patrocine aqui" nem fica vazio
 
 Cenário: igual para todos
   Dado dois saves diferentes na mesma rodada e no mesmo estádio
@@ -1586,6 +1609,7 @@ Cenário: sem rede e sem contagem
 ### Fora do escopo desta história
 
 - Patrocinadores reais, espaços vindos do servidor, contagem de impressões e painel de patrocínios (com o primeiro patrocinador real, depois da Etapa 1).
+- O convite "Patrocine aqui" no site (fica no `site/`, fora desta história).
 
 ---
 
@@ -1631,8 +1655,8 @@ Cenário: acessível
 **Como** jogador, **quero** saber que clubes e jogadores são fictícios, qual versão estou usando e o que o jogo faz com meus dados, **para** jogar tranquilo.
 
 **Prioridade:** Must
-**Depende de:** US-015; **P13** (canal com a comunidade)
-**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade) (aviso no jogo), [Privacidade](PROJETO.md#privacidade-lgpd-e-eca-digital) (política curta), [Monetização](PROJETO.md#monetização-e-apoio) (link de apoio simples desde cedo; apoio fora do jogo, com aviso) e item "Canal com a comunidade" do backlog. Contatos e links lidos da configuração central.
+**Depende de:** US-015
+**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade) (aviso no jogo), [Privacidade](PROJETO.md#privacidade-lgpd-e-eca-digital) (política curta), [Monetização](PROJETO.md#monetização-e-apoio) (link de apoio simples desde cedo; apoio fora do jogo, com aviso) e item "Canal com a comunidade" do backlog. Decisão P13: o canal com a comunidade é público e moderável (Discussions do repositório público ou formulário no devlog), nunca Discord nem grupo de WhatsApp; qual dos dois ainda está em aberto, mas a tela só lê o link da configuração central. Decisão do CEO: a tela Sobre é, junto com o site, o único lugar do jogo com o convite "Patrocine aqui". Contatos e links lidos da configuração central; o e-mail de suporte ainda está vazio (pendência da auditoria do dia 1).
 
 ### Critérios de aceite
 
@@ -1641,9 +1665,9 @@ Cenário: aviso de ficção
   Dado a tela de abertura e a tela "Sobre"
   Então ambas mostram o aviso de que clubes, jogadores e patrocinadores do jogo são fictícios
 
-Cenário: versão e links
+Cenário: versão e links (P13)
   Dado a tela "Sobre"
-  Então mostra o número da versão do app, o link da política de privacidade do site e o link do canal com a comunidade definido na P13
+  Então mostra o número da versão do app, o link da política de privacidade do site, o link do canal com a comunidade e o convite "Patrocine aqui"
   E todos os links vêm de config/prancheta.config.ts
 
 Cenário: link de apoio com aviso
@@ -1651,9 +1675,9 @@ Cenário: link de apoio com aviso
   Quando o jogador toca nele
   Então antes de sair do jogo aparece o aviso de que é uma página externa e de que menores precisam de um responsável
 
-Cenário: contato vazio
-  Dado o e-mail de suporte vazio na configuração
-  Então a tela não mostra campo de e-mail quebrado nem link vazio
+Cenário: contato ou link vazio
+  Dado o e-mail de suporte, o link do canal ou o link de "Patrocine aqui" vazio na configuração
+  Então a tela não mostra o item correspondente, nem campo de e-mail quebrado nem link vazio
 ```
 
 ### Fora do escopo desta história
@@ -1663,13 +1687,13 @@ Cenário: contato vazio
 
 ---
 
-## US-044: Preferências: tema, vibração e aba da rede social
+## US-044: Preferências: tema, vibração, tipo de partida, rede social
 
-**Como** jogador, **quero** escolher tema claro ou escuro, ligar ou desligar a vibração e esconder a rede social, **para** jogar do meu jeito.
+**Como** jogador, **quero** escolher tema claro ou escuro, ligar ou desligar a vibração, trocar o tipo de partida e esconder a rede social, **para** jogar do meu jeito.
 
 **Prioridade:** Should
-**Depende de:** US-015, US-029
-**Notas:** [Padrões de design](PROJETO.md#padrões-de-design) (escuro padrão, claro opcional) e [Rede social › Limites](PROJETO.md#rede-social-do-jogo) (desligar a aba). Preferências ficam no aparelho e valem para todas as carreiras. Idioma em US-040; lembrete de exportar em US-037.
+**Depende de:** US-015, US-020, US-029
+**Notas:** [Padrões de design](PROJETO.md#padrões-de-design) (escuro padrão, claro opcional) e [Rede social › Limites](PROJETO.md#rede-social-do-jogo) (desligar a aba). Preferências ficam no aparelho. Decisões do CEO: o tipo de partida (animada completa, só lances principais, só resultado) pode ser trocado durante a carreira, aqui e ao jogar a rodada (US-019); o realismo fica fixo depois de criar a carreira (US-014). Sem opção de áudio na Etapa 1 (decisão P5). Idioma em US-040; lembrete de exportar em US-037. Tela em `docs/design/telas/preferencias.md`.
 
 ### Critérios de aceite
 
@@ -1683,6 +1707,15 @@ Cenário: contraste nos dois temas
   Quando "npm run tokens" roda
   Então todo par de texto e fundo usado passa em contraste ≥ 4,5:1
 
+Cenário: trocar o tipo de partida
+  Dado uma carreira aberta com o tipo "animada completa"
+  Quando o jogador escolhe "só lances principais" nas Preferências
+  Então a próxima rodada dessa carreira é mostrada só com lances principais, e a escolha continua depois de reabrir o jogo
+
+Cenário: realismo fixo e sem áudio (P5)
+  Dado as Preferências com uma carreira aberta
+  Então o realismo da carreira aparece só como informação, sem controle para trocar, e não existe opção de áudio
+
 Cenário: desligar a rede social
   Dado a rede social desligada
   Então a aba ou entrada do feed some e o termômetro continua funcionando com resultados e decisões
@@ -1691,6 +1724,7 @@ Cenário: desligar a rede social
 ### Fora do escopo desta história
 
 - Tamanho de fonte ajustável (Etapa 2).
+- Opção de áudio (só quando houver lote de áudio aprovado pelo CEO).
 
 ---
 
@@ -1699,8 +1733,8 @@ Cenário: desligar a rede social
 **Como** jogador, **quero** ver uma mensagem clara quando algo dá errado; **como** equipe, **queremos** saber que o jogo quebrou sem identificar ninguém, **para** corrigir rápido.
 
 **Prioridade:** Must
-**Depende de:** — ; **P11** (para onde vai o registro)
-**Notas:** item "Registro de erros sem dados pessoais" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) e regra de erros do `CLAUDE.md` (motor retorna resultados tipados; a interface mostra em pt-BR e registra sem dados pessoais). Na recomendação da P11, a 1a guarda o registro só no aparelho.
+**Depende de:** —
+**Notas:** item "Registro de erros sem dados pessoais" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) e regra de erros do `CLAUDE.md` (motor retorna resultados tipados; a interface mostra em pt-BR e registra sem dados pessoais). Decisão P11: na 1a o registro fica só no aparelho, com o botão "Copiar relatório de erros" para mandar ao suporte; o envio anônimo ao nosso servidor na 1b é outra história e passa antes pelo `security-auditor`.
 
 ### Critérios de aceite
 
@@ -1709,10 +1743,11 @@ Cenário: erro inesperado na interface
   Dado um erro de programação lançado numa tela
   Então o jogador vê uma mensagem no idioma atual com "Tentar de novo" e "Voltar ao início", e a carreira salva não é alterada
 
-Cenário: registro sem dados pessoais
+Cenário: registro sem dados pessoais (P11)
   Dado um erro registrado
   Então o registro contém versão do app, tela, tipo e pilha do erro
   E não contém apelido do técnico, conteúdo do save, IP nem identificador do aparelho
+  E nenhuma requisição de rede é feita para registrar o erro
 
 Cenário: limite do registro local (P11)
   Dado mais erros do que o limite do registro local
@@ -1726,37 +1761,38 @@ Cenário: copiar para o suporte (P11)
 
 ### Fora do escopo desta história
 
+- Envio do registro ao servidor (1b em diante, com revisão do `security-auditor`).
 - Painel de saúde do servidor (Etapa 6).
 
 ---
 
-## US-046: Estatísticas de uso sem cookies
+## US-046: Estatísticas de uso do site sem cookies
 
-**Como** equipe, **queremos** saber quantas pessoas jogam e de que país, sem identificar ninguém, **para** decidir prioridades.
+**Como** equipe, **queremos** saber quantas pessoas visitam o site e de que país, sem identificar ninguém, **para** decidir prioridades.
 
 **Prioridade:** Could
-**Depende de:** US-038; **P11**
-**Notas:** item "Estatísticas de uso sem cookies" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) (exemplo citado: Cloudflare Web Analytics, registrado como restrição, não decisão) e [Privacidade](PROJETO.md#privacidade-lgpd-e-eca-digital) (sem cookie de terceiros, sem banner). Passa pelo `security-auditor`.
+**Depende de:** —
+**Notas:** item "Estatísticas de uso sem cookies" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) (exemplo citado: Cloudflare Web Analytics, registrado como restrição, não decisão) e [Privacidade](PROJETO.md#privacidade-lgpd-e-eca-digital) (sem cookie de terceiros, sem banner). Decisão P11: estatísticas só no site (`site/`) por enquanto; o jogo em `/jogo` não tem estatística nenhuma, porque seria uma chamada a terceiro dentro de um app offline. Passa pelo `security-auditor`.
 
 ### Critérios de aceite
 
 ```gherkin
 Cenário: sem cookie nem identificador
-  Dado uma sessão no jogo com estatísticas ligadas
+  Dado uma visita ao site com estatísticas ligadas
   Então nenhum cookie é criado e nenhum identificador persistente de pessoa ou aparelho é gravado para estatística
-
-Cenário: offline não quebra
-  Dado o jogo sem conexão
-  Então a ausência do serviço de estatísticas não gera erro visível nem atraso na abertura
 
 Cenário: só contagens agregadas
   Dado o que é enviado ao serviço
-  Então contém só página e dados técnicos agregáveis, sem apelido, clube escolhido nem conteúdo do save
+  Então contém só página e dados técnicos agregáveis, sem nenhum dado do jogo
+
+Cenário: jogo sem estatísticas (P11)
+  Dado o build do jogo em /jogo e uma sessão de carreira com a rede monitorada
+  Então nenhum script ou requisição de estatística existe no jogo
 ```
 
 ### Fora do escopo desta história
 
-- Eventos de jogo detalhados e funis.
+- Estatísticas dentro do jogo, eventos de jogo detalhados e funis.
 
 ---
 
@@ -1765,8 +1801,8 @@ Cenário: só contagens agregadas
 **Como** jogador que quer jogar com amigos, **quero** criar uma conta só com um apelido e a biometria do celular, **para** entrar no online sem e-mail nem dado pessoal.
 
 **Prioridade:** Must
-**Depende de:** — ; **P8** (aparelho sem passkey)
-**Notas:** [PROJETO.md › Privacidade, LGPD e ECA Digital](PROJETO.md#privacidade-lgpd-e-eca-digital) (apelido + passkey; sem e-mail, telefone, nome real ou data de nascimento; apelidos filtrados) e ADR-0003. O servidor guarda só apelido, chave pública da passkey e o necessário para o código de recuperação (US-048). A carreira offline continua sem conta. A tela inicial ganha a entrada "Liga online" ao lado de "Carreira".
+**Depende de:** domínio definitivo (decisão pendente do CEO, item 4 da auditoria do dia 1)
+**Notas:** [PROJETO.md › Privacidade, LGPD e ECA Digital](PROJETO.md#privacidade-lgpd-e-eca-digital) (apelido + passkey; sem e-mail, telefone, nome real ou data de nascimento; apelidos filtrados) e ADR-0003. Decisão P8: o online exige passkey; quem não tem suporte recebe a explicação, e a carreira offline não é afetada. Fica em rascunho até o domínio definitivo: a passkey fica presa ao domínio em que foi criada, e criar contas em `*.pages.dev` obrigaria todos a recuperar a conta pelo código (US-049) na troca de domínio. O servidor guarda só apelido, chave pública da passkey e o necessário para o código de recuperação (US-048). A carreira offline continua sem conta. A tela inicial ganha a entrada "Liga online" ao lado de "Carreira".
 
 ### Critérios de aceite
 
@@ -1798,6 +1834,7 @@ Cenário: aparelho sem passkey (P8)
 
 ### Fora do escopo desta história
 
+- Conta sem passkey, só com código de recuperação (descartada na P8).
 - Selo de apoiador e recompensas (Etapa 6).
 - Limite de criação de contas em massa (Etapa 6).
 
@@ -1911,8 +1948,8 @@ Cenário: dono da liga apaga a conta
 **Como** jogador, **quero** criar uma liga da Série A com nome, modo e prazo, **para** jogar com meus amigos.
 
 **Prioridade:** Must
-**Depende de:** US-049, US-012; **P12** (prazos permitidos)
-**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) e [Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais). Opções da 1b: nome da liga (filtrado como o apelido), modo (ao vivo ou assíncrono, com prazo por rodada), número de humanos (2 até o limite do modo, padrão 8 ao vivo e 30 assíncrono, lido de configuração e não fixo no código; numa liga só de Série A o máximo efetivo é 20), escolha de clubes (US-053, US-054), inatividade (US-060), mensagens prontas ligadas ou desligadas (US-062), duração (US-063). Competições: só Série A. As escolhas viram "última configuração".
+**Depende de:** US-049, US-012
+**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) e [Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais). Opções da 1b: nome da liga (filtrado como o apelido), modo (ao vivo ou assíncrono, com prazo por rodada), número de humanos (2 até o limite do modo, padrão 8 ao vivo e 30 assíncrono, lido de configuração e não fixo no código; numa liga só de Série A o máximo efetivo é 20), escolha de clubes (US-053, US-054), inatividade (US-060), mensagens prontas ligadas ou desligadas (US-062), duração (US-063). Decisão P12: prazos fixos por modo, ao vivo com 1, 2 ou 5 minutos (padrão 2) e assíncrono com 12, 24 ou 48 horas (padrão 24). Competições: só Série A. As escolhas viram "última configuração".
 
 ### Critérios de aceite
 
@@ -1931,14 +1968,16 @@ Cenário: nome filtrado
   Dado um nome de liga com termo bloqueado, link, e-mail ou telefone
   Então a criação é recusada com mensagem em pt-BR
 
-Cenário: prazo fora das opções (P12)
-  Dado uma requisição com prazo por rodada fora das opções do modo
-  Então o servidor recusa
+Cenário: prazos por modo (P12)
+  Dado a tela de criação de liga
+  Então o modo ao vivo oferece 1, 2 ou 5 minutos por rodada (padrão 2) e o assíncrono 12, 24 ou 48 horas (padrão 24)
+  E uma requisição com prazo fora das opções do modo é recusada pelo servidor
 ```
 
 ### Fora do escopo desta história
 
 - Tempo real, equilíbrio de orçamentos, mercado entre humanos, competições além da Série A, várias divisões (Etapas 2 a 6).
+- Prazo livre digitado pelo dono da liga (P12).
 
 ---
 
@@ -1947,8 +1986,8 @@ Cenário: prazo fora das opções (P12)
 **Como** amigo convidado, **quero** entrar na liga digitando ou abrindo um código, **para** participar sem busca pública.
 
 **Prioridade:** Must
-**Depende de:** US-051; **P9** (entrar com a liga em andamento)
-**Notas:** [PROJETO.md › Modo online › Regras da liga](PROJETO.md#modo-online). Não há lista pública de ligas. O código pode ser compartilhado como link.
+**Depende de:** US-051
+**Notas:** [PROJETO.md › Modo online › Regras da liga](PROJETO.md#modo-online). Não há lista pública de ligas. O código pode ser compartilhado como link. Decisão P9: dá para entrar com a liga em andamento, enquanto houver vaga, assumindo um clube da IA.
 
 ### Critérios de aceite
 
@@ -2131,8 +2170,8 @@ Cenário: processamento único
 **Como** grupo conectado ao mesmo tempo, **queremos** ver as partidas e os placares ao vivo juntos, **para** sofrer e comemorar na mesma hora.
 
 **Prioridade:** Must
-**Depende de:** US-056, US-020; **P6** (comandos durante a partida no online)
-**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) (prazo curto, resultado simulado na hora e visto por todos juntos, placares ao vivo, mensagens prontas). A partida é exibida a partir dos eventos já simulados pelo servidor, no mesmo ritmo para todos. Na recomendação da P6, sem comandos durante a partida no online.
+**Depende de:** US-056, US-020
+**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) (prazo curto, resultado simulado na hora e visto por todos juntos, placares ao vivo, mensagens prontas). A partida é exibida a partir dos eventos já simulados pelo servidor, no mesmo ritmo para todos. Decisão P6: sem comandos durante a partida no online da 1b; tática e escalação valem como definidas antes do "Pronto".
 
 ### Critérios de aceite
 
@@ -2159,6 +2198,7 @@ Cenário: sem comandos (P6)
 
 ### Fora do escopo desta história
 
+- Comandos e substituições ao vivo no online (P6; reavaliar depois da 1b).
 - Narração em voz e torcida sonora.
 
 ---
@@ -2200,7 +2240,7 @@ Cenário: partida rápida
 
 **Prioridade:** Must
 **Depende de:** US-056, US-023, US-028
-**Notas:** [PROJETO.md › Modo online › Fluxo de uma rodada](PROJETO.md#modo-online) (resultados, tabela e notícias chegam a todos). Clubes de humanos mostram o apelido do técnico; clubes da IA, "Técnico IA". Mesmos critérios de desempate de US-012.
+**Notas:** [PROJETO.md › Modo online › Fluxo de uma rodada](PROJETO.md#modo-online) (resultados, tabela e notícias chegam a todos). Clubes de humanos mostram o apelido do técnico; clubes da IA, "Técnico IA". Mesmos critérios de desempate de US-012 (CBF, P1).
 
 ### Critérios de aceite
 
@@ -2230,8 +2270,8 @@ Cenário: offline depois de sincronizar
 **Como** jogador de uma liga, **quero** que quem sumiu não trave a liga, **para** a temporada continuar.
 
 **Prioridade:** Must
-**Depende de:** US-056; **P10** (volta depois da inatividade)
-**Notas:** [PROJETO.md › Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais) (após quantas rodadas sem confirmar a IA assume). O número de rodadas é escolhido na criação da liga.
+**Depende de:** US-056
+**Notas:** [PROJETO.md › Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais) (após quantas rodadas sem confirmar a IA assume). O número de rodadas é escolhido na criação da liga. Decisão P10: o clube fica reservado e a pessoa o retoma ao confirmar uma escalação, sem pedir nada ao dono.
 
 ### Critérios de aceite
 
@@ -2248,7 +2288,7 @@ Cenário: não conta para "todos prontos"
 Cenário: volta do jogador (P10)
   Dado um humano cujo clube está com a IA
   Quando ele confirma uma escalação numa rodada aberta
-  Então retoma o clube a partir dessa rodada
+  Então retoma o clube a partir dessa rodada, sem aprovação do dono da liga
 ```
 
 ### Fora do escopo desta história
@@ -2263,7 +2303,7 @@ Cenário: volta do jogador (P10)
 
 **Prioridade:** Should
 **Depende de:** US-057, US-058
-**Notas:** [PROJETO.md › Modo online › Regras da liga](PROJETO.md#modo-online) (o dono pode trocar o modo no meio da temporada).
+**Notas:** [PROJETO.md › Modo online › Regras da liga](PROJETO.md#modo-online) (o dono pode trocar o modo no meio da temporada). A rodada seguinte abre com o prazo padrão do novo modo (P12).
 
 ### Critérios de aceite
 
@@ -2295,7 +2335,7 @@ Cenário: só o dono
 
 **Prioridade:** Must
 **Depende de:** US-055
-**Notas:** [PROJETO.md › Privacidade › ECA Digital](PROJETO.md#privacidade-lgpd-e-eca-digital) (chat só com mensagens prontas e emojis, desligável) e [Notícias e mensagens](PROJETO.md#notícias-e-mensagens). Catálogo de mensagens e emojis nos três idiomas em `app/src/content/<idioma>/`, aprovado pelo CEO; cada destinatário vê a mensagem no próprio idioma. Nenhum texto livre em nenhum lugar.
+**Notas:** [PROJETO.md › Privacidade › ECA Digital](PROJETO.md#privacidade-lgpd-e-eca-digital) (chat só com mensagens prontas e emojis, desligável) e [Notícias e mensagens](PROJETO.md#notícias-e-mensagens). Catálogo de mensagens e emojis nos três idiomas em `app/src/content/<idioma>/` (P4), aprovado pelo CEO; cada destinatário vê a mensagem no próprio idioma. Nenhum texto livre em nenhum lugar.
 
 ### Critérios de aceite
 
@@ -2331,8 +2371,8 @@ Cenário: limite de envio
 **Como** grupo de amigos, **queremos** que a liga feche a temporada com um campeão e continue pelo número de temporadas combinado, **para** ter rivalidade de longo prazo.
 
 **Prioridade:** Must
-**Depende de:** US-059, US-025; **P2**
-**Notas:** [PROJETO.md › Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais) (duração: número de temporadas ou sem fim). A virada de temporada segue a mesma regra da carreira (P2).
+**Depende de:** US-059, US-025
+**Notas:** [PROJETO.md › Novo jogo › Liga online](PROJETO.md#novo-jogo-configurações-iniciais) (duração: número de temporadas ou sem fim). A virada de temporada segue a mesma regra da carreira: mesmos 20 clubes (decisão P2).
 
 ### Critérios de aceite
 
@@ -2345,10 +2385,10 @@ Cenário: liga com duração
   Dado uma liga de 2 temporadas no fim da segunda
   Então a liga vai ao estado "encerrada", fica só para leitura e não abre nova rodada
 
-Cenário: próxima temporada
+Cenário: próxima temporada (P2)
   Dado uma liga sem fim ou com temporadas restantes
   Quando o dono inicia a próxima temporada
-  Então ela começa pela mesma regra de virada de US-025, com os mesmos humanos nos mesmos clubes
+  Então ela começa pela mesma regra de virada de US-025, com os mesmos 20 clubes e os mesmos humanos nos mesmos clubes
 ```
 
 ### Fora do escopo desta história
@@ -2393,9 +2433,9 @@ Cenário: política atualizada
 
 **Como** jogador, **quero** denunciar um apelido ou nome de liga ofensivo, **para** que a liga continue um lugar saudável.
 
-**Prioridade:** Should (Must se a P7 for aprovada)
-**Depende de:** US-047, US-051; **P7**
-**Notas:** [PROJETO.md › Privacidade › ECA Digital](PROJETO.md#privacidade-lgpd-e-eca-digital) (apelidos filtrados, com botão de denúncia; interação entre usuários exige denúncia). O roteiro põe denúncias completas na Etapa 6; esta história é a versão mínima, sem painel: a denúncia fica registrada no servidor para a equipe tratar. Mensagens prontas não precisam de denúncia porque são do catálogo.
+**Prioridade:** Must (P7 aprovada: a denúncia mínima entra na 1b)
+**Depende de:** US-047, US-051; quem trata as denúncias e em quanto tempo (parte da P7 ainda em aberto)
+**Notas:** [PROJETO.md › Privacidade › ECA Digital](PROJETO.md#privacidade-lgpd-e-eca-digital) (apelidos filtrados, com botão de denúncia; interação entre usuários exige denúncia). O roteiro põe denúncias completas na Etapa 6; esta história é a versão mínima, sem painel: a denúncia fica registrada no servidor e é tratada à mão pela equipe. Mensagens prontas não precisam de denúncia porque são do catálogo. Fica em rascunho até o CEO dizer quem trata e em quanto tempo; com a resposta entra um critério para o prazo informado na confirmação ao jogador e na política de privacidade.
 
 ### Critérios de aceite
 
@@ -2442,20 +2482,42 @@ Cenário: dados da denúncia
 - Metas e confiança da diretoria, demissão, propostas, base, histórico, replay, editor local, ritmo "Tempo real", sincronização de saves, SAF e dívida herdada (Etapa 4).
 - América do Sul, olheiros, resto do mundo, altitude e clima, espanhol e inglês completos (Etapa 5).
 - Ligas grandes com várias divisões, notificações push, modo férias, bloqueio, página pública da liga, painel de admin completo, apoio via PIX, limites contra abuso (Etapa 6).
-- Narração em voz, patrocinadores reais, chat de texto livre (este, nunca).
+- Áudio de qualquer tipo, efeitos e narração em voz (P5); estatísticas de uso dentro do jogo (P11); comandos durante a partida no online (P6).
+- Patrocinadores reais, chat de texto livre (este, nunca).
 
-## Perguntas abertas para o CEO
+## Decisões do CEO (2026-11-04)
 
-1. **P1. Critérios de desempate da tabela.** O documento não define. Recomendo os da CBF para a Série A: vitórias, saldo de gols, gols pró, confronto direto (só entre dois clubes), menos cartões vermelhos, menos amarelos e, por fim, sorteio com a semente do jogo. (US-012)
-2. **P2. O que acontece depois da 38ª rodada na Etapa 1, sem Série B?** Recomendo deixar continuar para a temporada seguinte com os mesmos 20 clubes: os 4 últimos aparecem como "zona de rebaixamento", sem efeito, e os jogadores envelhecem e evoluem pela curva de idade. A alternativa é a carreira terminar no fim da temporada, mas isso vai contra o "quer continuar na temporada seguinte" da visão. Se o clube do jogador ficar entre os 4 últimos, também continua na Série A. (US-025, US-063)
-3. **P3. Opções do novo jogo que dependem de etapas futuras** (Tempo real, começar desempregado, técnico livre, América do Sul, estilo Tranquilo/Realista, backup na nuvem). Recomendo esconder essas opções na Etapa 1, em vez de mostrá-las desabilitadas ou com "em breve". Elas voltam quando o sistema existir. Sem diretoria nem demissão na Etapa 1, o estilo não teria efeito nenhum. (US-014)
-4. **P4. O que fica em espanhol e inglês na 1a.** Recomendo a interface inteira nos três idiomas desde a 1a (o CI bloqueia chave faltando). Notícias, rede social e mensagens prontas também nos três, mas com menos variações em es e en por enquanto (por exemplo, 5 por evento em vez de 15 a 20), completando até a Etapa 5. O custo é revisar três lotes de textos em vez de um. A alternativa é liberar es/en só na Etapa 5. (US-040, US-062)
-5. **P5. Áudio na Etapa 1.** A voz está fora. Os efeitos (apito, rede, torcida) precisam do ElevenLabs pago para uso comercial. Recomendo não ter áudio na Etapa 1, só vibração no Android, e esconder a opção "Áudio" até você aprovar um lote com a estimativa de créditos. (US-020)
-6. **P6. Comandos durante a partida no online ao vivo.** O documento não diz se o técnico humano pode substituir ou mudar a tática no meio da partida online. Recomendo que não, na 1b: a partida online é simulada inteira no servidor e transmitida igual para todos, com tática e escalação definidas antes do "Pronto". Comandos ao vivo pedem sincronizar decisões de vários humanos em tempo real, o que é bem mais caro e arriscado. (US-057)
-7. **P7. Denúncia de apelido já na 1b?** O ECA Digital exige canal de denúncia quando há interação entre usuários, e a 1b já tem apelidos e mensagens prontas. Mas o roteiro põe as denúncias na Etapa 6. Recomendo entrar já na 1b uma denúncia mínima (registro no servidor, tratado à mão pela equipe, sem painel). Depende de você confirmar quem trata as denúncias e em quanto tempo. (US-065)
-8. **P8. Aparelho sem passkey.** Recomendo exigir passkey no online e explicar o motivo a quem não tem suporte. A carreira offline não é afetada. A alternativa (conta só com código de recuperação) é mais fraca contra roubo de conta. (US-047)
-9. **P9. Entrar numa liga já em andamento.** Recomendo permitir, enquanto houver vaga: a pessoa assume um clube da IA a partir da próxima rodada, herdando pontos e elenco dele. A alternativa é fechar a entrada quando a temporada começa. (US-052)
-10. **P10. Volta depois da inatividade.** Recomendo que o clube fique reservado e que a pessoa o retome ao confirmar uma escalação, sem pedir nada ao dono. A alternativa é o dono decidir. (US-060)
-11. **P11. Registro de erros e estatísticas de uso no jogo.** Recomendo, na 1a, guardar o registro de erros só no aparelho, com um botão "copiar relatório" para mandar ao suporte. Na 1b, o envio anônimo para o nosso próprio servidor passaria antes pelo `security-auditor`. Para as estatísticas, recomendo usá-las só no site por enquanto: no jogo, o script do Cloudflare Web Analytics seria uma chamada a um terceiro dentro de um app offline. (US-045, US-046, US-038)
-12. **P12. Prazos por rodada que o criador da liga pode escolher.** O documento dá só exemplos (2 minutos; 24 horas). Recomendo opções fixas: ao vivo com 1, 2 ou 5 minutos (padrão 2); assíncrono com 12, 24 ou 48 horas (padrão 24). (US-051)
-13. **P13. Canal com a comunidade.** Onde receber sugestões e chamar testadores? Recomendo, até existir o e-mail de suporte, usar o próprio devlog com um formulário simples ou as Discussions do repositório público. Evitaria Discord e grupos de WhatsApp, por causa do público menor de idade (ECA Digital). (US-043)
+Respostas às perguntas do `/kickoff`, registradas em `docs/status.md` ("Decisões do CEO no `/kickoff`" e "Decisões do CEO depois do merge do `/kickoff`"). Em P1 e P2 o CEO respondeu explicitamente; de P3 a P13 aceitou as recomendações deste documento.
+
+1. **P1. Critérios de desempate da tabela.** Os da CBF para a Série A: vitórias, saldo de gols, gols pró, confronto direto (só entre dois clubes), menos cartões vermelhos, menos amarelos e, por fim, sorteio com a semente do jogo. (US-012, US-059)
+2. **P2. Depois da 38ª rodada, sem Série B.** Nova temporada com os mesmos 20 clubes: os 4 últimos aparecem como "zona de rebaixamento", sem efeito, e os jogadores envelhecem e evoluem pela curva de idade; o clube do jogador continua na Série A mesmo entre os 4 últimos. A subida de 4 clubes fica para quando houver lista aprovada. (US-025, US-063)
+3. **P3. Opções do novo jogo de etapas futuras.** Escondidas na Etapa 1, nem desabilitadas nem com "em breve"; voltam quando o sistema existir. (US-014)
+4. **P4. Idiomas na 1a.** Interface inteira em pt-BR, es e en desde a 1a, com o CI bloqueando chave faltando; notícias, rede social e mensagens prontas também nos três, com menos variações em es e en, completando até a Etapa 5. (US-040, US-028, US-031, US-062)
+5. **P5. Áudio na Etapa 1.** Nenhum áudio, só vibração no Android; a opção "Áudio" fica escondida até o CEO aprovar um lote com a estimativa de créditos. (US-020, US-044)
+6. **P6. Comandos durante a partida no online ao vivo.** Não na 1b: a partida online é simulada inteira no servidor e transmitida igual para todos, com tática e escalação definidas antes do "Pronto". (US-057, US-021)
+7. **P7. Denúncia de apelido na 1b.** Sim, uma denúncia mínima (registro no servidor, tratado à mão, sem painel). Segue aberto quem trata e em quanto tempo (ver abaixo). (US-065)
+8. **P8. Aparelho sem passkey.** O online exige passkey; quem não tem suporte recebe a explicação, e a carreira offline não é afetada. (US-047)
+9. **P9. Entrar numa liga em andamento.** Permitido enquanto houver vaga: a pessoa assume um clube da IA a partir da próxima rodada, herdando pontos e elenco. (US-052)
+10. **P10. Volta depois da inatividade.** O clube fica reservado e a pessoa o retoma ao confirmar uma escalação, sem pedir nada ao dono. (US-060)
+11. **P11. Registro de erros e estatísticas.** Na 1a, registro de erros só no aparelho, com "Copiar relatório de erros"; o envio anônimo ao nosso servidor na 1b passa antes pelo `security-auditor`. Estatísticas de uso só no site; nenhuma no jogo. (US-045, US-046, US-038)
+12. **P12. Prazos por rodada.** Opções fixas: ao vivo com 1, 2 ou 5 minutos (padrão 2); assíncrono com 12, 24 ou 48 horas (padrão 24). (US-051, US-061)
+13. **P13. Canal com a comunidade.** Até existir o e-mail de suporte, o devlog com um formulário simples ou as Discussions do repositório público; sem Discord nem grupos de WhatsApp, por causa do público menor de idade. Segue aberto qual dos dois (ver abaixo). (US-043)
+
+Outras decisões do CEO que mudaram critérios:
+
+- **Rótulo "promessa":** aprovado para jovens de potencial alto, só o rótulo, nunca o número. (US-016)
+- **Tipo de partida:** pode ser trocado durante a carreira, nas Preferências e ao jogar a rodada; o realismo fica fixo depois de criar a carreira. (US-014, US-019, US-020, US-044)
+- **Patrocínio:** espaço vazio no jogo mostra marca fictícia; "Patrocine aqui" só no site e na tela Sobre. (US-041, US-043)
+- **Ícones próprios** do `art-director`, com conjunto aberto provisório atrás do componente `Icon` até a aprovação; **menu "Mais"** no topo, com as mesmas entradas no pé da tela Clube. (US-015)
+- **Fator casa:** ADR-0011, opção A (`match.homeBase = 0.05`; mandante vence 45% a 50%). (US-007, US-008, US-013, US-026)
+
+### Perguntas que seguem abertas
+
+1. **P7 (resto). Quem trata as denúncias e em quanto tempo?** Recomendo que, na 1b, o próprio CEO trate, com prazo de até 72 horas para renomear à força ou remover um apelido ou nome de liga ofensivo, e que o `architect` defina como o CEO fica sabendo de uma denúncia nova (sem painel). Um prazo semanal seria mais leve, mas deixa um apelido ofensivo visível para menores por dias. Trava a US-065.
+2. **P13 (resto). Discussions do GitHub ou formulário no devlog?** Recomendo as Discussions do repositório público: custo zero, nada para construir nem guardar do nosso lado, moderação pronta e exigência de conta no GitHub (que só aceita maiores de 13 anos). O formulário no devlog pediria um lugar para guardar as respostas, ou seja, dado pessoal novo com ADR e `security-auditor`. Não trava nenhuma história: a tela Sobre lê o link da configuração.
+3. **Tipo de partida por carreira ou para o aparelho?** As decisões não dizem se trocar o tipo de partida vale só para a carreira aberta ou para todas as carreiras do aparelho. Recomendo por carreira, porque ele é escolhido no novo jogo (US-014). Os critérios de US-019 e US-044 foram escritos para valer nos dois casos, então não trava nada; a resposta orienta o `ux-designer` e o `architect`.
+
+Insumos pendentes que travam histórias (não são perguntas novas):
+
+- **Lista dos 20 clubes da Série A** (`/content nomes série A`, aprovada pelo CEO): trava a US-001.
+- **Domínio definitivo** (item 4 da auditoria do dia 1): trava a US-047, porque a passkey fica presa ao domínio em que foi criada. Recomendo decidir antes de começar a 1b.

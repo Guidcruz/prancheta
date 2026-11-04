@@ -1,6 +1,6 @@
 # ADR-0007: API do motor, determinismo e versão do motor
 
-- **Status:** proposta
+- **Status:** aceita (CEO, 2026-11-04)
 - **Data:** 2026-11-04
 - **Decisores:** architect (propôs), CEO (aprova)
 

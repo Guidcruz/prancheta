@@ -42,6 +42,15 @@ Telas da 1a (`docs/design/telas/`):
 4. Patrocínio vazio no jogo mostra marcas fictícias; "Patrocine aqui" só no site e na tela Sobre.
 5. Menu "Mais" fica no topo na 1a, com as mesmas entradas no pé da tela Clube; revisar na Etapa 3, quando o Mercado virar a 5ª aba.
 
+## Decisões do CEO depois do merge do `/kickoff` (2026-11-04)
+
+1. ADRs 0006 a 0010 aceitos; ADR-0011 aceito na opção A (`match.homeBase = 0.05`).
+2. Dependências aprovadas: `valibot` (1a); `hono`, `@simplewebauthn/server` e `/browser` (1b); só de teste `@playwright/test`, `fake-indexeddb`, `@axe-core/playwright` (sem `fast-check`).
+3. Ajustes no `CLAUDE.md`, CI e `docs/04-deploy.md` sugeridos pelo `architect` e pelo `qa-engineer` aprovados; entram no PR da tarefa que os usa.
+4. Desempate da tabela pelos critérios da CBF, com sorteio pela semente no fim (P1).
+5. Depois da rodada 38, nova temporada com os mesmos 20 clubes (P2); subida de 4 clubes fica para quando houver lista aprovada.
+6. Demais perguntas do `product-manager` (P3 a P13) e do `qa-engineer` (Q1 a Q10): aceitas as recomendações dos documentos.
+
 ## Próximo
 
-PR do `/kickoff` (planejamento da Etapa 1) aberto para o CEO revisar e fazer merge. Depois do merge, `/feature T-001` (fundações do motor). Antes da T-013/T-016, o CEO responde o desempate (P1), o fim de temporada (P2) e o fator casa (ADR-0011).
+`/feature T-001` (fundações do motor) Lista dos 20 clubes da Série A 2026 aprovada pelo CEO em 2026-11-04 (`docs/content/lotes/2026-11-04-nomes-serie-a.md`); entra no jogo na T-003. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).

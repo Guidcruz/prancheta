@@ -1,6 +1,6 @@
 # ADR-0011: Fator casa fixo além da torcida (`match.homeBase`)
 
-- **Status:** proposta (decisão de diversão do CEO; o architect só redigiu)
+- **Status:** aceita, opção A (CEO, 2026-11-04)
 - **Data:** 2026-11-04
 - **Decisores:** game-designer (propôs em `docs/design/balance-targets.md`, decisão 1), architect (redigiu), CEO (decide)
 
@@ -18,7 +18,7 @@ O `docs/PROJETO.md` e o ADR-0005 fixam o bônus de mando de campo pela torcida e
 
 ## Decisão
 
-Pendente do CEO. Recomendação do `game-designer`: **A**. O architect não opina sobre diversão. Tecnicamente, as três opções custam o mesmo: o motor recebe `match.homeBase` por parâmetro (faixa válida 0 a 0,08), e o valor padrão no repositório fica 0 até a aprovação.
+**Opção A** (`match.homeBase = 0.05`), aprovada pelo CEO em 2026-11-04 seguindo a recomendação do `game-designer`. Tecnicamente, as três opções custam o mesmo: o motor recebe `match.homeBase` por parâmetro (faixa válida 0 a 0,08), e o valor no repositório é 0,05.
 
 ## Consequências
 

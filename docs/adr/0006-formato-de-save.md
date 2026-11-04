@@ -1,6 +1,6 @@
 # ADR-0006: Formato de save, gravação segura e migração
 
-- **Status:** proposta
+- **Status:** aceita (CEO, 2026-11-04)
 - **Data:** 2026-11-04
 - **Decisores:** architect (propôs), CEO (aprova)
 
