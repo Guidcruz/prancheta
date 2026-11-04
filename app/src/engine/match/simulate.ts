@@ -1,15 +1,8 @@
 import { elevenStrength } from '../generation.ts';
 import { clamp, normal } from '../math.ts';
 import type { GameParams } from '../params.ts';
-import { fit } from '../players.ts';
 import { Rng } from '../rng.ts';
-import {
-  GOALKEEPER_SLOT,
-  conditionMultiplier,
-  homeAdvantage,
-  moraleMultiplier,
-  type TeamStrengths,
-} from '../strength.ts';
+import { GOALKEEPER_SLOT, homeAdvantage, type TeamStrengths } from '../strength.ts';
 import type { EngineWarning, PlayerId, Side } from '../types.ts';
 import {
   AI_HALFTIME_TALK,
@@ -25,12 +18,17 @@ import {
   attendance,
   chanceProbability,
   energyDrain,
-  goalProbability,
   halftimeBoost,
   scoreState,
 } from './rules.ts';
 import { bestOnPitch, playerRatings, resultMarkers, winnerOf, type GoalRecord } from './summary.ts';
-import { currentStrengths, kickoffTeam, type Slot, type TeamState } from './team.ts';
+import {
+  currentStrengths,
+  kickoffTeam,
+  openPlayGoalProbability,
+  type Slot,
+  type TeamState,
+} from './team.ts';
 import type {
   ChanceKind,
   HalftimeTalk,
@@ -44,7 +42,7 @@ import type {
  * The match, minute by minute (docs/design/partida.md, "Visão geral do cálculo"; T-009).
  *
  * One Rng per match, seeded with `input.seed`, and a fixed order of draws (partida.md,
- * "Determinismo"; the golden of match.golden.test.ts pins it):
+ * "Determinismo"; the goldens of simulate.golden.test.ts pin it):
  * 1. kick-off: day form of the home side, then of the away side (6 draws each, `normal`);
  * 2. each minute, home side first, then away side: chance (1 draw); if there is one, shooter
  *    (1), goal (1), then the miss outcome (1) or, on a goal, whether it has an assist (1) and
@@ -101,6 +99,13 @@ function missOutcome(rng: Rng): MissOutcome {
 /**
  * Kind of a chance (partida.md, table "Tipo"). Penalties and direct free kicks, with their takers,
  * are T-010; until then every chance is open play ("Jogada") and no draw is spent here.
+ *
+ * T-010: the home factor of the finish ("Mando na finalização") applies to both new kinds too, as
+ * in `openPlayGoalProbability`: the free kick uses `technique × fit × moraleMult × condMult ×
+ * (1 + home)` against `gkEff × (1 + home(keeper's side))`, then `× 0.45`; the penalty uses
+ * `finishing × (1 + home)` and `gkEff × (1 + home)` in `clamp(0.78 + 0.004 × (finishing −
+ * gkEff), 0.60, 0.92)`. Document example (78 against 66, home 0.106): 0.861 for the home taker,
+ * 0.800 for the away one, 0.828 on neutral ground.
  */
 function chanceKind(): ChanceKind {
   return 'open';
@@ -134,13 +139,16 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   const events: MatchEvent[] = [];
   const goals: GoalRecord[] = [];
 
+  let capacity = input.capacity;
+  if (capacity !== undefined && !(Number.isFinite(capacity) && capacity >= 0)) {
+    warnings.push({ code: 'match-invalid-capacity', detail: { capacity: String(capacity) } });
+    capacity = undefined; // no capacity: the attendance is 0
+  }
   const home = kickoffTeam('home', input.home, warnings);
   const away = kickoffTeam('away', input.away, warnings);
   const teams = [home, away] as const;
   const teamOf = (side: Side) => (side === 'home' ? home : away);
-  home.home = input.neutral
-    ? 0
-    : homeAdvantage({ fans: input.home.fans, derby: input.derby }, params);
+  home.home = input.neutral ? 0 : homeAdvantage({ fans: home.fans, derby: input.derby }, params);
   const kickoffStrength = { home: displayedStrength(home), away: displayedStrength(away) };
 
   const score = (): [number, number] => [home.goals, away.goals];
@@ -180,12 +188,7 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     if (shooterIndex === undefined) return; // nobody who can shoot (no outfield player)
     const slot = team.slots[shooterIndex]!;
     const shooter = slot.app!;
-    const shot =
-      shooter.finishing *
-      fit(shooter.player.position, slot.position) *
-      moraleMultiplier(shooter.player.morale) *
-      conditionMultiplier(shooter.energy);
-    const pGoal = goalProbability(shot, theirs.goalkeeper, match);
+    const pGoal = openPlayGoalProbability(team, slot, opponent, theirs, match);
     team.shots += 1;
     const keeper = opponent.slots[GOALKEEPER_SLOT]!.app;
 
@@ -269,24 +272,24 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     }
   }
 
-  /** Home possession of a half: `clamp(50 + 1.5 × (Mid − Mid_opp) + Rng.int(−3, 3), 30, 70)`. */
+  /**
+   * Home possession of a half: `clamp(50 + 1.5 × (Mid − Mid_opp) + Rng.int(−3, 3), 30, 70)`, with
+   * the `Mid` of `home(t) = 0` (partida.md, "Posse de bola": two equal sides stay at 50%).
+   */
   function halfPossession(): number {
-    const mid = currentStrengths(home, match).mid - currentStrengths(away, match).mid;
+    const mid = currentStrengths(home, match, 0).mid - currentStrengths(away, match, 0).mid;
     const noise = rng.int(-POSSESSION.noise, POSSESSION.noise);
     return clamp(POSSESSION.base + POSSESSION.perMid * mid + noise, POSSESSION.min, POSSESSION.max);
   }
 
   /**
-   * The half-time talk of a side at its half-time score: the AI's (ia-clubes.md, "Intervalo"; an
-   * unknown profile uses the traditional one, as an absent lineup does); the coach's is T-012.
+   * The half-time talk of a side at its half-time score: the AI's (ia-clubes.md, "Intervalo"); the
+   * coach's is T-012.
    */
   function halftimeTalk(team: TeamState, own: number, theirs: number): HalftimeTalk {
-    const profile = team.input.profile;
+    const { profile } = team; // an unknown profile was already turned into `traditional`
     if (profile === 'chaotic') return HALFTIME_TALKS[rng.int(0, HALFTIME_TALKS.length - 1)]!;
-    const table = Object.hasOwn(AI_HALFTIME_TALK, profile)
-      ? AI_HALFTIME_TALK[profile]
-      : AI_HALFTIME_TALK.traditional;
-    return table[scoreState(own, theirs)];
+    return AI_HALFTIME_TALK[profile][scoreState(own, theirs)];
   }
 
   const possession: number[] = [];
@@ -374,7 +377,7 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     finalEnergy,
     newInjuries: [],
     markers,
-    attendance: attendance(input.capacity, input.home.fans, input.derby, params.fans),
+    attendance: attendance(capacity, home.fans, input.derby, params.fans),
     warnings,
   };
 }

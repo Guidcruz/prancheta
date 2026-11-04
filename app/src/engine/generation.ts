@@ -149,6 +149,12 @@ export const YOUTH_SHIRTS_FROM = 30;
 export const START_MORALE: { readonly min: number; readonly max: number } = { min: 50, max: 70 };
 /** Initial condition. */
 export const START_CONDITION = 100;
+/**
+ * Initial `clubAppearances` of the starters, reserves and rotation group (jogadores.md, "Partidas
+ * pelo clube"): they already played for the club before the career, so they never get the
+ * `estreia` marker; the youth start at 0 and debut when they first take the pitch.
+ */
+export const PRE_CAREER_APPEARANCES = 1;
 
 /** The "joia": the youth with the highest potential gets at least `strength + 8` (cap 95). */
 export const JEWEL_POTENTIAL_MARGIN = 8;
@@ -588,7 +594,7 @@ export function generateSquad(
       yellowCount: 0,
       recentRatings: [],
       benchStreak: 0,
-      clubAppearances: 0,
+      clubAppearances: group === 'youth' ? 0 : PRE_CAREER_APPEARANCES,
     };
   });
 

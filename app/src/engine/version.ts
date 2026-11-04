@@ -8,4 +8,7 @@
 // 2: newGame also generates the season calendar (T-007), so the new-game golden changed.
 // 3: ClubDef gains the crest fields (crestShape, crestPattern, crestBase, crestSymbol), which are
 //    part of the club definitions in the state digest; the simulation itself did not change.
-export const ENGINE_VERSION = 3;
+// 4: the initial squad starts with clubAppearances = 1 (only the youth at 0), and the match
+//    (T-009) applies the home advantage to the shot and the goalkeeper; new-game and match
+//    goldens changed.
+export const ENGINE_VERSION = 4;

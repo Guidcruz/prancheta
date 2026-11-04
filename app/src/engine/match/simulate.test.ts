@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
-import { generateSquad } from '../generation.ts';
+import { PRE_CAREER_APPEARANCES, SQUAD_GROUP_SIZES, generateSquad } from '../generation.ts';
 import { PARAM_RANGES, type GameParams } from '../params.ts';
 import { FORMATION_SECTORS, GOALKEEPER_SLOT, homeAdvantage } from '../strength.ts';
 import { fixedIdentitySource } from '../testing/identity.ts';
@@ -344,11 +344,48 @@ describe('simulateMatch: statistics, ratings and markers', () => {
           .map(([id]) => id)
           .sort(),
       );
-      // A new game: nobody has played for the club yet, so all 22 debut.
-      expect(kinds.filter((k) => k === 'estreia')).toHaveLength(22);
+      // A new game: the initial squad already played for the club (PRE_CAREER_APPEARANCES), so
+      // only a youth who takes the pitch can debut.
+      const youth = new Set(
+        [...derbyInput.home.players, ...derbyInput.away.players]
+          .filter((p) => p.clubAppearances === 0)
+          .map((p) => p.id),
+      );
+      for (const m of r.markers) if (m.kind === 'estreia') expect(youth.has(m.player)).toBe(true);
     }
     const plain = simulateMatch(fixtureInput(state, nonDerby), params);
     expect(plain.markers.some((m) => m.kind === 'classico')).toBe(false);
+  });
+
+  it('lets only the youth debut in round 1 of a new career (PRE_CAREER_APPEARANCES)', () => {
+    for (const club of Object.keys(state.clubs)) {
+      const squad = state.squads[club]!.map((id) => state.players[id]!);
+      expect(squad.filter((p) => p.clubAppearances === 0)).toHaveLength(SQUAD_GROUP_SIZES.youth);
+      expect(squad.slice(-SQUAD_GROUP_SIZES.youth).every((p) => p.clubAppearances === 0)).toBe(
+        true,
+      );
+      expect(
+        squad
+          .slice(0, -SQUAD_GROUP_SIZES.youth)
+          .every((p) => p.clubAppearances === PRE_CAREER_APPEARANCES),
+      ).toBe(true);
+    }
+    for (const fixture of state.fixtures.filter((f) => f.round === 1)) {
+      const r = simulateMatch(fixtureInput(state, fixture), params);
+      for (const m of r.markers) {
+        if (m.kind === 'estreia') expect(state.players[m.player]!.clubAppearances).toBe(0);
+      }
+    }
+    // A youth put in the XI debuts.
+    const youth = derbyInput.home.players.filter((p) => p.clubAppearances === 0)[0]!;
+    const starters = [...derbyInput.home.sheet.lineup.starters];
+    starters[10] = youth.id;
+    const withYouth = teamInputFrom(derbyInput.home.clubId, derbyInput.home.players, {
+      formation: derbyInput.home.sheet.lineup.formation,
+      starters,
+    });
+    const r = simulateMatch({ ...derbyInput, home: withYouth }, params);
+    expect(r.markers).toContainEqual({ kind: 'estreia', side: 'home', player: youth.id });
   });
 
   it('computes the attendance from the home stadium and fans (torcida.md)', () => {
@@ -378,9 +415,10 @@ describe('simulateMatch: home advantage and neutral ground', () => {
     return input;
   };
 
-  function rate(neutral: boolean): { home: number; away: number } {
+  function rate(neutral: boolean): { home: number; away: number; possession: number } {
     let home = 0;
     let away = 0;
+    let possession = 0;
     const n = 2000;
     for (let i = 0; i < n; i++) {
       const input: MatchInput = {
@@ -392,19 +430,59 @@ describe('simulateMatch: home advantage and neutral ground', () => {
         neutral,
         rules: { realism: 'full' },
       };
-      const [h, a] = simulateMatch(input, params).score;
+      const result = simulateMatch(input, params);
+      const [h, a] = result.score;
       if (h > a) home++;
       if (a > h) away++;
+      possession += result.stats.home.possession;
     }
-    return { home: home / n, away: away / n };
+    return { home: home / n, away: away / n, possession: possession / n };
   }
 
   it('favours the home side, and nobody on neutral ground', () => {
     expect(homeAdvantage({ fans: 60, derby: false }, params)).toBeGreaterThan(0);
     const home = rate(false);
     expect(home.home - home.away).toBeGreaterThan(0.08);
+    // The possession ignores the home advantage: equal sides stay at 50% (partida.md).
+    expect(home.possession).toBeGreaterThanOrEqual(49);
+    expect(home.possession).toBeLessThanOrEqual(51);
     const neutral = rate(true);
     expect(Math.abs(neutral.home - neutral.away)).toBeLessThan(0.05);
+    expect(neutral.possession).toBeGreaterThanOrEqual(49);
+    expect(neutral.possession).toBeLessThanOrEqual(51);
+  });
+
+  it('applies 1 + home(t) to the home shot and to the home goalkeeper, never to the away side', () => {
+    // With the shot and the goalkeeper both at home, the same chance converts more for the home
+    // side and less against it; on neutral ground the two sides convert alike.
+    const pGoals = (neutral: boolean) => {
+      const sum = { home: 0, away: 0 };
+      const count = { home: 0, away: 0 };
+      for (let i = 0; i < 400; i++) {
+        const result = simulateMatch(
+          {
+            fixtureId: `finish-${i}`,
+            seed: 5_000 + i,
+            home: team('even-a', i % 20),
+            away: team('even-b', 100 + (i % 20)),
+            derby: false,
+            neutral,
+            rules: { realism: 'full' },
+          },
+          params,
+        );
+        for (const e of result.events) {
+          if (e.type !== 'chance') continue;
+          sum[e.side] += e.pGoal;
+          count[e.side]++;
+        }
+      }
+      return { home: sum.home / count.home, away: sum.away / count.away };
+    };
+    const atHome = pGoals(false);
+    expect(atHome.home).toBeGreaterThan(atHome.away * 1.05);
+    const neutral = pGoals(true);
+    expect(Math.abs(neutral.home - neutral.away)).toBeLessThan(0.01);
   });
 });
 
@@ -467,6 +545,50 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
     expect(warning?.detail?.side).toBe('home');
     const keeper = warning!.detail!.player as string;
     for (const e of result.events) if (e.type === 'chance') expect(e.shooter).not.toBe(keeper);
+  });
+
+  it('corrects NaN or out-of-range condition, fans and capacity, with warnings', () => {
+    const tired = {
+      ...home,
+      fans: Number.NaN,
+      players: home.players.map((p, i) =>
+        i === 0 ? { ...p, condition: Number.NaN } : i === 1 ? { ...p, condition: 140 } : p,
+      ),
+    };
+    const result = simulateMatch(
+      { ...derbyInput, home: tired, away: { ...away, fans: -5 }, capacity: Number.NaN },
+      params,
+    );
+    expectSane(result);
+    const codes = result.warnings.map((w) => w.code);
+    expect(codes.filter((c) => c === 'player-invalid-condition')).toHaveLength(2);
+    expect(codes.filter((c) => c === 'team-invalid-fans')).toHaveLength(2);
+    expect(codes).toContain('match-invalid-capacity');
+    expect(result.attendance).toBe(0);
+    expect(result.finalEnergy[home.players[1]!.id]).toBeLessThanOrEqual(100);
+    expect(
+      simulateMatch({ ...derbyInput, capacity: -1 }, params).warnings.map((w) => w.code),
+    ).toEqual(['match-invalid-capacity']);
+  });
+
+  it('plays an unknown profile as traditional, with one warning per side', () => {
+    const odd = { ...home, profile: 'mystery' as never };
+    const result = simulateMatch(
+      { ...derbyInput, home: odd, away: { ...away, profile: 'x' as never } },
+      params,
+    );
+    expectSane(result);
+    const warnings = result.warnings.filter((w) => w.code === 'team-unknown-profile');
+    expect(warnings.map((w) => w.detail?.side)).toEqual(['home', 'away']);
+    const asTraditional = simulateMatch(
+      {
+        ...derbyInput,
+        home: { ...home, profile: 'traditional' },
+        away: { ...away, profile: 'traditional' },
+      },
+      params,
+    );
+    expect(JSON.stringify(result.events)).toBe(JSON.stringify(asTraditional.events));
   });
 
   it('plays a team with nobody at all, and reports an unknown formation, posture or pressure', () => {

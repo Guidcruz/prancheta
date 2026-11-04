@@ -1,4 +1,6 @@
+import { AI_PROFILES } from '../clubs.ts';
 import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
+import { clamp } from '../math.ts';
 import type { MatchParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
 import {
@@ -14,7 +16,16 @@ import {
   type StrengthTactic,
   type TeamStrengths,
 } from '../strength.ts';
-import type { EngineWarning, Formation, Position, Posture, Pressure, Side } from '../types.ts';
+import type {
+  AiProfile,
+  EngineWarning,
+  Formation,
+  Position,
+  Posture,
+  Pressure,
+  Side,
+} from '../types.ts';
+import { goalProbability } from './rules.ts';
 import type { TeamInput } from './types.ts';
 
 /*
@@ -68,7 +79,14 @@ export interface TeamState {
   readonly ratings: (number | undefined)[];
   /** Everyone who took the pitch, in order of entry (starters by slot first). */
   readonly appearances: Appearance[];
-  /** `home(t)` of `T(t)`: 0 for the away side and on neutral ground. */
+  /** The AI profile; an unknown one plays as `traditional` (partida.md, "Casos de borda"). */
+  readonly profile: AiProfile;
+  /** Fans thermometer, 0..100 (corrected at kick-off). */
+  readonly fans: number;
+  /**
+   * `home(t)`: 0 for the away side and on neutral ground. It enters `T(t)`, the shot of the
+   * home side and the eff of its goalkeeper when he defends (partida.md, decision "a").
+   */
   home: number;
   /** Day form, in points, added to `Power` and `Defense` (drawn at kick-off). */
   dayForm: number;
@@ -102,11 +120,25 @@ function isPressure(value: unknown): value is Pressure {
   return typeof value === 'string' && Object.prototype.hasOwnProperty.call(PRESSURE_EFFECTS, value);
 }
 
-function appearance(player: Player, side: Side): Appearance {
+/** True for a finite number within [min, max]. */
+function inRange(value: unknown, min: number, max: number): value is number {
+  return typeof value === 'number' && value >= min && value <= max;
+}
+
+function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appearance {
+  let energy = player.condition;
+  if (!inRange(energy, 0, 100)) {
+    // NaN goes to 0, like every clamp of the engine; out of range goes to the nearest end.
+    warnings.push({
+      code: 'player-invalid-condition',
+      detail: { side, player: player.id, condition: String(energy) },
+    });
+    energy = clamp(energy, 0, 100);
+  }
   return {
     player,
     side,
-    energy: Math.min(100, Math.max(0, player.condition)),
+    energy,
     finishing: attributeOf(player, 'finishing'),
     passing: attributeOf(player, 'passing'),
     physical: attributeOf(player, 'physical'),
@@ -136,6 +168,8 @@ export function occupy(slot: Slot, app: Appearance | undefined): void {
  * played as well as possible, with a warning for each fix (an invalid sheet only reaches the
  * match through a bug or a damaged save; replacing injured or suspended starters is T-010):
  * - unknown formation → `4-4-2`; unknown posture → `balanced`; unknown pressure → `medium`;
+ *   unknown profile → `traditional` (one warning per side for each);
+ * - fans or a player's condition that is NaN or outside 0..100 → clipped (NaN to 0);
  * - a starter who is not in the squad, a repeated starter or a missing one → empty slot;
  * - an empty goalkeeper slot → the outfield player with the highest `physical` goes in goal
  *   (`fillEmptyGoal`) and his slot is the empty one.
@@ -162,6 +196,17 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
       detail: { side, pressure: String(pressure) },
     });
     pressure = 'medium';
+  }
+
+  let profile: AiProfile = input.profile;
+  if (!AI_PROFILES.includes(profile)) {
+    warnings.push({ code: 'team-unknown-profile', detail: { side, profile: String(profile) } });
+    profile = 'traditional';
+  }
+  let fans = input.fans;
+  if (!inRange(fans, 0, 100)) {
+    warnings.push({ code: 'team-invalid-fans', detail: { side, fans: String(fans) } });
+    fans = clamp(fans, 0, 100);
   }
 
   const positions = FORMATION_SLOTS[formation];
@@ -198,7 +243,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     const slot: Slot = { position, sector: sectors[i]!, app: undefined, ratingBase: 0 };
     const player = filled.slots[i];
     if (player !== undefined) {
-      const app = appearance(player, side);
+      const app = appearance(player, side, warnings);
       appearances.push(app);
       occupy(slot, app);
     }
@@ -212,6 +257,8 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     slots,
     ratings: new Array<number | undefined>(slots.length).fill(undefined),
     appearances,
+    profile,
+    fans,
     home: 0,
     dayForm: 0,
     halftimeBoost: 0,
@@ -225,11 +272,12 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
  * Strengths of the team now (partida.md, "Forças de setor"): the effective rating of each
  * occupied slot with the current energy, the formation, the tactic and `T(t)` (home advantage,
  * empty slots, half-time talk). The day form is not in here: it is added to `Power` and
- * `Defense` where they are compared.
+ * `Defense` where they are compared. `home` replaces `home(t)` (the possession uses 0).
  */
 export function currentStrengths(
   team: TeamState,
   match: Pick<MatchParams, 'midWeight' | 'missingPlayerPenalty'>,
+  home: number = team.home,
 ): TeamStrengths {
   if (team.slots[GOALKEEPER_SLOT]!.app === undefined) return NO_STRENGTH;
   const { slots, ratings } = team;
@@ -242,7 +290,33 @@ export function currentStrengths(
     team.formation,
     team.tactic,
     ratings,
-    { home: team.home, halftimeBoost: team.halftimeBoost },
+    { home, halftimeBoost: team.halftimeBoost },
     match,
   );
+}
+
+/**
+ * `pGoal` of an open-play chance shot by the player in `slot` of `team` against the goalkeeper of
+ * `opponent` (partida.md, "Chance de oportunidade e finalização" and "Mando na finalização"):
+ * - `shot = finishing × fit × moraleMult × condMult × (1 + home(team))`;
+ * - `gkEff = eff of the opponent's goalkeeper × (1 + home(opponent))`, where the eff is
+ *   `TeamStrengths.goalkeeper` (no `T(t)`: missing players and the half-time talk never reach the
+ *   finish, only the home factor does).
+ * The away side and both sides on neutral ground have `home = 0`, so the factor is 1.
+ */
+export function openPlayGoalProbability(
+  team: TeamState,
+  slot: Slot,
+  opponent: TeamState,
+  theirs: Pick<TeamStrengths, 'goalkeeper'>,
+  match: Pick<MatchParams, 'conversion' | 'kFinish'>,
+): number {
+  const shooter = slot.app!;
+  const shot =
+    shooter.finishing *
+    fit(shooter.player.position, slot.position) *
+    moraleMultiplier(shooter.player.morale) *
+    conditionMultiplier(shooter.energy) *
+    (1 + team.home);
+  return goalProbability(shot, theirs.goalkeeper * (1 + opponent.home), match);
 }
