@@ -1,0 +1,13 @@
+{
+  "homeBonusMin": 0.02,
+  "homeBonusMax": 0.08,
+  "derbyBonus": 0.02,
+  "moraleDrift": 1,
+  "start": 60,
+  "baseline": 55,
+  "resultWeight": 4,
+  "derbyResultMult": 1.5,
+  "reversion": 0.08,
+  "decisionCap": 4,
+  "baseOccupancy": 0.62
+}

@@ -58,7 +58,7 @@ scripts/             balance.ts, content-check.mjs, template-repeat.ts, check-pr
 ### Parâmetros (`app/src/params/`)
 
 - Um JSON por sistema: `match.json`, `players.json`, `generation.json`, `season.json`, `ai.json`, `fans.json`. Os nomes são os de `docs/design/*.md`, com prefixo pelo arquivo (`match.baseChance` → `match.json` › `baseChance`).
-- O motor exporta `validateParams(raw: unknown): Result<GameParams, ParamIssue[]>` com as faixas válidas dos documentos de sistema. Um teste carrega os JSON do repositório e exige `ok`, então um `/quick` que ponha um valor fora da faixa quebra o CI.
+- O motor exporta `validateParams(raw: unknown): Result<GameParams, 'invalid-params'>` (a lista de `ParamIssue[]` vai em `detail`, seção 4.1; nunca lança) com as faixas válidas dos documentos de sistema. Um teste carrega os JSON do repositório e exige `ok`, então um `/quick` que ponha um valor fora da faixa quebra o CI.
 - Entram no motor como argumento em toda chamada pública. Quem carrega: `app/src/lib/params.ts` (jogo, empacotado no build), `scripts/balance.ts` (lê do disco ou de `--params <arquivo>`) e `server/` (importa os mesmos JSON no build).
 - `paramsHash` (SHA-256 do JSON canônico) fica registrado no save e na liga, só para diagnóstico.
 
@@ -565,8 +565,8 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 
 | #     | Tarefa                                                                                                                                                         | Histórias                      | Etapa | Depende de   | Caminho    | Tamanho | Estado     |
 | ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----- | ------------ | ---------- | ------- | ---------- |
-| T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos   | base de US-004..012            | 1a    | —            | `/feature` | M       | em revisão |
-| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos             | base de US-007..013            | 1a    | T-001        | `/feature` | M       | a fazer    |
+| T-001 | Fundações do motor: `types.ts`, `Result`, `ENGINE_VERSION`, `math.ts`, utilitário de golden, lint de fronteira novo, `erasableSyntaxOnly`, imports relativos   | base de US-004..012            | 1a    | —            | `/feature` | M       | feita      |
+| T-002 | `GameParams`: tipo e `validateParams` com faixas; seis JSON em `app/src/params/`; `lib/params.ts`; teste de que os JSON do repositório são válidos             | base de US-007..013            | 1a    | T-001        | `/feature` | M       | em revisão |
 | T-003 | Dados dos clubes: esquema `ClubDef`, `app/src/data/`, validação (20 clubes, rivais simétricos, escudo, lista bloqueada em hash), `scripts/hash-blocklist.mjs`  | US-001                         | 1a    | T-001        | `/feature` | M       | a fazer    |
 | T-004 | Gerador de nomes fictícios por nacionalidade (`lib/generators/names.ts`) + listas de sílabas/nomes                                                             | US-003                         | 1a    | —            | `/feature` | M       | a fazer    |
 | T-005 | Modelo do jogador no motor: atributos, `overall`, tabela `fit`, traços, potencial                                                                              | US-004                         | 1a    | T-001, T-002 | `/feature` | M       | a fazer    |

@@ -199,7 +199,7 @@ Cenário: sem duplicata no mesmo clube
 
 **Prioridade:** Must
 **Depende de:** US-001, US-003
-**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado). Campos da Etapa 1: posição, 6 atributos por posição (1 a 99), nota geral, potencial (oculto na interface como número; ver o rótulo "promessa" em US-016), idade, forma, moral, fadiga, um traço de personalidade (líder, temperamental, profissional, ídolo da torcida), número da camisa. Tamanho do elenco, distribuição por posição e faixa de notas por porte são parâmetros do `game-designer` em `app/src/params/`. Contrato e salário não entram na Etapa 1 (mercado e finanças são Etapa 3).
+**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado). Campos da Etapa 1: posição, 6 atributos por posição (1 a 99), nota geral, potencial (oculto na interface como número; ver o rótulo "promessa" em US-016), idade, forma, moral, fadiga, um traço de personalidade (líder, temperamental, profissional, ídolo da torcida), número da camisa. Tamanho do elenco, distribuição por posição e faixa de notas por porte são definidos em `docs/design/` (constante ou parâmetro): [jogadores › Geração de elencos](design/jogadores.md#geração-de-elencos). Contrato e salário não entram na Etapa 1 (mercado e finanças são Etapa 3).
 
 ### Critérios de aceite
 
@@ -208,7 +208,7 @@ Cenário: elenco completo e determinístico
   Dado a semente de um novo jogo
   Quando os 20 elencos são gerados duas vezes com a mesma semente
   Então os elencos são idênticos
-  E cada clube tem o número de jogadores e o mínimo por posição definidos nos parâmetros, incluindo goleiros
+  E cada clube tem o número de jogadores e o mínimo por posição definidos em docs/design/jogadores.md, incluindo goleiros
 
 Cenário: atributos dentro dos limites
   Dado qualquer jogador gerado
@@ -378,7 +378,7 @@ Cenário: metas de balanceamento
 
 **Prioridade:** Must
 **Depende de:** US-008
-**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado) (lesões influenciadas por fadiga, suspensão automática), [Cálculo da partida](PROJETO.md#cálculo-da-partida) (eventos), item "Lesões, suspensões e fadiga: 1 (simples)" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). Regra de suspensão: 3 amarelos ou 1 vermelho, como em [brasilidades › STJD](design/brasilidades.md#stjd-etapa-2-com-o-calendário-completo), com os números em `app/src/params/`. Pressão alta aumenta cartões ([Táticas](PROJETO.md#táticas)). Julgamento, efeito suspensivo e escalação irregular são Etapa 2.
+**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado) (lesões influenciadas por fadiga, suspensão automática), [Cálculo da partida](PROJETO.md#cálculo-da-partida) (eventos), item "Lesões, suspensões e fadiga: 1 (simples)" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). Regra de suspensão: 3 amarelos ou 1 vermelho, como em [brasilidades › STJD](design/brasilidades.md#stjd-etapa-2-com-o-calendário-completo), com os números definidos em `docs/design/` (constante ou parâmetro): [partida › Cartões e suspensão](design/partida.md#cartões-e-suspensão). Pressão alta aumenta cartões ([Táticas](PROJETO.md#táticas)). Julgamento, efeito suspensivo e escalação irregular são Etapa 2.
 
 ### Critérios de aceite
 
@@ -390,7 +390,7 @@ Cenário: vermelho tira o jogador e suspende
   E fica suspenso na rodada seguinte do clube
 
 Cenário: acúmulo de amarelos
-  Dado um jogador com amarelos acumulados um abaixo do limite do parâmetro
+  Dado um jogador com amarelos acumulados um abaixo do limite definido em docs/design/partida.md
   Quando recebe mais um amarelo numa partida
   Então fica suspenso na rodada seguinte e o contador volta a zero depois de cumprir
 
@@ -651,7 +651,7 @@ Cenário: tela do clube
 
 **Prioridade:** Must
 **Depende de:** US-004, US-009, US-010, US-015
-**Notas:** componente "card de jogador" de [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design). O número do potencial nunca aparece (só olheiros ou tempo; olheiros na Etapa 5). Decisão do CEO: jovens que se enquadram na regra do `game-designer` ([jogadores › Potencial](design/jogadores.md#potencial); limiares em `app/src/params/`) levam o rótulo "promessa", só o rótulo, nunca o número. Tabelas no celular: coluna fixa e estatísticas rolando para o lado.
+**Notas:** componente "card de jogador" de [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design). O número do potencial nunca aparece (só olheiros ou tempo; olheiros na Etapa 5). Decisão do CEO: jovens que se enquadram na regra do `game-designer` ([jogadores › Potencial](design/jogadores.md#potencial); limiares definidos em `docs/design/` (constante ou parâmetro), no mesmo documento) levam o rótulo "promessa", só o rótulo, nunca o número. Tabelas no celular: coluna fixa e estatísticas rolando para o lado.
 
 ### Critérios de aceite
 
@@ -672,7 +672,7 @@ Cenário: detalhe do jogador
   Então abre o card com os 6 atributos da posição, o traço de personalidade e gols e jogos na temporada
 
 Cenário: rótulo "promessa" sem o número
-  Dado um atleta que se enquadra na regra de promessa dos parâmetros e outro que não se enquadra
+  Dado um atleta que se enquadra na regra de promessa de docs/design/jogadores.md e outro que não se enquadra
   Quando o elenco e o card são mostrados
   Então só o primeiro mostra o rótulo "promessa" com ícone e texto do arquivo de conteúdo
   E a interface recebe do motor só o booleano de promessa, e nenhum número, faixa ou barra do potencial aparece em nenhuma tela

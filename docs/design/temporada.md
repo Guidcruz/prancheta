@@ -106,10 +106,12 @@ Recomendo a B: dá motivo para a última rodada importar também para quem está
 
 ## Parâmetros (`app/src/params/season.json`)
 
-| Parâmetro             | Valor inicial                  | Por quê                                      |
-| --------------------- | ------------------------------ | -------------------------------------------- |
-| `season.fifaWeeks`    | [9, 21, 25, 30]                | pausas que dão respiro e recuperação total   |
-| `season.midweekWeeks` | [3, 7, 12, 16, 19, 23, 28, 32] | rodadas com 3 dias de descanso pedem rotação |
+| Parâmetro             | Valor inicial                  | Faixa válida                                        | Por quê                                      |
+| --------------------- | ------------------------------ | --------------------------------------------------- | -------------------------------------------- |
+| `season.fifaWeeks`    | [9, 21, 25, 30]                | semanas inteiras de 1 a 34, crescentes, sem repetir | pausas que dão respiro e recuperação total   |
+| `season.midweekWeeks` | [3, 7, 12, 16, 19, 23, 28, 32] | semanas inteiras de 1 a 34, crescentes, sem repetir | rodadas com 3 dias de descanso pedem rotação |
+
+**Regras que cruzam as duas listas** (o validador recusa ao carregar): nenhuma semana de Data FIFA tem rodada no meio da semana, e `34 − (nº de semanas FIFA) + (nº de quartas) = 38` rodadas. Mais uma Data FIFA pede mais uma quarta, e vice-versa.
 
 **Constantes:** 20 clubes, 38 rodadas, 3/1/0 pontos, 4 rebaixados, ordem de desempate, metas por porte.
 
