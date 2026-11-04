@@ -52,7 +52,7 @@ Obs. para o developer: na frase de abertura de "Perguntas", falta espaço antes 
 | 71'    | Gol do Corinto, em cabeceio na área.                |
 | 89'    | Gol do Flamingo, aos 89: a vitória está perto.      |
 
-O placar e os lances batem: três gols (2 a 1) nos minutos 34, 71 e 89. Mantido sem mudança; só o lance de 89' fica melhor sem "a vitória está perto", que já é o gol decisivo: **"Gol do Flamingo, aos 89, de cabeça, na segunda trave."**
+O placar e os lances batem: três gols (2 a 1) nos minutos 34, 71 e 89. Só o lance de 89' muda: "a vitória está perto" repete o placar, então fica **"Gol do Flamingo, aos 89, de cabeça, na segunda trave."**
 
 **Termômetro de exemplo:** 72 de 100, "animada". Legenda: Termômetro de exemplo, de 0 a 100.
 
@@ -134,9 +134,9 @@ Ajuste: em "Quando chega" use "Etapa 1a, na carreira" e "Etapa 4, na carreira e 
 
 ## Rótulos de componente
 
-| Componente                 | Texto                                                                                                                                                                                                                 |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Link padrão do cartão      | Saiba mais (mantido)                                                                                                                                                                                                  |
-| Coluna da tabela de etapas | O que entra (mantido)                                                                                                                                                                                                 |
-| Escudo (`aria-label`)      | Escudo: {nome do clube}. Troca "Escudo do Flamingo" (certo) por "Escudo do Corinto" (certo) e "Escudo do Palmeral"; o artigo "do" erra com nomes como "São Paulão" ou "Santões" ("Escudo: São Paulão" resolve todos). |
-| Tabela com rolagem         | {nome da tabela} (tabela com rolagem) (mantido)                                                                                                                                                                       |
+| Componente                 | Texto                                                                                                                                              |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Link padrão do cartão      | Saiba mais (mantido)                                                                                                                               |
+| Coluna da tabela de etapas | O que entra (mantido)                                                                                                                              |
+| Escudo (`aria-label`)      | Escudo: {nome do clube}. O artigo de "Escudo do …" erra o gênero com nomes como "Santões" ou "São Paulão"; os dois pontos resolvem todos os casos. |
+| Tabela com rolagem         | {nome da tabela} (tabela com rolagem) (mantido)                                                                                                    |
