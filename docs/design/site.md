@@ -1,5 +1,7 @@
 # Site público: mapa, páginas e componentes
 
+**Status:** aprovado pelo CEO em 2026-11-04, com as três opções da seção "Tokens" (tema `dia` pela preferência do sistema, grupo `layout` nos tokens, `@astrojs/sitemap`).
+
 Especificação do `ux-designer` para o site em `site/` (Astro, só pt-BR). Define a estrutura, a ordem das seções, o tipo de conteúdo e os componentes; o texto final é do `tech-writer`, em `docs/content/site/`. Nome, slogan, logo, cores, domínio e contatos vêm sempre de `config/prancheta.config.ts`; cores, fontes, raios e espaços só de `app/src/tokens.css` (gerado de `design/tokens.json`).
 
 Princípios: celular primeiro (360px), leitura com uma mão, cara de estádio à noite (tema `noite`), simples antes de bonito. Sem capturas de tela até existirem telas do jogo: a parte visual vem dos escudos gerados, do logo e da tipografia.
@@ -37,7 +39,7 @@ A rota `/roadmap/` fica como está (o devlog e posts antigos já apontam para el
 
 ### Rodapé (todas as páginas)
 
-Três blocos empilhados no celular, em linha no desktop: (1) aviso "jogo independente, clubes e jogadores fictícios" e versão (`config.version`); (2) links: Privacidade, Apoiar, RSS do devlog, repositório (só se `config.contacts.repository` não for vazio); (3) contato (só se `supportEmail` não for vazio). Links do rodapé com alvo ≥ 44px (padding vertical, não só a altura da linha).
+Três blocos empilhados no celular, em linha no desktop: (1) aviso "jogo independente, clubes e jogadores fictícios" e versão (`config.version`); (2) links: Privacidade, Apoiar, RSS do devlog, Discussions (só se `config.contacts.discussionsUrl` não for vazio), repositório (só se `config.contacts.repository` não for vazio); (3) contato (só se `supportEmail` não for vazio). Links do rodapé com alvo ≥ 44px (padding vertical, não só a altura da linha).
 
 ### Pular para o conteúdo
 
@@ -101,7 +103,7 @@ Para cada seção: objetivo e tipo de conteúdo. "CTA" é chamada para ação; u
 
 1. **Abertura**. Título e campo nenhum de busca (poucas perguntas; a página é curta).
 2. **Grupos de perguntas**: Sobre o jogo (preço, celular e computador, instalar como app, idiomas), Clubes e jogadores (por que fictícios), Privacidade (o que fica no aparelho, sem cookies, sem analytics com identificação, sem anúncios de terceiros, link para a política), Online (quando chega, conta anônima, sem chat livre), Apoio (como apoiar, "Patrocine aqui"). Conteúdo: Pergunta (acordeão com `<details>/<summary>`, funciona sem JS, `summary` ≥ 48px, ícone de seta além do texto).
-3. **Não achou?** Contato se `supportEmail` existir; senão, link para o devlog e o repositório (se houver).
+3. **Não achou?** Link para o canal de Discussions (de `config.contacts.discussionsUrl`, se preenchido) e contato se `supportEmail` existir; senão, link para o devlog e o repositório (se houver).
 
 ## Componentes Astro reutilizáveis
 
@@ -156,7 +158,7 @@ O layout `Base.astro` já aceita `title` e `description`; acrescentar:
 | Clubes    | Clubes                  | clubes fictícios em trocadilho e escudos gerados           |
 | Perguntas | Perguntas frequentes    | preço, celular, privacidade, online                        |
 
-Também: `sitemap.xml` (via `@astrojs/sitemap`, se o CEO aprovar a dependência; senão, gerado à mão no build) e `robots.txt` simples.
+Também: `sitemap.xml` via `@astrojs/sitemap` (dependência aprovada pelo CEO em 2026-11-04) e `robots.txt` simples apontando para ele.
 
 ## Privacidade e terceiros
 
@@ -164,10 +166,21 @@ Também: `sitemap.xml` (via `@astrojs/sitemap`, se o CEO aprovar a dependência;
 - Nenhuma chamada a terceiros: fontes por `@fontsource` (já é assim), ícones como SVG inline no repositório, nada de CDN.
 - Se um dia houver contagem de visitas, só agregada e sem identificação, com ADR e revisão do `security-auditor`.
 
-## Tokens
+## Tokens e tema
 
-Nenhum token novo é necessário: os pares de cor do StatusBadge, cards, botões e tabela já existem. Observações para o `developer`:
+Decisões do CEO em 2026-11-04:
 
-- O `Base.astro` atual usa tamanhos de fonte literais em `h1`, `h2` e `h3` (40/28/20px); trocar por `titulo`, `subtitulo` e `display-xl` da escala, e a família só por `--font-display`/`--font-body`.
-- Larguras de layout (720px e 1040px) são medidas de página, não tokens de cor/fonte/raio; ficam como estão. Se o CEO quiser padronizar, a proposta é um grupo `layout` em `design/tokens.json` (`content-max`, `wide-max`), opcional.
-- O site segue no tema `noite` fixo (como hoje); o tema `dia` por `prefers-color-scheme` fica como proposta para depois, já que exige conferir todas as páginas nos dois temas.
+1. **Tema `dia` no site**: segue `prefers-color-scheme: light`; quem prefere escuro (ou não declara preferência) fica no `noite`, que continua padrão. Todas as páginas são conferidas nos dois temas (contraste ≥ 4,5:1).
+2. **Grupo `layout` em `design/tokens.json`**: `content-max` = 720px (coluna de leitura) e `wide-max` = 1040px (grades de recursos e escudos). Viram `--layout-content-max` e `--layout-wide-max` em `tokens.css`.
+3. **`@astrojs/sitemap`** como dependência do site.
+
+Nenhum outro token novo: os pares de cor do StatusBadge, cards, botões e tabela já existem.
+
+## Pedido ao `developer`
+
+1. **Tokens**: acrescentar o grupo `layout` (`content-max: 720px`, `wide-max: 1040px`) em `design/tokens.json`, ajustar `scripts/tokens-to-css.mjs` se ele não emitir grupos novos, e rodar `npm run tokens`; nunca editar `app/src/tokens.css` à mão. Trocar os `720px` literais do `Base.astro` por `var(--layout-content-max)`.
+2. **Tema `dia`**: no site, aplicar `data-theme="dia"` quando `prefers-color-scheme: light` (sem script: via `@media` sobre os tokens do tema `dia`, ou o mecanismo que o `tokens.css` já oferecer); `theme-color` com uma `<meta>` por esquema.
+3. **Escudos**: expor o alias `@engine` (para `app/src/engine/`) no Vite do Astro, para que `app/src/lib/generators/shield.ts` rode no build; SVG gerado no frontmatter, sem JS no navegador.
+4. **Tipografia**: trocar os tamanhos fixos de `h1`, `h2` e `h3` do `Base.astro` (40, 28 e 20px) pelos estilos de texto (`display-xl`, `titulo`, `subtitulo`).
+5. **Sitemap**: instalar `@astrojs/sitemap`, ligar no `astro.config` (usa o `site` já derivado de `config.domain`) e criar `robots.txt`.
+6. **Discussions**: o link do canal de Discussions (rodapé e "Não achou?" das Perguntas) vem de um campo novo de link em `config/prancheta.config.ts` (sugestão: `contacts.discussionsUrl`, vazio até existir); com o campo vazio, o link não aparece. Mexer em `config/` é caminho `/feature`.
