@@ -1,0 +1,77 @@
+---
+import { config } from '../../../config/prancheta.config.ts';
+const base = config.paths.site;
+const { supportEmail, repository, discussionsUrl } = config.contacts;
+---
+
+<footer class="foot">
+  <div class="inner caption">
+    <div>
+      <p>
+        {config.name} é um jogo independente, em desenvolvimento. Clubes e jogadores são fictícios.
+      </p>
+      <p>Versão {config.version}</p>
+    </div>
+    <ul class="links">
+      <li>
+        <a href={`${base}privacidade/`}>Privacidade</a>
+      </li>
+      <li>
+        <a href={`${base}apoiar/`}>Apoiar</a>
+      </li>
+      <li>
+        <a href={`${base}devlog/rss.xml`}>RSS do devlog</a>
+      </li>
+      {discussionsUrl && (
+        <li>
+          <a href={discussionsUrl}>Discussões</a>
+        </li>
+      )}
+      {repository && (
+        <li>
+          <a href={repository}>Repositório</a>
+        </li>
+      )}
+    </ul>
+    {supportEmail && (
+      <p>
+        Contato: <a href={`mailto:${supportEmail}`}>{supportEmail}</a>
+      </p>
+    )}
+  </div>
+</footer>
+<style>
+  .foot {
+    border-top: 1px solid var(--line);
+    color: var(--ink-muted);
+  }
+  .inner {
+    max-width: var(--layout-wide-max);
+    margin: 0 auto;
+    padding: var(--space-6) var(--space-4);
+    display: grid;
+    gap: var(--space-4);
+  }
+  p {
+    margin: 0 0 var(--space-1);
+  }
+  .links {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0 var(--space-3);
+  }
+  .links a {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
+  @media (min-width: 720px) {
+    .inner {
+      grid-template-columns: 1fr auto auto;
+      align-items: start;
+    }
+  }
+</style>

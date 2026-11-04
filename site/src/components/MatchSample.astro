@@ -1,0 +1,68 @@
+---
+interface Props {
+  home: string;
+  away: string;
+  score: [number, number];
+  events: { minute: number; text: string }[];
+}
+const { home, away, score, events } = Astro.props;
+---
+
+<figure class="match">
+  <figcaption class="caption">Exemplo ilustrativo, com clubes fictícios</figcaption>
+  <p class="score" aria-label={`${home} ${score[0]}, ${away} ${score[1]}`}>
+    <span class="team subtitulo">{home}</span>
+    <span class="placar-xl">
+      {score[0]} x {score[1]}
+    </span>
+    <span class="team subtitulo">{away}</span>
+  </p>
+  <ol class="events">
+    {events.map((e) => (
+      <li>
+        <span class="numero minute">{e.minute}'</span>
+        <span>{e.text}</span>
+      </li>
+    ))}
+  </ol>
+</figure>
+<style>
+  .match {
+    margin: 0;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+  figcaption {
+    color: var(--ink-muted);
+  }
+  .score {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: var(--space-2) 0 var(--space-4);
+    text-align: center;
+  }
+  .team {
+    color: var(--ink-muted);
+  }
+  .events {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: var(--space-2);
+  }
+  li {
+    display: flex;
+    gap: var(--space-3);
+    border-top: 1px solid var(--line);
+    padding-top: var(--space-2);
+  }
+  .minute {
+    flex: none;
+    min-width: 4ch;
+    color: var(--grass);
+  }
+</style>

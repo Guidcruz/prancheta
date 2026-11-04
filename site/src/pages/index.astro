@@ -2,56 +2,234 @@
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
 import { getCollection } from 'astro:content';
+import Button from '../components/Button.astro';
+import FeatureCard from '../components/FeatureCard.astro';
+import StepList from '../components/StepList.astro';
+import ShieldGrid from '../components/ShieldGrid.astro';
+import StageStrip from '../components/StageStrip.astro';
+import PostCard from '../components/PostCard.astro';
+import FinalCta from '../components/FinalCta.astro';
+import { clubsById, exampleClubIds } from '../lib/shields';
+import { stages } from '../lib/roadmap';
+
 const posts = (await getCollection('devlog'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
   .slice(0, 3);
 const base = config.paths.site;
+const clubs = clubsById(exampleClubIds);
 ---
 
-<Base>
+<Base description={config.slogan['pt-BR']} wide>
   <section class="hero">
-    <p class="rotulo" style="color: var(--floodlight)">
-      Em desenvolvimento, em público
+    <p class="rotulo kicker">Em desenvolvimento, em público</p>
+    <h1>{config.name}</h1>
+    <p class="lead">{config.slogan['pt-BR']}</p>
+    <p class="intro">
+      Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela.
+      Tudo no celular, em rodadas de poucos minutos.
     </p>
-    <h1 class="display-xl">{config.name}</h1>
-    <p class="lead subtitulo">{config.slogan['pt-BR']}</p>
+    <p class="actions">
+      <Button href={`${config.paths.game}/`}>Abrir a versão atual (v{config.version})</Button>
+      <Button href={`${base}roadmap/`} variant="secondary">
+        Ver o roteiro
+      </Button>
+    </p>
+    <p class="caption muted notice">
+      O {config.name} está em desenvolvimento, em público. A versão que você abre hoje ainda é bem
+      pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.
+    </p>
+    <ShieldGrid clubs={clubs} size={56} decorative />
+  </section>
+
+  <section class="prose" aria-labelledby="oque">
+    <h2 id="oque">O que é</h2>
     <p>
-      Um jogo de técnico de futebol no estilo dos clássicos, só com clubes fictícios em trocadilho,
-      para jogar no celular em rodadas de poucos minutos. Carreira offline e ligas com amigos.
+      O {config.name} é um jogo de técnico de futebol para jogar no navegador e instalar no celular,
+      como um app.
     </p>
     <p>
-      <a class="btn botao" href={config.paths.game + '/'}>
-        Abrir a versão atual (v{config.version})
+      Os clubes são todos fictícios, com nomes em trocadilho: você reconhece o seu time pela cidade,
+      pelas cores e pela torcida, sem nenhuma marca oficial.
+    </p>
+    <p>
+      Não precisa de cadastro. Não tem pegadinha. Tem rodada, tabela e aquele frio na barriga de
+      domingo.
+    </p>
+  </section>
+
+  <section aria-labelledby="destaques">
+    <h2 id="destaques">Destaques</h2>
+    <ul class="grid-cards">
+      <li>
+        <FeatureCard
+          title="Rodadas de poucos minutos"
+          icon="phone"
+          stage="1a"
+          href={`${base}o-jogo/`}
+          linkLabel="Conhecer o jogo"
+        >
+          <p>Escale, ajuste a tática e jogue uma rodada no tempo de uma viagem de ônibus.</p>
+        </FeatureCard>
+      </li>
+      <li>
+        <FeatureCard
+          title="Carreira sem internet"
+          icon="offline"
+          stage="1a"
+          href={`${base}modos/`}
+          linkLabel="Ver os modos de jogo"
+        >
+          <p>Sua carreira fica no seu aparelho e funciona offline.</p>
+        </FeatureCard>
+      </li>
+      <li>
+        <FeatureCard
+          title="Liga com os amigos"
+          icon="users"
+          stage="1b"
+          showStage
+          href={`${base}modos/`}
+          linkLabel="Ver os modos de jogo"
+        >
+          <p>Cada um com um clube, no mesmo campeonato, por código de convite.</p>
+        </FeatureCard>
+      </li>
+      <li>
+        <FeatureCard
+          title="Clubes com cara de Brasil"
+          icon="shield"
+          stage="1a"
+          href={`${base}clubes/`}
+          linkLabel="Ver os clubes"
+        >
+          <p>
+            Flamingo, Corinto, Coritibom e mais: clubes fictícios que a gente reconhece de longe.
+          </p>
+        </FeatureCard>
+      </li>
+    </ul>
+  </section>
+
+  <section class="prose" aria-labelledby="comecar">
+    <h2 id="comecar">Como começar</h2>
+    <StepList
+      steps={[
+        { title: 'Abra o jogo', text: 'Use o botão acima, no celular.' },
+        {
+          title: 'Instale na tela inicial',
+          text: 'O navegador oferece; no iPhone, pelo botão de compartilhar.',
+        },
+        { title: 'Escolha um clube', text: 'E jogue a primeira rodada.' },
+      ]}
+    />
+    <p class="after">
+      Hoje o passo 3 ainda não existe: a escolha de clube e as rodadas estão sendo construídas. Veja
+      o estado de cada coisa no <a href={`${base}roadmap/`}>roteiro</a>.
+    </p>
+  </section>
+
+  <section class="prose" aria-labelledby="jeito">
+    <h2 id="jeito">Jeito de fazer</h2>
+    <ul>
+      <li>
+        <strong>Sem pagar para ganhar.</strong> Nunca. Sem caixa de sorteio, sem recompensa por
+        tempo de uso.
+      </li>
+      <li>
+        <strong>Seus dados são seus.</strong> O modo offline não pede cadastro, e nada sai do seu
+        aparelho.
+      </li>
+      <li>
+        <strong>Feito em público.</strong> Um post por semana no devlog, com o que foi feito e o que
+        vem a seguir.
+      </li>
+    </ul>
+  </section>
+
+  <section aria-labelledby="onde">
+    <h2 id="onde">Onde estamos</h2>
+    <StageStrip {stages} />
+    <p>
+      <a class="inline-link" href={`${base}roadmap/`}>
+        Ver o roteiro completo
       </a>
     </p>
-    <p class="caption" style="color: var(--ink-muted)">
-      A versão atual é a zero: uma tela e um botão. Cada semana ela cresce. Veja o{' '}
-      <a href={`${base}roadmap/`}>roteiro</a>.
-    </p>
   </section>
-  <section>
-    <h2>Devlog</h2>
-    {posts.map((p) => (
-      <article class="card" style="margin-bottom: var(--space-3)">
-        <p class="caption" style="color: var(--ink-muted); margin: 0">
-          {p.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa {p.data.etapa}
-        </p>
-        <h3 style="margin-top: var(--space-1)">
-          <a href={`${base}devlog/${p.id}/`}>{p.data.title}</a>
-        </h3>
-        <p style="margin: 0">{p.data.summary}</p>
-      </article>
-    ))}
+
+  <section aria-labelledby="ultimas">
+    <h2 id="ultimas">Últimas do devlog</h2>
+    <ul class="grid-cards three">
+      {posts.map((p) => (
+        <li>
+          <PostCard post={p} />
+        </li>
+      ))}
+    </ul>
     <p>
-      <a href={`${base}devlog/`}>Todos os posts</a>
+      <a class="inline-link" href={`${base}devlog/`}>
+        Todos os posts
+      </a>
     </p>
   </section>
+
+  <section class="prose">
+    <p>
+      Quer acompanhar? Leia o <a href={`${base}devlog/`}>devlog</a>, veja o
+      <a href={`${base}roadmap/`}>roteiro</a> e tire dúvidas nas
+      <a href={`${base}perguntas/`}>perguntas frequentes</a>.
+    </p>
+    <p>
+      Quer ajudar o projeto a seguir de pé? Veja como <a href={`${base}apoiar/`}>apoiar</a>.
+    </p>
+  </section>
+
+  <FinalCta />
+
+  <p class="caption muted brand-note">
+    O nome {config.name} é provisório, até a conferência de marca. Clubes, jogadores e
+    patrocinadores do jogo são fictícios.
+  </p>
 </Base>
 <style>
   .hero {
-    padding: var(--space-6) 0;
+    padding: var(--space-6) 0 var(--space-4);
+    max-width: var(--layout-content-max);
+  }
+  .kicker {
+    display: inline-block;
+    background: var(--floodlight);
+    color: var(--on-floodlight);
+    padding: var(--space-1) var(--space-3);
+    border-radius: var(--radius-pill);
+    margin: 0 0 var(--space-3);
   }
   .lead {
-    color: var(--ink-muted);
+    margin: 0 0 var(--space-4);
+  }
+  .intro {
+    margin-bottom: var(--space-4);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-3);
+    margin: 0 0 var(--space-4);
+  }
+  .notice {
+    margin-bottom: var(--space-6);
+  }
+  .prose {
+    max-width: var(--layout-content-max);
+  }
+  .after {
+    margin-top: var(--space-3);
+  }
+  .inline-link {
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
+  .brand-note {
+    margin-top: var(--space-6);
   }
 </style>

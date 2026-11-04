@@ -3,7 +3,11 @@ import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
 ---
 
-<Base title="Apoiar" description={`Como apoiar o desenvolvimento do ${config.name}.`}>
+<Base
+  title="Apoiar"
+  current="apoiar"
+  description={`Como apoiar o desenvolvimento do ${config.name}.`}
+>
   <h1>Apoiar o projeto</h1>
   <p>
     O {config.name} é feito por uma pessoa, no tempo livre, e vai ser gratuito. O jogo nunca terá

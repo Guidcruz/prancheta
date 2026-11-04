@@ -8,7 +8,11 @@ const posts = (await getCollection('devlog')).sort(
 const base = config.paths.site;
 ---
 
-<Base title="Devlog" description={`Diário de desenvolvimento do ${config.name}, desde o dia 1.`}>
+<Base
+  title="Devlog"
+  current="devlog"
+  description={`Diário de desenvolvimento do ${config.name}, desde o dia 1.`}
+>
   <h1>Devlog</h1>
   <p>Um post por semana, mesmo que curto, e um por etapa concluída. Desde o dia 1.</p>
   {posts.map((p) => (

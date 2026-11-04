@@ -1,40 +1,17 @@
 ---
 import Base from '../layouts/Base.astro';
-import md from '../../../docs/roadmap.md?raw';
-// Fonte única: docs/roadmap.md (a tabela). Mudou lá, muda aqui no próximo build.
-const rows = md
-  .split('\n')
-  .filter((l) => l.startsWith('|') && !/^\|\s*:?-{3,}/.test(l) && !l.startsWith('| Etapa'))
-  .map((l) =>
-    l
-      .split('|')
-      .slice(1, -1)
-      .map((c) => c.trim().replace(/`/g, '')),
-  );
-const nota = md.split('\n').find((l) => l.startsWith('Sem datas')) ?? '';
+import StageTable from '../components/StageTable.astro';
+import { stages, roadmapNote } from '../lib/roadmap';
+// Single source: docs/roadmap.md (the table). Changed there, changed here on the next build.
 ---
 
-<Base title="Roteiro" description="As etapas do jogo, cada uma com uma versão jogável.">
+<Base
+  title="Roteiro"
+  current="roadmap"
+  description="As etapas do jogo, cada uma com uma versão jogável."
+  wide
+>
   <h1>Roteiro</h1>
-  <p>Cada etapa termina com uma versão jogável, publicada aqui. {nota}</p>
-  <table>
-    <thead>
-      <tr>
-        <th>Etapa</th>
-        <th>Nome</th>
-        <th>Entrega</th>
-        <th>Estado</th>
-      </tr>
-    </thead>
-    <tbody>
-      {rows.map(([n, nome, entrega, estado]) => (
-        <tr>
-          <td class="numero">{n}</td>
-          <td class="body-strong">{nome}</td>
-          <td>{entrega}</td>
-          <td>{estado}</td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
+  <p>Cada etapa termina com uma versão jogável, publicada aqui. {roadmapNote}</p>
+  <StageTable stages={stages} />
 </Base>

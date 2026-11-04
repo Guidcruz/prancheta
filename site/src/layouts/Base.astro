@@ -6,33 +6,52 @@ import '@fontsource/barlow/600.css';
 import '@fontsource/barlow-condensed/600.css';
 import '@fontsource/barlow-condensed/700.css';
 import '../../../app/src/tokens.css';
+import '../theme-auto.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
 interface Props {
   title?: string;
   description?: string;
+  /** Menu entry to mark as the current page (see lib/nav.ts). */
+  current?: string;
+  /** Open Graph type; posts use "article". */
+  ogType?: 'website' | 'article';
+  /** Wide pages (grids) use the wide column. */
+  wide?: boolean;
 }
-const { title, description = config.slogan['pt-BR'] } = Astro.props;
+const {
+  title,
+  description = config.slogan['pt-BR'],
+  current,
+  ogType = 'website',
+  wide = false,
+} = Astro.props;
 const fullTitle = title ? `${title} · ${config.name}` : config.name;
 const base = config.paths.site;
-const nav = [
-  { href: base, label: 'Início' },
-  { href: `${base}devlog/`, label: 'Devlog' },
-  { href: `${base}roadmap/`, label: 'Roteiro' },
-  { href: config.paths.game + '/', label: `Jogar v${config.version}` },
-  { href: `${base}apoiar/`, label: 'Apoiar' },
-];
+const canonical = new URL(Astro.url.pathname, `https://${config.domain}`).href;
 ---
 
 <!doctype html>
-<html lang="pt-BR" data-theme="noite">
+<html lang="pt-BR">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>{fullTitle}</title>
     <meta name="description" content={description} />
+    <link rel="canonical" href={canonical} />
     <meta property="og:title" content={fullTitle} />
     <meta property="og:description" content={description} />
-    <meta property="og:type" content="website" />
-    <meta name="theme-color" content={config.colors.background} />
+    <meta property="og:type" content={ogType} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:site_name" content={config.name} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta
+      name="theme-color"
+      content={config.colors.background}
+      media="(prefers-color-scheme: dark)"
+    />
+    <meta name="theme-color" content="#f3f5f7" media="(prefers-color-scheme: light)" />
     <link rel="icon" href={`${config.paths.game}/icons/icon.svg`} type="image/svg+xml" />
     <link
       rel="alternate"
@@ -42,30 +61,14 @@ const nav = [
     />
   </head>
   <body>
-    <header class="top">
-      <a class="brand" href={base}>
-        <span class="titulo">{config.name}</span>
-      </a>
-      <nav aria-label="Principal">
-        {nav.map((n) => (
-          <a href={n.href} class="rotulo">
-            {n.label}
-          </a>
-        ))}
-      </nav>
-    </header>
-    <main>
+    <a class="skip rotulo" href="#conteudo">
+      Pular para o conteúdo
+    </a>
+    <SiteHeader {current} />
+    <main id="conteudo" class:list={{ wide }}>
       <slot />
     </main>
-    <footer class="caption">
-      <p>
-        {config.name} é um jogo independente em desenvolvimento. Clubes, jogadores e veículos são
-        fictícios.
-      </p>
-      <p>
-        <a href={`${base}privacidade/`}>Privacidade</a> · <a href={`${base}devlog/rss.xml`}>RSS</a>
-      </p>
-    </footer>
+    <SiteFooter />
   </body>
 </html>
 <style is:global>
@@ -74,86 +77,79 @@ const nav = [
   *::after {
     box-sizing: border-box;
   }
+  html {
+    scroll-behavior: smooth;
+  }
   body {
     margin: 0;
     background: var(--surface-0);
     color: var(--ink);
-    font-family: var(--font-body);
-    font-size: 16px;
-    line-height: 24px;
+    font: var(--type-body);
   }
   main {
-    max-width: 720px;
+    max-width: var(--layout-content-max);
     margin: 0 auto;
     padding: var(--space-6) var(--space-4) var(--space-8);
   }
+  main.wide {
+    max-width: var(--layout-wide-max);
+  }
+  main.wide > * {
+    max-width: var(--layout-wide-max);
+  }
   a {
     color: var(--info);
+    text-decoration: underline;
+    text-underline-offset: 3px;
   }
-  .top {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: var(--space-4);
+  a.botao,
+  nav a,
+  .links a {
+    text-decoration: none;
+  }
+  :focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .skip {
+    position: absolute;
+    left: var(--space-2);
+    top: -100px;
+    z-index: 20;
     padding: var(--space-3) var(--space-4);
-    border-bottom: 1px solid var(--line);
     background: var(--surface-1);
-    flex-wrap: wrap;
-  }
-  .brand {
-    text-decoration: none;
     color: var(--ink);
-  }
-  nav {
-    display: flex;
-    gap: var(--space-3);
-    flex-wrap: wrap;
-  }
-  nav a {
-    color: var(--ink-muted);
-    text-decoration: none;
+    border-radius: var(--radius-md);
     min-height: var(--touch);
-    display: inline-flex;
-    align-items: center;
-    padding: 0 var(--space-2);
   }
-  nav a:hover {
-    color: var(--grass);
-  }
-  footer {
-    max-width: 720px;
-    margin: 0 auto;
-    padding: var(--space-6) var(--space-4);
-    color: var(--ink-muted);
-    border-top: 1px solid var(--line);
+  .skip:focus {
+    top: var(--space-2);
   }
   h1 {
-    font: 700 40px/44px var(--font-display);
+    font: var(--type-display-xl);
+    text-transform: uppercase;
     margin: 0 0 var(--space-4);
+    hyphens: auto;
+    overflow-wrap: break-word;
   }
   h2 {
-    font: 700 28px/32px var(--font-display);
+    font: var(--type-titulo);
     margin: var(--space-8) 0 var(--space-3);
   }
   h3 {
-    font: 600 20px/24px var(--font-display);
+    font: var(--type-subtitulo);
     margin: var(--space-6) 0 var(--space-2);
+  }
+  p,
+  ul,
+  ol {
+    margin-top: 0;
   }
   .card {
     background: var(--surface-1);
     border: 1px solid var(--line);
     border-radius: var(--radius-md);
     padding: var(--space-4);
-  }
-  .btn {
-    display: inline-flex;
-    align-items: center;
-    min-height: var(--touch);
-    padding: 0 var(--space-6);
-    border-radius: var(--radius-pill);
-    background: var(--grass);
-    color: var(--on-grass);
-    text-decoration: none;
   }
   table {
     border-collapse: collapse;
@@ -167,10 +163,13 @@ const nav = [
     vertical-align: top;
   }
   th {
-    font: 700 12px/16px var(--font-display);
+    font: var(--type-rotulo);
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--ink-muted);
+  }
+  td.numero {
+    font-variant-numeric: tabular-nums;
   }
   code {
     background: var(--surface-2);
@@ -181,5 +180,38 @@ const nav = [
   img {
     max-width: 100%;
     border-radius: var(--radius-md);
+  }
+  .muted {
+    color: var(--ink-muted);
+  }
+  .lead {
+    font: var(--type-subtitulo);
+    color: var(--ink-muted);
+  }
+  .grid-cards {
+    display: grid;
+    gap: var(--space-4);
+    padding: 0;
+    margin: 0;
+    list-style: none;
+  }
+  @media (min-width: 720px) {
+    .grid-cards {
+      grid-template-columns: repeat(2, 1fr);
+    }
+    .grid-cards.three {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    html {
+      scroll-behavior: auto;
+    }
+    *,
+    *::before,
+    *::after {
+      transition: none !important;
+      animation: none !important;
+    }
   }
 </style>

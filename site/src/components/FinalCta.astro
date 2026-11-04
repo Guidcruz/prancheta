@@ -1,0 +1,48 @@
+---
+import Button from './Button.astro';
+import { config } from '../../../config/prancheta.config.ts';
+interface Props {
+  title?: string;
+  primary?: { href: string; label: string };
+  secondary?: { href: string; label: string };
+}
+const {
+  title = 'Pronto para a prancheta?',
+  primary = { href: `${config.paths.game}/`, label: `Abrir a versão atual (v${config.version})` },
+  secondary = { href: `${config.paths.site}apoiar/`, label: 'Apoiar o projeto' },
+} = Astro.props;
+---
+
+<section class="cta" aria-labelledby="cta-title">
+  <h2 id="cta-title" class="titulo">
+    {title}
+  </h2>
+  <p class="actions">
+    <Button href={primary.href}>{primary.label}</Button>
+    {secondary && (
+      <Button href={secondary.href} variant="secondary">
+        {secondary.label}
+      </Button>
+    )}
+  </p>
+</section>
+<style>
+  .cta {
+    margin-top: var(--space-8);
+    padding: var(--space-6) var(--space-4);
+    text-align: center;
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+  }
+  h2 {
+    margin: 0 0 var(--space-4);
+  }
+  .actions {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: var(--space-3);
+    margin: 0;
+  }
+</style>

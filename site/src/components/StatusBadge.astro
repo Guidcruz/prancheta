@@ -1,0 +1,51 @@
+---
+import Icon from './Icon.astro';
+import { statusForStage, type FeatureStatus } from '../lib/roadmap';
+interface Props {
+  /** Explicit status; when omitted it is derived from `stage` (docs/roadmap.md). */
+  status?: FeatureStatus;
+  stage?: string;
+  /** Show "Etapa X" in the label. */
+  showStage?: boolean;
+}
+const { stage, showStage = false } = Astro.props;
+const status: FeatureStatus = Astro.props.status ?? (stage ? statusForStage(stage) : 'planejado');
+const labels: Record<FeatureStatus, string> = {
+  disponivel: 'Disponível',
+  'em-desenvolvimento': 'Em desenvolvimento',
+  planejado: 'Planejado',
+};
+const icons = { disponivel: 'check', 'em-desenvolvimento': 'gear', planejado: 'calendar' } as const;
+const label = labels[status] + (showStage && stage ? ` · Etapa ${stage}` : '');
+---
+
+<span class:list={['badge', 'rotulo', status]}>
+  <Icon name={icons[status]} size={14} />
+  {label}
+</span>
+<style>
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    height: 24px;
+    padding: 0 var(--space-2);
+    border-radius: var(--radius-pill);
+    border: 1px solid transparent;
+    white-space: nowrap;
+    vertical-align: middle;
+  }
+  .disponivel {
+    background: var(--grass-soft);
+    color: var(--ink);
+  }
+  .em-desenvolvimento {
+    background: var(--floodlight);
+    color: var(--on-floodlight);
+  }
+  .planejado {
+    background: var(--surface-2);
+    color: var(--ink);
+    border: 1px dashed var(--ink-muted);
+  }
+</style>

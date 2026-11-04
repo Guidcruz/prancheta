@@ -1,0 +1,133 @@
+---
+import Base from '../layouts/Base.astro';
+import { config } from '../../../config/prancheta.config.ts';
+import ShieldGrid from '../components/ShieldGrid.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import FinalCta from '../components/FinalCta.astro';
+import { clubsById, exampleClubIds } from '../lib/shields';
+const clubs = clubsById(exampleClubIds);
+const divisions = [
+  { name: 'Série A', clubs: '20 clubes fictícios', stage: '1a' },
+  { name: 'Séries B a D', clubs: 'lista ainda não aprovada', stage: '2' },
+  {
+    name: 'Outros países da América do Sul',
+    clubs: 'Argentina, Uruguai, Colômbia, Chile e mais',
+    stage: '5',
+  },
+];
+---
+
+<Base
+  title="Clubes"
+  current="clubes"
+  description="Todos os clubes são fictícios, com nomes em trocadilho e escudos desenhados por código. Conheça a ideia por trás dos times do Prancheta."
+  wide
+>
+  <div class="prose">
+    <h1>Clubes</h1>
+    <p class="lead">
+      No {config.name}, todos os clubes são fictícios. O nome é um trocadilho: você bate o olho e
+      sabe quem é, mas ninguém copiou marca nenhuma.
+    </p>
+    <p>
+      Cidade, cores e apelido da torcida estão lá. O que você não vai achar é escudo, uniforme ou
+      nome oficial de clube de verdade.
+    </p>
+
+    <h2>Como um clube nasce</h2>
+    <ul>
+      <li>
+        <strong>Nome:</strong> um trocadilho que lembra o original. Exemplos: Flamingo, Corinto,
+        Palmeral, Coritibom, Botafogueira.
+      </li>
+      <li>
+        <strong>Cidade e cores:</strong> as do lugar, para a torcida se reconhecer.
+      </li>
+      <li>
+        <strong>Escudo:</strong> desenhado por código, combinando formato, cores, faixas e um
+        símbolo simples (estrela, letra, animal). Nunca imita um escudo real.
+      </li>
+      <li>
+        <strong>Uniforme:</strong> listras, faixas, gola e metades, com as cores do clube.
+      </li>
+      <li>
+        <strong>Estádio:</strong> também com nome próprio, como o Estádio Maracatu.
+      </li>
+      <li>
+        <strong>Torcida:</strong> apelido de arquibancada e uma rivalidade que esquenta os
+        clássicos.
+      </li>
+    </ul>
+  </div>
+
+  <section aria-labelledby="escudos">
+    <h2 id="escudos">Alguns escudos de exemplo</h2>
+    <ShieldGrid {clubs} />
+    <p class="caption muted note">
+      Cada escudo é gerado por código, e é sempre o mesmo para o mesmo clube. Os 20 da Série A serão
+      apresentados aqui assim que a lista for aprovada para publicação.
+    </p>
+  </section>
+
+  <div class="prose">
+    <h2>Jogadores</h2>
+    <p>
+      Todos fictícios, com nome, nacionalidade, posição e atributos gerados pelo jogo. O rosto
+      também é gerado por código (formato, tom de pele, cabelo, barba). Se algum nome parecer o de
+      alguém real, é coincidência, e a gente corrige.
+    </p>
+
+    <h2>Quem está no jogo</h2>
+    <table>
+      <thead>
+        <tr>
+          <th scope="col">Divisão</th>
+          <th scope="col">Clubes</th>
+          <th scope="col">Estado</th>
+        </tr>
+      </thead>
+      <tbody>
+        {divisions.map((d) => (
+          <tr>
+            <td class="body-strong">{d.name}</td>
+            <td>{d.clubs}</td>
+            <td>
+              <StatusBadge stage={d.stage} showStage />
+            </td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+    <p>
+      Os clubes se dividem em grandes, médios e pequenos, e o porte muda o tamanho da torcida e da
+      história.
+    </p>
+
+    <h2>Aviso</h2>
+    <p>
+      Clubes, jogadores, estádios e patrocinadores do jogo são fictícios. Qualquer semelhança é
+      trocadilho, não ligação.
+    </p>
+
+    <h2>Patrocinadores</h2>
+    <p>
+      Marcas reais poderão aparecer só em espaços do cenário (placas em volta do campo, placar,
+      telas de carregamento) e sempre identificadas como publicidade. Enquanto nenhum espaço estiver
+      vendido, o jogo mostra marcas fictícias. Quer anunciar? Em breve haverá uma página para isso.
+    </p>
+  </div>
+
+  <FinalCta />
+</Base>
+<style>
+  .prose {
+    max-width: var(--layout-content-max);
+  }
+  .note {
+    margin-top: var(--space-4);
+    max-width: var(--layout-content-max);
+  }
+  .prose ul {
+    padding-left: var(--space-6);
+  }
+</style>

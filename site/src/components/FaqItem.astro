@@ -1,0 +1,55 @@
+---
+import Icon from './Icon.astro';
+interface Props {
+  question: string;
+}
+const { question } = Astro.props;
+---
+
+<details class="faq">
+  <summary>
+    <span class="body-strong">{question}</span>
+    <Icon name="chevron" size={20} />
+  </summary>
+  <div class="answer">
+    <slot />
+  </div>
+</details>
+<style>
+  .faq {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+  summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-3);
+    min-height: 48px;
+    padding: var(--space-2) var(--space-4);
+    cursor: pointer;
+    list-style: none;
+  }
+  summary::-webkit-details-marker {
+    display: none;
+  }
+  summary :global(svg) {
+    flex: none;
+    transition: transform 150ms;
+  }
+  details[open] summary :global(svg) {
+    transform: rotate(180deg);
+  }
+  .answer {
+    padding: 0 var(--space-4) var(--space-4);
+  }
+  .answer :global(p) {
+    margin: 0 0 var(--space-2);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    summary :global(svg) {
+      transition: none;
+    }
+  }
+</style>

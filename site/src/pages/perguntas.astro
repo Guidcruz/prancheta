@@ -1,0 +1,224 @@
+---
+import Base from '../layouts/Base.astro';
+import { config } from '../../../config/prancheta.config.ts';
+import FaqItem from '../components/FaqItem.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import FinalCta from '../components/FinalCta.astro';
+const base = config.paths.site;
+const { supportEmail, discussionsUrl, repository } = config.contacts;
+---
+
+<Base
+  title="Perguntas frequentes"
+  current="perguntas"
+  description="Preço, celular, privacidade, clubes fictícios e online: respostas diretas às dúvidas mais comuns sobre o Prancheta, sem enrolação."
+>
+  <h1>Perguntas frequentes</h1>
+  <p class="lead">
+    Respostas diretas, sem enrolação. Não achou a sua? Veja o <a href={`${base}devlog/`}>devlog</a>{' '}
+    ou o<a href={`${base}roadmap/`}>roteiro</a>.
+  </p>
+
+  <section>
+    <h2>O jogo</h2>
+    <div class="list">
+      <FaqItem question={`O que é o ${config.name}?`}>
+        <p>
+          Um jogo de técnico de futebol para o navegador, que também se instala no celular. Você
+          escala o time, escolhe a tática e acompanha as partidas. Os clubes são fictícios.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Já dá para jogar?`}>
+        <p>
+          Ainda não de verdade. A versão atual é a zero: uma tela e um botão. O jogo está em
+          desenvolvimento e cresce toda semana. O <a href={`${base}roadmap/`}>roteiro</a> mostra o
+          estado de cada etapa, sem data prometida.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Os clubes e jogadores são reais?`}>
+        <p>
+          Não. Os clubes têm nomes em trocadilho (Flamingo, Corinto, Coritibom) e os jogadores são
+          gerados pelo jogo. Não há escudo, uniforme, estádio ou pessoa real no jogo.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Por que não tem os times de verdade?`}>
+        <p>
+          Porque nome, escudo e imagem de atletas têm dono. Preferimos fazer um jogo original e
+          livre de problema. O trocadilho faz o resto.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Em quais idiomas?`}>
+        <p>O jogo está sendo feito em português, espanhol e inglês. Este site é só em português.</p>
+      </FaqItem>
+    </div>
+  </section>
+
+  <section>
+    <h2>Custo e anúncios</h2>
+    <div class="list">
+      <FaqItem question={`O jogo é grátis?`}>
+        <p>Sim. Jogar não custa nada, e o projeto não vende vantagem dentro do jogo.</p>
+      </FaqItem>
+      <FaqItem question={`Vai ter pop-up, vídeo ou anúncio no meio do jogo?`}>
+        <p>
+          Não. A publicidade fica só no cenário, como placas em volta do campo, no placar e em telas
+          de carregamento. Sempre identificada como anúncio, nunca interrompendo a partida. Marcas
+          de apostas e bebidas alcoólicas ficam de fora. Enquanto não houver patrocinador real, o
+          jogo mostra marcas fictícias.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Dá para pagar para ganhar?`}>
+        <p>
+          Não, e nunca vai dar. Sem caixa de sorteio, sem item aleatório pago, sem recompensa por
+          tempo de uso.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Como ajudo o projeto?`}>
+        <p>
+          Pela página <a href={`${base}apoiar/`}>Apoiar</a>. O apoio é voluntário e, no futuro,
+          poderá render itens de enfeite (como nome nos créditos), nunca vantagem em campo. Apoio
+          com recompensas está <StatusBadge stage="6" showStage />. O jogo é grátis; apoiar é
+          opcional.
+        </p>
+      </FaqItem>
+    </div>
+  </section>
+
+  <section>
+    <h2>Dados e privacidade</h2>
+    <div class="list">
+      <FaqItem question={`Preciso criar conta ou me cadastrar?`}>
+        <p>
+          Na carreira offline, não. Tudo fica no seu aparelho. Para a liga online, haverá uma conta
+          anônima: apelido mais a biometria do celular. <StatusBadge stage="1b" showStage />
+        </p>
+      </FaqItem>
+      <FaqItem question={`Que dados vocês guardam?`}>
+        <p>
+          No modo offline, nenhum: seu save fica só no seu navegador ou no app instalado. No online,
+          só o apelido e uma chave de acesso do aparelho. Sem e-mail, telefone, nome real ou data de
+          nascimento. Não há rastreamento nem anúncio que identifique pessoas, e por isso também não
+          há banner de cookies.
+        </p>
+      </FaqItem>
+      <FaqItem question={`E a LGPD?`}>
+        <p>
+          Coletar o mínimo é a nossa forma de respeitar a lei. Os detalhes, em linguagem simples,
+          estão na página de <a href={`${base}privacidade/`}>Privacidade</a>.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Crianças e adolescentes podem jogar?`}>
+        <p>
+          O jogo foi pensado para ser seguro para menores: sem caixa de sorteio, sem recompensa por
+          tempo de uso, sem chat de texto livre. No online, só mensagens prontas e emojis, que dá
+          para desligar, com apelidos filtrados e botão de denúncia. A meta é a classificação
+          indicativa Livre.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Perdi o código de recuperação. E agora?`}>
+        <p>
+          Sem o código e sem o aparelho, a conta online não tem como ser recuperada. É o preço de
+          não pedirmos seus dados. Guarde o código em lugar seguro. A carreira offline não depende
+          de conta.
+        </p>
+      </FaqItem>
+    </div>
+  </section>
+
+  <section>
+    <h2>Internet, celular e saves</h2>
+    <div class="list">
+      <FaqItem question={`Preciso de internet?`}>
+        <p>
+          Para a carreira, não: ela funciona offline. Para a liga online, sim. A primeira abertura
+          do jogo precisa de conexão para baixar o app.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Funciona no celular?`}>
+        <p>Foi feito para o celular, para jogar com uma mão. Também roda no computador.</p>
+      </FaqItem>
+      <FaqItem question={`Como instalo na tela inicial?`}>
+        <p>
+          Abra o jogo no navegador do celular e use a opção "Instalar" ou "Adicionar à tela
+          inicial". No iPhone, pelo botão de compartilhar do Safari. Instalar ajuda o navegador a
+          não apagar o seu progresso.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Meu progresso pode se perder?`}>
+        <p>
+          Pode acontecer se o navegador limpar os dados do site, principalmente no iPhone. Por isso
+          o jogo salva sozinho ao fim de cada rodada (guarda as 3 últimas versões), pede ao
+          navegador para não apagar e deixa você exportar o save para um arquivo. Exporte de vez em
+          quando. Salvar entre aparelhos pela internet está <StatusBadge stage="4" showStage />.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Posso jogar o mesmo save em dois aparelhos?`}>
+        <p>
+          Pelo arquivo de save, sim: exporte em um e importe no outro. A sincronização automática
+          vem depois.
+        </p>
+      </FaqItem>
+    </div>
+  </section>
+
+  <section>
+    <h2>Projeto</h2>
+    <div class="list">
+      <FaqItem question={`Quando sai a versão completa?`}>
+        <p>
+          Não prometemos data. Cada etapa recebe uma estimativa quando a anterior termina. O ritmo
+          real aparece no <a href={`${base}devlog/`}>devlog</a>.
+        </p>
+      </FaqItem>
+      <FaqItem question={`O que vai ter, além da Série A?`}>
+        <p>
+          Séries B a D, Copa do Brasil, mercado, finanças, clubes de outros países da América do Sul
+          e ligas maiores. Cada coisa tem a sua etapa no <a href={`${base}roadmap/`}>roteiro</a>.
+        </p>
+      </FaqItem>
+      <FaqItem question={`O nome ${config.name} é definitivo?`}>
+        <p>
+          Por enquanto o nome é provisório, até a conferência de marca. Se mudar, o site e o jogo
+          mudam juntos.
+        </p>
+      </FaqItem>
+    </div>
+  </section>
+  <section>
+    <h2>Não achou a sua pergunta?</h2>
+    {discussionsUrl && (
+      <p>
+        Abra um tópico nas <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Lá cabem
+        relatos de erro, ideias e perguntas.
+      </p>
+    )}
+    {supportEmail && (
+      <p>
+        Ou escreva para <a href={`mailto:${supportEmail}`}>{supportEmail}</a>.
+      </p>
+    )}
+    {!discussionsUrl && !supportEmail && (
+      <p>
+        Acompanhe o <a href={`${base}devlog/`}>devlog</a>
+        {repository && (
+          <>
+            {' '}
+            ou veja o <a href={repository}>repositório</a>
+          </>
+        )}
+        .
+      </p>
+    )}
+  </section>
+
+  <FinalCta />
+</Base>
+<style>
+  .list {
+    display: grid;
+    gap: var(--space-2);
+  }
+  .lead {
+    margin-bottom: var(--space-4);
+  }
+</style>
