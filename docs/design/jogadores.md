@@ -140,6 +140,8 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 **Variação por carreira:** `strength` efetiva = `strength + Normal(0, generation.clubStrengthSd)`, com `generation.clubStrengthSd = 1.5` (decisão 3 de `balance-targets.md`).
 
+**Atualização anual:** a ordem dos clubes na escada de cada porte segue a colocação final do último campeonato real (regra do CEO; fórmula em `clubes-serie-a.md`, "Atualização anual e força pela colocação"). Os valores da escada não mudam.
+
 **Elenco de 25 (constante):** 3 GOL, 5 ZAG, 4 LAT, 4 VOL, 4 MEI, 5 ATA. O tamanho sai da composição; não há parâmetro de tamanho de elenco (ver "Parâmetros").
 
 | Grupo     | Quantos                                   | Overall                        | Idade                  |
