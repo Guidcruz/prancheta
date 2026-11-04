@@ -35,7 +35,7 @@ export const config = {
     text: '#f2f5f7',
   },
   /** Domain and paths. Until the real domain is chosen, the Pages subdomain is used. */
-  domain: 'prancheta.pages.dev',
+  domain: 'prancheta-ad1.pages.dev',
   paths: { site: '/', game: '/jogo' },
   /** Languages: the first is the default. Texts live in app/src/content/<lang>/. */
   languages: ['pt-BR', 'es', 'en'] as const,
