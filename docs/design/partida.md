@@ -381,6 +381,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Caso                                                | Regra                                                                                                                                  |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Escalação com jogador suspenso ou lesionado         | a interface bloqueia; se chegar ao motor, ele troca pelo melhor reserva disponível e registra aviso (escalação irregular é da Etapa 2) |
+| Escalação ausente (técnico não montou)              | a IA monta pelo perfil "Tradicional"                                                                                                   |
 | Melhor reserva para a vaga de um titular fora       | maior valor de seleção para a vaga (`ia-clubes.md`, "Escalação"); empate: maior overall, mais novo, menor ID                           |
 | Goleiro titular fora e nenhum goleiro no banco      | a mesma regra do reserva: entra o reserva de maior valor de seleção para o gol (`fit` 0,40); os 10 de linha ficam nas vagas            |
 | Sem goleiro e sem reserva nenhum no banco           | joga no gol o titular de linha com maior `physical`, com `fit` 0,40, e a vaga dele fica vazia                                          |
