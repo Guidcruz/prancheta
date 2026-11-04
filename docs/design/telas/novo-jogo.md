@@ -30,13 +30,13 @@ Ritmo, competições e as demais opções da P3 não aparecem. As escolhas viram
 
 - **Vazio:** não se aplica (os 20 clubes vêm do jogo).
 - **Inválido:** apelido vazio, só espaços ou longo demais: mensagem em texto sob o campo, "Começar" desabilitado com a mesma mensagem ligada ao botão; sem clube escolhido, a barra diz que falta escolher.
-- **Carregando:** ao tocar "Começar", tela de carregamento com SponsorSlot enquanto a carreira é gerada; "Começar" em `busy`, sem toque duplo.
+- **Carregando:** ao tocar "Começar", tela de carregamento com BrandSlot enquanto a carreira é gerada; "Começar" em `busy`, sem toque duplo.
 - **Erro:** falha ao gravar: ErrorState com "Tentar de novo"; nada criado pela metade.
 - **Offline:** nada muda.
 
 ## Componentes
 
-ScreenHeader, ClubOption, Crest, TextField, OptionGroup/OptionCard, Button, SponsorSlot (só no carregamento), ErrorState.
+ScreenHeader, ClubOption, Crest, TextField, OptionGroup/OptionCard, Button, BrandSlot (só no carregamento), ErrorState.
 
 ## Acessibilidade
 
@@ -44,6 +44,6 @@ ScreenHeader, ClubOption, Crest, TextField, OptionGroup/OptionCard, Button, Spon
 - Erro do apelido por texto e `aria-describedby`, não só borda vermelha.
 - Nomes de clube longos em es/en quebram em duas linhas, sem cortar.
 
-## Patrocínio
+## Marcas do cenário
 
-Só na tela de carregamento ao criar a carreira, e só se a espera existir.
+Só na tela de carregamento ao criar a carreira, e só se a espera existir (marca fictícia de `brandForSlot`).

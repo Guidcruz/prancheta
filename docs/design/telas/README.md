@@ -18,30 +18,30 @@ Catálogo de componentes compartilhados: [componentes.md](componentes.md).
 
 Prioridade herdada das histórias (Must, Should, Could). A ordem é a sugerida para implementar: cada tela usa componentes das anteriores e destrava um fluxo testável de ponta a ponta o quanto antes.
 
-| Ordem | Tela                                        | Histórias                      | Prioridade | Componentes principais                                               |
-| ----- | ------------------------------------------- | ------------------------------ | ---------- | -------------------------------------------------------------------- |
-| 1     | [Moldura e navegação](navegacao.md)         | US-015                         | Must       | AppShell, TabBar, PlayRoundButton, ScreenHeader                      |
-| 2     | [Início](inicio.md)                         | US-034, US-043                 | Must       | CareerCard, Button, Banner                                           |
-| 3     | [Novo jogo](novo-jogo.md)                   | US-014                         | Must       | TextField, ClubOption, OptionGroup, Button                           |
-| 4     | [Clube](clube.md)                           | US-015, US-026, US-028         | Must       | Crest, MatchCard, FanThermometer, NewsCard, LinkRow                  |
-| 5     | [Elenco](elenco.md)                         | US-016                         | Must       | ScrollTable, PlayerCard (linha), StatusBadge, SegmentedControl       |
-| 6     | [Jogador](jogador.md)                       | US-016                         | Must       | BottomSheet, PlayerCard (completo), Avatar, AttributeBar             |
-| 7     | [Escalação](escalacao.md)                   | US-017                         | Must       | LineupPitch, PlayerCard (linha), StrengthBars, StatusBadge           |
-| 8     | [Tática](tatica.md)                         | US-018                         | Must       | OptionGroup, LineupPitch (prévia), BottomSheet                       |
-| 9     | [Resumo da rodada](resumo-rodada.md)        | US-019, US-041                 | Must       | Scoreboard, StatusBadge, MatchCard, SponsorSlot                      |
-| 10    | [Tabela](tabela.md)                         | US-023                         | Must       | ScrollTable, TableRow, StatusBadge                                   |
-| 11    | [Calendário](calendario.md)                 | US-024                         | Must       | MatchCard, StatusBadge                                               |
-| 12    | [Partida](partida.md)                       | US-020, US-021, US-041         | Must       | MatchPitch, Scoreboard, CommentaryFeed, GoalCelebration, SponsorSlot |
-| 13    | [Intervalo](intervalo.md)                   | US-022                         | Should     | OptionGroup, Scoreboard                                              |
-| 14    | [Notícias](noticias.md)                     | US-028                         | Must       | NewsCard, EmptyState                                                 |
-| 15    | [Rede social](rede-social.md)               | US-029, US-044                 | Must       | SocialPost, Avatar, EmptyState                                       |
-| 16    | [Entrevista pós-jogo](entrevista.md)        | US-030                         | Should     | BottomSheet, OptionGroup                                             |
-| 17    | [Fim de temporada](fim-temporada.md)        | US-025, US-037                 | Must       | Crest, ScrollTable, TableRow, Banner                                 |
-| 18    | [Carreiras e backup (saves)](saves.md)      | US-034, US-035, US-036, US-037 | Must       | CareerCard, ConfirmSheet, Banner                                     |
-| 19    | [Preferências](preferencias.md)             | US-044, US-040, US-037         | Should     | Toggle, SegmentedControl, LinkRow                                    |
-| 20    | [Sobre](sobre.md)                           | US-043, US-039, US-045         | Must       | LinkRow, Banner, ConfirmSheet                                        |
-| 21    | [Tutorial](tutorial.md)                     | US-042                         | Should     | Coachmark, BottomSheet                                               |
-| 22    | [Erros e avisos globais](erros-e-avisos.md) | US-045, US-039, US-037, US-038 | Must       | ErrorState, Banner, BottomSheet                                      |
+| Ordem | Tela                                        | Histórias                      | Prioridade | Componentes principais                                             |
+| ----- | ------------------------------------------- | ------------------------------ | ---------- | ------------------------------------------------------------------ |
+| 1     | [Moldura e navegação](navegacao.md)         | US-015                         | Must       | AppShell, TabBar, PlayRoundButton, ScreenHeader                    |
+| 2     | [Início](inicio.md)                         | US-034, US-043                 | Must       | CareerCard, Button, Banner                                         |
+| 3     | [Novo jogo](novo-jogo.md)                   | US-014                         | Must       | TextField, ClubOption, OptionGroup, Button                         |
+| 4     | [Clube](clube.md)                           | US-015, US-026, US-028         | Must       | Crest, MatchCard, FanThermometer, NewsCard, LinkRow                |
+| 5     | [Elenco](elenco.md)                         | US-016                         | Must       | ScrollTable, PlayerCard (linha), StatusBadge, SegmentedControl     |
+| 6     | [Jogador](jogador.md)                       | US-016                         | Must       | BottomSheet, PlayerCard (completo), Avatar, AttributeBar           |
+| 7     | [Escalação](escalacao.md)                   | US-017                         | Must       | LineupPitch, PlayerCard (linha), StrengthBars, StatusBadge         |
+| 8     | [Tática](tatica.md)                         | US-018                         | Must       | OptionGroup, LineupPitch (prévia), BottomSheet                     |
+| 9     | [Resumo da rodada](resumo-rodada.md)        | US-019, US-041                 | Must       | Scoreboard, StatusBadge, MatchCard, BrandSlot                      |
+| 10    | [Tabela](tabela.md)                         | US-023                         | Must       | ScrollTable, TableRow, StatusBadge                                 |
+| 11    | [Calendário](calendario.md)                 | US-024                         | Must       | MatchCard, StatusBadge                                             |
+| 12    | [Partida](partida.md)                       | US-020, US-021, US-041         | Must       | MatchPitch, Scoreboard, CommentaryFeed, GoalCelebration, BrandSlot |
+| 13    | [Intervalo](intervalo.md)                   | US-022                         | Should     | OptionGroup, Scoreboard                                            |
+| 14    | [Notícias](noticias.md)                     | US-028                         | Must       | NewsCard, EmptyState                                               |
+| 15    | [Rede social](rede-social.md)               | US-029, US-044                 | Must       | SocialPost, Avatar, EmptyState                                     |
+| 16    | [Entrevista pós-jogo](entrevista.md)        | US-030                         | Should     | BottomSheet, OptionGroup                                           |
+| 17    | [Fim de temporada](fim-temporada.md)        | US-025, US-037                 | Must       | Crest, ScrollTable, TableRow, Banner                               |
+| 18    | [Carreiras e backup (saves)](saves.md)      | US-034, US-035, US-036, US-037 | Must       | CareerCard, ConfirmSheet, Banner                                   |
+| 19    | [Preferências](preferencias.md)             | US-044, US-040, US-037         | Should     | Toggle, SegmentedControl, LinkRow                                  |
+| 20    | [Sobre](sobre.md)                           | US-043, US-039, US-045         | Must       | LinkRow, Banner, ConfirmSheet                                      |
+| 21    | [Tutorial](tutorial.md)                     | US-042                         | Should     | Coachmark, BottomSheet                                             |
+| 22    | [Erros e avisos globais](erros-e-avisos.md) | US-045, US-039, US-037, US-038 | Must       | ErrorState, Banner, BottomSheet                                    |
 
 US-046 (estatísticas de uso, Could) não tem tela: se entrar, aparece só como uma linha informativa em Sobre. As histórias de motor, conteúdo e ferramentas (US-001 a US-013, US-027, US-031 a US-033) não têm tela própria; os geradores de US-002 e US-005 aparecem pelos componentes Crest e Avatar.
 
@@ -103,20 +103,27 @@ Resumo da rodada 38 ──► [Lembrete de exportar] ──► Fim de temporada 
 - A Partida usa a largura toda: campo à esquerda, narração e controles à direita.
 - Nenhuma tela tem rolagem horizontal da página; só as tabelas rolam por dentro, e só se não couberem.
 
-## Espaços de patrocínio (US-041)
+## Marcas fictícias no cenário (US-041, ADR-0015)
 
-Todos usam o componente SponsorSlot, rotulado como publicidade, com marca da lista de marcas fictícias (conteúdo aprovado pelo CEO), sem rede e sem contagem.
+O patrocínio real está desligado e não é anunciado (ADR-0015). Os espaços abaixo são **cenário**: mostram marcas fictícias da lista de conteúdo aprovada pelo CEO, como as placas de um estádio de verdade, e não são publicidade.
 
-| Espaço                   | Tela                                                                                                          |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------- |
-| Placas em volta do campo | Partida (desenhadas no canvas pelo MatchPitch)                                                                |
-| Placar                   | Partida e Intervalo (faixa do Scoreboard)                                                                     |
-| Resumo da rodada         | Resumo da rodada (faixa abaixo do placar)                                                                     |
-| Tela de carregamento     | Carregando ao criar a carreira e ao abrir a partida, se demorar                                               |
-| Nome do estádio          | Cabeçalho da Partida e do MatchCard, se o `game-designer`/`content-writer` derem nome patrocinado ao estádio  |
-| Camisa                   | Fica para quando houver prévia de uniforme maior que as bolinhas do campo; nenhuma tela da 1a tem esse espaço |
+- **Ponto único.** Toda marca exibida vem de `brandForSlot(slot, ctx, brands)` (pura e determinística: depende só do espaço, da rodada, do clube e do estádio; igual para todos). Nenhuma tela escreve nome de marca direto.
+- **Componente.** Todos usam o BrandSlot (ver [componentes.md](componentes.md)), que só desenha o `FictionalBrand` que recebe.
+- **Sem cara de anúncio.** Sem rótulo de "publicidade", sem link, sem rede, sem contagem de impressões. Nenhuma tela convida a anunciar ("Patrocine aqui", "Anuncie aqui", "Quer anunciar?" e parecidos não existem no jogo).
+- **Decorativo.** A marca não é alvo de toque nem recebe foco; o BrandSlot leva `aria-hidden="true"` (se for imagem, `alt=""`), porque não carrega informação de jogo. Nas placas do campo, já vale o `aria-hidden` do canvas; o resumo acessível da partida não cita marcas.
+- **Cores.** As duas cores da marca (`colors`) são dado da marca, como as cores do clube no escudo, e não cor de interface; moldura, fundo e espaçamento da faixa são só tokens. A faixa nunca parece botão (sem seta, sem sublinhado, sem sombra de elevação) e nunca disputa atenção com o primário da tela.
 
-Nenhum espaço fica em Início, Novo jogo, Elenco, Escalação, Tática, Preferências, Saves, Sobre ou Tutorial: são telas de decisão e de configuração, e o PROJETO lista só espaços de cenário.
+| Espaço (`SlotId`)                         | Tela                                                                                                                                                                         |
+| ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Placas em volta do campo (`pitch-boards`) | Partida (desenhadas no canvas pelo MatchPitch)                                                                                                                               |
+| Placar (`scoreboard`)                     | Partida e Intervalo (faixa do Scoreboard)                                                                                                                                    |
+| Resumo da rodada (`round-summary`)        | Resumo da rodada (faixa abaixo do placar)                                                                                                                                    |
+| Tela de carregamento (`loading`)          | Carregando ao criar a carreira, ao calcular a rodada, ao abrir a partida e na virada da temporada, só se a espera existir                                                    |
+| Camisa (`shirt`)                          | **Fica para depois da Etapa 1a**, a menos que o CEO decida diferente: só quando houver prévia de uniforme maior que as bolinhas do campo; nenhuma tela da 1a tem esse espaço |
+
+O nome do estádio não é espaço de marca: é o nome do estádio fictício que vem do conteúdo, sem marca e fora do `brandForSlot`.
+
+Nenhum espaço fica em Início, Novo jogo, Elenco, Escalação, Tática, Preferências, Saves, Sobre ou Tutorial (a tela de carregamento que abre a partir delas é outra tela): são telas de decisão e de configuração, e as marcas são só cenário.
 
 ## Telas da 1b (só a lista)
 

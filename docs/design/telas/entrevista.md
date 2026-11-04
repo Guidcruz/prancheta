@@ -32,6 +32,6 @@ BottomSheet, OptionGroup/OptionCard, Button.
 
 Foco na pergunta ao abrir; Esc e voltar equivalem a "Dispensar"; sem animação de subida com reduced motion.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

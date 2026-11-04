@@ -45,6 +45,6 @@ SegmentedControl, ScrollTable, PlayerCard (`row`), StatusBadge, Skeleton, ErrorS
 
 Todas as colunas visíveis sem rolagem; o card do jogador abre em painel à direita.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

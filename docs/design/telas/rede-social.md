@@ -33,6 +33,6 @@ ScreenHeader, SocialPost, Avatar, EmptyState, Skeleton, Banner (aviso de ficçã
 
 Humor do post nunca indicado só por cor; números com rótulo acessível ("N curtidas"); avatares decorativos (`aria-hidden`) porque o nome está ao lado.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

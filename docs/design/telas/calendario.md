@@ -11,7 +11,7 @@ Ver as 38 rodadas do clube, com o que vem e o que já foi, para planejar a rota�
 1. Lista de MatchCard do clube por rodada (adversário, mando, rótulo de data, placar e StatusBadge V/E/D nas jogadas, "Clássico" quando for).
 2. A próxima rodada em destaque (`state="next"`); a tela abre rolada nela.
 3. Separador entre os turnos.
-4. **Rodada (subtela):** ao tocar numa rodada jogada, abre a rodada inteira com os 10 resultados e autores dos gols (mesmo bloco do Resumo da rodada, sem patrocínio nem "Continuar").
+4. **Rodada (subtela):** ao tocar numa rodada jogada, abre a rodada inteira com os 10 resultados e autores dos gols (mesmo bloco do Resumo da rodada, sem a faixa de marca do cenário nem "Continuar").
 
 ## Ao alcance do polegar
 
@@ -32,6 +32,6 @@ MatchCard, StatusBadge, Crest, BottomSheet ou tela para a rodada, Button.
 
 Resultado sempre com letra/ícone e texto acessível; destaque da próxima rodada com rótulo, não só cor; rolagem automática até a próxima rodada sem animação suave com reduced motion.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

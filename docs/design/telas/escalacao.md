@@ -45,6 +45,6 @@ SegmentedControl, StrengthBars, LineupPitch, PlayerCard (`row`), StatusBadge, Ba
 
 Campo à esquerda e reservas à direita, lado a lado.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

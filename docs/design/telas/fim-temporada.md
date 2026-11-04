@@ -20,18 +20,18 @@ Encerrar a temporada com o campeão e a classificação final, e oferecer a pró
 
 ## Estados
 
-- **Carregando:** ao tocar "Próxima temporada", tela de carregamento com SponsorSlot enquanto a virada é calculada.
+- **Carregando:** ao tocar "Próxima temporada", tela de carregamento com BrandSlot enquanto a virada é calculada.
 - **Erro:** ErrorState; a carreira continua no fim da temporada anterior.
 - **Offline:** nada muda (exportar funciona offline).
 
 ## Componentes
 
-Crest, ScrollTable, TableRow, StatusBadge, Banner, Button, SponsorSlot (carregamento).
+Crest, ScrollTable, TableRow, StatusBadge, Banner, Button, BrandSlot (carregamento).
 
 ## Acessibilidade
 
 Com reduced motion, cerimônia estática (US-025); campeão anunciado em texto; zona com ícone e legenda.
 
-## Patrocínio
+## Marcas do cenário
 
-Só na tela de carregamento da virada.
+Só na tela de carregamento da virada (marca fictícia de `brandForSlot`).

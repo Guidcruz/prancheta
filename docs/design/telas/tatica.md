@@ -33,6 +33,6 @@ SegmentedControl, OptionGroup/OptionCard, LineupPitch (prévia), LinkRow, Bottom
 
 Cada grupo é um grupo de rádio com legenda; selecionado com ícone de marcado; reordenar a lista de cobradores também por botões subir/descer (não só arrastar); a prévia do campo é complementar ao texto.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

@@ -36,6 +36,6 @@ Coachmark, BottomSheet, Button.
 
 Foco vai para o passo atual; Esc fecha (equivale a "Pular"); o realce não depende só de cor (contorno com `focus`); sem animação de pulsar com reduced motion.
 
-## Patrocínio
+## Marcas do cenário
 
-Nenhum.
+Nenhuma.

@@ -12,8 +12,8 @@ Assiste aos lances (todos os visíveis ou só os principais), pausa para dar com
 
 ## Conteúdo (de cima para baixo, celular)
 
-1. Scoreboard: escudos, placar, minuto, faixa de patrocínio do placar; nome do estádio, se houver.
-2. MatchPitch (canvas): campo visto de cima, bolinhas nas cores dos uniformes, placas de patrocínio em volta.
+1. Scoreboard: escudos, placar, minuto, faixa de marca do cenário no placar (BrandSlot `scoreboard`, decorativa); nome do estádio, se houver.
+2. MatchPitch (canvas): campo visto de cima, bolinhas nas cores dos uniformes (sem marca na camisa: fica para depois da Etapa 1a, a menos que o CEO decida diferente), placas com marcas fictícias do cenário em volta.
 3. CommentaryFeed: narração com minuto, a mais recente em cima ou embaixo conforme o teste de uso (decidir na casca; recomendação: a mais recente embaixo, perto do polegar).
 4. Barra de controles fixa embaixo: Pausar/continuar, Comandos, Substituir (com o número restante), Tática, Pular.
 5. GoalCelebration sobre o campo quando há gol: escudo e nome do artilheiro.
@@ -26,7 +26,7 @@ Toda a barra de controles e as folhas. O placar fica em cima, só para leitura.
 
 ## Estados
 
-- **Carregando:** tela de carregamento com SponsorSlot se a simulação demorar.
+- **Carregando:** tela de carregamento com BrandSlot se a simulação demorar.
 - **Erro:** ErrorState com "Tentar de novo"; a rodada não é aplicada pela metade (US-019).
 - **Pausada:** controles visíveis, indicação "pausada" em texto.
 - **Offline:** nada muda.
@@ -34,7 +34,7 @@ Toda a barra de controles e as folhas. O placar fica em cima, só para leitura.
 
 ## Componentes
 
-Scoreboard, MatchPitch, CommentaryFeed, GoalCelebration, SponsorSlot, BottomSheet, OptionGroup, PlayerCard (`row`), Button, StatusBadge.
+Scoreboard, MatchPitch, CommentaryFeed, GoalCelebration, BrandSlot, BottomSheet, OptionGroup, PlayerCard (`row`), Button, StatusBadge.
 
 ## Acessibilidade
 
@@ -49,6 +49,6 @@ Scoreboard, MatchPitch, CommentaryFeed, GoalCelebration, SponsorSlot, BottomShee
 
 Campo à esquerda; placar, narração e controles numa coluna à direita.
 
-## Patrocínio
+## Marcas do cenário
 
-Placas do campo, faixa do placar, tela de carregamento e, se existir, nome do estádio.
+Placas do campo, faixa do placar e tela de carregamento, todas com marcas fictícias de `brandForSlot`, decorativas, sem rótulo de publicidade e sem link (ver [README](README.md#marcas-fictícias-no-cenário-us-041-adr-0015)). O nome do estádio não é espaço de marca. Marca na camisa só depois da Etapa 1a.
