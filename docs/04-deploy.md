@@ -4,9 +4,9 @@
 
 ## Ambientes
 
-| Ambiente | Para quê           | Onde                                                           | Publicado por                                     |
-| -------- | ------------------ | -------------------------------------------------------------- | ------------------------------------------------- |
-| local    | desenvolvimento    | `npm run dev`                                                  | qualquer um                                       |
+| Ambiente | Para quê           | Onde                                                               | Publicado por                                     |
+| -------- | ------------------ | ------------------------------------------------------------------ | ------------------------------------------------- |
+| local    | desenvolvimento    | `npm run dev`                                                      | qualquer um                                       |
 | prévia   | revisão de cada PR | `<branch>.prancheta-ad1.pages.dev` (Cloudflare Pages cria sozinho) | Cloudflare, no push da branch                     |
 | produção | jogadores          | `prancheta-ad1.pages.dev` (depois o domínio definitivo)            | Cloudflare, no merge na `main` (o merge é do CEO) |
 
