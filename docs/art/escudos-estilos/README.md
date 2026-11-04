@@ -41,3 +41,45 @@ Losango com faixa transversal com a sigla, símbolo no alto, padrão simples emb
 - Para manter compatibilidade, o `developer` pode manter o campo `symbol: 'star'|'ball'|'letter'` aceito por um ciclo (renderizando como hoje) e só usar o novo sorteio quando `style` vier.
 - Dois cuidados de produção: usar `var(--ink)` no contorno e `var(--font-display)` nos textos (o protótipo usa cores fixas e Arial Black); ids de `clipPath` precisam ser únicos por instância (o protótipo usa contador, produção deve usar o id do clube + estilo, já que a mesma página renderiza muitos escudos).
 - Sem dependência nova. Antes de produção, o `code-reviewer` deve conferir a regra de padrões reais já existente e o `content-writer`/CEO validar a lista de símbolos.
+
+---
+
+# Estilo A v2 (escolhido pelo CEO: Brasão, com o C só nas listas pequenas)
+
+Arquivos: `estilo-a-brasao-v2.html`, `estilo-a-grade-v2.png`, `estilo-a-zoom-v2.png`; código em `prototipo/escudos-v2.mjs` e `prototipo/gerar-v2.cjs`. Os arquivos da v1 foram mantidos.
+
+## Todos terão o mesmo formato? Não
+Seis formatos: clássico arredondado, francês com ponta, suíço com recorte no topo, oval, chanfrado e bolacha (com anel interno). O formato parte do hash do id; depois, clubes da mesma cidade ou rivais diretos (`rivals`) nunca repetem formato. Resultado nos 20 clubes: 0 conflitos; distribuição 6 francês, 5 suíço, 3 chanfrado, 2 clássico, 2 oval, 2 bolacha. A atribuição percorre os clubes em ordem de id, então depende da lista; o `developer` deve calcular uma vez (função `assignShapes(clubs)`) e guardar no dado derivado do clube, não por escudo renderizado. Se um clube novo entrar, formatos de clubes vizinhos podem mudar; para evitar isso, a proposta é fixar o formato num campo `crestShape` em `clubs.serie-a.json` depois da aprovação.
+
+## Brilho e profundidade
+- Gradiente vertical sutil na cor 1 (18% mais claro no topo, 22% mais escuro embaixo), sempre derivado da cor do clube.
+- Reflexo diagonal branco (42% para 4% de opacidade) no terço superior, recortado no formato.
+- Borda dupla com metal por porte: ouro (big), prata (medium), bronze (small), em gradiente, mais um fio metálico interno; contorno escuro por fora.
+- Sombra interna (traço escuro recortado) e sombra externa deslocada, sem `filter` (leve e barato no celular).
+- Estrelas com gradiente metálico e halo suave.
+- O metal é um acento neutro, como o dourado das estrelas; as cores do escudo continuam sendo as do clube. Contraste do símbolo: mínimo 3,14:1 nos 20 clubes (mesma regra da v1).
+
+## Versão pequena (largura ≤ 32 px)
+`brasaoV2(club, shape, size)` troca sozinho para a versão simples quando `size <= 32`: sem gradiente, sem reflexo, sem sombras, sem borda dupla; só formato, cor chapada, padrão grosso (diagonal, chevron, metade, faixa, chefe; padrões finos como xadrez, bolinhas, gomos e listras somem), medalhão com símbolo, contorno simples com fio metálico e no máximo 3 estrelas maiores. Para listas pequenas (tabela), o C continua como variante opcional.
+
+## Regra das estrelas (explícita)
+O protótipo v1 usava `ceil(títulos / 2,5)`, máximo 5 (12 títulos e 6 títulos davam resultados confusos). Regra proposta e usada na v2, com `titles.league`:
+
+| Títulos de liga | Estrelas |
+| --- | --- |
+| 0 | 0 |
+| 1 a 2 | 1 |
+| 3 a 4 | 2 |
+| 5 a 6 | 3 |
+| 7 a 9 | 4 |
+| 10 ou mais | 5 (máximo) |
+
+Na versão pequena, no máximo 3 estrelas. Só contam títulos de liga; copas não geram estrela. Os 5 níveis mantêm a ordem entre clubes, mas a partir de 10 títulos não se distingue (Palmeral, 12, e um clube de 10 ficam iguais); se o CEO quiser, pode-se mostrar o número ao lado da estrela na tela de clube.
+
+## Peso
+SVG médio nos 20 clubes: cerca de 3,1 KB na versão grande e 1,1 KB na pequena (sem compressão; gzip fica em cerca de 1 KB e 0,5 KB). PNG: grade 354 KB, zoom 123 KB.
+
+## O que muda no gerador (além do que está acima)
+- `shape` passa a ter 6 valores (`rounded|french|swiss|oval|chamfer|disc`); a chave `size` do clube entra no `ShieldSpec` para escolher o metal; `shieldSvg(spec, size)` ramifica em `size <= 32`.
+- IDs de gradiente e `clipPath` precisam ser únicos por instância e por clube (o protótipo usa contador; produção deve usar `clubId` + estilo).
+- Os testes existentes em `shield.test.ts` (snapshot do `shieldSpecFor`, escape de texto, cor inválida) precisam ser atualizados; o metal e os gradientes são constantes seguras, e a única cor vinda do dado continua passando por `safeColor`.

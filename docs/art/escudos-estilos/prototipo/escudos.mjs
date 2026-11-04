@@ -7,11 +7,11 @@ export function hash(str) {
   return h >>> 0;
 }
 // pequeno PRNG para sortear varias coisas do mesmo id
-function stream(id, salt) {
+export function stream(id, salt) {
   let s = hash(id + '|' + salt) || 1;
   return () => { s ^= s << 13; s >>>= 0; s ^= s >>> 17; s ^= s << 5; s >>>= 0; return s / 4294967296; };
 }
-const pick = (r, a) => a[Math.floor(r() * a.length)];
+export const pick = (r, a) => a[Math.floor(r() * a.length)];
 
 const lum = (hex) => {
   const v = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16) / 255)
@@ -31,8 +31,8 @@ export function onColor(bg, club) {
   return contrast(NEUTRAL_DARK, bg) >= contrast(NEUTRAL_LIGHT, bg) ? NEUTRAL_DARK : NEUTRAL_LIGHT;
 }
 
-const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
-const INK = '#0b1118', RIM = '#f2f5f7';
+export const esc = (t) => t.replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+export const INK = '#0b1118', RIM = '#f2f5f7';
 
 // ---- simbolos genericos (centro 0,0, caixa ~ -10..10) ----
 export const SYMBOLS = {
@@ -50,7 +50,7 @@ export const SYMBOLS = {
   crown: (c) => `<path d="M-10 8V-5l5 5 5-8 5 8 5-5V8Z" fill="${c}"/>`,
   wheel: (c) => `<g fill="none" stroke="${c}" stroke-width="2.4"><circle r="8"/><circle r="2" fill="${c}"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g>`,
 };
-const SYMBOL_KEYS = Object.keys(SYMBOLS);
+export const SYMBOL_KEYS = Object.keys(SYMBOLS);
 
 function star(cx, cy, r, c) {
   const p = [];
@@ -66,7 +66,7 @@ function starRow(n, cx, y, r, gap, c) {
 }
 
 // ---- padroes de campo (base c1, desenho c2) na caixa 0..64 x 0..72 ----
-const PATTERNS = {
+export const PATTERNS = {
   bend: (c) => `<path d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z" fill="${c}" opacity="0"/><path d="M-6 42 L42 -6 H62 L-6 62Z" fill="${c}"/>`,
   chevron: (c) => `<path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="${c}"/>`,
   check: (c) => { let s = ''; for (let y = 0; y < 8; y++) for (let x = 0; x < 8; x++) if ((x + y) % 2) s += `<rect x="${x * 8}" y="${y * 9}" width="8" height="9"/>`; return `<g fill="${c}">${s}</g>`; },
@@ -78,10 +78,10 @@ const PATTERNS = {
   chief: (c) => `<path d="M-4-4H70V26H-4Z" fill="${c}"/>`,
   dots: (c) => { let s = ''; for (let y = 0; y < 6; y++) for (let x = 0; x < 6; x++) s += `<circle cx="${x * 12 + (y % 2 ? 6 : 0)}" cy="${y * 13}" r="2.6"/>`; return `<g fill="${c}">${s}</g>`; },
 };
-const PATTERN_KEYS = Object.keys(PATTERNS);
+export const PATTERN_KEYS = Object.keys(PATTERNS);
 
 let uid = 0;
-function medallion(cx, cy, r, club, symKey, scale = 1) {
+export function medallion(cx, cy, r, club, symKey, scale = 1) {
   const [c1, c2] = club;
   const fill = lum(c1) > lum(c2) ? c1 : c2; // medalhao na cor mais clara
   const sym = onColor(fill, club);
