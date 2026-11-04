@@ -310,7 +310,7 @@ Somando os 22 jogadores do 4-4-2 (`Σ positionMult² = 12,1` por time), com 15% 
 - A premissa errada: `balance-targets.md` contava com "o time que ganha por 2 ou mais segura o resultado a partir dos 75'" para ficar abaixo do Poisson, mas a regra 5 só age com 1 gol de vantagem, e mesmo estendida ela tira menos de 1 ponto: a postura defensiva com pressão baixa corta só cerca de 5% das chances (`power` 0,95, `mid` 0,96), pouco para mudar o placar em 15 minutos.
 - Só com `baseChance` (menos gols) a goleada entra na faixa abaixo de 2,52 gols, na borda das duas metas ao mesmo tempo. Não serve.
 
-**Proposta para a T-016: regra nova "tirar o pé" + `baseChance`, um ajuste por vez.**
+**Proposta para a T-016: regra nova "tirar o pé" + `baseChance`, um ajuste por vez.** Aprovada pelo CEO em 2026-11-04 (regra "tirar o pé" para a T-016; meta de substituições de 3 a 4 por time; `ai.subEnergy` 85).
 
 1. **Regra (precisa do CEO e de código):** o time que ganha por 2 gols ou mais cria menos: `Power × match.comfortableLeadPower` no cálculo do `pChance` dele, com `comfortableLeadPower = 0.85` (faixa 0,7 a 1; 1 desliga). Vale para todos os times, técnico ou IA, por cima da postura: é o time que relaxa, não uma ordem do técnico. A `Defense` não muda, então quem perde não ganha chances a mais; o que cai é o terceiro e o quarto gol de quem já ganha. Medido: goleada 14,9% → 12,8%, diferença ≥ 5 1,5% → 1,0%, gols 2,71; 20 pontos mais forte 65,5% → 65,4%; zebra de 30 pontos sem mudança.
 2. **Depois, `match.baseChance` 0,090 → 0,087**, para levar os gols ao centro da meta. Medido com os dois: gols 2,63, goleada 12,1% a 12,3%, diferença ≥ 5 0,8% a 0,9%, 0×0 7,1% a 7,2%, empates 25,1%, mandante 46,9% a 47,0%, 20 pontos 64,9%.
