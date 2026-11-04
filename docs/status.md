@@ -32,6 +32,16 @@ Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do 
 8. Confirmar que o alias de modelo `fable` existe na sua instalação do Claude Code (usado pelo `project-auditor`); senão, trocar por `opus`.
 9. ~~Versão adaptada do `/kickoff` (passo 0) antes do primeiro uso.~~ Resolvido em 2026-11-04.
 
+## Decisões do CEO no `/kickoff` (2026-11-04)
+
+Telas da 1a (`docs/design/telas/`):
+
+1. Rótulo "promessa" para jovens de potencial alto: aprovado, só o rótulo, nunca o número (ajustar US-016).
+2. Ícones próprios, desenhados pelo `art-director` (`/assets arte ícones`); até a aprovação, conjunto aberto provisório atrás do componente `Icon`.
+3. Tipo de partida (animada, lances principais, só resultado) pode ser trocado durante a carreira, nas Preferências e ao jogar a rodada; o "Realismo" fica fixo após criar a carreira.
+4. Patrocínio vazio no jogo mostra marcas fictícias; "Patrocine aqui" só no site e na tela Sobre.
+5. Menu "Mais" fica no topo na 1a, com as mesmas entradas no pé da tela Clube; revisar na Etapa 3, quando o Mercado virar a 5ª aba.
+
 ## Próximo
 
 `/kickoff` para o `product-manager` e o `architect` transformarem `docs/PROJETO.md` em `docs/01-requirements.md` e `docs/02-architecture.md` da Etapa 1 (1a carreira offline, 1b online mínimo), com a quebra técnica.
