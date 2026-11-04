@@ -181,7 +181,7 @@ home(campo neutro) = 0 para os dois times
 
 **Valor aprovado e meta.** Os +5% de `match.homeBase` do ADR-0011 continuam sendo o valor aprovado; a fórmula de onde o mando entra é desta página, não do ADR. A meta é o mandante vencer cerca de 47% dos jogos (faixa 45% a 50%, `balance-targets.md`). Se o `/balance` com o mando na finalização sair da faixa, o ajuste é em `match.homeBase` dentro de 0 a 0,08, um por vez, sem mexer na regra.
 
-`fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase = 0.05` (ADR-0011, opção A, aceita pelo CEO; faixa 0 a 0,08: mudar dentro da faixa é ajuste de parâmetro, fora dela é ADR). Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os cartões ficam ×1,2 para os dois lados (`cards.derbyMult`). Altitude: Etapa 5.
+`fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase = 0.05` (ADR-0011, opção A, aceita pelo CEO; faixa 0 a 0,08: mudar dentro da faixa é ajuste de parâmetro, fora dela é ADR). Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os **amarelos** ficam ×1,2 para os dois lados (`cards.derbyMult`; o segundo amarelo também, porque é um amarelo; o vermelho direto não muda). Altitude: Etapa 5.
 
 ## Cansaço
 
@@ -228,11 +228,43 @@ pRed    = cards.redPerMinute × pressure.cards × positionMult × traitMult
 | -------------- | --- | --- | --- | --- | --- | --- |
 | `positionMult` | 0,2 | 1,3 | 1,1 | 1,3 | 0,9 | 0,8 |
 
-`traitMult` = 1,5 para temperamental, 1,0 para os outros. `cards.yellowPerMinute = 0.0020` (cerca de 4 amarelos por jogo), `cards.redPerMinute = 0.00003` (cerca de 0,06 vermelho direto; com os segundos amarelos, cerca de 0,18 por jogo). O fator 0,5 depois do amarelo é o jogador "jogando pendurado".
+`traitMult` = 1,5 para temperamental, 1,0 para os outros. `positionMult` é o da **posição da vaga** em que o jogador está no minuto, não o da posição natural (como os pesos de finalizador e assistência): um volante improvisado de lateral usa 1,1, e o jogador de linha que foi para o gol usa 0,2. O fator 0,5 depois do amarelo é o jogador "jogando pendurado" (`BOOKED_MULT`, constante por enquanto; ver "Calibragem dos vermelhos").
+
+`cards.yellowPerMinute = 0.0020` dá cerca de 4 amarelos por jogo (motor, T-010: 3,89). `cards.redPerMinute = 0.00003` dá cerca de 0,07 vermelho direto por jogo (motor: 0,068). Com o fator 0,5, o segundo amarelo dá cerca de 0,20 por jogo (motor: 0,205), e o total fica em cerca de 0,27, acima da meta de 0,11 a 0,25 de `balance-targets.md`.
 
 Segundo amarelo vira vermelho. Expulso sai e não é substituído; o time joga com um a menos (`match.missingPlayerPenalty = 0.07` em todos os setores por jogador a menos).
 
-**Suspensão na 1a:** 3 amarelos acumulados = 1 jogo de suspensão (e o contador zera); vermelho = 1 jogo. Os dois amarelos que viraram vermelho não entram no acúmulo. Suspensão por agressão, julgamento e recurso: Etapa 2 (STJD).
+**Eventos e números do segundo amarelo (regra em uma frase):** o segundo amarelo gera só o evento `red` com motivo `secondYellow`, sem um segundo `yellow`.
+
+- Nas estatísticas, o jogador fica com 1 amarelo e 1 vermelho; "amarelos por partida" conta eventos `yellow`, então o segundo amarelo não entra duas vezes.
+- Na nota, desconta −0,5 (o amarelo) e −1,5 (o vermelho), −2,0 no total. O vermelho direto de quem não tinha amarelo desconta só −1,5; o de quem já tinha amarelo, também −2,0. Cada cartão mostrado custa o seu valor, sem exceção.
+
+**Suspensão na 1a:** 3 amarelos acumulados = 1 jogo de suspensão (e o contador zera); vermelho = 1 jogo. Os dois amarelos que viraram vermelho não entram no acúmulo. As suspensões somam. Suspensão por agressão, julgamento e recurso: Etapa 2 (STJD).
+
+| Caso (contador antes do jogo)              | Contador depois | Suspensão                       |
+| ------------------------------------------ | --------------- | ------------------------------- |
+| 2, leva amarelo                            | 0               | 1 jogo (3 amarelos)             |
+| 2, leva amarelo e depois vermelho direto   | 0               | 2 jogos (3 amarelos + vermelho) |
+| 2, leva amarelo e depois o segundo amarelo | 2               | 1 jogo (só o vermelho)          |
+| qualquer, vermelho direto sem amarelo      | igual           | 1 jogo                          |
+
+- O campo "terceiro da série" do evento `yellow` diz o que valia **no momento** do cartão. Se o mesmo jogador leva depois o segundo amarelo, o `yellow` não é corrigido; a suspensão e o contador que valem são os do resultado da partida (`newSuspensions`, `yellowCounts`). A narração não erra o que importa: ele fica fora do próximo jogo nos dois casos.
+- Por quê o segundo amarelo pesa menos que o terceiro amarelo mais o vermelho direto: é a regra do futebol de verdade (os amarelos da expulsão não acumulam), e quem entende de futebol estranharia o contrário.
+
+### Calibragem dos vermelhos (para a T-016)
+
+A estimativa antiga deste documento ("cerca de 0,18 vermelho por jogo somando o segundo amarelo") estava errada no texto; a fórmula está certa e o motor a reproduz. A conta, para um jogador com taxa de amarelo `λ` por minuto em `T` minutos (cerca de 95, com acréscimos), com o segundo amarelo a `0,5 × λ`:
+
+```
+P(segundo amarelo) = (1 − exp(−λ × T / 2))²        (vale só com BOOKED_MULT = 0,5)
+λ = cards.yellowPerMinute × positionMult × traitMult × pressure.cards
+```
+
+Somando os 22 jogadores do 4-4-2 (`Σ positionMult² = 12,1` por time), com 15% de temperamentais e pressão média, dá 4,0 amarelos, 0,23 segundo amarelo e 0,07 vermelho direto por jogo; o motor dá 0,205, um pouco menos, porque a IA usa pressão baixa com o time cansado e quem sai de campo não leva mais cartão. Para o total dar 0,18 com 4 amarelos, o segundo amarelo teria de ficar em cerca de 0,12, o que o fator 0,5 não dá.
+
+- **Não é erro de regra:** é calibragem, e fica para a T-016 (um ajuste por vez, com o `/balance`).
+- **Botão certo:** o fator do pendurado. Ele é o único que mexe só no segundo amarelo: `cards.yellowPerMinute` tiraria amarelos (3,89 já está perto do centro de 4) e `cards.redPerMinute` só alcança 0,07 do total.
+- **Proposta para a T-016:** promover `BOOKED_MULT` a parâmetro, `cards.bookedMult`, faixa 0 a 1, e baixar de 0,5 para 0,30. Conta: segundo amarelo de 0,205 para cerca de 0,125, total de 0,27 para cerca de 0,19. Métrica que deve mudar: vermelhos por partida, para dentro de 0,11 a 0,25. Métricas que não podem piorar: amarelos por partida (3,5 a 4,5), gols por partida, goleada e zebra com 30 pontos.
 
 ## Substituições
 
@@ -243,6 +275,7 @@ Segundo amarelo vira vermelho. Expulso sai e não é substituído; o time joga c
 ## Capitão e cobradores
 
 - O técnico escolhe capitão, cobrador de pênalti e cobrador de falta como listas ordenadas de titulares (a tela de Tática): cobra o primeiro da lista que está em campo. Sem lista, ou com a lista toda fora de campo, cobra quem está em campo com maior `finishing` (pênalti) ou maior `technique` (falta); a braçadeira vai para o líder em campo, senão o mais velho.
+- **Desempates:** entre vários líderes em campo, o de maior overall (como em `ia-clubes.md`, "Escalação"); entre os mais velhos, entre cobradores com o mesmo atributo e entre líderes com o mesmo overall, o primeiro na ordem das vagas.
 - O capitão com traço **líder** dobra o efeito positivo da conversa do intervalo. É o único efeito mecânico do capitão na 1a; o resto é notícia.
 
 ## Conversa no intervalo
@@ -266,7 +299,7 @@ Primeiro tempo: `Rng.int(0, 3)` minutos; segundo tempo: `Rng.int(2, 6)`, sortead
 - **Finalizações:** oportunidades criadas. **No alvo:** gols + defesas do goleiro.
 - **Posse de bola** (só exibição): `clamp(50 + 1.5 × (MidSemMando(t) − MidSemMando(o)) + Rng.int(−3, 3), 30, 70)` para o mandante, calculada no fim de cada tempo (depois dos acréscimos) com o `Mid` daquele momento. `MidSemMando` é o `Mid` com `home(t) = 0` (energia, vagas vazias, pressão e conversa do intervalo continuam valendo). A posse do jogo é a média dos dois tempos arredondada para inteiro (`Math.round`; o meio ponto vai para o mandante), e o visitante fica com `100 − posse do mandante`.
   - Por quê sem mando: com o `Mid` cheio, dois times iguais davam 60,9% de posse ao mandante (2.000 duelos de força 70, termômetro 60), porque o mando multiplica o meio inteiro. Posse é só exibição; uma estatística que mostra 61% × 39% num jogo entre iguais engana quem lê. Sem o mando, iguais ficam em 50%.
-- **Minutos jogados:** só os regulamentares (1 a 90; o jogo inteiro vale 90). O minuto de acréscimo não conta. A evolução (`jogadores.md`, "Minutos") e a regra de "sem nota" usam essa conta. "Jogou", para a moral, é ter entrado em campo, mesmo só nos acréscimos (`jogadores.md`, "Moral por rodada").
+- **Minutos jogados:** só os regulamentares (1 a 90; o jogo inteiro vale 90). O minuto de acréscimo não conta. Quem está em campo no começo de um minuto jogou esse minuto, mesmo que saia nele: expulso ou lesionado no minuto 30 fica com 30 minutos; no 45+2, com 45. A evolução (`jogadores.md`, "Minutos") e a regra de "sem nota" usam essa conta. "Jogou", para a moral, é ter entrado em campo, mesmo só nos acréscimos (`jogadores.md`, "Moral por rodada").
 - **Nota do jogador** (0 a 10, uma casa decimal): `6.0 + 1.0 × gols + 0.6 × assistências + 0.3 × defesas (goleiro) − 0.25 × gols sofridos (goleiro e defesa) − 0.5 × amarelo − 1.5 × vermelho + 0.4 (vitória) / −0.4 (derrota) + ruído`, arredondada para uma casa e cortada entre 3,0 e 10,0. Quem jogou menos de 15 minutos regulamentares fica "sem nota" e não gasta sorteio.
   - **Ruído:** uniforme em [−0,5; 0,5) (`(Rng.next() × 2 − 1) × 0.5`), um sorteio por jogador com nota, mandante primeiro, cada time na ordem de entrada em campo.
   - **Gols sofridos:** contam para quem estava em campo, no momento do gol, na vaga do gol ou numa vaga do **setor** de defesa da formação (a tabela "Formações"). Ala do 3-5-2 e do 3-4-3 está no meio e não conta; LAT do 5-3-2 está na defesa e conta. Jogador de linha no gol conta como goleiro.
@@ -278,23 +311,24 @@ Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os
 
 - `kickoff` sai uma vez só, no minuto 0 do primeiro tempo. O começo do segundo tempo é o evento seguinte a `halftimeTalk`; a narração e a animação usam `halftime` para os dois lados do intervalo.
 - `stoppage` sai sempre no fim de cada tempo (minuto 45 ou 90, antes dos acréscimos), mesmo com 0 minuto: a narração precisa de um texto para "sem acréscimo", que acontece em 25% dos primeiros tempos.
+- **Pênalti:** sai sempre `penaltyAwarded` e depois `goal` (tipo pênalti) ou `penaltyMissed`; o pênalti nunca gera `chance`. O perdido usa a mesma divisão trave/defesa/fora da jogada e conta nas estatísticas como os outros chutes: é finalização; se o goleiro defende, é no alvo e defesa do goleiro (+0,3 na nota dele).
 
-| Evento           | Campos                                                                           | Importância (para "só lances principais")      |
-| ---------------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
-| `kickoff`        | —                                                                                | 1                                              |
-| `chance`         | finalizador, tipo (jogada/falta/pênalti), resultado (defesa/trave/fora), `pGoal` | 2 se `pGoal ≥ 0,25`, trave ou pênalti; senão 1 |
-| `goal`           | autor, assistência, tipo, placar depois                                          | 3                                              |
-| `penaltyAwarded` | cobrador                                                                         | 3                                              |
-| `penaltyMissed`  | cobrador, resultado (defesa/fora/trave)                                          | 3                                              |
-| `yellow`         | jogador, se é o terceiro da série (gera suspensão)                               | 1                                              |
-| `red`            | jogador, motivo (`direct` / `secondYellow`)                                      | 3                                              |
-| `injury`         | jogador, gravidade                                                               | 2                                              |
-| `substitution`   | sai, entra, motivo (`tactical` / `fatigue` / `injury`)                           | 1                                              |
-| `tacticChange`   | formação, postura, pressão novas; comando usado                                  | 1                                              |
-| `stoppage`       | minutos de acréscimo                                                             | 1                                              |
-| `halftime`       | placar                                                                           | 2                                              |
-| `halftimeTalk`   | opção escolhida                                                                  | 1                                              |
-| `fulltime`       | placar, estatísticas, notas, melhor em campo, marcadores (abaixo)                | 3                                              |
+| Evento           | Campos                                                                   | Importância (para "só lances principais") |
+| ---------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
+| `kickoff`        | —                                                                        | 1                                         |
+| `chance`         | finalizador, tipo (jogada/falta), resultado (defesa/trave/fora), `pGoal` | 2 se `pGoal ≥ 0,25` ou trave; senão 1     |
+| `goal`           | autor, assistência, tipo, placar depois                                  | 3                                         |
+| `penaltyAwarded` | cobrador                                                                 | 3                                         |
+| `penaltyMissed`  | cobrador, resultado (defesa/fora/trave)                                  | 3                                         |
+| `yellow`         | jogador, se é o terceiro da série (gera suspensão)                       | 1                                         |
+| `red`            | jogador, motivo (`direct` / `secondYellow`)                              | 3                                         |
+| `injury`         | jogador, gravidade                                                       | 2                                         |
+| `substitution`   | sai, entra, motivo (`tactical` / `fatigue` / `injury`)                   | 1                                         |
+| `tacticChange`   | formação, postura, pressão novas; comando usado                          | 1                                         |
+| `stoppage`       | minutos de acréscimo                                                     | 1                                         |
+| `halftime`       | placar                                                                   | 2                                         |
+| `halftimeTalk`   | opção escolhida                                                          | 1                                         |
+| `fulltime`       | placar, estatísticas, notas, melhor em campo, marcadores (abaixo)        | 3                                         |
 
 **Marcadores do resultado** (calculados no `fulltime`, para o `content-writer` escolher o template):
 
@@ -312,6 +346,19 @@ Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os
 - O `kind` de cada marcador é o nome da primeira coluna, sem tradução: é a chave que os templates do `content-writer` e a arquitetura (`docs/02-architecture.md`, `MatchMarker`) já usam.
 - **`golNoFim`, em detalhe.** "Mudar o resultado" é mudar quem está vencendo: de empate para vitória de alguém, de vitória para empate (o empate no fim conta) ou de um vencedor para o outro. O gol que só amplia a vantagem (2×1 para 3×1) e o que só diminui (2×0 para 2×1) não mudam. Vale o **último** gol que mudou o resultado: se ele saiu aos 85' ou depois (o 45+2 do primeiro tempo é minuto 45 e não conta; o 90+3 conta), o marcador sai com o time, o autor e o minuto desse gol. Exemplo: 1×1 aos 80', o mandante faz 2×1 aos 88' e o visitante empata aos 90+2' → `golNoFim` do visitante (o empate). 0×0, o mandante faz 1×0 aos 86' e 2×0 aos 89' → `golNoFim` do gol dos 86'.
 - **`estreia`, em detalhe.** O marcador conta a história de quem chegou: o jovem que sobe da base e o reforço. O elenco inicial de uma carreira já jogava pelo clube antes dela, então não estreia: na geração (`jogadores.md`, "Geração de elencos"), titulares, reservas e elenco começam com `clubAppearances = 1` (`PRE_CAREER_APPEARANCES`, constante: "já estreou antes da carreira", sem histórico inventado) e os 3 jovens com 0. Depois, `clubAppearances` soma 1 a cada partida em que o jogador entra em campo pelo clube. Na 1a, então, só os 3 jovens de cada clube estreiam, quando o técnico ou a IA os põe em campo (com a IA, raro: o banco leva os de maior overall); reforços (Etapa 3) e jovens promovidos da base (Etapa 4) chegam com 0, pela mesma regra. Na interface da 1a, `clubAppearances` não aparece como "jogos pelo clube" (o 1 é convenção, não estatística).
+
+### Jogo encerrado (menos de 7 em campo)
+
+**Regra em uma frase:** o time que fica com menos de 7 perde por 0×3, ou pelo placar do momento se o adversário já vencia por mais de 3 gols; o placar dado decide o resultado, e os gols reais contam os gols.
+
+- **"Vencia por mais"** é margem maior que 3: 1×4 vira 0×3 (margem 3, não mais); 0×4 e 1×5 ficam como estão. O time que fica com menos de 7 perde sempre, mesmo que vencesse: 3×0 a favor dele vira 0×3.
+- **Os dois com menos de 7 ao mesmo tempo** só acontece no apito inicial, com entrada danificada (a escalação já gerou avisos): confere primeiro o mandante, que perde por 0×3. Durante o jogo, o caso não existe: a partida acaba no primeiro jogador que deixa um time com 6.
+- **O placar dado vale para:** tabela e torcida (`temporada.md`, `torcida.md`), vitória ou derrota na nota (±0,4), desempate do melhor em campo e `zebra`.
+- **Os gols reais valem para:** artilharia (`temporada.md`: "gols contam normal"), gols, assistências, defesas e gols sofridos na nota, `hatTrick` e `semSofrerGols` (por time, pelos gols reais sofridos).
+- **Não saem** `goleada`, `virada` nem `golNoFim`: a história do jogo é o abandono, e a notícia usa o `fulltime.abandoned`. Sem isso, um 1×0 abandonado viraria "goleada" de 3×0, e um 2×1 que virou 0×3 de mesa sairia como "virada".
+- `classico` e `estreia` saem como sempre.
+
+Mudança em relação à T-010 (o `developer` tinha lido "placar dado para todos os marcadores"): ver "Pedido ao `developer`", item 7.
 
 ## Modo "Realismo simplificado" (configuração do novo jogo)
 
@@ -334,14 +381,16 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Caso                                                | Regra                                                                                                                                  |
 | --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
 | Escalação com jogador suspenso ou lesionado         | a interface bloqueia; se chegar ao motor, ele troca pelo melhor reserva disponível e registra aviso (escalação irregular é da Etapa 2) |
-| Escalação ausente (técnico não montou)              | a IA monta pelo perfil "Tradicional"                                                                                                   |
-| Sem goleiro disponível                              | joga o jogador de linha com maior `physical`, com `fit` 0,40                                                                           |
+| Melhor reserva para a vaga de um titular fora       | maior valor de seleção para a vaga (`ia-clubes.md`, "Escalação"); empate: maior overall, mais novo, menor ID                           |
+| Goleiro titular fora e nenhum goleiro no banco      | a mesma regra do reserva: entra o reserva de maior valor de seleção para o gol (`fit` 0,40); os 10 de linha ficam nas vagas            |
+| Sem goleiro e sem reserva nenhum no banco           | joga no gol o titular de linha com maior `physical`, com `fit` 0,40, e a vaga dele fica vazia                                          |
 | Goleiro expulso ou lesionado sem substituição       | idem, durante o jogo                                                                                                                   |
 | Menos de 11 disponíveis no elenco                   | joga com os que há (`missingPlayerPenalty` por jogador a menos)                                                                        |
 | Vaga vazia (expulsão, lesão sem substituição)       | sai da média do setor; só o `missingPlayerPenalty` ("Vaga vazia")                                                                      |
 | Setor sem ninguém (ex.: o único ATA do 4-2-3-1)     | média do setor = `EMPTY_SECTOR_FIT` (0,90) × média do `eff` dos jogadores de linha em campo ("Vaga vazia")                             |
 | Troca de formação com menos de 11 em campo          | "Troca de formação durante o jogo": ficam vazias as últimas vagas livres da ordem da formação                                          |
-| Menos de 7 em campo em qualquer momento             | partida encerrada; o adversário vence por 3×0, ou pelo placar do momento se vencia por mais                                            |
+| Menos de 7 em campo em qualquer momento             | partida encerrada; o adversário vence por 3×0, ou pelo placar do momento se vencia por mais de 3 ("Jogo encerrado")                    |
+| Os dois times com menos de 7 no apito inicial       | confere o mandante primeiro: o mandante perde por 0×3 ("Jogo encerrado")                                                               |
 | Cobrador escolhido fora de campo                    | regra de "Capitão e cobradores"                                                                                                        |
 | Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
 | Comando no mesmo minuto de um gol                   | vale a partir do minuto seguinte, sempre                                                                                               |
@@ -370,10 +419,10 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `fatigue.recoveryPerDay`     | 7                        | 3–15         | 3 dias não bastam para voltar inteiro                      |
 | `injury.basePerMinute`       | 0,00012                  | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
 | `cards.yellowPerMinute`      | 0,0020                   | 0–0,005      | cerca de 4 amarelos por jogo                               |
-| `cards.redPerMinute`         | 0,00003                  | 0–0,0002     | cerca de 0,18 vermelho por jogo somando segundo amarelo    |
+| `cards.redPerMinute`         | 0,00003                  | 0–0,0002     | cerca de 0,07 vermelho direto por jogo                     |
 | `cards.derbyMult`            | 1,2                      | 1–1,5        | clássico é mais quente                                     |
 
-**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
+**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), fator do pendurado `BOOKED_MULT = 0.5` (candidato a `cards.bookedMult` na T-016, "Calibragem dos vermelhos"), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
 
 ## Pedido ao `developer` (critérios de aceite)
 
@@ -383,3 +432,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 4. 200 temporadas rodam em menos de 3 minutos no CI (o `/balance` precisa ser usado a cada ajuste).
 5. Vaga vazia ("Vaga vazia"): as forças de setor aceitam vagas vazias e reproduzem os dois exemplos daquela seção (65,1; 55,7 e 61,7, com tolerância de 0,05); nenhum setor dá `NaN` ou divide por zero em nenhuma formação com 7 a 11 em campo (teste que esvazia cada setor de cada formação).
 6. Troca de formação ("Troca de formação durante o jogo"): reproduz o exemplo daquela seção (61,9 com tolerância de 0,05); para cada par das 6 × 6 formações e cada `N` de 7 a 11, nunca lança, deixa exatamente `11 − N` vagas vazias, mantém o goleiro no gol e é determinística; trocar para a formação atual não muda nenhuma vaga.
+7. Ajustes da T-010 (cartões, pênaltis e jogo encerrado):
+   - Jogo encerrado ("Jogo encerrado"): com `abandoned`, `goleada`, `virada` e `golNoFim` não saem; `semSofrerGols` lê os gols reais sofridos; tabela, ±0,4 da nota, melhor em campo e `zebra` leem o placar dado. Testes: 1×0 com o visitante abandonando (vira 3×0): sem `goleada`, `semSofrerGols` só do mandante; 2×1 com o mandante abandonando (vira 0×3): sem `virada` nem `golNoFim`, nenhum `semSofrerGols`, +0,4 na nota do visitante e −0,4 na do mandante; 0×4 com o mandante abandonando: fica 0×4, sem `goleada`, `semSofrerGols` do visitante.
+   - Os casos da tabela de suspensão ("Cartões e suspensão") com um teste cada.
+   - O resto das decisões da T-010 está confirmado como implementado; o texto do mando (amarelos ×1,2) foi corrigido aqui, sem mudança no código.
