@@ -14,6 +14,8 @@ export interface ClubDef {
   readonly id: ClubId;
   readonly name: string;
   readonly shortName: string;
+  /** Three capital letters, unique in the league, e.g. "FLG"; also the letter of the shield. */
+  readonly abbreviation: string;
   readonly nickname: string;
   readonly city: string;
   /** Two-letter state code (UF), e.g. "SP". */
@@ -28,6 +30,11 @@ export interface ClubDef {
   readonly stadium: { readonly name: string; readonly capacity: number };
   /** Derbies. May be empty; when present, both clubs list each other. */
   readonly rivals: readonly ClubId[];
+  /**
+   * Titles won before the first season (Brasileiro, Copa do Brasil). Static content for news and
+   * club cards; the engine computes nothing from it (docs/design/clubes-serie-a.md).
+   */
+  readonly titles: { readonly league: number; readonly cup: number };
 }
 
 /** Clubs in a Série A season (SEASON_ROUNDS = 2 × (SERIE_A_CLUBS − 1)). */
@@ -68,6 +75,8 @@ export type ClubProblem =
   | 'empty'
   | 'invalid-id'
   | 'duplicate-id'
+  | 'invalid-abbreviation'
+  | 'duplicate-abbreviation'
   | 'invalid-state'
   | 'invalid-color'
   | 'invalid-size'
@@ -107,12 +116,14 @@ export interface ValidateClubsOptions {
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const STATE = /^[A-Z]{2}$/;
+const ABBREVIATION = /^[A-Z]{3}$/;
 const COLOR = /^#[0-9a-f]{6}$/i;
 
 const CLUB_KEYS = [
   'id',
   'name',
   'shortName',
+  'abbreviation',
   'nickname',
   'city',
   'state',
@@ -122,9 +133,11 @@ const CLUB_KEYS = [
   'strength',
   'stadium',
   'rivals',
+  'titles',
 ] as const;
 const OPTIONAL_KEYS: ReadonlySet<string> = new Set(['aiProfile', 'strength']);
 const STADIUM_KEYS = ['name', 'capacity'] as const;
+const TITLE_KEYS = ['league', 'cup'] as const;
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -212,20 +225,45 @@ function checkStadium(
   const name = Object.hasOwn(value, 'name')
     ? checkText(scope, 'stadium.name', value.name)
     : undefined;
-  let capacity: number | undefined;
-  if (Object.hasOwn(value, 'capacity')) {
-    const raw = value.capacity;
-    if (typeof raw !== 'number' || !Number.isFinite(raw)) {
-      scope.add({ field: 'stadium.capacity', problem: 'not-a-number', value: raw });
-    } else if (!Number.isInteger(raw)) {
-      scope.add({ field: 'stadium.capacity', problem: 'not-an-integer', value: raw });
-    } else if (raw < 1) {
-      scope.add({ field: 'stadium.capacity', problem: 'out-of-range', value: raw });
-    } else {
-      capacity = raw;
-    }
-  }
+  const capacity = Object.hasOwn(value, 'capacity')
+    ? checkCount(scope, 'stadium.capacity', value.capacity, 1)
+    : undefined;
   return name !== undefined && capacity !== undefined ? { name, capacity } : undefined;
+}
+
+/** An integer of at least `min` (capacity, number of titles). */
+function checkCount(
+  scope: ClubScope,
+  field: string,
+  value: unknown,
+  min: number,
+): number | undefined {
+  if (typeof value !== 'number' || !Number.isFinite(value)) {
+    scope.add({ field, problem: 'not-a-number', value });
+  } else if (!Number.isInteger(value)) {
+    scope.add({ field, problem: 'not-an-integer', value });
+  } else if (value < min) {
+    scope.add({ field, problem: 'out-of-range', value });
+  } else {
+    return value;
+  }
+  return undefined;
+}
+
+function checkTitles(
+  scope: ClubScope,
+  value: unknown,
+): { league: number; cup: number } | undefined {
+  if (!isPlainObject(value)) {
+    scope.add({ field: 'titles', problem: 'not-an-object', value });
+    return undefined;
+  }
+  checkKeys(scope, 'titles.', value, TITLE_KEYS);
+  const count = (key: (typeof TITLE_KEYS)[number]) =>
+    Object.hasOwn(value, key) ? checkCount(scope, `titles.${key}`, value[key], 0) : undefined;
+  const league = count('league');
+  const cup = count('cup');
+  return league !== undefined && cup !== undefined ? { league, cup } : undefined;
 }
 
 function checkRivalList(scope: ClubScope, value: unknown): string[] | undefined {
@@ -270,6 +308,18 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
 
   const name = has('name') ? checkText(scope, 'name', raw.name) : undefined;
   const shortName = has('shortName') ? checkText(scope, 'shortName', raw.shortName) : undefined;
+  let abbreviation: string | undefined;
+  if (has('abbreviation')) {
+    if (typeof raw.abbreviation === 'string' && ABBREVIATION.test(raw.abbreviation)) {
+      abbreviation = raw.abbreviation;
+    } else {
+      scope.add({
+        field: 'abbreviation',
+        problem: 'invalid-abbreviation',
+        value: raw.abbreviation,
+      });
+    }
+  }
   const nickname = has('nickname') ? checkText(scope, 'nickname', raw.nickname) : undefined;
   const city = has('city') ? checkText(scope, 'city', raw.city) : undefined;
   let state: string | undefined;
@@ -306,6 +356,7 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
   }
   const stadium = has('stadium') ? checkStadium(scope, raw.stadium) : undefined;
   const rivals = has('rivals') ? checkRivalList(scope, raw.rivals) : undefined;
+  const titles = has('titles') ? checkTitles(scope, raw.titles) : undefined;
 
   if (scope.count > 0) return undefined;
   const club: {
@@ -314,6 +365,7 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
     id: scope.clubId!,
     name: name!,
     shortName: shortName!,
+    abbreviation: abbreviation!,
     nickname: nickname!,
     city: city!,
     state: state!,
@@ -321,6 +373,7 @@ function checkClub(scope: ClubScope, raw: unknown): ClubDef | undefined {
     size: size!,
     stadium: stadium!,
     rivals: rivals!,
+    titles: titles!,
   };
   if (aiProfile !== undefined) club.aiProfile = aiProfile;
   if (strength !== undefined) club.strength = strength;
@@ -363,10 +416,36 @@ function checkAcrossClubs(
   }
 }
 
+/** Abbreviations are unique in the league (they tell clubs apart in tables and on shields). */
+function checkAbbreviations(raw: readonly unknown[], issues: ClubIssue[]): void {
+  const first = new Map<string, number>();
+  for (let index = 0; index < raw.length; index++) {
+    const club = raw[index] as unknown;
+    if (!isPlainObject(club) || typeof club.abbreviation !== 'string') continue;
+    if (!ABBREVIATION.test(club.abbreviation)) continue;
+    const seen = first.get(club.abbreviation);
+    if (seen === undefined) {
+      first.set(club.abbreviation, index);
+      continue;
+    }
+    const other = raw[seen] as Record<string, unknown>;
+    const issue: ClubIssue = {
+      index,
+      field: 'abbreviation',
+      problem: 'duplicate-abbreviation',
+      value: club.abbreviation,
+      other: typeof other.id === 'string' ? other.id : `#${seen}`,
+    };
+    if (typeof club.id === 'string' && ID.test(club.id)) issue.clubId = club.id;
+    issues.push(issue);
+  }
+}
+
 /**
  * Checks a raw club list (the parsed JSON of app/src/data/) against the ClubDef contract:
  * exact count, required fields filled, known keys only, valid id slugs, colours, state, size,
- * profile, strength within the range of the size, positive integer capacity, unique ids and
+ * profile, strength within the range of the size, positive integer capacity, titles as integers
+ * of at least 0, unique ids, unique three-letter abbreviations and
  * symmetric derbies with existing clubs (an empty `rivals` is valid). Lists every issue at once
  * with club and field. Never throws; on success returns fresh copies that share nothing with
  * `raw`.
@@ -400,6 +479,7 @@ export function validateClubs(raw: unknown, options: ValidateClubsOptions = {}):
     }
   }
   checkAcrossClubs(entries, issues);
+  checkAbbreviations(raw, issues);
   if (issues.length > 0) return { ok: false, error: 'invalid-clubs', detail: issues };
   return { ok: true, value: clubs, warnings: [] };
 }

@@ -14,6 +14,14 @@ describe('shield generator', () => {
     `);
   });
 
+  it('uses the club abbreviation as the letter and keeps the rest of the spec', () => {
+    const byId = shieldSpecFor('flamingo', '#b3001b', '#111111');
+    expect(shieldSpecFor('flamingo', '#b3001b', '#111111', 'FLG')).toEqual({
+      ...byId,
+      letter: 'FLG',
+    });
+  });
+
   it('escapes text and rejects unsafe colors', () => {
     const svg = shieldSvg({
       shape: 'classic',

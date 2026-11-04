@@ -21,18 +21,28 @@ const escapeText = (text: string) =>
 const safeColor = (c: string) => (HEX.test(c) ? c : FALLBACK);
 const DIAGONAL = 'M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z';
 
-/** Deterministic shield spec from a club id. Same id, same shield, forever. */
-export function shieldSpecFor(clubId: string, color1: string, color2: string): ShieldSpec {
+/**
+ * Deterministic shield spec from a club id. Same id, same shield, forever. The letter symbol
+ * shows `abbreviation` (ClubDef.abbreviation) when given, else the first three letters of the id.
+ */
+export function shieldSpecFor(
+  clubId: string,
+  color1: string,
+  color2: string,
+  abbreviation?: string,
+): ShieldSpec {
   const rng = new Rng(seedFromString(clubId));
   return {
     shape: rng.pick(['classic', 'round', 'diagonal'] as const) ?? 'classic',
     color1: safeColor(color1),
     color2: safeColor(color2),
     symbol: rng.pick(['star', 'ball', 'letter'] as const) ?? 'star',
-    letter: clubId
-      .replace(/[^a-z0-9]/gi, '')
-      .slice(0, 3)
-      .toUpperCase(),
+    letter:
+      abbreviation ??
+      clubId
+        .replace(/[^a-z0-9]/gi, '')
+        .slice(0, 3)
+        .toUpperCase(),
   };
 }
 

@@ -69,6 +69,7 @@ describe('validateClubs', () => {
     'id',
     'name',
     'shortName',
+    'abbreviation',
     'nickname',
     'city',
     'state',
@@ -76,6 +77,7 @@ describe('validateClubs', () => {
     'size',
     'stadium',
     'rivals',
+    'titles',
   ] as const)('names the club and the field when %s is missing', (field) => {
     const raw = syntheticClubs();
     delete (raw[3] as Partial<(typeof raw)[number]>)[field];
@@ -189,6 +191,54 @@ describe('validateClubs', () => {
       ['clube-teste-01', 'stadium.capacity', 'out-of-range'],
       ['clube-teste-02', 'stadium.capacity', 'not-an-integer'],
       ['clube-teste-03', 'stadium.capacity', 'not-a-number'],
+    ]);
+  });
+
+  it('requires a three-letter capital abbreviation, unique in the league', () => {
+    const raw = syntheticClubs();
+    raw[0]!.abbreviation = 'Tab';
+    raw[1]!.abbreviation = 'TAAA';
+    raw[9]!.abbreviation = 'TAC'; // same as clube-teste-03
+    expect(issuesOf(validateClubs(raw))).toEqual([
+      {
+        index: 0,
+        clubId: 'clube-teste-01',
+        field: 'abbreviation',
+        problem: 'invalid-abbreviation',
+        value: 'Tab',
+      },
+      {
+        index: 1,
+        clubId: 'clube-teste-02',
+        field: 'abbreviation',
+        problem: 'invalid-abbreviation',
+        value: 'TAAA',
+      },
+      {
+        index: 9,
+        clubId: 'clube-teste-10',
+        field: 'abbreviation',
+        problem: 'duplicate-abbreviation',
+        value: 'TAC',
+        other: 'clube-teste-03',
+      },
+    ]);
+  });
+
+  it('requires titles as integers of at least 0, zero included', () => {
+    const raw = syntheticClubs();
+    raw[0]!.titles = { league: 0, cup: 0 };
+    raw[1]!.titles = { league: -1, cup: 1.5 };
+    (raw[2] as { titles: unknown }).titles = { league: 2 };
+    (raw[3] as { titles: unknown }).titles = { league: 1, cup: 0, libertadores: 1 };
+    (raw[4] as { titles: unknown }).titles = 3;
+    const problems = issuesOf(validateClubs(raw)).map((i) => [i.clubId, i.field, i.problem]);
+    expect(problems).toEqual([
+      ['clube-teste-02', 'titles.league', 'out-of-range'],
+      ['clube-teste-02', 'titles.cup', 'not-an-integer'],
+      ['clube-teste-03', 'titles.cup', 'missing'],
+      ['clube-teste-04', 'titles.libertadores', 'unknown-key'],
+      ['clube-teste-05', 'titles', 'not-an-object'],
     ]);
   });
 

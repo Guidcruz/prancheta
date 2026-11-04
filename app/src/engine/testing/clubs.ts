@@ -16,7 +16,9 @@ export type MutableClubDef = {
       ? string[]
       : K extends 'stadium'
         ? { name: string; capacity: number }
-        : ClubDef[K];
+        : K extends 'titles'
+          ? { league: number; cup: number }
+          : ClubDef[K];
 };
 
 const pad = (n: number) => String(n).padStart(2, '0');
@@ -26,6 +28,12 @@ function sizeAt(index: number): ClubSize {
   if (index < 6) return 'big';
   if (index < 14) return 'medium';
   return 'small';
+}
+
+/** "TAA", "TAB"...: three capital letters, unique for up to 676 clubs. */
+function abbreviationAt(index: number): string {
+  const letter = (n: number) => String.fromCharCode(65 + n);
+  return `T${letter(Math.floor(index / 26) % 26)}${letter(index % 26)}`;
 }
 
 const STRENGTH: Record<ClubSize, number> = { big: 75, medium: 70, small: 64 };
@@ -43,6 +51,7 @@ export function syntheticClubs(count = 20): MutableClubDef[] {
       id: `clube-teste-${n}`,
       name: `Clube Teste ${n}`,
       shortName: `Teste ${n}`,
+      abbreviation: abbreviationAt(i),
       nickname: `Testeiros ${n}`,
       city: `Cidade Teste ${n}`,
       state: 'SP',
@@ -52,6 +61,7 @@ export function syntheticClubs(count = 20): MutableClubDef[] {
       strength: STRENGTH[size],
       stadium: { name: `Estádio Teste ${n}`, capacity: 20_000 + i * 1_000 },
       rivals: [],
+      titles: { league: i % 3, cup: 0 },
     });
   }
   const paired = Math.max(0, count - 4);
