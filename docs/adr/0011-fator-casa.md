@@ -26,6 +26,8 @@ O `docs/PROJETO.md` e o ADR-0005 fixam o bônus de mando de campo pela torcida e
 - **Se B:** `homeBase` fica 0 e a meta de `balance-targets.md` cai para 40% a 45% (proposta do `game-designer` aprovada pelo CEO).
 - **Pendências:** um `/balance` com três sementes depois da escolha (T-016).
 
+**Nota (2026-11-04):** a decisão e o valor não mudam (`match.homeBase = 0.05`, faixa 0 a 0,08, mandante vencendo cerca de 47%, faixa de 45% a 50%). Por decisão do CEO, o fator de mando passa a valer também na finalização: o chute do mandante e o goleiro do mandante levam `(1 + home(t))`. A fórmula de onde o mando entra fica em `docs/design/partida.md`, que é a fonte; ajustar `homeBase` dentro da faixa continua sendo ajuste de parâmetro.
+
 ## Conformidade
 
 O `/balance` imprime a vitória do mandante contra a meta da opção escolhida. Mudar `match.homeBase` depois disso é ajuste de parâmetro (`/quick` + `/balance`), não ADR, enquanto ficar na faixa aprovada aqui.

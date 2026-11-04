@@ -208,8 +208,15 @@ export function strengthsFromRatings(
       `expected ${sectors.length} ratings for ${formation}, got ${ratings.length}`,
     );
   }
-  const sum = { gk: 0, def: 0, mid: 0, atk: 0 };
-  const count = { gk: 0, def: 0, mid: 0, atk: 0 };
+  // Plain locals instead of records keyed by sector: the match calls this twice a minute (T-009).
+  let gkSum = 0;
+  let defSum = 0;
+  let midSum = 0;
+  let atkSum = 0;
+  let gkCount = 0;
+  let defCount = 0;
+  let midCount = 0;
+  let atkCount = 0;
   let empty = 0;
   for (let i = 0; i < sectors.length; i++) {
     const rating = ratings[i];
@@ -218,25 +225,36 @@ export function strengthsFromRatings(
       continue;
     }
     const sector = sectors[i]!;
-    sum[sector] += rating;
-    count[sector] += 1;
+    if (sector === 'def') {
+      defSum += rating;
+      defCount += 1;
+    } else if (sector === 'mid') {
+      midSum += rating;
+      midCount += 1;
+    } else if (sector === 'atk') {
+      atkSum += rating;
+      atkCount += 1;
+    } else {
+      gkSum += rating;
+      gkCount += 1;
+    }
   }
-  if (count.gk === 0) {
+  if (gkCount === 0) {
     throw new RangeError('the goalkeeper slot is empty: call fillEmptyGoal first');
   }
-  const outfield = count.def + count.mid + count.atk;
-  const outfieldMean = outfield > 0 ? (sum.def + sum.mid + sum.atk) / outfield : 0;
-  const mean = (sector: 'def' | 'mid' | 'atk') =>
-    count[sector] > 0 ? sum[sector] / count[sector] : EMPTY_SECTOR_FIT * outfieldMean;
+  const outfield = defCount + midCount + atkCount;
+  const outfieldMean = outfield > 0 ? (defSum + midSum + atkSum) / outfield : 0;
+  const mean = (sum: number, count: number) =>
+    count > 0 ? sum / count : EMPTY_SECTOR_FIT * outfieldMean;
 
   const t = teamFactor({ ...factors, missing: empty }, match);
   const shape = FORMATION_MULTIPLIERS[formation];
   const posture = POSTURE_EFFECTS[tactic.posture];
-  const def = mean('def') * shape.def * t;
-  const mid = mean('mid') * shape.mid * PRESSURE_EFFECTS[tactic.pressure].mid * t;
-  const atk = mean('atk') * shape.atk * t;
+  const def = mean(defSum, defCount) * shape.def * t;
+  const mid = mean(midSum, midCount) * shape.mid * PRESSURE_EFFECTS[tactic.pressure].mid * t;
+  const atk = mean(atkSum, atkCount) * shape.atk * t;
   return {
-    goalkeeper: sum.gk / count.gk,
+    goalkeeper: gkSum / gkCount,
     def,
     mid,
     atk,

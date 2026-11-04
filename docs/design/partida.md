@@ -99,16 +99,31 @@ Se cria, o **tipo** da oportunidade:
 | Jogada       | o resto                     | sorteado pelos pesos abaixo         | `pGoal`                                                 |
 
 ```
-shot  = finishing do finalizador × fit × moraleMult × condMult
-gkEff = eff do goleiro adversário
+shot  = finishing do finalizador × fit × moraleMult × condMult × (1 + home(time do finalizador))
+gkEff = eff do goleiro adversário × (1 + home(time do goleiro))
 pGoal = clamp(match.conversion × exp(match.kFinish × (shot − gkEff) / 10), 0.04, 0.40)
 ```
+
+**Mando na finalização.** O mando também vale no chute e na defesa do goleiro: o finalizador do mandante chuta com `shot × (1 + home)`, e o goleiro do mandante defende com `gkEff × (1 + home)`. O `home(t)` é o mesmo da seção "Mando de campo e clássico", calculado uma vez no apito inicial; o visitante e os dois times em campo neutro têm `home = 0`, e o fator vira 1.
+
+- Entra só o fator de mando, `(1 + home(t))`, e não o `T(t)` inteiro: jogador a menos e conversa do intervalo continuam mexendo só nas forças de setor (criação de chances), nunca no chute nem no goleiro.
+- Vale nos três tipos de oportunidade: na jogada (`shot`), na falta direta (`shot` com `technique` no lugar de `finishing`, depois o `× 0.45`) e no pênalti, em que o `finishing` do cobrador do mandante vira `finishing × (1 + home)` e o `gkEff` do goleiro do mandante vira `gkEff × (1 + home)` na mesma fórmula da tabela.
+- O fator entra antes do `clamp`; os limites de `pGoal` (0,04 a 0,40) e do pênalti (0,60 a 0,92) não mudam.
+- Por quê: com o mando só na criação de chances, o mandante cria mais, mas cada chute dele vale o mesmo que o do visitante, e a vantagem de casa fica fraca no placar. Pôr o mesmo fator nas duas pontas da finalização faz o mando aparecer no resultado sem parâmetro novo.
 
 Peso de cada jogador de linha para ser o finalizador de uma jogada: `shooterWeight[setor da vaga em que joga] × finishing / 60`, com ATA 3,0, MEI 1,6, VOL 0,6, LAT 0,5, ZAG 0,4 (cabeçada em escanteio), GOL 0.
 
 Se não é gol: trave 7%, defesa do goleiro 48%, para fora 45%. Na jogada que termina em gol, há assistência em 70% dos casos (`match.assistShare`), de um companheiro sorteado com peso `assistWeight[setor] × passing / 60` (MEI 3,0, LAT 1,5, ATA 1,5, VOL 1,2, ZAG 0,5; GOL 0), também pelo setor da vaga. Atributo que o jogador não tem (goleiro na linha) vale `round(0.4 × overall)` ("Atributo ausente" em `jogadores.md`); a força do goleiro é sempre o `eff`, então jogador de linha no gol não precisa de `reflexes`.
 
-**Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Com um atacante de finishing 78 contra goleiro de eff 66: `pGoal = 0.15 × exp(0.09 × 1.2) = 0.167`.
+**Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Na finalização, com atacantes de finishing 78 (fit 1, moral 50, descansados) e goleiros de eff 66 nos dois times:
+
+| Quem chuta | `shot`            | `gkEff` do goleiro que defende | `pGoal`                                       |
+| ---------- | ----------------- | ------------------------------ | --------------------------------------------- |
+| Mandante   | 78 × 1,106 = 86,3 | 66 (visitante, `home = 0`)     | `0.15 × exp(0.09 × 2.03) = 0.180`             |
+| Visitante  | 78                | 66 × 1,106 = 73,0              | `0.15 × exp(0.09 × 0.50) = 0.157`             |
+| Neutro     | 78                | 66                             | `0.15 × exp(0.09 × 1.2) = 0.167` (referência) |
+
+Cada chute do mandante vale cerca de 8% a mais e cada chute do visitante cerca de 6% a menos que em campo neutro. No pênalti, com os mesmos 78 e 66: mandante `0.78 + 0.004 × 20.3 = 0.861`, visitante `0.78 + 0.004 × 5.0 = 0.800`, neutro 0,828.
 
 ## Táticas
 
@@ -159,7 +174,12 @@ O técnico também pode trocar formação, postura e pressão diretamente a qual
 home(mandante) = match.homeBase + fans.homeBonusMin + (fans.homeBonusMax − fans.homeBonusMin) × termômetro / 100
                + (clássico ? fans.derbyBonus : 0)
 home(visitante) = 0
+home(campo neutro) = 0 para os dois times
 ```
+
+**Onde o mando entra (regra em uma frase):** o mesmo `home(t)` multiplica as forças de setor do mandante (por `T(t)`, mais chances criadas), o chute do mandante (`shot × (1 + home)`) e a defesa do goleiro do mandante (`gkEff × (1 + home)`); ver "Mando na finalização". A posse de bola exibida não leva mando ("Estatísticas e notas").
+
+**Valor aprovado e meta.** Os +5% de `match.homeBase` do ADR-0011 continuam sendo o valor aprovado; a fórmula de onde o mando entra é desta página, não do ADR. A meta é o mandante vencer cerca de 47% dos jogos (faixa 45% a 50%, `balance-targets.md`). Se o `/balance` com o mando na finalização sair da faixa, o ajuste é em `match.homeBase` dentro de 0 a 0,08, um por vez, sem mexer na regra.
 
 `fans.homeBonusMin = 0.02`, `fans.homeBonusMax = 0.08`, `fans.derbyBonus = 0.02` (ADR-0005). `match.homeBase = 0.05` (ADR-0011, opção A, aceita pelo CEO; faixa 0 a 0,08: mudar dentro da faixa é ajuste de parâmetro, fora dela é ADR). Em clássico, o visitante também ganha moral (ver `jogadores.md`), e os cartões ficam ×1,2 para os dois lados (`cards.derbyMult`). Altitude: Etapa 5.
 
@@ -244,12 +264,20 @@ Primeiro tempo: `Rng.int(0, 3)` minutos; segundo tempo: `Rng.int(2, 6)`, sortead
 ## Estatísticas e notas
 
 - **Finalizações:** oportunidades criadas. **No alvo:** gols + defesas do goleiro.
-- **Posse de bola** (só exibição): `clamp(50 + 1.5 × (Mid(t) − Mid(o)) + Rng.int(−3, 3), 30, 70)`, calculada no fim de cada tempo e somando 100 entre os dois.
-- **Nota do jogador** (0 a 10, uma casa decimal): `6.0 + 1.0 × gols + 0.6 × assistências + 0.3 × defesas (goleiro) − 0.25 × gols sofridos (goleiro e defesa) − 0.5 × amarelo − 1.5 × vermelho + 0.4 (vitória) / −0.4 (derrota) + Rng ±0.5`, entre 3,0 e 10,0. Quem jogou menos de 15 minutos fica "sem nota". **Melhor em campo:** maior nota (desempate: mais gols, depois o time vencedor, depois menor número da camisa).
+- **Posse de bola** (só exibição): `clamp(50 + 1.5 × (MidSemMando(t) − MidSemMando(o)) + Rng.int(−3, 3), 30, 70)` para o mandante, calculada no fim de cada tempo (depois dos acréscimos) com o `Mid` daquele momento. `MidSemMando` é o `Mid` com `home(t) = 0` (energia, vagas vazias, pressão e conversa do intervalo continuam valendo). A posse do jogo é a média dos dois tempos arredondada para inteiro (`Math.round`; o meio ponto vai para o mandante), e o visitante fica com `100 − posse do mandante`.
+  - Por quê sem mando: com o `Mid` cheio, dois times iguais davam 60,9% de posse ao mandante (2.000 duelos de força 70, termômetro 60), porque o mando multiplica o meio inteiro. Posse é só exibição; uma estatística que mostra 61% × 39% num jogo entre iguais engana quem lê. Sem o mando, iguais ficam em 50%.
+- **Minutos jogados:** só os regulamentares (1 a 90; o jogo inteiro vale 90). O minuto de acréscimo não conta. A evolução (`jogadores.md`, "Minutos") e a regra de "sem nota" usam essa conta. "Jogou", para a moral, é ter entrado em campo, mesmo só nos acréscimos (`jogadores.md`, "Moral por rodada").
+- **Nota do jogador** (0 a 10, uma casa decimal): `6.0 + 1.0 × gols + 0.6 × assistências + 0.3 × defesas (goleiro) − 0.25 × gols sofridos (goleiro e defesa) − 0.5 × amarelo − 1.5 × vermelho + 0.4 (vitória) / −0.4 (derrota) + ruído`, arredondada para uma casa e cortada entre 3,0 e 10,0. Quem jogou menos de 15 minutos regulamentares fica "sem nota" e não gasta sorteio.
+  - **Ruído:** uniforme em [−0,5; 0,5) (`(Rng.next() × 2 − 1) × 0.5`), um sorteio por jogador com nota, mandante primeiro, cada time na ordem de entrada em campo.
+  - **Gols sofridos:** contam para quem estava em campo, no momento do gol, na vaga do gol ou numa vaga do **setor** de defesa da formação (a tabela "Formações"). Ala do 3-5-2 e do 3-4-3 está no meio e não conta; LAT do 5-3-2 está na defesa e conta. Jogador de linha no gol conta como goleiro.
+- **Melhor em campo:** maior nota entre os que têm nota. Desempate, nesta ordem: mais gols; jogador do time vencedor; menor número da camisa; o do mandante (só sobra empate com camisas iguais nos dois times). Sem ninguém com nota (impossível com 7 ou mais em campo), não há melhor em campo.
 
 ## Eventos (o que a partida animada, a narração, as notícias e a rede social consomem)
 
 Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os campos abaixo. A lista é a saída do motor e é igual para a mesma semente e os mesmos comandos.
+
+- `kickoff` sai uma vez só, no minuto 0 do primeiro tempo. O começo do segundo tempo é o evento seguinte a `halftimeTalk`; a narração e a animação usam `halftime` para os dois lados do intervalo.
+- `stoppage` sai sempre no fim de cada tempo (minuto 45 ou 90, antes dos acréscimos), mesmo com 0 minuto: a narração precisa de um texto para "sem acréscimo", que acontece em 25% dos primeiros tempos.
 
 | Evento           | Campos                                                                           | Importância (para "só lances principais")      |
 | ---------------- | -------------------------------------------------------------------------------- | ---------------------------------------------- |
@@ -275,11 +303,15 @@ Cada evento tem `minute` (com acréscimo, por exemplo 45+2), `half`, `team` e os
 | `goleada`       | diferença de 3 gols ou mais                                                                      |
 | `virada`        | o vencedor esteve perdendo em algum momento                                                      |
 | `zebra`         | o vencedor tinha força + mando (4 pontos para o mandante) pelo menos 8 pontos abaixo do perdedor |
-| `golNoFim`      | gol decisivo (mudou o resultado) a partir do minuto 85                                           |
+| `golNoFim`      | o último gol que mudou o resultado do jogo saiu aos 85' ou depois (acréscimos incluídos)         |
 | `hatTrick`      | um jogador com 3 gols ou mais                                                                    |
 | `semSofrerGols` | por time                                                                                         |
 | `classico`      | os dois clubes são rivais                                                                        |
-| `estreia`       | jogador na primeira partida pelo clube                                                           |
+| `estreia`       | jogador que entrou em campo com `clubAppearances = 0` (regra abaixo)                             |
+
+- O `kind` de cada marcador é o nome da primeira coluna, sem tradução: é a chave que os templates do `content-writer` e a arquitetura (`docs/02-architecture.md`, `MatchMarker`) já usam.
+- **`golNoFim`, em detalhe.** "Mudar o resultado" é mudar quem está vencendo: de empate para vitória de alguém, de vitória para empate (o empate no fim conta) ou de um vencedor para o outro. O gol que só amplia a vantagem (2×1 para 3×1) e o que só diminui (2×0 para 2×1) não mudam. Vale o **último** gol que mudou o resultado: se ele saiu aos 85' ou depois (o 45+2 do primeiro tempo é minuto 45 e não conta; o 90+3 conta), o marcador sai com o time, o autor e o minuto desse gol. Exemplo: 1×1 aos 80', o mandante faz 2×1 aos 88' e o visitante empata aos 90+2' → `golNoFim` do visitante (o empate). 0×0, o mandante faz 1×0 aos 86' e 2×0 aos 89' → `golNoFim` do gol dos 86'.
+- **`estreia`, em detalhe.** O marcador conta a história de quem chegou: o jovem que sobe da base e o reforço. O elenco inicial de uma carreira já jogava pelo clube antes dela, então não estreia: na geração (`jogadores.md`, "Geração de elencos"), titulares, reservas e elenco começam com `clubAppearances = 1` (`PRE_CAREER_APPEARANCES`, constante: "já estreou antes da carreira", sem histórico inventado) e os 3 jovens com 0. Depois, `clubAppearances` soma 1 a cada partida em que o jogador entra em campo pelo clube. Na 1a, então, só os 3 jovens de cada clube estreiam, quando o técnico ou a IA os põe em campo (com a IA, raro: o banco leva os de maior overall); reforços (Etapa 3) e jovens promovidos da base (Etapa 4) chegam com 0, pela mesma regra. Na interface da 1a, `clubAppearances` não aparece como "jogos pelo clube" (o 1 é convenção, não estatística).
 
 ## Modo "Realismo simplificado" (configuração do novo jogo)
 
@@ -313,6 +345,9 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Cobrador escolhido fora de campo                    | regra de "Capitão e cobradores"                                                                                                        |
 | Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
 | Comando no mesmo minuto de um gol                   | vale a partir do minuto seguinte, sempre                                                                                               |
+| Valor desconhecido na entrada (save danificado)     | 4-4-2, `balanced`, `medium`, perfil "Tradicional"; aviso (abaixo)                                                                      |
+
+**Valor desconhecido na entrada:** formação vira 4-4-2, postura vira `balanced`, pressão vira `medium` e perfil desconhecido joga como "Tradicional" em tudo o que o perfil decide (a conversa do intervalo agora; tática e comandos na T-011). Cada valor trocado gera um aviso por time no apito inicial, inclusive o perfil.
 
 ## Parâmetros (`app/src/params/match.json`)
 

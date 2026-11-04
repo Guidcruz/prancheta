@@ -71,6 +71,7 @@ export {
   STARTER_SHIRTS,
   STARTER_SHIRT_ORDER,
   START_CONDITION,
+  PRE_CAREER_APPEARANCES,
   START_MORALE,
   STRENGTH_TOLERANCE,
   YOUTH_SHIRTS_FROM,
@@ -125,6 +126,43 @@ export type {
   StrengthsResult,
   TeamStrengths,
 } from './strength.ts';
+export { simulateMatch } from './match/simulate.ts';
+export {
+  AI_HALFTIME_TALK,
+  ASSIST_WEIGHTS,
+  ATTENDANCE,
+  BIG_CHANCE_P_GOAL,
+  CHANCE_BOUNDS,
+  GOALKEEPER_DRAIN_SHARE,
+  GOAL_BOUNDS,
+  HALFTIME_TALKS,
+  HALFTIME_TALK_EFFECTS,
+  HALF_MINUTES,
+  MARKERS,
+  MISS_OUTCOMES,
+  POSSESSION,
+  PRESSURE_DRAIN,
+  RATING,
+  SHOOTER_WEIGHTS,
+  STOPPAGE,
+  WEIGHT_ATTRIBUTE_SCALE,
+  attendance,
+  chanceProbability,
+  energyDrain,
+  goalProbability,
+  halftimeBoost,
+} from './match/rules.ts';
+export type {
+  ChanceKind,
+  HalftimeTalk,
+  MatchEvent,
+  MatchInput,
+  MatchMarker,
+  MatchResult,
+  MatchStats,
+  MissOutcome,
+  TeamInput,
+} from './match/types.ts';
 export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {

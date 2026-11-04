@@ -99,12 +99,14 @@ Forma e moral: o `PROJETO.md` lista as duas; na 1a só a moral mexe no jogo e a 
 
 | Situação                                                | Δ moral                                               |
 | ------------------------------------------------------- | ----------------------------------------------------- |
-| Jogou (≥ 1 minuto) e o time venceu / empatou / perdeu   | +3 / 0 / −3                                           |
+| Entrou em campo e o time venceu / empatou / perdeu      | +3 / 0 / −3                                           |
 | Clássico                                                | resultado acima × 2                                   |
 | Esperava jogar e não entrou (2ª rodada seguida ou mais) | −2 por rodada                                         |
 | Deriva da torcida                                       | 1 ponto na direção do termômetro (`fans.moraleDrift`) |
 | Conversa "cobrar" no intervalo                          | −3 para temperamentais em campo                       |
 | Voltou de lesão                                         | sem mudança                                           |
+
+"Entrou em campo" vale mesmo para quem entrou só nos acréscimos, com 0 minuto regulamentar (`partida.md`, "Minutos jogados").
 
 "Esperava jogar" = `overall ≥ média dos overall dos 11 titulares da rodada − 3`. Traços: **profissional** sofre só metade das quedas; **temperamental** sofre o dobro da queda por banco. Moral sempre entre 0 e 100.
 
@@ -181,6 +183,7 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 - **Potencial:** até 23 anos, `overall + round(U^1.5 × (30 − 2 × (idade − 17)))` com `U = Rng.next()`; de 24 a 26, `overall + Rng.int(0, 4)`; 27 ou mais, igual ao overall. Máximo 95. Um dos jovens de cada clube é a **joia**: potencial de pelo menos `strength + 8` (a história do jovem que vira craque precisa existir em todo clube). O potencial é sorteado **depois** do deslocamento do elenco (sobre o overall final), para valer `potential ≥ overall`; a joia é o jovem de maior potencial e, se ficar abaixo do piso `min(95, ceil(strength efetiva + 8))`, sobe para ele (e nunca abaixo do próprio overall). Joia e ídolo são regras do elenco (T-006), não do jogador avulso. **Desempates** (ídolo com o mesmo overall, joia com o mesmo potencial): o primeiro na ordem do elenco (XI por vaga, reservas, elenco, jovens).
 - **Nacionalidade:** 90% brasileiros, 10% de outros países da América do Sul, divididos igualmente entre os 9 outros países da CONMEBOL (Argentina, Bolívia, Chile, Colômbia, Equador, Paraguai, Peru, Uruguai, Venezuela). Pesos iguais de propósito: é só o nome e a bandeira, e uma tabela de pesos não muda nenhuma meta. Enquanto não houver lista de nomes em espanhol (pedido ao `content-writer`, passa pelo CEO), o gerador usa nomes brasileiros para eles. Nomes e avatares vêm de `app/src/lib/generators/` (fora do motor), sempre fictícios; o motor só guarda a semente do nome e do rosto.
 - **Formação preferida:** sorteada entre as duas do perfil do clube (ver `ia-clubes.md`); a sorteada vai primeiro em `preferredFormations`, o elenco é montado para ela e ela vence o empate da IA. O Caótico recebe duas formações distintas sorteadas entre as seis; elas só moldam o elenco, porque no jogo ele continua sorteando a cada partida.
+- **Partidas pelo clube (`clubAppearances`):** titulares, reservas e elenco começam com 1 (`PRE_CAREER_APPEARANCES`, constante: já estrearam antes da carreira); os 3 jovens começam com 0. Serve só ao marcador `estreia` (`partida.md`, "Marcadores do resultado") e não aparece na interface da 1a como total de jogos.
 - **Camisas** (uma por jogador, únicas no clube, fixas na carreira). Titulares, na ordem GOL, LAT, ZAG, VOL, MEI, ATA (dentro da posição, na ordem das vagas), pegam o primeiro número livre da sua lista; se nenhum estiver livre, o menor livre de 2 a 11. Os 11 titulares sempre ficam com 1 a 11.
 
   | Posição | Lista    |

@@ -63,7 +63,7 @@ público = round(capacidade × clamp(fans.baseOccupancy × demanda × (clássico
 demanda = 0.6 + 0.7 × termômetro / 100        (0,6 a 1,3, como na ADR-0005)
 ```
 
-Com `fans.baseOccupancy = 0.62` e termômetro 55, a ocupação é 61% (meta da Etapa 3: 55% a 70%). Termômetro 90 em clássico: estádio cheio. O número aparece no placar e nas notícias ("casa cheia", "estádio vazio"); bilheteria e faixas de ingresso entram na Etapa 3.
+Com `fans.baseOccupancy = 0.62` e termômetro 55, a ocupação é 61% (meta da Etapa 3: 55% a 70%). Termômetro 90 em clássico: 95% (`0.62 × 1.23 × 1.25`); o estádio só fica cheio em clássico com termômetro 99 ou mais, e fora de clássico nunca passa de 81%. O número aparece no placar e nas notícias ("casa cheia", "estádio vazio"); bilheteria e faixas de ingresso entram na Etapa 3.
 
 ## Humor da rede social
 
