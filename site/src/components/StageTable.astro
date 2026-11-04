@@ -90,7 +90,7 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
   }
   table.stages th.et {
     width: 52px;
-    font: 800 26px/1 var(--font-display);
+    font: var(--type-stage-number);
     font-variant-numeric: tabular-nums;
     text-transform: none;
     letter-spacing: 0;
@@ -150,7 +150,7 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
     gap: var(--space-3);
   }
   .cards .et {
-    font: 800 26px/1 var(--font-display);
+    font: var(--type-stage-number);
     font-variant-numeric: tabular-nums;
     min-width: 2ch;
   }

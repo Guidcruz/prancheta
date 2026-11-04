@@ -86,11 +86,12 @@
   --type-subtitulo: 600 20px/24px var(--font-display);
   --type-numero: 600 18px/20px var(--font-display);
   --type-rotulo: 700 12px/16px var(--font-display);
-  --type-display-xl: 800 clamp(72px, 21vw, 196px)/0.84 var(--font-display);
+  --type-display-xl: 800 clamp(64px, 21vw, 196px)/0.84 var(--font-display);
   --type-display-lg: 700 40px/44px var(--font-display);
   --type-botao: 700 20px/24px var(--font-display);
   --type-sticker-name: 800 20px/24px var(--font-display);
   --type-sticker-name-long: 800 17px/22px var(--font-display);
+  --type-stage-number: 800 26px/1 var(--font-display);
   --type-body: 400 15px/22px var(--font-body);
   --type-body-lg: 400 17px/26px var(--font-body);
   --type-body-strong: 600 15px/22px var(--font-body);
@@ -101,11 +102,12 @@
 .subtitulo { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 600; }
 .numero { font-family: var(--font-display); font-size: 18px; line-height: 20px; font-weight: 600; font-variant-numeric: tabular-nums; }
 .rotulo { font-family: var(--font-display); font-size: 12px; line-height: 16px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; }
-.display-xl { font-family: var(--font-display); font-size: clamp(72px, 21vw, 196px); line-height: 0.84; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; }
+.display-xl { font-family: var(--font-display); font-size: clamp(64px, 21vw, 196px); line-height: 0.84; font-weight: 800; letter-spacing: -0.01em; text-transform: uppercase; }
 .display-lg { font-family: var(--font-display); font-size: 40px; line-height: 44px; font-weight: 700; text-transform: uppercase; }
 .botao { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 700; letter-spacing: 0.02em; text-transform: uppercase; }
 .sticker-name { font-family: var(--font-display); font-size: 20px; line-height: 24px; font-weight: 800; text-transform: uppercase; }
 .sticker-name-long { font-family: var(--font-display); font-size: 17px; line-height: 22px; font-weight: 800; text-transform: uppercase; }
+.stage-number { font-family: var(--font-display); font-size: 26px; line-height: 1; font-weight: 800; }
 .body { font-family: var(--font-body); font-size: 15px; line-height: 22px; font-weight: 400; }
 .body-lg { font-family: var(--font-body); font-size: 17px; line-height: 26px; font-weight: 400; }
 .body-strong { font-family: var(--font-body); font-size: 15px; line-height: 22px; font-weight: 600; }
