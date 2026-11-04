@@ -380,14 +380,15 @@ export function fitAttributesToOverall(
   for (const key of order) {
     result[key] = clamp(result[key]! + d, ATTRIBUTE_RANGE.min, ATTRIBUTE_RANGE.max);
   }
-  // At most 99 × 6 steps; the bound only guards against a programming error.
-  for (let guard = 0; guard < 600; guard++) {
-    const current = computeOverall(position, result);
-    if (current === goal) break;
-    const up = current < goal;
+  // Each step moves one attribute toward the target, so 99 × 6 steps always suffice, and some
+  // attribute is off the edge while the formula misses a target in 1..99. Reaching either
+  // throw below is a programming error, never a game situation.
+  for (let steps = 0; computeOverall(position, result) !== goal; steps++) {
+    if (steps >= 600) throw new Error(`fitAttributesToOverall did not converge to ${goal}`);
+    const up = computeOverall(position, result) < goal;
     const edge = up ? ATTRIBUTE_RANGE.max : ATTRIBUTE_RANGE.min;
     const key = order.find((k) => result[k] !== edge);
-    if (key === undefined) break;
+    if (key === undefined) throw new Error(`fitAttributesToOverall cannot reach ${goal}`);
     result[key] = result[key]! + (up ? 1 : -1);
   }
   return result;

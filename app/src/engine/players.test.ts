@@ -386,13 +386,17 @@ describe('fitAttributesToOverall', () => {
   });
 
   it('moves the heaviest attribute first in the fine adjustment (GK reflexes)', () => {
-    // GK 72.5 → 73 already; from all 50 (overall 50) to 50 nothing changes.
     const flat = Object.fromEntries(GOALKEEPER_ATTRIBUTES.map((k) => [k, 50]));
-    expect(fitAttributesToOverall(flat, 'GK', 50)).toEqual(flat);
-    // Coarse +1 overshoots nothing; check the rounding step with an odd start.
-    const odd = { ...flat, reflexes: 51 }; // 50.3 → 50
-    const up = fitAttributesToOverall(odd, 'GK', 51);
-    expect(computeOverall('GK', up)).toBe(51);
+    // positioning 99, the rest 50: overall 62.25 → 62. Target 70: coarse +8 (positioning stays
+    // at 99) gives 68.25 → 68; fine: only reflexes moves, 58 → 63, giving 69.75 → 70.
+    expect(fitAttributesToOverall({ ...flat, positioning: 99 }, 'GK', 70)).toEqual({
+      reflexes: 63,
+      positioning: 99,
+      aerial: 58,
+      rushing: 58,
+      distribution: 58,
+      physical: 58,
+    });
   });
 
   it('is pure and clamps a target outside 1..99', () => {
