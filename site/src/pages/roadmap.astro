@@ -1,12 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import md from '../../../docs/roadmap.md?raw';
 // Fonte única: docs/roadmap.md (a tabela). Mudou lá, muda aqui no próximo build.
-const md = readFileSync(resolve(process.cwd(), '..', 'docs', 'roadmap.md'), 'utf8');
 const rows = md
   .split('\n')
-  .filter((l) => l.startsWith('|') && !l.startsWith('|---') && !l.startsWith('| Etapa'))
+  .filter((l) => l.startsWith('|') && !/^\|\s*:?-{3,}/.test(l) && !l.startsWith('| Etapa'))
   .map((l) =>
     l
       .split('|')

@@ -106,7 +106,7 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 
 - Perguntar antes de começar cada item; avisar no celular quando algo esperar por ele.
 - "Pode rodar" antes de qualquer coisa que abra janela ou use a GPU; um teste de tela por vez.
-- Ambiente de teste isolado: a definir na Etapa 1a (`PRANCHETA_ENV=test` e um IndexedDB separado); o hook já exige a variável para E2E e preview.
+- Ambiente de teste isolado: a definir na Etapa 1a (`PRANCHETA_ENV=test` e um IndexedDB separado); o hook já exige a variável para `playwright test`, `vite preview` e `npm run preview -w app` (o preview do site é livre).
 - Toda semana um post no devlog, mesmo curto; toda etapa concluída, um post de marco. O `/kickoff` parte do backlog de `docs/PROJETO.md`, não só de `docs/roadmap.md`.
 - Cada lote de textos do `content-writer` e cada lista de clubes passa pelo CEO antes de entrar no jogo.
 - Tabela de andamento no fim de cada resposta longa.

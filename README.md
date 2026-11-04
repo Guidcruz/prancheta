@@ -13,7 +13,7 @@ Jogo de técnico de futebol para o celular (PWA), com clubes brasileiros e sul-a
 
 ```bash
 npm install
-npm run dev          # o jogo em http://localhost:5173/jogo/
+npm run dev          # o jogo em http://localhost:5173/jogo/ (gera os ícones antes)
 npm run dev -w site  # o site em http://localhost:4321/
 npm test             # testes do motor
 npm run build        # site + jogo em dist/ (o que o Cloudflare Pages publica)

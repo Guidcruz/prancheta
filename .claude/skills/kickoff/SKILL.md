@@ -13,7 +13,7 @@ Siga estes passos, criando a lista de tarefas antes de começar:
 1. **Preparar o repositório**
    - Verifique se é um repositório git (`git status`). Se não for, peça ao CEO para rodar `git init` e criar o repositório no GitHub, ou faça `git init` se ele autorizar.
    - Verifique se o kit está na raiz (`CLAUDE.md`, `.claude/`, `docs/PROCESSO.md`, `docs/papeis.md`, `.github/`). Se não, diga ao CEO para copiar o conteúdo do kit para a raiz do repositório.
-   - Decida com o CEO, antes de tudo: o idioma de specs/commits/PRs/docs (seção "Política de idioma" do `CLAUDE.md`) e o critério do caminho leve ("Critério do caminho leve").
+   - A política de idioma e o critério do caminho leve já estão decididos no `CLAUDE.md`; não pergunte de novo.
    - Crie a branch `chore/project-setup` para todo o trabalho de planejamento.
 
 2. **Descoberta** → chame `product-manager` com a ideia do CEO pedindo `docs/00-vision.md` e as perguntas abertas.

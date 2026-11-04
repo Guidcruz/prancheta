@@ -8,7 +8,7 @@ Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do 
 | ------------------------------ | ---------- | ---------------------------------------------------------------------------------- |
 | Documento de projeto           | feito      | congelado em `docs/PROJETO.md`                                                     |
 | Design system                  | feito (v1) | artefato "Prancheta"; tokens em `design/tokens.json`                               |
-| Kit de agentes adaptado        | feito      | 14 agentes, 10 comandos, hook com travas do projeto e 44 testes                    |
+| Kit de agentes adaptado        | feito      | 14 agentes, 10 comandos, hook com travas do projeto e 74 casos de teste            |
 | Auditoria do dia 1             | feita      | 50 achados; corrigidos os que não dependem de decisão; os outros estão abaixo      |
 | Repositório no GitHub          | pendente   | proteger a `main` (checklist em `docs/04-deploy.md`)                               |
 | Site no Cloudflare Pages       | pendente   | criar o projeto apontando para o repositório, build `npm run build`, saída `dist/` |

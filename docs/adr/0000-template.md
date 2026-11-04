@@ -1,30 +1,30 @@
-# ADR-0000: <Short title of the decision>
+# ADR-0000: <Título curto da decisão>
 
-- **Status:** proposed | accepted | deprecated | superseded by ADR-XXXX
-- **Date:** YYYY-MM-DD
-- **Deciders:** architect (proposed), CEO (approved)
+- **Status:** proposta | aceita | descontinuada | substituída pela ADR-XXXX
+- **Data:** AAAA-MM-DD
+- **Decisores:** architect (propôs), CEO (aprovou)
 
-## Context
+## Contexto
 
-<What situation forces a decision? Which requirements, constraints or problems are in play? Two to five sentences.>
+<Que situação obriga a decidir? Quais requisitos, restrições ou problemas estão em jogo? Duas a cinco frases.>
 
-## Options considered
+## Opções consideradas
 
-| Option      | Pros | Cons |
-| ----------- | ---- | ---- |
-| A: <option> |      |      |
-| B: <option> |      |      |
+| Opção      | Prós | Contras |
+| ---------- | ---- | ------- |
+| A: <opção> |      |         |
+| B: <opção> |      |         |
 
-## Decision
+## Decisão
 
-<Which option and why, in plain language. "We will use X because Y.">
+<Qual opção e por quê, em linguagem simples. "Vamos usar X porque Y.">
 
-## Consequences
+## Consequências
 
-- **Positive:** <what gets easier>
-- **Negative:** <what gets harder, what we accept>
-- **Follow-ups:** <tasks this creates>
+- **Positivo:** <o que fica mais fácil>
+- **Negativo:** <o que fica mais difícil, o que aceitamos>
+- **Pendências:** <tarefas que isso cria>
 
-## Compliance
+## Conformidade
 
-<How a reviewer can tell the code follows this decision. E.g. "all DB access goes through `src/repositories/`; direct SQL elsewhere is a BLOCKER in review.">
+<Como um revisor sabe que o código segue esta decisão. Ex.: "todo acesso ao banco passa por `server/src/db/`; SQL direto em outro lugar é BLOCKER na revisão".>

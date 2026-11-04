@@ -18,10 +18,10 @@ Crie a lista de tarefas e siga o fluxo. Nunca pule um portão.
 2b. **Implementação** → chame `developer` com: tarefa, história e critérios de aceite, trecho de arquitetura relevante, branch, e a proibição de tocar em CI/deploy. Tarefas em `app/src/engine/` ou de complexidade G: `model: opus`.
 
 3. **Code review** → chame `code-reviewer` em uma invocação separada, passando só a branch, a base (`main`) e a tarefa, sem o raciocínio do developer. Se a tarefa tocou tela, também o `ux-designer` em invocação separada com o checklist de interface (se ele escreveu a casca, a revisão vai para o `code-reviewer` com o checklist).
-   - CHANGES REQUESTED → devolva a lista ao `developer` (volte ao passo 2). Na segunda reprovação pelo mesmo motivo, escale o developer para `opus`. Na terceira, ⏸ pare e consulte o CEO.
+   - CHANGES REQUESTED → devolva a lista ao `developer` (volte ao passo 2b). Na segunda reprovação pelo mesmo motivo, escale o developer para `opus`. Na terceira, ⏸ pare e consulte o CEO.
 
 4. **QA + regressão** → chame `qa-engineer` com a branch e os critérios de aceite. Ele escreve testes de aceite e roda a regressão completa.
-   - FAIL → relatório de bug volta ao `developer` (passo 2), depois nova revisão (passo 3) apenas do diff novo.
+   - FAIL → relatório de bug volta ao `developer` (passo 2b), depois nova revisão (passo 3) apenas do diff novo.
 
 5. **Segurança (condicional)** → se a mudança tocar autenticação, autorização, dados pessoais, upload, pagamento ou dependências, chame `security-auditor` antes do PR.
 
