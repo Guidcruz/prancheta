@@ -479,7 +479,7 @@ Cenário: rotação por fadiga
 Cenário: substituição na partida
   Dado um jogador da IA que se lesiona durante a partida e substituições ainda disponíveis
   Quando o evento acontece
-  Então a IA o substitui por um reserva da mesma posição, se houver, no mesmo minuto
+  Então a IA o substitui, no mesmo minuto, pelo reserva que mais rende na vaga (maior valor de seleção, quase sempre o da mesma posição)
   E a IA nunca faz mais de 5 substituições
 
 Cenário: elenco sem reservas aptos
