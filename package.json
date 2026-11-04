@@ -16,7 +16,8 @@
     "lint": "npm run lint -w app && npm run check -w app && npm run check -w site && prettier --check \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\" && bash scripts/test-hook.sh",
     "format": "prettier --write \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\"",
     "balance": "echo \"scripts/balance.ts ainda não existe (tarefa da Etapa 1)\" && exit 1",
-    "content:check": "echo \"scripts/content-check.mjs ainda não existe (tarefa da Etapa 1)\" && exit 1",
+    "content:check": "node scripts/content-check.mjs",
+    "blocklist:hash": "node scripts/hash-blocklist.mjs",
     "icons": "node scripts/icons.mjs"
   },
   "devDependencies": {
