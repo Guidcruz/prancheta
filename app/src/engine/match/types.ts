@@ -68,7 +68,8 @@ export type MatchEvent = {
       readonly type: 'chance';
       readonly side: Side;
       readonly shooter: PlayerId;
-      readonly kind: ChanceKind;
+      /** Never `penalty`: a penalty is `penaltyAwarded`, then `goal` or `penaltyMissed`. */
+      readonly kind: Exclude<ChanceKind, 'penalty'>;
       readonly outcome: MissOutcome;
       readonly pGoal: number;
     }

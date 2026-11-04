@@ -265,7 +265,10 @@ export function sideCardRates(
   };
 }
 
-/** The highest `positionMult × traitMult` of any player (a hothead centre-back or midfielder). */
+/**
+ * The highest `positionMult × traitMult` of any player (a hothead centre-back or defensive
+ * midfielder): the ceiling of the match loop's shortcut. Internal: not part of the engine API.
+ */
 export const MAX_PLAYER_CARD_MULT =
   Math.max(...Object.values(CARD_POSITION_MULT)) * CARD_FACTORS.hothead;
 

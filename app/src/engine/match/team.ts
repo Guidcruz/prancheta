@@ -137,15 +137,21 @@ function inRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && value >= min && value <= max;
 }
 
+/**
+ * A player's condition as the match uses it: NaN goes to 0, like every clamp of the engine, and a
+ * value out of 0..100 goes to the nearest end.
+ */
+function correctedCondition(player: Player): number {
+  return clamp(player.condition, 0, 100);
+}
+
 function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appearance {
-  let energy = player.condition;
-  if (!inRange(energy, 0, 100)) {
-    // NaN goes to 0, like every clamp of the engine; out of range goes to the nearest end.
+  const energy = correctedCondition(player);
+  if (!inRange(player.condition, 0, 100)) {
     warnings.push({
       code: 'player-invalid-condition',
-      detail: { side, player: player.id, condition: String(energy) },
+      detail: { side, player: player.id, condition: String(player.condition) },
     });
-    energy = clamp(energy, 0, 100);
   }
   let yellowCount = player.yellowCount;
   const maxCount = SUSPENSION.yellowLimit - 1;
@@ -183,10 +189,13 @@ function unavailable(player: Player): boolean {
 
 /**
  * Selection value of a player for a slot (ia-clubes.md, "Escalação"):
- * `overall × fit × (0.80 + 0.20 × condition / 100)`.
+ * `overall × fit × (0.80 + 0.20 × condition / 100)`, with the corrected condition (a damaged
+ * NaN or out-of-range value never wins nor loses a place by itself).
  */
 function selectionValue(player: Player, slot: Position): number {
-  return player.overall * fit(player.position, slot) * conditionMultiplier(player.condition);
+  return (
+    player.overall * fit(player.position, slot) * conditionMultiplier(correctedCondition(player))
+  );
 }
 
 /**
