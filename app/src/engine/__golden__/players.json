@@ -1,0 +1,184 @@
+{
+  "engineVersion": 1,
+  "name": "players",
+  "data": {
+    "overalls": [
+      {
+        "position": "GK",
+        "attributes": {
+          "reflexes": 21,
+          "positioning": 28,
+          "aerial": 57,
+          "rushing": 38,
+          "distribution": 24,
+          "physical": 69
+        },
+        "overall": 36
+      },
+      {
+        "position": "CB",
+        "attributes": {
+          "speed": 64,
+          "technique": 18,
+          "passing": 96,
+          "finishing": 34,
+          "marking": 43,
+          "physical": 20
+        },
+        "overall": 43
+      },
+      {
+        "position": "FB",
+        "attributes": {
+          "speed": 4,
+          "technique": 31,
+          "passing": 94,
+          "finishing": 29,
+          "marking": 88,
+          "physical": 61
+        },
+        "overall": 54
+      },
+      {
+        "position": "DM",
+        "attributes": {
+          "speed": 41,
+          "technique": 87,
+          "passing": 93,
+          "finishing": 83,
+          "marking": 23,
+          "physical": 14
+        },
+        "overall": 50
+      },
+      {
+        "position": "AM",
+        "attributes": {
+          "speed": 21,
+          "technique": 10,
+          "passing": 64,
+          "finishing": 24,
+          "marking": 87,
+          "physical": 26
+        },
+        "overall": 32
+      },
+      {
+        "position": "ST",
+        "attributes": {
+          "speed": 90,
+          "technique": 82,
+          "passing": 64,
+          "finishing": 80,
+          "marking": 8,
+          "physical": 94
+        },
+        "overall": 84
+      }
+    ],
+    "traits": [
+      "professional",
+      "hothead",
+      "hothead",
+      "hothead",
+      "quiet",
+      "quiet",
+      "leader",
+      "quiet",
+      "quiet",
+      "leader",
+      "professional",
+      "quiet",
+      "quiet",
+      "quiet",
+      "quiet",
+      "hothead",
+      "quiet",
+      "professional",
+      "hothead",
+      "professional"
+    ],
+    "potentials": [
+      {
+        "age": 17,
+        "potential": 66
+      },
+      {
+        "age": 19,
+        "potential": 84
+      },
+      {
+        "age": 21,
+        "potential": 70
+      },
+      {
+        "age": 23,
+        "potential": 65
+      },
+      {
+        "age": 24,
+        "potential": 65
+      },
+      {
+        "age": 25,
+        "potential": 68
+      },
+      {
+        "age": 26,
+        "potential": 69
+      },
+      {
+        "age": 27,
+        "potential": 65
+      },
+      {
+        "age": 33,
+        "potential": 65
+      }
+    ],
+    "curves": [
+      {
+        "peakAge": 27,
+        "growth": 1.0693542809225618
+      },
+      {
+        "peakAge": 28,
+        "growth": 1.1956295907497405
+      },
+      {
+        "peakAge": 28,
+        "growth": 1.0943514527752995
+      },
+      {
+        "peakAge": 27,
+        "growth": 0.9788941267877818
+      }
+    ],
+    "identities": [
+      {
+        "display": "Teste1",
+        "full": "Jogador Teste1",
+        "family": "Teste1",
+        "nameSeed": 740985114,
+        "faceSeed": 2329048159,
+        "face": "t-br-12inl27"
+      },
+      {
+        "display": "Teste2",
+        "full": "Jogador Teste2",
+        "family": "Teste2",
+        "nameSeed": 1968923207,
+        "faceSeed": 2378796659,
+        "face": "t-br-13c9v8z"
+      },
+      {
+        "display": "Teste3",
+        "full": "Jogador Teste3",
+        "family": "Teste3",
+        "nameSeed": 3586910725,
+        "faceSeed": 813279498,
+        "face": "t-br-dg7eh6"
+      }
+    ]
+  }
+}
