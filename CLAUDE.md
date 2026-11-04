@@ -18,7 +18,7 @@
 
 ## Stack e comandos
 
-- **Linguagem:** TypeScript 5 (strict) / Node 22.18+.
+- **Linguagem:** TypeScript 5 (strict) / Node 22.23.4+ (fixada em `.nvmrc`).
 - **Jogo (`app/`):** Svelte 5 + Vite 8, PWA com `vite-plugin-pwa` 2, saves em IndexedDB (`idb`), campo 2D em canvas. Fontes hospedadas no próprio app (`@fontsource`), sem chamadas a terceiros.
 - **Site (`site/`):** Astro 7, conteúdo em Markdown (`site/src/content/devlog/`); o roteiro do site é lido de `docs/roadmap.md` no build. O site é só em pt-BR.
 - **Motor (`app/src/engine/`):** TypeScript puro, sem DOM, determinístico (semente explícita), compartilhado com o servidor a partir da Etapa 1b. Parâmetros numéricos ficam fora dele, em `app/src/params/`, e entram como argumento.

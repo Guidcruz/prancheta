@@ -111,6 +111,7 @@ export {
   homeAdvantage,
   moraleMultiplier,
   sectorStrengths,
+  shownEleven,
   strengthsFromRatings,
   teamFactor,
   teamStrength,
@@ -126,6 +127,30 @@ export type {
   StrengthsResult,
   TeamStrengths,
 } from './strength.ts';
+export {
+  BENCH_LINES,
+  CHAOTIC_POSTURE_WEIGHTS,
+  CHAOTIC_PRESSURE_WEIGHTS,
+  PROFILE_POSTURE,
+  PROFILE_PRESSURE,
+  aiSeed,
+  pickBench,
+  pickCaptainAndTakers,
+  pickEleven,
+  profileTactic,
+  strengthDelta,
+  suggestSheet,
+  validateLineup,
+} from './ai.ts';
+export type {
+  PreMatchPosture,
+  SheetProblem,
+  SuggestOptions,
+  SuggestState,
+  ValidateLineupResult,
+  Venue,
+} from './ai.ts';
+export { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
 export { simulateMatch } from './match/simulate.ts';
 export {
   ABANDONED_SCORE,
@@ -183,6 +208,7 @@ export type {
   MissOutcome,
   TeamInput,
 } from './match/types.ts';
+export { BENCH_SIZE } from './lineup.ts';
 export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {

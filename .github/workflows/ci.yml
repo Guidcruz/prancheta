@@ -24,7 +24,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: '22', cache: 'npm' }
+        with: { node-version-file: '.nvmrc', cache: 'npm' }
       - name: Instalar
         run: npm ci
       - name: Tokens do design system (falha se o contraste cair ou se o CSS commitado estiver desatualizado)

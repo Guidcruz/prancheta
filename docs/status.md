@@ -69,7 +69,8 @@ Telas da 1a (`docs/design/telas/`):
 | T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle` |
 | T-008  | feita (PR #18 mergeado; code review aprovado): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                                   |
 | T-009  | feita (PR #20 mergeado): `app/src/engine/match/`, goldens de partida, `ENGINE_VERSION` 4                                                                                                                           |
-| T-010  | em andamento (PR em aberto): cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5                                                                                                                |
+| T-010  | feita (PR #21 mergeado): cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5                                                                                                                    |
+| T-011  | em andamento (PR em aberto; code review e QA aprovados): IA pré-jogo, `suggestSheet`, `validateLineup`, `ENGINE_VERSION` segue 5                                                                                   |
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -148,6 +149,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 
 ## Concluído (mergeado em 2026-11-04)
 
+- PR #21: T-010 mergeada (cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5).
 - PR #20: T-009 mergeada (núcleo do `simulateMatch`, goldens de partida, `ENGINE_VERSION` 4).
 - PR #19: ADR-0015 (patrocínio desligado) e textos do site e do jogo sem patrocínio.
 - PR #16: site na direção A "Noite de estádio" e escudos v5 (ADR-0014).
@@ -162,32 +164,39 @@ Entregas do PR #16:
 - Tokens novos: `body-lg`, `sticker-name`, `sticker-name-long`, `stage-number`; mínimo de `type-display-xl` em 64px.
 - Textos aprovados em `docs/content/site/complementos.md`.
 
-## Métricas da partida (T-010) contra as metas
+## Métricas da partida (T-011, com a IA escalando) contra as metas
 
-| Métrica                  | Valor atual            | Meta      |
-| ------------------------ | ---------------------- | --------- |
-| Gols por jogo            | 2,70                   | 2,5–2,8   |
-| 0×0                      | 6,3%                   | 6–9%      |
-| Empates                  | 24,1%                  | —         |
-| Mandante                 | 48,1%                  | —         |
-| Goleada                  | 14,2%                  | 8–13      |
-| Amarelos por jogo        | 3,89                   | 3,5–4,5   |
-| Vermelhos por jogo       | 0,27                   | 0,11–0,25 |
-| Lesões por jogo          | 0,31                   | —         |
-| Pênaltis por jogo        | 0,27 (81% convertidos) | —         |
-| Mais forte por 20 pontos | 65,3%                  | —         |
-| Zebra por 30 pontos      | 7,7%                   | 8–12      |
+| Métrica                  | Valor atual | Meta      |
+| ------------------------ | ----------- | --------- |
+| Gols por jogo            | 2,76        | 2,5–2,8   |
+| 0×0                      | 6,2%        | 6–9%      |
+| Empates                  | 24,5%       | —         |
+| Mandante                 | 48,0%       | —         |
+| Goleada                  | 14,5%       | 8–13      |
+| Amarelos por jogo        | 4,36        | 3,5–4,5   |
+| Vermelhos por jogo       | 0,349       | 0,11–0,25 |
+| Lesões por jogo          | 0,32        | —         |
+| Pênaltis por jogo        | 0,275       | —         |
+| Mais forte por 20 pontos | 65,3%       | —         |
+| Zebra por 30 pontos      | 7,7%        | 8–12      |
 
-Fora da meta: goleada e zebra ficam para a T-011/T-012 ("segurar o resultado"); vermelhos ficam para a T-016 (`cards.bookedMult` em 0,30).
+Nota: com a IA, a pressão alta do Formador e do Ambicioso eleva os cartões. A proposta do `game-designer` para a T-016 é `cards.bookedMult` 0,20, o que deve levar os vermelhos para cerca de 0,19. Goleada e zebra seguem para a T-012 ("segurar o resultado").
 
 ## Decisões do CEO em 2026-11-04 (T-009)
 
 1. Fator casa também na finalização (chute e goleiro do mandante); nota no ADR-0011.
 2. Marcador "estreia" só para os jovens no início da carreira (quem nunca jogou pelo clube).
 
+## Decisões de design em 2026-11-04 (T-011)
+
+1. Rotação só com reserva descansado.
+2. Banco com 1 goleiro e 6 de linha.
+3. Clube humano sem ficha é lido como Tradicional.
+4. Formador sempre com pressão alta, mantido como identidade do perfil.
+
 ## Em andamento
 
-- **T-010** (cartões, lesões, pênaltis e faltas): PR em aberto, em re-revisão do code review.
+- **T-011** (IA pré-jogo): PR em aberto; code review e QA aprovados.
 - Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
 
 ## Concluído em 2026-11-04 (T-008 e patrocínio)
@@ -216,10 +225,16 @@ Fora da meta: goleada e zebra ficam para a T-011/T-012 ("segurar o resultado"); 
 - Domínio definitivo (bloqueia a US-047).
 - Quem trata as denúncias e em quanto tempo (bloqueia a US-065).
 
+## Ideias registradas para etapas futuras
+
+Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etapa chegar, e as regras passam pelo CEO antes de virar ADR ou requisito.
+
+- **Técnico interino e período sem técnico (Etapa 4, registrado em 2026-11-04):** quando um clube demite o técnico, o auxiliar assume como interino por 1 a 3 rodadas e joga no perfil "Tradicional"; "efeito técnico novo" com ganho de moral nos primeiros jogos; notícias e posts ("fulano é o interino", "diretoria busca nome no mercado"); no modo "técnico livre", o técnico humano demitido fica desempregado algumas rodadas até receber proposta. Vale para os clubes da IA e para o clube do técnico humano.
+
 ## Próximo
 
-1. T-011: IA pré-jogo (`suggestSheet`, escalação, tática por perfil, `validateLineup`).
+1. T-012: comandos na partida, substituições e IA em jogo, incluindo "segurar o resultado".
 2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
-4. T-010 até T-016 da Etapa 1a.
+4. T-013 até T-016 da Etapa 1a.
 5. Lote de clubes de dezembro, com a tabela final de 2026.

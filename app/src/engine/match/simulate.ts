@@ -486,10 +486,12 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
 
   /**
    * The half-time talk of a side at its half-time score: the AI's (ia-clubes.md, "Intervalo"); the
-   * coach's is T-012.
+   * coach's choice is T-012. Without a choice, the coach's club (`controller: 'human'`) gets the
+   * `traditional` talk, never a chaotic draw (ia-clubes.md, "Clube do técnico humano").
    */
   function halftimeTalk(team: TeamState, own: number, theirs: number): HalftimeTalk {
-    const { profile } = team; // an unknown profile was already turned into `traditional`
+    // `kickoffTeam` already turned an unknown profile and the human side into `traditional`.
+    const { profile } = team;
     if (profile === 'chaotic') return HALFTIME_TALKS[rng.int(0, HALFTIME_TALKS.length - 1)]!;
     return AI_HALFTIME_TALK[profile][scoreState(own, theirs)];
   }

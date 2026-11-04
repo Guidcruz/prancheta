@@ -6,6 +6,17 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- IA pré-jogo (T-011, US-011) em `app/src/engine/`:
+  - `suggestSheet` monta a ficha de cada clube: XI pelo valor de seleção, rotação com reserva descansado, banco de 1 goleiro e 6 de linha, capitão e cobradores.
+  - Tática por perfil, com o Δ de força e o mando; o Caótico sorteia; time cansado joga com pressão baixa.
+  - O clube do técnico humano é lido como Tradicional.
+  - `validateLineup` aceita `min(11, aptos)` titulares e confere o banco.
+  - O valor de seleção é compartilhado com a partida, e o desempate por ID passou a ser numérico.
+  - `shownEleven`: a força exibida e a IA usam a mesma conta.
+  - O relatório de métricas da partida passa a usar a IA na liga.
+  - Teste de ponta a ponta: 3 temporadas com os 20 clubes reais, 2.280 fichas, nenhuma com lesionado ou suspenso, e a rotação funcionando.
+  - `ENGINE_VERSION` continua 5.
+
 - Cartões, lesões, pênaltis e faltas na partida (T-010, US-009) em `app/src/engine/match/`:
   - Cartões amarelos e vermelhos, com o segundo amarelo virando vermelho e a suspensão devolvida em `newSuspensions` (1 a 2 jogos); o contador de amarelos volta em `yellowCounts`, só de quem entrou em campo.
   - Lesões ligadas ao cansaço, com gravidade (`InjurySeverity`) e rodadas fora devolvidas em `newInjuries`.

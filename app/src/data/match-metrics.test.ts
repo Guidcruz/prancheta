@@ -6,6 +6,7 @@ import {
   newGame,
   seedFromString,
   simulateMatch,
+  suggestSheet,
   teamStrength,
 } from '../engine/index.ts';
 import type {
@@ -16,6 +17,7 @@ import type {
   MatchResult,
   Player,
   TeamInput,
+  TeamSheet,
 } from '../engine/index.ts';
 import { fixedIdentitySource } from '../engine/testing/identity.ts';
 import { testParams } from '../engine/testing/params.ts';
@@ -30,8 +32,14 @@ import { testParams } from '../engine/testing/params.ts';
  * a short version (2 careers, 500 duels of each) checks the same sanity bounds in a second.
  *
  * - League: 30 careers (seeds 1..30) × the 380 matches of season 1 = 11,400 matches, both sides
- *   with the best XI of their first preferred formation, balanced posture and medium pressure
- *   (the AI's pre-match tactic is T-011), thermometer at its start value.
+ *   with the AI's sheet for the fixture (`suggestSheet`, T-011: formation, XI, bench, takers,
+ *   posture and pressure by profile), everyone fresh (the rounds are not played in sequence, so
+ *   condition stays 100 and rotation never triggers), thermometer at its start value. The report
+ *   also prints the posture and pressure the AI chose, by profile.
+ *   Caveat: with everyone fresh, the tired-team rule never lowers the pressure and rotation never
+ *   rests anyone, so this report overstates the high pressure, and with it the yellows and reds,
+ *   of a real season. The real numbers need the 38 rounds in sequence (`/balance`, T-016;
+ *   ia-clubes.md, "Pedido ao developer" 5).
  * - Calibrated duels (balance-targets.md, "Duelos calibrados"): squads generated with exact
  *   strength (clubStrengthSd = 0), both in 4-4-2, balanced, medium, neutral ground, thermometer
  *   55; 20,000 matches at 20 points of difference (80 × 60) and as many at 30 (85 × 55), as the
@@ -74,10 +82,43 @@ function teamInput(
   };
 }
 
-function clubInput(state: GameState, clubId: string): TeamInput {
+/** The AI's input for a fixture of season 1 (the state's round set to the fixture's). */
+function aiInput(state: GameState, round: number, clubId: string, opponentId: string): TeamInput {
   const club = state.clubs[clubId]!;
-  const squad = state.squads[clubId]!.map((id) => state.players[id]!);
-  return teamInput(clubId, squad, club.preferredFormations[0], club.profile, club.fans);
+  const sheet: TeamSheet = suggestSheet({ ...state, round }, params, clubId, opponentId);
+  return {
+    clubId,
+    controller: 'ai',
+    profile: club.profile,
+    fans: club.fans,
+    players: state.squads[clubId]!.map((id) => state.players[id]!),
+    sheet,
+  };
+}
+
+/** Postures and pressures the AI chose, by profile. */
+type TacticTally = Map<AiProfile, Map<string, number>>;
+
+function addTactic(t: TacticTally, profile: AiProfile, sheet: TeamSheet): void {
+  const counts = t.get(profile) ?? new Map<string, number>();
+  for (const key of [sheet.tactic.posture, `p-${sheet.tactic.pressure}`]) {
+    counts.set(key, (counts.get(key) ?? 0) + 1);
+  }
+  t.set(profile, counts);
+}
+
+function tacticLines(t: TacticTally): string[] {
+  const order: AiProfile[] = ['ambitious', 'academy', 'seller', 'traditional', 'chaotic'];
+  return order.flatMap((profile) => {
+    const counts = t.get(profile);
+    if (counts === undefined) return [];
+    const n =
+      (counts.get('p-low') ?? 0) + (counts.get('p-medium') ?? 0) + (counts.get('p-high') ?? 0);
+    const share = (key: string) => pct(counts.get(key) ?? 0, n);
+    return [
+      `  AI ${profile.padEnd(11)} (${n} sheets) attacking ${share('attacking')}, balanced ${share('balanced')}, defensive ${share('defensive')}; pressure high ${share('p-high')}, medium ${share('p-medium')}, low ${share('p-low')}`,
+    ];
+  });
 }
 
 interface Tally {
@@ -148,12 +189,13 @@ function add(t: Tally, result: MatchResult): void {
 
 const pct = (n: number, d: number) => `${((100 * n) / d).toFixed(1)}%`;
 
-describe('T-009/T-010 match metrics with the 20 real clubs (report only, not the /balance)', () => {
+describe('T-009/T-010/T-011 match metrics with the 20 real clubs (report only, not the /balance)', () => {
   it(
     `simulates ${FULL ? 'at least 10,000' : 'a sample of'} league matches and the calibrated duels`,
     { timeout: 300_000 },
     () => {
       const league = tally();
+      const tactics: TacticTally = new Map();
       let gap10 = { matches: 0, strongerWins: 0, draws: 0 };
       for (let career = 1; career <= CAREERS; career++) {
         const created = newGame(
@@ -164,17 +206,20 @@ describe('T-009/T-010 match metrics with the 20 real clubs (report only, not the
         );
         if (!created.ok) throw new Error('newGame failed');
         const state = created.value;
-        const inputs = new Map(Object.keys(state.clubs).map((id) => [id, clubInput(state, id)]));
         const shown = new Map(Object.keys(state.clubs).map((id) => [id, teamStrength(state, id)!]));
         for (const fixture of state.fixtures) {
+          const home = aiInput(state, fixture.round, fixture.homeId, fixture.awayId);
+          const away = aiInput(state, fixture.round, fixture.awayId, fixture.homeId);
+          addTactic(tactics, home.profile, home.sheet);
+          addTactic(tactics, away.profile, away.sheet);
           const result = simulateMatch(
             {
               fixtureId: fixture.id,
               seed: seedFromString(
                 `${state.seed}-s1-r${fixture.round}-${fixture.homeId}-${fixture.awayId}`,
               ),
-              home: inputs.get(fixture.homeId)!,
-              away: inputs.get(fixture.awayId)!,
+              home,
+              away,
               derby: state.clubs[fixture.homeId]!.def.rivals.includes(fixture.awayId),
               neutral: false,
               rules: state.rules,
@@ -246,7 +291,7 @@ describe('T-009/T-010 match metrics with the 20 real clubs (report only, not the
       const n = league.matches;
       const top = [...league.scores.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
       const lines = [
-        `[T-010 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}`,
+        `[T-011 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}`,
         `  goals per match        ${(league.goals / n).toFixed(3)}   target 2.65 (2.50–2.80)`,
         `  0x0                    ${pct(league.nilNil, n)}   target 7% (6–9%)`,
         `  draws                  ${pct(league.draws, n)}   target 26% (24–28%)`,
@@ -262,6 +307,8 @@ describe('T-009/T-010 match metrics with the 20 real clubs (report only, not the
         `  league, shown gap >= 10: ${gap10.matches} matches, stronger wins ${pct(gap10.strongerWins, gap10.matches || 1)}, draws ${pct(gap10.draws, gap10.matches || 1)}`,
         `  duel 80x60 (gap 20)    stronger wins ${pct(d20.strongWins, d20.matches)}   target 65% (62–68%); draws ${pct(d20.draws, d20.matches)}; goals ${(d20.goals / d20.matches).toFixed(2)}`,
         `  duel 85x55 (gap 30)    weaker wins ${pct(d30.weakWins, d30.matches)}   target 10% (8–12%); stronger ${pct(d30.strongWins, d30.matches)}; goals ${(d30.goals / d30.matches).toFixed(2)}`,
+        ...tacticLines(tactics),
+        '  note: everyone fresh (rounds not in sequence): high pressure, yellows and reds read above a real season',
       ];
       console.info(lines.join('\n'));
 

@@ -332,28 +332,32 @@ function isFormation(value: string): value is Formation {
 }
 
 /** Injured or suspended players are not fit to play (jogadores.md, "Estados que mudam"). */
-function isAvailable(player: Pick<Player, 'injuryRounds' | 'suspendedGames'>): boolean {
+export function isAvailable(player: Pick<Player, 'injuryRounds' | 'suspendedGames'>): boolean {
   return player.injuryRounds <= 0 && player.suspendedGames <= 0;
 }
 
 /**
- * The checks shared by {@link sectorStrengths} and {@link teamStrength}: a known formation, as
- * many distinct starters as slots, each found by `lookup` (the club's squad) and, when
- * `requireAvailable`, neither injured nor suspended. Returns the starters with their slots, or
- * the first problem (formation, count, then each starter in slot order).
+ * The checks shared by {@link sectorStrengths} and {@link teamStrength}: a known formation,
+ * `count` distinct starters (11 by default), each found by `lookup` (the club's squad) and, when
+ * `requireAvailable`, neither injured nor suspended. Returns the starters with their slots (the
+ * first `count` slots of the formation), or the first problem (formation, count, then each
+ * starter in slot order). Shared with `validateLineup` (ai.ts, T-011), so the reasons and their
+ * order are the same everywhere; only `validateLineup` passes a `count` below 11 (a squad with
+ * fewer than 11 available players).
  */
-function resolveStarters(
+export function resolveStarters(
   lineup: Pick<Lineup, 'formation' | 'starters'>,
   lookup: (id: PlayerId) => Player | undefined,
   requireAvailable: boolean,
+  count: number = STARTERS_COUNT,
 ): { formation: Formation; eleven: { player: Player; slot: Position }[] } | LineupProblem {
   const { formation, starters } = lineup;
   if (!isFormation(formation)) return { reason: 'no-formation', formation };
   const slots = FORMATION_SLOTS[formation];
-  if (starters.length !== slots.length) return { reason: 'wrong-count', count: starters.length };
+  if (starters.length !== count) return { reason: 'wrong-count', count: starters.length };
   const seen = new Set<PlayerId>();
   const eleven: { player: Player; slot: Position }[] = [];
-  for (let i = 0; i < slots.length; i++) {
+  for (let i = 0; i < starters.length; i++) {
     const id = starters[i]!;
     if (seen.has(id)) return { reason: 'duplicate', player: id };
     seen.add(id);
@@ -399,12 +403,35 @@ export function sectorStrengths(
 }
 
 /**
+ * The XI that the displayed strength of a club reads when no lineup is given: today the best XI
+ * of the available players (not injured, not suspended) in the club's first preferred formation
+ * (`4-4-2` if that one is unknown), everyone fresh (`bestEleven`); the T-013 makes it read
+ * `lastSheets`. Fewer than 11 entries when fewer than 11 are available; undefined for an unknown
+ * club. {@link teamStrength} and the AI's view of the opponent (ai.ts, `Δ`) both read it, so they
+ * never diverge.
+ */
+export function shownEleven(
+  state: Pick<GameState, 'clubs' | 'players' | 'squads'>,
+  clubId: ClubId,
+): { player: Player; slot: Position }[] | undefined {
+  const club = state.clubs[clubId];
+  if (club === undefined) return undefined;
+  const available: Player[] = [];
+  for (const id of state.squads[clubId] ?? []) {
+    const player = state.players[id];
+    if (player !== undefined && isAvailable(player)) available.push(player);
+  }
+  const first = club.preferredFormations[0];
+  return bestEleven(available, isFormation(first) ? first : '4-4-2');
+}
+
+/**
  * Displayed strength of a club (docs/02-architecture.md, 4.1; balance-targets.md, "Força" de um
  * time): the mean of `overall × fit` of the 11 starters, without condition, morale nor home
  * advantage. A real number in 0..99 (overall ≤ 99, fit ≤ 1); the interface rounds it for display.
  *
  * - With `lineup`: its formation and its 11 starters, which must be distinct players of the
- *   club's squad. Availability is not checked here (that is `validateLineup`, T-011).
+ *   club's squad. Availability is not checked here (that is `validateLineup`, ai.ts).
  * - Without `lineup`: the best XI of the available players (not injured, not suspended) in the
  *   club's first preferred formation, picked as the AI does with everyone fresh (`bestEleven`).
  *
@@ -421,13 +448,10 @@ export function teamStrength(
   const squadIds = state.squads[clubId] ?? [];
 
   if (lineup === undefined) {
-    const available: Player[] = [];
-    for (const id of squadIds) {
-      const player = state.players[id];
-      if (player !== undefined && isAvailable(player)) available.push(player);
-    }
-    const eleven = bestEleven(available, club.preferredFormations[0]);
-    return eleven.length === STARTERS_COUNT ? elevenStrength(eleven) : undefined;
+    const eleven = shownEleven(state, clubId);
+    return eleven !== undefined && eleven.length === STARTERS_COUNT
+      ? elevenStrength(eleven)
+      : undefined;
   }
 
   const inSquad = new Set(squadIds);

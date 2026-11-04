@@ -1,6 +1,9 @@
 {
   "name": "@prancheta/site",
   "version": "0.0.1",
+  "engines": {
+    "node": ">=22.23.4"
+  },
   "private": true,
   "type": "module",
   "scripts": {
