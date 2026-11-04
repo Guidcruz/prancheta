@@ -12,7 +12,7 @@ Cidade, cores e apelido da torcida estão lá. O que você não vai achar é esc
 
 - **Nome:** um trocadilho que lembra o original. Exemplos: Flamingo, Corinto, Palmeral, Coritibom, Botafogueira.
 - **Cidade e cores:** as do lugar, para a torcida se reconhecer.
-- **Escudo:** desenhado por código, combinando formato, cores, faixas e um símbolo simples (estrela, letra, animal). Nunca imita um escudo real.
+- **Escudo:** desenhado por código, combinando formato, cores, faixas e um símbolo simples (estrela, bola ou letra). Nunca imita um escudo real.
 - **Uniforme:** listras, faixas, gola e metades, com as cores do clube.
 - **Estádio:** também com nome próprio, como o Estádio Maracatu.
 - **Torcida:** apelido de arquibancada e uma rivalidade que esquenta os clássicos.

@@ -1,0 +1,50 @@
+---
+interface Props {
+  columns: [string, string];
+  rows: { label: string; values: [string, string] }[];
+}
+const { columns, rows } = Astro.props;
+---
+
+<div class="compare">
+  {columns.map((name, i) => (
+    <section class="col">
+      <h3 class="subtitulo">{name}</h3>
+      <dl>
+        {rows.map((r) => (
+          <>
+            <dt class="rotulo">{r.label}</dt>
+            <dd>{r.values[i]}</dd>
+          </>
+        ))}
+      </dl>
+    </section>
+  ))}
+</div>
+<style>
+  .compare {
+    display: grid;
+    gap: var(--space-4);
+  }
+  .col {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+  h3 {
+    margin: 0 0 var(--space-2);
+  }
+  dt {
+    color: var(--ink-muted);
+    margin-top: var(--space-2);
+  }
+  dd {
+    margin: 0;
+  }
+  @media (min-width: 720px) {
+    .compare {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+</style>

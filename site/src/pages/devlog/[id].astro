@@ -9,7 +9,7 @@ const { post } = Astro.props;
 const { Content } = await render(post);
 ---
 
-<Base title={post.data.title} description={post.data.summary}>
+<Base title={post.data.title} description={post.data.summary} current="devlog" ogType="article">
   <article>
     <p class="caption" style="color: var(--ink-muted); margin: 0">
       {post.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} · Etapa {post.data.etapa}

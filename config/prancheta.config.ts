@@ -45,7 +45,9 @@ export const config = {
     supportEmail: '',
     supportUrl: '/suporte',
     donateUrl: '/apoiar',
-    repository: '',
+    repository: 'https://github.com/Guidcruz/prancheta',
+    /** Discussions page of the repository (support channel); empty hides the links. */
+    discussionsUrl: 'https://github.com/Guidcruz/prancheta/discussions',
   },
   /** Legal identity for privacy policy and terms. */
   legal: {

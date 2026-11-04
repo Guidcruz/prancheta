@@ -1,0 +1,252 @@
+---
+import Base from '../layouts/Base.astro';
+import { config } from '../../../config/prancheta.config.ts';
+import FeatureCard from '../components/FeatureCard.astro';
+import StatusBadge from '../components/StatusBadge.astro';
+import TacticDiagram from '../components/TacticDiagram.astro';
+import MatchSample from '../components/MatchSample.astro';
+import FanMeter from '../components/FanMeter.astro';
+import NewsSample from '../components/NewsSample.astro';
+import TableScroll from '../components/TableScroll.astro';
+import FinalCta from '../components/FinalCta.astro';
+
+const base = config.paths.site;
+const toc = [
+  { id: 'tatica', label: 'Você manda no time' },
+  { id: 'partida', label: 'A partida' },
+  { id: 'clube', label: 'O clube em volta' },
+  { id: 'progresso', label: 'Seu progresso fica protegido' },
+  { id: 'depois', label: 'O que vem depois' },
+];
+const later = [
+  { name: 'Séries A a D, Copa do Brasil, estaduais', id: 'piramide-nacional' },
+  { name: 'Mercado, empréstimos, finanças, estádio', id: 'mercado-financas' },
+  { name: 'Metas da diretoria, demissões, base', id: 'metas-diretoria' },
+  { name: 'Clubes sul-americanos e torneios continentais', id: 'america-do-sul' },
+];
+---
+
+<Base
+  title="O jogo"
+  current="o-jogo"
+  description={`Uma temporada da Série A, tática em três ajustes e partida minuto a minuto, com notícias e torcida reagindo: veja como é jogar o ${config.name}.`}
+>
+  <h1>O jogo</h1>
+  <p class="lead">
+    O {config.name} é um jogo de técnico de futebol para o celular. Você monta o time, define como
+    ele joga e acompanha cada partida minuto a minuto. O resto do clube, a torcida e a imprensa
+    reagem ao que você decide.
+  </p>
+  <p>A ideia é simples de propósito: completo, mas sem precisar de manual.</p>
+  <nav aria-label="Nesta página">
+    <ul class="toc">
+      {toc.map((t) => (
+        <li>
+          <a href={`#${t.id}`}>{t.label}</a>
+        </li>
+      ))}
+    </ul>
+  </nav>
+
+  <section aria-labelledby="tatica">
+    <h2 id="tatica">Você manda no time</h2>
+    <p>Três ajustes táticos, e só. Dá para explicar cada um numa frase.</p>
+    <ul class="grid-cards three tactics">
+      <li>
+        <FeatureCard title="Formação" recurso="tatica">
+          <TacticDiagram
+            kind="formation"
+            title="Diagrama de campo com onze jogadores em linhas, na formação 4-3-3."
+          />
+          <p>
+            4-3-3, 4-4-2, 4-2-3-1, 3-5-2, 3-4-3 ou 5-3-2. Define quantos jogadores pesam na defesa,
+            no meio e no ataque.
+          </p>
+        </FeatureCard>
+      </li>
+      <li>
+        <FeatureCard title="Postura" recurso="tatica">
+          <TacticDiagram
+            kind="posture"
+            title="Diagrama de campo com três setas de ataque, cada uma de um tamanho: quanto maior, mais ofensiva a postura."
+          />
+          <p>
+            Defensiva, equilibrada ou ofensiva. Você troca chances criadas por chances sofridas.
+          </p>
+        </FeatureCard>
+      </li>
+      <li>
+        <FeatureCard title="Pressão" recurso="tatica">
+          <TacticDiagram
+            kind="pressure"
+            title="Diagrama de campo com três faixas, cada uma mais clara que a anterior: quanto mais clara, mais alta a pressão."
+          />
+          <p>
+            Baixa, média ou alta. Mais bolas recuperadas, mas também mais cansaço e mais cartões.
+          </p>
+        </FeatureCard>
+      </li>
+    </ul>
+    <p>
+      Escale arrastando e soltando. Jogador fora da posição rende menos. Escolha o capitão e quem
+      bate pênalti e falta.
+    </p>
+    <p class="state">
+      <StatusBadge recurso="tatica" showStage />
+    </p>
+  </section>
+
+  <section aria-labelledby="partida">
+    <h2 id="partida">A partida</h2>
+    <p>
+      O jogo é simulado minuto a minuto. A cada minuto, os dois times tentam criar chances. O meio e
+      o ataque de um enfrentam a defesa do outro. Cada chance pode virar gol, defesa, trave ou chute
+      para fora.
+    </p>
+    <ul>
+      <li>Gols, cartões, lesões, pênaltis e substituições acontecem no caminho.</li>
+      <li>
+        Você pode pressionar, segurar o resultado, mandar todo mundo para o ataque e fazer até 5
+        substituições.
+      </li>
+      <li>No intervalo, uma conversa com o time: motivar, cobrar ou acalmar.</li>
+      <li>O time melhor ganha com mais frequência, mas zebra existe. Isso é futebol.</li>
+      <li>Mando de campo conta, e conta mais em estádio cheio.</li>
+    </ul>
+    <p>Você escolhe como assistir: partida animada, só os lances principais ou só o resultado.</p>
+    <MatchSample
+      home="Flamingo"
+      away="Corinto"
+      score={[2, 1]}
+      events={[
+        { minute: 12, text: 'Chute de fora da área, a bola passa perto da trave.' },
+        { minute: 34, text: 'Gol do Flamingo, em cobrança de pênalti.' },
+        { minute: 58, text: 'Cartão amarelo para o volante do Corinto.' },
+        { minute: 71, text: 'Gol do Corinto, em cabeceio na área.' },
+        { minute: 89, text: 'Gol do Flamingo, aos 89, de cabeça, na segunda trave.' },
+      ]}
+    />
+    <p class="state">
+      <StatusBadge recurso="partida" showStage />
+    </p>
+  </section>
+
+  <section aria-labelledby="clube">
+    <h2 id="clube">O clube em volta</h2>
+    <ul>
+      <li>
+        <strong>Tabela e calendário:</strong> uma temporada completa da Série A, com 38 rodadas.
+      </li>
+      <li>
+        <strong>Notícias:</strong> manchetes de jornal, rádio, programa polêmico e portal de
+        mercado, todas fictícias e escritas para o seu momento (clássico, jejum, virada).
+      </li>
+      <li>
+        <strong>Rede social do jogo:</strong> torcedor que exagera, rival que provoca, canal de TV
+        que vaza a escalação. É só do jogo: ninguém de verdade posta ali.
+      </li>
+      <li>
+        <strong>Torcida:</strong> o humor da arquibancada sobe e desce com os resultados.
+      </li>
+    </ul>
+    <FanMeter value={72} label="animada" />
+    <p class="caption muted">Termômetro de exemplo, de 0 a 100.</p>
+    <div class="samples">
+      <NewsSample
+        kind="news"
+        outlet="Diário do Escanteio Curto"
+        headline="Gol no fim e casa em festa"
+        text="O Flamingo achou o gol da vitória aos 89 minutos e deixou a torcida em êxtase."
+      />
+      <NewsSample
+        kind="social"
+        outlet="Torcedor exagerado"
+        headline="Time de campeão, dá para ver de longe"
+        text="Que jogo! A Flamingada está em festa e eu já estou contando os pontos do título."
+      />
+    </div>
+    <p>
+      Estado: tabela, calendário e notícias, <StatusBadge recurso="tabela-noticias" showStage />.
+      Rede social completa com enquetes e reações do técnico:{' '}
+      <StatusBadge recurso="rede-social-completa" showStage />.
+    </p>
+  </section>
+
+  <section aria-labelledby="progresso">
+    <h2 id="progresso">Seu progresso fica protegido</h2>
+    <ul>
+      <li>Salvamento automático ao fim de cada rodada, com as 3 últimas versões guardadas.</li>
+      <li>Exportar o save para um arquivo e importar em outro aparelho.</li>
+      <li>Pedido ao navegador para não apagar seus dados. Instalar o app ajuda muito.</li>
+    </ul>
+    <p>
+      Estado: <StatusBadge recurso="saves" showStage />. Sincronização opcional entre aparelhos:
+      <StatusBadge recurso="sincronizacao-saves" showStage />.
+    </p>
+  </section>
+
+  <section aria-labelledby="depois">
+    <h2 id="depois">O que vem depois</h2>
+    <p>
+      Mais divisões, copas, mercado de transferências, finanças, clubes de outros países da América
+      do Sul e ligas maiores com amigos. Cada coisa tem uma etapa no
+      <a href={`${base}roadmap/`}>roteiro</a>, sem data prometida.
+    </p>
+    <TableScroll label="O que vem depois" minWidth="440px">
+      <table>
+        <thead>
+          <tr>
+            <th scope="col">Recurso</th>
+            <th scope="col">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {later.map((l) => (
+            <tr>
+              <th scope="row">{l.name}</th>
+              <td>
+                <StatusBadge recurso={l.id} showStage />
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </TableScroll>
+    <h3>Sem letra miúda</h3>
+    <p>
+      Sem pagar para ganhar. Sem caixa de sorteio. Sem recompensa por tempo de uso. Sem chat livre.
+      Todo clube, jogador e patrocinador é fictício.
+    </p>
+  </section>
+
+  <FinalCta />
+</Base>
+<style>
+  .lead {
+    margin-bottom: var(--space-3);
+  }
+  .toc {
+    list-style: none;
+    padding: 0;
+    margin: var(--space-4) 0 0;
+  }
+  .toc a {
+    display: flex;
+    align-items: center;
+    min-height: var(--touch);
+  }
+  .state {
+    margin-top: var(--space-3);
+  }
+  .samples {
+    display: grid;
+    gap: var(--space-3);
+    margin: var(--space-4) 0;
+  }
+  .tactics {
+    margin: var(--space-4) 0;
+  }
+  section :global(ul:not(.grid-cards)) {
+    padding-left: var(--space-6);
+  }
+</style>

@@ -1,0 +1,64 @@
+---
+import { shieldSpecFor, shieldSvg } from '../../../app/src/lib/generators/shield';
+import type { ShieldClub } from '../lib/shields';
+interface Props {
+  clubs: ShieldClub[];
+  size?: number;
+  /** Decorative strip: hides everything from assistive tech and omits names. */
+  decorative?: boolean;
+}
+const { clubs, size = 64, decorative = false } = Astro.props;
+// Generated at build time; no JavaScript reaches the browser.
+const items = clubs.map((c) => ({
+  ...c,
+  svg: shieldSvg(shieldSpecFor(c.id, c.color1, c.color2, c.abbreviation), size),
+}));
+---
+
+<ul class:list={['grid', { decorative }]} aria-hidden={decorative ? 'true' : undefined}>
+  {items.map((c) => (
+    <li>
+      <span
+        role={decorative ? undefined : 'img'}
+        aria-label={decorative ? undefined : `Escudo: ${c.shortName}`}
+        set:html={c.svg}
+      />
+      {!decorative && <span class="caption name">{c.shortName}</span>}
+    </li>
+  ))}
+</ul>
+<style>
+  .grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: var(--space-4);
+  }
+  li {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-1);
+    text-align: center;
+  }
+  .name {
+    color: var(--ink-muted);
+  }
+  .decorative {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  @media (min-width: 480px) {
+    .grid:not(.decorative) {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  @media (min-width: 720px) {
+    .grid:not(.decorative) {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+</style>

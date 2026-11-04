@@ -1,0 +1,69 @@
+---
+import StatusBadge from './StatusBadge.astro';
+import type { Stage } from '../lib/roadmap';
+import { stageSummaries } from '../data/etapas-resumo';
+interface Props {
+  stages: Stage[];
+  /** 'delivery' shows the roadmap text; 'summary' shows the short text from data/etapas-resumo.ts. */
+  text?: 'delivery' | 'summary';
+}
+const { stages, text = 'delivery' } = Astro.props;
+---
+
+<div class="scroll" tabindex="0" role="region" aria-label="Etapas do jogo (tabela com rolagem)">
+  <table>
+    <thead>
+      <tr>
+        <th scope="col">Etapa</th>
+        <th scope="col">Nome</th>
+        <th scope="col" aria-label="O que entra para o jogador">
+          O que entra
+        </th>
+        <th scope="col">Estado</th>
+      </tr>
+    </thead>
+    <tbody>
+      {stages.map((s) => (
+        <tr>
+          <th scope="row" class="numero sticky">
+            {s.id}
+          </th>
+          <td class="body-strong">{s.name}</td>
+          <td>{text === 'summary' ? (stageSummaries[s.id] ?? '') : s.delivery}</td>
+          <td>
+            <StatusBadge status={s.status} />
+          </td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
+<style>
+  .scroll {
+    overflow-x: auto;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+  }
+  table {
+    min-width: 640px;
+  }
+  .sticky {
+    position: sticky;
+    left: 0;
+    background: var(--surface-1);
+    color: var(--ink);
+    font: var(--type-numero);
+    font-variant-numeric: tabular-nums;
+    text-transform: none;
+    letter-spacing: 0;
+    border-right: 1px solid var(--line);
+  }
+  thead th:first-child {
+    position: sticky;
+    left: 0;
+    background: var(--surface-1);
+  }
+  td:nth-child(3) {
+    min-width: 260px;
+  }
+</style>

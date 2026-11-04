@@ -1,0 +1,43 @@
+---
+interface Props {
+  outlet: string;
+  headline: string;
+  text: string;
+  kind: 'news' | 'social';
+}
+const { outlet, headline, text, kind } = Astro.props;
+---
+
+<article class:list={['item', kind]}>
+  <p class="rotulo outlet">
+    {kind === 'social' ? 'Rede social do jogo' : 'Notícia'} · {outlet}
+  </p>
+  <h3 class="subtitulo">{headline}</h3>
+  <p>{text}</p>
+  <p class="caption sample">Exemplo fictício</p>
+</article>
+<style>
+  .item {
+    background: var(--surface-1);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--grass);
+    border-radius: var(--radius-md);
+    padding: var(--space-4);
+  }
+  .social {
+    border-left-color: var(--info);
+  }
+  p {
+    margin: 0;
+  }
+  h3 {
+    margin: var(--space-1) 0 var(--space-2);
+  }
+  .outlet,
+  .sample {
+    color: var(--ink-muted);
+  }
+  .sample {
+    margin-top: var(--space-2);
+  }
+</style>

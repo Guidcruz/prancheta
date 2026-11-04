@@ -1,0 +1,38 @@
+---
+interface Props {
+  href: string;
+  variant?: 'primary' | 'secondary';
+}
+const { href, variant = 'primary' } = Astro.props;
+---
+
+<a {href} class:list={['button', 'botao', variant]}>
+  <slot />
+</a>
+<style>
+  .button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--touch);
+    padding: var(--space-2) var(--space-6);
+    border-radius: var(--radius-pill);
+    text-decoration: none;
+    text-align: center;
+    border: 2px solid transparent;
+  }
+  .primary {
+    background: var(--grass);
+    color: var(--on-grass);
+  }
+  .secondary {
+    border-color: var(--line);
+    color: var(--ink);
+  }
+  .secondary:hover {
+    border-color: var(--ink-muted);
+  }
+  .primary:hover {
+    filter: brightness(1.08);
+  }
+</style>
