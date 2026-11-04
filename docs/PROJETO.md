@@ -123,16 +123,17 @@ Cada clube controlado pela IA tem um perfil que guia escalação, mercado e paci
 
 ### Competições e calendário
 
-| Competição         | Formato                                              | Quando              |
-| ------------------ | ---------------------------------------------------- | ------------------- |
-| Estaduais          | 8 clubes por estado (grupo único, semifinal e final) | Janeiro a março     |
-| Série A e B        | 20 clubes, pontos corridos, 4 sobem e 4 caem         | Abril a dezembro    |
-| Série C            | 20 clubes, pontos corridos e quadrangulares finais   | Abril a novembro    |
-| Série D            | 64 clubes em grupos e mata-mata                      | Abril a setembro    |
-| Copa do Brasil     | Mata-mata com 64 clubes, finais em outubro           | Fevereiro a outubro |
-| Libertadores       | 32 clubes em 8 grupos e mata-mata                    | Abril a novembro    |
-| Sul-Americana      | 32 clubes em 8 grupos e mata-mata                    | Abril a novembro    |
-| Supercopa e Recopa | Jogo único                                           | Janeiro e abril     |
+| Competição         | Formato                                                                                                                                                             | Quando              |
+| ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------- |
+| Estaduais          | 8 clubes por estado (grupo único, semifinal e final)                                                                                                                | Janeiro a março     |
+| Série A            | 20 clubes, pontos corridos; 4 caem                                                                                                                                  | Abril a dezembro    |
+| Série B            | 20 clubes, pontos corridos; os 2 primeiros sobem direto e do 3º ao 6º disputam playoff de ida e volta pelas outras 2 vagas (3º×6º, 4º×5º); 4 caem (formato de 2026) | Março a novembro    |
+| Série C            | 20 clubes, pontos corridos e quadrangulares finais                                                                                                                  | Abril a novembro    |
+| Série D            | 64 clubes em grupos e mata-mata                                                                                                                                     | Abril a setembro    |
+| Copa do Brasil     | Mata-mata com 64 clubes, finais em outubro                                                                                                                          | Fevereiro a outubro |
+| Libertadores       | 32 clubes em 8 grupos e mata-mata                                                                                                                                   | Abril a novembro    |
+| Sul-Americana      | 32 clubes em 8 grupos e mata-mata                                                                                                                                   | Abril a novembro    |
+| Supercopa e Recopa | Jogo único                                                                                                                                                          | Janeiro e abril     |
 
 - Vagas na Libertadores e na Sul-Americana pela tabela da Série A e pela Copa do Brasil.
 - Calendário congestionado de propósito: semanas com dois jogos obrigam rotação e dão valor ao elenco.
@@ -546,12 +547,12 @@ Notícias e mensagens vêm de um sistema de templates gerado pelo motor do jogo,
 
 | Camada               | O que varia                                                                                                                                | Meta                                                        |
 | -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- |
-| Evento               | Cada fato do jogo tem seu conjunto de frases (goleada, virada, zebra, lesão, venda, contrato a vencer, jovem estreando, série de derrotas) | 150 a 200 tipos de evento                                   |
-| Variações por evento | Frases diferentes para o mesmo fato                                                                                                        | 8 a 12 por evento, por idioma                               |
-| Veículo              | Jornal sério, programa polêmico, rádio, perfil da torcida; cada um com tom próprio                                                         | 4 veículos                                                  |
+| Evento               | Cada fato do jogo tem seu conjunto de frases (goleada, virada, zebra, lesão, venda, contrato a vencer, jovem estreando, série de derrotas) | 250 a 300 tipos de evento                                   |
+| Variações por evento | Frases diferentes para o mesmo fato                                                                                                        | 15 a 20 por evento, por idioma                              |
+| Veículo              | Jornal sério, programa polêmico, rádio, portal de mercado, influenciador, perfil da torcida; cada um com tom próprio                       | 6 veículos                                                  |
 | Contexto             | A mesma vitória muda de frase se é clássico, se quebra um jejum, se vale título ou rebaixamento                                            | Modificadores por rivalidade, momento na tabela e histórico |
 | Personalidade        | Traço do jogador (líder, temperamental, ídolo) escolhe a frase e gera eventos próprios                                                     | 1 traço por jogador                                         |
-| Memória              | O jogo guarda as últimas 50 frases usadas e evita repetir                                                                                  | Nenhuma repetição em menos de 20 rodadas                    |
+| Memória              | O jogo guarda as últimas 200 frases usadas e evita repetir                                                                                 | Nenhuma repetição em menos de 40 rodadas                    |
 | Composição           | Manchete + 1 a 3 parágrafos montados de blocos independentes                                                                               | Combinações na casa dos milhares por evento                 |
 
 **Mensagens e conversas**

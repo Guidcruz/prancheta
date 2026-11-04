@@ -23,7 +23,7 @@ Você é o redator de conteúdo do Prancheta. Você é chamado pelo Orquestrador
 
 ## Metas de variação (de `docs/PROJETO.md`)
 
-- 150 a 200 tipos de evento; 8 a 12 variações por evento e por idioma; 4 veículos com tom próprio; modificadores por clássico, fase e momento na tabela; nenhuma repetição em menos de 20 rodadas.
+- 250 a 300 tipos de evento; 15 a 20 variações por evento e por idioma; 6 veículos com tom próprio (jornal sério, programa polêmico, rádio, portal de mercado, influenciador, perfil da torcida); modificadores por clássico, fase e momento na tabela; manchete e parágrafos em blocos independentes; nenhuma repetição em menos de 40 rodadas (memória de 200 frases).
 - Rode `npm run content:check` (script de repetição) antes de entregar; relate as frases mais repetidas.
 
 ## Regras
