@@ -1,6 +1,6 @@
-import { readdirSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { validateParams } from '../engine/index.ts';
+import { PARAM_RANGES, validateParams } from '../engine/index.ts';
 import { formatParamIssues, loadGameParams, rawParams } from './params.ts';
 
 /*
@@ -75,5 +75,60 @@ describe('formatParamIssues', () => {
     ).toBe(
       'match.homeBase: out-of-range, got 0.1 (range 0..0.08)\n(root): not-an-object, got null',
     );
+  });
+});
+
+/*
+ * QA (T-002): the JSON files and the ranges must equal the tables of docs/design/*.md, value by
+ * value. The tables are parsed straight from the documents, so a drift in either side fails here.
+ */
+describe('app/src/params against docs/design', () => {
+  const docs = ['partida', 'jogadores', 'ia-clubes', 'temporada', 'torcida'];
+  const pt = (s: string) => Number(s.replace(',', '.'));
+  const rows: { name: string; value: string; range: string }[] = [];
+  for (const doc of docs) {
+    const text = readFileSync(new URL(`../../../docs/design/${doc}.md`, import.meta.url), 'utf8');
+    for (const line of text.split('\n')) {
+      const cells = line.split('|').map((c) => c.trim());
+      const m =
+        /^`((?:match|players|generation|ai|season|fans|fatigue|injury|cards)\.[\w.]+)`$/.exec(
+          cells[1] ?? '',
+        );
+      if (m) rows.push({ name: m[1]!, value: cells[2]!, range: cells[3]! });
+    }
+  }
+  const lookup = (root: unknown, path: string): unknown =>
+    path.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], root);
+  const fullPath = (name: string) =>
+    /^(fatigue|injury|cards)\./.test(name) ? `match.${name}` : name;
+
+  it('finds every parameter of the six files in the documents', () => {
+    const leaves: string[] = [];
+    const walk = (o: unknown, p: string) => {
+      if (typeof o === 'object' && o !== null && !Array.isArray(o)) {
+        for (const [k, v] of Object.entries(o)) walk(v, p ? `${p}.${k}` : k);
+      } else leaves.push(p);
+    };
+    walk(rawParams, '');
+    expect(rows.map((r) => fullPath(r.name)).sort()).toEqual(leaves.sort());
+  });
+
+  it.each(rows)('$name = $value, range $range', ({ name, value, range }) => {
+    const path = fullPath(name);
+    const actual = lookup(rawParams, path);
+    const spec = lookup(PARAM_RANGES, path) as { kind: string; min: number; max: number };
+    if (value.startsWith('[')) {
+      expect(actual).toEqual(JSON.parse(value));
+      expect(spec).toMatchObject({ kind: 'intList', min: 1, max: 34 });
+      return;
+    }
+    expect(actual).toBe(pt(/^[\d,]+/.exec(value)![0]));
+    if (range.startsWith('fixo')) {
+      expect(spec.min).toBe(spec.max);
+      expect(spec.min).toBe(actual);
+    } else {
+      const [min, max] = range.split('–').map(pt);
+      expect([spec.min, spec.max]).toEqual([min, max]);
+    }
   });
 });
