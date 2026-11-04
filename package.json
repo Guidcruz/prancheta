@@ -18,6 +18,7 @@
     "balance": "echo \"scripts/balance.ts ainda não existe (tarefa da Etapa 1)\" && exit 1",
     "content:check": "node scripts/content-check.mjs",
     "blocklist:hash": "node scripts/hash-blocklist.mjs",
+    "blocklist:hash:athletes": "node scripts/hash-blocklist.mjs --out app/src/data/athletes-blocklist.sha256.json",
     "icons": "node scripts/icons.mjs"
   },
   "devDependencies": {
