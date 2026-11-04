@@ -1,4 +1,5 @@
 import type { PlayersParams } from './params.ts';
+import { clamp } from './math.ts';
 import type { Rng } from './rng.ts';
 import type { ClubId, PlayerId, Position, Result, Trait } from './types.ts';
 
@@ -181,6 +182,17 @@ export const TRAITS: readonly Trait[] = ['leader', 'hothead', 'professional', 'i
 
 /** Ceiling of `potential` at generation (docs/design/jogadores.md, "Potencial"). */
 export const POTENTIAL_MAX = 95;
+/**
+ * Ceiling of a stored `potential` ("Limites dos campos"): 95 is only the generation cap, and a
+ * legitimate save (an overall above 95 keeps potential = overall) must never be refused.
+ */
+export const POTENTIAL_STORED_MAX = 99;
+/** Valid stored `age`: generation gives 17..34; the rest is sanity for long careers. */
+export const AGE_RANGE: { readonly min: number; readonly max: number } = { min: 15, max: 60 };
+/** Valid shirt number (unique per club, checked where the squad is built, T-006). */
+export const SHIRT_RANGE: { readonly min: number; readonly max: number } = { min: 1, max: 99 };
+/** Share of `overall` used for an attribute the player does not have ("Atributo ausente"). */
+const MISSING_ATTRIBUTE_TENTHS = 4;
 /** Up to this age the potential has the large headroom of youth. */
 export const YOUTH_MAX_AGE = 23;
 /** From 24 to this age the potential is `overall + Rng.int(0, 4)`; older, equal to overall. */
@@ -283,7 +295,9 @@ export function drawTrait(rng: Rng): Exclude<Trait, 'idol'> {
  * - up to 23: `overall + round(U^1.5 × (30 − 2 × (age − 17)))`, `U = rng.next()` (one draw);
  * - 24 to 26: `overall + rng.int(0, 4)` (one draw);
  * - 27 or older: `overall` (no draw).
- * Capped at {@link POTENTIAL_MAX} and never below `overall`. The "joia" floor is T-006.
+ * Capped at {@link POTENTIAL_MAX} and never below `overall`: a player whose overall is already
+ * above 95 gets `potential = overall` (the cap never lowers it; US-004 demands potential ≥
+ * overall). The "joia" floor is T-006.
  *
  * U^1.5 is computed as `U × √U`: `Math.sqrt` is correctly rounded on every JavaScript engine,
  * unlike `Math.pow` (ADR-0007, rule 9).
@@ -311,6 +325,72 @@ export function drawGrowthCurve(
   const peakAge = rng.int(PEAK_AGE_RANGE.min, PEAK_AGE_RANGE.max);
   const growth = players.growthMin + rng.next() * (players.growthMax - players.growthMin);
   return { peakAge, growth };
+}
+
+/**
+ * Value of an attribute for the match (docs/design/jogadores.md, "Atributo ausente"): the
+ * player's own when it belongs to their position, otherwise `clamp(round(0.4 × overall), 1, 99)`
+ * (a goalkeeper of overall 70 finishes as 28). Integer arithmetic: 0.4 × overall never lands on
+ * an exact half, and this avoids float drift anyway.
+ */
+export function attributeOf(
+  player: Pick<Player, 'attributes' | 'overall'>,
+  key: AttributeKey,
+): number {
+  const own = player.attributes[key];
+  if (own !== undefined) return own;
+  const rounded = Math.floor((MISSING_ATTRIBUTE_TENTHS * player.overall + 5) / 10);
+  return clamp(rounded, ATTRIBUTE_RANGE.min, ATTRIBUTE_RANGE.max);
+}
+
+/**
+ * Attribute keys of a position with weight > 0, from the heaviest down; ties keep the order of
+ * the design table (so AM → technique, ST → finishing, GK → reflexes first).
+ */
+function weightedKeysByWeight(position: Position): AttributeKey[] {
+  const keys = attributeKeysFor(position).filter((k) => overallWeight(position, k) > 0);
+  // Array.prototype.sort is stable, so equal weights keep the table order.
+  return keys.sort((a, b) => overallWeight(position, b) - overallWeight(position, a));
+}
+
+/**
+ * Moves the attributes so that `computeOverall` gives exactly `target` (docs/design/jogadores.md,
+ * "Ajuste ao alvo"), used by generation, the squad shift and evolution:
+ * 1. coarse shift: `d = target − overall` is added to every attribute of weight > 0 (the weights
+ *    add up to 1, so the formula moves by `d`), each clipped to 1..99;
+ * 2. fine adjustment: while the formula is not the target, the heaviest attribute not yet at the
+ *    edge (99 going up, 1 going down) moves 1 point toward it; ties by table order.
+ * Each step moves the formula by at most 0.40, so it never overshoots, and every target in 1..99
+ * is reachable. Attributes of weight 0 are left untouched. `target` is rounded and clipped to
+ * 1..99; a missing attribute of the position starts at the target. Pure: returns a new record.
+ */
+export function fitAttributesToOverall(
+  attributes: PlayerAttributes,
+  position: Position,
+  target: number,
+): PlayerAttributes {
+  const goal = clamp(Math.round(target), ATTRIBUTE_RANGE.min, ATTRIBUTE_RANGE.max);
+  const order = weightedKeysByWeight(position);
+  const result: Partial<Record<AttributeKey, number>> = { ...attributes };
+  for (const key of order) {
+    const start = Math.round(result[key] ?? goal);
+    result[key] = clamp(start, ATTRIBUTE_RANGE.min, ATTRIBUTE_RANGE.max);
+  }
+  const d = goal - computeOverall(position, result);
+  for (const key of order) {
+    result[key] = clamp(result[key]! + d, ATTRIBUTE_RANGE.min, ATTRIBUTE_RANGE.max);
+  }
+  // At most 99 × 6 steps; the bound only guards against a programming error.
+  for (let guard = 0; guard < 600; guard++) {
+    const current = computeOverall(position, result);
+    if (current === goal) break;
+    const up = current < goal;
+    const edge = up ? ATTRIBUTE_RANGE.max : ATTRIBUTE_RANGE.min;
+    const key = order.find((k) => result[k] !== edge);
+    if (key === undefined) break;
+    result[key] = result[key]! + (up ? 1 : -1);
+  }
+  return result;
 }
 
 /** The "promessa" label: at most 23 years old and `potential − overall ≥ 10`. */
@@ -452,7 +532,6 @@ class Issues {
 }
 
 const COUNT = { min: 0, max: Number.MAX_SAFE_INTEGER };
-const POSITIVE = { min: 1, max: Number.MAX_SAFE_INTEGER };
 const SEED = { min: 0, max: UINT32_MAX };
 
 function checkName(issues: Issues, value: unknown): PlayerNameText | undefined {
@@ -578,14 +657,14 @@ export function validatePlayer(raw: unknown): PlayerResult {
     ? issues.number(
         'potential',
         raw.potential,
-        { min: ATTRIBUTE_RANGE.min, max: POTENTIAL_MAX },
+        { min: ATTRIBUTE_RANGE.min, max: POTENTIAL_STORED_MAX },
         true,
       )
     : undefined;
   if (potential !== undefined && overall !== undefined && potential < overall) {
     issues.add({ field: 'potential', problem: 'potential-below-overall', value: potential });
   }
-  const age = has('age') ? issues.number('age', raw.age, POSITIVE, true) : undefined;
+  const age = has('age') ? issues.number('age', raw.age, AGE_RANGE, true) : undefined;
   const peakAge = has('peakAge')
     ? issues.number('peakAge', raw.peakAge, PEAK_AGE_RANGE, true)
     : undefined;
@@ -597,7 +676,7 @@ export function validatePlayer(raw: unknown): PlayerResult {
     if (TRAITS.includes(raw.trait as Trait)) trait = raw.trait as Trait;
     else issues.add({ field: 'trait', problem: 'invalid-trait', value: raw.trait });
   }
-  const shirt = has('shirt') ? issues.number('shirt', raw.shirt, POSITIVE, true) : undefined;
+  const shirt = has('shirt') ? issues.number('shirt', raw.shirt, SHIRT_RANGE, true) : undefined;
   const condition = has('condition')
     ? issues.number('condition', raw.condition, CONDITION_RANGE, false)
     : undefined;

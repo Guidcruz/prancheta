@@ -10,11 +10,13 @@ import {
   SQUAD_COMPOSITION,
   SQUAD_SIZE,
   attributeKeysFor,
+  attributeOf,
   computeOverall,
   drawGrowthCurve,
   drawPotential,
   drawTrait,
   fit,
+  fitAttributesToOverall,
   fitLevel,
   isProspect,
   overallWeight,
@@ -24,7 +26,7 @@ import {
   type PlayerResult,
 } from './players.ts';
 import { PARAM_RANGES } from './params.ts';
-import { Rng } from './rng.ts';
+import { Rng, seedFromString } from './rng.ts';
 import { fixedIdentitySource } from './testing/identity.ts';
 import {
   EXAMPLE_GOALKEEPER_ATTRIBUTES,
@@ -226,6 +228,7 @@ describe('drawPotential', () => {
   });
 
   it('caps at 95 and never goes below the overall', () => {
+    // Rule: the 95 cap applies to the draw only; an overall above 95 keeps potential = overall.
     expect(POTENTIAL_MAX).toBe(95);
     expect(drawPotential(scriptedRng(0.999), 85, 17)).toBe(95);
     expect(drawPotential(scriptedRng(0.999), 94, 25)).toBe(95);
@@ -281,6 +284,123 @@ describe('isProspect', () => {
     expect(isProspect({ age: 24, overall: 60, potential: 70 })).toBe(false);
     expect(isProspect({ age: 18, overall: 60, potential: 69 })).toBe(false);
     expect(isProspect({ age: 17, overall: 55, potential: 55 })).toBe(false);
+  });
+});
+
+describe('attributeOf', () => {
+  it('reads the own attribute of the position', () => {
+    const striker = testPlayer();
+    expect(attributeOf(striker, 'finishing')).toBe(81);
+    expect(attributeOf(striker, 'physical')).toBe(70);
+  });
+
+  it('gives a missing attribute clamp(round(0.4 × overall), 1, 99): goalkeeper 70 finishes as 28', () => {
+    const keeper = { attributes: EXAMPLE_GOALKEEPER_ATTRIBUTES, overall: 70 };
+    expect(attributeOf(keeper, 'finishing')).toBe(28);
+    expect(attributeOf(keeper, 'passing')).toBe(28);
+    // physical exists in both lists and is always the player's own.
+    expect(attributeOf(keeper, 'physical')).toBe(72);
+    expect(attributeOf(testPlayer(), 'reflexes')).toBe(30); // 0.4 × 76 = 30.4
+    expect(attributeOf({ attributes: {}, overall: 1 }, 'speed')).toBe(1); // 0.4 → 0 → 1
+    expect(attributeOf({ attributes: {}, overall: 99 }, 'speed')).toBe(40); // 39.6
+    for (let overall = 1; overall <= 99; overall++) {
+      const value = attributeOf({ attributes: {}, overall }, 'marking');
+      expect(value, String(overall)).toBe(Math.max(1, Math.round(0.4 * overall)));
+    }
+  });
+});
+
+describe('fitAttributesToOverall', () => {
+  it('lands exactly on the target for 10,000 random targets, in 1..99, weight-0 untouched', () => {
+    const rng = new Rng(seedFromString('fit-attributes'));
+    for (let i = 0; i < 10_000; i++) {
+      const position = POSITIONS[rng.int(0, POSITIONS.length - 1)]!;
+      const attributes = Object.fromEntries(
+        attributeKeysFor(position).map((key) => [key, rng.int(1, 99)]),
+      ) as Record<AttributeKey, number>;
+      const target = rng.int(1, 99);
+      const fitted = fitAttributesToOverall(attributes, position, target);
+      expect(computeOverall(position, fitted), `${position} → ${target}`).toBe(target);
+      for (const key of attributeKeysFor(position)) {
+        const value = fitted[key]!;
+        expect(Number.isInteger(value) && value >= 1 && value <= 99).toBe(true);
+        if (overallWeight(position, key) === 0) expect(value).toBe(attributes[key]);
+      }
+    }
+  });
+
+  it('shifts every weighted attribute by d, then fine-tunes the heaviest (striker +3)', () => {
+    const fitted = fitAttributesToOverall(EXAMPLE_STRIKER_ATTRIBUTES, 'ST', 79);
+    // 76 → 79: +3 on every attribute of weight > 0; marking (weight 0) stays 30.
+    expect(fitted).toEqual({
+      speed: 83,
+      technique: 75,
+      passing: 63,
+      finishing: 84,
+      marking: 30,
+      physical: 73,
+    });
+  });
+
+  it('uses the heaviest attribute not at the edge, ties by table order', () => {
+    // AM, overall 60. technique and passing weigh 0.30; technique comes first in the table.
+    const am = { speed: 60, technique: 60, passing: 60, finishing: 60, marking: 40, physical: 60 };
+    // technique 99: overall 71.7 → 72. Target 75: coarse +3 (technique stays at 99) gives 73.8
+    // → 74; fine: passing (heaviest not at the edge) 63 → 66 gives 74.7 → 75.
+    expect(fitAttributesToOverall({ ...am, technique: 99 }, 'AM', 75)).toEqual({
+      speed: 63,
+      technique: 99,
+      passing: 66,
+      finishing: 63,
+      marking: 40,
+      physical: 63,
+    });
+    // Both free, speed clipped: speed 99 gives 65.85 → 66. Target 70: coarse +4 gives 69.25
+    // → 69; fine: technique (tied with passing, first in the table) 64 → 65 gives 69.55 → 70.
+    expect(fitAttributesToOverall({ ...am, speed: 99 }, 'AM', 70)).toEqual({
+      speed: 99,
+      technique: 65,
+      passing: 64,
+      finishing: 64,
+      marking: 40,
+      physical: 64,
+    });
+    // passing 99 instead: technique moves.
+    expect(fitAttributesToOverall({ ...am, passing: 99 }, 'AM', 75)).toEqual({
+      speed: 63,
+      technique: 66,
+      passing: 99,
+      finishing: 63,
+      marking: 40,
+      physical: 63,
+    });
+    const bottom = fitAttributesToOverall(am, 'AM', 1);
+    expect(bottom).toEqual({
+      speed: 1,
+      technique: 1,
+      passing: 1,
+      finishing: 1,
+      marking: 40,
+      physical: 1,
+    });
+  });
+
+  it('moves the heaviest attribute first in the fine adjustment (GK reflexes)', () => {
+    // GK 72.5 → 73 already; from all 50 (overall 50) to 50 nothing changes.
+    const flat = Object.fromEntries(GOALKEEPER_ATTRIBUTES.map((k) => [k, 50]));
+    expect(fitAttributesToOverall(flat, 'GK', 50)).toEqual(flat);
+    // Coarse +1 overshoots nothing; check the rounding step with an odd start.
+    const odd = { ...flat, reflexes: 51 }; // 50.3 → 50
+    const up = fitAttributesToOverall(odd, 'GK', 51);
+    expect(computeOverall('GK', up)).toBe(51);
+  });
+
+  it('is pure and clamps a target outside 1..99', () => {
+    const input = { ...EXAMPLE_STRIKER_ATTRIBUTES };
+    const fitted = fitAttributesToOverall(input, 'ST', 150);
+    expect(input).toEqual(EXAMPLE_STRIKER_ATTRIBUTES);
+    expect(computeOverall('ST', fitted)).toBe(99);
+    expect(computeOverall('ST', fitAttributesToOverall(input, 'ST', -5))).toBe(1);
   });
 });
 
@@ -358,10 +478,10 @@ describe('validatePlayer', () => {
     expect(issuesOf(validatePlayer(testPlayer({ potential: 75 })))).toEqual([
       { field: 'potential', problem: 'potential-below-overall', value: 75 },
     ]);
-    expect(issuesOf(validatePlayer(testPlayer({ potential: 96 })))[0]).toMatchObject({
+    expect(issuesOf(validatePlayer(testPlayer({ potential: 100 })))[0]).toMatchObject({
       field: 'potential',
       problem: 'out-of-range',
-      range: { min: 1, max: 95 },
+      range: { min: 1, max: 99 },
     });
   });
 
@@ -406,8 +526,10 @@ describe('validatePlayer', () => {
       [{ suspendedGames: 1.5 }, 'suspendedGames:not-an-integer'],
       [{ peakAge: 30 }, 'peakAge:out-of-range'],
       [{ growth: 1.6 }, 'growth:out-of-range'],
-      [{ age: 0 }, 'age:out-of-range'],
+      [{ age: 14 }, 'age:out-of-range'],
+      [{ age: 61 }, 'age:out-of-range'],
       [{ shirt: 0 }, 'shirt:out-of-range'],
+      [{ shirt: 100 }, 'shirt:out-of-range'],
       [{ nameSeed: -1 }, 'nameSeed:out-of-range'],
       [{ faceSeed: 2 ** 32 }, 'faceSeed:out-of-range'],
       [{ recentRatings: [6, 7, 8, 9, 10, 6] }, 'recentRatings:out-of-range'],
