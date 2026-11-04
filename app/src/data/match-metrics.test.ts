@@ -36,6 +36,10 @@ import { testParams } from '../engine/testing/params.ts';
  *   posture and pressure by profile), everyone fresh (the rounds are not played in sequence, so
  *   condition stays 100 and rotation never triggers), thermometer at its start value. The report
  *   also prints the posture and pressure the AI chose, by profile.
+ *   Caveat: with everyone fresh, the tired-team rule never lowers the pressure and rotation never
+ *   rests anyone, so this report overstates the high pressure, and with it the yellows and reds,
+ *   of a real season. The real numbers need the 38 rounds in sequence (`/balance`, T-016;
+ *   ia-clubes.md, "Pedido ao developer" 5).
  * - Calibrated duels (balance-targets.md, "Duelos calibrados"): squads generated with exact
  *   strength (clubStrengthSd = 0), both in 4-4-2, balanced, medium, neutral ground, thermometer
  *   55; 20,000 matches at 20 points of difference (80 × 60) and as many at 30 (85 × 55), as the
@@ -304,6 +308,7 @@ describe('T-009/T-010/T-011 match metrics with the 20 real clubs (report only, n
         `  duel 80x60 (gap 20)    stronger wins ${pct(d20.strongWins, d20.matches)}   target 65% (62–68%); draws ${pct(d20.draws, d20.matches)}; goals ${(d20.goals / d20.matches).toFixed(2)}`,
         `  duel 85x55 (gap 30)    weaker wins ${pct(d30.weakWins, d30.matches)}   target 10% (8–12%); stronger ${pct(d30.strongWins, d30.matches)}; goals ${(d30.goals / d30.matches).toFixed(2)}`,
         ...tacticLines(tactics),
+        '  note: everyone fresh (rounds not in sequence): high pressure, yellows and reds read above a real season',
       ];
       console.info(lines.join('\n'));
 
