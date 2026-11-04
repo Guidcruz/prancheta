@@ -57,12 +57,29 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                     |
-| ------ | -------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                 |
-| T-002  | entregue, aguardando merge (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`; 182 testes)   |
-| T-003  | próxima (em paralelo à T-002 (dados dos clubes; lista dos 20 aprovada em `docs/content/lotes/2026-11-04-nomes-serie-a.md`) |
+| Tarefa | Estado                                                                                                                                       |
+| ------ | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                   |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                      |
+| T-003  | entregue, aguardando merge (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107) |
+
+## Decisões do CEO durante a T-003 (2026-11-04)
+
+1. Porte por títulos, história e torcida: 12 grandes, 5 médios, 3 pequenos.
+2. Força pela tabela do Brasileirão 2026 parcial (33ª rodada), numa escada única de 20 degraus, separada do porte.
+3. Lote refeito em dezembro com a tabela final.
+4. Atualização anual dos dados (US-066 a US-069).
+5. Títulos da carreira somam ao histórico do clube (T-017/T-018).
+6. O porte pode crescer dentro da carreira (Etapa 4).
+7. Metas de balanceamento ajustadas.
+
+## Pendências abertas
+
+- `/balance` da T-016 deve medir "grande rebaixado" (estimativa grosseira ~97% contra a meta de 40% a 80%).
+- ADR da Etapa 4 para a meta da diretoria pela força.
+- Consulta ao advogado sobre espelhar dados reais (tabela e títulos).
+- Lote de dezembro com a tabela final.
 
 ## Próximo
 
-`/quick` do devcontainer (Codespaces pronto, Node 22.18) aguardando merge; a T-002 aguarda o merge do CEO; depois `/feature T-003`. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
+`/quick` do devcontainer (Codespaces pronto, Node 22.18) aguardando merge; a T-003 aguarda o merge do CEO; depois T-004 e T-005. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).

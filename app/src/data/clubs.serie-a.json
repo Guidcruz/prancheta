@@ -1,0 +1,482 @@
+[
+  {
+    "id": "flamingo",
+    "name": "Flamingo Futebol Clube",
+    "shortName": "Flamingo",
+    "abbreviation": "FLG",
+    "nickname": "Flamingada",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "colors": ["#C8102E", "#111417"],
+    "size": "big",
+    "aiProfile": "ambitious",
+    "strength": 78,
+    "stadium": {
+      "name": "Estádio Maracatu",
+      "capacity": 78800
+    },
+    "rivals": ["botafogueira", "corinto", "fluminario", "vasconcelos"],
+    "titles": {
+      "league": 8,
+      "cup": 5,
+      "libertadores": 4,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "corinto",
+    "name": "Sport Clube Corinto",
+    "shortName": "Corinto",
+    "abbreviation": "CRT",
+    "nickname": "Coríntios",
+    "city": "São Paulo",
+    "state": "SP",
+    "colors": ["#111417", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "ambitious",
+    "strength": 65,
+    "stadium": {
+      "name": "Arena Itaquerê",
+      "capacity": 48900
+    },
+    "rivals": ["flamingo", "palmeral", "santoes", "sao-paulao"],
+    "titles": {
+      "league": 7,
+      "cup": 4,
+      "libertadores": 1,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "palmeral",
+    "name": "Sociedade Esportiva Palmeral",
+    "shortName": "Palmeral",
+    "abbreviation": "PLM",
+    "nickname": "Palmeralada",
+    "city": "São Paulo",
+    "state": "SP",
+    "colors": ["#006437", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "ambitious",
+    "strength": 77,
+    "stadium": {
+      "name": "Arena do Palmeiral",
+      "capacity": 43700
+    },
+    "rivals": ["corinto", "santoes", "sao-paulao"],
+    "titles": {
+      "league": 12,
+      "cup": 4,
+      "libertadores": 3,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "sao-paulao",
+    "name": "São Paulão Futebol Clube",
+    "shortName": "São Paulão",
+    "abbreviation": "SPL",
+    "nickname": "Tricoloridos",
+    "city": "São Paulo",
+    "state": "SP",
+    "colors": ["#E4002B", "#111417"],
+    "size": "big",
+    "aiProfile": "traditional",
+    "strength": 70,
+    "stadium": {
+      "name": "Estádio do Morumbom",
+      "capacity": 72000
+    },
+    "rivals": ["corinto", "palmeral", "santoes"],
+    "titles": {
+      "league": 6,
+      "cup": 1,
+      "libertadores": 3,
+      "sudamericana": 1
+    }
+  },
+  {
+    "id": "atletico-minerio",
+    "name": "Atlético Minério Clube",
+    "shortName": "Minério",
+    "abbreviation": "AMN",
+    "nickname": "Minerários",
+    "city": "Belo Horizonte",
+    "state": "MG",
+    "colors": ["#111417", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "ambitious",
+    "strength": 72,
+    "stadium": {
+      "name": "Arena Veio de Minério",
+      "capacity": 44900
+    },
+    "rivals": ["cruzador"],
+    "titles": {
+      "league": 3,
+      "cup": 2,
+      "libertadores": 1,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "gremeos",
+    "name": "Grêmeos Futebol Porto-Alegrense",
+    "shortName": "Grêmeos",
+    "abbreviation": "GRM",
+    "nickname": "Gemada",
+    "city": "Porto Alegre",
+    "state": "RS",
+    "colors": ["#0D80BF", "#111417"],
+    "size": "big",
+    "aiProfile": "traditional",
+    "strength": 67,
+    "stadium": {
+      "name": "Arena dos Grêmeos",
+      "capacity": 55700
+    },
+    "rivals": ["inter-regional"],
+    "titles": {
+      "league": 2,
+      "cup": 5,
+      "libertadores": 3,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "fluminario",
+    "name": "Fluminário Futebol Clube",
+    "shortName": "Fluminário",
+    "abbreviation": "FLM",
+    "nickname": "Tricolorada",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "colors": ["#8B1A2E", "#00704A"],
+    "size": "big",
+    "aiProfile": "academy",
+    "strength": 75,
+    "stadium": {
+      "name": "Estádio Maracatu",
+      "capacity": 78800
+    },
+    "rivals": ["botafogueira", "flamingo", "vasconcelos"],
+    "titles": {
+      "league": 4,
+      "cup": 1,
+      "libertadores": 1,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "botafogueira",
+    "name": "Botafogueira Futebol Clube",
+    "shortName": "Botafogueira",
+    "abbreviation": "BTG",
+    "nickname": "Fogueirada",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "colors": ["#111417", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "seller",
+    "strength": 69,
+    "stadium": {
+      "name": "Estádio Engenhoca",
+      "capacity": 44700
+    },
+    "rivals": ["flamingo", "fluminario", "vasconcelos"],
+    "titles": {
+      "league": 3,
+      "cup": 0,
+      "libertadores": 1,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "vasconcelos",
+    "name": "Vasconcelos Atlético Clube",
+    "shortName": "Vasconcelos",
+    "abbreviation": "VSC",
+    "nickname": "Vasconcelistas",
+    "city": "Rio de Janeiro",
+    "state": "RJ",
+    "colors": ["#111417", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "traditional",
+    "strength": 68,
+    "stadium": {
+      "name": "Estádio Janeirão",
+      "capacity": 21700
+    },
+    "rivals": ["botafogueira", "flamingo", "fluminario"],
+    "titles": {
+      "league": 4,
+      "cup": 1,
+      "libertadores": 1,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "santoes",
+    "name": "Santões Futebol Clube",
+    "shortName": "Santões",
+    "abbreviation": "SNT",
+    "nickname": "Praieiros",
+    "city": "Santos",
+    "state": "SP",
+    "colors": ["#FFFFFF", "#111417"],
+    "size": "big",
+    "aiProfile": "academy",
+    "strength": 72,
+    "stadium": {
+      "name": "Vila Belamar",
+      "capacity": 16100
+    },
+    "rivals": ["corinto", "palmeral", "sao-paulao"],
+    "titles": {
+      "league": 8,
+      "cup": 1,
+      "libertadores": 3,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "cruzador",
+    "name": "Cruzador Esporte Clube",
+    "shortName": "Cruzador",
+    "abbreviation": "CRZ",
+    "nickname": "Celestinos",
+    "city": "Belo Horizonte",
+    "state": "MG",
+    "colors": ["#0033A0", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "traditional",
+    "strength": 76,
+    "stadium": {
+      "name": "Estádio Minerão",
+      "capacity": 61900
+    },
+    "rivals": ["atletico-minerio"],
+    "titles": {
+      "league": 4,
+      "cup": 6,
+      "libertadores": 2,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "inter-regional",
+    "name": "Inter-Regional Futebol Clube",
+    "shortName": "Inter-Regional",
+    "abbreviation": "IRG",
+    "nickname": "Vermelhada",
+    "city": "Porto Alegre",
+    "state": "RS",
+    "colors": ["#E5050F", "#FFFFFF"],
+    "size": "big",
+    "aiProfile": "academy",
+    "strength": 64,
+    "stadium": {
+      "name": "Estádio Beira-Riacho",
+      "capacity": 50800
+    },
+    "rivals": ["gremeos"],
+    "titles": {
+      "league": 3,
+      "cup": 1,
+      "libertadores": 2,
+      "sudamericana": 1
+    }
+  },
+  {
+    "id": "tufao",
+    "name": "Tufão Esporte Clube",
+    "shortName": "Tufão",
+    "abbreviation": "TUF",
+    "nickname": "Ventania",
+    "city": "Curitiba",
+    "state": "PR",
+    "colors": ["#C8102E", "#111417"],
+    "size": "medium",
+    "aiProfile": "seller",
+    "strength": 74,
+    "stadium": {
+      "name": "Arena da Baixadinha",
+      "capacity": 42400
+    },
+    "rivals": ["coritibom"],
+    "titles": {
+      "league": 1,
+      "cup": 1,
+      "libertadores": 0,
+      "sudamericana": 2
+    }
+  },
+  {
+    "id": "baiao",
+    "name": "Baião Esporte Clube",
+    "shortName": "Baião",
+    "abbreviation": "BAO",
+    "nickname": "Baianada",
+    "city": "Salvador",
+    "state": "BA",
+    "colors": ["#0057B8", "#D6001C"],
+    "size": "medium",
+    "aiProfile": "traditional",
+    "strength": 73,
+    "stadium": {
+      "name": "Arena Fonte Novelo",
+      "capacity": 48700
+    },
+    "rivals": ["vitorioso"],
+    "titles": {
+      "league": 2,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "coritibom",
+    "name": "Coritibom Futebol Clube",
+    "shortName": "Coritibom",
+    "abbreviation": "CTB",
+    "nickname": "Verdeiros",
+    "city": "Curitiba",
+    "state": "PR",
+    "colors": ["#00553A", "#FFFFFF"],
+    "size": "medium",
+    "aiProfile": "academy",
+    "strength": 70,
+    "stadium": {
+      "name": "Estádio Couve-Pera",
+      "capacity": 40500
+    },
+    "rivals": ["tufao"],
+    "titles": {
+      "league": 1,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "vitorioso",
+    "name": "Vitorioso Esporte Clube",
+    "shortName": "Vitorioso",
+    "abbreviation": "VTR",
+    "nickname": "Barrenses",
+    "city": "Salvador",
+    "state": "BA",
+    "colors": ["#C8102E", "#111417"],
+    "size": "medium",
+    "aiProfile": "chaotic",
+    "strength": 68,
+    "stadium": {
+      "name": "Estádio Barrancão",
+      "capacity": 35600
+    },
+    "rivals": ["baiao"],
+    "titles": {
+      "league": 0,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "bragantao",
+    "name": "Bragantão Futebol Clube",
+    "shortName": "Bragantão",
+    "abbreviation": "BRG",
+    "nickname": "Bragantistas",
+    "city": "Bragança Paulista",
+    "state": "SP",
+    "colors": ["#FFFFFF", "#D81E2B"],
+    "size": "small",
+    "aiProfile": "seller",
+    "strength": 71,
+    "stadium": {
+      "name": "Arena Bragança",
+      "capacity": 12000
+    },
+    "rivals": [],
+    "titles": {
+      "league": 0,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "miragol",
+    "name": "Miragol Futebol Clube",
+    "shortName": "Miragol",
+    "abbreviation": "MRG",
+    "nickname": "Miragolenses",
+    "city": "Mirassol",
+    "state": "SP",
+    "colors": ["#FFD400", "#0A7A3D"],
+    "size": "small",
+    "aiProfile": "seller",
+    "strength": 66,
+    "stadium": {
+      "name": "Estádio Maionão",
+      "capacity": 15000
+    },
+    "rivals": [],
+    "titles": {
+      "league": 0,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "chapecao",
+    "name": "Chapecão Esporte Clube",
+    "shortName": "Chapecão",
+    "abbreviation": "CHP",
+    "nickname": "Oestinos",
+    "city": "Chapecó",
+    "state": "SC",
+    "colors": ["#00A650", "#FFFFFF"],
+    "size": "small",
+    "aiProfile": "traditional",
+    "strength": 62,
+    "stadium": {
+      "name": "Arena Condão",
+      "capacity": 21600
+    },
+    "rivals": [],
+    "titles": {
+      "league": 0,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  },
+  {
+    "id": "remador",
+    "name": "Remador Futebol Clube",
+    "shortName": "Remador",
+    "abbreviation": "RMD",
+    "nickname": "Remeiros",
+    "city": "Belém",
+    "state": "PA",
+    "colors": ["#003A8C", "#FFFFFF"],
+    "size": "medium",
+    "aiProfile": "academy",
+    "strength": 63,
+    "stadium": {
+      "name": "Estádio Batelão",
+      "capacity": 53600
+    },
+    "rivals": [],
+    "titles": {
+      "league": 0,
+      "cup": 0,
+      "libertadores": 0,
+      "sudamericana": 0
+    }
+  }
+]

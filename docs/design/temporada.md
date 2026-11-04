@@ -6,13 +6,13 @@
 
 ## Escopo
 
-| Entra na 1a                                                    | Fica para depois                                                        |
-| -------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 38 rodadas, tabela, desempate, campeão, rebaixados             | Séries B a D com acesso de verdade, estaduais, Copa do Brasil (Etapa 2) |
-| Datas aproximadas (fim de semana, 8 rodadas no meio da semana) | Ritmo "Tempo real" com o calendário real do servidor (Etapa 4)          |
-| Prêmios da temporada e resumo                                  | Vagas na Libertadores e Sul-Americana valendo (Etapa 5)                 |
-| Expectativa da diretoria só informativa (decisão 6)            | Barra de confiança, cobrança e demissão (Etapa 4)                       |
-| Evolução e envelhecimento no fim da temporada                  | Base, aposentadorias com festa, histórico e recordes (Etapa 4)          |
+| Entra na 1a                                                     | Fica para depois                                                        |
+| --------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 38 rodadas, tabela, desempate, campeão, rebaixados              | Séries B a D com acesso de verdade, estaduais, Copa do Brasil (Etapa 2) |
+| Datas aproximadas (fim de semana, 8 rodadas no meio da semana)  | Ritmo "Tempo real" com o calendário real do servidor (Etapa 4)          |
+| Prêmios da temporada e resumo                                   | Vagas na Libertadores e Sul-Americana valendo (Etapa 5)                 |
+| Expectativa da diretoria só informativa (decisão 6), pela força | Barra de confiança, cobrança e demissão (Etapa 4)                       |
+| Evolução e envelhecimento no fim da temporada                   | Base, aposentadorias com festa, histórico e recordes (Etapa 4)          |
 
 Na 1a o ritmo é sempre "No meu ritmo": a rodada avança quando o jogador toca em "Jogar rodada". O tipo de carreira é, na prática, "clube fixo" e o estilo Tranquilo e o Realista só mudam o texto da diretoria (demissão: Etapa 4).
 
@@ -77,13 +77,33 @@ A tela de Novo jogo mostra, para cada clube, a força (número, a mesma de `bala
 
 Mostrada no início da temporada e conferida no resumo; não mexe em nada na 1a.
 
-| Porte   | Meta da temporada        |
-| ------- | ------------------------ |
-| Grande  | terminar entre os 6      |
-| Médio   | terminar entre os 10     |
-| Pequeno | não cair (16º ou melhor) |
+**Regra em uma frase (decisão do CEO, 2026-11-04):** a diretoria pede o que o elenco pode dar; o porte diz o quanto ela cobra.
+
+```
+strengthRank = posição do clube na ordem de força efetiva da carreira (1 = mais forte; empate pelo id)
+targetPosition = min(strengthRank + 2, 16)
+```
+
+| Porte   | Tom da cobrança na 1a (texto)                                   | Paciência (Etapa 4) |
+| ------- | --------------------------------------------------------------- | ------------------- |
+| Grande  | exigente ("é obrigação ficar entre os N")                       | menor               |
+| Médio   | firme ("a meta é ficar entre os N")                             | média               |
+| Pequeno | compreensivo ("o objetivo é terminar entre os N" ou "não cair") | maior               |
+
+**Exemplos:** Flamingo (força 1º) → terminar entre os 3; Corinto (força 17º, grande) → entre os 16, com tom de grande; Bragantão (9º, pequeno) → entre os 11. A meta de 16 lê "não cair".
+
+Isto troca a meta por porte do `PROJETO.md` ("o porte define as metas e a paciência"): vai para a ADR da Etapa 4 (o `architect` abre). Na 1a só muda o texto mostrado.
 
 No estilo Tranquilo o texto é "a diretoria espera"; no Realista, "a diretoria cobra". A confiança de 0 a 100 e a demissão entram na Etapa 4.
+
+## Porte na carreira (Etapa 4, decisão do CEO)
+
+**Regra em uma frase:** dentro de uma carreira, o porte de um clube pode crescer devagar com títulos e torcida conquistados (pequeno → médio → grande), sem mexer nos dados base.
+
+- Fica no save da carreira (`careerSize` por clube), não no `ClubDef`; jogo novo começa com o porte do lote.
+- Critério a calibrar na Etapa 4 com o `/balance`: título nacional ou continental mais termômetro da torcida alto por várias temporadas sobe um degrau; nunca mais de um degrau por temporada e nunca pela colocação sozinha. Cair de porte não existe dentro da carreira (porte é história).
+- Mudar o porte muda a paciência e o tom da diretoria, o perfil padrão e, na Etapa 3, a receita; não muda a força.
+- Mudança no formato de save: ADR do `architect` com migração.
 
 ## Fim de temporada
 
