@@ -126,6 +126,30 @@ export type {
   StrengthsResult,
   TeamStrengths,
 } from './strength.ts';
+export {
+  BENCH_LINES,
+  BENCH_SIZE,
+  CHAOTIC_POSTURE_WEIGHTS,
+  CHAOTIC_PRESSURE_WEIGHTS,
+  PROFILE_POSTURE,
+  PROFILE_PRESSURE,
+  aiSeed,
+  pickBench,
+  pickCaptainAndTakers,
+  pickEleven,
+  profileTactic,
+  strengthDelta,
+  suggestSheet,
+  validateLineup,
+} from './ai.ts';
+export type {
+  PreMatchPosture,
+  SheetProblem,
+  SuggestState,
+  ValidateLineupResult,
+  Venue,
+} from './ai.ts';
+export { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
 export { simulateMatch } from './match/simulate.ts';
 export {
   ABANDONED_SCORE,

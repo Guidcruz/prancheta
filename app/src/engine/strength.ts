@@ -332,7 +332,7 @@ function isFormation(value: string): value is Formation {
 }
 
 /** Injured or suspended players are not fit to play (jogadores.md, "Estados que mudam"). */
-function isAvailable(player: Pick<Player, 'injuryRounds' | 'suspendedGames'>): boolean {
+export function isAvailable(player: Pick<Player, 'injuryRounds' | 'suspendedGames'>): boolean {
   return player.injuryRounds <= 0 && player.suspendedGames <= 0;
 }
 
@@ -340,9 +340,10 @@ function isAvailable(player: Pick<Player, 'injuryRounds' | 'suspendedGames'>): b
  * The checks shared by {@link sectorStrengths} and {@link teamStrength}: a known formation, as
  * many distinct starters as slots, each found by `lookup` (the club's squad) and, when
  * `requireAvailable`, neither injured nor suspended. Returns the starters with their slots, or
- * the first problem (formation, count, then each starter in slot order).
+ * the first problem (formation, count, then each starter in slot order). Shared with
+ * `validateLineup` (ai.ts, T-011), so the reasons and their order are the same everywhere.
  */
-function resolveStarters(
+export function resolveStarters(
   lineup: Pick<Lineup, 'formation' | 'starters'>,
   lookup: (id: PlayerId) => Player | undefined,
   requireAvailable: boolean,
@@ -404,7 +405,7 @@ export function sectorStrengths(
  * advantage. A real number in 0..99 (overall ≤ 99, fit ≤ 1); the interface rounds it for display.
  *
  * - With `lineup`: its formation and its 11 starters, which must be distinct players of the
- *   club's squad. Availability is not checked here (that is `validateLineup`, T-011).
+ *   club's squad. Availability is not checked here (that is `validateLineup`, ai.ts).
  * - Without `lineup`: the best XI of the available players (not injured, not suspended) in the
  *   club's first preferred formation, picked as the AI does with everyone fresh (`bestEleven`).
  *

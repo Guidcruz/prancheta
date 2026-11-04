@@ -1,9 +1,9 @@
 import type { Formation, PlayerId, Posture, Pressure } from './types.ts';
 
 /*
- * Lineup and tactic contracts (docs/02-architecture.md, 4.1). Only the types for now: the strength
- * calculation (T-008) reads `formation` and `starters`; `validateLineup` and `suggestSheet` (the
- * bench, captains and takers) arrive with T-011.
+ * Lineup and tactic contracts (docs/02-architecture.md, 4.1). The strength calculation (T-008)
+ * reads `formation` and `starters`; `validateLineup` and `suggestSheet` (the bench, captains and
+ * takers) are in ai.ts (T-011).
  */
 
 /** The team the coach (or the AI) puts on the pitch. */
