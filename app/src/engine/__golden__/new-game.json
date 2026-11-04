@@ -1,0 +1,1149 @@
+{
+  "engineVersion": 1,
+  "name": "new-game",
+  "data": {
+    "header": {
+      "engineVersion": 1,
+      "retiredNamesRev": 0,
+      "seed": 20261104,
+      "year": 2026,
+      "season": 1,
+      "round": 1,
+      "phase": "season",
+      "rules": {
+        "realism": "full"
+      }
+    },
+    "warnings": [],
+    "clubs": [
+      {
+        "id": "clube-teste-01",
+        "profile": "traditional",
+        "strength": 76.82738053666563,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-02",
+        "profile": "traditional",
+        "strength": 74.03859667490242,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-03",
+        "profile": "traditional",
+        "strength": 72.9880261815735,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-04",
+        "profile": "traditional",
+        "strength": 73.44911422469731,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-05",
+        "profile": "traditional",
+        "strength": 77.05490806440407,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-06",
+        "profile": "traditional",
+        "strength": 76.40677553050574,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-07",
+        "profile": "traditional",
+        "strength": 70.09182611659175,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-08",
+        "profile": "traditional",
+        "strength": 69.56828289589997,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-09",
+        "profile": "traditional",
+        "strength": 70.13885071767467,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-10",
+        "profile": "traditional",
+        "strength": 69.54725090347833,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-11",
+        "profile": "traditional",
+        "strength": 71.03009904444357,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-12",
+        "profile": "traditional",
+        "strength": 70.4844200779722,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-13",
+        "profile": "traditional",
+        "strength": 71.38293735859877,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-14",
+        "profile": "traditional",
+        "strength": 67.33239738483287,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-15",
+        "profile": "traditional",
+        "strength": 66.26729219424044,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-16",
+        "profile": "traditional",
+        "strength": 65.68936102975303,
+        "preferredFormations": [
+          "4-4-2",
+          "3-5-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-17",
+        "profile": "traditional",
+        "strength": 66.49825208937563,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-18",
+        "profile": "traditional",
+        "strength": 64.41639645532162,
+        "preferredFormations": [
+          "3-5-2",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-19",
+        "profile": "seller",
+        "strength": 64.75991715576544,
+        "preferredFormations": [
+          "4-2-3-1",
+          "4-4-2"
+        ],
+        "fans": 60
+      },
+      {
+        "id": "clube-teste-20",
+        "profile": "chaotic",
+        "strength": 63.99988734246175,
+        "preferredFormations": [
+          "4-4-2",
+          "4-3-3"
+        ],
+        "fans": 60
+      }
+    ],
+    "squad": [
+      {
+        "id": "clube-teste-01#1",
+        "clubId": "clube-teste-01",
+        "nameSeed": 2550618966,
+        "faceSeed": 1319320547,
+        "name": {
+          "display": "Teste1",
+          "full": "Jogador Teste1",
+          "family": "Teste1"
+        },
+        "face": "t-br-lthm8z",
+        "nationality": "BR",
+        "position": "GK",
+        "attributes": {
+          "reflexes": 78,
+          "positioning": 87,
+          "aerial": 71,
+          "rushing": 69,
+          "distribution": 82,
+          "physical": 74
+        },
+        "overall": 78,
+        "potential": 78,
+        "age": 28,
+        "peakAge": 28,
+        "growth": 1.0741358513012529,
+        "trait": "hothead",
+        "shirt": 1,
+        "condition": 100,
+        "morale": 64,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#2",
+        "clubId": "clube-teste-01",
+        "nameSeed": 2420670268,
+        "faceSeed": 3667048008,
+        "name": {
+          "display": "Teste2",
+          "full": "Jogador Teste2",
+          "family": "Teste2"
+        },
+        "face": "t-br-1on9kco",
+        "nationality": "BR",
+        "position": "CB",
+        "attributes": {
+          "speed": 74,
+          "technique": 72,
+          "passing": 79,
+          "finishing": 49,
+          "marking": 74,
+          "physical": 81
+        },
+        "overall": 76,
+        "potential": 77,
+        "age": 25,
+        "peakAge": 27,
+        "growth": 1.181640853639692,
+        "trait": "quiet",
+        "shirt": 2,
+        "condition": 100,
+        "morale": 56,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#3",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3651450847,
+        "faceSeed": 1025491630,
+        "name": {
+          "display": "Teste3",
+          "full": "Jogador Teste3",
+          "family": "Teste3"
+        },
+        "face": "t-br-gyjuem",
+        "nationality": "BR",
+        "position": "CB",
+        "attributes": {
+          "speed": 82,
+          "technique": 72,
+          "passing": 84,
+          "finishing": 53,
+          "marking": 71,
+          "physical": 80
+        },
+        "overall": 76,
+        "potential": 80,
+        "age": 25,
+        "peakAge": 26,
+        "growth": 1.1011545433662833,
+        "trait": "quiet",
+        "shirt": 3,
+        "condition": 100,
+        "morale": 67,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#4",
+        "clubId": "clube-teste-01",
+        "nameSeed": 4144269758,
+        "faceSeed": 3335863666,
+        "name": {
+          "display": "Teste4",
+          "full": "Jogador Teste4",
+          "family": "Teste4"
+        },
+        "face": "t-br-1j634vm",
+        "nationality": "BR",
+        "position": "FB",
+        "attributes": {
+          "speed": 76,
+          "technique": 72,
+          "passing": 68,
+          "finishing": 51,
+          "marking": 77,
+          "physical": 81
+        },
+        "overall": 75,
+        "potential": 75,
+        "age": 29,
+        "peakAge": 28,
+        "growth": 1.0042244563810527,
+        "trait": "quiet",
+        "shirt": 4,
+        "condition": 100,
+        "morale": 57,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#5",
+        "clubId": "clube-teste-01",
+        "nameSeed": 1793629061,
+        "faceSeed": 621600711,
+        "name": {
+          "display": "Teste5",
+          "full": "Jogador Teste5",
+          "family": "Teste5"
+        },
+        "face": "t-br-aa326f",
+        "nationality": "BR",
+        "position": "FB",
+        "attributes": {
+          "speed": 69,
+          "technique": 77,
+          "passing": 72,
+          "finishing": 56,
+          "marking": 78,
+          "physical": 78
+        },
+        "overall": 74,
+        "potential": 74,
+        "age": 24,
+        "peakAge": 27,
+        "growth": 1.0844631695188582,
+        "trait": "hothead",
+        "shirt": 5,
+        "condition": 100,
+        "morale": 56,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#6",
+        "clubId": "clube-teste-01",
+        "nameSeed": 858282508,
+        "faceSeed": 2820215990,
+        "name": {
+          "display": "Teste6",
+          "full": "Jogador Teste6",
+          "family": "Teste6"
+        },
+        "face": "t-br-1an30l2",
+        "nationality": "BR",
+        "position": "DM",
+        "attributes": {
+          "speed": 76,
+          "technique": 82,
+          "passing": 79,
+          "finishing": 55,
+          "marking": 76,
+          "physical": 85
+        },
+        "overall": 79,
+        "potential": 79,
+        "age": 24,
+        "peakAge": 28,
+        "growth": 0.9488046669401229,
+        "trait": "quiet",
+        "shirt": 6,
+        "condition": 100,
+        "morale": 55,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#7",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3983475159,
+        "faceSeed": 586145837,
+        "name": {
+          "display": "Teste7",
+          "full": "Jogador Teste7",
+          "family": "Teste7"
+        },
+        "face": "t-br-9oz50t",
+        "nationality": "BR",
+        "position": "DM",
+        "attributes": {
+          "speed": 79,
+          "technique": 80,
+          "passing": 88,
+          "finishing": 76,
+          "marking": 72,
+          "physical": 85
+        },
+        "overall": 81,
+        "potential": 81,
+        "age": 28,
+        "peakAge": 27,
+        "growth": 0.8548598185181618,
+        "trait": "quiet",
+        "shirt": 7,
+        "condition": 100,
+        "morale": 68,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#8",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3245180470,
+        "faceSeed": 1913111141,
+        "name": {
+          "display": "Teste8",
+          "full": "Jogador Teste8",
+          "family": "Teste8"
+        },
+        "face": "t-br-vn0m05",
+        "nationality": "BR",
+        "position": "AM",
+        "attributes": {
+          "speed": 78,
+          "technique": 84,
+          "passing": 62,
+          "finishing": 77,
+          "marking": 60,
+          "physical": 72
+        },
+        "overall": 74,
+        "potential": 77,
+        "age": 25,
+        "peakAge": 28,
+        "growth": 1.0926221317611635,
+        "trait": "hothead",
+        "shirt": 8,
+        "condition": 100,
+        "morale": 60,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#9",
+        "clubId": "clube-teste-01",
+        "nameSeed": 562711024,
+        "faceSeed": 3460911990,
+        "name": {
+          "display": "Teste9",
+          "full": "Jogador Teste9",
+          "family": "Teste9"
+        },
+        "face": "t-br-1l8jcs6",
+        "nationality": "BR",
+        "position": "AM",
+        "attributes": {
+          "speed": 64,
+          "technique": 85,
+          "passing": 73,
+          "finishing": 78,
+          "marking": 41,
+          "physical": 80
+        },
+        "overall": 77,
+        "potential": 77,
+        "age": 29,
+        "peakAge": 26,
+        "growth": 0.8845421446487308,
+        "trait": "idol",
+        "shirt": 9,
+        "condition": 100,
+        "morale": 65,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#10",
+        "clubId": "clube-teste-01",
+        "nameSeed": 784305534,
+        "faceSeed": 3748234952,
+        "name": {
+          "display": "Teste10",
+          "full": "Jogador Teste10",
+          "family": "Teste10"
+        },
+        "face": "t-br-1pzlolk",
+        "nationality": "BR",
+        "position": "ST",
+        "attributes": {
+          "speed": 85,
+          "technique": 71,
+          "passing": 80,
+          "finishing": 84,
+          "marking": 66,
+          "physical": 74
+        },
+        "overall": 80,
+        "potential": 81,
+        "age": 26,
+        "peakAge": 29,
+        "growth": 1.1431023619137703,
+        "trait": "quiet",
+        "shirt": 10,
+        "condition": 100,
+        "morale": 60,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#11",
+        "clubId": "clube-teste-01",
+        "nameSeed": 401073239,
+        "faceSeed": 670957493,
+        "name": {
+          "display": "Teste11",
+          "full": "Jogador Teste11",
+          "family": "Teste11"
+        },
+        "face": "t-br-b3gy45",
+        "nationality": "BR",
+        "position": "ST",
+        "attributes": {
+          "speed": 71,
+          "technique": 74,
+          "passing": 69,
+          "finishing": 74,
+          "marking": 44,
+          "physical": 78
+        },
+        "overall": 74,
+        "potential": 74,
+        "age": 28,
+        "peakAge": 28,
+        "growth": 0.9659631196409464,
+        "trait": "hothead",
+        "shirt": 11,
+        "condition": 100,
+        "morale": 63,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#12",
+        "clubId": "clube-teste-01",
+        "nameSeed": 1149959930,
+        "faceSeed": 1172101308,
+        "name": {
+          "display": "Teste25",
+          "full": "Jogador Teste25",
+          "family": "Teste25"
+        },
+        "face": "t-cl-jdu75o",
+        "nationality": "CL",
+        "position": "GK",
+        "attributes": {
+          "reflexes": 76,
+          "positioning": 59,
+          "aerial": 81,
+          "rushing": 65,
+          "distribution": 85,
+          "physical": 73
+        },
+        "overall": 71,
+        "potential": 71,
+        "age": 24,
+        "peakAge": 26,
+        "growth": 0.9375374811701477,
+        "trait": "quiet",
+        "shirt": 12,
+        "condition": 100,
+        "morale": 66,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#13",
+        "clubId": "clube-teste-01",
+        "nameSeed": 2608624145,
+        "faceSeed": 404251974,
+        "name": {
+          "display": "Teste12",
+          "full": "Jogador Teste12",
+          "family": "Teste12"
+        },
+        "face": "t-br-6ooiti",
+        "nationality": "BR",
+        "position": "CB",
+        "attributes": {
+          "speed": 68,
+          "technique": 77,
+          "passing": 59,
+          "finishing": 52,
+          "marking": 64,
+          "physical": 69
+        },
+        "overall": 67,
+        "potential": 67,
+        "age": 31,
+        "peakAge": 27,
+        "growth": 1.0271553026512266,
+        "trait": "quiet",
+        "shirt": 13,
+        "condition": 100,
+        "morale": 68,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#14",
+        "clubId": "clube-teste-01",
+        "nameSeed": 2525610852,
+        "faceSeed": 1057302694,
+        "name": {
+          "display": "Teste13",
+          "full": "Jogador Teste13",
+          "family": "Teste13"
+        },
+        "face": "t-br-hhhnza",
+        "nationality": "BR",
+        "position": "FB",
+        "attributes": {
+          "speed": 63,
+          "technique": 71,
+          "passing": 72,
+          "finishing": 54,
+          "marking": 81,
+          "physical": 72
+        },
+        "overall": 71,
+        "potential": 71,
+        "age": 31,
+        "peakAge": 28,
+        "growth": 1.0265428598038853,
+        "trait": "leader",
+        "shirt": 14,
+        "condition": 100,
+        "morale": 65,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#15",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3156199335,
+        "faceSeed": 2957648887,
+        "name": {
+          "display": "Teste14",
+          "full": "Jogador Teste14",
+          "family": "Teste14"
+        },
+        "face": "t-br-1cwwohj",
+        "nationality": "BR",
+        "position": "DM",
+        "attributes": {
+          "speed": 76,
+          "technique": 66,
+          "passing": 70,
+          "finishing": 48,
+          "marking": 73,
+          "physical": 63
+        },
+        "overall": 70,
+        "potential": 70,
+        "age": 25,
+        "peakAge": 27,
+        "growth": 0.8498973796144128,
+        "trait": "quiet",
+        "shirt": 15,
+        "condition": 100,
+        "morale": 68,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#16",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3118205947,
+        "faceSeed": 1179467046,
+        "name": {
+          "display": "Teste15",
+          "full": "Jogador Teste15",
+          "family": "Teste15"
+        },
+        "face": "t-br-ji82li",
+        "nationality": "BR",
+        "position": "AM",
+        "attributes": {
+          "speed": 64,
+          "technique": 73,
+          "passing": 67,
+          "finishing": 71,
+          "marking": 51,
+          "physical": 67
+        },
+        "overall": 69,
+        "potential": 81,
+        "age": 22,
+        "peakAge": 29,
+        "growth": 0.8419858423061669,
+        "trait": "leader",
+        "shirt": 16,
+        "condition": 100,
+        "morale": 60,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#17",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3184575190,
+        "faceSeed": 3529361731,
+        "name": {
+          "display": "Teste16",
+          "full": "Jogador Teste16",
+          "family": "Teste16"
+        },
+        "face": "t-br-1mdagxv",
+        "nationality": "BR",
+        "position": "ST",
+        "attributes": {
+          "speed": 71,
+          "technique": 61,
+          "passing": 70,
+          "finishing": 62,
+          "marking": 53,
+          "physical": 68
+        },
+        "overall": 65,
+        "potential": 68,
+        "age": 24,
+        "peakAge": 28,
+        "growth": 0.9520895769819617,
+        "trait": "quiet",
+        "shirt": 17,
+        "condition": 100,
+        "morale": 68,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#18",
+        "clubId": "clube-teste-01",
+        "nameSeed": 1650319534,
+        "faceSeed": 2470384628,
+        "name": {
+          "display": "Teste17",
+          "full": "Jogador Teste17",
+          "family": "Teste17"
+        },
+        "face": "t-br-14uswz8",
+        "nationality": "BR",
+        "position": "CB",
+        "attributes": {
+          "speed": 75,
+          "technique": 66,
+          "passing": 65,
+          "finishing": 54,
+          "marking": 63,
+          "physical": 74
+        },
+        "overall": 68,
+        "potential": 74,
+        "age": 19,
+        "peakAge": 28,
+        "growth": 0.8078299862332643,
+        "trait": "leader",
+        "shirt": 18,
+        "condition": 100,
+        "morale": 70,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#19",
+        "clubId": "clube-teste-01",
+        "nameSeed": 4218169816,
+        "faceSeed": 3477993070,
+        "name": {
+          "display": "Teste18",
+          "full": "Jogador Teste18",
+          "family": "Teste18"
+        },
+        "face": "t-br-1lipgmm",
+        "nationality": "BR",
+        "position": "FB",
+        "attributes": {
+          "speed": 64,
+          "technique": 63,
+          "passing": 76,
+          "finishing": 29,
+          "marking": 52,
+          "physical": 62
+        },
+        "overall": 63,
+        "potential": 64,
+        "age": 25,
+        "peakAge": 29,
+        "growth": 0.8006879298016429,
+        "trait": "professional",
+        "shirt": 19,
+        "condition": 100,
+        "morale": 55,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#20",
+        "clubId": "clube-teste-01",
+        "nameSeed": 620720788,
+        "faceSeed": 2742358969,
+        "name": {
+          "display": "Teste19",
+          "full": "Jogador Teste19",
+          "family": "Teste19"
+        },
+        "face": "t-br-19cq9q1",
+        "nationality": "BR",
+        "position": "CB",
+        "attributes": {
+          "speed": 63,
+          "technique": 55,
+          "passing": 59,
+          "finishing": 37,
+          "marking": 61,
+          "physical": 61
+        },
+        "overall": 61,
+        "potential": 61,
+        "age": 28,
+        "peakAge": 29,
+        "growth": 0.9790116606280208,
+        "trait": "quiet",
+        "shirt": 20,
+        "condition": 100,
+        "morale": 52,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#21",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3793415811,
+        "faceSeed": 895022497,
+        "name": {
+          "display": "Teste20",
+          "full": "Jogador Teste20",
+          "family": "Teste20"
+        },
+        "face": "t-br-esvfs1",
+        "nationality": "BR",
+        "position": "AM",
+        "attributes": {
+          "speed": 76,
+          "technique": 79,
+          "passing": 67,
+          "finishing": 75,
+          "marking": 59,
+          "physical": 70
+        },
+        "overall": 73,
+        "potential": 73,
+        "age": 30,
+        "peakAge": 27,
+        "growth": 0.9065782850608229,
+        "trait": "quiet",
+        "shirt": 21,
+        "condition": 100,
+        "morale": 55,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#22",
+        "clubId": "clube-teste-01",
+        "nameSeed": 3865814501,
+        "faceSeed": 1633076705,
+        "name": {
+          "display": "Teste21",
+          "full": "Jogador Teste21",
+          "family": "Teste21"
+        },
+        "face": "t-br-r0ai1t",
+        "nationality": "BR",
+        "position": "GK",
+        "attributes": {
+          "reflexes": 54,
+          "positioning": 60,
+          "aerial": 52,
+          "rushing": 56,
+          "distribution": 56,
+          "physical": 54
+        },
+        "overall": 56,
+        "potential": 56,
+        "age": 30,
+        "peakAge": 27,
+        "growth": 0.9251294370740653,
+        "trait": "quiet",
+        "shirt": 22,
+        "condition": 100,
+        "morale": 59,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#23",
+        "clubId": "clube-teste-01",
+        "nameSeed": 2960633270,
+        "faceSeed": 1469449859,
+        "name": {
+          "display": "Teste22",
+          "full": "Jogador Teste22",
+          "family": "Teste22"
+        },
+        "face": "t-br-oavern",
+        "nationality": "BR",
+        "position": "DM",
+        "attributes": {
+          "speed": 64,
+          "technique": 66,
+          "passing": 70,
+          "finishing": 52,
+          "marking": 71,
+          "physical": 66
+        },
+        "overall": 68,
+        "potential": 73,
+        "age": 18,
+        "peakAge": 29,
+        "growth": 1.087542423326522,
+        "trait": "quiet",
+        "shirt": 23,
+        "condition": 100,
+        "morale": 61,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#24",
+        "clubId": "clube-teste-01",
+        "nameSeed": 699529146,
+        "faceSeed": 3899093776,
+        "name": {
+          "display": "Teste23",
+          "full": "Jogador Teste23",
+          "family": "Teste23"
+        },
+        "face": "t-br-1shf40g",
+        "nationality": "BR",
+        "position": "ST",
+        "attributes": {
+          "speed": 64,
+          "technique": 74,
+          "passing": 72,
+          "finishing": 64,
+          "marking": 51,
+          "physical": 64
+        },
+        "overall": 66,
+        "potential": 92,
+        "age": 17,
+        "peakAge": 27,
+        "growth": 0.9123961385339499,
+        "trait": "leader",
+        "shirt": 24,
+        "condition": 100,
+        "morale": 50,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      },
+      {
+        "id": "clube-teste-01#25",
+        "clubId": "clube-teste-01",
+        "nameSeed": 1945708725,
+        "faceSeed": 714491102,
+        "name": {
+          "display": "Teste24",
+          "full": "Jogador Teste24",
+          "family": "Teste24"
+        },
+        "face": "t-br-bte0v2",
+        "nationality": "BR",
+        "position": "ST",
+        "attributes": {
+          "speed": 53,
+          "technique": 74,
+          "passing": 80,
+          "finishing": 70,
+          "marking": 57,
+          "physical": 79
+        },
+        "overall": 69,
+        "potential": 91,
+        "age": 18,
+        "peakAge": 29,
+        "growth": 0.87585538495332,
+        "trait": "leader",
+        "shirt": 25,
+        "condition": 100,
+        "morale": 59,
+        "injuryRounds": 0,
+        "suspendedGames": 0,
+        "yellowCount": 0,
+        "recentRatings": [],
+        "benchStreak": 0,
+        "clubAppearances": 0
+      }
+    ],
+    "digest": "bb65717"
+  }
+}

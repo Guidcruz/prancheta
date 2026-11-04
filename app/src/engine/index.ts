@@ -52,6 +52,34 @@ export {
   overallWeight,
   validatePlayer,
 } from './players.ts';
+export { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS } from './formations.ts';
+export {
+  GENERATED_OVERALL_RANGE,
+  GROUP_AGE,
+  GROUP_OVERALL,
+  HOME_NATIONALITY,
+  HOME_NATIONALITY_SHARE,
+  IDOL_MIN_AGE,
+  JEWEL_POTENTIAL_MARGIN,
+  PROFILE_WEIGHTS_BY_SIZE,
+  SOUTH_AMERICAN_NATIONALITIES,
+  SQUAD_GROUPS,
+  SQUAD_GROUP_SIZES,
+  STARTER_MODE_AGE,
+  START_CONDITION,
+  START_MORALE,
+  STRENGTH_TOLERANCE,
+  bestEleven,
+  checkGeneratedSquad,
+  drawClubProfile,
+  drawPreferredFormations,
+  effectiveStrength,
+  elevenStrength,
+  generateSquad,
+} from './generation.ts';
+export type { GeneratedSquad, SquadGroup, SquadProblem, SquadRequest } from './generation.ts';
+export { newGame } from './game.ts';
+export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {
   AttributeKey,
   FitLevel,
