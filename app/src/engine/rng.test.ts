@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Rng, seedFromString } from './rng';
+import { Rng, seedFromString } from './rng.ts';
 
 describe('Rng', () => {
   it('is deterministic for the same seed', () => {
