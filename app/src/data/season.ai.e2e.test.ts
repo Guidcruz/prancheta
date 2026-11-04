@@ -178,12 +178,12 @@ describe('T-011 acceptance: chained season with the 20 real clubs', () => {
         tired += r.tiredStarters;
         for (const [reason, n] of Object.entries(r.subs)) subs[reason]! += n;
       }
-      const matches = 3 * 380;
-      const perMatch = (n: number) => (n / matches).toFixed(2);
+      const teams = 3 * 380 * 2;
+      const perTeam = (n: number) => (n / teams).toFixed(2);
       const all = subs.injury! + subs.fatigue! + subs.tactical!;
       console.info(
         `[T-011 e2e] sheets ${sheets}; player-rounds out ${out} (suspended ${sus}); rotations of tired starters ${rot}; starters below ${ROTATION}: ${tired}\n` +
-          `[T-012 e2e] substitutions per match ${perMatch(all)} (ia-clubes.md: 3 to 4): injury ${perMatch(subs.injury!)}, fatigue ${perMatch(subs.fatigue!)}, tactical ${perMatch(subs.tactical!)}`,
+          `[T-012 e2e] substitutions per team ${perTeam(all)} (ia-clubes.md: 3 to 4 per team): injury ${perTeam(subs.injury!)}, fatigue ${perTeam(subs.fatigue!)}, tactical ${perTeam(subs.tactical!)}`,
       );
       expect(sheets).toBe(3 * 380 * 2);
       expect(out).toBeGreaterThan(0);
