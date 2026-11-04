@@ -136,6 +136,13 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - Consulta ao advogado sobre espelhar dados reais (tabela e títulos).
 - Lote de dezembro com a tabela final.
 
+## Dívida técnica (achados do security-auditor)
+
+- M1 (resolvido por este PR): a política prometia apagar mensagens de suporte em 90 dias, mas o canal publicado são as Discussões do GitHub (público, de terceiros). Textos de Privacidade, Perguntas e rodapé corrigidos.
+- L1: `scripts/og.mjs` não limpa a pasta temporária em SIGINT/SIGTERM.
+- L2: criar `_headers` do Cloudflare Pages (CSP, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors`) antes da Etapa 1b.
+- L3: fixar a imagem do devcontainer e as ações do CI por SHA/digest.
+
 ## Em andamento (PR do site e dos escudos, branch `claude/kickoff-i22gas`)
 
 Aprovado em revisão, aguardando merge do CEO:

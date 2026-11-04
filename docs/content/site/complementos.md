@@ -189,3 +189,35 @@ Notas:
 
 1. A "Frase sob os escudos" da seção "Clubes" deste arquivo (acima) também cita "um símbolo simples (estrela, bola ou letra)". Já foi substituída pela frase aprovada em 2026-11-04; conferido: o site usa a nova.
 2. O item "Nome" da lista exemplifica com "Coritibom" e "Botafogueira", que ficam muito perto de nomes de clubes existentes. Sugiro trocar por exemplos mais distantes, em outro lote, se o CEO concordar.
+
+## Privacidade e canal de suporte
+
+> Status: **aprovado pelo CEO em 2026-11-04**. Motivo: achado M1 do security-auditor. A política prometia apagar as mensagens de suporte em 90 dias, mas o canal publicado são as Discussões do GitHub, que são públicas e de terceiros. Aplicado em `site/src/pages/privacidade.astro`, `site/src/pages/perguntas.astro` e `site/src/components/SiteFooter.astro`. Versão da política: 4 de novembro de 2026.
+
+**Privacidade, seção "Suporte"** (os três primeiros parágrafos só aparecem se houver link de Discussões):
+
+> Hoje o canal de suporte são as Discussões do projeto no GitHub. Esse canal é um serviço do GitHub e segue a política de privacidade dele. Não controlamos por quanto tempo as mensagens ficam lá.
+>
+> Tudo o que você escreve nas Discussões é público. Por isso, não publique dados pessoais: nome completo, e-mail, telefone, endereço ou escola.
+>
+> Para escrever, é preciso ter conta no GitHub, que só é permitida a partir dos 13 anos. Quem é menor de idade deve pedir ajuda a um responsável.
+>
+> Quando existir um canal por e-mail, a mensagem enviada por ele ficará guardada só pelo tempo necessário para responder e será apagada 90 dias depois do encerramento. Essa regra vale só para o e-mail, e não para as Discussões do GitHub. Não envie dados sensíveis por nenhum canal.
+
+**Privacidade, seção "Contato"** (sem e-mail configurado):
+
+> Responsável: [nome], [cidade]. Ainda não há canal de e-mail; ele será publicado aqui assim que existir. Por enquanto, o contato é pelas Discussões no GitHub (públicas, exigem conta no GitHub).
+
+**Privacidade, seção "Menores de idade"** (frase acrescentada ao fim):
+
+> Já as Discussões do GitHub, nosso canal de suporte, são públicas e exigem conta no GitHub: se você é menor de idade, peça ajuda a um responsável (veja a seção Suporte).
+
+**Perguntas, "Achei um erro ou tenho uma ideia"** (acrescentado à resposta):
+
+> Exige conta no GitHub (a partir de 13 anos; menores devem pedir ajuda a um responsável), e tudo fica público: não publique dados pessoais. Detalhes na página de Privacidade.
+
+**Perguntas, cartão final:**
+
+> Escreva no mesmo lugar: as Discussões do projeto no GitHub (exige conta no GitHub; tudo fica público). Se preferir, acompanhe o devlog.
+
+**Rodapé, rótulo do link:** "Discussões (GitHub, público)".

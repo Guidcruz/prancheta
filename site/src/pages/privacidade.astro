@@ -2,13 +2,14 @@
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
 import PageHero from '../components/PageHero.astro';
+const { supportEmail, discussionsUrl } = config.contacts;
 ---
 
 <Base title="Privacidade" share="privacidade">
   <PageHero title="Privacidade" />
   <div class="sec flow">
     <p>
-      Versão de 3 de novembro de 2026. Curta de propósito: o {config.name} coleta o mínimo possível.
+      Versão de 4 de novembro de 2026. Curta de propósito: o {config.name} coleta o mínimo possível.
     </p>
     <h2>O que o jogo guarda</h2>
     <ul>
@@ -34,21 +35,49 @@ import PageHero from '../components/PageHero.astro';
       páginas, conforme a política de privacidade dela. O jogo não grava endereços IP.
     </p>
     <h2>Suporte</h2>
+    {discussionsUrl && (
+      <>
+        <p>
+          Hoje o canal de suporte são as{' '}
+          <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Esse canal é um serviço do
+          GitHub e segue a política de privacidade dele. Não controlamos por quanto tempo as
+          mensagens ficam lá.
+        </p>
+        <p>
+          Tudo o que você escreve nas Discussões é público. Por isso, não publique dados pessoais:
+          nome completo, e-mail, telefone, endereço ou escola.
+        </p>
+        <p>
+          Para escrever, é preciso ter conta no GitHub, que só é permitida a partir dos 13 anos.
+          Quem é menor de idade deve pedir ajuda a um responsável.
+        </p>
+      </>
+    )}
     <p>
-      Se você escrever para o suporte, a mensagem fica guardada só pelo tempo necessário para
-      responder e é apagada depois de 90 dias do encerramento. Não envie dados sensíveis.
+      Quando existir um canal por e-mail, a mensagem enviada por ele ficará guardada só pelo tempo
+      necessário para responder e será apagada 90 dias depois do encerramento. Essa regra vale só
+      para o e-mail, e não para as Discussões do GitHub. Não envie dados sensíveis por nenhum canal.
     </p>
     <h2>Menores de idade</h2>
     <p>
       O jogo não tem caixas de recompensa, compras aleatórias, recompensas por tempo de uso nem chat
-      de texto livre. Toda interação entre jogadores usa mensagens prontas e pode ser desligada.
+      de texto livre. Toda interação entre jogadores usa mensagens prontas e pode ser desligada. Já
+      as Discussões do GitHub, nosso canal de suporte, são públicas e exigem conta no GitHub: se
+      você é menor de idade, peça ajuda a um responsável (veja a seção Suporte).
     </p>
     <h2>Contato</h2>
     <p>
       Responsável: {config.legal.responsible}, {config.legal.city}.
-      {config.contacts.supportEmail
-        ? ` E-mail: ${config.contacts.supportEmail}.`
-        : ' Um canal de contato será publicado aqui assim que existir.'}
+      {supportEmail
+        ? ` E-mail: ${supportEmail}.`
+        : ' Ainda não há canal de e-mail; ele será publicado aqui assim que existir.'}
+      {discussionsUrl && (
+        <>
+          {' '}
+          Por enquanto, o contato é pelas <a href={discussionsUrl}>Discussões no GitHub</a>{' '}
+          (públicas, exigem conta no GitHub).
+        </>
+      )}
     </p>
   </div>
 </Base>

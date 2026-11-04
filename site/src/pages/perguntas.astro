@@ -188,7 +188,9 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
         <FaqItem question="Achei um erro ou tenho uma ideia. Para onde vou?">
           <p>
             Abra um tópico nas <a href={discussionsUrl}>Discussões do projeto no GitHub</a>. Lá
-            cabem relatos de erro, ideias e perguntas.
+            cabem relatos de erro, ideias e perguntas. Exige conta no GitHub (a partir de 13 anos;
+            menores devem pedir ajuda a um responsável), e tudo fica público: não publique dados
+            pessoais. Detalhes na página de <a href={`${base}privacidade/`}>Privacidade</a>.
           </p>
         </FaqItem>
       )}
@@ -200,8 +202,9 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
         <h2 id="fecho">Não achou a sua pergunta?</h2>
         {discussionsUrl && (
           <p>
-            Escreva no mesmo lugar: as <a href={discussionsUrl}>Discussões do projeto no GitHub</a>.
-            Se preferir, acompanhe o <a href={`${base}devlog/`}>devlog</a>.
+            Escreva no mesmo lugar: as <a href={discussionsUrl}>Discussões do projeto no GitHub</a>{' '}
+            (exige conta no GitHub; tudo fica público). Se preferir, acompanhe o{' '}
+            <a href={`${base}devlog/`}>devlog</a>.
           </p>
         )}
         {supportEmail && (
