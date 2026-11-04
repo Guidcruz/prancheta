@@ -1,6 +1,6 @@
 # Lote 2026-11-04: nomes da Série A (20 clubes), versão 2
 
-Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). Status: **aguardando ok do CEO**. Nada foi gravado em `app/src/`. Esta versão substitui a primeira.
+Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). Status: **aprovado pelo CEO em 2026-11-04 (com ajustes)**. Nada foi gravado em `app/src/`. Esta versão substitui a primeira.
 
 ## O que mudou e como ler
 
@@ -28,7 +28,7 @@ Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). 
 | 11  | médio   | Cruzador Esporte Clube          | Cruzador       | CRZ   | Belo Horizonte, MG    | azul `#0033A0`, branco `#FFFFFF`     | Celestinos         | Cruzeiro      |
 | 12  | médio   | Inter-Regional Futebol Clube    | Inter-Regional | IRG   | Porto Alegre, RS      | vermelho `#E5050F`, branco `#FFFFFF` | Vermelhada         | Internacional |
 | 13  | médio   | Tufão Esporte Clube             | Tufão          | TUF   | Curitiba, PR          | vermelho `#C8102E`, preto `#111417`  | Ventania           | Athletico-PR  |
-| 14  | médio   | Baía Esporte Clube              | Baía           | BAI   | Salvador, BA          | azul `#0057B8`, vermelho `#D6001C`   | Baianada           | Bahia         |
+| 14  | médio   | Baião Esporte Clube             | Baião          | BAO   | Salvador, BA          | azul `#0057B8`, vermelho `#D6001C`   | Baianada           | Bahia         |
 | 15  | pequeno | Coritibom Futebol Clube         | Coritibom      | CTB   | Curitiba, PR          | verde `#00553A`, branco `#FFFFFF`    | Verdeiros          | Coritiba      |
 | 16  | pequeno | Vitorioso Esporte Clube         | Vitorioso      | VTR   | Salvador, BA          | vermelho `#C8102E`, preto `#111417`  | Barrenses          | Vitória       |
 | 17  | pequeno | Bragantão Futebol Clube         | Bragantão      | BRG   | Bragança Paulista, SP | branco `#FFFFFF`, vermelho `#D81E2B` | Bragantistas       | Bragantino    |
@@ -39,7 +39,7 @@ Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). 
 ### Por que esses portes (6 grandes, 8 médios, 6 pequenos)
 
 - **Grandes (6):** as maiores torcidas e os maiores orçamentos do país: Flamingo, Corinto, Palmeral, São Paulão, Atlético Minério e Grêmeos. Os três paulistas e o carioca de maior torcida são consenso; Atlético Minério e Grêmeos entram pelo peso de torcida e títulos nacionais e continentais recentes.
-- **Médios (8):** tradição e torcida grandes, mas hoje menos folga financeira ou oscilação recente: Fluminário, Botafogueira, Vasconcelos, Santões, Cruzador, Inter-Regional, Tufão e Baía. Cruzador, Botafogueira e Inter-Regional são candidatos a "médio forte"; se o `game-designer` quiser, sobem de `strength` dentro da faixa do porte.
+- **Médios (8):** tradição e torcida grandes, mas hoje menos folga financeira ou oscilação recente: Fluminário, Botafogueira, Vasconcelos, Santões, Cruzador, Inter-Regional, Tufão e Baião. Cruzador, Botafogueira e Inter-Regional são candidatos a "médio forte"; se o `game-designer` quiser, sobem de `strength` dentro da faixa do porte.
 - **Pequenos (6):** clubes de menor orçamento e torcida: Coritibom, Vitorioso, Bragantão, Miragol, Chapecão e Remador. Coritibom e Vitorioso são os "pequenos de torcida grande"; Miragol, Bragantão, Chapecão e Remador são os pequenos de verdade, como no desenho da temporada (meta "não cair" para pequeno).
 - Essa distribuição deixa dois grandes (Corinto e Palmeral, ou Flamingo e Atlético Minério) brigando por título, e Gre-Nal e Fla-Flu com porte diferente (grande contra médio), o que dá azarão em clássico.
 
@@ -62,7 +62,7 @@ Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). 
 | 11  | Cruzador: "cruzeiro" virou navio de guerra.                                                               | Sem raposa; palavra comum, não conheço clube homônimo.                                                   | M     |
 | 12  | Inter-Regional: "Internacional" quebrado em "Inter" + "Regional".                                         | Não é "Internacional" nem "Inter de ..."; sem "Colorado" nem saci.                                       | M     |
 | 13  | Tufão: o vento no lugar do "Furacão".                                                                     | Não é "Atlético Paranaense" nem "Athletico"; sem escudo de furacão.                                      | M     |
-| 14  | Baía: "Bahia" lido como "baía" (a de Todos os Santos); soa igual, escreve diferente.                      | Evitei "Tricolor de Aço" e "Esquadrão"; som idêntico ao oficial: risco maior (dúvida 4).                 | M     |
+| 14  | Baião: "Bahia" virou "baião", ritmo e prato do Nordeste; muda o som, mantém o clima.                      | Evitei "Tricolor de Aço" e "Esquadrão"; "baião" é palavra comum, não conheço clube homônimo.             | M     |
 | 15  | Coritibom: "Coritiba" com "bom".                                                                          | Sem "Coxa" e "Coxinha" (apelido evitado de propósito, por conotação política); nome distinto do oficial. | M     |
 | 16  | Vitorioso: "Vitória" virou adjetivo.                                                                      | Sem leão nem "Barradão"; "Barrenses" é só o bairro.                                                      | B     |
 | 17  | Bragantão: "Bragantino" aumentado, como cidade grande-pequena.                                            | Sem touro nem marca de bebida; cores brancas e vermelha, não a identidade do patrocinador.               | M     |
@@ -90,36 +90,36 @@ Autor: `content-writer`. Pedido: `/content nomes série A` (destrava a US-001). 
 | Atlético Minério x Cruzador | **Clássico do Minério**              | Clássico Mineiro                   | cidade (Belo Horizonte) |
 | Grêmeos x Inter-Regional    | **Gêm-Reg**                          | Gre-Nal                            | cidade (Porto Alegre)   |
 | Tufão x Coritibom           | **Tufotiba**                         | Atletiba                           | cidade (Curitiba)       |
-| Baía x Vitorioso            | **Ba-Vit**                           | Ba-Vi                              | cidade (Salvador)       |
+| Baião x Vitorioso           | **Bai-Vit**                          | Ba-Vi                              | cidade (Salvador)       |
 
-**Sem clássico real na lista:** Bragantão, Miragol, Chapecão e Remador (os rivais reais deles não estão na Série A 2026). O Re-Pa vira **Re-Pai** (Remador x Pai d'Égua) quando o Pai d'Égua subir, ver reserva. Ver dúvida 3.
+**Sem clássico real na lista:** Bragantão, Miragol, Chapecão e Remador (os rivais reais deles não estão na Série A 2026). Decisão do CEO: ficam sem rival (ver decisões).
 
 ## Formas em es e en
 
-Nenhum nome muda. Nomes de clássicos são conteúdo à parte (aparecem em notícias) e podem ganhar forma livre em es e en depois, com a mesma chave. "Grêmeos", "Baía", "Botafogueira" e "Chapecão" mantêm acentos e til; "Inter-Regional" mantém o hífen. Apelidos de torcida não se traduzem.
+Nenhum nome muda. Nomes de clássicos são conteúdo à parte (aparecem em notícias) e podem ganhar forma livre em es e en depois, com a mesma chave. "Grêmeos", "Baião", "Botafogueira" e "Chapecão" mantêm acentos e til; "Inter-Regional" mantém o hífen. Apelidos de torcida não se traduzem.
 
 ## Lista reserva (subida da Série B): os 4 rebaixados de 2025 mais 3 tradicionais
 
-| Nome completo           | Nome curto | Sigla | Cidade / UF       | Porte   | Cores                                    | Apelido      | Inspirado em      | Trocadilho (uma linha)                 | Risco |
-| ----------------------- | ---------- | ----- | ----------------- | ------- | ---------------------------------------- | ------------ | ----------------- | -------------------------------------- | ----- |
-| Sportivo Arrecifes      | Arrecifes  | ARR   | Recife, PE        | médio   | vermelho `#C8102E`, preto `#111417`      | Arrecifeiros | Sport (rebaixado) | "recife" no sentido de recife de coral | M     |
-| Juvenília Esporte Clube | Juvenília  | JVL   | Caxias do Sul, RS | pequeno | verde `#00843D`, branco `#FFFFFF`        | Vinhateiros  | Juventude (reb.)  | "juventude" em tom de nome próprio     | B     |
-| Seará Sporting Clube    | Seará      | SEA   | Fortaleza, CE     | médio   | preto `#111417`, branco `#FFFFFF`        | Barulheira   | Ceará (rebaixado) | "Ceará" com o som de "ser" ("será")    | M     |
-| Fortaleça Esporte Clube | Fortaleça  | FRT   | Fortaleza, CE     | médio   | azul `#003399`, vermelho `#D6001C`       | Aliados      | Fortaleza (reb.)  | verbo "fortalecer" no imperativo       | M     |
-| Goiabada Esporte Clube  | Goiabada   | GOI   | Goiânia, GO       | médio   | verde `#00843D`, branco `#FFFFFF`        | Doceiros     | Goiás             | fruta e doce no lugar de "Goiás"       | B     |
-| Ilhéu Esporte Clube     | Ilhéu      | ILH   | Florianópolis, SC | pequeno | azul `#0057A8`, branco `#FFFFFF`         | Manezinhos   | Avaí              | morador da ilha, no lugar de "Avaí"    | M     |
-| Pai d'Égua Sport Club   | Pai d'Égua | PDE   | Belém, PA         | médio   | azul-celeste `#4FA3DB`, branco `#FFFFFF` | Mangueiros   | Paysandu          | expressão paraense ("muito bom")       | B     |
+| Nome completo              | Nome curto  | Sigla | Cidade / UF       | Porte   | Cores                               | Apelido      | Inspirado em               | Trocadilho (uma linha)                     | Risco |
+| -------------------------- | ----------- | ----- | ----------------- | ------- | ----------------------------------- | ------------ | -------------------------- | ------------------------------------------ | ----- |
+| Sportivo Arrecifes         | Arrecifes   | ARR   | Recife, PE        | médio   | vermelho `#C8102E`, preto `#111417` | Arrecifeiros | Sport (rebaixado)          | "recife" no sentido de recife de coral     | M     |
+| Juvenília Esporte Clube    | Juvenília   | JVL   | Caxias do Sul, RS | pequeno | verde `#00843D`, branco `#FFFFFF`   | Vinhateiros  | Juventude (reb.)           | "juventude" em tom de nome próprio         | B     |
+| Seará Sporting Clube       | Seará       | SEA   | Fortaleza, CE     | médio   | preto `#111417`, branco `#FFFFFF`   | Barulheira   | Ceará (rebaixado)          | "Ceará" com o som de "ser" ("será")        | M     |
+| Fortaleça Esporte Clube    | Fortaleça   | FRT   | Fortaleza, CE     | médio   | azul `#003399`, vermelho `#D6001C`  | Aliados      | Fortaleza (reb.)           | verbo "fortalecer" no imperativo           | M     |
+| Goiabada Esporte Clube     | Goiabada    | GOI   | Goiânia, GO       | médio   | verde `#00843D`, branco `#FFFFFF`   | Doceiros     | Goiás                      | fruta e doce no lugar de "Goiás"           | B     |
+| Ilhéu Esporte Clube        | Ilhéu       | ILH   | Florianópolis, SC | pequeno | azul `#0057A8`, branco `#FFFFFF`    | Manezinhos   | Avaí                       | morador da ilha, no lugar de "Avaí"        | M     |
+| Ponte Velha Atlético Clube | Ponte Velha | PNV   | Campinas, SP      | médio   | preto `#111417`, branco `#FFFFFF`   | Pontistas    | Ponte Preta (Série B 2026) | "Ponte Preta" com a cor trocada pela idade | M     |
 
-Clássicos da reserva: **Seará x Fortaleça** = **Clássico-Reino** (de Clássico-Rei); **Remador x Pai d'Égua** = **Re-Pai** (de Re-Pa); Goiabada e Juvenília, Arrecifes e Ilhéu sem par na lista. Mesma conferência e mesmo limite dos 20. **Ressalva:** os três "tradicionais" (Goiás, Avaí, Paysandu) são escolha minha pelo peso histórico; não confirmei a composição da Série B 2026 (ver dúvida 5).
+Clássicos da reserva: **Seará x Fortaleça** = **Clássico-Reino** (de Clássico-Rei); Goiabada, Juvenília, Arrecifes, Ilhéu e Ponte Velha sem par na lista (Ponte Velha: sem Guarani na lista). Mesma conferência e mesmo limite dos 20. Goiás, Avaí e Ponte Preta confirmados na Série B 2026 pelo Orquestrador; Paysandu saiu (está na Série C).
 
-## Dúvidas para o CEO
+## Decisões do CEO (2026-11-04)
 
-1. **Cores reais x padrão do uniforme.** Com as cores reais, 5 clubes são preto e branco (Corinto, Atlético Minério, Botafogueira, Vasconcelos, Santões) e 3 vermelho e preto (Flamingo, Tufão, Vitorioso). Só o padrão (listras, faixa diagonal, metades, gola) separa um do outro; peço ao `art-director` regras de padrão por clube na US-002, com símbolo próprio (nada de estrela solitária, cruz de malta, galo, urubu, peixe).
-2. **Apelidos.** Troquei por apelido reconhecível, nunca o oficial. Dois que merecem olho: "Coríntios" (do Corinto) e "Tricoloridos" (do São Paulão). Se achar perto demais do original, troco.
-3. **Clubes sem clássico** (Bragantão, Miragol, Chapecão, Remador). Opções: deixar sem rival, ou inventar um regional (Bragantão x Miragol, "interior paulista"). A validação da US-001 aceita `rivals` vazio? Resposta do `developer` ou do `game-designer`.
-4. **Baía** soa igual a "Bahia" (muda só a grafia); é o trocadilho mais colado. Alternativa mais distante: "Bahiano de Todos" ou "Baianos de Aço". Decida se mantém.
-5. **Composição da Série B 2026.** Os quatro rebaixados vêm do Orquestrador; Goiás, Avaí e Paysandu são suposição minha. Peço confirmação na web antes de fechar a reserva.
-6. **Lista bloqueada em hash.** O `scripts/hash-blocklist.mjs` e o `blocklist.sha256.json` ainda não existem (T-003). Posso alimentar a lista de nomes reais (só em hash) quando o developer criar o script; peço o ok.
-7. **INPI.** Nenhum dos 27 nomes (20 mais 7 reservas) foi consultado no INPI. Os marcados M merecem consulta primeiro.
-8. **Chapecão.** Tema sensível: mantive o clube pequeno, sem qualquer alusão à história do real; peço atenção a notícias e cerimônias para nunca tocar nesse assunto.
-9. **Estádios fictícios e capacidades** entram no próximo lote, depois do ok dos nomes.
+1. Reserva: sai Pai d'Égua (Paysandu caiu para a Série C) e o Re-Pai; entra Ponte Velha (PNV, Campinas) ← Ponte Preta.
+2. "Baía" vira **Baião Esporte Clube** (BAO); o clássico vira Bai-Vit.
+3. Inter-Regional segue médio por ora (pode virar "médio forte" na `strength`).
+4. Bragantão, Miragol, Chapecão e Remador ficam **sem rival**; `rivals` vazio é válido (o `developer` confirma na T-003).
+5. Chapecão: nenhuma alusão à história do clube real, em notícias, cerimônias ou posts.
+6. Regras de padrão de uniforme e de símbolo (clubes de mesma dupla de cores) ficam com o `art-director` na US-002.
+7. Consulta ao INPI: pendente com o CEO (marcados M primeiro).
+8. Apelidos "Coríntios" e "Tricoloridos": mantidos.
+9. Lista bloqueada em hash: entra com a T-003. Estádios e capacidades: próximo lote. Nada foi gravado em `app/src/`; isso entra na T-003.

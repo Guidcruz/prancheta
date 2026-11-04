@@ -17,7 +17,7 @@ Convenções usadas nas histórias:
 
 | ID     | Título                                                     | Etapa | Prioridade | Estado   |
 | ------ | ---------------------------------------------------------- | ----- | ---------- | -------- |
-| US-001 | Cadastro e validação dos 20 clubes da Série A              | 1a    | Must       | rascunho |
+| US-001 | Cadastro e validação dos 20 clubes da Série A              | 1a    | Must       | pronta   |
 | US-002 | Uniformes gerados por código                               | 1a    | Must       | pronta   |
 | US-003 | Gerador de nomes fictícios de jogadores                    | 1a    | Must       | pronta   |
 | US-004 | Modelo de jogador e geração dos elencos                    | 1a    | Must       | pronta   |
@@ -83,7 +83,7 @@ Convenções usadas nas histórias:
 | US-064 | Lista de privacidade da 1b auditada e política atualizada  | 1b    | Must       | pronta   |
 | US-065 | Denunciar apelido ou nome de liga                          | 1b    | Must       | rascunho |
 
-Totais: 46 histórias da 1a (US-001 a US-046) e 19 da 1b (US-047 a US-065). Depois das decisões de 2026-11-04: 62 prontas e 3 em rascunho (US-001, lista dos 20 clubes; US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
+Totais: 46 histórias da 1a (US-001 a US-046) e 19 da 1b (US-047 a US-065). Depois das decisões de 2026-11-04: 63 prontas e 2 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
 
 ---
 
@@ -92,8 +92,8 @@ Totais: 46 histórias da 1a (US-001 a US-046) e 19 da 1b (US-047 a US-065). Depo
 **Como** equipe de conteúdo, **quero** um arquivo de dados dos 20 clubes da Série A com validação automática, **para** montar e revisar os clubes sem tocar no código e sem deixar escapar nome real.
 
 **Prioridade:** Must
-**Depende de:** lista dos 20 clubes aprovada pelo CEO (`/content nomes série A`; combinado do `CLAUDE.md`)
-**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade); item "Ferramenta de cadastro dos clubes" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). Cada clube tem: id, nome em trocadilho, nome curto, cidade, estado, cores, apelido, porte (grande, médio, pequeno), perfil de IA ([IA dos outros clubes](PROJETO.md#ia-dos-outros-clubes)), estádio fictício e capacidade, e lista de rivais (clássicos). O escudo é o gerador do dia 1 (`app/src/lib/generators/shield.ts`). Os valores de porte e capacidade são do `game-designer`. Fica em rascunho até a lista ser aprovada; a validação pode ser escrita antes, com dados de teste, mas o primeiro cenário só passa com os 20 clubes reais do jogo.
+**Depende de:** lista dos 20 clubes, aprovada pelo CEO em 2026-11-04 (`docs/content/lotes/2026-11-04-nomes-serie-a.md`)
+**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade); item "Ferramenta de cadastro dos clubes" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa). Cada clube tem: id, nome em trocadilho, nome curto, cidade, estado, cores, apelido, porte (grande, médio, pequeno), perfil de IA ([IA dos outros clubes](PROJETO.md#ia-dos-outros-clubes)), estádio fictício e capacidade, e lista de rivais (clássicos). O escudo é o gerador do dia 1 (`app/src/lib/generators/shield.ts`). Os valores de porte e capacidade são do `game-designer`. A lista aprovada está no lote de 2026-11-04; `rivals` pode ser vazio (Bragantão, Miragol, Chapecão, Remador).
 
 ### Critérios de aceite
 

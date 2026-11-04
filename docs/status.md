@@ -53,4 +53,4 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Próximo
 
-`/feature T-001` (fundações do motor) e, em paralelo, `/content nomes série A` (lista dos 20 clubes, trava a US-001). Pendente: o `product-manager` ajustar a US-016 (rótulo "promessa") e passar para "pronta" as histórias em rascunho que dependiam das perguntas.
+`/feature T-001` (fundações do motor) Lista dos 20 clubes da Série A 2026 aprovada pelo CEO em 2026-11-04 (`docs/content/lotes/2026-11-04-nomes-serie-a.md`); entra no jogo na T-003. Pendentes do CEO: consulta no INPI dos nomes de risco médio, domínio definitivo (trava a US-047) e quem trata as denúncias e em quanto tempo (trava a US-065).
