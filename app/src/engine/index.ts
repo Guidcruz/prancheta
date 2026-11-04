@@ -94,6 +94,33 @@ export {
 } from './fixtures.ts';
 export type { Fixture, FixturesError, FixturesRequest, RoundSlot } from './fixtures.ts';
 export { newGame } from './game.ts';
+export {
+  CONDITION_MULT,
+  FORMATION_MULTIPLIERS,
+  FORMATION_SECTORS,
+  MORALE_MULT,
+  POSTURE_EFFECTS,
+  PRESSURE_EFFECTS,
+  STARTERS_COUNT,
+  conditionMultiplier,
+  effectiveRating,
+  homeAdvantage,
+  moraleMultiplier,
+  sectorStrengths,
+  strengthsFromRatings,
+  teamFactor,
+  teamStrength,
+} from './strength.ts';
+export type {
+  LineupProblem,
+  Sector,
+  StrengthContext,
+  StrengthFactors,
+  StrengthSheet,
+  StrengthTactic,
+  TeamStrengths,
+} from './strength.ts';
+export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {
   AttributeKey,

@@ -1,0 +1,794 @@
+{
+  "engineVersion": 3,
+  "name": "strengths",
+  "data": {
+    "clubs": [
+      {
+        "id": "clube-teste-01",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-01#1",
+          "clube-teste-01#2",
+          "clube-teste-01#3",
+          "clube-teste-01#4",
+          "clube-teste-01#5",
+          "clube-teste-01#7",
+          "clube-teste-01#6",
+          "clube-teste-01#9",
+          "clube-teste-01#8",
+          "clube-teste-01#10",
+          "clube-teste-01#11"
+        ],
+        "displayed": 76.72727272727273,
+        "away": {
+          "goalkeeper": 79.092,
+          "def": 75.92925,
+          "mid": 78.687,
+          "atk": 77.881,
+          "power": 78.28399999999999,
+          "defense": 75.92925,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 79.092,
+          "def": 83.9777505,
+          "mid": 87.027822,
+          "atk": 86.136386,
+          "power": 86.582104,
+          "defense": 83.9777505,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-02",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-02#1",
+          "clube-teste-02#3",
+          "clube-teste-02#2",
+          "clube-teste-02#14",
+          "clube-teste-02#4",
+          "clube-teste-02#6",
+          "clube-teste-02#7",
+          "clube-teste-02#8",
+          "clube-teste-02#9",
+          "clube-teste-02#10",
+          "clube-teste-02#11"
+        ],
+        "displayed": 74.18181818181819,
+        "away": {
+          "goalkeeper": 75.07499999999999,
+          "def": 75.78699999999999,
+          "mid": 74.55125,
+          "atk": 73.225,
+          "power": 73.888125,
+          "defense": 75.78699999999999,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 75.07499999999999,
+          "def": 83.820422,
+          "mid": 82.4536825,
+          "atk": 80.98685,
+          "power": 81.72026625000001,
+          "defense": 83.820422,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-03",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-03#1",
+          "clube-teste-03#3",
+          "clube-teste-03#7",
+          "clube-teste-03#4",
+          "clube-teste-03#5",
+          "clube-teste-03#6",
+          "clube-teste-03#8",
+          "clube-teste-03#9",
+          "clube-teste-03#11",
+          "clube-teste-03#10",
+          "clube-teste-03#17"
+        ],
+        "displayed": 73.16363636363637,
+        "away": {
+          "goalkeeper": 75.07499999999999,
+          "def": 74.95235,
+          "mid": 72.523525,
+          "atk": 74.601,
+          "power": 73.5622625,
+          "defense": 74.95235,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 75.07499999999999,
+          "def": 82.8972991,
+          "mid": 80.21101865000001,
+          "atk": 82.508706,
+          "power": 81.35986232500001,
+          "defense": 82.8972991,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-04",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-04#1",
+          "clube-teste-04#2",
+          "clube-teste-04#3",
+          "clube-teste-04#13",
+          "clube-teste-04#6",
+          "clube-teste-04#14",
+          "clube-teste-04#8",
+          "clube-teste-04#7",
+          "clube-teste-04#9",
+          "clube-teste-04#11",
+          "clube-teste-04#10"
+        ],
+        "displayed": 73.81818181818181,
+        "away": {
+          "goalkeeper": 77.29199999999999,
+          "def": 71.71423999999999,
+          "mid": 77.785344,
+          "atk": 75.41499999999999,
+          "power": 76.60017199999999,
+          "defense": 71.71423999999999,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 77.29199999999999,
+          "def": 79.31594944,
+          "mid": 86.030590464,
+          "atk": 83.40899,
+          "power": 84.71979023200001,
+          "defense": 79.31594944,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-05",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-05#1",
+          "clube-teste-05#3",
+          "clube-teste-05#4",
+          "clube-teste-05#2",
+          "clube-teste-05#6",
+          "clube-teste-05#14",
+          "clube-teste-05#8",
+          "clube-teste-05#7",
+          "clube-teste-05#9",
+          "clube-teste-05#11",
+          "clube-teste-05#10"
+        ],
+        "displayed": 77.45454545454545,
+        "away": {
+          "goalkeeper": 79.482,
+          "def": 76.12704,
+          "mid": 81.292248,
+          "atk": 79.98599999999999,
+          "power": 80.639124,
+          "defense": 76.12704,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 79.482,
+          "def": 84.19650624,
+          "mid": 89.90922628800001,
+          "atk": 88.464516,
+          "power": 89.18687114400001,
+          "defense": 84.19650624,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-06",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-06#1",
+          "clube-teste-06#3",
+          "clube-teste-06#2",
+          "clube-teste-06#4",
+          "clube-teste-06#5",
+          "clube-teste-06#6",
+          "clube-teste-06#7",
+          "clube-teste-06#9",
+          "clube-teste-06#8",
+          "clube-teste-06#17",
+          "clube-teste-06#10"
+        ],
+        "displayed": 76.27272727272727,
+        "away": {
+          "goalkeeper": 80.18499999999999,
+          "def": 77.65375,
+          "mid": 77.577,
+          "atk": 73.8395,
+          "power": 75.70824999999999,
+          "defense": 77.65375,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 80.18499999999999,
+          "def": 85.88504750000001,
+          "mid": 85.800162,
+          "atk": 81.666487,
+          "power": 83.73332450000001,
+          "defense": 85.88504750000001,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-07",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-07#1",
+          "clube-teste-07#3",
+          "clube-teste-07#4",
+          "clube-teste-07#13",
+          "clube-teste-07#6",
+          "clube-teste-07#5",
+          "clube-teste-07#8",
+          "clube-teste-07#15",
+          "clube-teste-07#9",
+          "clube-teste-07#10",
+          "clube-teste-07#11"
+        ],
+        "displayed": 69.9090909090909,
+        "away": {
+          "goalkeeper": 70,
+          "def": 68.5744,
+          "mid": 73.886876,
+          "atk": 72.06099999999999,
+          "power": 72.973938,
+          "defense": 68.5744,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 70,
+          "def": 75.8432864,
+          "mid": 81.718884856,
+          "atk": 79.699466,
+          "power": 80.70917542800001,
+          "defense": 75.8432864,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-08",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-08#1",
+          "clube-teste-08#3",
+          "clube-teste-08#2",
+          "clube-teste-08#4",
+          "clube-teste-08#5",
+          "clube-teste-08#6",
+          "clube-teste-08#15",
+          "clube-teste-08#9",
+          "clube-teste-08#8",
+          "clube-teste-08#10",
+          "clube-teste-08#11"
+        ],
+        "displayed": 69.0909090909091,
+        "away": {
+          "goalkeeper": 70.17299999999999,
+          "def": 67.771,
+          "mid": 70.605,
+          "atk": 71.30699999999999,
+          "power": 70.95599999999999,
+          "defense": 67.771,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 70.17299999999999,
+          "def": 74.95472600000001,
+          "mid": 78.08913000000001,
+          "atk": 78.86554199999999,
+          "power": 78.47733600000001,
+          "defense": 74.95472600000001,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-09",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-09#1",
+          "clube-teste-09#4",
+          "clube-teste-09#7",
+          "clube-teste-09#2",
+          "clube-teste-09#6",
+          "clube-teste-09#14",
+          "clube-teste-09#8",
+          "clube-teste-09#15",
+          "clube-teste-09#9",
+          "clube-teste-09#18",
+          "clube-teste-09#17"
+        ],
+        "displayed": 69.84545454545454,
+        "away": {
+          "goalkeeper": 72.432,
+          "def": 69.08864,
+          "mid": 74.21208400000002,
+          "atk": 67.804,
+          "power": 71.00804200000002,
+          "defense": 69.08864,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 72.432,
+          "def": 76.41203584,
+          "mid": 82.07856490400003,
+          "atk": 74.991224,
+          "power": 78.53489445200002,
+          "defense": 76.41203584,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-10",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-10#1",
+          "clube-teste-10#4",
+          "clube-teste-10#3",
+          "clube-teste-10#2",
+          "clube-teste-10#5",
+          "clube-teste-10#6",
+          "clube-teste-10#7",
+          "clube-teste-10#8",
+          "clube-teste-10#9",
+          "clube-teste-10#10",
+          "clube-teste-10#11"
+        ],
+        "displayed": 69.72727272727273,
+        "away": {
+          "goalkeeper": 70.31099999999999,
+          "def": 69.50816,
+          "mid": 73.69628800000001,
+          "atk": 69.624,
+          "power": 71.660144,
+          "defense": 69.50816,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 70.31099999999999,
+          "def": 76.87602496000001,
+          "mid": 81.50809452800002,
+          "atk": 77.004144,
+          "power": 79.256119264,
+          "defense": 76.87602496000001,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-11",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-11#1",
+          "clube-teste-11#3",
+          "clube-teste-11#2",
+          "clube-teste-11#8",
+          "clube-teste-11#6",
+          "clube-teste-11#5",
+          "clube-teste-11#7",
+          "clube-teste-11#15",
+          "clube-teste-11#9",
+          "clube-teste-11#11",
+          "clube-teste-11#10"
+        ],
+        "displayed": 70.66363636363636,
+        "away": {
+          "goalkeeper": 74.022,
+          "def": 69.554784,
+          "mid": 74.32189999999999,
+          "atk": 71.644,
+          "power": 72.98294999999999,
+          "defense": 69.554784,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 74.022,
+          "def": 76.927591104,
+          "mid": 82.2000214,
+          "atk": 79.23826400000002,
+          "power": 80.7191427,
+          "defense": 76.927591104,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-12",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-12#1",
+          "clube-teste-12#2",
+          "clube-teste-12#3",
+          "clube-teste-12#6",
+          "clube-teste-12#5",
+          "clube-teste-12#4",
+          "clube-teste-12#7",
+          "clube-teste-12#15",
+          "clube-teste-12#9",
+          "clube-teste-12#17",
+          "clube-teste-12#11"
+        ],
+        "displayed": 70.58181818181819,
+        "away": {
+          "goalkeeper": 74.241,
+          "def": 70.30335999999998,
+          "mid": 74.8406428,
+          "atk": 68.612,
+          "power": 71.72632139999999,
+          "defense": 70.30335999999998,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 74.241,
+          "def": 77.75551615999998,
+          "mid": 82.7737509368,
+          "atk": 75.884872,
+          "power": 79.3293114684,
+          "defense": 77.75551615999998,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-13",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-13#1",
+          "clube-teste-13#3",
+          "clube-teste-13#4",
+          "clube-teste-13#2",
+          "clube-teste-13#6",
+          "clube-teste-13#5",
+          "clube-teste-13#7",
+          "clube-teste-13#8",
+          "clube-teste-13#9",
+          "clube-teste-13#10",
+          "clube-teste-13#11"
+        ],
+        "displayed": 71.81818181818181,
+        "away": {
+          "goalkeeper": 68.272,
+          "def": 70.49568,
+          "mid": 78.25004799999999,
+          "atk": 70.54749999999999,
+          "power": 74.39877399999999,
+          "defense": 70.49568,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 68.272,
+          "def": 77.96822208,
+          "mid": 86.544553088,
+          "atk": 78.02553499999999,
+          "power": 82.28504404399999,
+          "defense": 77.96822208,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-14",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-14#1",
+          "clube-teste-14#3",
+          "clube-teste-14#4",
+          "clube-teste-14#2",
+          "clube-teste-14#5",
+          "clube-teste-14#6",
+          "clube-teste-14#7",
+          "clube-teste-14#8",
+          "clube-teste-14#9",
+          "clube-teste-14#11",
+          "clube-teste-14#17"
+        ],
+        "displayed": 67.18181818181819,
+        "away": {
+          "goalkeeper": 68.74799999999999,
+          "def": 66.71168,
+          "mid": 71.71387599999998,
+          "atk": 66.118,
+          "power": 68.91593799999998,
+          "defense": 66.71168,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 68.74799999999999,
+          "def": 73.78311808000001,
+          "mid": 79.31554685599998,
+          "atk": 73.126508,
+          "power": 76.22102742799999,
+          "defense": 73.78311808000001,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-15",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-15#12",
+          "clube-teste-15#3",
+          "clube-teste-15#2",
+          "clube-teste-15#5",
+          "clube-teste-15#4",
+          "clube-teste-15#7",
+          "clube-teste-15#6",
+          "clube-teste-15#8",
+          "clube-teste-15#9",
+          "clube-teste-15#11",
+          "clube-teste-15#17"
+        ],
+        "displayed": 66.63636363636364,
+        "away": {
+          "goalkeeper": 67.188,
+          "def": 67.24374999999999,
+          "mid": 69.41600000000001,
+          "atk": 65.2995,
+          "power": 67.35775000000001,
+          "defense": 67.24374999999999,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 67.188,
+          "def": 74.3715875,
+          "mid": 76.77409600000001,
+          "atk": 72.221247,
+          "power": 74.49767150000001,
+          "defense": 74.3715875,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-16",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-16#1",
+          "clube-teste-16#3",
+          "clube-teste-16#2",
+          "clube-teste-16#4",
+          "clube-teste-16#5",
+          "clube-teste-16#6",
+          "clube-teste-16#7",
+          "clube-teste-16#9",
+          "clube-teste-16#10",
+          "clube-teste-16#11",
+          "clube-teste-16#23"
+        ],
+        "displayed": 65.27272727272727,
+        "away": {
+          "goalkeeper": 71.26,
+          "def": 67.93350000000001,
+          "mid": 63.83725,
+          "atk": 63.794999999999995,
+          "power": 63.816125,
+          "defense": 67.93350000000001,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 71.26,
+          "def": 75.13445100000001,
+          "mid": 70.6039985,
+          "atk": 70.55727,
+          "power": 70.58063425,
+          "defense": 75.13445100000001,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-17",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-17#1",
+          "clube-teste-17#4",
+          "clube-teste-17#3",
+          "clube-teste-17#2",
+          "clube-teste-17#5",
+          "clube-teste-17#14",
+          "clube-teste-17#7",
+          "clube-teste-17#8",
+          "clube-teste-17#9",
+          "clube-teste-17#11",
+          "clube-teste-17#17"
+        ],
+        "displayed": 66.27272727272727,
+        "away": {
+          "goalkeeper": 62.22,
+          "def": 66.0976,
+          "mid": 70.84615999999998,
+          "atk": 66.4755,
+          "power": 68.66082999999999,
+          "defense": 66.0976,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 62.22,
+          "def": 73.1039456,
+          "mid": 78.35585295999999,
+          "atk": 73.52190300000001,
+          "power": 75.93887798,
+          "defense": 73.1039456,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-18",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-18#1",
+          "clube-teste-18#2",
+          "clube-teste-18#4",
+          "clube-teste-18#8",
+          "clube-teste-18#6",
+          "clube-teste-18#5",
+          "clube-teste-18#15",
+          "clube-teste-18#7",
+          "clube-teste-18#9",
+          "clube-teste-18#11",
+          "clube-teste-18#18"
+        ],
+        "displayed": 64.0909090909091,
+        "away": {
+          "goalkeeper": 59.354,
+          "def": 66.55008,
+          "mid": 66.48065600000001,
+          "atk": 65.94149999999999,
+          "power": 66.211078,
+          "defense": 66.55008,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 59.354,
+          "def": 73.60438848,
+          "mid": 73.52760553600002,
+          "atk": 72.931299,
+          "power": 73.22945226800002,
+          "defense": 73.60438848,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-19",
+        "formation": "3-5-2",
+        "starters": [
+          "clube-teste-19#1",
+          "clube-teste-19#3",
+          "clube-teste-19#13",
+          "clube-teste-19#2",
+          "clube-teste-19#5",
+          "clube-teste-19#6",
+          "clube-teste-19#8",
+          "clube-teste-19#15",
+          "clube-teste-19#16",
+          "clube-teste-19#11",
+          "clube-teste-19#10"
+        ],
+        "displayed": 64.72727272727273,
+        "away": {
+          "goalkeeper": 65.152,
+          "def": 63.75328,
+          "mid": 69.47558,
+          "atk": 63.844,
+          "power": 66.65979,
+          "defense": 63.75328,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 65.152,
+          "def": 70.51112768,
+          "mid": 76.83999148,
+          "atk": 70.61146400000001,
+          "power": 73.72572774,
+          "defense": 70.51112768,
+          "factor": 1.106
+        }
+      },
+      {
+        "id": "clube-teste-20",
+        "formation": "4-4-2",
+        "starters": [
+          "clube-teste-20#1",
+          "clube-teste-20#2",
+          "clube-teste-20#3",
+          "clube-teste-20#5",
+          "clube-teste-20#4",
+          "clube-teste-20#6",
+          "clube-teste-20#7",
+          "clube-teste-20#9",
+          "clube-teste-20#10",
+          "clube-teste-20#11",
+          "clube-teste-20#17"
+        ],
+        "displayed": 63.54545454545455,
+        "away": {
+          "goalkeeper": 66,
+          "def": 63.8715,
+          "mid": 65.32475,
+          "atk": 61.86149999999999,
+          "power": 63.59312499999999,
+          "defense": 63.8715,
+          "factor": 1
+        },
+        "home": {
+          "goalkeeper": 66,
+          "def": 70.641879,
+          "mid": 72.2491735,
+          "atk": 68.418819,
+          "power": 70.33399625,
+          "defense": 70.641879,
+          "factor": 1.106
+        }
+      }
+    ],
+    "derbies": [
+      {
+        "id": "s1-r4-clube-teste-01-clube-teste-02",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r4-clube-teste-13-clube-teste-14",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r8-clube-teste-11-clube-teste-12",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r9-clube-teste-10-clube-teste-09",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r12-clube-teste-16-clube-teste-15",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r13-clube-teste-03-clube-teste-04",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r14-clube-teste-08-clube-teste-07",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r18-clube-teste-06-clube-teste-05",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r23-clube-teste-02-clube-teste-01",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r23-clube-teste-14-clube-teste-13",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r27-clube-teste-12-clube-teste-11",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r28-clube-teste-09-clube-teste-10",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r31-clube-teste-15-clube-teste-16",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r32-clube-teste-04-clube-teste-03",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r33-clube-teste-07-clube-teste-08",
+        "home": 0.126
+      },
+      {
+        "id": "s1-r37-clube-teste-05-clube-teste-06",
+        "home": 0.126
+      }
+    ]
+  }
+}
