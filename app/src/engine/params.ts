@@ -25,6 +25,12 @@ export interface MatchParams {
   readonly penaltyShare: number;
   readonly freeKickShare: number;
   readonly assistShare: number;
+  /**
+   * "Tirar o pé" (partida.md, "Calibragem das goleadas"): a side leading by at least
+   * `comfortableLeadGoals` creates chances with its `Power × comfortableLeadPower`. 1 turns it off.
+   */
+  readonly comfortableLeadGoals: number;
+  readonly comfortableLeadPower: number;
   readonly fatigue: { readonly drainPerMinute: number; readonly recoveryPerDay: number };
   readonly injury: { readonly basePerMinute: number };
   readonly cards: {
@@ -110,6 +116,12 @@ export type ParamRanges<T> = T extends readonly number[]
     : { readonly [K in keyof T]-?: ParamRanges<T[K]> };
 
 const num = (min: number, max: number): NumberRange => ({ kind: 'number', min, max });
+const int = (min: number, max: number): NumberRange => ({
+  kind: 'number',
+  min,
+  max,
+  integer: true,
+});
 /** A value fixed by an ADR: changing it is an ADR, not a parameter tweak. */
 const fixed = (value: number): NumberRange => num(value, value);
 
@@ -135,6 +147,10 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
     penaltyShare: num(0, 0.05),
     freeKickShare: num(0, 0.15),
     assistShare: num(0, 1),
+    // partida.md, "Calibragem das goleadas": the rule is for a lead of 2 or more; the factor
+    // range is 0.7 to 1 (1 turns the rule off).
+    comfortableLeadGoals: int(2, 5),
+    comfortableLeadPower: num(0.7, 1),
     fatigue: { drainPerMinute: num(0.1, 0.6), recoveryPerDay: num(3, 15) },
     injury: { basePerMinute: num(0, 0.0005) },
     cards: {

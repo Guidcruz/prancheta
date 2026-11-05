@@ -263,6 +263,20 @@ export function chanceProbability(
   return clamp(p, CHANCE_BOUNDS.min, CHANCE_BOUNDS.max);
 }
 
+/**
+ * "Tirar o pé" (partida.md, "Calibragem das goleadas"): the factor on the `Power` of a side whose
+ * lead is `own − other` goals. `match.comfortableLeadPower` once the lead reaches
+ * `match.comfortableLeadGoals`, else 1. It is the team that relaxes, on top of the posture and for
+ * every controller; the `Defense` never changes. No draw: the same score gives the same factor.
+ */
+export function comfortableLeadFactor(
+  own: number,
+  other: number,
+  match: Pick<MatchParams, 'comfortableLeadGoals' | 'comfortableLeadPower'>,
+): number {
+  return own - other >= match.comfortableLeadGoals ? match.comfortableLeadPower : 1;
+}
+
 /** `pGoal = clamp(conversion × exp(kFinish × (shot − gkEff) / 10), 0.04, 0.40)`. */
 export function goalProbability(
   shot: number,

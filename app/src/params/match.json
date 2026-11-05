@@ -10,6 +10,8 @@
   "penaltyShare": 0.015,
   "freeKickShare": 0.06,
   "assistShare": 0.7,
+  "comfortableLeadGoals": 2,
+  "comfortableLeadPower": 1,
   "fatigue": { "drainPerMinute": 0.3, "recoveryPerDay": 7 },
   "injury": { "basePerMinute": 0.00012 },
   "cards": { "yellowPerMinute": 0.002, "redPerMinute": 0.00003, "derbyMult": 1.2 }

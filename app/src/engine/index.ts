@@ -249,6 +249,7 @@ export {
   abandonedScore,
   attendance,
   chanceProbability,
+  comfortableLeadFactor,
   energyDrain,
   goalProbability,
   halftimeBoost,
