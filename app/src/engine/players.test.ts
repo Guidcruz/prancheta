@@ -515,6 +515,16 @@ describe('validatePlayer', () => {
     ]);
   });
 
+  it('still accepts the South American nationalities of older saves (T-069)', () => {
+    // Etapa 1 generates only BR, but saves from before kept a few AR, UY and other CONMEBOL
+    // players; they must stay valid with no migration.
+    for (const nationality of ['AR', 'UY']) {
+      const checked = validatePlayer(testPlayer({ nationality }));
+      expect(checked.ok, nationality).toBe(true);
+      if (checked.ok) expect(checked.value.nationality).toBe(nationality);
+    }
+  });
+
   it('accepts a face of exactly 32 characters and ids with large numbers', () => {
     const raw = testPlayer({ face: 'f'.repeat(FACE_MAX_LENGTH), id: 'clube-teste-20#1024' });
     expect(validatePlayer(raw).ok).toBe(true);
