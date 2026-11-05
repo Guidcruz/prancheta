@@ -291,6 +291,14 @@ Guardado para quando o CEO aprovar a lista de clubes da Série B (P2): os 4 da z
 
 **Constantes:** 20 clubes, 38 rodadas, 3/1/0 pontos, 4 na zona de rebaixamento, ordem de desempate, metas por porte, mínimo de 19 jogos dos prêmios (`AWARD_MIN_GAMES`), a moral da virada a meio caminho de `fans.start` (`MORALE_OFFSEASON_PULL = 0.5`). O fim de temporada não tem parâmetro em `season.json`.
 
+### Lesões entre temporadas: revisar na Etapa 2 (pedido do CEO, 2026-11-05)
+
+A regra da 1a (a lesão termina na virada, decisão 13 de `balance-targets.md`) vale só enquanto a pausa entre temporadas for longa (cerca de 19 semanas) e não houver mercado para repor o jogador. Na Etapa 2, com estaduais e Copa do Brasil, o ano começa em janeiro e a pausa cai para algo como 6 a 8 semanas. Então:
+
+- **Regra a adotar:** a lesão continua pelo tempo que falta, descontadas as semanas de pausa; uma lesão curta some na pausa, uma longa invade o começo do ano.
+- **Lesões graves de longa duração:** o CEO pediu que entrem lesões de até cerca de 1 ano (o caso típico é a ruptura de ligamento do joelho), seguindo as regras do futebol brasileiro. Antes de virar regra, o `game-designer` pesquisa e registra: tempos de recuperação por tipo de lesão, frequência real, o que as regras de inscrição da CBF permitem ao clube nesse caso (por exemplo, inscrever um substituto ou manter o lesionado inscrito) e o efeito no contrato e no salário (Etapa 3).
+- **Hoje:** a lesão mais longa da 1a é a "grave", de até 20 rodadas (`partida.md`, "Lesões"); a escala nova, com a lesão de cerca de 1 ano, entra com a calibragem da Etapa 2 e uma rodada de `/balance`.
+
 ## Casos de borda
 
 | Caso                                            | Regra                                                                                                                                                                                                  |
