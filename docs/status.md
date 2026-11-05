@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-05 (Semana 1). Última atualização: 2026-11-05 (T-049 feita, aguardando merge).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-05 (Semana 1). Última atualização: 2026-11-05 (T-069 feita, aguardando merge).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
@@ -78,6 +78,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-015  | feita (PR #29 mergeado): `properties.test.ts` com as invariantes em 1.000 partidas e 30 temporadas (`PROPERTY_FULL=1`: 10.000 e 1.000) e golden novo `season-human-simplified`; `ENGINE_VERSION` segue 11                                                                                                                                                                                                 |
 | T-017  | feita (PR #31 mergeado): `endSeason` e `startNextSeason` (prêmios, evolução e idade, títulos somados ao escudo, `strength` recalculada, temporada nova zerada), `npm run balance -- --chain N` com trava de deriva, `ENGINE_VERSION` 12                                                                                                                                                                   |
 | T-049  | feita, aguardando merge (decisões 12 e 13 da auditoria; ADR-0019): `lastRound` fora do `GameState` (`roundRecap`, `matchSheet`), `index.ts` de 347 para 174 símbolos (contrato de 152 e API de ferramentas de 22), lint `engineEntryOnly`, estado cerca de 16% menor, simulação igual (balance 200 temporadas idêntico à `main`), `ENGINE_VERSION` 13; QA PASS (1222 testes no app; `PROPERTY_FULL` 1319) |
+| T-069  | feita, aguardando merge (decisão 9 da auditoria): todo jogador gerado é brasileiro (`HOME_NATIONALITY_SHARE` 1, sorteio ainda consumido); goldens mudaram só nacionalidade, nome, rosto e `digest` (o `new-game` tinha 2 estrangeiros; 34 jogadores com nome e rosto novos); balance de 200 temporadas idêntico à `main` (39/39 metas); saves com `AR`/`UY` seguem válidos; `ENGINE_VERSION` 14           |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
 
@@ -100,7 +101,7 @@ Relatórios em [`docs/reports/auditoria-2026-11-05/`](reports/auditoria-2026-11-
 6. `main` vermelha é prioridade zero, com PR `fix(ci)` próprio do `devops-engineer`, registrado aqui.
 7. Prettier antes do commit; `npm run test:all` obrigatório também no caminho leve e no `/devlog`.
 8. Meta "20 pontos mais forte vence cerca de 65%" vira a faixa de 62% a 68%, centro em 63% (ADR).
-9. Na 1a, jogadores só brasileiros; sul-americanos na Etapa 5.
+9. ~~Na 1a, jogadores só brasileiros; sul-americanos na Etapa 5.~~ Feito na T-069 (aguardando merge): `HOME_NATIONALITY_SHARE` 1, `ENGINE_VERSION` 14.
 10. Meta da diretoria só como texto informativo na 1a, com critérios na US-025.
 11. A vibração segue o `prefers-reduced-motion`.
 12. ~~O `architect` emagrece o `lastRound` antes do congelamento do save (T-019).~~ Feito na T-049 (aguardando merge): o `lastRound` saiu do estado.
@@ -398,12 +399,11 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. "Só brasileiros" na geração (decisão 9 da auditoria).
-2. T-018, T-027 e T-019 (save).
-3. T-048 (renovação mínima do elenco).
-4. Post da semana 2 do devlog: "Quem pode ser campeão?".
-5. `PROPERTY_FULL=1` e `NAMES_FULL_CHECK=1` antes de release.
-6. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
-7. Placar e tabela ao vivo da rodada (US-070 a US-074).
-8. Lote de clubes de dezembro, com a tabela final de 2026.
-9. Áudio essencial (T-047, depois da T-033; ver a decisão de 2026-11-05).
+1. T-018, T-027 e T-019 (save).
+2. T-048 (renovação mínima do elenco).
+3. Post da semana 2 do devlog: "Quem pode ser campeão?".
+4. `PROPERTY_FULL=1` e `NAMES_FULL_CHECK=1` antes de release.
+5. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
+6. Placar e tabela ao vivo da rodada (US-070 a US-074).
+7. Lote de clubes de dezembro, com a tabela final de 2026.
+8. Áudio essencial (T-047, depois da T-033; ver a decisão de 2026-11-05).
