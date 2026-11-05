@@ -5,6 +5,7 @@ import type { Lineup } from './lineup.ts';
 import { clamp } from './math.ts';
 import type { GameParams, MatchParams } from './params.ts';
 import { attributeOf, fit, type Player } from './players.ts';
+import { kickoffBench, replaceUnavailable } from './selection.ts';
 import type { ClubId, Formation, PlayerId, Position, Posture, Pressure, Result } from './types.ts';
 
 /*
@@ -409,16 +410,18 @@ export type ShownState = Pick<GameState, 'clubs' | 'players' | 'squads'> &
 /**
  * The XI that the displayed strength of a club reads when no lineup is given (balance-targets.md,
  * "Força"; ia-clubes.md, "Força no Δ"):
- * 1. the club's last sheet (`GameState.lastSheets`, written by `playRound`, T-013): its formation
- *    and its 11 starters, when they still are 11 distinct players of the club's squad in a known
- *    formation. Availability is not checked, as with an explicit lineup: it is the XI the club
- *    last fielded, the number the pre-match screen shows;
- * 2. otherwise (before round 1, or a last sheet that no longer resolves) the best XI of the
- *    available players (not injured, not suspended) in the club's first preferred formation
- *    (`4-4-2` if that one is unknown), everyone fresh (`bestEleven`). Fewer than 11 entries when
- *    fewer than 11 are available.
+ * 1. the club's last sheet (`GameState.lastSheets`, written by `playRound`, T-013), when its
+ *    formation is known and its 11 starters are distinct players of the club's squad: each
+ *    starter now injured or suspended is replaced by the best available reserve of that sheet's
+ *    bench for the slot, exactly as the match does at kick-off (`replaceUnavailable`, partida.md
+ *    "Casos de borda"), so the pre-match number never counts a player who will not play;
+ * 2. otherwise (before round 1, a last sheet that no longer resolves, or one that does not close
+ *    11 after the replacements) the best XI of the available players (not injured, not suspended)
+ *    in the club's first preferred formation (`4-4-2` if that one is unknown), everyone fresh
+ *    (`bestEleven`). Fewer than 11 entries when fewer than 11 are available.
  * Undefined for an unknown club. {@link teamStrength} and the AI's view of the opponent (ai.ts,
- * `Δ`) both read it, so they never diverge.
+ * `Δ`) both read it, so they never diverge. An explicit lineup (`teamStrength` with `lineup`)
+ * still ignores availability.
  */
 export function shownEleven(
   state: ShownState,
@@ -426,18 +429,26 @@ export function shownEleven(
 ): { player: Player; slot: Position }[] | undefined {
   const club = state.clubs[clubId];
   if (club === undefined) return undefined;
+  const squadIds = state.squads[clubId] ?? [];
   const last = state.lastSheets?.[clubId];
   if (last !== undefined) {
-    const inSquad = new Set(state.squads[clubId] ?? []);
-    const resolved = resolveStarters(
-      last.lineup,
-      (id) => (inSquad.has(id) ? state.players[id] : undefined),
-      false,
-    );
-    if (!('reason' in resolved)) return resolved.eleven;
+    const byId = new Map<PlayerId, Player>();
+    for (const id of squadIds) {
+      const player = state.players[id];
+      if (player !== undefined) byId.set(id, player);
+    }
+    const resolved = resolveStarters(last.lineup, (id) => byId.get(id), false);
+    if (!('reason' in resolved)) {
+      const occupants: (Player | undefined)[] = resolved.eleven.map(({ player }) => player);
+      const bench = kickoffBench(last.lineup.bench, byId, new Set(last.lineup.starters));
+      replaceUnavailable(occupants, FORMATION_SLOTS[resolved.formation], bench);
+      if (occupants.every((p) => p !== undefined)) {
+        return resolved.eleven.map(({ slot }, i) => ({ player: occupants[i]!, slot }));
+      }
+    }
   }
   const available: Player[] = [];
-  for (const id of state.squads[clubId] ?? []) {
+  for (const id of squadIds) {
     const player = state.players[id];
     if (player !== undefined && isAvailable(player)) available.push(player);
   }
@@ -452,8 +463,8 @@ export function shownEleven(
  *
  * - With `lineup`: its formation and its 11 starters, which must be distinct players of the
  *   club's squad. Availability is not checked here (that is `validateLineup`, ai.ts).
- * - Without `lineup`: the XI of {@link shownEleven}: the club's last sheet (`lastSheets`), or,
- *   before it has one, the best XI of the available players (not injured, not suspended) in the
+ * - Without `lineup`: the XI of {@link shownEleven}: the club's last sheet (`lastSheets`), with
+ *   the unavailable starters replaced from its bench as at kick-off, or, without one, the best XI of the available players (not injured, not suspended) in the
  *   club's first preferred formation, picked as the AI does with everyone fresh (`bestEleven`).
  *
  * `undefined` when there is no answer: unknown club, a lineup that is not 11 distinct players of

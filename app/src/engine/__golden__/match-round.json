@@ -1,13 +1,10 @@
 {
-  "engineVersion": 8,
+  "engineVersion": 9,
   "name": "match-round",
   "data": [
     {
       "id": "s1-r1-clube-teste-20-clube-teste-06",
-      "score": [
-        2,
-        0
-      ],
+      "score": [2, 0],
       "stats": {
         "home": {
           "shots": 11,
@@ -25,18 +22,12 @@
         }
       },
       "motm": "clube-teste-20#10",
-      "markers": [
-        "zebra",
-        "semSofrerGols"
-      ],
+      "markers": ["zebra", "semSofrerGols"],
       "events": "677eea3"
     },
     {
       "id": "s1-r1-clube-teste-02-clube-teste-03",
-      "score": [
-        0,
-        1
-      ],
+      "score": [0, 1],
       "stats": {
         "home": {
           "shots": 11,
@@ -54,17 +45,12 @@
         }
       },
       "motm": "clube-teste-03#1",
-      "markers": [
-        "semSofrerGols"
-      ],
+      "markers": ["semSofrerGols"],
       "events": "a558a44b"
     },
     {
       "id": "s1-r1-clube-teste-19-clube-teste-13",
-      "score": [
-        5,
-        1
-      ],
+      "score": [5, 1],
       "stats": {
         "home": {
           "shots": 10,
@@ -82,17 +68,12 @@
         }
       },
       "motm": "clube-teste-19#16",
-      "markers": [
-        "goleada"
-      ],
+      "markers": ["goleada"],
       "events": "d8edeb21"
     },
     {
       "id": "s1-r1-clube-teste-15-clube-teste-10",
-      "score": [
-        2,
-        2
-      ],
+      "score": [2, 2],
       "stats": {
         "home": {
           "shots": 7,
@@ -110,17 +91,12 @@
         }
       },
       "motm": "clube-teste-15#17",
-      "markers": [
-        "golNoFim"
-      ],
+      "markers": ["golNoFim"],
       "events": "2a1506f9"
     },
     {
       "id": "s1-r1-clube-teste-04-clube-teste-05",
-      "score": [
-        3,
-        0
-      ],
+      "score": [3, 0],
       "stats": {
         "home": {
           "shots": 9,
@@ -138,19 +114,12 @@
         }
       },
       "motm": "clube-teste-04#11",
-      "markers": [
-        "goleada",
-        "hatTrick",
-        "semSofrerGols"
-      ],
+      "markers": ["goleada", "hatTrick", "semSofrerGols"],
       "events": "ab3215c"
     },
     {
       "id": "s1-r1-clube-teste-07-clube-teste-12",
-      "score": [
-        2,
-        2
-      ],
+      "score": [2, 2],
       "stats": {
         "home": {
           "shots": 8,
@@ -173,10 +142,7 @@
     },
     {
       "id": "s1-r1-clube-teste-16-clube-teste-09",
-      "score": [
-        0,
-        1
-      ],
+      "score": [0, 1],
       "stats": {
         "home": {
           "shots": 7,
@@ -194,17 +160,12 @@
         }
       },
       "motm": "clube-teste-09#1",
-      "markers": [
-        "semSofrerGols"
-      ],
+      "markers": ["semSofrerGols"],
       "events": "44994ad4"
     },
     {
       "id": "s1-r1-clube-teste-08-clube-teste-01",
-      "score": [
-        3,
-        4
-      ],
+      "score": [3, 4],
       "stats": {
         "home": {
           "shots": 12,
@@ -222,17 +183,12 @@
         }
       },
       "motm": "clube-teste-01#10",
-      "markers": [
-        "virada"
-      ],
+      "markers": ["virada"],
       "events": "d77dcad6"
     },
     {
       "id": "s1-r1-clube-teste-14-clube-teste-18",
-      "score": [
-        5,
-        0
-      ],
+      "score": [5, 0],
       "stats": {
         "home": {
           "shots": 12,
@@ -250,19 +206,12 @@
         }
       },
       "motm": "clube-teste-14#11",
-      "markers": [
-        "goleada",
-        "hatTrick",
-        "semSofrerGols"
-      ],
+      "markers": ["goleada", "hatTrick", "semSofrerGols"],
       "events": "abee3ee"
     },
     {
       "id": "s1-r1-clube-teste-17-clube-teste-11",
-      "score": [
-        0,
-        1
-      ],
+      "score": [0, 1],
       "stats": {
         "home": {
           "shots": 11,
@@ -280,17 +229,12 @@
         }
       },
       "motm": "clube-teste-11#1",
-      "markers": [
-        "semSofrerGols"
-      ],
+      "markers": ["semSofrerGols"],
       "events": "ee419f04"
     },
     {
       "id": "s1-r2-clube-teste-03-clube-teste-20",
-      "score": [
-        1,
-        2
-      ],
+      "score": [1, 2],
       "stats": {
         "home": {
           "shots": 6,
@@ -308,18 +252,12 @@
         }
       },
       "motm": "clube-teste-20#1",
-      "markers": [
-        "virada",
-        "zebra"
-      ],
+      "markers": ["virada", "zebra"],
       "events": "e684a9e4"
     },
     {
       "id": "s1-r2-clube-teste-06-clube-teste-19",
-      "score": [
-        2,
-        0
-      ],
+      "score": [2, 0],
       "stats": {
         "home": {
           "shots": 8,
@@ -337,17 +275,12 @@
         }
       },
       "motm": "clube-teste-06#17",
-      "markers": [
-        "semSofrerGols"
-      ],
+      "markers": ["semSofrerGols"],
       "events": "8e3dd3"
     },
     {
       "id": "s1-r2-clube-teste-10-clube-teste-02",
-      "score": [
-        2,
-        2
-      ],
+      "score": [2, 2],
       "stats": {
         "home": {
           "shots": 11,
@@ -370,10 +303,7 @@
     },
     {
       "id": "s1-r2-clube-teste-13-clube-teste-04",
-      "score": [
-        3,
-        3
-      ],
+      "score": [3, 3],
       "stats": {
         "home": {
           "shots": 9,
@@ -391,17 +321,12 @@
         }
       },
       "motm": "clube-teste-13#11",
-      "markers": [
-        "golNoFim"
-      ],
+      "markers": ["golNoFim"],
       "events": "4db10752"
     },
     {
       "id": "s1-r2-clube-teste-12-clube-teste-15",
-      "score": [
-        0,
-        0
-      ],
+      "score": [0, 0],
       "stats": {
         "home": {
           "shots": 7,
@@ -419,18 +344,12 @@
         }
       },
       "motm": "clube-teste-15#12",
-      "markers": [
-        "semSofrerGols",
-        "semSofrerGols"
-      ],
+      "markers": ["semSofrerGols", "semSofrerGols"],
       "events": "39801f61"
     },
     {
       "id": "s1-r2-clube-teste-05-clube-teste-16",
-      "score": [
-        2,
-        3
-      ],
+      "score": [2, 3],
       "stats": {
         "home": {
           "shots": 12,
@@ -448,17 +367,12 @@
         }
       },
       "motm": "clube-teste-16#10",
-      "markers": [
-        "zebra"
-      ],
+      "markers": ["zebra"],
       "events": "447041d3"
     },
     {
       "id": "s1-r2-clube-teste-01-clube-teste-07",
-      "score": [
-        5,
-        0
-      ],
+      "score": [5, 0],
       "stats": {
         "home": {
           "shots": 14,
@@ -476,18 +390,12 @@
         }
       },
       "motm": "clube-teste-01#9",
-      "markers": [
-        "goleada",
-        "semSofrerGols"
-      ],
+      "markers": ["goleada", "semSofrerGols"],
       "events": "207576a"
     },
     {
       "id": "s1-r2-clube-teste-09-clube-teste-14",
-      "score": [
-        1,
-        0
-      ],
+      "score": [1, 0],
       "stats": {
         "home": {
           "shots": 8,
@@ -505,17 +413,12 @@
         }
       },
       "motm": "clube-teste-09#18",
-      "markers": [
-        "semSofrerGols"
-      ],
+      "markers": ["semSofrerGols"],
       "events": "957adfcd"
     },
     {
       "id": "s1-r2-clube-teste-11-clube-teste-08",
-      "score": [
-        1,
-        2
-      ],
+      "score": [1, 2],
       "stats": {
         "home": {
           "shots": 11,
@@ -533,17 +436,12 @@
         }
       },
       "motm": "clube-teste-08#10",
-      "markers": [
-        "golNoFim"
-      ],
+      "markers": ["golNoFim"],
       "events": "a90e0f6b"
     },
     {
       "id": "s1-r2-clube-teste-18-clube-teste-17",
-      "score": [
-        2,
-        4
-      ],
+      "score": [2, 4],
       "stats": {
         "home": {
           "shots": 5,
@@ -561,9 +459,7 @@
         }
       },
       "motm": "clube-teste-17#11",
-      "markers": [
-        "virada"
-      ],
+      "markers": ["virada"],
       "events": "23993f9b"
     }
   ]

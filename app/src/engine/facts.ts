@@ -5,7 +5,7 @@ import type { Player } from './players.ts';
 import {
   POINTS,
   RELEGATION_SPOTS,
-  standingsHistory,
+  roundTables,
   type StandingRow,
   type StandingsState,
 } from './standings.ts';
@@ -15,25 +15,29 @@ import type { ClubId, PlayerId } from './types.ts';
  * Facts of a round for the content layer (docs/design/temporada.md, "Fatos da tabela para o
  * content-writer"; docs/02-architecture.md, 4.1, `Fact`; T-013). The engine emits typed facts,
  * never text (ADR-0007, rule 5): `lib/content` picks the templates. Every fact is derived from the
- * tables after this round and the one before (`standingsHistory`) and from the round's results.
- *
- * Reading of the definitions, where temporada.md leaves the detail open (registered in the T-013
- * report for the game-designer):
- * - before round 1 there is no table yet: nobody leads and nobody is in the Z4, so round 1 gives
- *   `leadership took` for the leader and `enteredZ4` for the last four;
- * - `leadership`: `took` (rounds 1) for a new leader and `lost` for the previous one (rounds = how
- *   many rounds in a row he had led); `kept` with the rounds in a row, this one included;
- * - `unbeaten` / `winless`: the current run of the club, every round it is at least
- *   {@link UNBEATEN_MIN_GAMES} / {@link WINLESS_MIN_GAMES};
+ * tables after this round and the one before, the leader after each round (`roundTables`) and the
+ * round's results. Rule of temporada.md: only what changed or became a milestone; a run that goes
+ * on is not news every week.
+ * - `leadership took` (rounds 1) for a new leader, also the first one at round 1; `lost` with it,
+ *   for the previous leader, with the rounds in a row he led (never at round 1); `kept` only at
+ *   the milestones: the rounds in a row, this one included, at 5, 10, 15, …;
+ * - `enteredZ4` / `leftZ4`: from round 2 on, who came into or left the last four;
+ * - series milestones, "the minimum, then every 5": `unbeaten` at 5, 10, 15, … games without
+ *   losing; `winless` at 4, 9, 14, … games without winning;
+ * - end of a series (CEO, 2026-11-05), once, in the round it ends, by the table's score (an
+ *   abandoned match by the awarded one): `unbeatenEnded` when the club loses after N ≥ 5 games
+ *   without losing, `winlessEnded` when it wins after N ≥ 4 without winning; `games` is N (the
+ *   game that ended it does not count), with the `round` and the `opponentId` of that game. The
+ *   end has priority: in that round the club has no `unbeaten` nor `winless`;
  * - `championClinched` / `relegatedClinched`: once, in the round it becomes true. The leader is
  *   champion when his lead over the 2nd is greater than `3 × rounds left`; a club is relegated
  *   when the 16th is more than `3 × rounds left` points ahead of it. A tie in that count decides
  *   nothing until the last round, when the table decides everything;
- * - `topScorerOfRound`: every player with the round's most goals (real goals, at least 1), in
- *   the order of their first goal;
+ * - `topScorerOfRound`: the players with the round's most real goals, only when that is 2 or
+ *   more; every one level at the top, in the order of their first goal;
  * - `decisiveLastRound`: in the report of round 37, `title` when the champion is still open and
  *   `relegation` when at least one relegation spot is;
- * - `suspended` / `injured`: the new suspensions and injuries of the round, with the games (or
+ * - `suspended` / `injured`: every new suspension and injury of the round, with the games (or
  *   rounds) the player will miss.
  */
 
@@ -47,20 +51,43 @@ export type Fact =
     }
   | { readonly kind: 'enteredZ4' | 'leftZ4'; readonly clubId: ClubId }
   | { readonly kind: 'unbeaten' | 'winless'; readonly clubId: ClubId; readonly games: number }
+  | {
+      /** `games`: the run that ended, without the game that ended it; `opponentId`: that game's. */
+      readonly kind: 'unbeatenEnded' | 'winlessEnded';
+      readonly clubId: ClubId;
+      readonly games: number;
+      readonly round: number;
+      readonly opponentId: ClubId;
+    }
   | { readonly kind: 'championClinched' | 'relegatedClinched'; readonly clubId: ClubId }
   | { readonly kind: 'topScorerOfRound'; readonly playerId: PlayerId; readonly goals: number }
   | { readonly kind: 'decisiveLastRound'; readonly stakes: 'title' | 'relegation' }
   | { readonly kind: 'suspended' | 'injured'; readonly playerId: PlayerId; readonly games: number };
 
-/** "invencibilidade (N jogos sem perder, N ≥ 5)" (temporada.md). */
+/** "invencibilidade": the first milestone, 5 games without losing (temporada.md). */
 export const UNBEATEN_MIN_GAMES = 5;
-/** "jejum (N jogos sem vencer, N ≥ 4)" (temporada.md). */
+/** "jejum": the first milestone, 4 games without winning (temporada.md). */
 export const WINLESS_MIN_GAMES = 4;
+/** "liderança manteve": the first milestone, 5 rounds in a row at the top (temporada.md). */
+export const LEADERSHIP_MIN_ROUNDS = 5;
+/** After the first milestone, a run is a fact again every this many (temporada.md). */
+export const MILESTONE_STEP = 5;
+/** `topScorerOfRound` only when the most goals of the round reach this (temporada.md). */
+export const TOP_SCORER_MIN_GOALS = 2;
+
+/** A run is a milestone at its minimum and then every MILESTONE_STEP (5, 10, 15 or 4, 9, 14). */
+export function isMilestone(run: number, minimum: number): boolean {
+  return run >= minimum && (run - minimum) % MILESTONE_STEP === 0;
+}
 
 /** Rounds in a row (ending at `round`) that `clubId` led the table. */
-function leadStreak(history: readonly StandingRow[][], round: number, clubId: ClubId): number {
+function leadStreak(
+  leaders: readonly (ClubId | undefined)[],
+  round: number,
+  clubId: ClubId,
+): number {
   let rounds = 0;
-  for (let k = round; k >= 1 && history[k]![0]?.clubId === clubId; k--) rounds++;
+  for (let k = round; k >= 1 && leaders[k] === clubId; k--) rounds++;
   return rounds;
 }
 
@@ -91,22 +118,39 @@ function relegated(table: readonly StandingRow[], round: number): ClubId[] {
   return rows.filter((row) => safe.points - row.points > pointsLeft(round)).map((r) => r.clubId);
 }
 
-/** Current unbeaten and winless runs of every club, from its played fixtures in round order. */
-function runs(
-  fixtures: readonly Fixture[],
-  round: number,
-): Map<ClubId, { unbeaten: number; winless: number }> {
-  const out = new Map<ClubId, { unbeaten: number; winless: number }>();
+/** A club's runs after its last played fixture, and how that fixture ended the runs before it. */
+interface ClubRuns {
+  unbeaten: number;
+  winless: number;
+  /** The run without losing that this round's defeat ended (0 when none). */
+  unbeatenEnded: number;
+  /** The run without winning that this round's win ended (0 when none). */
+  winlessEnded: number;
+  /** The opponent of the club's last fixture of this round. */
+  opponentId?: ClubId;
+}
+
+/**
+ * Current unbeaten and winless runs of every club, from its played fixtures in round order (the
+ * table's score: an abandoned match counts with the awarded one), and the runs that a fixture of
+ * `round` ended.
+ */
+function runs(fixtures: readonly Fixture[], round: number): Map<ClubId, ClubRuns> {
+  const out = new Map<ClubId, ClubRuns>();
   const played = fixtures
     .filter((f) => f.result !== undefined && f.round <= round)
     .sort((a, b) => a.round - b.round);
   for (const f of played) {
     const [home, away] = f.result!.score;
-    for (const [id, own, other] of [
-      [f.homeId, home, away],
-      [f.awayId, away, home],
+    for (const [id, opponentId, own, other] of [
+      [f.homeId, f.awayId, home, away],
+      [f.awayId, f.homeId, away, home],
     ] as const) {
-      const run = out.get(id) ?? { unbeaten: 0, winless: 0 };
+      const run = out.get(id) ?? { unbeaten: 0, winless: 0, unbeatenEnded: 0, winlessEnded: 0 };
+      const thisRound = f.round === round;
+      run.unbeatenEnded = thisRound && own < other ? run.unbeaten : 0;
+      run.winlessEnded = thisRound && own > other ? run.winless : 0;
+      if (thisRound) run.opponentId = opponentId;
       run.unbeaten = own >= other ? run.unbeaten + 1 : 0;
       run.winless = own > other ? 0 : run.winless + 1;
       out.set(id, run);
@@ -125,21 +169,17 @@ export function roundFacts(
   results: readonly MatchResult[],
 ): Fact[] {
   const facts: Fact[] = [];
-  const history = standingsHistory(state, round);
-  const now = history[round] ?? [];
-  const before = history[round - 1] ?? [];
+  const { before, now, leaders } = roundTables(state, round);
 
   // Leadership.
   const leader = now[0]?.clubId;
   const previous = round > 1 ? before[0]?.clubId : undefined;
   if (leader !== undefined) {
     if (leader === previous) {
-      facts.push({
-        kind: 'leadership',
-        clubId: leader,
-        change: 'kept',
-        rounds: leadStreak(history, round, leader),
-      });
+      const rounds = leadStreak(leaders, round, leader);
+      if (isMilestone(rounds, LEADERSHIP_MIN_ROUNDS)) {
+        facts.push({ kind: 'leadership', clubId: leader, change: 'kept', rounds });
+      }
     } else {
       facts.push({ kind: 'leadership', clubId: leader, change: 'took', rounds: 1 });
       if (previous !== undefined) {
@@ -147,14 +187,14 @@ export function roundFacts(
           kind: 'leadership',
           clubId: previous,
           change: 'lost',
-          rounds: leadStreak(history, round - 1, previous),
+          rounds: leadStreak(leaders, round - 1, previous),
         });
       }
     }
   }
 
-  // Z4.
-  const zoneNow = relegationZone(now, round);
+  // Z4, from round 2 on (there is no zone before the first game).
+  const zoneNow = round > 1 ? relegationZone(now, round) : [];
   const zoneBefore = new Set(relegationZone(before, round - 1));
   for (const id of zoneNow) if (!zoneBefore.has(id)) facts.push({ kind: 'enteredZ4', clubId: id });
   const zoneNowSet = new Set(zoneNow);
@@ -164,15 +204,27 @@ export function roundFacts(
     }
   }
 
-  // Runs, in table order.
+  // Runs, in table order. The end of a run has priority over the milestones of that club.
   const clubRuns = runs(state.fixtures, round);
   for (const row of now) {
     const run = clubRuns.get(row.clubId);
     if (run === undefined) continue;
-    if (run.unbeaten >= UNBEATEN_MIN_GAMES) {
+    const { clubId } = row;
+    const opponentId = run.opponentId ?? '';
+    let ended = false;
+    if (run.unbeatenEnded >= UNBEATEN_MIN_GAMES) {
+      facts.push({ kind: 'unbeatenEnded', clubId, games: run.unbeatenEnded, round, opponentId });
+      ended = true;
+    }
+    if (run.winlessEnded >= WINLESS_MIN_GAMES) {
+      facts.push({ kind: 'winlessEnded', clubId, games: run.winlessEnded, round, opponentId });
+      ended = true;
+    }
+    if (ended) continue;
+    if (isMilestone(run.unbeaten, UNBEATEN_MIN_GAMES)) {
       facts.push({ kind: 'unbeaten', clubId: row.clubId, games: run.unbeaten });
     }
-    if (run.winless >= WINLESS_MIN_GAMES) {
+    if (isMilestone(run.winless, WINLESS_MIN_GAMES)) {
       facts.push({ kind: 'winless', clubId: row.clubId, games: run.winless });
     }
   }
@@ -195,8 +247,10 @@ export function roundFacts(
   }
   let most = 0;
   for (const n of goals.values()) if (n > most) most = n;
-  for (const [playerId, n] of goals) {
-    if (n === most) facts.push({ kind: 'topScorerOfRound', playerId, goals: n });
+  if (most >= TOP_SCORER_MIN_GOALS) {
+    for (const [playerId, n] of goals) {
+      if (n === most) facts.push({ kind: 'topScorerOfRound', playerId, goals: n });
+    }
   }
 
   // The last round decides something.

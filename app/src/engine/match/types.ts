@@ -235,6 +235,12 @@ export interface MatchResult {
   /** Energy at the final whistle, for every player who took the pitch. */
   readonly finalEnergy: Readonly<Record<PlayerId, number>>;
   /**
+   * Real goals conceded by the team while the player was on the pitch in the goal slot or a
+   * defence slot (the counter of the rating), for every player who took the pitch. The players
+   * who occupied the goal add up to the opponent's real goals.
+   */
+  readonly conceded: Readonly<Record<PlayerId, number>>;
+  /**
    * Players injured in the match, in order of the injuries, with the rounds out drawn for the
    * severity (partida.md, "Lesões"). Counting the rounds down is the round's job (T-013).
    */

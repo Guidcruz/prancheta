@@ -90,6 +90,13 @@ export interface RoundInput {
   readonly coaches?: Readonly<Partial<Record<ClubId, MatchMode>>>;
 }
 
+/**
+ * What {@link prepareRound} reads: the same `sheets` and `coaches` as {@link RoundInput}, so the
+ * screen can pass the very object it will give to `playRound` and the live match never diverges
+ * from the recorded one. Both optional (no human club).
+ */
+export type RoundSetup = Partial<Pick<RoundInput, 'sheets' | 'coaches'>>;
+
 /** What {@link prepareRound} returns (docs/02-architecture.md, 4.1). */
 export interface RoundPlan {
   readonly round: number;
@@ -112,8 +119,9 @@ export interface RoundReport {
 }
 
 /**
- * The season numbers of a player (`GameState.seasonStats`), for the scorers and the awards of the
- * season (temporada.md, "Fim de temporada"; T-017). Only who took the pitch has an entry.
+ * The season numbers of a player (`GameState.seasonStats`), summed match by match by `playRound`.
+ * Only who took the pitch this season has an entry. The end of the season (T-017) reads them for
+ * the awards and the evolution and then clears them (temporada.md, "Fim de temporada").
  */
 export interface PlayerSeasonStats {
   /** Matches in which he took the pitch (also only in added time). */
@@ -128,6 +136,12 @@ export interface PlayerSeasonStats {
   /** Sum of his match ratings, and how many matches had one (the mean is the awards'). */
   readonly ratingSum: number;
   readonly ratedGames: number;
+  /**
+   * Real goals conceded with him on the pitch in the goal or in a defence slot
+   * (`MatchResult.conceded`). The best goalkeeper award reads it only for natural goalkeepers:
+   * `conceded / games` (temporada.md, "Fim de temporada").
+   */
+  readonly conceded: number;
 }
 
 /**
@@ -156,6 +170,7 @@ const EMPTY_STATS: PlayerSeasonStats = {
   reds: 0,
   ratingSum: 0,
   ratedGames: 0,
+  conceded: 0,
 };
 
 /** The season has no round left to play. */
@@ -186,12 +201,13 @@ function humanModes(
       warnings.push({ code: 'round-unknown-club', detail: { clubId } });
       return;
     }
-    const mode = coaches[clubId];
+    const mode = Object.hasOwn(coaches, clubId) ? coaches[clubId] : undefined;
     if (mode !== undefined && !MATCH_MODES.includes(mode)) {
       warnings.push({ code: 'round-unknown-mode', detail: { clubId, mode: String(mode) } });
     }
     humans.set(clubId, mode !== undefined && MATCH_MODES.includes(mode) ? mode : 'full');
   };
+  // Own keys only: the input comes from outside (the screen, the server), never the prototype.
   for (const clubId of Object.keys(sheets)) if (sheets[clubId] !== undefined) add(clubId);
   for (const clubId of Object.keys(coaches)) if (coaches[clubId] !== undefined) add(clubId);
   return humans;
@@ -222,10 +238,11 @@ function stadiumCapacity(state: Pick<GameState, 'clubs'>, clubId: ClubId): numbe
 export function prepareRound(
   state: GameState,
   params: GameParams,
-  sheets: RoundInput['sheets'] = {},
-  coaches: NonNullable<RoundInput['coaches']> = {},
+  input: RoundSetup = {},
 ): Result<RoundPlan, 'season-over'> {
   if (seasonOver(state)) return fail('season-over', { season: state.season, round: state.round });
+  const sheets = input.sheets ?? {};
+  const coaches = input.coaches ?? {};
   const warnings: EngineWarning[] = [];
   const humans = humanModes(state, sheets, coaches, warnings);
   const suggested: Record<ClubId, TeamSheet> = {};
@@ -243,9 +260,10 @@ export function prepareRound(
       const player = state.players[id];
       if (player !== undefined) players.push(player);
     }
+    const own = mode !== undefined && Object.hasOwn(sheets, clubId) ? sheets[clubId] : undefined;
     return {
       clubId,
-      sheet: (mode === undefined ? undefined : sheets[clubId]) ?? suggestion,
+      sheet: own ?? suggestion,
       controller: mode === undefined || mode === 'result' ? 'ai' : 'human',
       profile: mode === undefined ? (club?.profile ?? 'traditional') : 'traditional',
       fans: club?.fans ?? params.fans.start,
@@ -387,6 +405,7 @@ function addSeasonStats(
         reds: prev.reds + (count.get(`r${id}`) ?? 0),
         ratingSum: prev.ratingSum + (typeof rating === 'number' ? rating : 0),
         ratedGames: prev.ratedGames + (typeof rating === 'number' ? 1 : 0),
+        conceded: prev.conceded + (result.conceded[id] ?? 0),
       };
     }
   }
@@ -482,7 +501,7 @@ function applyRound(
 
 /**
  * Plays the current round (docs/02-architecture.md, 4.1; US-012): {@link prepareRound} with the
- * input's sheets and coaches, the 10 matches with `simulateMatch` and the commands of each
+ * same input (its sheets and coaches), the 10 matches with `simulateMatch` and the commands of each
  * fixture (the same plan and commands the live screen replayed, so the score is the one the
  * coach saw), then steps 3 to 7 of temporada.md (see the header). Returns the new state (round
  * + 1, `lastRound` = the report) and the report.
@@ -507,7 +526,7 @@ export function playRound(
   if (input.round !== state.round) {
     return fail('round-not-open', { round: input.round, next: state.round });
   }
-  const plan = prepareRound(state, params, input.sheets ?? {}, input.coaches ?? {});
+  const plan = prepareRound(state, params, input);
   if (!plan.ok) return plan;
   const warnings = [...plan.warnings];
   const commands = input.commands ?? {};

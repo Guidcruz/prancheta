@@ -13,8 +13,10 @@ import type { ClubId } from './types.ts';
  * 5. head to head, only when exactly 2 clubs are level up to 4: points in the games between
  *    them, then the goal difference in those games;
  * 6. fewer red cards; 7. fewer yellow cards;
- * 8. the draw: ascending `seedFromString("<seed>-tiebreak-<clubId>")` (deterministic, and it
- *    spends no draw of any Rng). Two clubs with the same hash (never seen) fall back to the id.
+ * 8. the draw: ascending ``seedFromString(`${seed}-s${season}-tiebreak-${clubId}`)``
+ *    (deterministic, and it spends no draw of any Rng). The season is in the label, as in the
+ *    match seeds, so no club wins the draw every season. Two clubs with the same hash (never
+ *    seen) fall back to the id.
  * With 3 or more clubs level up to 4, criterion 5 is skipped and 6 follows.
  *
  * An abandoned match counts with its awarded score (`MatchSummary.score`); its cards count as
@@ -187,17 +189,82 @@ function toRows(sorted: readonly Tally[]): StandingRow[] {
   }));
 }
 
-/** The draw of criterion 8 for every club of the state. */
-function lotteryKeys(state: Pick<GameState, 'seed' | 'clubs'>): Map<ClubId, number> {
+/** The draw of criterion 8 for every club of the state, for its season. */
+function lotteryKeys(state: Pick<GameState, 'seed' | 'season' | 'clubs'>): Map<ClubId, number> {
   const keys = new Map<ClubId, number>();
   for (const clubId of Object.keys(state.clubs)) {
-    keys.set(clubId, seedFromString(`${state.seed}-tiebreak-${clubId}`));
+    keys.set(clubId, seedFromString(`${state.seed}-s${state.season}-tiebreak-${clubId}`));
   }
   return keys;
 }
 
 /** What the table reads from the state. */
-export type StandingsState = Pick<GameState, 'seed' | 'clubs' | 'fixtures'>;
+export type StandingsState = Pick<GameState, 'seed' | 'season' | 'clubs' | 'fixtures'>;
+
+/** The played fixtures up to `throughRound`, grouped by round. */
+function playedByRound(state: StandingsState, throughRound: number): Map<number, Fixture[]> {
+  const byRound = new Map<number, Fixture[]>();
+  for (const fixture of state.fixtures) {
+    if (fixture.result === undefined || !(fixture.round <= throughRound)) continue;
+    const list = byRound.get(fixture.round) ?? [];
+    list.push(fixture);
+    byRound.set(fixture.round, list);
+  }
+  return byRound;
+}
+
+/**
+ * The leader of the table without sorting it: the clubs level with the best on criteria 1 to 4,
+ * ordered by the rest of the criteria (the same order `sortTallies` gives at the top).
+ */
+function leaderOf(
+  tallies: readonly Tally[],
+  h2h: ReadonlyMap<string, HeadToHead>,
+  lottery: ReadonlyMap<ClubId, number>,
+): ClubId | undefined {
+  let best: Tally | undefined;
+  for (const t of tallies) if (best === undefined || compareMain(t, best) < 0) best = t;
+  if (best === undefined) return undefined;
+  const top = tallies.filter((t) => compareMain(t, best) === 0);
+  return sortTallies(top, h2h, lottery)[0]!.clubId;
+}
+
+/** What the facts of a round read from the table (facts.ts). */
+export interface RoundTables {
+  /** The table after `round − 1` (every row at zero before round 1). */
+  readonly before: StandingRow[];
+  /** The table after `round`. */
+  readonly now: StandingRow[];
+  /** `leaders[k]` is the leader after round k, for k = 1..round (`leaders[0]` is undefined). */
+  readonly leaders: readonly (ClubId | undefined)[];
+}
+
+/**
+ * The two tables around `round` and the leader after each round, in one pass over the played
+ * fixtures: only the tables of `round − 1` and `round` are built in full; the earlier rounds
+ * only find their leader (for the leadership runs of facts.ts).
+ */
+export function roundTables(state: StandingsState, round: number): RoundTables {
+  const lottery = lotteryKeys(state);
+  const tallies = new Map<ClubId, Tally>();
+  for (const clubId of Object.keys(state.clubs)) tallies.set(clubId, emptyTally(clubId));
+  const h2h = new Map<string, HeadToHead>();
+  const byRound = playedByRound(state, round);
+  const leaders: (ClubId | undefined)[] = [undefined];
+  let before: StandingRow[] = toRows(sortTallies([...tallies.values()], h2h, lottery));
+  let now = before;
+  for (let k = 1; k <= round; k++) {
+    for (const fixture of byRound.get(k) ?? []) addFixture(fixture, tallies, h2h);
+    if (k === round - 1) before = toRows(sortTallies([...tallies.values()], h2h, lottery));
+    if (k === round) {
+      now = toRows(sortTallies([...tallies.values()], h2h, lottery));
+      leaders.push(now[0]?.clubId);
+    } else {
+      leaders.push(leaderOf([...tallies.values()], h2h, lottery));
+    }
+  }
+  return { before, now, leaders };
+}
 
 /**
  * The table after each round, from 0 (nobody has played: every row at zero, in the order of the
@@ -209,13 +276,7 @@ export function standingsHistory(state: StandingsState, throughRound: number): S
   const tallies = new Map<ClubId, Tally>();
   for (const clubId of Object.keys(state.clubs)) tallies.set(clubId, emptyTally(clubId));
   const h2h = new Map<string, HeadToHead>();
-  const byRound = new Map<number, Fixture[]>();
-  for (const fixture of state.fixtures) {
-    if (fixture.result === undefined || !(fixture.round <= throughRound)) continue;
-    const list = byRound.get(fixture.round) ?? [];
-    list.push(fixture);
-    byRound.set(fixture.round, list);
-  }
+  const byRound = playedByRound(state, throughRound);
   const history: StandingRow[][] = [toRows(sortTallies([...tallies.values()], h2h, lottery))];
   for (let round = 1; round <= throughRound; round++) {
     for (const fixture of byRound.get(round) ?? []) addFixture(fixture, tallies, h2h);

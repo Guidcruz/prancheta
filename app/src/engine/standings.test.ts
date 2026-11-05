@@ -54,16 +54,22 @@ function fx(
   };
 }
 
-function table(ids: readonly string[], fixtures: Fixture[], seed = SEED): StandingsState {
+function table(
+  ids: readonly string[],
+  fixtures: Fixture[],
+  seed = SEED,
+  season = 1,
+): StandingsState {
   const club = Object.values(testGame().clubs)[0]!;
   const clubs: Record<string, ClubState> = {};
   for (const id of ids) clubs[id] = club;
-  return { seed, clubs, fixtures };
+  return { seed, season, clubs, fixtures };
 }
 
 const order = (s: StandingsState, through?: number) =>
   getStandings(s, through).map((r) => r.clubId);
-const lottery = (id: string) => seedFromString(`${SEED}-tiebreak-${id}`);
+const lottery = (id: string, seed = SEED, season = 1) =>
+  seedFromString(`${seed}-s${season}-tiebreak-${id}`);
 
 describe('getStandings: columns', () => {
   it('counts points, games, wins, draws, losses, goals, cards and the last five', () => {
@@ -261,12 +267,19 @@ describe('getStandings: tie-breaks (temporada.md; US-012, P1)', () => {
     expect(order(s)).toEqual(byDraw);
     expect(order(s)).toEqual(order(table(ids, s.fixtures as Fixture[])));
     const other = order(table(ids, s.fixtures as Fixture[], SEED + 1));
-    expect(other).toEqual(
-      [...ids].sort(
-        (x, y) =>
-          seedFromString(`${SEED + 1}-tiebreak-${x}`) - seedFromString(`${SEED + 1}-tiebreak-${y}`),
-      ),
+    expect(other).toEqual([...ids].sort((x, y) => lottery(x, SEED + 1) - lottery(y, SEED + 1)));
+  });
+
+  it('8. the draw has the season in its label: the same state in seasons 1 and 2 orders differently', () => {
+    const ids = Array.from({ length: 20 }, (_, i) => `club-${i}`);
+    const fixtures = [0, 2, 4, 6, 8, 10, 12, 14, 16, 18].map((i) =>
+      fx(1, ids[i]!, ids[i + 1]!, [1, 1]),
     );
+    const one = order(table(ids, fixtures, SEED, 1));
+    const two = order(table(ids, fixtures, SEED, 2));
+    expect(one).toEqual([...ids].sort((x, y) => lottery(x, SEED, 1) - lottery(y, SEED, 1)));
+    expect(two).toEqual([...ids].sort((x, y) => lottery(x, SEED, 2) - lottery(y, SEED, 2)));
+    expect(two).not.toEqual(one);
   });
 
   it('an abandoned match counts with its awarded score', () => {

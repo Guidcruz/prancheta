@@ -1,12 +1,9 @@
 {
-  "engineVersion": 8,
+  "engineVersion": 9,
   "name": "match-commands",
   "data": {
     "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
-    "score": [
-      2,
-      0
-    ],
+    "score": [2, 0],
     "events": [
       {
         "minute": 0,
@@ -139,10 +136,7 @@
         "scorer": "clube-teste-01#7",
         "assist": "clube-teste-01#11",
         "kind": "open",
-        "score": [
-          1,
-          0
-        ]
+        "score": [1, 0]
       },
       {
         "minute": 42,
@@ -166,10 +160,7 @@
         "half": 1,
         "importance": 2,
         "type": "halftime",
-        "score": [
-          1,
-          0
-        ]
+        "score": [1, 0]
       },
       {
         "minute": 45,
@@ -207,10 +198,7 @@
         "scorer": "clube-teste-01#8",
         "assist": "clube-teste-01#4",
         "kind": "open",
-        "score": [
-          2,
-          0
-        ]
+        "score": [2, 0]
       },
       {
         "minute": 52,
@@ -379,10 +367,7 @@
         "half": 2,
         "importance": 3,
         "type": "fulltime",
-        "score": [
-          2,
-          0
-        ],
+        "score": [2, 0],
         "abandoned": false
       }
     ],
@@ -489,6 +474,35 @@
       "clube-teste-02#16": 99.712,
       "clube-teste-02#21": 93.00999999999995,
       "clube-teste-02#15": 95.73759999999993
+    },
+    "conceded": {
+      "clube-teste-01#1": 0,
+      "clube-teste-01#2": 0,
+      "clube-teste-01#3": 0,
+      "clube-teste-01#4": 0,
+      "clube-teste-01#5": 0,
+      "clube-teste-01#7": 0,
+      "clube-teste-01#6": 0,
+      "clube-teste-01#9": 0,
+      "clube-teste-01#8": 0,
+      "clube-teste-01#10": 0,
+      "clube-teste-01#11": 0,
+      "clube-teste-01#25": 0,
+      "clube-teste-02#1": 2,
+      "clube-teste-02#3": 2,
+      "clube-teste-02#2": 2,
+      "clube-teste-02#14": 2,
+      "clube-teste-02#4": 2,
+      "clube-teste-02#6": 0,
+      "clube-teste-02#7": 0,
+      "clube-teste-02#8": 0,
+      "clube-teste-02#9": 0,
+      "clube-teste-02#10": 0,
+      "clube-teste-02#11": 0,
+      "clube-teste-02#25": 0,
+      "clube-teste-02#16": 0,
+      "clube-teste-02#21": 0,
+      "clube-teste-02#15": 0
     },
     "newInjuries": [],
     "newSuspensions": [],

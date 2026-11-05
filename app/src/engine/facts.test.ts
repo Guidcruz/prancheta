@@ -45,7 +45,7 @@ function stateOf(fixtures: Fixture[], players: Record<string, Partial<Player>> =
   const club = Object.values(testGame().clubs)[0]!;
   const clubs: Record<string, ClubState> = {};
   for (const id of IDS) clubs[id] = club;
-  return { seed: 1, clubs, fixtures, players: players as Record<string, Player> };
+  return { seed: 1, season: 1, clubs, fixtures, players: players as Record<string, Player> };
 }
 
 const facts = (fixtures: Fixture[], round: number, results: MatchResult[] = []) =>
@@ -61,71 +61,109 @@ describe('roundFacts: leadership', () => {
     ]);
   });
 
-  it('kept counts the rounds in a row; a new leader takes it and the old one loses it', () => {
-    const fixtures = [...wins(1, 'c05', 'c06'), ...wins(2, 'c05', 'c07'), ...wins(3, 'c05', 'c08')];
-    expect(ofKind(facts(fixtures, 3), 'leadership')).toEqual([
-      { kind: 'leadership', clubId: 'c05', change: 'kept', rounds: 3 },
-    ]);
-    fixtures.push(...wins(4, 'c09', 'c10', 4));
-    expect(ofKind(facts(fixtures, 4), 'leadership')).toEqual([
+  it('kept only at the milestones 5, 10, 15; a new leader takes it and the old one loses it', () => {
+    const fixtures = Array.from({ length: 10 }, (_, i) => wins(i + 1, 'c05', 'c06')).flat();
+    const kept = (round: number) => ofKind(facts(fixtures, round), 'leadership');
+    for (const round of [2, 3, 4, 6, 9]) expect(kept(round), `round ${round}`).toEqual([]);
+    expect(kept(5)).toEqual([{ kind: 'leadership', clubId: 'c05', change: 'kept', rounds: 5 }]);
+    expect(kept(10)).toEqual([{ kind: 'leadership', clubId: 'c05', change: 'kept', rounds: 10 }]);
+    fixtures.push(...wins(11, 'c09', 'c10', 11));
+    expect(ofKind(facts(fixtures, 11), 'leadership')).toEqual([
       { kind: 'leadership', clubId: 'c09', change: 'took', rounds: 1 },
-      { kind: 'leadership', clubId: 'c05', change: 'lost', rounds: 3 },
+      { kind: 'leadership', clubId: 'c05', change: 'lost', rounds: 10 },
     ]);
   });
 });
 
 describe('roundFacts: Z4', () => {
-  it('round 1: the last four enter; later, who comes in and who goes out', () => {
+  it('round 1 has no Z4 facts; from round 2, who comes in and who goes out', () => {
     const r1 = [...wins(1, 'c01', 'c02'), ...wins(1, 'c03', 'c04')];
     const zone1 = getStandings(stateOf(r1), 1)
       .slice(16)
       .map((r) => r.clubId);
-    expect(ofKind(facts(r1, 1), 'enteredZ4', 'leftZ4')).toEqual(
-      zone1.map((clubId) => ({ kind: 'enteredZ4', clubId })),
-    );
-    expect(ofKind(facts(r1, 1), 'leftZ4')).toEqual([]);
-    // Round 2: the four of the zone win, two others lose: whoever ends in the zone entered.
+    expect(ofKind(facts(r1, 1), 'enteredZ4', 'leftZ4')).toEqual([]);
+    // Round 2: the four of the zone win: they leave it, and four others come in.
     const r2 = [...r1, ...zone1.map((id) => game(2, id, 'c20', [1, 0]))];
     const list = facts(r2, 2);
     const zone2 = getStandings(stateOf(r2), 2)
       .slice(16)
       .map((r) => r.clubId);
-    expect(
-      ofKind(list, 'leftZ4')
+    const ids = (kind: Fact['kind']) =>
+      ofKind(list, kind)
         .map((f) => (f as { clubId: string }).clubId)
-        .sort(),
-    ).toEqual(zone1.filter((id) => !zone2.includes(id)).sort());
-    expect(
-      ofKind(list, 'enteredZ4')
-        .map((f) => (f as { clubId: string }).clubId)
-        .sort(),
-    ).toEqual(zone2.filter((id) => !zone1.includes(id)).sort());
-    expect(ofKind(list, 'leftZ4').length).toBe(4);
+        .sort();
+    expect(ids('leftZ4')).toEqual(zone1.filter((id) => !zone2.includes(id)).sort());
+    expect(ids('enteredZ4')).toEqual(zone2.filter((id) => !zone1.includes(id)).sort());
+    expect(ids('leftZ4')).toHaveLength(4);
   });
 });
 
 describe('roundFacts: runs', () => {
-  it('unbeaten from 5 games, winless from 4', () => {
-    const draws = (n: number) =>
-      Array.from({ length: n }, (_, i) => game(i + 1, 'c01', 'c02', [0, 0]));
-    const four = facts(draws(4), 4);
-    expect(ofKind(four, 'unbeaten')).toEqual([]);
-    expect(ofKind(four, 'winless').map((f) => f)).toEqual(
-      expect.arrayContaining([{ kind: 'winless', clubId: 'c01', games: 4 }]),
+  /** c01 against c20, one game a round, with the results from c01's side. */
+  const run = (results: string) =>
+    [...results].map((r, i) =>
+      game(i + 1, 'c01', 'c20', r === 'W' ? [1, 0] : r === 'D' ? [0, 0] : [0, 1]),
     );
-    const five = facts(draws(5), 5);
-    expect(ofKind(five, 'unbeaten')).toEqual(
-      expect.arrayContaining([
-        { kind: 'unbeaten', clubId: 'c01', games: 5 },
-        { kind: 'unbeaten', clubId: 'c02', games: 5 },
-      ]),
+  const mine = (results: string) =>
+    facts(run(results), results.length).filter(
+      (f) =>
+        'clubId' in f && f.clubId === 'c01' && f.kind !== 'leadership' && !f.kind.endsWith('Z4'),
     );
-    // A defeat ends the unbeaten run; a win ends the winless one.
-    const broken = facts([...draws(5), game(6, 'c01', 'c02', [0, 1])], 6);
-    expect(ofKind(broken, 'unbeaten').map((f) => (f as { clubId: string }).clubId)).toEqual([
-      'c02',
+
+  it('unbeaten at the milestones 5, 10, 15 games without losing', () => {
+    expect(mine('WWWW')).toEqual([]);
+    expect(mine('WWWWW')).toEqual([{ kind: 'unbeaten', clubId: 'c01', games: 5 }]);
+    expect(mine('WWWWWW')).toEqual([]);
+    expect(mine('WWWWWWWWW')).toEqual([]);
+    expect(mine('WWWWWWWWWW')).toEqual([{ kind: 'unbeaten', clubId: 'c01', games: 10 }]);
+    expect(mine('W'.repeat(15))).toEqual([{ kind: 'unbeaten', clubId: 'c01', games: 15 }]);
+  });
+
+  it('winless at the milestones 4, 9, 14 games without winning', () => {
+    expect(mine('LLL')).toEqual([]);
+    expect(mine('LLLL')).toEqual([{ kind: 'winless', clubId: 'c01', games: 4 }]);
+    expect(mine('LLLLLL')).toEqual([]);
+    expect(mine('L'.repeat(10))).toEqual([]);
+    expect(mine('L'.repeat(9))).toEqual([{ kind: 'winless', clubId: 'c01', games: 9 }]);
+    expect(mine('L'.repeat(14))).toEqual([{ kind: 'winless', clubId: 'c01', games: 14 }]);
+  });
+
+  it('unbeatenEnded: a defeat after at least 5 without losing, with the run, round and opponent', () => {
+    expect(mine('WWWWWL')).toEqual([
+      { kind: 'unbeatenEnded', clubId: 'c01', games: 5, round: 6, opponentId: 'c20' },
     ]);
-    expect(ofKind(broken, 'winless')).toEqual([{ kind: 'winless', clubId: 'c01', games: 6 }]);
+    expect(mine('WWDWWDWL')).toEqual([
+      { kind: 'unbeatenEnded', clubId: 'c01', games: 7, round: 8, opponentId: 'c20' },
+    ]);
+    expect(mine('WWWWL')).toEqual([]);
+  });
+
+  it('winlessEnded: a win after at least 4 without winning', () => {
+    expect(mine('LLDLW')).toEqual([
+      { kind: 'winlessEnded', clubId: 'c01', games: 4, round: 5, opponentId: 'c20' },
+    ]);
+    expect(mine('LDLW')).toEqual([]);
+    // The opponent who lost it is the one who ended the run of the other side.
+    const both = facts(run('WWWWWL'), 6).filter((f) => f.kind === 'winlessEnded');
+    expect(both).toEqual([
+      { kind: 'winlessEnded', clubId: 'c20', games: 5, round: 6, opponentId: 'c01' },
+    ]);
+  });
+
+  it('the end has priority over the milestones of the same club', () => {
+    // W, W, D, D, D, L: 5 without losing end, and 4 without winning would be a milestone.
+    expect(mine('WWDDDL')).toEqual([
+      { kind: 'unbeatenEnded', clubId: 'c01', games: 5, round: 6, opponentId: 'c20' },
+    ]);
+  });
+
+  it('counts the awarded score of an abandoned match', () => {
+    const fixtures = run('WWWWW');
+    const last = game(6, 'c01', 'c20', [0, 3]);
+    fixtures.push({ ...last, result: { ...last.result!, abandoned: true } });
+    expect(roundFacts(stateOf(fixtures), 6, []).filter((f) => f.kind === 'unbeatenEnded')).toEqual([
+      { kind: 'unbeatenEnded', clubId: 'c01', games: 5, round: 6, opponentId: 'c20' },
+    ]);
   });
 });
 
@@ -201,6 +239,8 @@ describe('roundFacts: players', () => {
       { kind: 'topScorerOfRound', playerId: 'z', goals: 2 },
     ]);
     expect(ofKind(facts([], 1, [result([])]), 'topScorerOfRound')).toEqual([]);
+    // A round whose most is 1 goal has no top scorer.
+    expect(ofKind(facts([], 1, [result([goal('x'), goal('y')])]), 'topScorerOfRound')).toEqual([]);
   });
 
   it('suspended and injured with the games they will miss, in match order', () => {

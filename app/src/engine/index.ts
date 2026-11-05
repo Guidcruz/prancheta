@@ -111,10 +111,19 @@ export {
   POINTS,
   RELEGATION_SPOTS,
   getStandings,
+  roundTables,
   standingsHistory,
 } from './standings.ts';
-export type { StandingResult, StandingRow, StandingsState } from './standings.ts';
-export { UNBEATEN_MIN_GAMES, WINLESS_MIN_GAMES, roundFacts } from './facts.ts';
+export type { RoundTables, StandingResult, StandingRow, StandingsState } from './standings.ts';
+export {
+  LEADERSHIP_MIN_ROUNDS,
+  MILESTONE_STEP,
+  TOP_SCORER_MIN_GOALS,
+  UNBEATEN_MIN_GAMES,
+  WINLESS_MIN_GAMES,
+  isMilestone,
+  roundFacts,
+} from './facts.ts';
 export type { Fact } from './facts.ts';
 export {
   CONDITION_MULT,
@@ -172,7 +181,15 @@ export type {
   ValidateLineupResult,
   Venue,
 } from './ai.ts';
-export { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
+export {
+  bestForSlot,
+  correctedCondition,
+  isUnavailable,
+  kickoffBench,
+  replaceUnavailable,
+  selectionValue,
+  winsTie,
+} from './selection.ts';
 export { simulateMatch } from './match/simulate.ts';
 export { substitutionsLeft } from './match/commands.ts';
 export {

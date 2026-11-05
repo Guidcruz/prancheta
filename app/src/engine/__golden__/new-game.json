@@ -1,9 +1,9 @@
 {
-  "engineVersion": 8,
+  "engineVersion": 9,
   "name": "new-game",
   "data": {
     "header": {
-      "engineVersion": 8,
+      "engineVersion": 9,
       "retiredNamesRev": 0,
       "seed": 20261104,
       "year": 2026,
@@ -22,200 +22,140 @@
         "id": "clube-teste-01",
         "profile": "traditional",
         "strength": 76.82738053666563,
-        "preferredFormations": [
-          "4-4-2",
-          "3-5-2"
-        ],
+        "preferredFormations": ["4-4-2", "3-5-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-02",
         "profile": "traditional",
         "strength": 74.03859667490242,
-        "preferredFormations": [
-          "4-4-2",
-          "3-5-2"
-        ],
+        "preferredFormations": ["4-4-2", "3-5-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-03",
         "profile": "academy",
         "strength": 72.9880261815735,
-        "preferredFormations": [
-          "4-3-3",
-          "3-4-3"
-        ],
+        "preferredFormations": ["4-3-3", "3-4-3"],
         "fans": 60
       },
       {
         "id": "clube-teste-04",
         "profile": "traditional",
         "strength": 73.44911422469731,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-05",
         "profile": "traditional",
         "strength": 77.05490806440407,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-06",
         "profile": "traditional",
         "strength": 76.40677553050574,
-        "preferredFormations": [
-          "4-4-2",
-          "3-5-2"
-        ],
+        "preferredFormations": ["4-4-2", "3-5-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-07",
         "profile": "traditional",
         "strength": 70.09182611659175,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-08",
         "profile": "traditional",
         "strength": 69.56828289589997,
-        "preferredFormations": [
-          "4-4-2",
-          "3-5-2"
-        ],
+        "preferredFormations": ["4-4-2", "3-5-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-09",
         "profile": "traditional",
         "strength": 70.13885071767467,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-10",
         "profile": "traditional",
         "strength": 69.54725090347833,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-11",
         "profile": "traditional",
         "strength": 71.03009904444357,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-12",
         "profile": "traditional",
         "strength": 70.4844200779722,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-13",
         "profile": "traditional",
         "strength": 71.38293735859877,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-14",
         "profile": "traditional",
         "strength": 67.33239738483287,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-15",
         "profile": "traditional",
         "strength": 66.26729219424044,
-        "preferredFormations": [
-          "4-4-2",
-          "3-5-2"
-        ],
+        "preferredFormations": ["4-4-2", "3-5-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-16",
         "profile": "traditional",
         "strength": 65.68936102975303,
-        "preferredFormations": [
-          "4-4-2",
-          "3-5-2"
-        ],
+        "preferredFormations": ["4-4-2", "3-5-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-17",
         "profile": "traditional",
         "strength": 66.49825208937563,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-18",
         "profile": "traditional",
         "strength": 64.41639645532162,
-        "preferredFormations": [
-          "3-5-2",
-          "4-4-2"
-        ],
+        "preferredFormations": ["3-5-2", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-19",
         "profile": "seller",
         "strength": 64.75991715576544,
-        "preferredFormations": [
-          "4-2-3-1",
-          "4-4-2"
-        ],
+        "preferredFormations": ["4-2-3-1", "4-4-2"],
         "fans": 60
       },
       {
         "id": "clube-teste-20",
         "profile": "chaotic",
         "strength": 63.99988734246175,
-        "preferredFormations": [
-          "4-4-2",
-          "4-2-3-1"
-        ],
+        "preferredFormations": ["4-4-2", "4-2-3-1"],
         "fans": 60
       }
     ],
@@ -2143,6 +2083,6 @@
         "s1-r20-clube-teste-11-clube-teste-17"
       ]
     },
-    "digest": "63764c2c"
+    "digest": "6130fe07"
   }
 }

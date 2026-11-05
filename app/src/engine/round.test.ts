@@ -3,6 +3,8 @@ import { suggestSheet, validateLineup } from './ai.ts';
 import { daysBetween } from './fixtures.ts';
 import type { GameState } from './game.ts';
 import { simulateMatch } from './match/simulate.ts';
+import { kickoffTeam } from './match/team.ts';
+import type { TeamSheet } from './lineup.ts';
 import type { MatchCommand, MatchInput, MatchResult } from './match/types.ts';
 import type { Player } from './players.ts';
 import { seedFromString } from './rng.ts';
@@ -50,6 +52,27 @@ function season(seed: number): GameState[] {
 }
 
 const SEED = 20261104;
+
+/** Who the match puts in each slot at kick-off for `sheet` (undefined = empty slot). */
+function kickoffSlots(
+  state: GameState,
+  clubId: ClubId,
+  sheet: TeamSheet,
+): (PlayerId | undefined)[] {
+  const team = kickoffTeam(
+    'home',
+    {
+      clubId,
+      sheet,
+      controller: 'ai',
+      profile: 'traditional',
+      fans: 60,
+      players: state.squads[clubId]!.map((id) => state.players[id]!),
+    },
+    [],
+  );
+  return team.slots.map((slot) => slot.app?.player.id);
+}
 const states = () => season(SEED);
 
 function withPlayers(
@@ -112,7 +135,9 @@ describe('playRound: the table (US-012)', () => {
       const summary = after.fixtures.find((f) => f.id === result.fixtureId)!.result!;
       const goals = result.events.filter((e) => e.type === 'goal');
       expect(summary.goals.map((g) => g.scorer)).toEqual(goals.map((g) => g.scorer));
-      expect(summary.goals.filter((g) => g.side === 'home').length).toBeGreaterThanOrEqual(0);
+      expect(summary.goals.filter((g) => g.side === 'home').length).toBe(
+        goals.filter((g) => g.type === 'goal' && g.side === 'home').length,
+      );
       expect(summary.stats).toEqual(result.stats);
     }
   });
@@ -370,7 +395,12 @@ describe('playRound: other bookkeeping', () => {
         expect(after!.players[id]!.clubAppearances).toBe(before!.players[id]!.clubAppearances + 1);
         const goals = result.events.filter((e) => e.type === 'goal' && e.scorer === id).length;
         const stats = after!.seasonStats[id]!;
-        expect([stats.games, stats.minutes, stats.goals]).toEqual([1, minutes, goals]);
+        expect([stats.games, stats.minutes, stats.goals, stats.conceded]).toEqual([
+          1,
+          minutes,
+          goals,
+          result.conceded[id],
+        ]);
         const rating = result.ratings[id];
         expect(stats.ratedGames).toBe(rating === null ? 0 : 1);
       }
@@ -381,6 +411,59 @@ describe('playRound: other bookkeeping', () => {
     expect(goals).toBe(scored);
   });
 
+  it("conceded: whoever was in goal adds up to the opponent's real goals, every match", () => {
+    const all = states();
+    let checked = 0;
+    for (let r = 1; r <= 38; r++) {
+      const before = all[r - 1]!;
+      for (const result of all[r]!.lastRound!.results) {
+        const fixture = before.fixtures.find((f) => f.id === result.fixtureId)!;
+        const goals = result.events.filter((e) => e.type === 'goal');
+        for (const side of ['home', 'away'] as const) {
+          const clubId = side === 'home' ? fixture.homeId : fixture.awayId;
+          const isKeeper = (id: PlayerId) =>
+            before.players[id]!.clubId === clubId && before.players[id]!.position === 'GK';
+          // Only matches where every occupant of the goal was a goalkeeper: an outfield player
+          // in goal also counts what he conceded in defence.
+          const outfieldInGoal =
+            result.warnings.some(
+              (w) => w.code === 'goalkeeper-from-outfield' && w.detail?.side === side,
+            ) ||
+            result.events.some(
+              (e) =>
+                (e.type === 'red' || e.type === 'injury') &&
+                isKeeper(e.player) &&
+                !result.events.some(
+                  (x) => x.type === 'substitution' && x.out === e.player && isKeeper(x.in),
+                ),
+            );
+          if (outfieldInGoal) continue;
+          const keepers = Object.keys(result.conceded).filter(isKeeper);
+          const sum = keepers.reduce((n, id) => n + result.conceded[id]!, 0);
+          expect(sum, `${result.fixtureId} ${side}`).toBe(
+            goals.filter((g) => g.side !== side).length,
+          );
+          checked++;
+        }
+      }
+    }
+    expect(checked).toBeGreaterThan(700);
+  });
+
+  it('conceded: a goalkeeper who played the 38 whole matches has the goals against of his club', () => {
+    const last = states()[38]!;
+    const table = getStandings(last);
+    const full = Object.entries(last.seasonStats).filter(
+      ([id, st]) =>
+        last.players[id]!.position === 'GK' && st.games === 38 && st.minutes === 38 * 90,
+    );
+    expect(full.length).toBeGreaterThan(0);
+    for (const [id, st] of full) {
+      const clubId = last.players[id]!.clubId;
+      expect(st.conceded, id).toBe(table.find((row) => row.clubId === clubId)!.goalsAgainst);
+    }
+  });
+
   it('keeps the sheet each club took to the pitch, and the displayed strength reads it', () => {
     const [before, after] = states();
     const plan = prepareRound(before!, params);
@@ -389,14 +472,52 @@ describe('playRound: other bookkeeping', () => {
     for (const m of plan.value.matches) {
       for (const team of [m.home, m.away]) {
         expect(after!.lastSheets[team.clubId]).toEqual(team.sheet);
-        expect(teamStrength(after!, team.clubId)).toBe(
-          teamStrength(after!, team.clubId, team.sheet.lineup),
-        );
-        expect(shownEleven(after!, team.clubId)!.map((x) => x.player.id)).toEqual(
-          team.sheet.lineup.starters,
-        );
+        // The slots of the displayed strength are the kick-off's for that sheet today.
+        const kickoff = kickoffSlots(after!, team.clubId, team.sheet);
+        const shown = shownEleven(after!, team.clubId)!.map((x) => x.player.id);
+        if (kickoff.every((id) => id !== undefined)) expect(shown).toEqual(kickoff);
+        const allFit = team.sheet.lineup.starters.every((id) => {
+          const p = after!.players[id]!;
+          return p.injuryRounds === 0 && p.suspendedGames === 0;
+        });
+        if (allFit) {
+          expect(shown).toEqual(team.sheet.lineup.starters);
+          expect(teamStrength(after!, team.clubId)).toBe(
+            teamStrength(after!, team.clubId, team.sheet.lineup),
+          );
+        }
       }
     }
+  });
+
+  it('replaces a suspended starter of the last sheet as the kick-off does', () => {
+    const after = states()[1]!;
+    const clubId = COACH;
+    const sheet = after.lastSheets[clubId]!;
+    const absent = sheet.lineup.starters[3]!;
+    const suspended = withPlayers(after, (p) =>
+      p.id === absent ? { suspendedGames: 1 } : undefined,
+    );
+    const shown = shownEleven(suspended, clubId)!;
+    const kickoff = kickoffSlots(suspended, clubId, sheet);
+    expect(shown.map((x) => x.player.id)).toEqual(kickoff);
+    expect(shown.map((x) => x.player.id)).not.toContain(absent);
+    expect(sheet.lineup.bench).toContain(shown[3]!.player.id);
+    // The explicit lineup is not touched by availability.
+    expect(teamStrength(suspended, clubId, sheet.lineup)).toBe(
+      teamStrength(after, clubId, sheet.lineup),
+    );
+    expect(teamStrength(suspended, clubId)).not.toBe(teamStrength(suspended, clubId, sheet.lineup));
+    // Without a reserve on the bench the sheet does not close 11: the best fresh XI.
+    const noBench: GameState = {
+      ...suspended,
+      lastSheets: {
+        ...suspended.lastSheets,
+        [clubId]: { ...sheet, lineup: { ...sheet.lineup, bench: [] } },
+      },
+    };
+    const fresh: GameState = { ...suspended, lastSheets: {} };
+    expect(shownEleven(noBench, clubId)).toEqual(shownEleven(fresh, clubId));
   });
 
   it('fills the stadium and the derby of each match', () => {
@@ -454,7 +575,7 @@ describe('playRound: the coach\'s club (ia-clubes.md, "Clube do técnico humano"
       clubs: { ...state.clubs, [COACH]: { ...state.clubs[COACH]!, profile: 'chaotic' } },
     };
     for (const mode of ['full', 'highlights', 'result'] as const) {
-      const plan = prepareRound(chaotic, params, {}, { [COACH]: mode });
+      const plan = prepareRound(chaotic, params, { coaches: { [COACH]: mode } });
       if (!plan.ok) throw new Error('prepareRound');
       const match = coachMatch(plan.value);
       const team = sideOf(match, COACH) === 'home' ? match.home : match.away;
@@ -483,7 +604,7 @@ describe('playRound: the coach\'s club (ia-clubes.md, "Clube do técnico humano"
       lineup: { ...sheet.lineup, bench: sheet.lineup.bench.slice(0, 3) },
       tactic: { posture: 'attacking', pressure: 'high' },
     } as const;
-    const plan = prepareRound(state, params, { [COACH]: mine });
+    const plan = prepareRound(state, params, { sheets: { [COACH]: mine } });
     if (!plan.ok) throw new Error('prepareRound');
     const match = coachMatch(plan.value);
     const team = sideOf(match, COACH) === 'home' ? match.home : match.away;
@@ -499,7 +620,7 @@ describe('playRound: the coach\'s club (ia-clubes.md, "Clube do técnico humano"
       const out: string[] = [];
       for (let r = 1; r <= 6; r++) {
         const res = play(s, { coaches: { [COACH]: mode } }).value;
-        const plan = prepareRound(s, params, {}, { [COACH]: mode });
+        const plan = prepareRound(s, params, { coaches: { [COACH]: mode } });
         if (!plan.ok) throw new Error('prepareRound');
         const i = plan.value.matches.findIndex((m) => sideOf(m, COACH) !== undefined);
         const side = sideOf(plan.value.matches[i]!, COACH);
@@ -517,7 +638,7 @@ describe('playRound: the coach\'s club (ia-clubes.md, "Clube do técnico humano"
 
   it('the commands reproduce the match the coach saw live', () => {
     const state = testGame();
-    const plan = prepareRound(state, params, {}, { [COACH]: 'full' });
+    const plan = prepareRound(state, params, { coaches: { [COACH]: 'full' } });
     if (!plan.ok) throw new Error('prepareRound');
     const match = coachMatch(plan.value);
     const side = sideOf(match, COACH)!;
@@ -574,7 +695,7 @@ describe('playRound: "Cobrar" and the morale (partida.md, "Cobrar e a moral")', 
     const hotheads = withPlayers(testGame(), (p) =>
       p.clubId === COACH ? { trait: 'hothead', morale: 60 } : undefined,
     );
-    const plan = prepareRound(hotheads, params, {}, { [COACH]: 'full' });
+    const plan = prepareRound(hotheads, params, { coaches: { [COACH]: 'full' } });
     if (!plan.ok) throw new Error('prepareRound');
     const match = plan.value.matches.find((m) => sideOf(m, COACH) !== undefined)!;
     const side = sideOf(match, COACH)!;
