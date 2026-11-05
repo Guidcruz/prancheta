@@ -3,6 +3,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { config } from '../../../config/prancheta.config';
+import { GAME_PLAYABLE } from '../data/game';
 
 // Walks the built site (site/dist). Skipped when the site was not built yet,
 // unless REQUIRE_SITE_DIST=1 (then a missing build is a failure).
@@ -168,6 +169,22 @@ run('built site (site/dist)', () => {
     expect(readFileSync(join(dist, 'robots.txt'), 'utf8')).toContain(
       `Sitemap: ${own}/sitemap-index.xml`,
     );
+  });
+
+  it('does not promote the game while it is not playable', () => {
+    if (GAME_PLAYABLE) return;
+    const offenders: string[] = [];
+    for (const f of pages) {
+      const h = readFileSync(f, 'utf8');
+      for (const m of h.matchAll(/<link\b[^>]*>|<a\b[^>]*href="[^"]*\/jogo\/?[^"]*"[^>]*>/g)) {
+        if (m[0].startsWith('<a')) offenders.push(`${f}: ${m[0]}`);
+      }
+      for (const m of h.matchAll(/<a\b[^>]*>([\s\S]*?)<\/a>/g)) {
+        if (/^\s*Jogar\s*$/.test((m[1] ?? '').replace(/<[^>]+>/g, '')))
+          offenders.push(`${f}: Jogar`);
+      }
+    }
+    expect(offenders).toEqual([]);
   });
 
   it('has no dead internal links', () => {

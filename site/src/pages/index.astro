@@ -11,6 +11,7 @@ import PostCard from '../components/PostCard.astro';
 import FinalCta from '../components/FinalCta.astro';
 import { clubsById, exampleClubIds } from '../lib/shields';
 import { stages } from '../lib/roadmap';
+import { GAME_PLAYABLE } from '../data/game';
 
 const posts = (await getCollection('devlog'))
   .sort((a, b) => b.data.date.valueOf() - a.data.date.valueOf())
@@ -28,10 +29,11 @@ const miniClubs = clubsById(['botafogueira', 'corinto', 'palmeral', 'coritibom']
     sloganHighlight={config.slogan.short['pt-BR']}
     lead="Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela. Tudo no celular, em rodadas de poucos minutos."
     note={`O ${config.name} está em desenvolvimento. A versão que você abre hoje ainda é bem pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.`}
-    primary={{
-      href: `${config.paths.game}/`,
-      label: `Abrir a versão atual (v${config.version})`,
-    }}
+    primary={
+      GAME_PLAYABLE
+        ? { href: `${config.paths.game}/`, label: `Abrir a versão atual (v${config.version})` }
+        : { href: `${base}devlog/`, label: 'Acompanhe o desenvolvimento' }
+    }
     secondary={{ href: `${base}roadmap/`, label: 'Ver o roteiro' }}
     {clubs}
   />
@@ -120,21 +122,33 @@ const miniClubs = clubsById(['botafogueira', 'corinto', 'palmeral', 'coritibom']
 
   <div class="sec wide duo">
     <section aria-labelledby="comecar">
-      <h2 id="comecar">Como começar</h2>
+      <h2 id="comecar">{GAME_PLAYABLE ? 'Como começar' : 'Como vai ser para começar'}</h2>
       <StepList
         steps={[
-          { title: 'Abra o jogo.', text: 'Use o botão acima, no celular.' },
+          GAME_PLAYABLE
+            ? { title: 'Abra o jogo.', text: 'Use o botão acima, no celular.' }
+            : {
+                title: 'Abra o jogo.',
+                text: 'Quando a primeira versão sair, abra o jogo no celular.',
+              },
           {
             title: 'Instale na tela inicial.',
             text: `No Android, pelo menu do Chrome (⋮) → "Instalar app". No iPhone (iOS), pelo botão de compartilhar do Safari → "Adicionar à Tela de Início".`,
           },
-          { title: 'Escolha um clube.', text: 'E jogue a primeira rodada.' },
+          {
+            title: 'Escolha um clube.',
+            text: GAME_PLAYABLE
+              ? 'E jogue a primeira rodada.'
+              : 'Escolha um clube e jogue a primeira rodada.',
+          },
         ]}
       />
-      <p class="caption small">
-        Hoje o passo 3 ainda não existe: a escolha de clube e as rodadas estão sendo construídas.
-        Veja o estado de cada coisa no <a href={`${base}roadmap/`}>roteiro</a>.
-      </p>
+      {GAME_PLAYABLE && (
+        <p class="caption small">
+          Hoje o passo 3 ainda não existe: a escolha de clube e as rodadas estão sendo construídas.
+          Veja o estado de cada coisa no <a href={`${base}roadmap/`}>roteiro</a>.
+        </p>
+      )}
     </section>
     <section aria-labelledby="onde">
       <h2 id="onde">Onde estamos</h2>
