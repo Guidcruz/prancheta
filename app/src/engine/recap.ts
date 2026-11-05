@@ -41,11 +41,22 @@ export interface RoundRecap {
   readonly facts: readonly Fact[];
 }
 
-/** The events a match sheet shows (US-019). */
-export type MatchSheetEvent = Extract<
-  MatchEvent,
-  { type: 'goal' | 'penaltyMissed' | 'yellow' | 'red' | 'injury' | 'substitution' }
->;
+/**
+ * The event types a {@link MatchSheet} keeps (US-019), in tuple form. {@link MatchSheetEvent} is
+ * derived from this list, so the runtime list and the type cannot drift apart, and `satisfies`
+ * makes the compiler refuse a name that is not a `MatchEvent` type.
+ */
+export const MATCH_SHEET_EVENTS = [
+  'goal',
+  'penaltyMissed',
+  'yellow',
+  'red',
+  'injury',
+  'substitution',
+] as const satisfies readonly MatchEvent['type'][];
+
+/** The events a match sheet shows: goal, penaltyMissed, yellow, red, injury and substitution. */
+export type MatchSheetEvent = Extract<MatchEvent, { type: (typeof MATCH_SHEET_EVENTS)[number] }>;
 
 /** The match sheet of a played fixture: `Fixture.result` + this (US-019). */
 export interface MatchSheet {
@@ -54,16 +65,6 @@ export interface MatchSheet {
   readonly events: readonly MatchSheetEvent[];
   readonly motmRating?: number;
 }
-
-/** The event types a {@link MatchSheet} keeps. */
-export const MATCH_SHEET_EVENTS: readonly MatchSheetEvent['type'][] = [
-  'goal',
-  'penaltyMissed',
-  'yellow',
-  'red',
-  'injury',
-  'substitution',
-];
 
 const SHEET_EVENTS: ReadonlySet<MatchEvent['type']> = new Set(MATCH_SHEET_EVENTS);
 
