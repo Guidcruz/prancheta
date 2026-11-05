@@ -9,8 +9,9 @@ import { testParams } from '../engine/testing/params.ts';
  * Report of the fans thermometer and of the season with the morale between rounds (T-014),
  * against docs/design/torcida.md ("Simulação": mean 50 to 60, at most 5% of the rounds below 20
  * and at most 5% above 90) and the season targets of balance-targets.md (champion 72 to 82
- * points, 17th 39 to 45 since the CEO's decision of 2026-11-05, 2.5 to 2.8 goals per match). It only REPORTS: tuning is the /balance's
- * (T-016), so the assertions are sanity bounds far outside the targets.
+ * points, 17th 39 to 45 since the CEO's decision of 2026-11-05, 2.5 to 2.8 goals per match).
+ * It only REPORTS: tuning is the /balance's (T-016), so the assertions are sanity bounds far
+ * outside the targets.
  *
  * The full report (100 seasons: careers with seeds 1..100, season 1 each, the 20 real clubs, the
  * 38 rounds by the AI through playRound) runs only with `FANS_METRICS=1`:

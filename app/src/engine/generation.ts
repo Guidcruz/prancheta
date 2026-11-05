@@ -506,8 +506,8 @@ export type SquadProblem =
 /**
  * Squad-level rules of a generated squad (jogadores.md: composition 3/5/4/4/4/5, unique shirts,
  * exactly one idol, among the 11 starters, a joia among the youth with potential ≥ strength + 8
- * or 95). Per-player rules
- * are {@link validatePlayer}'s. Returns the problems found; empty when the squad is valid.
+ * or 95). Per-player rules are {@link validatePlayer}'s. Returns the problems found; empty when
+ * the squad is valid.
  */
 export function checkGeneratedSquad(
   players: readonly Player[],
