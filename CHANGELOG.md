@@ -144,6 +144,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- Infraestrutura: CI roda `content:check`, o balanceamento (200 temporadas, semente 1) e os testes do site sobre o build; ações do GitHub fixadas por SHA; hook de pre-commit que formata com o Prettier (ativado no `npm install`).
 - Motor: `ENGINE_VERSION` 12 (fim de temporada e virada). O estado do jogo ganha o histórico de temporadas passadas (`pastSeasons`, vazio no jogo novo) e o golden da virada entra; a simulação em si não muda.
 
 - Calibragem da partida e da ferramenta (T-016, parte 2), com as decisões do CEO de 2026-11-05:

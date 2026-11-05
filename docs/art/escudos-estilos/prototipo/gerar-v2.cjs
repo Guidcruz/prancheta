@@ -1,4 +1,5 @@
-const fs = require('fs'), path = require('path');
+const fs = require('fs'),
+  path = require('path');
 const { chromium } = require('/opt/node-tools/node_modules/playwright');
 (async () => {
   const m = await import(path.join(__dirname, 'escudos-v2.mjs'));
@@ -8,14 +9,43 @@ const { chromium } = require('/opt/node-tools/node_modules/playwright');
   const sv = (c, s) => m.brasaoV2(c, shapes[c.id], s);
   // confere conflitos
   let bad = 0;
-  for (const a of clubs) for (const b of clubs) if (a.id < b.id && shapes[a.id] === shapes[b.id] && (a.city === b.city || a.rivals.includes(b.id) || b.rivals.includes(a.id))) bad++;
-  const cnt = {}; Object.values(shapes).forEach((s) => (cnt[s] = (cnt[s] || 0) + 1));
+  for (const a of clubs)
+    for (const b of clubs)
+      if (
+        a.id < b.id &&
+        shapes[a.id] === shapes[b.id] &&
+        (a.city === b.city || a.rivals.includes(b.id) || b.rivals.includes(a.id))
+      )
+        bad++;
+  const cnt = {};
+  Object.values(shapes).forEach((s) => (cnt[s] = (cnt[s] || 0) + 1));
   const avg = (s) => Math.round(clubs.reduce((t, c) => t + sv(c, s).length, 0) / clubs.length);
-  console.log('conflitos', bad, JSON.stringify(cnt), 'bytes medios grande/pequeno', avg(64), avg(32));
-  const cell = (c, w) => `<div class="c"><div style="width:${w}px">${sv(c, w)}</div><span>${c.shortName}</span></div>`;
+  console.log(
+    'conflitos',
+    bad,
+    JSON.stringify(cnt),
+    'bytes medios grande/pequeno',
+    avg(64),
+    avg(32),
+  );
+  const cell = (c, w) =>
+    `<div class="c"><div style="width:${w}px">${sv(c, w)}</div><span>${c.shortName}</span></div>`;
   const grid = clubs.map((c) => cell(c, 96)).join('');
-  const big = ['flamingo', 'miragol', 'remador', 'santoes'].map((id) => cell(clubs.find((c) => c.id === id), 104)).join('');
-  const small = clubs.slice(0, 8).map((c) => `<div class="row"><div style="width:32px">${sv(c, 32)}</div><b>${c.shortName}</b><i>${c.abbreviation}</i><em>${c.titles.league}</em></div>`).join('');
+  const big = ['flamingo', 'miragol', 'remador', 'santoes']
+    .map((id) =>
+      cell(
+        clubs.find((c) => c.id === id),
+        104,
+      ),
+    )
+    .join('');
+  const small = clubs
+    .slice(0, 8)
+    .map(
+      (c) =>
+        `<div class="row"><div style="width:32px">${sv(c, 32)}</div><b>${c.shortName}</b><i>${c.abbreviation}</i><em>${c.titles.league}</em></div>`,
+    )
+    .join('');
   const html = `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Escudos, estilo A v2</title><style>
 body{margin:0;background:#0f1a24;color:#f2f5f7;font-family:system-ui,Arial,sans-serif;padding:24px;width:852px}
 h1{font-size:20px;margin:0 0 4px}p{color:#a3b3c0;margin:0 0 16px;font-size:13px}
@@ -30,7 +60,10 @@ svg{display:block;width:100%;height:auto}</style></head><body>
   const f = path.join(out, 'estilo-a-brasao-v2.html');
   fs.writeFileSync(f, html);
   const browser = await chromium.launch();
-  const page = await browser.newPage({ deviceScaleFactor: 1.5, viewport: { width: 900, height: 900 } });
+  const page = await browser.newPage({
+    deviceScaleFactor: 1.5,
+    viewport: { width: 900, height: 900 },
+  });
   await page.goto('file://' + f);
   await page.locator('#grade').screenshot({ path: path.join(out, 'estilo-a-grade-v2.png') });
   await page.locator('#zoom').screenshot({ path: path.join(out, 'estilo-a-zoom-v2.png') });

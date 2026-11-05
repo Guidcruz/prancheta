@@ -1,236 +1,2463 @@
-<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Escudos, estilo C</title><style>
-body{margin:0;background:#0f1a24;color:#f2f5f7;font-family:system-ui,Arial,sans-serif;padding:24px;width:852px}
-h1{font-size:20px;margin:0 0 4px}p{color:#a3b3c0;margin:0 0 16px;font-size:13px}
-#grade{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;background:#172534;padding:18px;border-radius:12px}
-.c{display:flex;flex-direction:column;align-items:center;gap:6px;font-size:12px}
-#zoom{box-sizing:border-box;display:flex;gap:20px;background:#172534;padding:18px;border-radius:12px;margin-top:20px;align-items:flex-start}
-#big{display:flex;gap:6px;flex:none}#small{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 10px;align-content:start;flex:1;min-width:0}
-.row{display:flex;align-items:center;gap:8px;font-size:13px;height:38px;background:#20334a;padding:0 8px;border-radius:6px}.row b{flex:1;font-weight:500}.row i{color:#a3b3c0;font-style:normal;font-size:11px}.row em{font-style:normal;color:#f4c20d;font-size:11px}
-svg{display:block;width:100%;height:auto}</style></head><body>
-<h1>Estilo C: Losango com faixa</h1><p>Losango, faixa transversal com a sigla, símbolo no alto e estrelas de títulos embaixo.</p>
-<div id="grade"><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flamingo"><defs><clipPath id="c64"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c64l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c64)"><rect width="64" height="72" fill="#C8102E"/><g clip-path="url(#c64l)"><rect x="12" y="0" width="5" height="80" fill="#111417"/><rect x="47" y="0" width="5" height="80" fill="#111417"/><rect x="27" y="0" width="10" height="80" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#C8102E"><g fill="none" stroke="#111417" stroke-width="2.6"><path d="M-11 0H11"/><path d="M-8 9V0M8 9V0"/><path d="M-8 0q8 -12 16 0" /><path d="M-11 9H11"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#C8102E">FLG</text>
-<rect x="13.600000000000001" y="52.5" width="36.8" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7" fill="#f4c20d"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/><polygon points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7" fill="#f4c20d"/></svg></div><span>Flamingo</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corinto"><defs><clipPath id="c65"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c65l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c65)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c65l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#FFFFFF"/><rect x="-1.5" y="8" width="3" height="4" fill="#FFFFFF"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">CRT</text>
-<rect x="18.200000000000003" y="52.5" width="27.599999999999998" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7" fill="#f4c20d"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/><polygon points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7" fill="#f4c20d"/></svg></div><span>Corinto</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Palmeral"><defs><clipPath id="c66"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c66l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c66)"><rect width="64" height="72" fill="#006437"/><g clip-path="url(#c66l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#006437"><g fill="none" stroke="#FFFFFF" stroke-width="2.4"><circle r="8"/><circle r="2" fill="#FFFFFF"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#006437">PLM</text>
-<rect x="9" y="52.5" width="46" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="13.6,53.4 14.6,55.7 17.0,55.9 15.1,57.5 15.7,59.9 13.6,58.6 11.5,59.9 12.1,57.5 10.2,55.9 12.6,55.7" fill="#f4c20d"/><polygon points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7" fill="#f4c20d"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/><polygon points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7" fill="#f4c20d"/><polygon points="50.4,53.4 51.4,55.7 53.8,55.9 51.9,57.5 52.5,59.9 50.4,58.6 48.3,59.9 48.9,57.5 47.0,55.9 49.4,55.7" fill="#f4c20d"/></svg></div><span>Palmeral</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="São Paulão"><defs><clipPath id="c67"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c67l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c67)"><rect width="64" height="72" fill="#E4002B"/><g clip-path="url(#c67l)"><path d="M32 -4H70V80H32Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#E4002B"><g fill="none" stroke="#111417" stroke-width="2.4"><circle r="8"/><circle r="2" fill="#111417"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#E4002B">SPL</text>
-<rect x="18.200000000000003" y="52.5" width="27.599999999999998" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7" fill="#f4c20d"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/><polygon points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7" fill="#f4c20d"/></svg></div><span>São Paulão</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Minério"><defs><clipPath id="c68"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c68l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c68)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c68l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><path d="M-7 10V-4h-2v-6h4v3h2v-3h4v3h2v-3h4v6h-2V10Z" fill="#FFFFFF"/><path d="M-2 10v-5a2 2 0 0 1 4 0v5Z" fill="var(--hole)"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">AMN</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><span>Minério</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grêmeos"><defs><clipPath id="c69"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c69l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c69)"><rect width="64" height="72" fill="#0D80BF"/><g clip-path="url(#c69l)"><path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#0D80BF"><g fill="none" stroke="#111417" stroke-width="3" stroke-linecap="round"><path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#0D80BF">GRM</text>
-<rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/></svg></div><span>Grêmeos</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluminário"><defs><clipPath id="c70"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c70l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c70)"><rect width="64" height="72" fill="#8B1A2E"/><g clip-path="url(#c70l)"><path d="M32 -4H70V80H32Z" fill="#00704A"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#00704A" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#8B1A2E"><path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#FFFFFF"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFFFFF">FLM</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><span>Fluminário</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Botafogueira"><defs><clipPath id="c71"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c71l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c71)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c71l)"><path d="M-4 -4 4-6 68 70 60 76ZM68-4 60-6-4 70 4 76Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><g fill="#FFFFFF"><circle r="5"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(0)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(45)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(90)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(135)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(180)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(225)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(270)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(315)"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">BTG</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><span>Botafogueira</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vasconcelos"><defs><clipPath id="c72"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c72l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c72)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c72l)"><path d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z" fill="#FFFFFF" opacity="0"/><path d="M-6 42 L42 -6 H62 L-6 62Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#FFFFFF"/><rect x="-1.5" y="8" width="3" height="4" fill="#FFFFFF"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">VSC</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><span>Vasconcelos</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Santões"><defs><clipPath id="c73"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c73l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c73)"><rect width="64" height="72" fill="#FFFFFF"/><g clip-path="url(#c73l)"><path d="M32 -4H70V80H32Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#FFFFFF"><path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#111417"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFFFFF">SNT</text>
-<rect x="13.600000000000001" y="52.5" width="36.8" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7" fill="#f4c20d"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/><polygon points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7" fill="#f4c20d"/></svg></div><span>Santões</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Cruzador"><defs><clipPath id="c74"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c74l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c74)"><rect width="64" height="72" fill="#0033A0"/><g clip-path="url(#c74l)"><path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#0033A0"><path d="M-11 9 -3-8 3 1 5-2 11 9Z" fill="#FFFFFF"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#0033A0">CRZ</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><span>Cruzador</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Inter-Regional"><defs><clipPath id="c75"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c75l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c75)"><rect width="64" height="72" fill="#E5050F"/><g clip-path="url(#c75l)"><path d="M-4 -4 4-6 68 70 60 76ZM68-4 60-6-4 70 4 76Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#E5050F"><g fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"><circle cx="0" cy="-6" r="4"/><path d="M0-2V10M0 6h4M0 10h4"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#E5050F">IRG</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><span>Inter-Regional</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tufão"><defs><clipPath id="c76"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c76l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c76)"><rect width="64" height="72" fill="#C8102E"/><g clip-path="url(#c76l)"><path d="M32 -4H70V80H32Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#C8102E"><path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#111417"/><rect x="-1.5" y="8" width="3" height="4" fill="#111417"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#C8102E">TUF</text>
-<rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/></svg></div><span>Tufão</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Baião"><defs><clipPath id="c77"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c77l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c77)"><rect width="64" height="72" fill="#0057B8"/><g clip-path="url(#c77l)"><rect x="12" y="0" width="5" height="80" fill="#D6001C"/><rect x="47" y="0" width="5" height="80" fill="#D6001C"/><rect x="27" y="0" width="10" height="80" fill="#D6001C"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#D6001C" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#0057B8"><g fill="#FFFFFF"><circle r="5"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(0)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(45)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(90)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(135)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(180)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(225)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(270)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(315)"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFFFFF">BAO</text>
-<rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/></svg></div><span>Baião</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Coritibom"><defs><clipPath id="c78"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c78l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c78)"><rect width="64" height="72" fill="#00553A"/><g clip-path="url(#c78l)"><path d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z" fill="#FFFFFF" opacity="0"/><path d="M-6 42 L42 -6 H62 L-6 62Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#00553A"><g fill="none" stroke="#FFFFFF" stroke-width="2.6"><path d="M-11 0H11"/><path d="M-8 9V0M8 9V0"/><path d="M-8 0q8 -12 16 0" /><path d="M-11 9H11"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#00553A">CTB</text>
-<rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/></svg></div><span>Coritibom</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Vitorioso"><defs><clipPath id="c79"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c79l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c79)"><rect width="64" height="72" fill="#C8102E"/><g clip-path="url(#c79l)"><path d="M32 -4H70V80H32Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#C8102E"><g fill="none" stroke="#111417" stroke-width="2.6"><path d="M-11 0H11"/><path d="M-8 9V0M8 9V0"/><path d="M-8 0q8 -12 16 0" /><path d="M-11 9H11"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#C8102E">VTR</text>
-</svg></div><span>Vitorioso</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Bragantão"><defs><clipPath id="c80"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c80l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c80)"><rect width="64" height="72" fill="#FFFFFF"/><g clip-path="url(#c80l)"><path d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z" fill="#D81E2B" opacity="0"/><path d="M-6 42 L42 -6 H62 L-6 62Z" fill="#D81E2B"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#D81E2B" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#FFFFFF"><path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#D81E2B"/><rect x="-1.5" y="8" width="3" height="4" fill="#D81E2B"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFFFFF">BRG</text>
-</svg></div><span>Bragantão</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Miragol"><defs><clipPath id="c81"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c81l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c81)"><rect width="64" height="72" fill="#FFD400"/><g clip-path="url(#c81l)"><path d="M32 -4H70V80H32Z" fill="#0A7A3D"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#0A7A3D" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#FFD400"><g fill="none" stroke="#0A7A3D" stroke-width="2.4"><circle r="8"/><circle r="2" fill="#0A7A3D"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFD400">MRG</text>
-</svg></div><span>Miragol</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Chapecão"><defs><clipPath id="c82"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c82l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c82)"><rect width="64" height="72" fill="#00A650"/><g clip-path="url(#c82l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#00A650"><path d="M-7 10V-4h-2v-6h4v3h2v-3h4v3h2v-3h4v6h-2V10Z" fill="#FFFFFF"/><path d="M-2 10v-5a2 2 0 0 1 4 0v5Z" fill="var(--hole)"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#00A650">CHP</text>
-</svg></div><span>Chapecão</span></div><div class="c"><div style="width:96px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Remador"><defs><clipPath id="c83"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c83l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c83)"><rect width="64" height="72" fill="#003A8C"/><g clip-path="url(#c83l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#003A8C"><g fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#003A8C">RMD</text>
-</svg></div><span>Remador</span></div></div>
-<div id="zoom"><div id="big"><div class="c"><div style="width:104px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flamingo"><defs><clipPath id="c84"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c84l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c84)"><rect width="64" height="72" fill="#C8102E"/><g clip-path="url(#c84l)"><rect x="12" y="0" width="5" height="80" fill="#111417"/><rect x="47" y="0" width="5" height="80" fill="#111417"/><rect x="27" y="0" width="10" height="80" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#C8102E"><g fill="none" stroke="#111417" stroke-width="2.6"><path d="M-11 0H11"/><path d="M-8 9V0M8 9V0"/><path d="M-8 0q8 -12 16 0" /><path d="M-11 9H11"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#C8102E">FLG</text>
-<rect x="13.600000000000001" y="52.5" width="36.8" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7" fill="#f4c20d"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/><polygon points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7" fill="#f4c20d"/></svg></div><span>Flamingo</span></div><div class="c"><div style="width:104px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Miragol"><defs><clipPath id="c85"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c85l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c85)"><rect width="64" height="72" fill="#FFD400"/><g clip-path="url(#c85l)"><path d="M32 -4H70V80H32Z" fill="#0A7A3D"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#0A7A3D" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#FFD400"><g fill="none" stroke="#0A7A3D" stroke-width="2.4"><circle r="8"/><circle r="2" fill="#0A7A3D"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFD400">MRG</text>
-</svg></div><span>Miragol</span></div><div class="c"><div style="width:104px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Remador"><defs><clipPath id="c86"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c86l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c86)"><rect width="64" height="72" fill="#003A8C"/><g clip-path="url(#c86l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#003A8C"><g fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"><path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#003A8C">RMD</text>
-</svg></div><span>Remador</span></div><div class="c"><div style="width:104px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Santões"><defs><clipPath id="c87"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c87l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c87)"><rect width="64" height="72" fill="#FFFFFF"/><g clip-path="url(#c87l)"><path d="M32 -4H70V80H32Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#FFFFFF"><path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#111417"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFFFFF">SNT</text>
-<rect x="13.600000000000001" y="52.5" width="36.8" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7" fill="#f4c20d"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/><polygon points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7" fill="#f4c20d"/></svg></div><span>Santões</span></div></div><div id="small"><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Flamingo"><defs><clipPath id="c88"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c88l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c88)"><rect width="64" height="72" fill="#C8102E"/><g clip-path="url(#c88l)"><rect x="12" y="0" width="5" height="80" fill="#111417"/><rect x="47" y="0" width="5" height="80" fill="#111417"/><rect x="27" y="0" width="10" height="80" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#C8102E"><g fill="none" stroke="#111417" stroke-width="2.6"><path d="M-11 0H11"/><path d="M-8 9V0M8 9V0"/><path d="M-8 0q8 -12 16 0" /><path d="M-11 9H11"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#C8102E">FLG</text>
-<rect x="13.600000000000001" y="52.5" width="36.8" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7" fill="#f4c20d"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/><polygon points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7" fill="#f4c20d"/></svg></div><b>Flamingo</b><i>FLG</i><em>8</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Corinto"><defs><clipPath id="c89"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c89l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c89)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c89l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#FFFFFF"/><rect x="-1.5" y="8" width="3" height="4" fill="#FFFFFF"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">CRT</text>
-<rect x="18.200000000000003" y="52.5" width="27.599999999999998" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7" fill="#f4c20d"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/><polygon points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7" fill="#f4c20d"/></svg></div><b>Corinto</b><i>CRT</i><em>7</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Palmeral"><defs><clipPath id="c90"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c90l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c90)"><rect width="64" height="72" fill="#006437"/><g clip-path="url(#c90l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#006437"><g fill="none" stroke="#FFFFFF" stroke-width="2.4"><circle r="8"/><circle r="2" fill="#FFFFFF"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#006437">PLM</text>
-<rect x="9" y="52.5" width="46" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="13.6,53.4 14.6,55.7 17.0,55.9 15.1,57.5 15.7,59.9 13.6,58.6 11.5,59.9 12.1,57.5 10.2,55.9 12.6,55.7" fill="#f4c20d"/><polygon points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7" fill="#f4c20d"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/><polygon points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7" fill="#f4c20d"/><polygon points="50.4,53.4 51.4,55.7 53.8,55.9 51.9,57.5 52.5,59.9 50.4,58.6 48.3,59.9 48.9,57.5 47.0,55.9 49.4,55.7" fill="#f4c20d"/></svg></div><b>Palmeral</b><i>PLM</i><em>12</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="São Paulão"><defs><clipPath id="c91"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c91l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c91)"><rect width="64" height="72" fill="#E4002B"/><g clip-path="url(#c91l)"><path d="M32 -4H70V80H32Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#E4002B"><g fill="none" stroke="#111417" stroke-width="2.4"><circle r="8"/><circle r="2" fill="#111417"/><path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#E4002B">SPL</text>
-<rect x="18.200000000000003" y="52.5" width="27.599999999999998" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7" fill="#f4c20d"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/><polygon points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7" fill="#f4c20d"/></svg></div><b>São Paulão</b><i>SPL</i><em>6</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Minério"><defs><clipPath id="c92"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c92l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c92)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c92l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><path d="M-7 10V-4h-2v-6h4v3h2v-3h4v3h2v-3h4v6h-2V10Z" fill="#FFFFFF"/><path d="M-2 10v-5a2 2 0 0 1 4 0v5Z" fill="var(--hole)"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">AMN</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><b>Minério</b><i>AMN</i><em>3</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Grêmeos"><defs><clipPath id="c93"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c93l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c93)"><rect width="64" height="72" fill="#0D80BF"/><g clip-path="url(#c93l)"><path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="#111417"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#111417" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#0D80BF"><g fill="none" stroke="#111417" stroke-width="3" stroke-linecap="round"><path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0"/><path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#0D80BF">GRM</text>
-<rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7" fill="#f4c20d"/></svg></div><b>Grêmeos</b><i>GRM</i><em>2</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Fluminário"><defs><clipPath id="c94"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c94l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c94)"><rect width="64" height="72" fill="#8B1A2E"/><g clip-path="url(#c94l)"><path d="M32 -4H70V80H32Z" fill="#00704A"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#00704A" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#8B1A2E"><path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#FFFFFF"/></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#FFFFFF">FLM</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><b>Fluminário</b><i>FLM</i><em>4</em></div><div class="row"><div style="width:32px"><svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Botafogueira"><defs><clipPath id="c95"><path d="M32 3 61 36 32 69 3 36Z"/></clipPath><clipPath id="c95l"><rect x="0" y="44" width="64" height="28"/></clipPath></defs>
-<path d="M32 3 61 36 32 69 3 36Z" transform="translate(1.2 2)" fill="#000" opacity=".28"/>
-<g clip-path="url(#c95)"><rect width="64" height="72" fill="#111417"/><g clip-path="url(#c95l)"><path d="M-4 -4 4-6 68 70 60 76ZM68-4 60-6-4 70 4 76Z" fill="#FFFFFF"/></g>
-<rect x="0" y="29" width="64" height="15" fill="#FFFFFF" stroke="#0b1118" stroke-width="1.6"/></g>
-<path d="M32 3 61 36 32 69 3 36Z" fill="none" stroke="#0b1118" stroke-width="2.6" stroke-linejoin="round"/>
-<g transform="translate(32 17.5) scale(.62)" style="--hole:#111417"><g fill="#FFFFFF"><circle r="5"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(0)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(45)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(90)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(135)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(180)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(225)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(270)"/><path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(315)"/></g></g>
-<text x="32" y="40.6" text-anchor="middle" font-family="Arial Black,DejaVu Sans,Arial,sans-serif" font-weight="900" font-size="11" letter-spacing=".4" fill="#111417">BTG</text>
-<rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85"/><polygon points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7" fill="#f4c20d"/><polygon points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7" fill="#f4c20d"/></svg></div><b>Botafogueira</b><i>BTG</i><em>3</em></div></div></div></body></html>
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <title>Escudos, estilo C</title>
+    <style>
+      body {
+        margin: 0;
+        background: #0f1a24;
+        color: #f2f5f7;
+        font-family: system-ui, Arial, sans-serif;
+        padding: 24px;
+        width: 852px;
+      }
+      h1 {
+        font-size: 20px;
+        margin: 0 0 4px;
+      }
+      p {
+        color: #a3b3c0;
+        margin: 0 0 16px;
+        font-size: 13px;
+      }
+      #grade {
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        gap: 14px;
+        background: #172534;
+        padding: 18px;
+        border-radius: 12px;
+      }
+      .c {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        font-size: 12px;
+      }
+      #zoom {
+        box-sizing: border-box;
+        display: flex;
+        gap: 20px;
+        background: #172534;
+        padding: 18px;
+        border-radius: 12px;
+        margin-top: 20px;
+        align-items: flex-start;
+      }
+      #big {
+        display: flex;
+        gap: 6px;
+        flex: none;
+      }
+      #small {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 10px;
+        align-content: start;
+        flex: 1;
+        min-width: 0;
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        height: 38px;
+        background: #20334a;
+        padding: 0 8px;
+        border-radius: 6px;
+      }
+      .row b {
+        flex: 1;
+        font-weight: 500;
+      }
+      .row i {
+        color: #a3b3c0;
+        font-style: normal;
+        font-size: 11px;
+      }
+      .row em {
+        font-style: normal;
+        color: #f4c20d;
+        font-size: 11px;
+      }
+      svg {
+        display: block;
+        width: 100%;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Estilo C: Losango com faixa</h1>
+    <p>Losango, faixa transversal com a sigla, símbolo no alto e estrelas de títulos embaixo.</p>
+    <div id="grade">
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Flamingo"
+          >
+            <defs>
+              <clipPath id="c64"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c64l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c64)">
+              <rect width="64" height="72" fill="#C8102E" />
+              <g clip-path="url(#c64l)">
+                <rect x="12" y="0" width="5" height="80" fill="#111417" />
+                <rect x="47" y="0" width="5" height="80" fill="#111417" />
+                <rect x="27" y="0" width="10" height="80" fill="#111417" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#111417"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #c8102e">
+              <g fill="none" stroke="#111417" stroke-width="2.6">
+                <path d="M-11 0H11" />
+                <path d="M-8 9V0M8 9V0" />
+                <path d="M-8 0q8 -12 16 0" />
+                <path d="M-11 9H11" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#C8102E"
+            >
+              FLG
+            </text>
+            <rect
+              x="13.600000000000001"
+              y="52.5"
+              width="36.8"
+              height="9"
+              rx="4.5"
+              fill="#0b1118"
+              opacity=".85"
+            />
+            <polygon
+              points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Flamingo</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Corinto"
+          >
+            <defs>
+              <clipPath id="c65"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c65l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c65)">
+              <rect width="64" height="72" fill="#111417" />
+              <g clip-path="url(#c65l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+              <path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#FFFFFF" />
+              <rect x="-1.5" y="8" width="3" height="4" fill="#FFFFFF" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#111417"
+            >
+              CRT
+            </text>
+            <rect
+              x="18.200000000000003"
+              y="52.5"
+              width="27.599999999999998"
+              height="9"
+              rx="4.5"
+              fill="#0b1118"
+              opacity=".85"
+            />
+            <polygon
+              points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Corinto</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Palmeral"
+          >
+            <defs>
+              <clipPath id="c66"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c66l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c66)">
+              <rect width="64" height="72" fill="#006437" />
+              <g clip-path="url(#c66l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #006437">
+              <g fill="none" stroke="#FFFFFF" stroke-width="2.4">
+                <circle r="8" />
+                <circle r="2" fill="#FFFFFF" />
+                <path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#006437"
+            >
+              PLM
+            </text>
+            <rect x="9" y="52.5" width="46" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="13.6,53.4 14.6,55.7 17.0,55.9 15.1,57.5 15.7,59.9 13.6,58.6 11.5,59.9 12.1,57.5 10.2,55.9 12.6,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="50.4,53.4 51.4,55.7 53.8,55.9 51.9,57.5 52.5,59.9 50.4,58.6 48.3,59.9 48.9,57.5 47.0,55.9 49.4,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Palmeral</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="São Paulão"
+          >
+            <defs>
+              <clipPath id="c67"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c67l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c67)">
+              <rect width="64" height="72" fill="#E4002B" />
+              <g clip-path="url(#c67l)"><path d="M32 -4H70V80H32Z" fill="#111417" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#111417"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #e4002b">
+              <g fill="none" stroke="#111417" stroke-width="2.4">
+                <circle r="8" />
+                <circle r="2" fill="#111417" />
+                <path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#E4002B"
+            >
+              SPL
+            </text>
+            <rect
+              x="18.200000000000003"
+              y="52.5"
+              width="27.599999999999998"
+              height="9"
+              rx="4.5"
+              fill="#0b1118"
+              opacity=".85"
+            />
+            <polygon
+              points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>São Paulão</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Minério"
+          >
+            <defs>
+              <clipPath id="c68"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c68l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c68)">
+              <rect width="64" height="72" fill="#111417" />
+              <g clip-path="url(#c68l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+              <path d="M-7 10V-4h-2v-6h4v3h2v-3h4v3h2v-3h4v6h-2V10Z" fill="#FFFFFF" />
+              <path d="M-2 10v-5a2 2 0 0 1 4 0v5Z" fill="var(--hole)" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#111417"
+            >
+              AMN
+            </text>
+            <rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Minério</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Grêmeos"
+          >
+            <defs>
+              <clipPath id="c69"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c69l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c69)">
+              <rect width="64" height="72" fill="#0D80BF" />
+              <g clip-path="url(#c69l)">
+                <path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="#111417" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#111417"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #0d80bf">
+              <g fill="none" stroke="#111417" stroke-width="3" stroke-linecap="round">
+                <path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0" />
+                <path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0" />
+                <path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#0D80BF"
+            >
+              GRM
+            </text>
+            <rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Grêmeos</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Fluminário"
+          >
+            <defs>
+              <clipPath id="c70"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c70l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c70)">
+              <rect width="64" height="72" fill="#8B1A2E" />
+              <g clip-path="url(#c70l)"><path d="M32 -4H70V80H32Z" fill="#00704A" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#00704A"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #8b1a2e">
+              <path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#FFFFFF" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#FFFFFF"
+            >
+              FLM
+            </text>
+            <rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Fluminário</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Botafogueira"
+          >
+            <defs>
+              <clipPath id="c71"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c71l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c71)">
+              <rect width="64" height="72" fill="#111417" />
+              <g clip-path="url(#c71l)">
+                <path d="M-4 -4 4-6 68 70 60 76ZM68-4 60-6-4 70 4 76Z" fill="#FFFFFF" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+              <g fill="#FFFFFF">
+                <circle r="5" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(0)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(45)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(90)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(135)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(180)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(225)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(270)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(315)" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#111417"
+            >
+              BTG
+            </text>
+            <rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Botafogueira</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Vasconcelos"
+          >
+            <defs>
+              <clipPath id="c72"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c72l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c72)">
+              <rect width="64" height="72" fill="#111417" />
+              <g clip-path="url(#c72l)">
+                <path
+                  d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z"
+                  fill="#FFFFFF"
+                  opacity="0"
+                />
+                <path d="M-6 42 L42 -6 H62 L-6 62Z" fill="#FFFFFF" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+              <path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#FFFFFF" />
+              <rect x="-1.5" y="8" width="3" height="4" fill="#FFFFFF" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#111417"
+            >
+              VSC
+            </text>
+            <rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Vasconcelos</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Santões"
+          >
+            <defs>
+              <clipPath id="c73"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c73l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c73)">
+              <rect width="64" height="72" fill="#FFFFFF" />
+              <g clip-path="url(#c73l)"><path d="M32 -4H70V80H32Z" fill="#111417" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#111417"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #ffffff">
+              <path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#111417" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#FFFFFF"
+            >
+              SNT
+            </text>
+            <rect
+              x="13.600000000000001"
+              y="52.5"
+              width="36.8"
+              height="9"
+              rx="4.5"
+              fill="#0b1118"
+              opacity=".85"
+            />
+            <polygon
+              points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Santões</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Cruzador"
+          >
+            <defs>
+              <clipPath id="c74"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c74l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c74)">
+              <rect width="64" height="72" fill="#0033A0" />
+              <g clip-path="url(#c74l)">
+                <path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="#FFFFFF" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #0033a0">
+              <path d="M-11 9 -3-8 3 1 5-2 11 9Z" fill="#FFFFFF" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#0033A0"
+            >
+              CRZ
+            </text>
+            <rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Cruzador</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Inter-Regional"
+          >
+            <defs>
+              <clipPath id="c75"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c75l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c75)">
+              <rect width="64" height="72" fill="#E5050F" />
+              <g clip-path="url(#c75l)">
+                <path d="M-4 -4 4-6 68 70 60 76ZM68-4 60-6-4 70 4 76Z" fill="#FFFFFF" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #e5050f">
+              <g fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round">
+                <circle cx="0" cy="-6" r="4" />
+                <path d="M0-2V10M0 6h4M0 10h4" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#E5050F"
+            >
+              IRG
+            </text>
+            <rect x="22.8" y="52.5" width="18.4" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+              fill="#f4c20d"
+            />
+            <polygon
+              points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Inter-Regional</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Tufão">
+            <defs>
+              <clipPath id="c76"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c76l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c76)">
+              <rect width="64" height="72" fill="#C8102E" />
+              <g clip-path="url(#c76l)"><path d="M32 -4H70V80H32Z" fill="#111417" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#111417"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #c8102e">
+              <path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#111417" />
+              <rect x="-1.5" y="8" width="3" height="4" fill="#111417" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#C8102E"
+            >
+              TUF
+            </text>
+            <rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Tufão</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Baião">
+            <defs>
+              <clipPath id="c77"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c77l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c77)">
+              <rect width="64" height="72" fill="#0057B8" />
+              <g clip-path="url(#c77l)">
+                <rect x="12" y="0" width="5" height="80" fill="#D6001C" />
+                <rect x="47" y="0" width="5" height="80" fill="#D6001C" />
+                <rect x="27" y="0" width="10" height="80" fill="#D6001C" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#D6001C"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #0057b8">
+              <g fill="#FFFFFF">
+                <circle r="5" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(0)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(45)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(90)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(135)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(180)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(225)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(270)" />
+                <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(315)" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#FFFFFF"
+            >
+              BAO
+            </text>
+            <rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Baião</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Coritibom"
+          >
+            <defs>
+              <clipPath id="c78"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c78l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c78)">
+              <rect width="64" height="72" fill="#00553A" />
+              <g clip-path="url(#c78l)">
+                <path
+                  d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z"
+                  fill="#FFFFFF"
+                  opacity="0"
+                />
+                <path d="M-6 42 L42 -6 H62 L-6 62Z" fill="#FFFFFF" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #00553a">
+              <g fill="none" stroke="#FFFFFF" stroke-width="2.6">
+                <path d="M-11 0H11" />
+                <path d="M-8 9V0M8 9V0" />
+                <path d="M-8 0q8 -12 16 0" />
+                <path d="M-11 9H11" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#00553A"
+            >
+              CTB
+            </text>
+            <rect x="27.4" y="52.5" width="9.2" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+            <polygon
+              points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+              fill="#f4c20d"
+            />
+          </svg>
+        </div>
+        <span>Coritibom</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Vitorioso"
+          >
+            <defs>
+              <clipPath id="c79"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c79l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c79)">
+              <rect width="64" height="72" fill="#C8102E" />
+              <g clip-path="url(#c79l)"><path d="M32 -4H70V80H32Z" fill="#111417" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#111417"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #c8102e">
+              <g fill="none" stroke="#111417" stroke-width="2.6">
+                <path d="M-11 0H11" />
+                <path d="M-8 9V0M8 9V0" />
+                <path d="M-8 0q8 -12 16 0" />
+                <path d="M-11 9H11" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#C8102E"
+            >
+              VTR
+            </text>
+          </svg>
+        </div>
+        <span>Vitorioso</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Bragantão"
+          >
+            <defs>
+              <clipPath id="c80"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c80l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c80)">
+              <rect width="64" height="72" fill="#FFFFFF" />
+              <g clip-path="url(#c80l)">
+                <path
+                  d="M-4 30 34 -8h24L-4 54Z M20 80 70 30v26L46 80Z"
+                  fill="#D81E2B"
+                  opacity="0"
+                />
+                <path d="M-6 42 L42 -6 H62 L-6 62Z" fill="#D81E2B" />
+              </g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#D81E2B"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #ffffff">
+              <path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#D81E2B" />
+              <rect x="-1.5" y="8" width="3" height="4" fill="#D81E2B" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#FFFFFF"
+            >
+              BRG
+            </text>
+          </svg>
+        </div>
+        <span>Bragantão</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Miragol"
+          >
+            <defs>
+              <clipPath id="c81"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c81l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c81)">
+              <rect width="64" height="72" fill="#FFD400" />
+              <g clip-path="url(#c81l)"><path d="M32 -4H70V80H32Z" fill="#0A7A3D" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#0A7A3D"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #ffd400">
+              <g fill="none" stroke="#0A7A3D" stroke-width="2.4">
+                <circle r="8" />
+                <circle r="2" fill="#0A7A3D" />
+                <path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#FFD400"
+            >
+              MRG
+            </text>
+          </svg>
+        </div>
+        <span>Miragol</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Chapecão"
+          >
+            <defs>
+              <clipPath id="c82"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c82l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c82)">
+              <rect width="64" height="72" fill="#00A650" />
+              <g clip-path="url(#c82l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #00a650">
+              <path d="M-7 10V-4h-2v-6h4v3h2v-3h4v3h2v-3h4v6h-2V10Z" fill="#FFFFFF" />
+              <path d="M-2 10v-5a2 2 0 0 1 4 0v5Z" fill="var(--hole)" />
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#00A650"
+            >
+              CHP
+            </text>
+          </svg>
+        </div>
+        <span>Chapecão</span>
+      </div>
+      <div class="c">
+        <div style="width: 96px">
+          <svg
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            role="img"
+            aria-label="Remador"
+          >
+            <defs>
+              <clipPath id="c83"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+              <clipPath id="c83l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+            </defs>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              transform="translate(1.2 2)"
+              fill="#000"
+              opacity=".28"
+            />
+            <g clip-path="url(#c83)">
+              <rect width="64" height="72" fill="#003A8C" />
+              <g clip-path="url(#c83l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+              <rect
+                x="0"
+                y="29"
+                width="64"
+                height="15"
+                fill="#FFFFFF"
+                stroke="#0b1118"
+                stroke-width="1.6"
+              />
+            </g>
+            <path
+              d="M32 3 61 36 32 69 3 36Z"
+              fill="none"
+              stroke="#0b1118"
+              stroke-width="2.6"
+              stroke-linejoin="round"
+            />
+            <g transform="translate(32 17.5) scale(.62)" style="--hole: #003a8c">
+              <g fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+                <path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0" />
+                <path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0" />
+                <path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0" />
+              </g>
+            </g>
+            <text
+              x="32"
+              y="40.6"
+              text-anchor="middle"
+              font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+              font-weight="900"
+              font-size="11"
+              letter-spacing=".4"
+              fill="#003A8C"
+            >
+              RMD
+            </text>
+          </svg>
+        </div>
+        <span>Remador</span>
+      </div>
+    </div>
+    <div id="zoom">
+      <div id="big">
+        <div class="c">
+          <div style="width: 104px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Flamingo"
+            >
+              <defs>
+                <clipPath id="c84"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c84l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c84)">
+                <rect width="64" height="72" fill="#C8102E" />
+                <g clip-path="url(#c84l)">
+                  <rect x="12" y="0" width="5" height="80" fill="#111417" />
+                  <rect x="47" y="0" width="5" height="80" fill="#111417" />
+                  <rect x="27" y="0" width="10" height="80" fill="#111417" />
+                </g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#111417"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #c8102e">
+                <g fill="none" stroke="#111417" stroke-width="2.6">
+                  <path d="M-11 0H11" />
+                  <path d="M-8 9V0M8 9V0" />
+                  <path d="M-8 0q8 -12 16 0" />
+                  <path d="M-11 9H11" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#C8102E"
+              >
+                FLG
+              </text>
+              <rect
+                x="13.600000000000001"
+                y="52.5"
+                width="36.8"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <span>Flamingo</span>
+        </div>
+        <div class="c">
+          <div style="width: 104px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Miragol"
+            >
+              <defs>
+                <clipPath id="c85"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c85l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c85)">
+                <rect width="64" height="72" fill="#FFD400" />
+                <g clip-path="url(#c85l)"><path d="M32 -4H70V80H32Z" fill="#0A7A3D" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#0A7A3D"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #ffd400">
+                <g fill="none" stroke="#0A7A3D" stroke-width="2.4">
+                  <circle r="8" />
+                  <circle r="2" fill="#0A7A3D" />
+                  <path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#FFD400"
+              >
+                MRG
+              </text>
+            </svg>
+          </div>
+          <span>Miragol</span>
+        </div>
+        <div class="c">
+          <div style="width: 104px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Remador"
+            >
+              <defs>
+                <clipPath id="c86"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c86l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c86)">
+                <rect width="64" height="72" fill="#003A8C" />
+                <g clip-path="url(#c86l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#FFFFFF"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #003a8c">
+                <g fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round">
+                  <path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0" />
+                  <path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0" />
+                  <path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#003A8C"
+              >
+                RMD
+              </text>
+            </svg>
+          </div>
+          <span>Remador</span>
+        </div>
+        <div class="c">
+          <div style="width: 104px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Santões"
+            >
+              <defs>
+                <clipPath id="c87"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c87l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c87)">
+                <rect width="64" height="72" fill="#FFFFFF" />
+                <g clip-path="url(#c87l)"><path d="M32 -4H70V80H32Z" fill="#111417" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#111417"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #ffffff">
+                <path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#111417" />
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#FFFFFF"
+              >
+                SNT
+              </text>
+              <rect
+                x="13.600000000000001"
+                y="52.5"
+                width="36.8"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <span>Santões</span>
+        </div>
+      </div>
+      <div id="small">
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Flamingo"
+            >
+              <defs>
+                <clipPath id="c88"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c88l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c88)">
+                <rect width="64" height="72" fill="#C8102E" />
+                <g clip-path="url(#c88l)">
+                  <rect x="12" y="0" width="5" height="80" fill="#111417" />
+                  <rect x="47" y="0" width="5" height="80" fill="#111417" />
+                  <rect x="27" y="0" width="10" height="80" fill="#111417" />
+                </g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#111417"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #c8102e">
+                <g fill="none" stroke="#111417" stroke-width="2.6">
+                  <path d="M-11 0H11" />
+                  <path d="M-8 9V0M8 9V0" />
+                  <path d="M-8 0q8 -12 16 0" />
+                  <path d="M-11 9H11" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#C8102E"
+              >
+                FLG
+              </text>
+              <rect
+                x="13.600000000000001"
+                y="52.5"
+                width="36.8"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="18.2,53.4 19.2,55.7 21.6,55.9 19.7,57.5 20.3,59.9 18.2,58.6 16.1,59.9 16.7,57.5 14.8,55.9 17.2,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="45.8,53.4 46.8,55.7 49.2,55.9 47.3,57.5 47.9,59.9 45.8,58.6 43.7,59.9 44.3,57.5 42.4,55.9 44.8,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Flamingo</b><i>FLG</i><em>8</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Corinto"
+            >
+              <defs>
+                <clipPath id="c89"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c89l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c89)">
+                <rect width="64" height="72" fill="#111417" />
+                <g clip-path="url(#c89l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#FFFFFF"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+                <path d="M0-11 6-3H3l5 6H3l4 5H-7l4-5h-5l5-6h-3Z" fill="#FFFFFF" />
+                <rect x="-1.5" y="8" width="3" height="4" fill="#FFFFFF" />
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#111417"
+              >
+                CRT
+              </text>
+              <rect
+                x="18.200000000000003"
+                y="52.5"
+                width="27.599999999999998"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Corinto</b><i>CRT</i><em>7</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Palmeral"
+            >
+              <defs>
+                <clipPath id="c90"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c90l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c90)">
+                <rect width="64" height="72" fill="#006437" />
+                <g clip-path="url(#c90l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#FFFFFF"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #006437">
+                <g fill="none" stroke="#FFFFFF" stroke-width="2.4">
+                  <circle r="8" />
+                  <circle r="2" fill="#FFFFFF" />
+                  <path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#006437"
+              >
+                PLM
+              </text>
+              <rect x="9" y="52.5" width="46" height="9" rx="4.5" fill="#0b1118" opacity=".85" />
+              <polygon
+                points="13.6,53.4 14.6,55.7 17.0,55.9 15.1,57.5 15.7,59.9 13.6,58.6 11.5,59.9 12.1,57.5 10.2,55.9 12.6,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="50.4,53.4 51.4,55.7 53.8,55.9 51.9,57.5 52.5,59.9 50.4,58.6 48.3,59.9 48.9,57.5 47.0,55.9 49.4,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Palmeral</b><i>PLM</i><em>12</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="São Paulão"
+            >
+              <defs>
+                <clipPath id="c91"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c91l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c91)">
+                <rect width="64" height="72" fill="#E4002B" />
+                <g clip-path="url(#c91l)"><path d="M32 -4H70V80H32Z" fill="#111417" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#111417"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #e4002b">
+                <g fill="none" stroke="#111417" stroke-width="2.4">
+                  <circle r="8" />
+                  <circle r="2" fill="#111417" />
+                  <path d="M-8 0H8M0-8V8M-5.7-5.7 5.7 5.7M5.7-5.7-5.7 5.7" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#E4002B"
+              >
+                SPL
+              </text>
+              <rect
+                x="18.200000000000003"
+                y="52.5"
+                width="27.599999999999998"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="22.8,53.4 23.8,55.7 26.2,55.9 24.3,57.5 24.9,59.9 22.8,58.6 20.7,59.9 21.3,57.5 19.4,55.9 21.8,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="41.2,53.4 42.2,55.7 44.6,55.9 42.7,57.5 43.3,59.9 41.2,58.6 39.1,59.9 39.7,57.5 37.8,55.9 40.2,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>São Paulão</b><i>SPL</i><em>6</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Minério"
+            >
+              <defs>
+                <clipPath id="c92"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c92l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c92)">
+                <rect width="64" height="72" fill="#111417" />
+                <g clip-path="url(#c92l)"><path d="M32 -4H70V80H32Z" fill="#FFFFFF" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#FFFFFF"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+                <path d="M-7 10V-4h-2v-6h4v3h2v-3h4v3h2v-3h4v6h-2V10Z" fill="#FFFFFF" />
+                <path d="M-2 10v-5a2 2 0 0 1 4 0v5Z" fill="var(--hole)" />
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#111417"
+              >
+                AMN
+              </text>
+              <rect
+                x="22.8"
+                y="52.5"
+                width="18.4"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Minério</b><i>AMN</i><em>3</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Grêmeos"
+            >
+              <defs>
+                <clipPath id="c93"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c93l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c93)">
+                <rect width="64" height="72" fill="#0D80BF" />
+                <g clip-path="url(#c93l)">
+                  <path d="M-4 40 32 14 68 40V54L32 28-4 54Z" fill="#111417" />
+                </g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#111417"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #0d80bf">
+                <g fill="none" stroke="#111417" stroke-width="3" stroke-linecap="round">
+                  <path d="M-10 -5q2.5-4 5 0t5 0 5 0 5 0" />
+                  <path d="M-10 2q2.5-4 5 0t5 0 5 0 5 0" />
+                  <path d="M-10 9q2.5-4 5 0t5 0 5 0 5 0" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#0D80BF"
+              >
+                GRM
+              </text>
+              <rect
+                x="27.4"
+                y="52.5"
+                width="9.2"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="32.0,53.4 33.0,55.7 35.4,55.9 33.5,57.5 34.1,59.9 32.0,58.6 29.9,59.9 30.5,57.5 28.6,55.9 31.0,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Grêmeos</b><i>GRM</i><em>2</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Fluminário"
+            >
+              <defs>
+                <clipPath id="c94"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c94l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c94)">
+                <rect width="64" height="72" fill="#8B1A2E" />
+                <g clip-path="url(#c94l)"><path d="M32 -4H70V80H32Z" fill="#00704A" /></g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#00704A"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #8b1a2e">
+                <path d="M2-11-7 2H-1L-3 11 7-3H1Z" fill="#FFFFFF" />
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#FFFFFF"
+              >
+                FLM
+              </text>
+              <rect
+                x="22.8"
+                y="52.5"
+                width="18.4"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Fluminário</b><i>FLM</i><em>4</em>
+        </div>
+        <div class="row">
+          <div style="width: 32px">
+            <svg
+              viewBox="0 0 64 72"
+              xmlns="http://www.w3.org/2000/svg"
+              role="img"
+              aria-label="Botafogueira"
+            >
+              <defs>
+                <clipPath id="c95"><path d="M32 3 61 36 32 69 3 36Z" /></clipPath>
+                <clipPath id="c95l"><rect x="0" y="44" width="64" height="28" /></clipPath>
+              </defs>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                transform="translate(1.2 2)"
+                fill="#000"
+                opacity=".28"
+              />
+              <g clip-path="url(#c95)">
+                <rect width="64" height="72" fill="#111417" />
+                <g clip-path="url(#c95l)">
+                  <path d="M-4 -4 4-6 68 70 60 76ZM68-4 60-6-4 70 4 76Z" fill="#FFFFFF" />
+                </g>
+                <rect
+                  x="0"
+                  y="29"
+                  width="64"
+                  height="15"
+                  fill="#FFFFFF"
+                  stroke="#0b1118"
+                  stroke-width="1.6"
+                />
+              </g>
+              <path
+                d="M32 3 61 36 32 69 3 36Z"
+                fill="none"
+                stroke="#0b1118"
+                stroke-width="2.6"
+                stroke-linejoin="round"
+              />
+              <g transform="translate(32 17.5) scale(.62)" style="--hole: #111417">
+                <g fill="#FFFFFF">
+                  <circle r="5" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(0)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(45)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(90)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(135)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(180)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(225)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(270)" />
+                  <path d="M-1.4-7.5h2.8L0-11Z" transform="rotate(315)" />
+                </g>
+              </g>
+              <text
+                x="32"
+                y="40.6"
+                text-anchor="middle"
+                font-family="Arial Black,DejaVu Sans,Arial,sans-serif"
+                font-weight="900"
+                font-size="11"
+                letter-spacing=".4"
+                fill="#111417"
+              >
+                BTG
+              </text>
+              <rect
+                x="22.8"
+                y="52.5"
+                width="18.4"
+                height="9"
+                rx="4.5"
+                fill="#0b1118"
+                opacity=".85"
+              />
+              <polygon
+                points="27.4,53.4 28.4,55.7 30.8,55.9 28.9,57.5 29.5,59.9 27.4,58.6 25.3,59.9 25.9,57.5 24.0,55.9 26.4,55.7"
+                fill="#f4c20d"
+              />
+              <polygon
+                points="36.6,53.4 37.6,55.7 40.0,55.9 38.1,57.5 38.7,59.9 36.6,58.6 34.5,59.9 35.1,57.5 33.2,55.9 35.6,55.7"
+                fill="#f4c20d"
+              />
+            </svg>
+          </div>
+          <b>Botafogueira</b><i>BTG</i><em>3</em>
+        </div>
+      </div>
+    </div>
+  </body>
+</html>

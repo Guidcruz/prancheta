@@ -1,42 +1,380 @@
 <!doctype html>
 <html lang="pt-BR">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<meta name="color-scheme" content="dark light">
-<title>OG · Direção B</title>
-<style>
-@font-face{font-family:"Barlow";font-style:normal;font-weight:400;font-display:swap;src:url(../../../node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2) format("woff2")}
-@font-face{font-family:"Barlow";font-style:normal;font-weight:600;font-display:swap;src:url(../../../node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:600;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2) format("woff2")}
-@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:700;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2) format("woff2")}
-@font-face{font-family:"Barlow Condensed";font-style:normal;font-weight:800;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff2) format("woff2")}
-@font-face{font-family:"Barlow Condensed";font-style:italic;font-weight:600;font-display:swap;src:url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-600-italic.woff2) format("woff2")}
-:root{--surface-0:#0f1a24;--surface-1:#172534;--surface-2:#20334a;--line:#2e4458;--ink:#f2f5f7;--ink-muted:#a3b3c0;--grass:#2fb866;--on-grass:#06200f;--grass-soft:#1b4a33;--floodlight:#ffc83d;--on-floodlight:#1c1500;--danger:#ff6b6b;--draw:#c3ced6;--info:#5fb0ff;--focus:#ffc83d;--pitch:#1e6b3f;--pitch-line:#9fdcb6;
---font-display:"Barlow Condensed","Arial Narrow",sans-serif;--font-body:"Barlow",system-ui,sans-serif;
---space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-6:24px;--space-8:32px;--touch:44px;
---radius-sm:6px;--radius-md:10px;--radius-lg:16px;--radius-pill:999px;--layout-content-max:720px;--layout-wide-max:1040px;color-scheme:dark;--board:#13261f;--board-2:#1a3129;--chalk:#eef3ec;--chalk-line:rgba(238,243,236,.4);--mark:#ffc83d;--mark-2:#ff9d8a;--frame:#3a4a57;--frame-hi:#56697a}
-@media (prefers-color-scheme: light){:root{--surface-0:#f3f5f7;--surface-1:#ffffff;--surface-2:#e6ebf0;--line:#cfd8e0;--ink:#10202c;--ink-muted:#4e6170;--grass:#177a42;--on-grass:#ffffff;--grass-soft:#d9f2e3;--floodlight:#f0b429;--on-floodlight:#1c1500;--danger:#c62828;--draw:#51626f;--info:#1565c0;--focus:#1565c0;--pitch:#2d8f55;--pitch-line:#eaf7ef;color-scheme:light;}}
-body{margin:0;width:1200px;height:630px;overflow:hidden;background:#0f1a24}
-.og{position:absolute;inset:18px 18px 18px 18px;border-radius:26px;border:14px solid var(--frame);box-shadow:inset 0 0 0 2px var(--frame-hi);background-color:var(--board-2);background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");overflow:hidden;color:var(--chalk);text-align:center}
-.clamp{position:absolute;top:4px;left:50%;transform:translateX(-50%);width:200px;height:72px;z-index:2}
-.tactic{position:absolute;inset:40px 30px 30px;width:calc(100% - 60px);height:calc(100% - 70px);opacity:.38}
-.tactic .pl{fill:none;stroke:var(--chalk-line);stroke-width:2}.tactic .o{fill:none;stroke:var(--mark);stroke-width:3}.tactic .x{stroke:var(--mark-2);stroke-width:3;stroke-linecap:round}.tactic .ar path{fill:none;stroke:var(--chalk);stroke-width:2.6;stroke-linecap:round}.tactic .lbl{display:none}
-.name{position:absolute;top:96px;left:0;right:0;font:600 italic 34px/1 var(--font-display);color:var(--mark);letter-spacing:2px}
-h1{position:absolute;top:150px;left:265px;width:630px;margin:0;font:800 88px/.9 var(--font-display);text-transform:uppercase}
-.magnets{position:absolute;bottom:40px;left:0;right:0;display:flex;justify-content:center;gap:26px}
-.magnet{width:104px;height:104px;border-radius:50%;display:grid;place-items:center;background:var(--frame-hi);box-shadow:0 6px 0 var(--frame),0 12px 20px rgba(0,0,0,.4)}
-.magnet .shield{width:64px;height:auto}
-</style>
-</head>
-<body class="og-b">
-<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="chalk" x="-5%" y="-5%" width="110%" height="110%"><feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="2.4"/></filter><marker id="ah" viewBox="0 0 10 10" refX="7" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M1 1 9 5 1 9" fill="none" stroke="context-stroke" stroke-width="2" stroke-linecap="round"/></marker></svg><div class="og"><svg class="tactic" viewBox="0 0 360 240" role="img" aria-label="Diagrama de campo com onze jogadores em linhas, na formação 4-3-3, e setas de ataque.">
-<g filter="url(#chalk)">
-<g class="pl"><rect x="10" y="10" width="340" height="220" rx="2"/><path d="M180 10v220"/><circle cx="180" cy="120" r="32"/><rect x="10" y="62" width="52" height="116"/><rect x="298" y="62" width="52" height="116"/><rect x="10" y="94" width="18" height="52"/><rect x="332" y="94" width="18" height="52"/><path d="M62 98a24 24 0 0 1 0 44M298 98a24 24 0 0 0 0 44"/></g>
-<g><circle cx="26" cy="120" r="7" class="o"/><circle cx="72" cy="45" r="7" class="o"/><circle cx="72" cy="95" r="7" class="o"/><circle cx="72" cy="145" r="7" class="o"/><circle cx="72" cy="195" r="7" class="o"/><circle cx="118" cy="70" r="7" class="o"/><circle cx="118" cy="120" r="7" class="o"/><circle cx="118" cy="170" r="7" class="o"/><circle cx="160" cy="48" r="7" class="o"/><circle cx="160" cy="120" r="7" class="o"/><circle cx="160" cy="192" r="7" class="o"/></g>
-<g><path d="M208 74l12 12M220 74l-12 12" class="x"/><path d="M216 154l12 12M228 154l-12 12" class="x"/><path d="M256 40l12 12M268 40l-12 12" class="x"/><path d="M252 114l12 12M264 114l-12 12" class="x"/><path d="M264 190l12 12M276 190l-12 12" class="x"/><path d="M312 114l12 12M324 114l-12 12" class="x"/></g>
-<g class="ar"><path pathLength="1" d="M124 64C150 30 200 24 236 34" marker-end="url(#ah)"/><path pathLength="1" d="M166 120C200 112 250 140 290 116" marker-end="url(#ah)"/><path pathLength="1" d="M78 200C120 226 180 222 214 210" marker-end="url(#ah)" class="dash"/></g>
-<text x="20" y="226" class="lbl">4-3-3</text>
-</g></svg><svg class="clamp" viewBox="0 0 120 44" aria-hidden="true"><rect x="8" y="10" width="104" height="30" rx="8" fill="var(--floodlight)"/><rect x="40" y="2" width="40" height="16" rx="5" fill="none" stroke="var(--floodlight)" stroke-width="5"/><rect x="20" y="20" width="80" height="6" rx="3" fill="rgba(0,0,0,.18)"/></svg><div class="name">Prancheta</div><h1>O Brasil inteiro na prancheta</h1><div class="magnets"><span class="magnet"><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="32" cy="36" r="30" fill="#FFFFFF"/><rect x="2" y="26" width="60" height="20" fill="#006437"/><circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="var(--ink)"/></svg></span><span class="magnet"><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="#C8102E"/><path d="M4 40 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40Z" fill="#111417"/><path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="none" stroke="var(--ink)" stroke-width="2"/><polygon points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31" fill="var(--ink)"/></svg></span><span class="magnet"><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="32" cy="36" r="30" fill="#FFFFFF"/><rect x="2" y="26" width="60" height="20" fill="#0033A0"/><circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="32" cy="38" r="8" fill="var(--ink)"/></svg></span><span class="magnet"><svg class="shield" viewBox="0 0 64 72" xmlns="http://www.w3.org/2000/svg" aria-hidden="true" focusable="false"><circle cx="32" cy="36" r="30" fill="#0A7A3D"/><rect x="2" y="26" width="60" height="20" fill="#FFD400"/><circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2"/><circle cx="32" cy="38" r="8" fill="var(--ink)"/></svg></span></div></div>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <title>OG · Direção B</title>
+    <style>
+      @font-face {
+        font-family: 'Barlow';
+        font-style: normal;
+        font-weight: 400;
+        font-display: swap;
+        src: url(../../../node_modules/@fontsource/barlow/files/barlow-latin-400-normal.woff2)
+          format('woff2');
+      }
+      @font-face {
+        font-family: 'Barlow';
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url(../../../node_modules/@fontsource/barlow/files/barlow-latin-600-normal.woff2)
+          format('woff2');
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        font-style: normal;
+        font-weight: 600;
+        font-display: swap;
+        src: url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-600-normal.woff2)
+          format('woff2');
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        font-style: normal;
+        font-weight: 700;
+        font-display: swap;
+        src: url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-700-normal.woff2)
+          format('woff2');
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        font-style: normal;
+        font-weight: 800;
+        font-display: swap;
+        src: url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-800-normal.woff2)
+          format('woff2');
+      }
+      @font-face {
+        font-family: 'Barlow Condensed';
+        font-style: italic;
+        font-weight: 600;
+        font-display: swap;
+        src: url(../../../node_modules/@fontsource/barlow-condensed/files/barlow-condensed-latin-600-italic.woff2)
+          format('woff2');
+      }
+      :root {
+        --surface-0: #0f1a24;
+        --surface-1: #172534;
+        --surface-2: #20334a;
+        --line: #2e4458;
+        --ink: #f2f5f7;
+        --ink-muted: #a3b3c0;
+        --grass: #2fb866;
+        --on-grass: #06200f;
+        --grass-soft: #1b4a33;
+        --floodlight: #ffc83d;
+        --on-floodlight: #1c1500;
+        --danger: #ff6b6b;
+        --draw: #c3ced6;
+        --info: #5fb0ff;
+        --focus: #ffc83d;
+        --pitch: #1e6b3f;
+        --pitch-line: #9fdcb6;
+        --font-display: 'Barlow Condensed', 'Arial Narrow', sans-serif;
+        --font-body: 'Barlow', system-ui, sans-serif;
+        --space-1: 4px;
+        --space-2: 8px;
+        --space-3: 12px;
+        --space-4: 16px;
+        --space-6: 24px;
+        --space-8: 32px;
+        --touch: 44px;
+        --radius-sm: 6px;
+        --radius-md: 10px;
+        --radius-lg: 16px;
+        --radius-pill: 999px;
+        --layout-content-max: 720px;
+        --layout-wide-max: 1040px;
+        color-scheme: dark;
+        --board: #13261f;
+        --board-2: #1a3129;
+        --chalk: #eef3ec;
+        --chalk-line: rgba(238, 243, 236, 0.4);
+        --mark: #ffc83d;
+        --mark-2: #ff9d8a;
+        --frame: #3a4a57;
+        --frame-hi: #56697a;
+      }
+      @media (prefers-color-scheme: light) {
+        :root {
+          --surface-0: #f3f5f7;
+          --surface-1: #ffffff;
+          --surface-2: #e6ebf0;
+          --line: #cfd8e0;
+          --ink: #10202c;
+          --ink-muted: #4e6170;
+          --grass: #177a42;
+          --on-grass: #ffffff;
+          --grass-soft: #d9f2e3;
+          --floodlight: #f0b429;
+          --on-floodlight: #1c1500;
+          --danger: #c62828;
+          --draw: #51626f;
+          --info: #1565c0;
+          --focus: #1565c0;
+          --pitch: #2d8f55;
+          --pitch-line: #eaf7ef;
+          color-scheme: light;
+        }
+      }
+      body {
+        margin: 0;
+        width: 1200px;
+        height: 630px;
+        overflow: hidden;
+        background: #0f1a24;
+      }
+      .og {
+        position: absolute;
+        inset: 18px 18px 18px 18px;
+        border-radius: 26px;
+        border: 14px solid var(--frame);
+        box-shadow: inset 0 0 0 2px var(--frame-hi);
+        background-color: var(--board-2);
+        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 .06 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+        overflow: hidden;
+        color: var(--chalk);
+        text-align: center;
+      }
+      .clamp {
+        position: absolute;
+        top: 4px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 200px;
+        height: 72px;
+        z-index: 2;
+      }
+      .tactic {
+        position: absolute;
+        inset: 40px 30px 30px;
+        width: calc(100% - 60px);
+        height: calc(100% - 70px);
+        opacity: 0.38;
+      }
+      .tactic .pl {
+        fill: none;
+        stroke: var(--chalk-line);
+        stroke-width: 2;
+      }
+      .tactic .o {
+        fill: none;
+        stroke: var(--mark);
+        stroke-width: 3;
+      }
+      .tactic .x {
+        stroke: var(--mark-2);
+        stroke-width: 3;
+        stroke-linecap: round;
+      }
+      .tactic .ar path {
+        fill: none;
+        stroke: var(--chalk);
+        stroke-width: 2.6;
+        stroke-linecap: round;
+      }
+      .tactic .lbl {
+        display: none;
+      }
+      .name {
+        position: absolute;
+        top: 96px;
+        left: 0;
+        right: 0;
+        font: 600 italic 34px/1 var(--font-display);
+        color: var(--mark);
+        letter-spacing: 2px;
+      }
+      h1 {
+        position: absolute;
+        top: 150px;
+        left: 265px;
+        width: 630px;
+        margin: 0;
+        font: 800 88px/0.9 var(--font-display);
+        text-transform: uppercase;
+      }
+      .magnets {
+        position: absolute;
+        bottom: 40px;
+        left: 0;
+        right: 0;
+        display: flex;
+        justify-content: center;
+        gap: 26px;
+      }
+      .magnet {
+        width: 104px;
+        height: 104px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--frame-hi);
+        box-shadow:
+          0 6px 0 var(--frame),
+          0 12px 20px rgba(0, 0, 0, 0.4);
+      }
+      .magnet .shield {
+        width: 64px;
+        height: auto;
+      }
+    </style>
+  </head>
+  <body class="og-b">
+    <svg width="0" height="0" style="position: absolute" aria-hidden="true">
+      <filter id="chalk" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="1.1" numOctaves="2" result="n" />
+        <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" />
+      </filter>
+      <marker
+        id="ah"
+        viewBox="0 0 10 10"
+        refX="7"
+        refY="5"
+        markerWidth="5"
+        markerHeight="5"
+        orient="auto-start-reverse"
+      >
+        <path
+          d="M1 1 9 5 1 9"
+          fill="none"
+          stroke="context-stroke"
+          stroke-width="2"
+          stroke-linecap="round"
+        />
+      </marker>
+    </svg>
+    <div class="og">
+      <svg
+        class="tactic"
+        viewBox="0 0 360 240"
+        role="img"
+        aria-label="Diagrama de campo com onze jogadores em linhas, na formação 4-3-3, e setas de ataque."
+      >
+        <g filter="url(#chalk)">
+          <g class="pl">
+            <rect x="10" y="10" width="340" height="220" rx="2" />
+            <path d="M180 10v220" />
+            <circle cx="180" cy="120" r="32" />
+            <rect x="10" y="62" width="52" height="116" />
+            <rect x="298" y="62" width="52" height="116" />
+            <rect x="10" y="94" width="18" height="52" />
+            <rect x="332" y="94" width="18" height="52" />
+            <path d="M62 98a24 24 0 0 1 0 44M298 98a24 24 0 0 0 0 44" />
+          </g>
+          <g>
+            <circle cx="26" cy="120" r="7" class="o" />
+            <circle cx="72" cy="45" r="7" class="o" />
+            <circle cx="72" cy="95" r="7" class="o" />
+            <circle cx="72" cy="145" r="7" class="o" />
+            <circle cx="72" cy="195" r="7" class="o" />
+            <circle cx="118" cy="70" r="7" class="o" />
+            <circle cx="118" cy="120" r="7" class="o" />
+            <circle cx="118" cy="170" r="7" class="o" />
+            <circle cx="160" cy="48" r="7" class="o" />
+            <circle cx="160" cy="120" r="7" class="o" />
+            <circle cx="160" cy="192" r="7" class="o" />
+          </g>
+          <g>
+            <path d="M208 74l12 12M220 74l-12 12" class="x" />
+            <path d="M216 154l12 12M228 154l-12 12" class="x" />
+            <path d="M256 40l12 12M268 40l-12 12" class="x" />
+            <path d="M252 114l12 12M264 114l-12 12" class="x" />
+            <path d="M264 190l12 12M276 190l-12 12" class="x" />
+            <path d="M312 114l12 12M324 114l-12 12" class="x" />
+          </g>
+          <g class="ar">
+            <path pathLength="1" d="M124 64C150 30 200 24 236 34" marker-end="url(#ah)" />
+            <path pathLength="1" d="M166 120C200 112 250 140 290 116" marker-end="url(#ah)" />
+            <path
+              pathLength="1"
+              d="M78 200C120 226 180 222 214 210"
+              marker-end="url(#ah)"
+              class="dash"
+            />
+          </g>
+          <text x="20" y="226" class="lbl">4-3-3</text>
+        </g></svg
+      ><svg class="clamp" viewBox="0 0 120 44" aria-hidden="true">
+        <rect x="8" y="10" width="104" height="30" rx="8" fill="var(--floodlight)" />
+        <rect
+          x="40"
+          y="2"
+          width="40"
+          height="16"
+          rx="5"
+          fill="none"
+          stroke="var(--floodlight)"
+          stroke-width="5"
+        />
+        <rect x="20" y="20" width="80" height="6" rx="3" fill="rgba(0,0,0,.18)" />
+      </svg>
+      <div class="name">Prancheta</div>
+      <h1>O Brasil inteiro na prancheta</h1>
+      <div class="magnets">
+        <span class="magnet"
+          ><svg
+            class="shield"
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <circle cx="32" cy="36" r="30" fill="#FFFFFF" />
+            <rect x="2" y="26" width="60" height="20" fill="#006437" />
+            <circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2" />
+            <polygon
+              points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31"
+              fill="var(--ink)"
+            /></svg></span
+        ><span class="magnet"
+          ><svg
+            class="shield"
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z" fill="#C8102E" />
+            <path d="M4 40 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40Z" fill="#111417" />
+            <path
+              d="M32 2 60 16v24c0 14-12 24-28 28C16 64 4 54 4 40V16Z"
+              fill="none"
+              stroke="var(--ink)"
+              stroke-width="2"
+            />
+            <polygon
+              points="32,22 35.5,31 45,31 37.5,36.5 40.5,46 32,40 23.5,46 26.5,36.5 19,31 28.5,31"
+              fill="var(--ink)"
+            /></svg></span
+        ><span class="magnet"
+          ><svg
+            class="shield"
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <circle cx="32" cy="36" r="30" fill="#FFFFFF" />
+            <rect x="2" y="26" width="60" height="20" fill="#0033A0" />
+            <circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2" />
+            <circle cx="32" cy="38" r="8" fill="var(--ink)" /></svg></span
+        ><span class="magnet"
+          ><svg
+            class="shield"
+            viewBox="0 0 64 72"
+            xmlns="http://www.w3.org/2000/svg"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <circle cx="32" cy="36" r="30" fill="#0A7A3D" />
+            <rect x="2" y="26" width="60" height="20" fill="#FFD400" />
+            <circle cx="32" cy="36" r="30" fill="none" stroke="var(--ink)" stroke-width="2" />
+            <circle cx="32" cy="38" r="8" fill="var(--ink)" /></svg
+        ></span>
+      </div>
+    </div>
+  </body>
 </html>

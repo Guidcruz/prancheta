@@ -170,7 +170,7 @@ Pendências derivadas:
 
 Pendências derivadas:
 
-- `devops-engineer`: ligar o `/balance` no CI e medir o runner de 2 vCPU.
+- `devops-engineer`: ~~ligar o `/balance` no CI~~ (feito: 200 temporadas, semente 1, PR e `main`). Falta medir o tempo real no runner de 2 vCPU; se passar de 3 min, o CEO decide a medida.
 - Gatilho de reavaliação do "tudo no ataque" (`docs/design/balance-log.md`): repetir a medição se a média das 3 sementes passar de +0,04 ou se mexerem em `allOutPower`, `allOutDef`, `allOutFromMinute`, `kChance` ou no cansaço.
 - "Grande rebaixado" volta a valer como meta na carreira longa.
 
@@ -290,7 +290,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - M1 (resolvido por este PR): a política prometia apagar mensagens de suporte em 90 dias, mas o canal publicado são as Discussões do GitHub (público, de terceiros). Textos de Privacidade, Perguntas e rodapé corrigidos.
 - L1: `scripts/og.mjs` não limpa a pasta temporária em SIGINT/SIGTERM.
 - L2: criar `_headers` do Cloudflare Pages (CSP, `X-Content-Type-Options`, `Referrer-Policy`, `frame-ancestors`) antes da Etapa 1b.
-- L3: fixar a imagem do devcontainer e as ações do CI por SHA/digest.
+- L3: ações do CI fixadas por SHA (feito no PR de CI de 2026-11-05). Falta só a imagem do devcontainer por digest.
 
 ## Concluído (mergeado em 2026-11-04)
 
