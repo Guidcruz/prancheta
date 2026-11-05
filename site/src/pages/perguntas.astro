@@ -30,10 +30,15 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
       </FaqItem>
       <FaqItem question={`Já dá para jogar?`}>
         <p>
-          Ainda não de verdade.{' '}
-          {GAME_PLAYABLE ? 'A versão atual é a zero: uma tela e um botão. ' : ''}O jogo está em
-          desenvolvimento e cresce toda semana. O <a href={`${base}roadmap/`}>roteiro</a> mostra o
-          estado de cada etapa, sem data prometida.
+          Ainda não. {GAME_PLAYABLE ? 'A versão atual é a zero: uma tela e um botão. ' : ''}O jogo
+          está em desenvolvimento e cresce toda semana. Acompanhe pelo devlog; o{' '}
+          <a href={`${base}roadmap/`}>roteiro</a> mostra o estado de cada etapa, sem data prometida.
+        </p>
+      </FaqItem>
+      <FaqItem question={`Tem som?`}>
+        <p>
+          Tem som de estádio: apito, gol e torcida. Ele começa desligado, você liga se quiser, e o
+          botão de mudo fica sempre à mão. Nada importante aparece só por som.
         </p>
       </FaqItem>
       <FaqItem question={`Os clubes e jogadores são reais?`}>
@@ -138,6 +143,7 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
         <p>Foi feito para o celular, para jogar com uma mão. Também roda no computador.</p>
       </FaqItem>
       <FaqItem question={`Como instalo na tela inicial?`}>
+        {!GAME_PLAYABLE && <p>Quando a primeira versão sair, é assim:</p>}
         <p>
           <strong>Android:</strong> abra o jogo no Chrome, toque no menu (⋮) e escolha "Instalar
           app" ou "Adicionar à tela inicial". Às vezes o próprio navegador mostra um aviso
