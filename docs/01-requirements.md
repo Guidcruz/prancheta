@@ -2721,6 +2721,13 @@ Cenário: tabela no intervalo
   E as 3 opções da conversa do intervalo (US-022) continuam visíveis, sem sobreposição com a tabela, com alvos de pelo menos 44 px
   E escolher uma opção ou "Pular" tem o mesmo efeito que sem a tabela
 
+Cenário: conversa do intervalo cita a tabela (D11)
+  Dado a partida assistida no intervalo e a tabela ao vivo do intervalo calculada
+  Quando a situação do clube do técnico na tabela ao vivo cai num dos casos previstos (sai ou entra no Z4, entra ou sai da zona da Libertadores, assume ou perde a liderança, o rival direto está perdendo ou ganhando)
+  Então o texto de cada opção da conversa (motivar, cobrar, acalmar) usa uma variação que cita essa situação, vinda dos templates de app/src/content/<idioma>/
+  E sem caso previsto, o texto é o padrão da US-022
+  E o efeito da conversa no motor é idêntico ao da mesma opção sem a citação
+
 Cenário: como ficou no fim
   Dado o apito final da partida assistida
   Então a tela mostra "como ficou", no mesmo formato, igual à tabela oficial depois da rodada, com as setas em relação ao início da rodada
@@ -2741,6 +2748,7 @@ Cenário: resultado e tabela oficial intocados
 
 - Simular cenários ("e se eu empatar?") ou projetar o fim do campeonato.
 - Artilharia ao vivo.
+- Opção nova "Mostrar a tabela" na conversa do intervalo, com efeito próprio no motor: ideia registrada em `docs/status.md`, a avaliar depois da calibragem da T-016 (D11).
 
 ---
 
@@ -2973,6 +2981,7 @@ O CEO aceitou as recomendações das perguntas abertas 9 e 10 do pedido de 2026-
 
 9. **D9. Fronteira da Libertadores no plantão.** O plantão usa a mesma fronteira da tabela da 1a: a "Zona da Libertadores", do 2º ao 6º (`docs/design/temporada.md`), no lugar do G4. Na US-072, k = 6 e o motivo `libertadoresRace`. (US-072, US-073)
 10. **D10. "Como ficou" no "só resultado".** Aparece também no resumo do modo "só resultado" (US-019), no mesmo formato da partida assistida. (US-071, US-019)
+11. **D11. A conversa do intervalo cita a tabela ao vivo.** Decisão do CEO de 2026-11-05: as três opções da conversa ganham variações de texto que citam a situação da tabela ao vivo (Z4, zona da Libertadores, liderança, rival direto), sem mudar o efeito no motor; o lote de textos do `content-writer` passa pelo CEO. Uma opção nova "Mostrar a tabela", com efeito próprio, fica como ideia para depois da calibragem da T-016. (US-071, US-022)
 
 ### Perguntas que seguem abertas
 
