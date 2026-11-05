@@ -37,6 +37,12 @@ export interface MatchParams {
    */
   readonly allOutPower: number;
   readonly allOutDef: number;
+  /**
+   * The first minute "tudo no ataque" can be played (partida.md, "Táticas"; T-016): a command
+   * that would put the side in `allOut` before it (a command of minute M plays from M + 1) is
+   * ignored with `command-too-early`. 0 or 1 turns the rule off.
+   */
+  readonly allOutFromMinute: number;
   readonly fatigue: { readonly drainPerMinute: number; readonly recoveryPerDay: number };
   readonly injury: { readonly basePerMinute: number };
   readonly cards: {
@@ -163,6 +169,9 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
     // 0.95), so the power never goes below 1.05 and the defence never above 0.95.
     allOutPower: num(1.05, 1.5),
     allOutDef: num(0.6, 0.95),
+    // partida.md, "Táticas": 0 (or 1) turns the rule off; never later than the AI's own "todo
+    // mundo no ataque" (ia-clubes.md, "Durante o jogo": from minute 80).
+    allOutFromMinute: int(0, 80),
     fatigue: { drainPerMinute: num(0.1, 0.6), recoveryPerDay: num(3, 15) },
     injury: { basePerMinute: num(0, 0.0005) },
     cards: {

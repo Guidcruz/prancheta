@@ -8,7 +8,7 @@ import { correctedCondition, kickoffBench, replaceUnavailable, winsTie } from '.
 import {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
-  POSTURES,
+  POSTURE_EFFECTS,
   PRESSURE_EFFECTS,
   conditionMultiplier,
   fillEmptyGoal,
@@ -143,8 +143,13 @@ function isFormation(value: unknown): value is Formation {
   return typeof value === 'string' && (FORMATIONS as readonly string[]).includes(value);
 }
 
-function isPosture(value: unknown): value is Posture {
-  return typeof value === 'string' && (POSTURES as readonly string[]).includes(value);
+/**
+ * A posture a sheet may start with: `allOut` is only reachable through a match command, from
+ * `match.allOutFromMinute` (partida.md, "Táticas"), so a sheet with it (a damaged save: the type
+ * refuses it, the runtime would not) is an unknown posture like any other.
+ */
+function isSheetPosture(value: unknown): value is Exclude<Posture, 'allOut'> {
+  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(POSTURE_EFFECTS, value);
 }
 
 function isPressure(value: unknown): value is Pressure {
@@ -214,8 +219,9 @@ export function occupy(slot: Slot, app: Appearance | undefined): void {
  * The team at kick-off, from its sheet. Never throws: a sheet that cannot be played as given is
  * played as well as possible, with a warning for each fix (an invalid sheet only reaches the
  * match through a bug or a damaged save):
- * - unknown formation → `4-4-2`; unknown posture → `balanced`; unknown pressure → `medium`;
- *   unknown profile → `traditional` (one warning per side for each);
+ * - unknown formation → `4-4-2`; unknown posture (`allOut` too: it is only a match command) →
+ *   `balanced`; unknown pressure → `medium`; unknown profile → `traditional` (one warning per
+ *   side for each);
  * - `controller: 'human'` → the profile is read as `traditional`, without a warning;
  * - fans or a player's condition that is NaN or outside 0..100 → clipped (NaN to 0);
  * - a starter who is not in the squad, a repeated starter or a missing one → empty slot;
@@ -237,7 +243,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     formation = FORMATIONS[0]!;
   }
   let posture: Posture = tactic.posture;
-  if (!isPosture(posture)) {
+  if (!isSheetPosture(posture)) {
     warnings.push({ code: 'tactic-unknown-posture', detail: { side, posture: String(posture) } });
     posture = 'balanced';
   }

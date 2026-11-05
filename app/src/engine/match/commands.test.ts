@@ -394,9 +394,10 @@ describe('tactics and shortcuts (partida.md, "Táticas" and "Comandos em jogo")'
       ]),
     )!;
     expect(hold).toMatchObject({ posture: 'defensive', pressure: 'low', preset: 'holdResult' });
+    // "Tudo no ataque" only from match.allOutFromMinute (60): below.
     const all = first(
       simulateMatch(coached, params, [
-        { minute: 10, side: 'home', kind: 'preset', preset: 'allOut' },
+        { minute: 60, side: 'home', kind: 'preset', preset: 'allOut' },
       ]),
     )!;
     expect(all).toMatchObject({ posture: 'allOut', pressure: 'high', preset: 'allOut' });
@@ -422,6 +423,135 @@ describe('tactics and shortcuts (partida.md, "Táticas" and "Comandos em jogo")'
     ]);
     expect(first(r)).toMatchObject({ minute: 41, formation });
     expect(Object.keys(r.minutes).filter((id) => home.starters.includes(id))).toHaveLength(11);
+  });
+});
+
+describe('"tudo no ataque" only from minute 60 (partida.md, "Táticas"; T-016)', () => {
+  const plainRun = simulateMatch(coached, params);
+  const from = params.match.allOutFromMinute;
+  /** Everything but the warnings, to compare a match with an ignored command to the plain one. */
+  const played = (r: MatchResult) => JSON.stringify({ ...r, warnings: [] });
+
+  /** Every command that puts the side in "tudo no ataque": the preset and the posture. */
+  const allOutCommands = (minute: number): MatchCommand[] => [
+    { minute, side: 'home', kind: 'preset', preset: 'allOut' },
+    { minute, side: 'home', kind: 'tactic', posture: 'allOut' },
+    ...(['low', 'medium', 'high'] as const).map((pressure): MatchCommand => ({
+      minute,
+      side: 'home',
+      kind: 'tactic',
+      posture: 'allOut',
+      pressure,
+    })),
+    { minute, side: 'home', kind: 'tactic', formation: '4-3-3', posture: 'allOut' },
+  ];
+
+  it('is 60 in the parameters, and the plain match has no warnings', () => {
+    expect(from).toBe(60);
+    expect(plainRun.warnings).toEqual([]);
+  });
+
+  it("at 30': the match is the one without the command, plus command-too-early", () => {
+    for (const command of allOutCommands(30)) {
+      const r = simulateMatch(coached, params, [command]);
+      expect(played(r), JSON.stringify(command)).toBe(played(plainRun));
+      expect(r.warnings).toEqual([
+        {
+          code: 'command-too-early',
+          detail: { command: 0, side: 'home', minute: 30, kind: command.kind, from: 60 },
+        },
+      ]);
+    }
+  });
+
+  it('from minute 0, at half-time and up to 58 (it would play from 59): ignored', () => {
+    for (const minute of [0, 1, 45, 58]) {
+      for (const command of allOutCommands(minute)) {
+        const r = simulateMatch(coached, params, [command]);
+        expect(played(r), `${minute} ${JSON.stringify(command)}`).toBe(played(plainRun));
+        expect(r.warnings.map((w) => w.code)).toEqual(['command-too-early']);
+      }
+    }
+  });
+
+  it("at 60' (and with the screen at 60', minute 59): applies, from the next minute", () => {
+    for (const minute of [59, 60]) {
+      for (const command of allOutCommands(minute)) {
+        const r = simulateMatch(coached, params, [command]);
+        expect(r.warnings, `${minute} ${JSON.stringify(command)}`).toEqual([]);
+        const change = ofType(r, 'tacticChange').find((e) => e.side === 'home');
+        expect(change).toMatchObject({ half: 2, minute: minute + 1, posture: 'allOut' });
+        expect(upTo(r.events, minute)).toEqual(upTo(plainRun.events, minute));
+      }
+    }
+    const preset = simulateMatch(coached, params, [allOutCommands(60)[0]!]);
+    expect(ofType(preset, 'tacticChange').find((e) => e.side === 'home')).toMatchObject({
+      pressure: 'high',
+      preset: 'allOut',
+    });
+  });
+
+  it('applies in the added time of the second half', () => {
+    const r = simulateMatch(coached, params, [
+      { minute: 90, side: 'home', kind: 'preset', preset: 'allOut' },
+    ]);
+    expect(r.warnings).toEqual([]);
+    expect(ofType(r, 'tacticChange').find((e) => e.side === 'home')).toMatchObject({
+      minute: 90,
+      added: 1,
+      posture: 'allOut',
+    });
+  });
+
+  it('leaves the other commands before 60 alone, and the rest of the list too', () => {
+    const r = simulateMatch(coached, params, [
+      { minute: 20, side: 'home', kind: 'preset', preset: 'press' },
+      { minute: 30, side: 'home', kind: 'preset', preset: 'allOut' },
+      { minute: 40, side: 'home', kind: 'tactic', posture: 'attacking', pressure: 'low' },
+      { minute: 50, side: 'home', kind: 'preset', preset: 'holdResult' },
+    ]);
+    const changes = ofType(r, 'tacticChange').filter((e) => e.side === 'home');
+    expect(changes.map((e) => [e.minute, e.posture, e.pressure])).toEqual([
+      [21, coached.home.sheet.tactic.posture, 'high'],
+      [41, 'attacking', 'low'],
+      [51, 'defensive', 'low'],
+    ]);
+    expect(r.warnings).toEqual([
+      {
+        code: 'command-too-early',
+        detail: { command: 1, side: 'home', minute: 30, kind: 'preset', from: 60 },
+      },
+    ]);
+  });
+
+  it('a command for the AI side is command-ai-side, not command-too-early', () => {
+    const r = simulateMatch(coached, params, [
+      { minute: 30, side: 'away', kind: 'preset', preset: 'allOut' },
+    ]);
+    expect(r.warnings.map((w) => w.code)).toEqual(['command-ai-side']);
+  });
+
+  it('follows match.allOutFromMinute: 0 turns the rule off, 80 moves it', () => {
+    const at = (allOutFromMinute: number, minute: number) =>
+      simulateMatch(coached, { ...params, match: { ...params.match, allOutFromMinute } }, [
+        { minute, side: 'home', kind: 'preset', preset: 'allOut' },
+      ]);
+    expect(at(0, 0).warnings).toEqual([]);
+    expect(ofType(at(0, 0), 'tacticChange')[0]).toMatchObject({ minute: 1, posture: 'allOut' });
+    expect(at(80, 70).warnings).toEqual([
+      {
+        code: 'command-too-early',
+        detail: { command: 0, side: 'home', minute: 70, kind: 'preset', from: 80 },
+      },
+    ]);
+    expect(at(80, 79).warnings).toEqual([]);
+  });
+
+  it('is deterministic', () => {
+    const commands = [...allOutCommands(30), ...allOutCommands(70)];
+    expect(simulateMatch(coached, params, commands)).toEqual(
+      simulateMatch(coached, params, commands),
+    );
   });
 });
 

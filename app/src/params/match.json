@@ -14,6 +14,7 @@
   "comfortableLeadPower": 0.85,
   "allOutPower": 1.25,
   "allOutDef": 0.78,
+  "allOutFromMinute": 60,
   "fatigue": { "drainPerMinute": 0.3, "recoveryPerDay": 7 },
   "injury": { "basePerMinute": 0.00012 },
   "cards": {

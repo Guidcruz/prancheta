@@ -24,6 +24,7 @@ export function testParams(overrides: { clubStrengthSd?: number } = {}): GamePar
       comfortableLeadPower: 0.85,
       allOutPower: 1.25,
       allOutDef: 0.78,
+      allOutFromMinute: 60,
       fatigue: { drainPerMinute: 0.3, recoveryPerDay: 7 },
       injury: { basePerMinute: 0.00012 },
       cards: { yellowPerMinute: 0.002, redPerMinute: 0.00003, derbyMult: 1.2, bookedMult: 0.2 },

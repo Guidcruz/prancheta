@@ -127,17 +127,25 @@ Cada chute do mandante vale cerca de 8% a mais e cada chute do visitante cerca d
 
 ## Táticas
 
-| Ajuste  | Opção                               | Efeito                                                      | Parâmetros                             |
-| ------- | ----------------------------------- | ----------------------------------------------------------- | -------------------------------------- |
-| Postura | Defensiva                           | Menos chances criadas, menos sofridas                       | `power` 0,95 · `def` 1,05              |
-|         | Equilibrada                         | Referência                                                  | 1,00 · 1,00                            |
-|         | Ofensiva                            | Mais chances criadas, mais sofridas                         | 1,05 · 0,95                            |
-|         | Tudo no ataque (só comando em jogo) | Aposta para buscar o resultado                              | 1,25 · 0,78 (parâmetros, abaixo)       |
-| Pressão | Baixa                               | Meio rende menos, cansa menos, menos cartões                | `mid` 0,96 · `drain` 0,8 · `cards` 0,7 |
-|         | Média                               | Referência                                                  | 1,00 · 1,0 · 1,0                       |
-|         | Alta                                | Meio rende mais (bola recuperada), cansa mais, mais cartões | 1,05 · 1,4 · 1,4                       |
+| Ajuste  | Opção                                | Efeito                                                      | Parâmetros                             |
+| ------- | ------------------------------------ | ----------------------------------------------------------- | -------------------------------------- |
+| Postura | Defensiva                            | Menos chances criadas, menos sofridas                       | `power` 0,95 · `def` 1,05              |
+|         | Equilibrada                          | Referência                                                  | 1,00 · 1,00                            |
+|         | Ofensiva                             | Mais chances criadas, mais sofridas                         | 1,05 · 0,95                            |
+|         | Tudo no ataque (só comando, dos 60') | Aposta para buscar o resultado                              | 1,25 · 0,78 (parâmetros, abaixo)       |
+| Pressão | Baixa                                | Meio rende menos, cansa menos, menos cartões                | `mid` 0,96 · `drain` 0,8 · `cards` 0,7 |
+|         | Média                                | Referência                                                  | 1,00 · 1,0 · 1,0                       |
+|         | Alta                                 | Meio rende mais (bola recuperada), cansa mais, mais cartões | 1,05 · 1,4 · 1,4                       |
 
-**"Tudo no ataque" é uma aposta de verdade** (T-016, aprovado pelo CEO em 2026-11-05): o time vai bem mais à frente e se expõe bem mais, com `power` × `match.allOutPower` (1,25) e `def` × `match.allOutDef` (0,78), no lugar dos 1,10 · 0,85 de antes. São os dois únicos efeitos de postura que são parâmetros; as outras três posturas são constantes. Perdendo por 1 aos 75', o comando "todo mundo no ataque" aumenta a chance de não perder em 3 a 4 pontos (era 1,4), com mais gols dos dois lados no fim. Ela não vira tática para o jogo todo: desde o apito inicial, contra a 4-4-2 equilibrada média, fica dentro de ±3 p.p. de vitórias − derrotas (o `/balance` mede no duelo "tudo no ataque desde o apito inicial", obrigatório), e ainda cansa e dá mais cartões pela pressão alta.
+**"Tudo no ataque" é uma aposta de verdade** (T-016, aprovado pelo CEO em 2026-11-05): o time vai bem mais à frente e se expõe bem mais, com `power` × `match.allOutPower` (1,25) e `def` × `match.allOutDef` (0,78), no lugar dos 1,10 · 0,85 de antes. São os dois únicos efeitos de postura que são parâmetros; as outras três posturas são constantes. Perdendo por 1 aos 75', o comando "todo mundo no ataque" aumenta a chance de não perder em 3 a 4 pontos (era 1,4), com mais gols dos dois lados no fim. **Só a partir dos 60 minutos** (T-016, aprovado pelo CEO em 2026-11-05; `balance-log.md`, "Tudo no ataque desde o apito inicial"): usada do apito ao fim, a postura rendia +0,6 ponto por temporada sobre o robô bom e levava o título de um clube médio ao teto da meta, ou seja, um botão no minuto 0 valia tanto quanto escalar e mexer bem. Regra em uma frase: **o "tudo no ataque" só vale a partir do minuto `match.allOutFromMinute` (60).** Perdendo cedo, o técnico tem a postura ofensiva.
+
+- O comando que levaria a postura `allOut` a valer antes do minuto 60 é ignorado no apito, com o aviso `command-too-early` (`detail` com `command`, `side`, `minute`, `kind` e `from`, o minuto mínimo). A partida fica exatamente igual à sem o comando.
+- A trava cobre os dois caminhos: o atalho "Todo mundo no ataque" (`preset: 'allOut'`) e o comando `tactic` com `posture: 'allOut'`, com qualquer pressão (ou sem ela) e com ou sem troca de formação. O comando inteiro é ignorado, não só a postura.
+- O minuto que conta é o em que o comando passa a valer ("Quando um comando vale"): o comando de `minute: M` vale a partir de `M + 1`. Com 60, vale o comando de `minute` 59 em diante, que é o da tela parada em 60'; o de `minute` 58 (a tela em 59') é cedo. Nos acréscimos do 2º tempo o comando nunca é cedo.
+- Do minuto 60 em diante, nada muda. A IA e o técnico-robô do `/balance` só usam o "tudo no ataque" a partir dos 80' (`ia-clubes.md`, "Durante o jogo"), então nenhuma meta se move; a faixa do parâmetro para em 80 para nunca alcançar a regra da IA. 0 (ou 1) desliga a regra.
+- Uma ficha anterior ao jogo com `allOut` (save danificado: o tipo recusa, mas pode chegar ao motor) é uma postura desconhecida como as outras: vira `balanced` com o aviso `tactic-unknown-posture` ("Valor desconhecido na entrada").
+
+Com a regra, a postura não vira tática para o jogo todo: o `/balance` mede o uso mais longo possível nos duelos "tudo no ataque desde o minuto 60" (o atalho, com pressão alta, e a postura direta com pressão média), obrigatórios, com vitórias − derrotas dentro de ±3 p.p. contra a 4-4-2 equilibrada média; a postura ainda cansa e dá mais cartões pela pressão alta do atalho.
 
 Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 37,6% com 2,79 gols; defensiva × equilibrada, 36,4% / 28,1% / 35,6% com 2,37 gols; pressão alta, 37,6% / 25,9% / 36,5%. Nenhuma opção domina; o que muda é o tipo de jogo, e a escolha certa depende do placar e do adversário.
 
@@ -149,7 +157,9 @@ Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 3
 | Segurar o resultado  | postura defensiva + pressão baixa       |
 | Todo mundo no ataque | postura "tudo no ataque" + pressão alta |
 
-O técnico também pode trocar formação, postura e pressão diretamente a qualquer momento.
+O técnico também pode trocar formação, postura e pressão diretamente a qualquer momento, menos a postura "tudo no ataque", que só vale a partir dos 60' ("Táticas").
+
+**Nota para a tela (T-033):** o botão "Todo mundo no ataque" e a opção "tudo no ataque" da postura só aparecem a partir dos 60' (relógio da tela em 60', comando com `minute` 59 ou mais; o minuto vem de `match.allOutFromMinute`). Antes disso a tela não oferece a opção; o `command-too-early` é a rede de segurança do motor, não um caminho da interface.
 
 ### Quando um comando vale
 
@@ -460,8 +470,9 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | Probabilidade fora de [0, 1] por parâmetro estranho | todas as probabilidades passam por `clamp`; o validador de parâmetros recusa valores fora da faixa ao carregar                         |
 | Comando no mesmo minuto de um gol                   | vale a partir do minuto seguinte, sempre                                                                                               |
 | Valor desconhecido na entrada (save danificado)     | 4-4-2, `balanced`, `medium`, perfil "Tradicional"; aviso (abaixo)                                                                      |
+| "Tudo no ataque" pedido antes dos 60'               | comando ignorado, aviso `command-too-early`; a partida fica igual à sem o comando ("Táticas")                                          |
 
-**Valor desconhecido na entrada:** formação vira 4-4-2, postura vira `balanced`, pressão vira `medium` e perfil desconhecido joga como "Tradicional" em tudo o que o perfil decide (a conversa do intervalo agora; tática e comandos na T-011). Cada valor trocado gera um aviso por time no apito inicial, inclusive o perfil.
+**Valor desconhecido na entrada:** formação vira 4-4-2, postura vira `balanced` (também `allOut` na ficha, que só existe como comando), pressão vira `medium` e perfil desconhecido joga como "Tradicional" em tudo o que o perfil decide (a conversa do intervalo agora; tática e comandos na T-011). Cada valor trocado gera um aviso por time no apito inicial, inclusive o perfil.
 
 ## Parâmetros (`app/src/params/match.json`)
 
@@ -484,6 +495,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `match.comfortableLeadPower` | 0,85 (T-016; era 1, neutro)        | 0,7–1        | "tirar o pé": quem ganha com folga cria menos; 1 desliga   |
 | `match.allOutPower`          | 1,25 (T-016; era a constante 1,10) | 1,05–1,50    | "tudo no ataque" multiplica o `power` ("Táticas")          |
 | `match.allOutDef`            | 0,78 (T-016; era a constante 0,85) | 0,60–0,95    | "tudo no ataque" multiplica a `def` ("Táticas")            |
+| `match.allOutFromMinute`     | 60 (T-016; antes não havia limite) | 0–80         | "tudo no ataque" só vale deste minuto em diante; 0 desliga |
 | `fatigue.drainPerMinute`     | 0,30                               | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
 | `fatigue.recoveryPerDay`     | 7                                  | 3–15         | 3 dias não bastam para voltar inteiro                      |
 | `injury.basePerMinute`       | 0,00012                            | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
@@ -512,3 +524,4 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
    - **Comando para o lado da IA:** ignorado no apito com `command-ai-side`. Teste: um `preset` para o lado `controller: 'ai'` não gera `tacticChange` nem muda a partida.
    - **Lesionado com troca disponível:** sempre substituído (como está). Teste já existente; nenhuma mudança.
    - A mudança da IA nos acréscimos muda os eventos: sobe `ENGINE_VERSION` e regrava o golden.
+9. "Tudo no ataque" só a partir dos 60' (T-016, "Táticas"): o atalho `allOut` e o `tactic` com `posture: 'allOut'` que valeriam antes de `match.allOutFromMinute` são ignorados com `command-too-early`. Testes: comando aos 30' (atalho e postura direta, cada pressão) dá a partida igual à sem comando, mais o aviso; aos 60' (e com `minute` 59, a tela em 60') vale a partir do minuto seguinte; ficha com `allOut` vira `balanced` com `tactic-unknown-posture`.

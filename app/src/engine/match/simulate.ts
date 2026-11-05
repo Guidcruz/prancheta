@@ -222,6 +222,7 @@ export function simulateMatch(
   const book = prepareCommands(
     commands,
     { home: input.home.controller, away: input.away.controller },
+    match.allOutFromMinute,
     warnings,
   );
   const teams = [home, away] as const;
