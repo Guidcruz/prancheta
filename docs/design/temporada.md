@@ -174,7 +174,7 @@ A ordem importa: prêmios e campanha leem o `seasonStats` e as idades da tempora
 **`startNextSeason`** (só com `phase: 'seasonEnd'`): a **virada**.
 
 1. `season + 1`, `year + 1` (o ano da temporada nova), `round` 1, `phase: 'season'`; calendário novo pelo sorteio da temporada nova ("Tabela de jogos"; datas pelo ano novo).
-2. `seasonStats` zerado (`{}`), `lastRound` removido; `lastSheets` fica (o `shownEleven` ignora a ficha que não resolve mais).
+2. `seasonStats` zerado (`{}`), o `lastRound` já não está no estado (saiu na T-049; o relatório da rodada só volta no retorno do `playRound`); `lastSheets` fica (o `shownEleven` ignora a ficha que não resolve mais).
 3. Jogadores e clubes, pelas tabelas abaixo. A meta da diretoria da temporada nova sai da força recalculada.
 4. **Lembrete** discreto de exportar o save (`PROJETO.md`, "Saves e backup"), na interface.
 
