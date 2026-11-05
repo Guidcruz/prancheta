@@ -197,7 +197,7 @@ function humanModes(
   const humans = new Map<ClubId, MatchMode>();
   const add = (clubId: ClubId) => {
     if (humans.has(clubId)) return;
-    if (state.clubs[clubId] === undefined) {
+    if (!Object.hasOwn(state.clubs, clubId) || state.clubs[clubId] === undefined) {
       warnings.push({ code: 'round-unknown-club', detail: { clubId } });
       return;
     }

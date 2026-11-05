@@ -546,6 +546,34 @@ describe('playRound: other bookkeeping', () => {
     expect(p.ok && p.value.matches[0]!.capacity).toBe(DEFAULT_STADIUM_CAPACITY[club.def.size]);
   });
 
+  it('reads only the own keys of sheets and coaches (toString, __proto__, inherited)', () => {
+    const state = testGame();
+    const plain = prepareRound(state, params);
+    if (!plain.ok) throw new Error('prepareRound');
+    // JSON.parse makes "__proto__" an own key, as a request body from outside would.
+    const odd = JSON.parse('{"toString": "result", "__proto__": "full"}') as Record<string, 'full'>;
+    for (const setup of [{ coaches: odd }, { sheets: odd as never }]) {
+      const plan = prepareRound(state, params, setup);
+      if (!plan.ok) throw new Error('prepareRound');
+      expect(plan.value.matches).toEqual(plain.value.matches);
+      expect(plan.warnings).toEqual([
+        { code: 'round-unknown-club', detail: { clubId: 'toString' } },
+        { code: 'round-unknown-club', detail: { clubId: '__proto__' } },
+      ]);
+      const played = playRound(state, params, input(1, setup));
+      expect(played.ok && played.value.report.results).toEqual(play(state).value.report.results);
+    }
+    // A mode inherited from the prototype is not the coach's: his club in `sheets` plays as full.
+    const sheet = plain.value.suggested[COACH]!;
+    const inherited = Object.create({ [COACH]: 'result' }) as Record<string, 'result'>;
+    const plan = prepareRound(state, params, { sheets: { [COACH]: sheet }, coaches: inherited });
+    if (!plan.ok) throw new Error('prepareRound');
+    const match = plan.value.matches.find((m) => sideOf(m, COACH) !== undefined)!;
+    const team = sideOf(match, COACH) === 'home' ? match.home : match.away;
+    expect(team.controller).toBe('human');
+    expect(plan.warnings).toEqual([]);
+  });
+
   it('warns about sheets, modes and commands it cannot use', () => {
     const state = testGame();
     const result = playRound(
