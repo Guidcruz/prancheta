@@ -72,7 +72,8 @@ Telas da 1a (`docs/design/telas/`):
 | T-010  | feita (PR #21 mergeado): cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5                                                                                                                    |
 | T-011  | feita (PR #22 mergeado): IA pré-jogo, `suggestSheet`, `validateLineup`, `ENGINE_VERSION` segue 5                                                                                                                   |
 | T-012  | feita (PR #24 mergeado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                                                       |
-| T-013  | em andamento (PR em aberto; code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                          |
+| T-013  | feita (code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                                               |
+| T-014  | feita (PR aberto; code review aprovado em 2 rodadas e QA PASS): moral, forma, termômetro da torcida, "realismo simplificado", ídolo sempre titular, `ENGINE_VERSION` 10                                            |
 
 ## Dados da temporada (T-013, 20 temporadas)
 
@@ -82,6 +83,34 @@ Telas da 1a (`docs/design/telas/`):
 | 17º colocado     | 41,1        | 40–46   |
 | Gols por jogo    | 2,77        | 2,5–2,8 |
 | Trocas por time  | 3,5         | 3–4     |
+
+## Dados da temporada (T-014, 100 temporadas)
+
+| Métrica                 | Valor atual | Meta         |
+| ----------------------- | ----------- | ------------ |
+| Termômetro (média)      | 53,6        | 50–60        |
+| Termômetro (desvio)     | 18,2        | acima de 15  |
+| Termômetro abaixo de 20 | 4,4%        | —            |
+| Termômetro acima de 90  | 1,8%        | —            |
+| Campeão (pontos)        | 77,4        | 72–82        |
+| 17º colocado            | 39,8        | 39–45 (novo) |
+| Gols por jogo           | 2,770       | 2,5–2,8      |
+| Tempo por rodada        | 7 ms        | —            |
+
+Regressão: 988 testes passando e 1 pulado.
+
+## Decisões do CEO em 2026-11-05 (T-014)
+
+1. Meta do 17º recentrada em 42, de 39 a 45.
+2. Topo da tabela mantido como está, sem deixar os favoritos mais dominantes (hoje o mais forte é campeão em cerca de 24% das temporadas e algum dos 3 favoritos termina na metade de baixo em 26%).
+3. Placar e tabela ao vivo da rodada na tela de partida, no estilo TV: plantão curto em todo gol, plantão grande no gol que mexe com o técnico, tabela no intervalo e no fim, e opção nos ajustes. História em redação (`product-manager`).
+4. O devlog pode citar inspirações reais, como campeonatos e jogos, como referência.
+
+Pendências derivadas:
+
+- T-016: `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%).
+- T-017: recalcular a `strength` dos clubes na virada da temporada.
+- T-059 (online): as 3 regras de servidor para `fanDecisions` e a fronteira de `app/src/content/` para os valores da entrevista.
 
 ## Decisões do CEO em 2026-11-05 (T-013)
 
@@ -224,7 +253,7 @@ Notas:
 
 ## Em andamento
 
-- **T-013** (rodada e temporada): PR em aberto; code review e QA aprovados.
+- **T-014** (moral, forma, termômetro e realismo simplificado): PR aberto; code review e QA aprovados.
 - Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
 
 ## Concluído em 2026-11-04 (T-008 e patrocínio)
@@ -264,8 +293,8 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-014: moral, forma, termômetro da torcida e "realismo simplificado".
+1. T-015 e T-016 da Etapa 1a (a T-016 traz "tirar o pé", o ajuste de `baseChance` e `fans.reversion` 0,10).
 2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
-4. T-015 e T-016 da Etapa 1a (a T-016 traz "tirar o pé" e o ajuste de `baseChance`).
+4. Placar e tabela ao vivo da rodada (história em redação).
 5. Lote de clubes de dezembro, com a tabela final de 2026.
