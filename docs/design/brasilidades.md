@@ -41,10 +41,114 @@ Parâmetros: `ban.cutoffDates = [30/06, 31/12]`, `ban.graceDays = 45`, `ban.wind
 
 - Cartões: suspensão automática (3 amarelos ou 1 vermelho), avisada na escalação.
 - Escalação irregular: escalar jogador suspenso é permitido, mas custa os pontos do jogo (vão ao adversário), multa e confiança −15. É a "virada de mesa" real (Portuguesa 2013, São Paulo 1999).
-- Expulsão por agressão: julgamento em 2 a 4 rodadas, pena de 2 a 6 jogos. O técnico decide pedir **efeito suspensivo**: o jogador segue jogando até o julgamento; se a pena for confirmada, dobra. Chance de absolvição: 30%; de redução: 30%; de confirmação: 40%.
+- Expulsão por agressão: julgamento em 2 a 4 rodadas, pena de 2 a 6 jogos. O técnico decide pedir **efeito suspensivo**: o jogador segue jogando até o julgamento; se a pena for confirmada, dobra. Chance de absolvição: 30%; de redução: 30%; de confirmação: 40%. _(Em revisão: no real a pena não dobra; ver "Efeito suspensivo: como funciona no real" abaixo, com a proposta a aprovar pelo CEO.)_
 - Torcida: briga ou invasão (probabilidade cresce com termômetro abaixo de 30 ou acima de 90 em clássico): perda de mando (um jogo de portões fechados, bilheteria zero) e multa.
 - Recurso ao Pleno: o clube pode recorrer de qualquer pena; a decisão sai 3 a 6 rodadas depois, com 25% de chance de reduzir e 10% de agravar.
 - Virada de mesa por liminar: evento raro (≤ 2% por temporada, só no estilo Realista): um clube da IA rebaixado volta pela Justiça comum e a divisão joga com um time a mais na temporada seguinte (Gama 2000).
+
+## Efeito suspensivo: como funciona no real (pesquisa de 2026-11-05)
+
+> Pedido do CEO, que duvidou do "se a pena for confirmada, dobra" da seção acima (e de `PROJETO.md`, "STJD"). Pesquisa em fontes públicas: o CBJD como aparece citado em decisões de tribunais desportivos e reportagens de 2024 a 2026. O texto integral do CBJD e do RGC da CBF não pôde ser baixado nesta sessão (a rede bloqueou os PDFs); quem for implementar confere os artigos no texto vigente.
+
+**Resposta curta: a pena não dobra.** Não há no CBJD nenhuma regra que dobre a pena de quem pediu efeito suspensivo. O risco real é outro: o Pleno pode absolver, reduzir, manter **ou aumentar** a pena (aconteceu em setembro de 2026: 2 jogos viraram 3), e o que sobrar é cumprido depois, nos jogos que vierem, sejam eles quais forem.
+
+### O rito real, em ordem
+
+1. **Expulsão = suspensão automática de 1 jogo**, na partida seguinte da mesma competição, sem esperar julgamento (RGC da CBF). Ela não é pena, é impedimento; por isso não se converte em outra coisa (TJD-DF, janeiro de 2026).
+2. **Julgamento na 1ª instância (Comissão Disciplinar do STJD), em cerca de uma semana.** Exemplo: Victor Gabriel (Internacional), jogo em 22/07/2026, julgado em 28/07. A pena vale a partir da decisão, e **a partida da automática é descontada** (CBJD: "deduzir-se-á da pena imposta a partida não disputada em consequência da expulsão"). Pena de 1 jogo = já cumprida.
+3. **Recurso ao Tribunal Pleno, com pedido de efeito suspensivo.** Quem pede é o clube (ou o próprio punido), no recurso voluntário, ao relator do Pleno; a Procuradoria também pode recorrer, inclusive para aumentar a pena. Há dois casos:
+   - **Pena acima de 2 jogos (ou 15 dias):** o efeito suspensivo decorre da norma, basta pedir (CBJD art. 147-B, I, que remete à Lei Pelé, art. 53, § 4º). Mas só vale para o que passa do limite (147-B, § 1º): o jogador **cumpre 2 jogos (a automática conta) e joga até o Pleno**. Foi o caso de Victor Gabriel (pena de 6 jogos, efeito concedido em 01/08/2026 "depois de cumpridas duas partidas"). Na Série A, os clubes pedem com frequência; as notícias de 2026 trazem vários casos por mês.
+   - **Pena de até 2 jogos:** o relator decide caso a caso (art. 147-A): exige argumento plausível e risco de dano irreparável. É exceção: negado a Thiago Carpini (Fortaleza, 2 jogos, maio de 2026), concedido a Abel Ferreira (Palmeiras, 2 jogos, setembro de 2026).
+   - Multa: o recurso a suspende sempre (147-B, II).
+4. **O Pleno julga, em geral, uma a duas semanas depois.** Victor Gabriel: efeito em 01/08, Pleno em 07/08, pena mantida. Abel Ferreira (microfone): efeito em 05/09, Pleno em 11/09, pena **aumentada de 2 para 3 jogos**, sem novo recurso. Abel Ferreira (abril, expulsões): efeito negado, Pleno reduziu de 8 para 7. O que sobrou é cumprido a partir do jogo seguinte da competição.
+
+### Penas típicas (CBJD, atleta)
+
+| Infração                                              | Artigo | Pena no código                              | Na prática (2026)                                                                                                                        |
+| ----------------------------------------------------- | ------ | ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| Jogada violenta (força excessiva, mesmo sem intenção) | 254    | 1 a 6 partidas                              | perto do mínimo; com a automática descontada, muitas vezes já está cumprida                                                              |
+| Agressão física                                       | 254-A  | 4 a 12 partidas (não atleta: 30 a 180 dias) | perto do mínimo: Pulgar (Flamengo) 4, Zé Ricardo (Remo) 5 com o art. 250; Victor Gabriel 6 e "até o adversário voltar", teto de 180 dias |
+| Cusparada                                             | 254-B  | 6 a 12 partidas                             | Kleber (Coritiba) denunciado no mínimo de 6                                                                                              |
+| Conduta contrária à disciplina ("antidesportiva")     | 258    | 1 a 6 partidas (não atleta: 15 a 180 dias)  | 1 a 3: Abel Ferreira 2, depois 3, por chutar um microfone                                                                                |
+
+- **Multa:** nas infrações de campo, o atleta leva suspensão; a multa recai sobretudo no clube (por exemplo, Remo multado em R$ 10 mil pelo art. 213, segurança, no mesmo jogo da agressão) e em treinadores e dirigentes. O teto do CBJD é R$ 100 mil por infração (o caso Bruno Henrique, de 2025, terminou numa multa desse valor).
+
+### Em que competições a pena vale (responde a `temporada.md`, "Suspensões entre temporadas")
+
+| Tipo                                          | Onde vale                                                                                                                       | Se a competição acaba (ou o time é eliminado)                                                                                                                                                                                                       |
+| --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Suspensão automática (3 amarelos ou vermelho) | só na competição em que foi recebida                                                                                            | **extinta** (RGC; o TJD-DF negou levá-la para a temporada seguinte em 2026); os amarelos zeram com a competição                                                                                                                                     |
+| Pena do STJD em partidas                      | só na mesma competição (CBJD art. 171): o gancho de Abel Ferreira no Brasileiro não valia na Copa do Brasil nem na Libertadores | **passa para a partida seguinte de outra competição da mesma entidade** (art. 171, § 1º), ou vira medida de interesse social, a pedido. Bruno Henrique, expulso na semifinal da Copa do Brasil de 2024, cumpriu o resto na última rodada da Série A |
+| Pena do STJD em dias                          | em todas as competições da modalidade (art. 172)                                                                                | o prazo corre no calendário, inclusive na pausa                                                                                                                                                                                                     |
+
+A pena é da pessoa: transferido, o jogador a leva para o clube novo, na mesma competição.
+
+**Para o jogo (Etapa 2, só a Série A):** amarelos e suspensão automática pendente zeram na virada, como já é na 1a (a regra atual de `temporada.md` é fiel); jogos de pena do STJD que sobrarem passam para a próxima competição nacional que o jogador disputar (na Etapa 2, a Série A da temporada seguinte; com copas, a primeira que vier no calendário).
+
+### Proposta de regra (a aprovar pelo CEO)
+
+> Substitui o "se a pena for confirmada, dobra". Como a regra atual está no `PROJETO.md`, a troca é ADR depois do ok do CEO. Os números ainda não foram simulados: o STJD é da Etapa 2 e não existe no motor; as contas abaixo são de esperança simples, e a medição entra no pedido ao `developer`.
+
+**Regra em uma frase:** o expulso fica 1 jogo de fora na hora; o STJD julga na semana e desconta esse jogo; se a pena passar de 2 jogos, você pode recorrer: ele cumpre 2 e joga até o Pleno, que pode absolver, reduzir, manter ou aumentar, e o que sobrar ele cumpre logo depois.
+
+1. **Vermelho direto ganha um motivo**, sorteado no lance: `impedir gol` (35%: pena de 1 jogo, já cumprida com a automática), `jogada violenta` (45%: pena de 1, 2 ou 3 jogos, com pesos 50/30/20) e `agressão` (20%: 4, 5 ou 6 jogos, com pesos 50/30/20). O segundo amarelo continua só na automática, sem julgamento.
+2. **Julgamento na rodada seguinte à expulsão** (`stjd.firstInstanceDelayRounds = 1`), com a automática descontada. A notícia sai com a pena e os jogos que ele perde.
+3. **Com pena de 3 jogos ou mais**, o técnico vê uma tela com duas opções e os próximos adversários:
+   - **Cumprir agora:** perde os jogos da pena, em sequência; sabe quando ele volta.
+   - **Recorrer ao Pleno:** cumpre 2 (automática inclusa), joga as `stjd.plenoDelayRounds = 2` rodadas até o Pleno e depois cumpre o que o Pleno decidir, a partir da rodada seguinte, sejam quais forem os jogos.
+4. **O parecer do jurídico** aparece antes da escolha (sorteado: um terço cada) e fixa as chances do Pleno. Reduzir e aumentar mexem em 1 jogo (`stjd.plenoStepGames = 1`, constante); absolvição não devolve os 2 já cumpridos (como no real).
+
+| Parecer      | Absolve | Reduz 1 | Mantém | Aumenta 1 | Jogos perdidos, pena de 4 (cumprir agora: 4) |
+| ------------ | ------- | ------- | ------ | --------- | -------------------------------------------- |
+| Favorável    | 25%     | 35%     | 35%    | 5%        | 3,2                                          |
+| Dividido     | 10%     | 30%     | 45%    | 15%       | 3,65                                         |
+| Desfavorável | 5%      | 15%     | 55%    | 25%       | 4,0                                          |
+
+**Por que a escolha é interessante:** com parecer favorável, recorrer quase sempre compensa (é o que os clubes fazem no real); com parecer desfavorável, a conta dá empate (4,0 contra 4), e quem decide é o calendário: perder o centroavante agora contra o lanterna ou arriscar perdê-lo no clássico daqui a três rodadas, talvez por um jogo a mais. Não é azar puro: o técnico vê o parecer, a tabela e os jogos antes de decidir.
+
+**Simplificações de propósito:** pena de até 2 jogos não tem efeito suspensivo no jogo (no real é exceção, a critério do relator); a Procuradoria não recorre sozinha (quem cumpre agora não corre risco de aumento); sem custo em dinheiro pelo recurso. As multas ao clube ficam com a parte de torcida do STJD.
+
+**IA dos clubes:** recorre sempre com parecer favorável ou dividido e em metade dos desfavoráveis (`stjd.aiAppealDoubtful = 0.5`).
+
+**Parâmetros (iniciais; vão para `app/src/params/` só depois do ok):** `stjd.redReasonWeights = {preventGoal: 0.35, violentPlay: 0.45, assault: 0.20}`, `stjd.banWeights.violentPlay = {1: 0.5, 2: 0.3, 3: 0.2}`, `stjd.banWeights.assault = {4: 0.5, 5: 0.3, 6: 0.2}`, `stjd.firstInstanceDelayRounds = 1`, `stjd.plenoDelayRounds = 2`, `stjd.plenoOutcomes` (a tabela acima), `stjd.aiAppealDoubtful = 0.5`. Constantes (vêm da lei, não se ajustam): automática de 1 jogo descontada, efeito suspensivo só acima de 2 jogos, 2 jogos cumpridos antes do efeito, passo de 1 jogo no Pleno.
+
+**Frequência esperada (conta, não simulação):** o motor dá cerca de 0,08 vermelho direto por jogo (`partida.md`, T-016), cerca de 1,5 por clube na temporada; pena de 3 ou mais sai em 29% deles (20% + 45% × 20%). A tela de recurso aparece para o clube do técnico cerca de uma vez a cada duas temporadas. Se o CEO quiser mais, o botão é o peso de `assault`, não a regra.
+
+**Casos de borda:**
+
+| Caso                                         | Regra                                                                                 |
+| -------------------------------------------- | ------------------------------------------------------------------------------------- |
+| Pleno marcado depois da última rodada        | o Pleno julga na virada; o que sobrar passa para a próxima temporada (art. 171, § 1º) |
+| Jogador vendido com pena ou recurso pendente | leva a pena e o recurso para o clube novo                                             |
+| Escalar o jogador depois do Pleno confirmar  | é escalação irregular (regra da seção acima)                                          |
+| Nova expulsão enquanto o recurso corre       | nova automática e novo julgamento; as penas somam, cada uma com o seu recurso         |
+| Absolvição                                   | os 2 jogos cumpridos não voltam; a notícia diz "absolvido, mas já ficou 2 jogos fora" |
+
+**Pedido ao `developer` (Etapa 2, quando o STJD entrar):** evento de vermelho direto com `redReason`; estado de pena por jogador (`banGames`, `appealPending`, `plenoRound`); e o `npm run balance` contando, por temporada, penas por motivo, telas de recurso por clube, resultados do Pleno por parecer e jogos perdidos por quem recorreu e por quem cumpriu. Critérios de aceite: telas de recurso por clube e temporada entre 0,3 e 0,7; jogos perdidos médios de quem recorreu com parecer desfavorável a até ±0,2 de quem cumpriu; nenhuma pena atravessando a temporada fora da regra do art. 171.
+
+### Fontes da pesquisa
+
+- [Lance: STJD concede efeito suspensivo a Victor Gabriel, do Inter (cumpre 2 e joga até o Pleno)](https://www.lance.com.br/internacional/stjd-concede-efeito-suspensivo-a-victor-gabriel-do-inter.html)
+- [Band: STJD mantém pena de Victor Gabriel no Pleno](https://www.band.com.br/esportes/stjd-mantem-pena-de-victor-gabriel-por-entrada-em-gabriel-pec-confira-202608071750)
+- [Itatiaia: Victor Gabriel punido por até 180 dias](https://www.itatiaia.com.br/esportes/futebol/futebol-nacional/brasileirao-serie-a/stjd-pune-zagueiro-do-inter-por-ate-180-dias-apos-entrada-violenta-em-gabriel-pec/)
+- [DGABC: Abel Ferreira consegue efeito suspensivo após chute em microfone](https://www.dgabc.com.br/Noticia/4345339/abel-ferreira-e-palmeiras-conseguem-efeito-suspensivo-apos-chute-em-microfone)
+- [Flashscore: STJD aumenta gancho de Abel Ferreira, sem direito a recurso](https://www.flashscore.com.br/noticias/stjd-aumenta-gancho-de-abel-ferreira-sem-direito-a-recurso/Mk941KUI/)
+- [Tribuna de Jundiaí: os jogos que Abel perde (só no Brasileiro)](https://tribunadejundiai.com.br/mais/esportes/veja-quais-jogos-abel-ferreira-vai-perder-pelo-palmeiras-apos-suspensao-do-stjd/)
+- [Band: Abel tem pena reduzida de 8 para 7 pelo Pleno](https://www.band.com.br/esportes/abel-ferreira-do-palmeiras-tem-pena-reduzida-pelo-stjd-mas-segue-suspenso-202604151444)
+- [O Povo: STJD indefere efeito suspensivo para Thiago Carpini](https://www.opovo.com.br/esportes/futebol/times/fortaleza/2026/05/22/stjd-indefere-pedido-do-fortaleza-de-efeito-suspensivo-para-thiago-carpini.html)
+- [Diário do Nordeste: Mendoza liberado depois de cumprir 2 jogos (art. 147-B)](https://diariodonordeste.verdesmares.com.br/jogada/mendoza-e-liberado-pelo-stjd-e-ceara-ganha-reforco-para-o-classico-rei-1.3096035)
+- [TJD-RS: decisão sobre efeito suspensivo (147-A ope judicis, 147-B ope legis)](https://www.ligagaucha.com.br/assets_site/documentos/TJD_-_DECISÃO_EFEITO_SUSPENSIVO_-_2463524.23.pdf)
+- [FPF-PE: parecer com o desconto da automática e a regra da mesma competição](https://www.fpf-pe.com.br/assets/uploads/170837049013.pdf)
+- [TJD-DF (2026): automática não se converte nem passa para a temporada seguinte](https://ffdf.com.br/assets/uploads/176796614878.pdf)
+- [Bahia Notícias: suspensão automática descontada da pena (caso Neymar)](https://www.bahianoticias.com.br/esportes/noticia/80800-stjd-pune-neymar-com-dois-jogos-de-suspensao-apos-expulsao-contra-o-bahia)
+- [Valor Final: cartões no campeonato brasileiro e quando a conta zera](https://valorfinal.com.br/guia/cartoes-amarelos-suspensao-brasileirao)
+- [Soccerway: Bruno Henrique cumpre na última rodada da Série A a pena da Copa do Brasil](https://br.soccerway.com/noticias/futebol-brasileirao-betano-stjd-mantem-punicao-a-bruno-henrique-que-desfalca-o-fla-no-encerramento-da-serie-a/AgzFj6RH)
+- [Netflu: o art. 171 do CBJD e a pena pendente no fim da competição](https://www.netflu.com.br/nova-resolucao-da-cbf-tem-conflito-com-cbjd/)
+- [TNH1: Pulgar pega 4 jogos por agressão (art. 254-A)](https://www.tnh1.com.br/noticia/nid/pulgar-do-flamengo-pega-quatro-jogos-de-suspensao-no-stjd-por-agressao/)
+- [O Liberal: Zé Ricardo, 5 jogos, e multa do Remo pelo art. 213](https://www.oliberal.com/esportes/remo/amp/stjd-pune-volante-do-remo-ze-ricardo-com-cinco-jogos-de-suspensao-por-expulsao-contra-o-palmeiras-1.1121838)
+- [Lance: Kleber segue suspenso (arts. 254-A e 254-B)](https://www.lance.com.br/futebol-paranaense/stjd-nega-pedido-reconsideracao-coritiba-kleber-segue-suspenso.html)
+- [DGABC: caso Bruno Henrique encerrado com multa de R$ 100 mil](https://www.dgabc.com.br/Noticia/4269341/stjd-encerra-caso-bruno-henrique-com-multa-de-r$-100-mil)
+- [Jus.com.br: agressão física, jogada violenta e ato hostil no CBJD](https://jus.com.br/artigos/17589/justica-desportiva-agressao-fisica-jogada-violenta-ato-hostil)
 
 ## Estrutura do clube e comissão técnica (Etapas 3 e 4)
 
