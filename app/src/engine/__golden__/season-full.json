@@ -1,5 +1,5 @@
 {
-  "engineVersion": 11,
+  "engineVersion": 12,
   "name": "season-full",
   "data": {
     "table": [
@@ -265,6 +265,6 @@
         }
       ]
     ],
-    "digest": "20559e78"
+    "digest": "1d2ed3c7"
   }
 }

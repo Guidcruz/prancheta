@@ -2,6 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { GameState } from './game.ts';
 import { playRound } from './round.ts';
+import { careerLeagueTitles, endSeason, startNextSeason } from './season.ts';
+import { fixedIdentitySource } from './testing/identity.ts';
 import { testParams } from './testing/params.ts';
 import { ENGINE_VERSION } from './version.ts';
 
@@ -72,5 +74,19 @@ describe('a state saved by the engine before T-014', () => {
     expect(JSON.stringify(finish(legacy.state, 'full').at(-1))).toBe(
       JSON.stringify(finish(legacy.state, 'full').at(-1)),
     );
+  });
+
+  it('closes and turns its season without pastSeasons (read as [], T-017)', () => {
+    const last = finish(legacy.state, 'full').at(-1)!;
+    expect('pastSeasons' in legacy.state).toBe(false);
+    const closed = endSeason(last, params, [Object.keys(last.clubs)[4]!]);
+    if (!closed.ok) throw new Error(closed.error);
+    expect(closed.value.state.pastSeasons).toEqual([closed.value.summary]);
+    const champion = closed.value.summary.championId;
+    expect(careerLeagueTitles(closed.value.state, champion)).toBe(
+      last.clubs[champion]!.def.titles.league + 1,
+    );
+    const next = startNextSeason(closed.value.state, params, fixedIdentitySource());
+    expect(next.ok && next.value.season).toBe(2);
   });
 });

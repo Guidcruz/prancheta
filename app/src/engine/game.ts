@@ -12,6 +12,7 @@ import type { IdentitySource, Player } from './players.ts';
 import { fail, ok } from './result.ts';
 import type { PlayerSeasonStats, RoundReport } from './round.ts';
 import { Rng, seedFromString } from './rng.ts';
+import type { SeasonSummary } from './season.ts';
 import { ENGINE_VERSION } from './version.ts';
 import type { AiProfile, ClubId, EngineWarning, Formation, PlayerId, Result } from './types.ts';
 
@@ -19,9 +20,9 @@ import type { AiProfile, ClubId, EngineWarning, Formation, PlayerId, Result } fr
  * Game state and `newGame` (docs/02-architecture.md, 4.1; T-006). The state grows with the tasks
  * that own each part: this file has what a new game needs to exist (clubs, squads, players and
  * the identity of the career), the calendar (`fixtures`, T-007) and what the rounds write
- * (`lastSheets`, `seasonStats`, `lastRound`, T-013; round.ts). Still to come, as §4.1 assigns it:
- * `pastSeasons` (end of season), T-017. The save format (T-018/T-019) is frozen only after that
- * lands, so adding it needs no migration yet.
+ * (`lastSheets`, `seasonStats`, `lastRound`, T-013; round.ts) and the summaries of the seasons
+ * closed (`pastSeasons`, T-017; season.ts). The save format (T-018/T-019) is frozen only after
+ * that, so adding `pastSeasons` needs no migration.
  */
 
 /** A club in the career (docs/02-architecture.md, 4.1). */
@@ -75,6 +76,12 @@ export interface GameState {
   readonly lastSheets: Readonly<Record<ClubId, TeamSheet>>;
   /** Season numbers of every player who took the pitch this season (round.ts). */
   readonly seasonStats: Readonly<Record<PlayerId, PlayerSeasonStats>>;
+  /**
+   * One lean summary per season closed by `endSeason` (season.ts; temporada.md, "O que vai para
+   * pastSeasons"): ids and numbers only, never names (ADR-0012). The career's league titles are
+   * derived from it (`careerLeagueTitles`).
+   */
+  readonly pastSeasons: readonly SeasonSummary[];
   /** The report of the last round played, with the full events (only this one is kept). */
   readonly lastRound?: RoundReport;
 }
@@ -169,6 +176,7 @@ export function newGame(
       fixtures: fixtures.value,
       lastSheets: {},
       seasonStats: {},
+      pastSeasons: [],
     },
     warnings,
   );

@@ -282,6 +282,39 @@ export type {
 } from './match/types.ts';
 export { BENCH_SIZE } from './lineup.ts';
 export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
+export {
+  AWARD_MIN_GAMES,
+  EVOLUTION,
+  MORALE_OFFSEASON_PULL,
+  REVELATION_MAX_AGE,
+  TARGET_MARGIN,
+  TARGET_POSITION_MAX,
+  TEAM_OF_SEASON_FORMATION,
+  ageCurve,
+  careerLeagueTitles,
+  endSeason,
+  evolutionSeed,
+  evolutionTarget,
+  evolvePlayer,
+  seasonAwards,
+  squadStrength,
+  startNextSeason,
+  strengthRank,
+  targetPosition,
+} from './season.ts';
+export type {
+  AssistAward,
+  CampaignMatch,
+  ClubCampaign,
+  EvolvingPlayer,
+  GoalkeeperAward,
+  PlayerEvolution,
+  RatingAward,
+  ScorerAward,
+  SeasonAwards,
+  SeasonSummary,
+  TeamOfSeasonSlot,
+} from './season.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type {
   AttributeKey,
