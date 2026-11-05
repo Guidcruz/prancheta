@@ -93,8 +93,60 @@ Junto com as decisões, entram os ajustes da ordem já aprovada: `match.comforta
 
 ### Medição final (3 sementes)
 
-_A preencher com a tabela do `developer` depois da aplicação: `npm run balance -- --seasons 200 --seed N`, com N = 1, 2 e 3, e as metas raras somadas nas 3 sementes._
+`npm run balance -- --seasons 200 --seed 1,2,3`, com `ENGINE_VERSION` 11 e os parâmetros aplicados em `app/src/params/` (commit `753159e`). **Resultado: 35 de 35 metas obrigatórias dentro em cada semente, as 3 metas raras dentro no total, código de saída 0.**
 
-| Métrica | Semente 1 | Semente 2 | Semente 3 | Meta |
-| ------- | --------- | --------- | --------- | ---- |
-|         |           |           |           |      |
+| Métrica                                        | Semente 1   | Semente 2   | Semente 3   | Meta                        |
+| ---------------------------------------------- | ----------- | ----------- | ----------- | --------------------------- |
+| Gols por partida                               | 2,64        | 2,65        | 2,62        | 2,50 a 2,80                 |
+| Time 20 pontos mais forte vence                | 62,8%       | 62,6%       | 62,4%       | 62% a 68%                   |
+| Zebra de 30 pontos                             | 8,3%        | 8,1%        | 8,4%        | 8% a 12%                    |
+| Empates                                        | 26,1%       | 25,9%       | 26,5%       | 24% a 28%                   |
+| Mandante vence                                 | 46,0%       | 45,9%       | 45,5%       | 45% a 50%                   |
+| 0×0                                            | 7,3%        | 7,0%        | 7,3%        | 6% a 9%                     |
+| Goleada (≥ 3)                                  | 12,3%       | 12,4%       | 12,2%       | 8% a 13%                    |
+| Placar grande (≥ 5)                            | 0,9%        | 1,0%        | 0,9%        | 0,5% a 2%                   |
+| Amarelos                                       | 4,46        | 4,46        | 4,46        | 3,5 a 4,5                   |
+| Vermelhos                                      | 0,181       | 0,179       | 0,179       | 0,11 a 0,25                 |
+| Lesões                                         | 0,324       | 0,319       | 0,322       | 0,20 a 0,40                 |
+| Pênaltis                                       | 0,263       | 0,263       | 0,258       | 0,17 a 0,33                 |
+| Táticas (V − D, pior caso)                     | −0,8 a +1,4 | −1,3 a +1,1 | −1,7 a +0,9 | −3 a +3 p.p.                |
+| "Tudo no ataque" desde o apito inicial (V − D) | +1,6        | +1,0        | +2,1        | −3 a +3 p.p.                |
+| "Tudo no ataque" (0×1 aos 75')                 | +3,7        | +3,5        | +3,1        | ≥ +3 p.p.                   |
+| Pontos do campeão                              | 75,0        | 75,8        | 75,1        | 72 a 82                     |
+| Pontos do 17º                                  | 40,3        | 40,3        | 40,2        | 39 a 45                     |
+| Termômetro abaixo de 20 / acima de 90          | 2,3% / 0,6% | 2,3% / 0,7% | 2,6% / 0,6% | no máximo 5% cada           |
+| Campeão grande                                 | 83,0%       | 80,5%       | 82,5%       | 50% a 85%                   |
+| Fuga do Z4 depois da rodada 30                 | 21,9%       | 20,5%       | 20,4%       | 15% a 30%                   |
+| Robô no Coritibom: ganho                       | +4,1        | +3,9        | +4,5        | +2 a +8 pontos              |
+| Título do Coritibom com o robô                 | 4,5%        | 3,5%        | 3,0%        | no máximo 5%                |
+| Grande rebaixado (informativa)                 | 96,0%       | 95,0%       | 94,5%       | 40% a 80% na carreira longa |
+
+| Meta rara (total das 3 sementes, 600 temporadas) | Valor                   | Meta        |
+| ------------------------------------------------ | ----------------------- | ----------- |
+| Campeão pequeno                                  | 1,5% (2,0 / 1,0 / 1,5%) | 0,5% a 3%   |
+| Clube fraco no G4                                | 6,0% (8,0 / 4,0 / 6,0%) | 5% a 15%    |
+| Fuga do Z4 de 6 a 8 pontos                       | 7,8% (7,7 / 8,4 / 7,2%) | ao menos 3% |
+
+Os números conferem com a medição na cópia antes da aplicação (tabela "antes × depois" acima), semente a semente.
+
+### "Tudo no ataque" desde o apito inicial: avaliação dos pontos por jogo
+
+**A observação do `developer`:** desde o apito inicial, o "tudo no ataque" fica dentro de ±3 em vitórias − derrotas (+1,6, +1,0 e +2,1), mas rende +0,029, +0,034 e +0,054 ponto por jogo sobre a referência (a semente 3 fora da faixa de referência de ±0,04). Somado numa temporada, isso dá de +1,1 a +2,1 pontos. É mais que a postura ofensiva comum (+0,012 por jogo, cerca de +0,5 por temporada), porque a postura troca empates por vitórias e derrotas, e a vitória vale 3.
+
+**Medição de temporada (cópia do código em `753159e`, 200 temporadas pareadas por semente, sem duelos).** Um robô que põe "tudo no ataque" no minuto 0 e não muda mais, mantendo a escalação, as trocas e a conversa do robô bom, contra o robô bom normal, que nunca começa no "tudo no ataque" e só o usa perdendo por 1 a partir dos 80':
+
+| Coritibom, ganho sobre a IA (pontos por temporada) | Semente 1    | Semente 2    | Semente 3    | Média        |
+| -------------------------------------------------- | ------------ | ------------ | ------------ | ------------ |
+| Robô bom                                           | +4,1         | +3,9         | +4,5         | +4,2         |
+| Robô "sempre tudo no ataque"                       | +3,5         | +5,9         | +4,9         | +4,8         |
+| G4 (robô bom / sempre tudo no ataque)              | 23,0 / 26,5% | 21,5 / 27,0% | 24,0 / 28,0% | 22,8 / 27,2% |
+| Título (robô bom / sempre tudo no ataque)          | 4,5 / 5,5%   | 3,5 / 4,0%   | 3,0 / 5,5%   | 3,7 / 5,0%   |
+
+**Leitura.** Em pontos não é dominante: +0,6 ponto por temporada sobre o robô bom, dentro do ruído (diferenças de −0,6 a +2,0 entre as sementes). O cansaço da pressão alta e os cartões a mais pesam ao longo da temporada e comem a maior parte dos +1 a +2 pontos que o duelo isolado mostra. Mesmo assim é um problema de design: **um botão apertado no minuto 0 de todo jogo rende o mesmo que escalar e mexer bem**, e, como põe mais gols nos dois lados, dá mais variância a um clube médio: mais 4 pontos de G4, e o título do Coritibom chega ao teto da meta (5%). Isso esvazia a escolha tática que o jogo quer premiar.
+
+**O robô passaria a usar o tempo todo?** Não. Ele escolhe a postura antes do jogo só entre defensiva, equilibrada e ofensiva, e usa o "tudo no ataque" só perdendo por 1 a partir dos 80'. O risco é o humano descobrir que o botão no minuto 0 vale tanto quanto jogar bem.
+
+**Proposta (volta ao CEO; não aplicada).** Regra em uma frase: **"todo mundo no ataque" só pode ser pedido a partir dos 60 minutos.** É o último recurso, como no futebol: perdendo cedo, o técnico tem a postura ofensiva. Por que esta e não um ajuste de número: os multiplicadores aprovados (×1,25 · ×0,78) e o "tudo no ataque" aos 75' (+3,1 a +3,7) não mudam, o robô e a IA não mudam (os dois só o usam a partir dos 80'), e o uso desde o apito deixa de existir. Nenhuma outra métrica se move. A alternativa seria fazer o "tudo no ataque" cansar mais por minuto (o custo cresce com o tempo de uso e quase não pesa em 15 minutos), mas isso pede um multiplicador novo de cansaço e uma rodada de calibragem; a regra dos 60' não pede nenhuma.
+
+- **Pedido ao `developer`, se o CEO aprovar:** o comando `allOut` (preset e postura) antes do minuto 60 é ignorado com o aviso `command-too-early`; a tela só mostra o botão a partir dos 60'. Aceite: as 35 metas e as 3 raras iguais às desta medição; o duelo "tudo no ataque desde o apito inicial" sai do relatório (ou passa a começar aos 60', com V − D dentro de ±3 e pontos por jogo dentro de ±0,04); um teste com o comando no minuto 30 mostra a partida igual à sem comando, mais o aviso.
+- **Meta nova (proposta, referência que não bloqueia):** "nenhum comando ou tática usado do apito ao fim rende mais de +0,04 ponto por jogo sobre a referência", porque vitórias − derrotas não pega o efeito dos 3 pontos.
