@@ -12,8 +12,9 @@ import { testParams } from './testing/params.ts';
  * source. `round-first`: the report of round 1 (scores, scorers, facts) and a 32-bit digest
  * (FNV-1a, `seedFromString`) of the state after it. `season-full`: the 38 rounds in a row, all by
  * the AI, with the final table, the facts of the last two rounds, the facts counted by kind and
- * the digest of the final state, which catches any change in any match or between rounds. The
- * whole season with the moral, the fatigue and the fans of T-014 is the T-015 golden.
+ * the digest of the final state, which catches any change in any match or between rounds: since
+ * T-014 that includes the morale, the form, the bench streaks and the fans thermometer. The
+ * T-015 golden records the whole season of T-014 in detail.
  */
 const params = testParams();
 const SEED = 20261104;

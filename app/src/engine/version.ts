@@ -25,4 +25,8 @@
 //    them changed), the tie-break draw has the season in its label, the facts follow the cadence
 //    of temporada.md (milestones, run ends), and the displayed strength replaces the unavailable
 //    starters of the last sheet as the kick-off does; the round goldens changed.
-export const ENGINE_VERSION = 9;
+// 10: between rounds (T-014): the morale of the round (result, bench, drift towards the fans),
+//    the form, `benchStreak`, the fans thermometer of every club (`fans`, `idolBenchStreak`,
+//    `fanDecisions`) and the simplified realism; the morale moves the strength of the next
+//    rounds, so the round goldens changed (the match goldens did not).
+export const ENGINE_VERSION = 10;

@@ -1,7 +1,8 @@
 import { suggestSheet } from './ai.ts';
+import { clubIdol, expectedPoints, fansDelta, IDOL_BENCH, winlessRuns } from './fans.ts';
 import { roundFacts, type Fact } from './facts.ts';
 import { daysBetween, type Fixture } from './fixtures.ts';
-import type { GameState } from './game.ts';
+import type { ClubState, GameState } from './game.ts';
 import type { TeamSheet } from './lineup.ts';
 import { clamp } from './math.ts';
 import { simulateMatch } from './match/simulate.ts';
@@ -14,9 +15,11 @@ import type {
   TeamInput,
 } from './match/types.ts';
 import { SEASON_ROUNDS, type GameParams } from './params.ts';
-import type { Player } from './players.ts';
+import { RECENT_RATINGS_MAX, type Player } from './players.ts';
 import { fail, ok } from './result.ts';
 import { seedFromString } from './rng.ts';
+import { isUnavailable } from './selection.ts';
+import { getStandings } from './standings.ts';
 import type {
   ClubId,
   ClubSize,
@@ -44,14 +47,18 @@ import { ENGINE_VERSION } from './version.ts';
  * 4. the suspensions served and the rounds of injury counted down, then the new ones: 1 game off
  *    `suspendedGames` for every player of a club that played, 1 round off `injuryRounds` for
  *    every player; then `newSuspensions` added, `newInjuries` written and `yellowCounts` merged
- *    (only who took the pitch is in it); `clubAppearances` + 1 for who took the pitch;
- * 5. the round's morale: today only the −3 of "Cobrar" for the hotheads on the pitch at the
- *    half-time whistle (partida.md, "Cobrar e a moral"). The rest of the table of jogadores.md
- *    ("Moral por rodada") and the fans thermometer are T-014, which adds its deltas to the same
- *    per-player sum (`roundMoraleDeltas`) before the one clamp to 0..100;
+ *    (only who took the pitch is in it); `clubAppearances` + 1 for who took the pitch. With the
+ *    simplified realism (partida.md, "Modo Realismo simplificado") the new suspensions and the
+ *    new injuries are not written: the cards and the injured leaving happen in the match only;
+ * 5. the round's morale (jogadores.md, "Moral por rodada"; T-014): the result for who took the
+ *    pitch, the bench for who expected to play and did not (`benchStreak`), the drift towards the
+ *    fans and the "Cobrar" for the hotheads, summed per player (`roundMoraleDeltas`) before the
+ *    one clamp to 0..100; the form (`recentRatings`); then the fans thermometer of every club
+ *    (fans.ts), with the idol left on the bench (`idolBenchStreak`) and `fanDecisions`;
  * 6. the condition: the final energy of who played (the condition of the others), plus
  *    `fatigue.recoveryPerDay` × the days until the next round, up to 100. After round 38 there is
- *    no next round, so no recovery (the next season is T-017's);
+ *    no next round, so no recovery (the next season is T-017's). With the simplified realism
+ *    everyone is back to 100 between the games;
  * 7. the facts (facts.ts).
  * Step 8, the save, is the application's.
  *
@@ -77,7 +84,11 @@ export interface RoundInput {
   readonly sheets: Readonly<Partial<Record<ClubId, TeamSheet>>>;
   /** The coach's commands by fixture (only in the career, P6), as he gave them live. */
   readonly commands: Readonly<Partial<Record<FixtureId, readonly MatchCommand[]>>>;
-  /** Sum of the coach's decisions about the fans (fans.decisionCap); applied by T-014. */
+  /**
+   * Sum of the coach's decisions about the fans in the round (torcida.md, "Decisões do técnico"),
+   * by club. Added to the idol's bench of that club and limited to ±fans.decisionCap. A club not
+   * in the state, or a value that is not a finite number, is ignored with a warning.
+   */
   readonly fanDecisions: Readonly<Partial<Record<ClubId, number>>>;
   /**
    * The clubs with a human coach and how he follows the match (ia-clubes.md, "Clube do técnico
@@ -155,11 +166,29 @@ export const DEFAULT_STADIUM_CAPACITY: { readonly [S in ClubSize]: number } = {
 };
 
 /**
- * The deltas of the round's morale that belong to T-013 (jogadores.md, "Moral por rodada"): the
- * "Cobrar" half-time talk takes 3 from every hothead on the pitch at the half-time whistle. A
- * rule constant; the other rows of that table come with T-014.
+ * The round's morale (jogadores.md, "Moral por rodada"; rule constants, not /balance knobs):
+ * - who took the pitch (also only in added time): +3 / 0 / −3 for a win / draw / defeat of his
+ *   club, × 2 in a derby (both sides);
+ * - who expected to play and did not take the pitch, from the 2nd round in a row
+ *   (`benchStreak` ≥ 2): −2 per round. "Expected to play" = `overall ≥ mean overall of the
+ *   club's kick-off XI − 3`; an injured or suspended player does not expect to play;
+ * - the "Cobrar" half-time talk: −3 for every hothead on the pitch at the half-time whistle;
+ * - a hothead suffers the bench twice; a professional suffers only half of every drop (the
+ *   defeat, the bench and the drift down).
+ * The drift towards the fans is `fans.moraleDrift` (ADR-0005), a parameter.
  */
-export const ROUND_MORALE = { demandTalkHothead: -3 } as const;
+export const ROUND_MORALE = {
+  demandTalkHothead: -3,
+  win: 3,
+  draw: 0,
+  loss: -3,
+  derbyMult: 2,
+  benched: -2,
+  benchedFromStreak: 2,
+  expectedMargin: 3,
+  hotheadBenchMult: 2,
+  professionalDropMult: 0.5,
+} as const;
 
 const EMPTY_STATS: PlayerSeasonStats = {
   games: 0,
@@ -342,30 +371,213 @@ function onPitchAtHalftime(match: MatchInput, result: MatchResult): Record<Side,
   return { home: new Set(), away: new Set() };
 }
 
-/**
- * The morale deltas of the round, by player, summed before the one clamp to 0..100 (step 5). In
- * T-013 only "Cobrar" (ROUND_MORALE.demandTalkHothead for the hotheads who heard it; a professional
- * is never a hothead, so the half rule of jogadores.md does not apply to it); T-014 adds the rest.
- */
-export function roundMoraleDeltas(
+/** One club's match of the round, as the morale and the fans read it. */
+interface ClubMatch {
+  readonly clubId: ClubId;
+  readonly opponentId: ClubId;
+  readonly side: Side;
+  readonly derby: boolean;
+  /** The club's goals and the opponent's: the awarded score of an abandoned match. */
+  readonly scored: number;
+  readonly conceded: number;
+  /** Who took the pitch for the club, also only in added time (partida.md, "Minutos jogados"). */
+  readonly pitch: ReadonlySet<PlayerId>;
+  /** Mean overall of the club's kick-off XI; undefined when nobody started. */
+  readonly xiMean: number | undefined;
+}
+
+/** The round's matches by club: `matches[i]` was played as `results[i]`. */
+function clubMatches(
   players: Readonly<Record<PlayerId, Player>>,
   matches: readonly MatchInput[],
   results: readonly MatchResult[],
+): Map<ClubId, ClubMatch> {
+  const out = new Map<ClubId, ClubMatch>();
+  results.forEach((result, i) => {
+    const match = matches[i];
+    if (match === undefined) return;
+    for (const [side, team, other, own] of [
+      ['home', match.home, match.away, 0],
+      ['away', match.away, match.home, 1],
+    ] as const) {
+      const squad = new Set(team.players.map((p) => p.id));
+      const cameOn = new Set<PlayerId>();
+      for (const e of result.events)
+        if (e.type === 'substitution' && e.side === side) cameOn.add(e.in);
+      const pitch = new Set(Object.keys(result.minutes).filter((id) => squad.has(id)));
+      let sum = 0;
+      let starters = 0;
+      for (const id of pitch) {
+        const overall = players[id]?.overall;
+        if (cameOn.has(id) || overall === undefined) continue;
+        sum += overall;
+        starters++;
+      }
+      out.set(team.clubId, {
+        clubId: team.clubId,
+        opponentId: other.clubId,
+        side,
+        derby: match.derby,
+        scored: result.score[own],
+        conceded: result.score[1 - own]!,
+        pitch,
+        xiMean: starters > 0 ? sum / starters : undefined,
+      });
+    }
+  });
+  return out;
+}
+
+/** A count read from the state: a non-negative integer, else 0 (a damaged value starts over). */
+const count = (value: number) => (Number.isInteger(value) && value > 0 ? value : 0);
+
+/**
+ * The `benchStreak` of every player of a club that played the round (jogadores.md, "Moral por
+ * rodada"): rounds in a row in which he expected to play and did not take the pitch. Back to 0
+ * when he took the pitch, when he did not expect to play (`overall` below the mean overall of the
+ * club's kick-off XI − 3) and when he was injured or suspended (an unavailable player does not
+ * expect to play, and the one back from injury starts over: "voltou de lesão: sem mudança").
+ */
+export function roundBenchStreaks(
+  state: Pick<GameState, 'players' | 'squads'>,
+  matches: readonly MatchInput[],
+  results: readonly MatchResult[],
 ): Map<PlayerId, number> {
+  const streaks = new Map<PlayerId, number>();
+  for (const club of clubMatches(state.players, matches, results).values()) {
+    for (const id of state.squads[club.clubId] ?? []) {
+      const p = state.players[id];
+      if (p === undefined) continue;
+      const expected =
+        club.xiMean !== undefined && p.overall >= club.xiMean - ROUND_MORALE.expectedMargin;
+      const benched = !club.pitch.has(id) && !isUnavailable(p) && expected;
+      streaks.set(id, benched ? count(p.benchStreak) + 1 : 0);
+    }
+  }
+  return streaks;
+}
+
+/**
+ * The morale deltas of the round, by player, summed before the one clamp to 0..100 (step 5;
+ * jogadores.md, "Moral por rodada"; see {@link ROUND_MORALE}): the result for who took the pitch,
+ * the bench from the 2nd round in a row ({@link roundBenchStreaks}), the "Cobrar" for the
+ * hotheads who heard it, and the drift of `fans.moraleDrift` towards the club's thermometer
+ * (the one before this round's update) for every player of the squad. The drift's direction is
+ * read from the morale before the round; a morale equal to the thermometer does not drift. Only
+ * the players with a non-zero sum are in the map.
+ */
+export function roundMoraleDeltas(
+  state: Pick<GameState, 'players' | 'squads' | 'clubs'>,
+  params: Pick<GameParams, 'fans'>,
+  matches: readonly MatchInput[],
+  results: readonly MatchResult[],
+): Map<PlayerId, number> {
+  const { players } = state;
   const deltas = new Map<PlayerId, number>();
-  const add = (id: PlayerId, delta: number) => deltas.set(id, (deltas.get(id) ?? 0) + delta);
+  const add = (p: Player, delta: number) => {
+    const felt =
+      delta < 0 && p.trait === 'professional' ? delta * ROUND_MORALE.professionalDropMult : delta;
+    if (felt !== 0) deltas.set(p.id, (deltas.get(p.id) ?? 0) + felt);
+  };
+  const streaks = roundBenchStreaks(state, matches, results);
+  const drift = params.fans.moraleDrift;
+
+  for (const club of clubMatches(players, matches, results).values()) {
+    const outcome =
+      club.scored > club.conceded
+        ? ROUND_MORALE.win
+        : club.scored === club.conceded
+          ? ROUND_MORALE.draw
+          : ROUND_MORALE.loss;
+    const byResult = outcome * (club.derby ? ROUND_MORALE.derbyMult : 1);
+    const fans = state.clubs[club.clubId]?.fans;
+    for (const id of state.squads[club.clubId] ?? []) {
+      const p = players[id];
+      if (p === undefined) continue;
+      if (club.pitch.has(id)) add(p, byResult);
+      if ((streaks.get(id) ?? 0) >= ROUND_MORALE.benchedFromStreak) {
+        add(p, ROUND_MORALE.benched * (p.trait === 'hothead' ? ROUND_MORALE.hotheadBenchMult : 1));
+      }
+      if (fans !== undefined) {
+        if (fans > p.morale) add(p, drift);
+        else if (fans < p.morale) add(p, -drift);
+      }
+    }
+  }
+
   results.forEach((result, i) => {
     const demanded = result.events.filter((e) => e.type === 'halftimeTalk' && e.talk === 'demand');
-    if (demanded.length === 0) return;
-    const pitch = onPitchAtHalftime(matches[i]!, result);
+    if (demanded.length === 0 || matches[i] === undefined) return;
+    const pitch = onPitchAtHalftime(matches[i], result);
     for (const e of demanded) {
       if (e.type !== 'halftimeTalk') continue;
       for (const id of pitch[e.side]) {
-        if (players[id]?.trait === 'hothead') add(id, ROUND_MORALE.demandTalkHothead);
+        const p = players[id];
+        if (p?.trait === 'hothead') add(p, ROUND_MORALE.demandTalkHothead);
       }
     }
   });
   return deltas;
+}
+
+/**
+ * The form after a match (jogadores.md, "Estados que mudam"; display only): the last
+ * {@link RECENT_RATINGS_MAX} match ratings, oldest first. A match without a rating ("sem nota",
+ * under 15 minutes) leaves it as it was.
+ */
+export function nextRecentRatings(
+  previous: readonly number[],
+  rating: number | null | undefined,
+): readonly number[] {
+  if (typeof rating !== 'number' || !Number.isFinite(rating)) return previous;
+  return [...previous, rating].slice(-RECENT_RATINGS_MAX);
+}
+
+/**
+ * The fans thermometer of every club that played the round (step 5, after the morale; fans.ts,
+ * torcida.md "Fórmula"), with its `idolBenchStreak`: rounds in a row in which the idol did not
+ * take the pitch while able to (not injured nor suspended), −1 from the 2nd (IDOL_BENCH) added
+ * to the round's decisions. `state` has the round's results; `before` is the state the round
+ * started from (who was injured or suspended).
+ */
+function roundFans(
+  state: GameState,
+  before: Readonly<Record<PlayerId, Player>>,
+  params: GameParams,
+  matches: readonly MatchInput[],
+  results: readonly MatchResult[],
+  decisions: ReadonlyMap<ClubId, number>,
+): Record<ClubId, ClubState> {
+  const clubs: Record<ClubId, ClubState> = { ...state.clubs };
+  const table = getStandings(state);
+  const position = new Map(table.map((row) => [row.clubId, row.position]));
+  const winless = winlessRuns(state.fixtures, state.round);
+  for (const match of clubMatches(before, matches, results).values()) {
+    const club = state.clubs[match.clubId];
+    if (club === undefined) continue;
+    const idol = clubIdol(state.squads[match.clubId] ?? [], before);
+    const benched = idol !== undefined && !match.pitch.has(idol.id) && !isUnavailable(idol);
+    const idolBenchStreak = benched ? count(club.idolBenchStreak) + 1 : 0;
+    const idolPenalty = idolBenchStreak >= IDOL_BENCH.fromStreak ? IDOL_BENCH.fans : 0;
+    const opponent = state.clubs[match.opponentId];
+    const moved = fansDelta(
+      {
+        fans: club.fans,
+        scored: match.scored,
+        conceded: match.conceded,
+        expected: expectedPoints(club.strength, opponent?.strength ?? club.strength, match.side),
+        derby: match.derby,
+        winlessRun: winless.get(match.clubId) ?? 0,
+        position: position.get(match.clubId),
+        clubs: table.length,
+        round: state.round,
+        decisions: (decisions.get(match.clubId) ?? 0) + idolPenalty,
+      },
+      params.fans,
+    );
+    clubs[match.clubId] = { ...club, fans: moved.fans, idolBenchStreak };
+  }
+  return clubs;
 }
 
 /** Days from this round to the next one (0 after the last round or with a broken date). */
@@ -418,8 +630,10 @@ function applyRound(
   params: GameParams,
   plan: RoundPlan,
   results: readonly MatchResult[],
+  decisions: ReadonlyMap<ClubId, number>,
 ): { state: GameState; report: RoundReport } {
   const round = state.round;
+  const simplified = state.rules.realism === 'simplified';
   const byFixture = new Map<FixtureId, MatchResult>();
   for (const result of results) byFixture.set(result.fixtureId, result);
 
@@ -435,11 +649,16 @@ function applyRound(
   const yellows = new Map<PlayerId, number>();
   const injuries = new Map<PlayerId, number>();
   const suspensions = new Map<PlayerId, number>();
+  const ratings = new Map<PlayerId, number | null>();
   const tookPitch = new Set<PlayerId>();
   for (const result of results) {
     for (const [id, value] of Object.entries(result.finalEnergy)) energy.set(id, value);
     for (const id of Object.keys(result.minutes)) tookPitch.add(id);
+    for (const [id, value] of Object.entries(result.ratings)) ratings.set(id, value);
     for (const [id, value] of Object.entries(result.yellowCounts)) yellows.set(id, value);
+    // Simplified realism: the injured leaves the match and is available next round, and the
+    // cards never suspend (partida.md, "Modo Realismo simplificado").
+    if (simplified) continue;
     for (const { player, rounds } of result.newInjuries) {
       injuries.set(player, Math.max(injuries.get(player) ?? 0, rounds));
     }
@@ -452,7 +671,8 @@ function applyRound(
     clubsPlayed.add(match.home.clubId);
     clubsPlayed.add(match.away.clubId);
   }
-  const morale = roundMoraleDeltas(state.players, plan.matches, results);
+  const morale = roundMoraleDeltas(state, params, plan.matches, results);
+  const benchStreaks = roundBenchStreaks(state, plan.matches, results);
   const recovery = params.match.fatigue.recoveryPerDay * recoveryDays(state.fixtures, round);
 
   const players: Record<PlayerId, Player> = {};
@@ -465,14 +685,26 @@ function applyRound(
     const delta = morale.get(id);
     players[id] = {
       ...p,
-      condition: clamp((energy.get(id) ?? p.condition) + recovery, 0, 100),
+      condition: simplified ? 100 : clamp((energy.get(id) ?? p.condition) + recovery, 0, 100),
       morale: delta === undefined ? p.morale : clamp(p.morale + delta, 0, 100),
       injuryRounds,
       suspendedGames,
       yellowCount: yellows.get(id) ?? p.yellowCount,
+      recentRatings: nextRecentRatings(p.recentRatings, ratings.get(id)),
+      benchStreak: benchStreaks.get(id) ?? p.benchStreak,
       clubAppearances: p.clubAppearances + (tookPitch.has(id) ? 1 : 0),
     };
   }
+
+  // 5, after the morale: the fans of every club, on the table with this round.
+  const clubs = roundFans(
+    { ...state, fixtures },
+    state.players,
+    params,
+    plan.matches,
+    results,
+    decisions,
+  );
 
   const lastSheets: Record<ClubId, TeamSheet> = { ...state.lastSheets };
   for (const match of plan.matches) {
@@ -485,6 +717,7 @@ function applyRound(
     ...state,
     engineVersion: ENGINE_VERSION,
     round: round + 1,
+    clubs,
     fixtures,
     players,
     lastSheets,
@@ -500,6 +733,34 @@ function applyRound(
 }
 
 /**
+ * The coach's decisions of the round by club (`RoundInput.fanDecisions`), own keys only: a club
+ * not in the state is ignored (`round-unknown-club`), and so is a value that is not a finite
+ * number (`round-invalid-fan-decision`). The cap is applied with the idol's bench, in fans.ts.
+ */
+function fanDecisionsOf(
+  state: Pick<GameState, 'clubs'>,
+  input: RoundInput['fanDecisions'] | undefined,
+  warnings: EngineWarning[],
+): Map<ClubId, number> {
+  const out = new Map<ClubId, number>();
+  for (const clubId of Object.keys(input ?? {})) {
+    const value: unknown = input![clubId];
+    if (value === undefined) continue;
+    if (!Object.hasOwn(state.clubs, clubId) || state.clubs[clubId] === undefined) {
+      warnings.push({ code: 'round-unknown-club', detail: { clubId } });
+    } else if (typeof value !== 'number' || !Number.isFinite(value)) {
+      warnings.push({
+        code: 'round-invalid-fan-decision',
+        detail: { clubId, value: String(value) },
+      });
+    } else {
+      out.set(clubId, value);
+    }
+  }
+  return out;
+}
+
+/**
  * Plays the current round (docs/02-architecture.md, 4.1; US-012): {@link prepareRound} with the
  * same input (its sheets and coaches), the 10 matches with `simulateMatch` and the commands of each
  * fixture (the same plan and commands the live screen replayed, so the score is the one the
@@ -508,8 +769,10 @@ function applyRound(
  *
  * Idempotent: `round-already-played` when `input.round` is a round already played (nothing
  * changes), `season-over` after round 38, `round-not-open` for a round after the current one.
- * Warnings: those of prepareRound, and `round-unknown-fixture` for commands of a fixture that is
- * not in the round (ignored). The matches' own warnings stay in each result.
+ * Warnings: those of prepareRound, `round-unknown-fixture` for commands of a fixture that is not
+ * in the round (ignored), and for `fanDecisions` `round-unknown-club` (a club not in the state)
+ * and `round-invalid-fan-decision` (not a finite number), both ignored. The matches' own warnings
+ * stay in each result.
  */
 export function playRound(
   state: GameState,
@@ -536,8 +799,9 @@ export function playRound(
       warnings.push({ code: 'round-unknown-fixture', detail: { fixtureId } });
     }
   }
+  const decisions = fanDecisionsOf(state, input.fanDecisions, warnings);
   const results = plan.value.matches.map((match) =>
     simulateMatch(match, params, commands[match.fixtureId]),
   );
-  return ok(applyRound(state, params, plan.value, results), warnings);
+  return ok(applyRound(state, params, plan.value, results, decisions), warnings);
 }

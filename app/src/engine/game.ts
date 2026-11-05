@@ -34,9 +34,12 @@ export interface ClubState {
   readonly strength: number;
   /** The first is the preferred one: the squad was generated and measured in it. */
   readonly preferredFormations: readonly [Formation, Formation];
-  /** Fans thermometer 0..100; starts at `fans.start`. Its dynamics are T-014. */
+  /** Fans thermometer 0..100; starts at `fans.start` and moves once per round (fans.ts). */
   readonly fans: number;
-  /** Consecutive rounds with the idol on the bench (torcida.md); T-014. */
+  /**
+   * Rounds in a row in which the club's idol did not take the pitch while able to (not injured
+   * nor suspended); from the 2nd, −1 on the thermometer per round (torcida.md; round.ts).
+   */
   readonly idolBenchStreak: number;
 }
 
