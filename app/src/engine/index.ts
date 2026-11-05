@@ -104,6 +104,7 @@ export {
   prepareRound,
   nextRecentRatings,
   roundBenchStreaks,
+  moraleDrift,
   roundMoraleDeltas,
   summarizeMatch,
 } from './round.ts';
@@ -122,6 +123,7 @@ export {
   clubIdol,
   expectedPoints,
   fansDelta,
+  fansVenue,
   winlessRuns,
 } from './fans.ts';
 export type { FansDelta, FansRoundInput, FansVenue } from './fans.ts';

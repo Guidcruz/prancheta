@@ -76,7 +76,8 @@ export function expectedMoraleParts(
         out.set(id, {
           result: tookPitch ? byResult : 0,
           bench: benchStreak >= 2 ? (p.trait === 'hothead' ? -4 : -2) : 0,
-          drift: fans > p.morale ? 1 : fans < p.morale ? -1 : 0,
+          // Up to 1 point towards the thermometer, never past it (jogadores.md, revised).
+          drift: Math.max(-1, Math.min(1, fans - p.morale)),
           demand: heard.has(id) && p.trait === 'hothead' ? -3 : 0,
           benchStreak,
         });
@@ -86,10 +87,13 @@ export function expectedMoraleParts(
   return out;
 }
 
-/** The morale a player should have after the round: the parts summed, then clamped once. */
+/**
+ * The morale a player should have after the round: the parts summed, then clamped once. The
+ * professional's half applies to the result and the bench only, never to the drift (ADR-0005).
+ */
 export function expectedMorale(before: GameState, id: PlayerId, parts: MoraleParts): number {
   const p = before.players[id]!;
   const half = (x: number) => (x < 0 && p.trait === 'professional' ? x / 2 : x);
-  const sum = half(parts.result) + half(parts.bench) + half(parts.drift) + half(parts.demand);
+  const sum = half(parts.result) + half(parts.bench) + parts.drift + parts.demand;
   return Math.max(0, Math.min(100, p.morale + sum));
 }

@@ -5,6 +5,7 @@ import {
   expectedPoints,
   FANS_EXTRAS,
   fansDelta,
+  fansVenue,
   IDOL_BENCH,
   winlessRuns,
   type FansRoundInput,
@@ -69,6 +70,7 @@ function base(extra: Partial<FansRoundInput> = {}): FansRoundInput {
     clubs: 20,
     round: 10,
     decisions: 0,
+    idol: 0,
     ...extra,
   };
 }
@@ -105,6 +107,14 @@ describe('fansDelta: the formula of torcida.md', () => {
     expect([EXPECTED_POINTS.min, EXPECTED_POINTS.max]).toEqual([0.3, 2.5]);
   });
 
+  it('the venue: home or away by the side, none on neutral ground (match.neutral)', () => {
+    expect(fansVenue({ neutral: false }, 'home')).toBe('home');
+    expect(fansVenue({ neutral: false }, 'away')).toBe('away');
+    expect(fansVenue({ neutral: true }, 'home')).toBe('neutral');
+    expect(fansVenue({ neutral: true }, 'away')).toBe('neutral');
+    expect(expectedPoints(70, 76, fansVenue({ neutral: true }, 'home'))).toBeCloseTo(1.16, 10);
+  });
+
   it('result: resultWeight × (points − expected), × derbyResultMult in a derby', () => {
     const at = (scored: number, conceded: number, derby = false) =>
       fansDelta(base({ scored, conceded, expected: 1.4, derby }), fansParams).result;
@@ -135,6 +145,10 @@ describe('fansDelta: the formula of torcida.md', () => {
   });
 
   it('decisions are limited to ±fans.decisionCap; reversion pulls towards fans.baseline', () => {
+    // The idol left on the bench comes after the cap (torcida.md, revised): −5 to +4.
+    expect(fansDelta(base({ decisions: 6, idol: -1 }), fansParams).decisions).toBe(3);
+    expect(fansDelta(base({ decisions: -6, idol: -1 }), fansParams).decisions).toBe(-5);
+    expect(fansDelta(base({ decisions: 2, idol: -1 }), fansParams).decisions).toBe(1);
     expect(fansDelta(base({ decisions: 10 }), fansParams).decisions).toBe(4);
     expect(fansDelta(base({ decisions: -7 }), fansParams).decisions).toBe(-4);
     expect(fansDelta(base({ decisions: 3 }), fansParams).decisions).toBe(3);
@@ -220,8 +234,9 @@ function expectedFans(
   before: GameState,
   after: GameState,
   decisions: Partial<Record<ClubId, number>> = {},
-): Map<ClubId, { fans: number; idolBenchStreak: number }> {
-  const out = new Map<ClubId, { fans: number; idolBenchStreak: number }>();
+  humans: ReadonlySet<ClubId> = new Set(),
+): Map<ClubId, { fans: number; idolBenchStreak: number; decisions: number }> {
+  const out = new Map<ClubId, { fans: number; idolBenchStreak: number; decisions: number }>();
   const round = before.round;
   const table = getStandings(after);
   for (const res of after.lastRound!.results) {
@@ -240,7 +255,9 @@ function expectedFans(
       const idol = before.squads[clubId]!.map((id) => before.players[id]!).find(
         (p) => p.trait === 'idol',
       );
+      // Only a human club leaves its idol on the bench (jogadores.md, revised).
       const benched =
+        humans.has(clubId) &&
         idol !== undefined &&
         !(idol.id in res.minutes) &&
         idol.injuryRounds === 0 &&
@@ -261,11 +278,12 @@ function expectedFans(
           position: table.find((r) => r.clubId === clubId)!.position,
           clubs: 20,
           round,
-          decisions: (decisions[clubId] ?? 0) + (idolBenchStreak >= 2 ? -1 : 0),
+          decisions: humans.has(clubId) ? (decisions[clubId] ?? 0) : 0,
+          idol: idolBenchStreak >= 2 ? -1 : 0,
         },
         fansParams,
       );
-      out.set(clubId, { fans: move.fans, idolBenchStreak });
+      out.set(clubId, { fans: move.fans, idolBenchStreak, decisions: move.decisions });
     }
   }
   return out;
@@ -293,6 +311,8 @@ describe('playRound: the thermometer of the 20 clubs (US-026)', () => {
         const want = expected.get(clubId)!;
         expect(club.fans, `round ${r}, ${clubId}`).toBe(want.fans);
         expect(club.idolBenchStreak, `round ${r}, ${clubId}`).toBe(want.idolBenchStreak);
+        // Every club is the AI's here: the idol's streak never moves.
+        expect(club.idolBenchStreak, `round ${r}, ${clubId}`).toBe(0);
         expect(club.fans).toBeGreaterThanOrEqual(0);
         expect(club.fans).toBeLessThanOrEqual(100);
         if (club.fans !== all[r - 1]!.clubs[clubId]!.fans) moved++;
@@ -421,42 +441,77 @@ describe('US-026: the morale drifts towards the thermometer', () => {
     expect(fansParams.moraleDrift).toBe(1);
   });
 
-  it('down when above it, half for a professional, nothing when equal', () => {
+  it('never past the thermometer: 79.5 with the fans at 80 goes to 80.0', () => {
+    expect(drifting(79.5, 80)).toBe(80);
+    expect(drifting(80.25, 80)).toBe(80);
+    expect(drifting(99.5, 100)).toBe(100);
+  });
+
+  it('the same for every trait, up and down; nothing when equal', () => {
     expect(drifting(70, 30)).toBe(69);
-    expect(drifting(70, 30, 'professional')).toBe(69.5);
+    expect(drifting(70, 30, 'professional')).toBe(69);
+    expect(drifting(60, 40, 'professional')).toBe(59);
     expect(drifting(40, 80, 'professional')).toBe(41);
+    expect(drifting(70, 30, 'hothead')).toBe(69);
     expect(drifting(60, 60)).toBe(60);
     expect(drifting(100, 100)).toBe(100);
     expect(drifting(0, 0)).toBe(0);
-    expect(drifting(99.5, 100)).toBe(100);
   });
 });
 
 describe("US-026: the coach's decisions (fanDecisions)", () => {
+  const human = { coaches: { [COACH]: 'result' as const } };
+
   it('added to the thermometer of his club after the round, limited to ±fans.decisionCap', () => {
     const state = testGame();
-    const plain = play(state).value.state.clubs[COACH]!.fans;
+    const plain = play(state, human).value.state.clubs[COACH]!.fans;
     const at = (value: number) =>
-      play(state, { fanDecisions: { [COACH]: value } }).value.state.clubs[COACH]!.fans;
+      play(state, { ...human, fanDecisions: { [COACH]: value } }).value.state.clubs[COACH]!.fans;
     expect(at(2)).toBeCloseTo(plain + 2, 10);
     expect(at(-1)).toBeCloseTo(plain - 1, 10);
     expect(at(9)).toBeCloseTo(plain + fansParams.decisionCap, 10);
     expect(at(-9)).toBeCloseTo(plain - fansParams.decisionCap, 10);
     // The decisions come after the round: the matches are the same.
-    const a = play(state).value.report.results;
-    const b = play(state, { fanDecisions: { [COACH]: 3 } }).value.report.results;
+    const a = play(state, human).value.report.results;
+    const b = play(state, { ...human, fanDecisions: { [COACH]: 3 } }).value.report.results;
     expect(b).toEqual(a);
     // Only the club that made them moves.
-    const other = play(state, { fanDecisions: { [COACH]: 3 } }).value.state.clubs;
-    for (const [id, club] of Object.entries(play(state).value.state.clubs)) {
+    const other = play(state, { ...human, fanDecisions: { [COACH]: 3 } }).value.state.clubs;
+    for (const [id, club] of Object.entries(play(state, human).value.state.clubs)) {
       if (id !== COACH) expect(other[id]!.fans).toBe(club.fans);
     }
+    // A club in `sheets` is human too.
+    const plan = prepareRound(state, params, human);
+    if (!plan.ok) throw new Error('prepareRound');
+    const sheets = { [COACH]: plan.value.suggested[COACH]! };
+    const bySheet = (value: number) =>
+      play(state, { sheets, fanDecisions: { [COACH]: value } }).value.state.clubs[COACH]!.fans;
+    expect(bySheet(2)).toBeCloseTo(bySheet(0) + 2, 10);
+  });
+
+  it('a key of an AI club does not move its thermometer and gives a warning', () => {
+    const state = testGame();
+    const plain = play(state, human).value.state;
+    const played = play(state, { ...human, fanDecisions: { 'clube-teste-01': 3 } });
+    expect(played.warnings).toContainEqual({
+      code: 'round-fan-decision-not-human',
+      detail: { clubId: 'clube-teste-01' },
+    });
+    expect(played.value.state.clubs).toEqual(plain.clubs);
+    // Without any human club, the coach's own key is an AI key too.
+    const noHuman = play(state, { fanDecisions: { [COACH]: 3 } });
+    expect(noHuman.warnings).toContainEqual({
+      code: 'round-fan-decision-not-human',
+      detail: { clubId: COACH },
+    });
+    expect(noHuman.value.state.clubs).toEqual(play(state).value.state.clubs);
   });
 
   it('ignores, with a warning, a club not in the state and a value that is not a number', () => {
     const state = testGame();
-    const plain = play(state).value.state;
+    const plain = play(state, human).value.state;
     const played = play(state, {
+      ...human,
       fanDecisions: { nowhere: 2, [COACH]: Number.NaN, 'clube-teste-01': undefined },
     });
     expect(played.warnings).toContainEqual({
@@ -470,7 +525,9 @@ describe("US-026: the coach's decisions (fanDecisions)", () => {
     expect(played.value.state.clubs).toEqual(plain.clubs);
     // Inherited keys are not decisions.
     const inherited = Object.create({ [COACH]: 4 }) as Record<ClubId, number>;
-    expect(play(state, { fanDecisions: inherited }).value.state.clubs).toEqual(plain.clubs);
+    expect(play(state, { ...human, fanDecisions: inherited }).value.state.clubs).toEqual(
+      plain.clubs,
+    );
   });
 });
 
@@ -511,27 +568,54 @@ describe('the idol left on the bench (idolBenchStreak)', () => {
     }).value.state;
   }
 
-  it(`−1 from the ${IDOL_BENCH.fromStreak}nd round in a row, as a decision of the round`, () => {
+  it(`−1 from the ${IDOL_BENCH.fromStreak}nd round in a row, after the cap of the decisions`, () => {
+    const humans = new Set([COACH]);
     let s = testGame();
-    for (let r = 1; r <= 4; r++) {
+    for (let r = 1; r <= 3; r++) {
       const before = s;
-      const decisions = r === 4 ? { [COACH]: -4 } : {};
-      s = benchIdol(s, decisions);
+      s = benchIdol(s);
       expect(s.clubs[COACH]!.idolBenchStreak).toBe(r);
-      expect(s.clubs[COACH]!.fans, `round ${r}`).toBe(
-        expectedFans(before, s, decisions).get(COACH)!.fans,
-      );
+      const want = expectedFans(before, s, {}, humans).get(COACH)!;
+      expect(s.clubs[COACH]!.fans, `round ${r}`).toBe(want.fans);
+      expect(want.decisions).toBe(r >= 2 ? -1 : 0);
     }
-    // Round 4: −4 of the coach and −1 of the idol, limited to −4 together.
-    const before = s;
-    const again = benchIdol(before, { [COACH]: -4 });
-    const free = benchIdol(before, { [COACH]: 0 });
-    expect(again.clubs[COACH]!.fans - free.clubs[COACH]!.fans).toBeCloseTo(-3, 10);
+    // 2nd round on the bench with +6 of the coach: min(6, 4) − 1 = +3; with −6: −4 − 1 = −5.
+    const first = benchIdol(testGame());
+    for (const [given, part] of [
+      [6, 3],
+      [-6, -5],
+    ] as const) {
+      const second = benchIdol(first, { [COACH]: given });
+      expect(second.clubs[COACH]!.idolBenchStreak).toBe(2);
+      const want = expectedFans(first, second, { [COACH]: given }, humans).get(COACH)!;
+      expect(want.decisions).toBe(part);
+      expect(second.clubs[COACH]!.fans).toBe(want.fans);
+      // Against the same round without decisions: the coach's part is +4 or −4, the idol's stays.
+      const none = benchIdol(first);
+      expect(second.clubs[COACH]!.fans - none.clubs[COACH]!.fans).toBeCloseTo(part + 1, 10);
+    }
     // On the pitch again: the streak is over.
     const back = play(s, { coaches: { [COACH]: 'full' } }).value.state;
     const idol = clubIdol(s.squads[COACH]!, s.players)!;
     expect(back.lastRound!.results.some((x) => idol.id in x.minutes)).toBe(true);
     expect(back.clubs[COACH]!.idolBenchStreak).toBe(0);
+  });
+
+  it('in an AI club the streak stays at 0, even when its idol stays off the pitch', () => {
+    const state = testGame();
+    const idol = clubIdol(state.squads[COACH]!, state.players)!;
+    // A fit idol the AI never picks (overall 20): off the pitch 4 rounds in a row.
+    let s = withPlayers(state, (p) => (p.id === idol.id ? { overall: 20 } : undefined));
+    let human = withPlayers(state, (p) => (p.id === idol.id ? { overall: 20 } : undefined));
+    for (let r = 1; r <= 4; r++) {
+      s = play(s).value.state;
+      expect(s.lastRound!.results.some((x) => idol.id in x.minutes)).toBe(false);
+      expect(s.players[idol.id]!.injuryRounds + s.players[idol.id]!.suspendedGames).toBe(0);
+      expect(s.clubs[COACH]!.idolBenchStreak).toBe(0);
+      // The same club as the coach's ("só resultado": the AI picks for him) does count.
+      human = play(human, { coaches: { [COACH]: 'result' } }).value.state;
+      expect(human.clubs[COACH]!.idolBenchStreak).toBe(r);
+    }
   });
 
   it('an injured idol is not left on the bench by anyone: no streak', () => {

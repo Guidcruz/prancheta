@@ -92,7 +92,8 @@ function season(seed: number): GameState[] {
   return states;
 }
 
-const drift = (fans: number, morale: number) => (fans > morale ? 1 : fans < morale ? -1 : 0);
+/** jogadores.md (revised): up to 1 point towards the thermometer, never past it. */
+const drift = (fans: number, morale: number) => Math.max(-1, Math.min(1, fans - morale));
 
 describe('US-010: fatigue goes up when playing and down when resting', () => {
   it('a 90-minute player before a midweek round is tired; the round he rests, he recovers', () => {
@@ -165,10 +166,10 @@ describe('US-010: a long spell on the bench lowers the morale', () => {
         s = playWithout(s, id).state;
         const p = s.players[id]!;
         expect(p.benchStreak).toBe(r);
+        // The drift is the same for every trait; only the bench is halved for a professional.
         const d = drift(before.clubs[COACH]!.fans, before.players[id]!.morale);
-        const half = trait === 'professional' && d < 0 ? d / 2 : d;
         const bench = r >= ROUND_MORALE.benchedFromStreak ? perRound : 0;
-        expect(p.morale, `round ${r}`).toBe(before.players[id]!.morale + bench + half);
+        expect(p.morale, `round ${r}`).toBe(before.players[id]!.morale + bench + d);
       }
       // Back on the pitch: the streak is over.
       const back = play(s, { coaches: { [COACH]: 'full' } });
@@ -351,5 +352,54 @@ describe('US-010: the form (recentRatings, display only)', () => {
       .slice(1)
       .some((s) => s.lastRound!.results.some((x) => Object.values(x.ratings).includes(null)));
     expect(unrated).toBe(true);
+  });
+});
+
+describe('jogadores.md (revised): the professional halves result and bench, never the drift', () => {
+  /** Round 1 of the coach's club with one professional who played, and his drift set. */
+  function professional(morale: number, fans: number, derby: boolean, own: number, other: number) {
+    const base = testGame();
+    const plan = prepareRound(base, params);
+    if (!plan.ok) throw new Error('prepareRound');
+    const matches = plan.value.matches.map((m) =>
+      m.home.clubId === COACH || m.away.clubId === COACH ? { ...m, derby } : m,
+    );
+    const results = plan.value.matches.map((m) => simulateMatch(m, params));
+    const i = matches.findIndex((m) => m.home.clubId === COACH || m.away.clubId === COACH);
+    const home = matches[i]!.home.clubId === COACH;
+    const scored = results.map((r, k) =>
+      k === i ? { ...r, score: (home ? [own, other] : [other, own]) as [number, number] } : r,
+    );
+    const id = Object.keys(results[i]!.minutes).find((x) => x.startsWith(`${COACH}#`))!;
+    const changed = withPlayers(base, (p) =>
+      p.id === id ? { trait: 'professional', morale } : undefined,
+    );
+    const state: GameState = {
+      ...changed,
+      clubs: { ...changed.clubs, [COACH]: { ...changed.clubs[COACH]!, fans } },
+    };
+    return roundMoraleDeltas(state, params, matches, scored).get(id) ?? 0;
+  }
+
+  it('a win (+3) with the drift down (−1) gives +2, as for anyone', () => {
+    expect(professional(70, 30, false, 2, 0)).toBe(2);
+  });
+
+  it('a defeat (−3 → −1.5) with the drift up (+1) gives −0.5', () => {
+    expect(professional(30, 70, false, 0, 1)).toBe(-0.5);
+  });
+
+  it('a derby defeat (−6 → −3) with the drift down (−1) gives −4', () => {
+    expect(professional(70, 30, true, 0, 2)).toBe(-4);
+  });
+
+  it('a professional who did not play, morale 60 and thermometer 40, drops 1', () => {
+    const state = testGame();
+    const id = state.squads[COACH]![3]!;
+    const s = withPlayers(
+      { ...state, clubs: { ...state.clubs, [COACH]: { ...state.clubs[COACH]!, fans: 40 } } },
+      (p) => (p.id === id ? { trait: 'professional', morale: 60, injuryRounds: 2 } : undefined),
+    );
+    expect(play(s).state.players[id]!.morale).toBe(59);
   });
 });

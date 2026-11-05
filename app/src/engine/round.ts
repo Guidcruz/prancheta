@@ -1,5 +1,5 @@
 import { suggestSheet } from './ai.ts';
-import { clubIdol, expectedPoints, fansDelta, IDOL_BENCH, winlessRuns } from './fans.ts';
+import { clubIdol, expectedPoints, fansDelta, fansVenue, IDOL_BENCH, winlessRuns } from './fans.ts';
 import { roundFacts, type Fact } from './facts.ts';
 import { daysBetween, type Fixture } from './fixtures.ts';
 import type { ClubState, GameState } from './game.ts';
@@ -48,13 +48,14 @@ import { ENGINE_VERSION } from './version.ts';
  *    `suspendedGames` for every player of a club that played, 1 round off `injuryRounds` for
  *    every player; then `newSuspensions` added, `newInjuries` written and `yellowCounts` merged
  *    (only who took the pitch is in it); `clubAppearances` + 1 for who took the pitch. With the
- *    simplified realism (partida.md, "Modo Realismo simplificado") the new suspensions and the
- *    new injuries are not written: the cards and the injured leaving happen in the match only;
+ *    simplified realism (partida.md, "Modo Realismo simplificado") the new suspensions, the new
+ *    injuries and the yellow counters are not written: cards and injuries count in the match only;
  * 5. the round's morale (jogadores.md, "Moral por rodada"; T-014): the result for who took the
  *    pitch, the bench for who expected to play and did not (`benchStreak`), the drift towards the
  *    fans and the "Cobrar" for the hotheads, summed per player (`roundMoraleDeltas`) before the
  *    one clamp to 0..100; the form (`recentRatings`); then the fans thermometer of every club
- *    (fans.ts), with the idol left on the bench (`idolBenchStreak`) and `fanDecisions`;
+ *    (fans.ts), with `fanDecisions` and the idol left on the bench (`idolBenchStreak`) for the
+ *    human clubs only;
  * 6. the condition: the final energy of who played (the condition of the others), plus
  *    `fatigue.recoveryPerDay` × the days until the next round, up to 100. After round 38 there is
  *    no next round, so no recovery (the next season is T-017's). With the simplified realism
@@ -86,8 +87,9 @@ export interface RoundInput {
   readonly commands: Readonly<Partial<Record<FixtureId, readonly MatchCommand[]>>>;
   /**
    * Sum of the coach's decisions about the fans in the round (torcida.md, "Decisões do técnico"),
-   * by club. Added to the idol's bench of that club and limited to ±fans.decisionCap. A club not
-   * in the state, or a value that is not a finite number, is ignored with a warning.
+   * by club, limited to ±fans.decisionCap; the idol left on the bench comes after the cap. Read
+   * only for a human club of the round (in `sheets` or `coaches`); any other key, or a value that
+   * is not a finite number, is ignored with a warning.
    */
   readonly fanDecisions: Readonly<Partial<Record<ClubId, number>>>;
   /**
@@ -173,9 +175,12 @@ export const DEFAULT_STADIUM_CAPACITY: { readonly [S in ClubSize]: number } = {
  *   (`benchStreak` ≥ 2): −2 per round. "Expected to play" = `overall ≥ mean overall of the
  *   club's kick-off XI − 3`; an injured or suspended player does not expect to play;
  * - the "Cobrar" half-time talk: −3 for every hothead on the pitch at the half-time whistle;
- * - a hothead suffers the bench twice; a professional suffers only half of every drop (the
- *   defeat, the bench and the drift down).
- * The drift towards the fans is `fans.moraleDrift` (ADR-0005), a parameter.
+ * - a hothead suffers the bench twice; a professional suffers only half of each negative
+ *   component of result (the defeat) and of bench, one by one, never of the sum;
+ * - the drift towards the fans, the same for everyone (ADR-0005), professional included:
+ *   `clamp(thermometer − morale, −fans.moraleDrift, +fans.moraleDrift)` ({@link moraleDrift}).
+ * Every line reads the morale and the thermometer of the start of the round (jogadores.md, "Como
+ * o motor lê a tabela"), so the order of the lines does not change the result.
  */
 export const ROUND_MORALE = {
   demandTalkHothead: -3,
@@ -377,6 +382,8 @@ interface ClubMatch {
   readonly opponentId: ClubId;
   readonly side: Side;
   readonly derby: boolean;
+  /** Neutral ground (only the /balance's duels): no venue in the fans' expected points. */
+  readonly neutral: boolean;
   /** The club's goals and the opponent's: the awarded score of an abandoned match. */
   readonly scored: number;
   readonly conceded: number;
@@ -418,6 +425,7 @@ function clubMatches(
         opponentId: other.clubId,
         side,
         derby: match.derby,
+        neutral: match.neutral,
         scored: result.score[own],
         conceded: result.score[1 - own]!,
         pitch,
@@ -461,10 +469,10 @@ export function roundBenchStreaks(
  * The morale deltas of the round, by player, summed before the one clamp to 0..100 (step 5;
  * jogadores.md, "Moral por rodada"; see {@link ROUND_MORALE}): the result for who took the pitch,
  * the bench from the 2nd round in a row ({@link roundBenchStreaks}), the "Cobrar" for the
- * hotheads who heard it, and the drift of `fans.moraleDrift` towards the club's thermometer
- * (the one before this round's update) for every player of the squad. The drift's direction is
- * read from the morale before the round; a morale equal to the thermometer does not drift. Only
- * the players with a non-zero sum are in the map.
+ * hotheads who heard it, and the drift ({@link moraleDrift}) towards the club's thermometer for
+ * every player of the squad, with the morale and the thermometer of the start of the round. The
+ * professional's half applies to the result and the bench only. Only the players with a
+ * non-zero sum are in the map.
  */
 export function roundMoraleDeltas(
   state: Pick<GameState, 'players' | 'squads' | 'clubs'>,
@@ -475,10 +483,14 @@ export function roundMoraleDeltas(
   const { players } = state;
   const deltas = new Map<PlayerId, number>();
   const add = (p: Player, delta: number) => {
-    const felt =
-      delta < 0 && p.trait === 'professional' ? delta * ROUND_MORALE.professionalDropMult : delta;
-    if (felt !== 0) deltas.set(p.id, (deltas.get(p.id) ?? 0) + felt);
+    if (delta !== 0) deltas.set(p.id, (deltas.get(p.id) ?? 0) + delta);
   };
+  /** A drop of result or bench: half for a professional (jogadores.md). */
+  const drop = (p: Player, delta: number) =>
+    add(
+      p,
+      delta < 0 && p.trait === 'professional' ? delta * ROUND_MORALE.professionalDropMult : delta,
+    );
   const streaks = roundBenchStreaks(state, matches, results);
   const drift = params.fans.moraleDrift;
 
@@ -494,14 +506,11 @@ export function roundMoraleDeltas(
     for (const id of state.squads[club.clubId] ?? []) {
       const p = players[id];
       if (p === undefined) continue;
-      if (club.pitch.has(id)) add(p, byResult);
+      if (club.pitch.has(id)) drop(p, byResult);
       if ((streaks.get(id) ?? 0) >= ROUND_MORALE.benchedFromStreak) {
-        add(p, ROUND_MORALE.benched * (p.trait === 'hothead' ? ROUND_MORALE.hotheadBenchMult : 1));
+        drop(p, ROUND_MORALE.benched * (p.trait === 'hothead' ? ROUND_MORALE.hotheadBenchMult : 1));
       }
-      if (fans !== undefined) {
-        if (fans > p.morale) add(p, drift);
-        else if (fans < p.morale) add(p, -drift);
-      }
+      if (fans !== undefined) add(p, moraleDrift(fans, p.morale, drift));
     }
   }
 
@@ -534,11 +543,23 @@ export function nextRecentRatings(
 }
 
 /**
+ * The morale drift towards the thermometer (jogadores.md, "Como o motor lê a tabela"; torcida.md,
+ * "Efeitos"): `clamp(fans − morale, −drift, +drift)` with both values of the start of the round,
+ * so it never goes past the thermometer (79.5 with the fans at 80 goes to 80.0). The same for
+ * every trait (ADR-0005). 0 when either value is not a finite number.
+ */
+export function moraleDrift(fans: number, morale: number, drift: number): number {
+  if (!Number.isFinite(fans) || !Number.isFinite(morale)) return 0;
+  return clamp(fans - morale, -drift, drift);
+}
+
+/**
  * The fans thermometer of every club that played the round (step 5, after the morale; fans.ts,
- * torcida.md "Fórmula"), with its `idolBenchStreak`: rounds in a row in which the idol did not
- * take the pitch while able to (not injured nor suspended), −1 from the 2nd (IDOL_BENCH) added
- * to the round's decisions. `state` has the round's results; `before` is the state the round
- * started from (who was injured or suspended).
+ * torcida.md "Fórmula"). Only a human club of the round (`humans`) has decisions: the coach's
+ * (`decisions`, capped in fansDelta) and the idol left on the bench, `idolBenchStreak` = rounds in
+ * a row in which the idol did not take the pitch while able to (not injured nor suspended), −1
+ * from the 2nd (IDOL_BENCH) after the cap. An AI club's streak stays at 0. `state` has the round's
+ * results; `before` is the state the round started from (who was injured or suspended).
  */
 function roundFans(
   state: GameState,
@@ -546,6 +567,7 @@ function roundFans(
   params: GameParams,
   matches: readonly MatchInput[],
   results: readonly MatchResult[],
+  humans: ReadonlySet<ClubId>,
   decisions: ReadonlyMap<ClubId, number>,
 ): Record<ClubId, ClubState> {
   const clubs: Record<ClubId, ClubState> = { ...state.clubs };
@@ -555,7 +577,8 @@ function roundFans(
   for (const match of clubMatches(before, matches, results).values()) {
     const club = state.clubs[match.clubId];
     if (club === undefined) continue;
-    const idol = clubIdol(state.squads[match.clubId] ?? [], before);
+    const human = humans.has(match.clubId);
+    const idol = human ? clubIdol(state.squads[match.clubId] ?? [], before) : undefined;
     const benched = idol !== undefined && !match.pitch.has(idol.id) && !isUnavailable(idol);
     const idolBenchStreak = benched ? count(club.idolBenchStreak) + 1 : 0;
     const idolPenalty = idolBenchStreak >= IDOL_BENCH.fromStreak ? IDOL_BENCH.fans : 0;
@@ -565,13 +588,18 @@ function roundFans(
         fans: club.fans,
         scored: match.scored,
         conceded: match.conceded,
-        expected: expectedPoints(club.strength, opponent?.strength ?? club.strength, match.side),
+        expected: expectedPoints(
+          club.strength,
+          opponent?.strength ?? club.strength,
+          fansVenue(match, match.side),
+        ),
         derby: match.derby,
         winlessRun: winless.get(match.clubId) ?? 0,
         position: position.get(match.clubId),
         clubs: table.length,
         round: state.round,
-        decisions: (decisions.get(match.clubId) ?? 0) + idolPenalty,
+        decisions: human ? (decisions.get(match.clubId) ?? 0) : 0,
+        idol: idolPenalty,
       },
       params.fans,
     );
@@ -630,6 +658,7 @@ function applyRound(
   params: GameParams,
   plan: RoundPlan,
   results: readonly MatchResult[],
+  humans: ReadonlySet<ClubId>,
   decisions: ReadonlyMap<ClubId, number>,
 ): { state: GameState; report: RoundReport } {
   const round = state.round;
@@ -655,10 +684,12 @@ function applyRound(
     for (const [id, value] of Object.entries(result.finalEnergy)) energy.set(id, value);
     for (const id of Object.keys(result.minutes)) tookPitch.add(id);
     for (const [id, value] of Object.entries(result.ratings)) ratings.set(id, value);
-    for (const [id, value] of Object.entries(result.yellowCounts)) yellows.set(id, value);
-    // Simplified realism: the injured leaves the match and is available next round, and the
-    // cards never suspend (partida.md, "Modo Realismo simplificado").
+    // Simplified realism (partida.md, "Modo Realismo simplificado"): the injured leaves the match
+    // and is available next round, and the cards neither suspend nor count (`yellowCount` stays
+    // as it is, 0 in a simplified career, so no yellow ever triggers a suspension). The cards
+    // still count in the season stats and in the table's tie-break.
     if (simplified) continue;
+    for (const [id, value] of Object.entries(result.yellowCounts)) yellows.set(id, value);
     for (const { player, rounds } of result.newInjuries) {
       injuries.set(player, Math.max(injuries.get(player) ?? 0, rounds));
     }
@@ -703,6 +734,7 @@ function applyRound(
     params,
     plan.matches,
     results,
+    humans,
     decisions,
   );
 
@@ -733,13 +765,16 @@ function applyRound(
 }
 
 /**
- * The coach's decisions of the round by club (`RoundInput.fanDecisions`), own keys only: a club
- * not in the state is ignored (`round-unknown-club`), and so is a value that is not a finite
- * number (`round-invalid-fan-decision`). The cap is applied with the idol's bench, in fans.ts.
+ * The coach's decisions of the round by club (`RoundInput.fanDecisions`; torcida.md, "Quem pode
+ * decidir"), own keys only, and only for a human club of the round (`humans`). Ignored with a
+ * warning: a club not in the state (`round-unknown-club`), a club that is not human this round
+ * (`round-fan-decision-not-human`) and a value that is not a finite number
+ * (`round-invalid-fan-decision`). The cap is fansDelta's.
  */
 function fanDecisionsOf(
   state: Pick<GameState, 'clubs'>,
   input: RoundInput['fanDecisions'] | undefined,
+  humans: ReadonlySet<ClubId>,
   warnings: EngineWarning[],
 ): Map<ClubId, number> {
   const out = new Map<ClubId, number>();
@@ -748,6 +783,8 @@ function fanDecisionsOf(
     if (value === undefined) continue;
     if (!Object.hasOwn(state.clubs, clubId) || state.clubs[clubId] === undefined) {
       warnings.push({ code: 'round-unknown-club', detail: { clubId } });
+    } else if (!humans.has(clubId)) {
+      warnings.push({ code: 'round-fan-decision-not-human', detail: { clubId } });
     } else if (typeof value !== 'number' || !Number.isFinite(value)) {
       warnings.push({
         code: 'round-invalid-fan-decision',
@@ -770,8 +807,9 @@ function fanDecisionsOf(
  * Idempotent: `round-already-played` when `input.round` is a round already played (nothing
  * changes), `season-over` after round 38, `round-not-open` for a round after the current one.
  * Warnings: those of prepareRound, `round-unknown-fixture` for commands of a fixture that is not
- * in the round (ignored), and for `fanDecisions` `round-unknown-club` (a club not in the state)
- * and `round-invalid-fan-decision` (not a finite number), both ignored. The matches' own warnings
+ * in the round (ignored), and for `fanDecisions` `round-unknown-club` (a club not in the state),
+ * `round-fan-decision-not-human` (a club that is not human this round) and
+ * `round-invalid-fan-decision` (not a finite number), all ignored. The matches' own warnings
  * stay in each result.
  */
 export function playRound(
@@ -799,9 +837,11 @@ export function playRound(
       warnings.push({ code: 'round-unknown-fixture', detail: { fixtureId } });
     }
   }
-  const decisions = fanDecisionsOf(state, input.fanDecisions, warnings);
+  // The human clubs, as prepareRound read them (its warnings are already in `warnings`).
+  const humans = new Set(humanModes(state, input.sheets ?? {}, input.coaches ?? {}, []).keys());
+  const decisions = fanDecisionsOf(state, input.fanDecisions, humans, warnings);
   const results = plan.value.matches.map((match) =>
     simulateMatch(match, params, commands[match.fixtureId]),
   );
-  return ok(applyRound(state, params, plan.value, results, decisions), warnings);
+  return ok(applyRound(state, params, plan.value, results, humans, decisions), warnings);
 }

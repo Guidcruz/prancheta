@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import type { GameState } from './game.ts';
 import type { Player } from './players.ts';
 import { playRound, prepareRound, type RoundInput } from './round.ts';
+import { getStandings } from './standings.ts';
 import { testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
 import type { PlayerId } from './types.ts';
@@ -63,6 +64,7 @@ describe('simplified realism', () => {
   it('between the matches: condition 100, nobody injured or suspended, no such facts', () => {
     const all = season('simplified');
     let reds = 0;
+    let yellows = 0;
     let injuries = 0;
     let suspensions = 0;
     for (let r = 1; r <= 38; r++) {
@@ -72,13 +74,17 @@ describe('simplified realism', () => {
         expect(p.condition, `round ${r}, ${id}`).toBe(100);
         expect(p.injuryRounds, `round ${r}, ${id}`).toBe(0);
         expect(p.suspendedGames, `round ${r}, ${id}`).toBe(0);
-        expect(p.yellowCount).toBeGreaterThanOrEqual(0);
-        expect(p.yellowCount).toBeLessThanOrEqual(2);
+        // The yellow counter does not move in the simplified realism (partida.md, (1)).
+        expect(p.yellowCount, `round ${r}, ${id}`).toBe(0);
       }
       const facts = s.lastRound!.facts;
       expect(facts.some((f) => f.kind === 'suspended' || f.kind === 'injured')).toBe(false);
       for (const res of s.lastRound!.results) {
         reds += res.events.filter((e) => e.type === 'red').length;
+        yellows += res.events.filter((e) => e.type === 'yellow').length;
+        for (const e of res.events) {
+          if (e.type === 'yellow') expect(e.triggersSuspension, `round ${r}`).toBe(false);
+        }
         injuries += res.newInjuries.length;
         suspensions += res.newSuspensions.length;
         // Inside the match the energy still drains.
@@ -87,6 +93,11 @@ describe('simplified realism', () => {
     }
     // Cards, sendings-off and injuries still happen in the match.
     expect(reds).toBeGreaterThan(0);
+    expect(yellows).toBeGreaterThan(500);
+    // The cards still count in the season stats and in the table's tie-break.
+    const stats = Object.values(all[38]!.seasonStats);
+    expect(stats.reduce((n, x) => n + x.yellows, 0)).toBe(yellows);
+    expect(getStandings(all[38]!).reduce((n, row) => n + row.yellows, 0)).toBe(yellows);
     expect(injuries).toBeGreaterThan(0);
     expect(suspensions).toBeGreaterThan(0);
   });

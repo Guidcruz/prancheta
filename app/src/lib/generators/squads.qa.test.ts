@@ -117,7 +117,8 @@ describe('QA: generated squads with the real clubs and real names (300 seeds)', 
         const idols = squad.filter((p) => p.trait === 'idol');
         if (idols.length !== 1) bad(`${tag}: idols ${idols.length}`);
         else {
-          const vets = squad.filter((p) => p.age >= 29);
+          // Among the 11 starters only (jogadores.md, revised on 2026-11-05).
+          const vets = squad.slice(0, 11).filter((p) => p.age >= 29);
           const pool = vets.length > 0 ? vets : squad.slice(0, 11);
           const top = Math.max(...pool.map((p) => p.overall));
           if (!pool.includes(idols[0]!) || idols[0]!.overall !== top)

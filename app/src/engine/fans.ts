@@ -3,7 +3,7 @@ import { clamp } from './math.ts';
 import type { FansParams } from './params.ts';
 import type { Player } from './players.ts';
 import { POINTS, RELEGATION_SPOTS } from './standings.ts';
-import type { ClubId } from './types.ts';
+import type { ClubId, Side } from './types.ts';
 
 /*
  * The fans thermometer (docs/design/torcida.md, "Fórmula"; US-026; T-014). Every club has one,
@@ -15,8 +15,8 @@ import type { ClubId } from './types.ts';
  *   extras   = +2 win by 3 or more / −2 defeat by 3 or more;
  *              −1 from the 4th game in a row without winning;
  *              +0.5 among the first 4 / −1 in the last 4 (Z4), from round 6 on
- *   decisions = the coach's decisions of the round (and the idol left on the bench), limited to
- *              ±fans.decisionCap
+ *   decisions = clamp(the coach's decisions of the round, ±fans.decisionCap) + the idol left on
+ *              the bench (−1 or 0, after the cap): −5 to +4. Only a human club decides (round.ts)
  *   reversion = fans.reversion × (thermometer − fans.baseline)
  *   thermometer = clamp(thermometer + Δ, 0, 100)
  *
@@ -55,13 +55,19 @@ export const FANS_EXTRAS = {
 } as const;
 
 /**
- * The idol left on the bench (jogadores.md, "Traço de personalidade"; torcida.md, "Decisões do
- * técnico"): from the 2nd round in a row, −1 per round, as one of the round's decisions.
+ * The idol left on the bench (jogadores.md, "Ídolo no banco"; torcida.md, "Decisões do técnico"):
+ * from the 2nd round in a row, −1 per round, added after the cap of the coach's decisions. Only
+ * for a human club (round.ts).
  */
 export const IDOL_BENCH = { fromStreak: 2, fans: -1 } as const;
 
 /** Where the club plays: home, away or neutral ground (no venue in `d`). */
 export type FansVenue = 'home' | 'away' | 'neutral';
+
+/** The venue of a club in a match for the expected points: neutral ground has none. */
+export function fansVenue(match: { readonly neutral: boolean }, side: Side): FansVenue {
+  return match.neutral ? 'neutral' : side;
+}
 
 /** Points the fans expect from a match: `clamp(1.40 + 0.04 × d, 0.3, 2.5)`. */
 export function expectedPoints(own: number, opponent: number, venue: FansVenue): number {
@@ -93,15 +99,17 @@ export interface FansRoundInput {
   readonly clubs: number;
   /** The round just played (1..38). */
   readonly round: number;
-  /** Sum of the round's decisions, before the cap (the coach's and the idol's). */
+  /** Sum of the coach's decisions of the round, before the cap of ±fans.decisionCap. */
   readonly decisions: number;
+  /** The idol left on the bench: {@link IDOL_BENCH}.fans or 0, added after the cap. */
+  readonly idol: number;
 }
 
 /** The parts of the round's Δ, for the tests and the screen's explanations. */
 export interface FansDelta {
   readonly result: number;
   readonly extras: number;
-  /** After the cap of ±fans.decisionCap. */
+  /** `clamp(decisions, ±fans.decisionCap) + idol`: −5 to +4 with the values of torcida.md. */
   readonly decisions: number;
   readonly reversion: number;
   /** `result + extras + decisions − reversion`. */
@@ -138,7 +146,7 @@ export function fansDelta(input: FansRoundInput, params: FansParams): FansDelta 
   }
 
   const cap = params.decisionCap;
-  const decisions = clamp(finite(input.decisions), -cap, cap);
+  const decisions = clamp(finite(input.decisions), -cap, cap) + finite(input.idol);
   const reversion = params.reversion * (fans - params.baseline);
   const delta = result + extras + decisions - reversion;
   return { result, extras, decisions, reversion, delta, fans: clamp(fans + delta, 0, 100) };
