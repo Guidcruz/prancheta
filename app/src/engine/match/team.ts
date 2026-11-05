@@ -199,7 +199,6 @@ function appearance(
   };
 }
 
-/** Injured or suspended: cannot play this match (jogadores.md, "Estados que mudam"). */
 /** Puts `app` in `slot` (or empties it) and refreshes the cached part of its rating. */
 export function occupy(slot: Slot, app: Appearance | undefined): void {
   slot.app = app;

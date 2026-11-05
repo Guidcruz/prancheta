@@ -464,8 +464,9 @@ export function shownEleven(
  * - With `lineup`: its formation and its 11 starters, which must be distinct players of the
  *   club's squad. Availability is not checked here (that is `validateLineup`, ai.ts).
  * - Without `lineup`: the XI of {@link shownEleven}: the club's last sheet (`lastSheets`), with
- *   the unavailable starters replaced from its bench as at kick-off, or, without one, the best XI of the available players (not injured, not suspended) in the
- *   club's first preferred formation, picked as the AI does with everyone fresh (`bestEleven`).
+ *   the unavailable starters replaced from its bench as at kick-off, or, without one, the best
+ *   XI of the available players (not injured, not suspended) in the club's first preferred
+ *   formation, picked as the AI does with everyone fresh (`bestEleven`).
  *
  * `undefined` when there is no answer: unknown club, a lineup that is not 11 distinct players of
  * the club in a known formation, or fewer than 11 available players.

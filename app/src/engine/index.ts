@@ -105,7 +105,14 @@ export {
   roundMoraleDeltas,
   summarizeMatch,
 } from './round.ts';
-export type { MatchMode, PlayerSeasonStats, RoundInput, RoundPlan, RoundReport } from './round.ts';
+export type {
+  MatchMode,
+  PlayerSeasonStats,
+  RoundInput,
+  RoundPlan,
+  RoundReport,
+  RoundSetup,
+} from './round.ts';
 export {
   FORM_LENGTH,
   POINTS,
