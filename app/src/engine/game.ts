@@ -7,8 +7,10 @@ import {
   generateSquad,
 } from './generation.ts';
 import type { GameParams } from './params.ts';
+import type { TeamSheet } from './lineup.ts';
 import type { IdentitySource, Player } from './players.ts';
 import { fail, ok } from './result.ts';
+import type { PlayerSeasonStats, RoundReport } from './round.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { ENGINE_VERSION } from './version.ts';
 import type { AiProfile, ClubId, EngineWarning, Formation, PlayerId, Result } from './types.ts';
@@ -16,11 +18,10 @@ import type { AiProfile, ClubId, EngineWarning, Formation, PlayerId, Result } fr
 /*
  * Game state and `newGame` (docs/02-architecture.md, 4.1; T-006). The state grows with the tasks
  * that own each part: this file has what a new game needs to exist (clubs, squads, players and
- * the identity of the career) and the calendar (`fixtures`, T-007). Still to come, as §4.1 assigns them:
- * - `lastSheets`, `seasonStats`, `lastRound` (rounds, tables, cards, injuries): T-013;
- * - `pastSeasons` (end of season): T-017.
- * The save format (T-018/T-019) is frozen only after those land, so adding them needs no
- * migration yet.
+ * the identity of the career), the calendar (`fixtures`, T-007) and what the rounds write
+ * (`lastSheets`, `seasonStats`, `lastRound`, T-013; round.ts). Still to come, as §4.1 assigns it:
+ * `pastSeasons` (end of season), T-017. The save format (T-018/T-019) is frozen only after that
+ * lands, so adding it needs no migration yet.
  */
 
 /** A club in the career (docs/02-architecture.md, 4.1). */
@@ -62,8 +63,17 @@ export interface GameState {
   readonly players: Readonly<Record<PlayerId, Player>>;
   /** Squad of each club in squad order: XI by slot, reserves, rotation, youth. */
   readonly squads: Readonly<Record<ClubId, readonly PlayerId[]>>;
-  /** The 380 matches of the current season, by round (fixtures.ts). */
+  /** The 380 matches of the current season, by round (fixtures.ts), with the results played. */
   readonly fixtures: readonly Fixture[];
+  /**
+   * The last team sheet each club took to the pitch (`playRound`); empty before round 1. The
+   * displayed strength without a lineup reads it (`teamStrength`, `shownEleven`).
+   */
+  readonly lastSheets: Readonly<Record<ClubId, TeamSheet>>;
+  /** Season numbers of every player who took the pitch this season (round.ts). */
+  readonly seasonStats: Readonly<Record<PlayerId, PlayerSeasonStats>>;
+  /** The report of the last round played, with the full events (only this one is kept). */
+  readonly lastRound?: RoundReport;
 }
 
 export interface NewGameSetup {
@@ -154,6 +164,8 @@ export function newGame(
       players,
       squads,
       fixtures: fixtures.value,
+      lastSheets: {},
+      seasonStats: {},
     },
     warnings,
   );

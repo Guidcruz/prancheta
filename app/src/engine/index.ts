@@ -96,6 +96,27 @@ export {
 export type { Fixture, FixturesError, FixturesRequest, RoundSlot } from './fixtures.ts';
 export { newGame } from './game.ts';
 export {
+  DEFAULT_STADIUM_CAPACITY,
+  MATCH_MODES,
+  ROUND_MORALE,
+  matchSeed,
+  playRound,
+  prepareRound,
+  roundMoraleDeltas,
+  summarizeMatch,
+} from './round.ts';
+export type { MatchMode, PlayerSeasonStats, RoundInput, RoundPlan, RoundReport } from './round.ts';
+export {
+  FORM_LENGTH,
+  POINTS,
+  RELEGATION_SPOTS,
+  getStandings,
+  standingsHistory,
+} from './standings.ts';
+export type { StandingResult, StandingRow, StandingsState } from './standings.ts';
+export { UNBEATEN_MIN_GAMES, WINLESS_MIN_GAMES, roundFacts } from './facts.ts';
+export type { Fact } from './facts.ts';
+export {
   CONDITION_MULT,
   EMPTY_SECTOR_FIT,
   FORMATION_MULTIPLIERS,
@@ -120,6 +141,7 @@ export type {
   LineupProblem,
   RatingFactors,
   Sector,
+  ShownState,
   StrengthContext,
   StrengthFactors,
   StrengthSheet,
@@ -205,6 +227,8 @@ export type {
   HalftimeTalk,
   InjurySeverity,
   MatchCommand,
+  MatchGoal,
+  MatchSummary,
   MatchEvent,
   MatchInput,
   MatchMarker,

@@ -15,6 +15,7 @@ import {
   resolveStarters,
   shownEleven,
   type LineupProblem,
+  type ShownState,
 } from './strength.ts';
 import type {
   AiProfile,
@@ -312,13 +313,10 @@ function shownStrength(
 
 /**
  * The opponent's strength for `Δ`: his displayed strength without a lineup, from the same XI that
- * `teamStrength` reads (`shownEleven`; today the best fresh XI of his available players, from the
- * T-013 whatever `teamStrength` reads), with an empty slot as 0. Undefined for an unknown club.
+ * `teamStrength` reads (`shownEleven`: his last sheet, `lastSheets`, or before round 1 the best
+ * fresh XI of his available players), with an empty slot as 0. Undefined for an unknown club.
  */
-function opponentStrength(
-  state: Pick<GameState, 'clubs' | 'players' | 'squads'>,
-  opponentId: ClubId,
-): number | undefined {
+function opponentStrength(state: ShownState, opponentId: ClubId): number | undefined {
   const eleven = shownEleven(state, opponentId);
   return eleven === undefined ? undefined : shownStrength(eleven);
 }
@@ -434,11 +432,12 @@ export interface SuggestOptions {
   readonly controller?: 'ai' | 'human';
 }
 
-/** What `suggestSheet` reads from the state. */
+/** What `suggestSheet` reads from the state (`lastSheets` for the opponent's strength, T-013). */
 export type SuggestState = Pick<
   GameState,
   'seed' | 'season' | 'round' | 'clubs' | 'players' | 'squads' | 'fixtures'
->;
+> &
+  Partial<Pick<GameState, 'lastSheets'>>;
 
 /**
  * The AI's team sheet for a club's next match (docs/02-architecture.md, 4.1; ia-clubes.md): also

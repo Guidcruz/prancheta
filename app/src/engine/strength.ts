@@ -402,20 +402,40 @@ export function sectorStrengths(
   return { ok: true, value, warnings: [] };
 }
 
+/** What {@link shownEleven} and {@link teamStrength} read from the state. */
+export type ShownState = Pick<GameState, 'clubs' | 'players' | 'squads'> &
+  Partial<Pick<GameState, 'lastSheets'>>;
+
 /**
- * The XI that the displayed strength of a club reads when no lineup is given: today the best XI
- * of the available players (not injured, not suspended) in the club's first preferred formation
- * (`4-4-2` if that one is unknown), everyone fresh (`bestEleven`); the T-013 makes it read
- * `lastSheets`. Fewer than 11 entries when fewer than 11 are available; undefined for an unknown
- * club. {@link teamStrength} and the AI's view of the opponent (ai.ts, `Δ`) both read it, so they
- * never diverge.
+ * The XI that the displayed strength of a club reads when no lineup is given (balance-targets.md,
+ * "Força"; ia-clubes.md, "Força no Δ"):
+ * 1. the club's last sheet (`GameState.lastSheets`, written by `playRound`, T-013): its formation
+ *    and its 11 starters, when they still are 11 distinct players of the club's squad in a known
+ *    formation. Availability is not checked, as with an explicit lineup: it is the XI the club
+ *    last fielded, the number the pre-match screen shows;
+ * 2. otherwise (before round 1, or a last sheet that no longer resolves) the best XI of the
+ *    available players (not injured, not suspended) in the club's first preferred formation
+ *    (`4-4-2` if that one is unknown), everyone fresh (`bestEleven`). Fewer than 11 entries when
+ *    fewer than 11 are available.
+ * Undefined for an unknown club. {@link teamStrength} and the AI's view of the opponent (ai.ts,
+ * `Δ`) both read it, so they never diverge.
  */
 export function shownEleven(
-  state: Pick<GameState, 'clubs' | 'players' | 'squads'>,
+  state: ShownState,
   clubId: ClubId,
 ): { player: Player; slot: Position }[] | undefined {
   const club = state.clubs[clubId];
   if (club === undefined) return undefined;
+  const last = state.lastSheets?.[clubId];
+  if (last !== undefined) {
+    const inSquad = new Set(state.squads[clubId] ?? []);
+    const resolved = resolveStarters(
+      last.lineup,
+      (id) => (inSquad.has(id) ? state.players[id] : undefined),
+      false,
+    );
+    if (!('reason' in resolved)) return resolved.eleven;
+  }
   const available: Player[] = [];
   for (const id of state.squads[clubId] ?? []) {
     const player = state.players[id];
@@ -432,14 +452,15 @@ export function shownEleven(
  *
  * - With `lineup`: its formation and its 11 starters, which must be distinct players of the
  *   club's squad. Availability is not checked here (that is `validateLineup`, ai.ts).
- * - Without `lineup`: the best XI of the available players (not injured, not suspended) in the
+ * - Without `lineup`: the XI of {@link shownEleven}: the club's last sheet (`lastSheets`), or,
+ *   before it has one, the best XI of the available players (not injured, not suspended) in the
  *   club's first preferred formation, picked as the AI does with everyone fresh (`bestEleven`).
  *
  * `undefined` when there is no answer: unknown club, a lineup that is not 11 distinct players of
  * the club in a known formation, or fewer than 11 available players.
  */
 export function teamStrength(
-  state: Pick<GameState, 'clubs' | 'players' | 'squads'>,
+  state: ShownState,
   clubId: ClubId,
   lineup?: Pick<Lineup, 'formation' | 'starters'>,
 ): number | undefined {
