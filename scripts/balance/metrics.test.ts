@@ -5,6 +5,7 @@ import {
   addFans,
   addMatch,
   emptyMatchTally,
+  strongestClubs,
   tableRecord,
   weakestClubs,
   type FansTally,
@@ -12,7 +13,17 @@ import {
   type SeasonRecord,
   type TableRecord,
 } from './league.ts';
-import { buildReport, exitCode, meanCi, type MetricRow } from './metrics.ts';
+import {
+  FUTURE_TARGETS,
+  RARE_TARGETS,
+  buildReport,
+  exitCode,
+  meanCi,
+  notMeasured,
+  pooledRows,
+  withPooledVerdict,
+  type MetricRow,
+} from './metrics.ts';
 import type { RunResults } from './run.ts';
 
 /*
@@ -97,7 +108,8 @@ describe('the table of a season', () => {
     );
     const sizes: Record<string, ClubSize> = {};
     for (const id of ids) sizes[id] = id === 'c17' ? 'big' : id === 'c01' ? 'medium' : 'small';
-    const record = tableRecord(final, after30, sizes, ['c20', 'c19', 'c03', 'c06']);
+    const strongest = ['c01', 'c02', 'c03', 'c04', 'c05', 'c15'];
+    const record = tableRecord(final, after30, sizes, ['c20', 'c19', 'c03', 'c06'], strongest);
     expect(record).toEqual<TableRecord>({
       champion: 'c01',
       championPoints: 80,
@@ -105,19 +117,24 @@ describe('the table of a season', () => {
       seventeenthPoints: 40,
       bigRelegated: true,
       weakInG4: true,
+      strongChampion: true,
+      strongRelegated: true,
       z4: 4,
       z4Escaped: 1,
       z4Gap: 2,
       z4GapEscaped: 1,
     });
     // No weak club in the G4 and no big club down.
-    const none = tableRecord(final, after30, { ...sizes, c17: 'small' }, [
-      'c20',
-      'c19',
-      'c18',
-      'c06',
-    ]);
+    const none = tableRecord(
+      final,
+      after30,
+      { ...sizes, c17: 'small' },
+      ['c20', 'c19', 'c18', 'c06'],
+      ['c02', 'c03', 'c04', 'c05', 'c06', 'c18'],
+    );
     expect([none.weakInG4, none.bigRelegated]).toEqual([false, false]);
+    // The 6 strongest: c01 is not among them now; c18 escaped (15th), c15 went down instead.
+    expect([none.strongChampion, none.strongRelegated]).toEqual([false, false]);
   });
 
   it('takes the weakest clubs of the ladder at the start, ties by id', () => {
@@ -132,6 +149,8 @@ describe('the table of a season', () => {
       ].map(([id, strength]) => [id, { strength: strength as number }]),
     );
     expect(weakestClubs({ clubs } as never)).toEqual(['d', 'a', 'b', 'e']);
+    expect(strongestClubs({ clubs } as never, 3)).toEqual(['f', 'c', 'e']);
+    expect(strongestClubs({ clubs } as never, 5)).toEqual(['f', 'c', 'e', 'a', 'b']);
   });
 });
 
@@ -174,6 +193,8 @@ function season(
       seventeenthPoints: 42,
       bigRelegated: true,
       weakInG4: false,
+      strongChampion: true,
+      strongRelegated: false,
       z4: 4,
       z4Escaped: 1,
       z4Gap: 1,
@@ -236,6 +257,7 @@ describe('buildReport', () => {
     tactical: new Map([
       ['4-3-3', duel(40, 21, 39)],
       ['attacking', duel(45, 20, 35)],
+      ['reference', duel(36, 28, 36)],
     ]),
     allOut: { samples: 100, tries: 400, keptNotLost: 40, allOutNotLost: 44 } satisfies AllOutTally,
   };
@@ -263,6 +285,20 @@ describe('buildReport', () => {
     expect(byId(report.rows, 'allOut').status).toBe('dentro');
   });
 
+  it('gives the points per game of each tactic against the reference, as information', () => {
+    // Reference against itself: (3 × 36 + 28) / 100 = 1.36; 4-3-3: (3 × 40 + 21) / 100 = 1.41.
+    const reference = byId(report.rows, 'tactic-ppg-reference');
+    expect(reference).toMatchObject({ value: 1.36, shown: '1,360', required: false });
+    const t433 = byId(report.rows, 'tactic-ppg-4-3-3');
+    expect(t433.value).toBeCloseTo(0.05, 12);
+    expect(t433).toMatchObject({ shown: '1,410 (+0,050)', status: 'fora', required: false });
+    expect(byId(report.rows, 'tactic-ppg-5-3-2').status).toBe('n/a');
+    expect(exitCode({ rows: report.rows.filter((r) => r.id.startsWith('tactic-ppg-')) })).toBe(0);
+    // Without the reference duel there is nothing to compare with.
+    const noRef = buildReport({ ...results, tactical: new Map([['4-3-3', duel(40, 21, 39)]]) });
+    expect(byId(noRef.rows, 'tactic-ppg-4-3-3').status).toBe('n/a');
+  });
+
   it('reads the table, the fans, the sizes and the Z4', () => {
     expect(byId(report.rows, 'champion')).toMatchObject({ value: 78, status: 'dentro' });
     expect(byId(report.rows, 'seventeenth')).toMatchObject({ value: 42.5, status: 'dentro' });
@@ -273,6 +309,12 @@ describe('buildReport', () => {
     expect(byId(report.rows, 'fansSd').value).toBeCloseTo(sd, 9);
     expect(byId(report.rows, 'bigChampion').value).toBe(0.5);
     expect(byId(report.rows, 'bigRelegated').value).toBe(1);
+    // The 6 strongest of the ladder: the champion of season 2 was not one of them.
+    seasons[1]!.table.strongChampion = false;
+    const strong = buildReport(results);
+    seasons[1]!.table.strongChampion = true;
+    expect(byId(strong.rows, 'strongChampion')).toMatchObject({ value: 0.5, required: false });
+    expect(byId(strong.rows, 'strongRelegated')).toMatchObject({ value: 0, required: false });
     expect(byId(report.rows, 'weakInG4').value).toBe(0);
     expect(byId(report.rows, 'z4Escape').value).toBe(0.25);
     expect(byId(report.rows, 'z4EscapeGap')).toMatchObject({ value: 0, status: 'fora' });
@@ -306,6 +348,66 @@ describe('buildReport', () => {
     });
     expect(empty.rows.every((r) => r.status === 'n/a')).toBe(true);
     expect(exitCode(empty)).toBe(0);
+    expect(notMeasured(empty).map((r) => r.id)).toContain('goals');
+    const measured = notMeasured(report).map((r) => r.id);
+    expect(measured).not.toContain('goals');
+    expect(measured).toContain('injuryRounds'); // no injury in the fake matches
+    expect(notMeasured(report).every((r) => r.required)).toBe(true);
+  });
+
+  it('lists the targets of later stages as n/a, never required', () => {
+    const future = report.rows.filter((r) => r.id.startsWith('future-'));
+    expect(future.map((r) => r.label)).toEqual([
+      'Projeto do clube médio',
+      'Estabilidade da liga',
+      'Inflação de salários',
+      'Público médio',
+      'Frequência de eventos das Brasilidades',
+    ]);
+    expect(future).toHaveLength(FUTURE_TARGETS.length);
+    for (const r of future) expect(r).toMatchObject({ status: 'n/a', required: false });
+    expect(notMeasured(report).some((r) => r.id.startsWith('future-'))).toBe(false);
+  });
+});
+
+describe('several seeds', () => {
+  const m = matches({ '1x1': 1 });
+  const run = (tables: Partial<TableRecord>[]): RunResults => ({
+    seasons: tables.map((t, i) => season(i + 1, m, t, { big1: 70 })),
+    robotSeasons: [],
+    calibrated: new Map(),
+    tactical: new Map(),
+  });
+  // 100 seasons per seed: 1 small champion in seed 1, none in seed 2, 2 in seed 3.
+  const seeds = [1, 0, 2].map((small) =>
+    run(
+      Array.from({ length: 100 }, (_, i) => ({
+        championSize: i < small ? ('small' as const) : ('big' as const),
+        weakInG4: i < 6,
+        z4Gap: 2,
+        z4GapEscaped: i < 3 ? 1 : 0,
+      })),
+    ),
+  );
+
+  it('judges the rare targets on the seasons of every seed together', () => {
+    const rows = pooledRows(seeds);
+    expect(rows.map((r) => r.id)).toEqual([...RARE_TARGETS]);
+    expect(rows[0]).toMatchObject({ value: 0.01, status: 'dentro', required: true });
+    expect(rows[1]).toMatchObject({ value: 0.06, status: 'dentro' });
+    expect(rows[2]).toMatchObject({ value: 0.015, status: 'fora' });
+  });
+
+  it('stops counting the rare targets in each seed, and only those', () => {
+    const one = buildReport(seeds[1]!);
+    expect(byId(one.rows, 'smallChampion')).toMatchObject({ status: 'fora', required: true });
+    const judged = withPooledVerdict(one);
+    for (const id of RARE_TARGETS) {
+      expect(byId(judged.rows, id)).toMatchObject({ required: false, verdict: 'pooled' });
+    }
+    expect(byId(judged.rows, 'goals')).toMatchObject({ required: true });
+    expect(byId(judged.rows, 'goals').verdict).toBeUndefined();
+    expect(judged.rows.filter((r) => r.verdict === 'pooled')).toHaveLength(RARE_TARGETS.length);
   });
 });
 

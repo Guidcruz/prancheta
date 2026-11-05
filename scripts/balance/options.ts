@@ -18,8 +18,12 @@ export const DEFAULT_ROBOT_CLUB = 'coritibom';
 export interface BalanceOptions {
   /** Seasons of the league (each a new career; 0 skips the league and the robot). */
   readonly seasons: number;
-  /** Base seed: season `i` uses `seedFromString(`balance-${seed}-${i}`)`. */
-  readonly seed: number;
+  /**
+   * Base seeds, in the given order, without repeats: season `i` of seed `s` uses
+   * `seedFromString(`balance-${s}-${i}`)`. More than one (`--seed 1,2,3`) runs each and judges
+   * the rare targets on all of them together.
+   */
+  readonly seeds: readonly number[];
   /** Matches of each duel (calibrated, tactical and "tudo no ataque"); 0 skips the duels. */
   readonly duels: number;
   /** File with parameter overrides (same shape as GameParams, any subset of it). */
@@ -35,7 +39,9 @@ export interface BalanceOptions {
 export const USAGE = `Uso: npm run balance -- [opções]
 
   --seasons <n>    temporadas da Série A (padrão 200; 0 pula a liga e o robô)
-  --seed <n>       semente base, inteiro >= 0 (padrão 1)
+  --seed <n>       semente base, inteiro >= 0 (padrão 1); várias separadas por vírgula
+                   (--seed 1,2,3) rodam cada uma e julgam as metas raras (campeão pequeno,
+                   clube fraco no G4, fuga do Z4 de 6 a 8 pontos) na soma das temporadas
   --duels <n>      jogos de cada duelo calibrado e tático (padrão 20000; 0 pula os duelos)
   --params <arq>   JSON com parâmetros que sobrescrevem os de app/src/params/ (qualquer parte)
   --robot <clube>  clube do técnico-robô (padrão ${DEFAULT_ROBOT_CLUB}; "none" pula o robô)
@@ -43,8 +49,12 @@ export const USAGE = `Uso: npm run balance -- [opções]
   --workers <n>    threads de trabalho (padrão: até 4); o resultado não muda com elas
   --help           esta ajuda
 
-Código de saída: 0 com todas as metas obrigatórias dentro; 1 com alguma fora; 2 erro de uso.
-O tempo gasto sai no stderr, para a saída padrão ser idêntica entre duas execuções.`;
+Códigos de saída:
+  0  todas as metas obrigatórias dentro (as não medidas, "n/a", não contam)
+  1  alguma meta obrigatória fora
+  2  erro de uso (opção, arquivo de --params ou clube do robô inválidos)
+  3  falha da ferramenta (exceção ou thread de trabalho que caiu); o erro sai no stderr
+O tempo gasto e os avisos saem no stderr, para a saída padrão ser idêntica entre duas execuções.`;
 
 export type ParsedArgs = { ok: true; options: BalanceOptions } | { ok: false; error: string };
 
@@ -55,10 +65,20 @@ function integer(flag: string, raw: string | undefined, min: number): number | s
   return value;
 }
 
+/** `--seed`: one integer >= 0, or several separated by commas, without repeats. */
+function seedList(raw: string | undefined): readonly number[] | string {
+  const error = '--seed precisa de um inteiro >= 0 ou de vários separados por vírgula (1,2,3)';
+  if (raw === undefined || !/^\d+(,\d+)*$/.test(raw)) return error;
+  const seeds = raw.split(',').map(Number);
+  if (!seeds.every(Number.isSafeInteger)) return error;
+  if (new Set(seeds).size !== seeds.length) return `--seed com semente repetida: ${raw}`;
+  return seeds;
+}
+
 /** Parses the flags after `npm run balance --`. Never throws: a bad flag is an error result. */
 export function parseArgs(argv: readonly string[]): ParsedArgs {
   let seasons = 200;
-  let seed = 1;
+  let seeds: readonly number[] = [1];
   let duels = 20_000;
   let paramsFile: string | undefined;
   let robot: string | undefined = DEFAULT_ROBOT_CLUB;
@@ -77,9 +97,9 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
         break;
       }
       case '--seed': {
-        const v = integer(name, next(), 0);
+        const v = seedList(next());
         if (typeof v === 'string') return { ok: false, error: v };
-        seed = v;
+        seeds = v;
         break;
       }
       case '--duels': {
@@ -118,7 +138,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
         return { ok: false, error: `opção desconhecida: ${flag}` };
     }
   }
-  return { ok: true, options: { seasons, seed, duels, paramsFile, robot, json, workers, help } };
+  return { ok: true, options: { seasons, seeds, duels, paramsFile, robot, json, workers, help } };
 }
 
 const repoFile = (path: string) => new URL(`../../${path}`, import.meta.url);
@@ -133,13 +153,16 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 
 /**
  * `base` with `patch` on top, key by key; a list or a number in the patch replaces the base value.
- * `changed` collects the dotted path of every leaf the patch sets.
+ * `changed` collects the dotted path of every leaf the patch sets. A `__proto__` key (JSON.parse
+ * keeps it as an own key) is never merged, since assigning it would swap the object's prototype
+ * and the validator would never see it; its path goes to `ignored`.
  */
 export function mergeParams(
   base: unknown,
   patch: unknown,
   changed: string[] = [],
   path = '',
+  ignored: string[] = [],
 ): unknown {
   if (!isPlainObject(base) || !isPlainObject(patch)) {
     changed.push(path);
@@ -147,13 +170,24 @@ export function mergeParams(
   }
   const out: Record<string, unknown> = { ...base };
   for (const [key, value] of Object.entries(patch)) {
-    out[key] = mergeParams(base[key], value, changed, path ? `${path}.${key}` : key);
+    const at = path ? `${path}.${key}` : key;
+    if (key === '__proto__') {
+      ignored.push(at);
+      continue;
+    }
+    out[key] = mergeParams(base[key], value, changed, at, ignored);
   }
   return out;
 }
 
 export type LoadedParams =
-  | { ok: true; params: GameParams; overrides: readonly string[] }
+  | {
+      ok: true;
+      params: GameParams;
+      overrides: readonly string[];
+      /** Warnings for stderr (a `__proto__` key of the `--params` file, ignored). */
+      warnings: readonly string[];
+    }
   | { ok: false; error: string; issues?: readonly ParamIssue[] };
 
 /** The six JSON files of app/src/params/, under their keys, before validation. */
@@ -170,6 +204,7 @@ export function repositoryParams(): Record<string, unknown> {
 export function loadParams(paramsFile?: string): LoadedParams {
   let raw: unknown = repositoryParams();
   const overrides: string[] = [];
+  const ignored: string[] = [];
   if (paramsFile !== undefined) {
     let patch: unknown;
     try {
@@ -178,11 +213,14 @@ export function loadParams(paramsFile?: string): LoadedParams {
       return { ok: false, error: `não li ${paramsFile}: ${(error as Error).message}` };
     }
     if (!isPlainObject(patch)) return { ok: false, error: `${paramsFile} não é um objeto JSON` };
-    raw = mergeParams(raw, patch, overrides);
+    raw = mergeParams(raw, patch, overrides, '', ignored);
   }
   const result = validateParams(raw);
   if (!result.ok) return { ok: false, error: 'parâmetros inválidos', issues: result.detail };
-  return { ok: true, params: result.value, overrides: overrides.sort() };
+  const warnings = ignored.map(
+    (path) => `Aviso: ${paramsFile}: a chave "__proto__" (${path}) não é parâmetro e foi ignorada`,
+  );
+  return { ok: true, params: result.value, overrides: overrides.sort(), warnings };
 }
 
 /** One line per issue (the same text as app/src/lib/params.ts, which Node cannot load here). */

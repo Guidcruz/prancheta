@@ -1,5 +1,5 @@
 import type { ClubDef, ClubId } from '../../app/src/engine/index.ts';
-import { TACTIC_VARIANTS, type AllOutTally, type DuelTally } from './duels.ts';
+import { REFERENCE_VARIANT, TACTIC_VARIANTS, type AllOutTally, type DuelTally } from './duels.ts';
 import { emptyMatchTally, mergeMatchTally, type MatchTally, type SeasonRecord } from './league.ts';
 import type { RunResults } from './run.ts';
 
@@ -10,7 +10,12 @@ import type { RunResults } from './run.ts';
  *
  * `required` rows are the 1a targets of balance-targets.md: one of them "fora" makes the exit code
  * 1 (for the CI, wired by devops). The other rows are references of ia-clubes.md and torcida.md
- * ("info"): shown with their target, never failing the run.
+ * ("info"): shown with their target, never failing the run. The targets of later stages
+ * (balance-targets.md, "futura") are listed as "n/a" and never count either.
+ *
+ * With several seeds (`--seed 1,2,3`), the rare table targets (RARE_TARGETS) are judged on the
+ * seasons of all seeds together (balance-log.md, "Regra de medição proposta"): in each seed they
+ * are shown with `verdict: 'pooled'` and do not count; the pooled rows count once.
  */
 
 export type Status = 'dentro' | 'fora' | 'n/a';
@@ -25,7 +30,35 @@ export interface MetricRow {
   readonly target: string;
   readonly status: Status;
   readonly required: boolean;
+  /** Shown in each seed of a multi-seed run, judged on the seeds together (RARE_TARGETS). */
+  readonly verdict?: 'pooled';
 }
+
+/**
+ * The rare table targets, a few percent of 200 seasons, judged on all the seeds together when the
+ * run has more than one (balance-log.md, decision 4).
+ */
+export const RARE_TARGETS: readonly string[] = ['smallChampion', 'weakInG4', 'z4EscapeGap'];
+
+/** Half-width of the points per game reference of the tactical duels (balance-log.md). */
+export const PPG_TOLERANCE = 0.04;
+
+/** The targets of later stages (balance-targets.md, "futura"): "n/a" until their stage. */
+export const FUTURE_TARGETS: readonly {
+  readonly id: string;
+  readonly label: string;
+  readonly stage: string;
+}[] = [
+  { id: 'future-midClubProject', label: 'Projeto do clube médio', stage: 'etapa 4' },
+  { id: 'future-leagueStability', label: 'Estabilidade da liga', stage: 'etapa 4' },
+  { id: 'future-wageInflation', label: 'Inflação de salários', stage: 'etapa 3' },
+  { id: 'future-attendance', label: 'Público médio', stage: 'etapa 3' },
+  {
+    id: 'future-brasilidades',
+    label: 'Frequência de eventos das Brasilidades',
+    stage: 'etapas 2 a 4',
+  },
+];
 
 export interface RobotSummary {
   readonly club: ClubId;
@@ -190,6 +223,9 @@ export function buildReport(
   const d30 = results.calibrated.get(30);
   const d10 = results.calibrated.get(10);
   const d0 = results.calibrated.get(0);
+  const ppg = (d: DuelTally | undefined) =>
+    d === undefined || d.matches === 0 ? undefined : (3 * d.wins + d.draws) / d.matches;
+  const referencePpg = ppg(results.tactical.get(REFERENCE_VARIANT.id));
   const allOut: AllOutTally | undefined = results.allOut;
   const allOutGain =
     allOut === undefined || allOut.samples === 0
@@ -303,6 +339,27 @@ export function buildReport(
       'sobe ≥ 3 p.p. contra equilibrada',
       { min: 0.03 },
     ),
+    row(
+      'tactic-ppg-reference',
+      'Pontos por jogo: 4-4-2 equilibrada média contra ela mesma',
+      referencePpg,
+      rate3,
+      'referência dos pontos por jogo',
+      () => true,
+      false,
+    ),
+    ...TACTIC_VARIANTS.map((v) => {
+      const own = ppg(results.tactical.get(v.id));
+      return row(
+        `tactic-ppg-${v.id}`,
+        `Pontos por jogo: ${tacticLabel(v.id)} (diferença da referência)`,
+        own === undefined || referencePpg === undefined ? undefined : own - referencePpg,
+        (diff) => `${num(own!, 3)} (${diff >= 0 ? '+' : ''}${num(diff, 3)})`,
+        `±${num(PPG_TOLERANCE, 2)} da referência`,
+        { min: -PPG_TOLERANCE, max: PPG_TOLERANCE },
+        false,
+      );
+    }),
     // Tabela
     row(
       'champion',
@@ -379,6 +436,24 @@ export function buildReport(
       share1,
       '40% a 80% das temporadas',
       { min: 0.4, max: 0.8 },
+    ),
+    row(
+      'strongChampion',
+      'Campeão entre os 6 mais fortes da escada',
+      share((s) => s.table.strongChampion),
+      share1,
+      'referência (clubes-serie-a.md, item 4)',
+      () => true,
+      false,
+    ),
+    row(
+      'strongRelegated',
+      'Algum dos 6 mais fortes rebaixado',
+      share((s) => s.table.strongRelegated),
+      share1,
+      'referência (clubes-serie-a.md, item 4)',
+      () => true,
+      false,
     ),
     row(
       'weakInG4',
@@ -471,6 +546,18 @@ export function buildReport(
       { max: 0.05 },
       false,
     ),
+    // Metas futuras: "n/a" until their stage, never counted.
+    ...FUTURE_TARGETS.map((f) =>
+      row(
+        f.id,
+        f.label,
+        undefined,
+        () => '',
+        f.stage,
+        () => true,
+        false,
+      ),
+    ),
   ];
 
   const titleCount = new Map<ClubId, number>();
@@ -507,6 +594,36 @@ function tacticLabel(id: string): string {
     'pressure-high': 'pressão alta',
   };
   return labels[id] ?? id;
+}
+
+/**
+ * The rows of a multi-seed run's seed: the RARE_TARGETS stop counting there (`verdict: 'pooled'`),
+ * since they are judged on the seeds together ({@link pooledRows}).
+ */
+export function withPooledVerdict(report: Report): Report {
+  return {
+    ...report,
+    rows: report.rows.map((r) =>
+      RARE_TARGETS.includes(r.id) ? { ...r, required: false, verdict: 'pooled' as const } : r,
+    ),
+  };
+}
+
+/** The RARE_TARGETS rows measured on the seasons of every seed together. */
+export function pooledRows(runs: readonly RunResults[]): MetricRow[] {
+  const all: RunResults = {
+    seasons: runs.flatMap((r) => r.seasons),
+    robotSeasons: [],
+    calibrated: new Map(),
+    tactical: new Map(),
+  };
+  const rows = buildReport(all).rows;
+  return RARE_TARGETS.map((id) => rows.find((r) => r.id === id)!);
+}
+
+/** Required rows that were not measured in this run ("n/a": no league, duels or robot). */
+export function notMeasured(report: Pick<Report, 'rows'>): MetricRow[] {
+  return report.rows.filter((r) => r.required && r.status === 'n/a');
 }
 
 /** Exit code of a run: 1 when a required row is "fora". */

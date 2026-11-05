@@ -10,6 +10,7 @@ import {
   parseArgs,
   repositoryParams,
   serieAClubs,
+  USAGE,
 } from './options.ts';
 
 /* The command line and the inputs of the /balance (US-013, "parâmetros alternativos"). */
@@ -21,7 +22,7 @@ describe('parseArgs', () => {
     if (!parsed.ok) return;
     expect(parsed.options).toMatchObject({
       seasons: 200,
-      seed: 1,
+      seeds: [1],
       duels: 20_000,
       robot: DEFAULT_ROBOT_CLUB,
       json: false,
@@ -49,7 +50,7 @@ describe('parseArgs', () => {
       ok: true,
       options: {
         seasons: 3,
-        seed: 7,
+        seeds: [7],
         duels: 0,
         paramsFile: 'x.json',
         robot: undefined,
@@ -60,6 +61,25 @@ describe('parseArgs', () => {
     });
     const robot = parseArgs(['--robot', 'tufao']);
     expect(robot.ok && robot.options.robot).toBe('tufao');
+  });
+
+  it('reads several seeds separated by commas, in the given order', () => {
+    const three = parseArgs(['--seed', '1,2,3']);
+    expect(three.ok && three.options.seeds).toEqual([1, 2, 3]);
+    const inline = parseArgs(['--seed=9,0']);
+    expect(inline.ok && inline.options.seeds).toEqual([9, 0]);
+    for (const raw of ['1,', ',1', '1,,2', '1;2', '1, 2', '1,2,1', '1,-2']) {
+      expect(parseArgs(['--seed', raw]).ok, raw).toBe(false);
+    }
+    const repeated = parseArgs(['--seed', '1,2,1']);
+    expect(!repeated.ok && repeated.error).toContain('repetida');
+  });
+
+  it('documents the four exit codes in the help', () => {
+    expect(USAGE).toMatch(/^ {2}0 {2}todas as metas obrigatórias dentro/m);
+    expect(USAGE).toMatch(/^ {2}1 {2}alguma meta obrigatória fora/m);
+    expect(USAGE).toMatch(/^ {2}2 {2}erro de uso/m);
+    expect(USAGE).toMatch(/^ {2}3 {2}falha da ferramenta/m);
   });
 
   it('refuses unknown flags, missing values and numbers that are not whole', () => {
@@ -90,6 +110,21 @@ describe('mergeParams', () => {
     expect(merged).toEqual({ match: { a: 1, cards: { y: 5, r: 3 } }, season: { weeks: [3] } });
     expect(changed.sort()).toEqual(['match.cards.y', 'season.weeks']);
   });
+
+  it('never merges a "__proto__" key: it lists it as ignored and keeps the prototype', () => {
+    const changed: string[] = [];
+    const ignored: string[] = [];
+    const patch = JSON.parse('{"__proto__": {"x": 1}, "match": {"__proto__": {"y": 2}, "a": 4}}');
+    const merged = mergeParams({ match: { a: 1 } }, patch, changed, '', ignored) as Record<
+      string,
+      Record<string, unknown>
+    >;
+    expect(merged).toEqual({ match: { a: 4 } });
+    expect(Object.getPrototypeOf(merged)).toBe(Object.prototype);
+    expect(Object.getPrototypeOf(merged.match)).toBe(Object.prototype);
+    expect(ignored).toEqual(['__proto__', 'match.__proto__']);
+    expect(changed).toEqual(['match.a']);
+  });
 });
 
 describe('loadParams', () => {
@@ -118,7 +153,20 @@ describe('loadParams', () => {
     expect(loaded.params.match.comfortableLeadPower).toBe(0.85);
     expect(loaded.params.match.baseChance).toBe(0.09);
     expect(loaded.overrides).toEqual(['match.comfortableLeadPower']);
+    expect(loaded.warnings).toEqual([]);
     expect(repoFiles()).toEqual(before);
+  });
+
+  it('warns about a "__proto__" key of the file and loads the rest', () => {
+    const file = join(dir, 'proto.json');
+    writeFileSync(file, '{"__proto__": {"x": 1}, "match": {"cards": {"bookedMult": 0.2}}}');
+    const loaded = loadParams(file);
+    expect(loaded.ok).toBe(true);
+    if (!loaded.ok) return;
+    expect(loaded.params.match.cards.bookedMult).toBe(0.2);
+    expect(loaded.overrides).toEqual(['match.cards.bookedMult']);
+    expect(loaded.warnings).toHaveLength(1);
+    expect(loaded.warnings[0]).toContain('"__proto__"');
   });
 
   it('refuses a value out of range, an unknown key and a file that is not JSON', () => {

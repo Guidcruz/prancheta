@@ -8,8 +8,8 @@ import { PARAM_FILES } from './options.ts';
 
 /*
  * `npm run balance` end to end, in plain Node as the CI runs it (US-013): reproducible, the
- * `--params` file never touches app/src/params/, `--seed` changes the run, and the exit code
- * follows the required targets. Small runs (1 season, 100 duel matches) keep it to seconds.
+ * `--params` file never touches app/src/params/, `--seed` changes the run (and takes several
+ * seeds), and the exit code follows the required targets. Small runs (1 season, 100 duel matches) keep it to seconds.
  */
 
 const script = fileURLToPath(new URL('../balance.ts', import.meta.url));
@@ -95,6 +95,32 @@ describe('npm run balance', { timeout: 120_000 }, () => {
     const text = run(['--seasons', '1', '--duels', '0', '--robot', 'none', '--workers', '2']);
     expect(text.stdout).toContain('Gols por partida');
     expect(text.stdout).toMatch(/Metas obrigatórias: \d+ de \d+ dentro/);
+  });
+
+  it('runs several seeds, each as alone, and judges the rare targets on their sum', () => {
+    const args = ['--seasons', '1', '--duels', '0', '--robot', 'none', '--workers', '2'];
+    const multi = run([...args, '--seed', '1,2', '--json']);
+    const parsed = JSON.parse(multi.stdout) as {
+      exitCode: number;
+      seeds: Parsed[];
+      pooled: { seeds: number[]; seasons: number; rows: { id: string; required: boolean }[] };
+    };
+    expect(parsed.seeds.map((s) => s.run.seed)).toEqual([1, 2]);
+    expect(parsed.pooled).toMatchObject({ seeds: [1, 2], seasons: 2 });
+    expect(parsed.pooled.rows.map((r) => [r.id, r.required])).toEqual([
+      ['smallChampion', true],
+      ['weakInG4', true],
+      ['z4EscapeGap', true],
+    ]);
+    const alone = JSON.parse(run([...args, '--seed', '2', '--json']).stdout) as Parsed;
+    const value = (r: Parsed, id: string) => r.rows.find((x) => x.id === id)!.value;
+    expect(value(parsed.seeds[1]!, 'goals')).toBe(value(alone, 'goals'));
+    expect(parsed.seeds[1]!.rows.find((x) => x.id === 'smallChampion')!.required).toBe(false);
+    expect(multi.status).toBe(parsed.exitCode);
+    const text = run([...args, '--seed', '1,2']).stdout;
+    expect(text).toContain('=== Semente 2 ===');
+    expect(text).toContain('=== Soma das sementes 1, 2 (2 temporadas): metas raras ===');
+    expect(text).toMatch(/^Resultado: /m);
   });
 
   it('refuses a bad flag, a bad --params file and an unknown robot club with exit code 2', () => {

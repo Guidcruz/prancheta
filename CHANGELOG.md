@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Ajustes da ferramenta de balanceamento (T-016, revisão da parte 1 e pedidos do `game-designer`):
+  - Fator do pendurado como parâmetro: `match.cards.bookedMult` (faixa de 0 a 1), ainda em 0,5. Nenhum resultado muda e os goldens ficam iguais; o valor novo entra com os outros parâmetros da T-016, quando o CEO decidir.
+  - Códigos de saída do `npm run balance`: 0 com tudo dentro, 1 com alguma meta obrigatória fora, 2 erro de uso e 3 falha da própria ferramenta (antes, uma falha saía com 1, como se fosse meta fora).
+  - `--seed 1,2,3`: roda as três sementes, mostra cada uma e julga as metas raras (campeão pequeno, clube fraco no G4 e fuga do Z4 de 6 a 8 pontos) na soma das 600 temporadas; as outras metas continuam semente a semente. Com uma semente, nada muda.
+  - Novas linhas informativas, que não contam no código de saída: pontos por jogo de cada tática contra a referência (4-4-2 equilibrada contra ela mesma, faixa de ±0,04), "campeão entre os 6 mais fortes" e "algum dos 6 mais fortes rebaixado", e as metas de etapas futuras, como "n/a".
+  - Aviso no resumo quando uma meta obrigatória fica sem medida (`--robot none`, `--duels 0`), e no stderr quando o arquivo do `--params` tem uma chave `__proto__` (ignorada).
+  - As tarefas longas (temporadas do técnico-robô e "tudo no ataque") são distribuídas primeiro entre as threads; a saída não muda.
+
 - Ferramenta de balanceamento e regra "tirar o pé" (T-016, parte 1; US-013):
   - `npm run balance` (`scripts/balance.ts`): simula temporadas completas da Série A só com o motor, os duelos calibrados (0, 10, 20 e 30 pontos de diferença), os duelos táticos (cada formação, postura e pressão contra a 4-4-2 equilibrada) e o "tudo no ataque" a partir de 0×1 aos 75'. Para cada meta da Etapa 1a de `balance-targets.md`, mostra o valor medido, a meta e "dentro" ou "fora".
   - Opções `--seasons`, `--seed`, `--duels`, `--params <arquivo>` (sobrescreve parâmetros sem mexer em `app/src/params/`), `--robot <clube>`, `--json` e `--workers`. A mesma semente dá a mesma saída, com qualquer número de threads; o tempo sai à parte.

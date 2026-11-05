@@ -33,6 +33,11 @@ export const Z4_FROM = 17;
 export const G4_TO = 4;
 /** Clubs of the "clube fraco" cut: the weakest of the career's ladder (decision 9). */
 export const WEAK_CLUBS = 4;
+/**
+ * Clubs of the "6 mais fortes" cut: the strongest of the career's ladder, the second reading of
+ * "campeão grande" and "grande rebaixado" (clubes-serie-a.md, "Pedido ao developer", item 4).
+ */
+export const STRONG_CLUBS = 6;
 /** "6 a 8 pontos atrás do 16º" (decision 9). */
 export const Z4_GAP = { min: 6, max: 8 } as const;
 /** A starter below this condition marks a tired sheet (ia-clubes.md, "Pedido ao developer" 3). */
@@ -89,6 +94,10 @@ export interface TableRecord {
   bigRelegated: boolean;
   /** At least one of the WEAK_CLUBS weakest clubs at the start finished in the G4. */
   weakInG4: boolean;
+  /** The champion is one of the STRONG_CLUBS strongest clubs at the start. */
+  strongChampion: boolean;
+  /** At least one of the STRONG_CLUBS strongest clubs at the start finished in the Z4. */
+  strongRelegated: boolean;
   /** Clubs in the Z4 after round Z4_ROUND, and how many of them finished out of it. */
   z4: number;
   z4Escaped: number;
@@ -187,15 +196,24 @@ export function weakestClubs(state: Pick<GameState, 'clubs'>, count = WEAK_CLUBS
     .map(([id]) => id);
 }
 
+/** The strongest clubs of the career's ladder at the start (effective strength; ties by id). */
+export function strongestClubs(state: Pick<GameState, 'clubs'>, count = STRONG_CLUBS): ClubId[] {
+  return Object.entries(state.clubs)
+    .sort(([a, x], [b, y]) => y.strength - x.strength || (a < b ? -1 : a > b ? 1 : 0))
+    .slice(0, count)
+    .map(([id]) => id);
+}
+
 /**
  * The table record of a season from its final table, the table after round Z4_ROUND, the club
- * sizes and the weakest clubs at the start.
+ * sizes and the weakest and strongest clubs at the start.
  */
 export function tableRecord(
   final: readonly StandingRow[],
   afterZ4Round: readonly StandingRow[],
   sizes: Readonly<Record<ClubId, ClubSize>>,
   weakest: readonly ClubId[],
+  strongest: readonly ClubId[],
 ): TableRecord {
   const position = new Map(final.map((row) => [row.clubId, row.position]));
   const champion = final[0]!;
@@ -222,6 +240,8 @@ export function tableRecord(
     seventeenthPoints: final[Z4_FROM - 1]!.points,
     bigRelegated: final.some((row) => row.position >= Z4_FROM && sizes[row.clubId] === 'big'),
     weakInG4: weakest.some((id) => (position.get(id) ?? Infinity) <= G4_TO),
+    strongChampion: strongest.includes(champion.clubId),
+    strongRelegated: strongest.some((id) => (position.get(id) ?? 0) >= Z4_FROM),
     z4,
     z4Escaped,
     z4Gap,
@@ -258,6 +278,7 @@ export function runSeason(ctx: BalanceContext, index: number, robot?: ClubId): S
   const { params } = ctx;
   let state = seasonStart(ctx, index);
   const weakest = weakestClubs(state);
+  const strongest = strongestClubs(state);
   const sizes: Record<ClubId, ClubSize> = {};
   for (const [id, club] of Object.entries(state.clubs)) sizes[id] = club.def.size;
   const matches = emptyMatchTally();
@@ -307,7 +328,7 @@ export function runSeason(ctx: BalanceContext, index: number, robot?: ClubId): S
     matches,
     sheets,
     fans,
-    table: tableRecord(final, afterZ4Round ?? final, sizes, weakest),
+    table: tableRecord(final, afterZ4Round ?? final, sizes, weakest, strongest),
     points,
     positions,
   };
