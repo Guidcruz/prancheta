@@ -20,5 +20,6 @@
 | 0016 | Áudio essencial sem custo na 1a: efeitos e torcida sintetizados no navegador (Web Audio), sem crédito de ElevenLabs; a narração com voz continua no ElevenLabs, só com ok do CEO                                          | 2026-11-05 |
 | 0017 | Efeito suspensivo fiel ao real: a pena não dobra; vermelho direto com motivo, automática descontada e risco no Pleno (Etapa 2)                                                                                            | 2026-11-05 |
 | 0018 | Favorito por 20 pontos: meta "cerca de 65%" vira a faixa de 62% a 68%, centro realista 63%, com `kChance` 0,125; favorito e zebra com menos de 1 ponto de folga                                                           | 2026-11-05 |
+| 0019 | Relatório da rodada fora do estado (`RoundRecap` e súmulas da temporada no save e no D1); `index.ts` só com o contrato e a API de ferramentas, travado por lint; `ENGINE_VERSION` 13                                      | 2026-11-05 |
 
 Decisões pendentes: `docs/status.md`.
