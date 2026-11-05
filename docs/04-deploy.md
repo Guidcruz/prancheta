@@ -36,6 +36,9 @@ Settings → Branches → regra para `main`:
 
 - `npm install` roda `prepare` (`scripts/setup-hooks.mjs`), que faz `git config core.hooksPath scripts/git-hooks`. Fora de um checkout git ou com `CI` definido, não faz nada.
 - `scripts/git-hooks/pre-commit` roda `prettier --write` nos arquivos staged suportados e faz `git add` deles de novo. Se um arquivo staged também tem alterações fora do stage, o hook recusa e diz o que fazer. Sem dependência nova. O CI segue com `prettier --check`.
+- Exige bash 4.4 ou mais novo (o macOS traz o 3.2; instale com `brew install bash`).
+- Com `git commit <arquivo>`, faça `git add <arquivo>` antes: o hook só formata o que está no stage.
+- `core.hooksPath` sobrescreve qualquer hook global do usuário (`~/.config/git/hooks`).
 
 ## Publicar (produção)
 

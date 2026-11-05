@@ -113,7 +113,7 @@ Orçamentos por etapa do `ci` (estourar um deles é bug de desempenho a registra
 
 **Estado do CI (decisão 5 da auditoria de 2026-11-05):** **ativo** no job `ci`: `content:check`, `balance --seasons 200 --seed 1 --workers 2` (bloqueia pelo código de saída) e, depois do build, `REQUIRE_SITE_DIST=1` com `dist.test` e `roadmap.test`. O `test:all` local roda `content:check` e o `dist.test` também. **200 temporadas no PR e na `main`**: com 100 as metas raras ficam instáveis (a semente 1 sai com código 1: "Campeão grande" 87% e título do Coritibom com o robô 6%), por isso 200 é o número mínimo. Medição local (4 vCPU): 66 s; estimativa para 2 vCPU, cerca de 2 min. Se o CI real passar de 3 min, quem decide a próxima medida é o CEO. `check:precache` continua planejado. `tests/regression/` continua fora do `include` do Vitest (ver regra 2 da seção 5).
 
-**Mudança no CI** (detalhe na resposta ao Orquestrador): o job `ci` ganha `content:check`, `balance`, `check:precache`, a verificação de gancho de teste e `npm test -w server`; entra um segundo job `e2e` (matriz Chromium e WebKit) com cache do navegador do Playwright (`npx playwright install --with-deps chromium webkit`). O nome `ci` não muda.
+**Mudança no CI** (detalhe na resposta ao Orquestrador): o job `ci` já ganhou `content:check`, `balance` e o `dist.test` depois do build; ainda planejados: `check:precache`, a verificação de gancho de teste e `npm test -w server`, e um segundo job `e2e` (matriz Chromium e WebKit) com cache do navegador do Playwright (`npx playwright install --with-deps chromium webkit`). O nome `ci` não muda.
 
 ### Política de instabilidade
 
