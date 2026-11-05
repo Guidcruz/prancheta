@@ -7,6 +7,7 @@ import {
 import type {
   Formation,
   GameParams,
+  MatchCommand,
   MatchEvent,
   MatchInput,
   MatchResult,
@@ -29,7 +30,10 @@ import { balanceIdentitySource } from './identity.ts';
  *   against the reference 4-4-2, balanced, medium. Both sides with `controller: 'human'` and no
  *   commands, so the tactic under test stays the same for the 90 minutes (the AI's in-match rules
  *   would change the posture by the score). A formation variant gets a squad generated for that
- *   formation, as every club's squad is generated for its preferred one;
+ *   formation, as every club's squad is generated for its preferred one. "Tudo no ataque desde o
+ *   apito inicial" is one of them: `allOut` is only reachable through a command, so the variant
+ *   starts as the reference and sends "todo mundo no ataque" at minute 0, which holds from minute 1
+ *   to the end (balance-log.md, T-016: the posture must not become a dominant tactic);
  * - "tudo no ataque": equal squads (70, 4-4-2, balanced, medium, both `human`), each sample a
  *   match that is 0×1 after minute 75 (the next seed is tried until one is); the trailing side's
  *   P(not losing) when it keeps balanced against the same match with "todo mundo no ataque" from
@@ -66,14 +70,22 @@ export interface TacticVariant {
   readonly formation: Formation;
   readonly posture: Exclude<Posture, 'allOut'>;
   readonly pressure: Pressure;
+  /** A preset the variant sends at minute 0, so it holds for the whole match. */
+  readonly kickoffPreset?: 'allOut';
 }
+
+/** Minute of the kick-off preset command: it holds from minute 1. */
+export const KICKOFF_COMMAND_MINUTE = 0;
 
 const REFERENCE = { formation: '4-4-2', posture: 'balanced', pressure: 'medium' } as const;
 
 /** The reference against itself: the base of the points per game of the tactical duels. */
 export const REFERENCE_VARIANT: TacticVariant = { ...REFERENCE, id: 'reference' };
 
-/** Every adjustment of the 1a against the reference ("allOut" is only a command: own duel). */
+/**
+ * Every adjustment of the 1a against the reference. "allOut" is only a command: it has its own
+ * duel from 0×1 at 75' (below), and the `allout-start` variant plays it from the kick-off.
+ */
 export const TACTIC_VARIANTS: readonly TacticVariant[] = [
   ...(['4-3-3', '4-2-3-1', '3-5-2', '3-4-3', '5-3-2'] as const).map((formation) => ({
     ...REFERENCE,
@@ -90,6 +102,7 @@ export const TACTIC_VARIANTS: readonly TacticVariant[] = [
     id: `pressure-${pressure}`,
     pressure,
   })),
+  { ...REFERENCE, id: 'allout-start', kickoffPreset: 'allOut' },
 ];
 
 /** Wins, draws and defeats of the first side of a duel (the stronger, or the variant). */
@@ -220,6 +233,8 @@ export interface DuelSample {
   readonly input: MatchInput;
   /** The side of the first team of the tally: the stronger, or the variant. */
   readonly first: Side;
+  /** The commands of the match: the variant's kick-off preset, if any. */
+  readonly commands: readonly MatchCommand[];
 }
 
 /**
@@ -249,7 +264,7 @@ export function calibratedSamples(
       firstHome ? a : b,
       firstHome ? b : a,
     );
-    return { input, first: firstHome ? 'home' : 'away' };
+    return { input, first: firstHome ? 'home' : 'away', commands: [] };
   };
 }
 
@@ -288,7 +303,19 @@ export function tacticalSamples(
       firstHome ? v : r,
       firstHome ? r : v,
     );
-    return { input, first: firstHome ? 'home' : 'away' };
+    const first: Side = firstHome ? 'home' : 'away';
+    const commands: MatchCommand[] =
+      variant.kickoffPreset === undefined
+        ? []
+        : [
+            {
+              minute: KICKOFF_COMMAND_MINUTE,
+              side: first,
+              kind: 'preset',
+              preset: variant.kickoffPreset,
+            },
+          ];
+    return { input, first, commands };
   };
 }
 
@@ -300,8 +327,8 @@ function tallySamples(
 ): DuelTally {
   const tally = emptyDuelTally();
   for (let n = from; n < to; n++) {
-    const { input, first } = sample(n);
-    addDuel(tally, simulateMatch(input, params), first === 'home');
+    const { input, first, commands } = sample(n);
+    addDuel(tally, simulateMatch(input, params, commands), first === 'home');
   }
   return tally;
 }

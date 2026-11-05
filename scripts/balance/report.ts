@@ -128,6 +128,11 @@ export function formatText(report: Report, info: RunInfo, clubs: readonly ClubDe
     lines.push('', section.title);
     lines.push(...rowLines(rows, report.rows));
   }
+  const notes = report.rows.filter((r) => r.note !== undefined);
+  if (notes.length > 0) {
+    lines.push('', 'Notas:');
+    lines.push(...notes.map((r) => `  ${r.label}: ${r.note!}`));
+  }
   lines.push('');
   lines.push(requiredSummary('Metas obrigatórias', report.rows));
   const missing = notMeasured(report);

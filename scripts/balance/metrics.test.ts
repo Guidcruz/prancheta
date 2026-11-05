@@ -14,6 +14,7 @@ import {
   type TableRecord,
 } from './league.ts';
 import {
+  BIG_RELEGATED_NOTE,
   FUTURE_TARGETS,
   RARE_TARGETS,
   buildReport,
@@ -281,6 +282,20 @@ describe('buildReport', () => {
     expect(byId(report.rows, 'tactic-attacking')).toMatchObject({ value: 0.1, status: 'fora' });
     // A variant that did not run is "n/a", never "fora".
     expect(byId(report.rows, 'tactic-5-3-2').status).toBe('n/a');
+    // "Tudo no ataque" from the kick-off is a tactic like the others: required, within ±3 p.p.
+    expect(byId(report.rows, 'tactic-allout-start')).toMatchObject({
+      status: 'n/a',
+      required: true,
+    });
+    const allOutStart = buildReport({
+      ...results,
+      tactical: new Map([['allout-start', duel(38, 22, 40)]]),
+    });
+    expect(byId(allOutStart.rows, 'tactic-allout-start').value).toBeCloseTo(-0.02, 12);
+    expect(byId(allOutStart.rows, 'tactic-allout-start')).toMatchObject({
+      status: 'dentro',
+      label: 'Tática "tudo no ataque" desde o apito inicial contra 4-4-2 equilibrada média (V − D)',
+    });
     expect(byId(report.rows, 'allOut').value).toBeCloseTo(0.04, 12);
     expect(byId(report.rows, 'allOut').status).toBe('dentro');
   });
@@ -308,7 +323,14 @@ describe('buildReport', () => {
     const sd = Math.sqrt((50 ** 2 + 60 ** 2 + 10 ** 2 + 95 ** 2) / 4 - 53.75 ** 2);
     expect(byId(report.rows, 'fansSd').value).toBeCloseTo(sd, 9);
     expect(byId(report.rows, 'bigChampion').value).toBe(0.5);
-    expect(byId(report.rows, 'bigRelegated').value).toBe(1);
+    // Informative in the single season (CEO, 2026-11-05): out of 40% to 80%, but not required.
+    expect(byId(report.rows, 'bigRelegated')).toMatchObject({
+      value: 1,
+      status: 'fora',
+      required: false,
+      note: BIG_RELEGATED_NOTE,
+    });
+    expect(exitCode({ rows: [byId(report.rows, 'bigRelegated')] })).toBe(0);
     // The 6 strongest of the ladder: the champion of season 2 was not one of them.
     seasons[1]!.table.strongChampion = false;
     const strong = buildReport(results);

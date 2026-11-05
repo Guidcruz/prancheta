@@ -95,6 +95,9 @@ describe('npm run balance', { timeout: 120_000 }, () => {
     const text = run(['--seasons', '1', '--duels', '0', '--robot', 'none', '--workers', '2']);
     expect(text.stdout).toContain('Gols por partida');
     expect(text.stdout).toMatch(/Metas obrigatórias: \d+ de \d+ dentro/);
+    expect(text.stdout).toContain(
+      'Notas:\n  Grande rebaixado (ao menos um): informativa na temporada única (decisão do CEO de 2026-11-05); volta a valer na carreira longa',
+    );
   });
 
   it('runs several seeds, each as alone, and judges the rare targets on their sum', () => {

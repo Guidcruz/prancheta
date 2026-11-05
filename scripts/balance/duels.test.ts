@@ -1,9 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import { seedFromString, simulateMatch } from '../../app/src/engine/index.ts';
-import type { MatchEvent, MatchInput, Side } from '../../app/src/engine/index.ts';
+import type { MatchCommand, MatchEvent, MatchInput, Side } from '../../app/src/engine/index.ts';
 import {
   ALL_OUT_MINUTE,
   DUEL_PAIR_MATCHES,
+  KICKOFF_COMMAND_MINUTE,
   REFERENCE_VARIANT,
   TACTIC_VARIANTS,
   allOutDuel,
@@ -41,14 +42,14 @@ const meanOverall = (input: MatchInput, side: Side) => {
 
 /** The tally of samples `from` to `to`, counted by hand from the first side's goals. */
 function byHand(
-  sample: (n: number) => { input: MatchInput; first: Side },
+  sample: (n: number) => { input: MatchInput; first: Side; commands: readonly MatchCommand[] },
   from: number,
   to: number,
 ): DuelTally {
   const t = emptyDuelTally();
   for (let n = from; n < to; n++) {
-    const { input, first } = sample(n);
-    const result = simulateMatch(input, params);
+    const { input, first, commands } = sample(n);
+    const result = simulateMatch(input, params, commands);
     const own = result.score[first === 'home' ? 0 : 1];
     const theirs = result.score[first === 'home' ? 1 : 0];
     t.matches += 1;
@@ -116,6 +117,7 @@ describe('tactical duel', () => {
         expect(ref.sheet.tactic).toEqual({ posture: 'balanced', pressure: 'medium' });
         // Both "human" with no commands: the tactic under test stays for the 90 minutes.
         expect([own.controller, ref.controller]).toEqual(['human', 'human']);
+        expect(sample(n).commands).toEqual([]);
       }
     }
   });
@@ -128,6 +130,38 @@ describe('tactical duel', () => {
     const { input } = tacticalSamples(params, SEED, REFERENCE_VARIANT)(0);
     expect(input.home.sheet.tactic).toEqual(input.away.sheet.tactic);
     expect(input.home.sheet.lineup.formation).toBe(input.away.sheet.lineup.formation);
+  });
+});
+
+describe('"tudo no ataque" from the kick-off', () => {
+  const variant = TACTIC_VARIANTS.find((v) => v.id === 'allout-start')!;
+  const sample = tacticalSamples(params, SEED, variant);
+
+  it('starts as the reference and sends "todo mundo no ataque" at minute 0, on its own side', () => {
+    expect(variant).toMatchObject({ formation: '4-4-2', posture: 'balanced', pressure: 'medium' });
+    for (let n = 0; n < 2; n++) {
+      const { input, first, commands } = sample(n);
+      expect(input[first].clubId).toBe('duel-var');
+      expect(commands).toEqual([
+        { minute: KICKOFF_COMMAND_MINUTE, side: first, kind: 'preset', preset: 'allOut' },
+      ]);
+      const result = simulateMatch(input, params, commands);
+      expect(result.warnings).toEqual([]);
+      // The variant plays "tudo no ataque" with high pressure from minute 1 to the end.
+      const changes = result.events.filter((e) => e.type === 'tacticChange');
+      expect(changes).toHaveLength(1);
+      expect(changes[0]).toMatchObject({
+        half: 1,
+        minute: 1,
+        side: first,
+        posture: 'allOut',
+        pressure: 'high',
+      });
+    }
+  });
+
+  it('tallies the variant with its command', () => {
+    expect(tacticalDuel(params, SEED, variant, 0, 20)).toEqual(byHand(sample, 0, 20));
   });
 });
 

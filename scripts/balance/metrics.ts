@@ -32,7 +32,17 @@ export interface MetricRow {
   readonly required: boolean;
   /** Shown in each seed of a multi-seed run, judged on the seeds together (RARE_TARGETS). */
   readonly verdict?: 'pooled';
+  /** Why the row is judged as it is, printed under the table. */
+  readonly note?: string;
 }
+
+/**
+ * "Grande rebaixado" does not count in the single season (balance-log.md, the CEO's decision 3 of
+ * 2026-11-05): with the 2026 list two big clubs start among the 3 weakest, so one going down is
+ * expected. It counts again in the long career, when the strength follows the revenue.
+ */
+export const BIG_RELEGATED_NOTE =
+  'informativa na temporada única (decisão do CEO de 2026-11-05); volta a valer na carreira longa';
 
 /**
  * The rare table targets, a few percent of 200 seasons, judged on all the seeds together when the
@@ -429,14 +439,19 @@ export function buildReport(
       '0,5% a 3%',
       { min: 0.005, max: 0.03 },
     ),
-    row(
-      'bigRelegated',
-      'Grande rebaixado (ao menos um)',
-      share((s) => s.table.bigRelegated),
-      share1,
-      '40% a 80% das temporadas',
-      { min: 0.4, max: 0.8 },
-    ),
+    // Informative in the single season (BIG_RELEGATED_NOTE).
+    {
+      ...row(
+        'bigRelegated',
+        'Grande rebaixado (ao menos um)',
+        share((s) => s.table.bigRelegated),
+        share1,
+        '40% a 80% das temporadas',
+        { min: 0.4, max: 0.8 },
+        false,
+      ),
+      note: BIG_RELEGATED_NOTE,
+    },
     row(
       'strongChampion',
       'Campeão entre os 6 mais fortes da escada',
@@ -592,6 +607,7 @@ function tacticLabel(id: string): string {
     attacking: 'postura ofensiva',
     'pressure-low': 'pressão baixa',
     'pressure-high': 'pressão alta',
+    'allout-start': '"tudo no ataque" desde o apito inicial',
   };
   return labels[id] ?? id;
 }
