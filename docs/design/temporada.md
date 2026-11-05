@@ -2,23 +2,24 @@
 
 > Mantido pelo `game-designer`. Fonte: `docs/PROJETO.md`, "Competições e calendário" (Série A: 20 clubes, pontos corridos, 4 caem, abril a dezembro), "Diretoria e metas" e "Novo jogo: configurações iniciais". Parâmetros em `app/src/params/season.json` (`season.*`).
 
-**Regra em uma frase:** 20 clubes jogam todos contra todos em turno e returno, 38 rodadas de abril a dezembro; vitória vale 3, empate 1; o primeiro é campeão e os 4 últimos caem.
+**Regra em uma frase:** 20 clubes jogam todos contra todos em turno e returno, 38 rodadas de abril a dezembro; vitória vale 3, empate 1; o primeiro é campeão e os 4 últimos caem (na 1a, a queda só aparece como "zona de rebaixamento", sem efeito: decisão P2 do CEO).
 
 ## Escopo
 
-| Entra na 1a                                                     | Fica para depois                                                        |
-| --------------------------------------------------------------- | ----------------------------------------------------------------------- |
-| 38 rodadas, tabela, desempate, campeão, rebaixados              | Séries B a D com acesso de verdade, estaduais, Copa do Brasil (Etapa 2) |
-| Datas aproximadas (fim de semana, 8 rodadas no meio da semana)  | Ritmo "Tempo real" com o calendário real do servidor (Etapa 4)          |
-| Prêmios da temporada e resumo                                   | Vagas na Libertadores e Sul-Americana valendo (Etapa 5)                 |
-| Expectativa da diretoria só informativa (decisão 6), pela força | Barra de confiança, cobrança e demissão (Etapa 4)                       |
-| Evolução e envelhecimento no fim da temporada                   | Base, aposentadorias com festa, histórico e recordes (Etapa 4)          |
+| Entra na 1a                                                                  | Fica para depois                                                        |
+| ---------------------------------------------------------------------------- | ----------------------------------------------------------------------- |
+| 38 rodadas, tabela, desempate, campeão, zona de rebaixamento sem efeito (P2) | Séries B a D com acesso de verdade, estaduais, Copa do Brasil (Etapa 2) |
+| Nova temporada com os mesmos 20 clubes, sem fim (P2)                         | Subida de 4 clubes da Série B, quando houver lista aprovada pelo CEO    |
+| Datas aproximadas (fim de semana, 8 rodadas no meio da semana)               | Ritmo "Tempo real" com o calendário real do servidor (Etapa 4)          |
+| Prêmios da temporada e resumo                                                | Vagas na Libertadores e Sul-Americana valendo (Etapa 5)                 |
+| Expectativa da diretoria só informativa (decisão 6), pela força              | Barra de confiança, cobrança e demissão (Etapa 4)                       |
+| Evolução e envelhecimento no fim da temporada                                | Base, aposentadorias com festa, histórico e recordes (Etapa 4)          |
 
 Na 1a o ritmo é sempre "No meu ritmo": a rodada avança quando o jogador toca em "Jogar rodada". O tipo de carreira é, na prática, "clube fixo" e o estilo Tranquilo e o Realista só mudam o texto da diretoria (demissão: Etapa 4).
 
 ## Tabela de jogos
 
-1. Embaralha os 20 clubes com uma semente própria de cada temporada: `seedFromString("<seed>-fixtures-<season>")`, em que `<season>` é o número da temporada na carreira (1, 2, …, o mesmo de `GameState.season`; a primeira usa `<seed>-fixtures-1`), não o ano. Cada temporada tem o seu sorteio (na opção B do fim de temporada, a tabela muda de uma temporada para a outra), e a mesma carreira na mesma temporada dá sempre a mesma tabela.
+1. Embaralha os 20 clubes com uma semente própria de cada temporada: `seedFromString("<seed>-fixtures-<season>")`, em que `<season>` é o número da temporada na carreira (1, 2, …, o mesmo de `GameState.season`; a primeira usa `<seed>-fixtures-1`), não o ano. Cada temporada tem o seu sorteio (com os mesmos 20 clubes, a ordem dos jogos muda de uma temporada para a outra), e a mesma carreira na mesma temporada dá sempre a mesma tabela.
 2. Turno (rodadas 1 a 19) pelo método do círculo (tabela de Berger), começando na 4ª rotação da ordem canônica (`BERGER_START = 3`, contando de 0) e seguindo as 19 rotações em ciclo a partir dali.
 3. Returno (rodadas 20 a 38) espelhado: a rodada `19 + n` repete os confrontos da rodada `n` com o mando invertido, como na CBF.
 4. Sem restrição de clássico na 1a. Se dois clubes da mesma cidade forem mandantes na mesma rodada, não há problema (cada um tem o seu estádio na lista de clubes).
@@ -54,7 +55,7 @@ Vitória 3, empate 1, derrota 0. Colunas: posição, clube, P, J, V, E, D, GP, G
 
 Com 3 ou mais clubes empatados até o critério 4, pula o 5 e segue do 6.
 
-**Zonas na tela:** 1º "Campeão"; 2º a 6º "Zona da Libertadores" e 7º a 12º "Zona da Sul-Americana", com o aviso "as copas chegam numa próxima versão"; 17º a 20º "Rebaixamento". Sempre com rótulo de texto, não só faixa de cor.
+**Zonas na tela:** 1º "Campeão"; 2º a 6º "Zona da Libertadores" e 7º a 12º "Zona da Sul-Americana", com o aviso "as copas chegam numa próxima versão"; 17º a 20º "Zona de rebaixamento", com o aviso "o acesso e o rebaixamento entram numa próxima versão" (P2). Sempre com rótulo de texto, não só faixa de cor. Os fatos `enteredZ4`, `leftZ4` e `relegatedClinched` continuam saindo (a briga contra a queda é história), mas o texto do `content-writer` nunca diz que o clube vai jogar a Série B.
 
 ## Ordem do processamento de uma rodada
 
@@ -125,7 +126,7 @@ Mostrada no início da temporada e conferida no resumo; não mexe em nada na 1a.
 **Regra em uma frase (decisão do CEO, 2026-11-04):** a diretoria pede o que o elenco pode dar; o porte diz o quanto ela cobra.
 
 ```
-strengthRank = posição do clube na ordem de força efetiva da carreira (1 = mais forte; empate pelo id)
+strengthRank = posição do clube na ordem de ClubState.strength da temporada (1 = mais forte; empate pelo id)
 targetPosition = min(strengthRank + 2, 16)
 ```
 
@@ -134,6 +135,8 @@ targetPosition = min(strengthRank + 2, 16)
 | Grande  | exigente ("é obrigação ficar entre os N")                       | menor               |
 | Médio   | firme ("a meta é ficar entre os N")                             | média               |
 | Pequeno | compreensivo ("o objetivo é terminar entre os N" ou "não cair") | maior               |
+
+Na temporada 1, a `strength` é a força efetiva da carreira; da 2ª em diante, a recalculada na virada ("Força dos clubes na virada"). A meta é refeita a cada temporada.
 
 **Exemplos:** Flamingo (força 1º) → terminar entre os 3; Corinto (força 17º, grande) → entre os 16, com tom de grande; Bragantão (9º, pequeno) → entre os 11. A meta de 16 lê "não cair".
 
@@ -152,24 +155,130 @@ No estilo Tranquilo o texto é "a diretoria espera"; no Realista, "a diretoria c
 
 ## Fim de temporada
 
-Sempre, ao fim da rodada 38:
+**Regra em uma frase (decisão P2 do CEO):** depois da rodada 38 vêm a cerimônia, os prêmios e o resumo; os jogadores evoluem e fazem aniversário; e a temporada seguinte começa com os mesmos 20 clubes, todos aptos e descansados, sem fim de carreira na 1a.
 
-1. **Cerimônia do campeão** e lista dos 4 rebaixados.
-2. **Prêmios:** artilheiro (gols; desempate: menos jogos, depois mais assistências), garçom (assistências), melhor jogador (maior média de nota com ao menos 19 jogos), revelação (idem, até 21 anos), seleção do campeonato (melhor média por vaga num 4-3-3, ao menos 19 jogos), melhor goleiro (jogador de posição GOL com menos `conceded / games`, ao menos 19 jogos; desempate: mais jogos, depois maior média de nota).
-3. **Resumo do técnico:** posição, meta cumprida ou não, maior vitória, maior derrota, artilheiro do clube, "quem evoluiu" (a evolução calculada no passo 4).
-4. **Evolução e idade** (`jogadores.md`), depois a **virada:** `seasonStats` zerado, amarelos zerados, lesões e suspensões terminadas, condição 100 para todos (a pré-temporada é o descanso; não há recuperação depois da rodada 38). A moral passa como está. A ordem importa: prêmios, resumo e evolução leem o `seasonStats` (a evolução usa os minutos) antes de ele ser zerado.
-5. **Lembrete** discreto de exportar o save (`PROJETO.md`, "Saves e backup").
+Os 4 últimos aparecem como "zona de rebaixamento", sem efeito: ninguém sai, ninguém entra, e o clube do técnico continua na Série A mesmo entre os 4 últimos. A subida de clubes da Série B espera uma lista aprovada pelo CEO ("Acesso da Série B (futuro)", abaixo).
+
+### Ordem: duas funções do motor
+
+**`endSeason`** (só com `round` 39 e `phase: 'season'`; em qualquer outro estado devolve o erro e não mexe em nada, então a evolução nunca roda duas vezes):
+
+1. **Tabela final:** campeão (1º) e zona de rebaixamento (17º a 20º), de `getStandings`. A tela mostra a cerimônia do campeão e a classificação final.
+2. **Prêmios** (tabela abaixo), do `seasonStats`.
+3. **Campanha** de cada clube humano: posição, pontos, meta da diretoria cumprida ou não, maior vitória, maior derrota, artilheiro do clube.
+4. **Evolução e idade** de todos os jogadores dos 20 clubes (`jogadores.md`, "Evolução"): lê os minutos do `seasonStats` e a moral depois da rodada 38, e guarda o overall de antes para o "quem evoluiu" da campanha.
+5. Grava o resumo em `pastSeasons` e passa a `phase: 'seasonEnd'`. O título já conta a partir daqui (a estrela nova aparece na própria cerimônia).
+
+A ordem importa: prêmios e campanha leem o `seasonStats` e as idades da temporada jogada (a revelação tem até 21 anos **nesta** temporada), e a evolução lê os minutos antes de eles serem zerados. A tela de resumo, na fase `seasonEnd`, já mostra o elenco evoluído ("como o elenco chega à pré-temporada").
+
+**`startNextSeason`** (só com `phase: 'seasonEnd'`): a **virada**.
+
+1. `season + 1`, `year + 1` (o ano da temporada nova), `round` 1, `phase: 'season'`; calendário novo pelo sorteio da temporada nova ("Tabela de jogos"; datas pelo ano novo).
+2. `seasonStats` zerado (`{}`), `lastRound` removido; `lastSheets` fica (o `shownEleven` ignora a ficha que não resolve mais).
+3. Jogadores e clubes, pelas tabelas abaixo. A meta da diretoria da temporada nova sai da força recalculada.
+4. **Lembrete** discreto de exportar o save (`PROJETO.md`, "Saves e backup"), na interface.
+
+A virada não sorteia nada (o único sorteio é o calendário, pela semente da temporada): o mesmo save no fim da temporada dá sempre a mesma temporada nova (US-025, "determinismo da virada").
+
+### A virada: jogadores
+
+**Regra em uma frase:** a temporada nova começa com todos aptos, descansados e sem histórico de banco ou de cartão; a moral faz metade do caminho até a esperança da torcida.
+
+| Campo                                                                                | Na virada                              | Por quê                                                                                                                                                                                                |
+| ------------------------------------------------------------------------------------ | -------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `condition`                                                                          | 100                                    | a pré-temporada é o descanso; depois da rodada 38 o `playRound` não recupera                                                                                                                           |
+| `injuryRounds`                                                                       | 0                                      | a pausa de dezembro a abril (cerca de 19 semanas) é maior que a lesão mais longa do jogo (20 rodadas; `partida.md`, "Lesões"); decisão 13 de `balance-targets.md`                                      |
+| `suspendedGames`                                                                     | 0                                      | a suspensão é da competição que acabou; vale para amarelo e vermelho (uma regra só)                                                                                                                    |
+| `yellowCount`                                                                        | 0                                      | idem                                                                                                                                                                                                   |
+| `benchStreak`                                                                        | 0                                      | "esperava jogar" é coisa da temporada: ninguém fica "2 rodadas seguidas no banco" atravessando 4 meses                                                                                                 |
+| `recentRatings` (forma)                                                              | `[]` ("sem jogos")                     | nota de 4 meses atrás não é forma; é o mesmo começo da temporada 1                                                                                                                                     |
+| `morale`                                                                             | `morale + 0.5 × (fans.start − morale)` | metade do caminho até a esperança de início de temporada (60): o campeão chega animado (cerca de 70), o lanterna chega abatido (cerca de 40), sem a espiral de uma temporada para a outra (decisão 13) |
+| `clubAppearances`                                                                    | mantém                                 | conta a carreira (marcador `estreia`)                                                                                                                                                                  |
+| `age`, `overall`, `attributes`                                                       | já mudaram no `endSeason`              | evolução e idade                                                                                                                                                                                       |
+| `trait` (o ídolo inclusive), `potential`, `peakAge`, `growth`, `shirt`, nome e rosto | mantém                                 | o ídolo é o mesmo jogador a carreira toda na 1a (`jogadores.md`, "Traço de personalidade")                                                                                                             |
+
+`0.5` é constante (`MORALE_OFFSEASON_PULL`), não parâmetro. A moral continua sem arredondamento e cortada em 0 a 100.
+
+### A virada: clubes
+
+| Campo                            | Na virada                                               | Por quê                                                                                                                                                                                 |
+| -------------------------------- | ------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `fans` (termômetro)              | `fans.start` para os 20 clubes                          | "começo de temporada é esperança" (`torcida.md`); sem bônus de campeão nem desconto pela zona (P2: a zona não tem efeito; 5 pontos de termômetro são 0,3 ponto de mando, ninguém sente) |
+| `idolBenchStreak`                | 0                                                       | mesma razão do `benchStreak`                                                                                                                                                            |
+| `strength`                       | recalculada do elenco evoluído (abaixo)                 | pendência da T-014: os pontos esperados da torcida e a meta da diretoria seguem o elenco do ano                                                                                         |
+| `profile`, `preferredFormations` | mantém                                                  | identidade do clube                                                                                                                                                                     |
+| decisão pendente da torcida      | zerada (camada de aplicação; `docs/02-architecture.md`) | o termômetro volta a `fans.start` de qualquer forma                                                                                                                                     |
+
+### Força dos clubes na virada
+
+**Regra em uma frase:** a força de cada clube na temporada nova é a força do melhor XI do seu elenco depois da evolução, sem escada nem colocação.
+
+```
+strength(temporada nova) = elevenStrength(bestEleven(elenco inteiro, preferredFormations[0]))
+```
+
+- É a mesma definição de "Força" de `balance-targets.md`: média de `overall × fit` do melhor XI na formação preferida, com todos aptos e descansados, sem moral nem mando, escolhido como a geração escolhe (`bestEleven`). Número real, sem arredondar, sem sorteio e sem corte; a tela arredonda.
+- Na temporada 1 a geração deixa o melhor XI a até 0,5 ponto da força efetiva, então a regra dá praticamente o número com que a carreira começou: a força só anda pelo que a evolução mudou.
+- **Sem escada e sem colocação (decisão D8 do CEO):** a `LADDER` vale só para montar a temporada 1 a partir da lista de clubes; dentro da carreira a força vem do elenco. Não há renormalização para soma 1.400: se os jovens de um clube crescem, ele fica mais forte, e a escada muda de forma só pela evolução.
+- **Quem lê, e quando:** os pontos esperados da torcida (`torcida.md`), a posição de força da meta da diretoria (`strengthRank`, acima) e o número "força do clube" das telas leem todos o mesmo campo, então **mudam juntos, uma vez por temporada, na virada**. A força do XI da rodada (`teamStrength`, na escalação e no placar) é outro número e continua mudando a cada rodada, como hoje. Não se recalcula `strength` no meio da temporada: a expectativa da torcida é de pré-temporada, e baixá-la com lesões daria termômetro de graça a quem perde jogadores (o mesmo motivo da leitura da T-014).
+- **Sem realimentação:** depois do `newGame`, nada que escreve jogadores lê a `strength`, e a evolução não a lê. O único caminho indireto é força → pontos esperados → termômetro → moral → multiplicador de moral da evolução (0,9 a 1,1, só no crescimento). Medido: a força média da liga na temporada 3 é a mesma com a moral passando inteira, pela metade ou zerada (70,91, 70,92 e 70,92; `balance-log.md`, 2026-11-05, T-017).
+
+### Prêmios
+
+**Regra em uma frase:** artilheiro e garçom pelo total; os prêmios de nota e o de goleiro só para quem jogou pelo menos metade da temporada.
+
+| Prêmio                | Quem concorre                                                                                                         | Critério                                                                   | Desempate, em ordem                                           |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| Artilheiro            | todos, com ao menos 1 gol                                                                                             | mais gols                                                                  | menos jogos; mais assistências; empatados em tudo **dividem** |
+| Garçom                | todos, com ao menos 1 assistência                                                                                     | mais assistências                                                          | menos jogos; mais gols; empatados em tudo **dividem**         |
+| Melhor jogador        | ao menos 19 jogos com nota (`ratedGames`)                                                                             | maior média de nota (`ratingSum / ratedGames`)                             | mais jogos com nota; mais minutos; menor id                   |
+| Revelação             | idem, com até 21 anos na temporada jogada (antes do aniversário da virada)                                            | idem                                                                       | idem                                                          |
+| Melhor goleiro        | posição natural GOL, ao menos 19 jogos (`games`)                                                                      | menor `conceded / games`                                                   | mais jogos; maior média de nota; menor id                     |
+| Seleção do campeonato | por vaga de um 4-3-3 (GOL, 2 ZAG, 2 LAT, VOL, 2 MEI, 3 ATA), só a posição natural da vaga, ao menos 19 jogos com nota | maior média de nota, vaga a vaga na ordem da formação, sem repetir jogador | como o melhor jogador                                         |
+
+- **19 é constante** (`AWARD_MIN_GAMES`, metade das 38 rodadas), não parâmetro. "Jogos com nota" são os de 15 minutos ou mais (a nota só existe neles); o goleiro conta `games`, porque `conceded` soma por partida em que ele entrou.
+- **"Menor id"** só desempata o que já empatou em média, jogos e minutos (números reais, praticamente nunca): o clube pelo id, depois o número do jogador no clube (a mesma comparação numérica do `bestEleven`).
+- **Ninguém atinge o mínimo:** não há o prêmio, e a tela mostra "sem vencedor nesta temporada"; na seleção, a vaga fica vazia. Sem segunda régua (a regra antiga, "metade dos jogos do clube", dava os mesmos 19). Medido (`balance-log.md`): por temporada, cerca de 282 jogadores com 19 jogos com nota, 20 goleiros com 19 jogos e de 15 a 25 jogadores de até 21 anos com 19 jogos com nota (de 13 a 24 no Realismo simplificado), nunca zero em 750 temporadas. A exceção conhecida é a carreira longa sem renovação dos elencos: da temporada 6 em diante não há mais jogador de até 21 anos, e a revelação fica sem vencedor (decisão 14 de `balance-targets.md`).
+- O clube do jogador premiado é o dele na temporada (na 1a ninguém troca de clube; o resumo guarda o `clubId` para quando houver mercado).
+
+### Campanha do clube do técnico
+
+Para cada clube humano (o da carreira; na liga online, cada clube com dono). Quem chama o `endSeason` passa a lista; sem ela, o resumo não tem campanha.
+
+| Item                | Regra                                                                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Posição e pontos    | da tabela final                                                                                                                                                            |
+| Meta da diretoria   | `targetPosition` pela `strength` da temporada que acabou ("Expectativa da diretoria"); cumprida se `posição ≤ targetPosition`                                              |
+| Maior vitória       | maior saldo; empate: mais gols marcados, depois a rodada mais cedo; partida encerrada conta pelo placar definido; sem vitória, não há o item                               |
+| Maior derrota       | o mesmo, pelo lado da derrota                                                                                                                                              |
+| Artilheiro do clube | quem fez mais gols pelo clube; empatados dividem; sem gols, não há o item                                                                                                  |
+| Quem evoluiu        | os jogadores do clube cujo overall mudou na evolução, do maior Δ para o menor (empate: maior overall novo, depois a ordem do elenco), com o overall de antes e o de depois |
+
+### O que vai para `pastSeasons` (resumo enxuto)
+
+Um item por temporada encerrada, gravado no `endSeason`. Só ids e números, nunca nomes (ADR-0012: um nome retirado é regerado no save, e um nome copiado aqui escaparia disso).
+
+| Campo                          | Conteúdo                                                                                                                                                                                                                                           |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `season`, `year`               | a temporada e o ano                                                                                                                                                                                                                                |
+| `championId`, `championPoints` | o campeão                                                                                                                                                                                                                                          |
+| `relegationZone`               | os 4 clubes do 17º ao 20º, na ordem; só informativo (P2)                                                                                                                                                                                           |
+| `awards`                       | os prêmios acima: para cada um, `playerId`, `clubId` e o número que deu o prêmio (gols, assistências, média, gols sofridos por jogo); artilheiro e garçom são listas (dividem); a seleção é a lista das 11 vagas com `slot`, `playerId` e `clubId` |
+| `campaigns`                    | por `clubId` humano, os itens da campanha acima (o "quem evoluiu" como `playerId`, overall de antes e de depois)                                                                                                                                   |
+
+Fica fora: a tabela inteira, as estatísticas de todos, as partidas e os fatos. Medida: de 1 a 2 KB por temporada; o estado no começo da temporada 3 tem o mesmo tamanho do começo da temporada 2, mais um item de `pastSeasons`.
+
+**Títulos da carreira (US-068):** o total de títulos de liga de um clube na carreira é `def.titles.league + (temporadas de pastSeasons com championId = clube)`. A fonte é o `pastSeasons`, sem campo novo em `ClubState`: o mesmo número não fica guardado em dois lugares, e a migração da US-068 ("histórico da temporada base mais os títulos das temporadas já encerradas") é exatamente essa conta. O `ClubDef` nunca muda. O escudo (ADR-0014) recebe o total nas telas da carreira (1 estrela pequena por título, cada 5 viram 1 grande); a tela de Novo jogo mostra o conjunto da temporada base. Função única no motor (sugestão: `careerLeagueTitles(state, clubId)`), usada pela interface e pelos templates.
 
 **Gols sofridos na temporada (`PlayerSeasonStats.conceded`):** a soma, partida a partida, dos gols reais sofridos pelo time com o jogador em campo no gol ou na defesa, o mesmo contador que a nota da partida já usa (`Appearance.conceded`). Entra na T-013, junto com o resto do `seasonStats`: o campo é novo nesta versão do save, e acrescentá-lo depois pediria migração. O prêmio lê só quem é goleiro de posição; o número dos defensores fica disponível, sem uso na 1a.
 
-Depois disso, uma de duas opções (decisão 5 de `balance-targets.md`, do CEO):
+### Carreira longa na 1a (decisão 14 de `balance-targets.md`)
 
-| Opção                               | O que acontece                                                                                                                                                                                                                                                                                                | Custo                                                                    |
-| ----------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------ |
-| **A. Temporada única**              | A carreira termina no resumo. O save fica "concluído", pode ser exportado e continua na Etapa 2 por migração.                                                                                                                                                                                                 | nenhum                                                                   |
-| **B. Nova temporada (recomendada)** | Os 4 rebaixados saem e entram 4 clubes da "Série B" abstrata: uma lista reserva de clubes com nome e força (`strength` 61 a 66), sorteados com peso pela força, com elencos gerados na hora. Se o clube do técnico cair, a carreira termina como na opção A, com a notícia de que a Série B chega na Etapa 2. | lista de 4 a 8 clubes extras aprovada pelo CEO; tela de "nova temporada" |
+A 1a não tem base, aposentadoria nem mercado (Etapas 3 e 4), e a P2 não põe fim na carreira. Sem renovação, os elencos só envelhecem. Medido em cadeias de 10 temporadas (`balance-log.md`): até a temporada 3 tudo fica dentro das metas; a idade média vai de 26 para 30 na temporada 5 e 35 na 10; a força média da liga sobe até +1,1 na temporada 4 e cai a −2,5 na 9; os gols por partida saem da meta (abaixo de 2,50) da temporada 8 em diante; e a revelação fica sem candidatos da temporada 6 em diante. A proposta de renovação mínima (aposentadoria aos 35 com um jovem da base no lugar) espera o CEO; a T-017 não depende dela.
 
-Recomendo a B: dá motivo para a última rodada importar também para quem está no meio da tabela, deixa a evolução dos jovens visível no jogo e não é a "carreira longa" da Etapa 4 (sem histórico, reputação nem base).
+### Acesso da Série B (futuro)
+
+Guardado para quando o CEO aprovar a lista de clubes da Série B (P2): os 4 da zona de rebaixamento saem e entram 4 clubes da lista, com nome e força (`strength` 61 a 66), sorteados com peso pela força e com elencos gerados na hora; se o clube do técnico cair, a carreira segue na Série B quando ela existir (Etapa 2). O `startNextSeason` pode aceitar um `incoming` opcional (`docs/02-architecture.md`, §7), mas na 1a ninguém o passa, e não há regra de jogo para ele até a lista existir. Quando entrar, é decisão nova do CEO, com a lista.
 
 ## Parâmetros (`app/src/params/season.json`)
 
@@ -180,16 +289,24 @@ Recomendo a B: dá motivo para a última rodada importar também para quem está
 
 **Regras que cruzam as duas listas** (o validador recusa ao carregar): nenhuma semana de Data FIFA tem rodada no meio da semana, e `34 − (nº de semanas FIFA) + (nº de quartas) = 38` rodadas. Mais uma Data FIFA pede mais uma quarta, e vice-versa.
 
-**Constantes:** 20 clubes, 38 rodadas, 3/1/0 pontos, 4 rebaixados, ordem de desempate, metas por porte.
+**Constantes:** 20 clubes, 38 rodadas, 3/1/0 pontos, 4 na zona de rebaixamento, ordem de desempate, metas por porte, mínimo de 19 jogos dos prêmios (`AWARD_MIN_GAMES`), a moral da virada a meio caminho de `fans.start` (`MORALE_OFFSEASON_PULL = 0.5`). O fim de temporada não tem parâmetro em `season.json`.
 
 ## Casos de borda
 
-| Caso                                        | Regra                                                                                                                                                                                                  |
-| ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Partida encerrada por menos de 7 em campo   | vale o placar definido em `partida.md`; cartões e gols contam normal                                                                                                                                   |
-| Goleiro trocado ou expulso no jogo          | cada um soma os gols sofridos enquanto estava em campo; o jogador de linha que vai para o gol soma os dele, mas não concorre ao prêmio de goleiro                                                      |
-| Empate total até os amarelos                | sorteio determinístico (critério 8)                                                                                                                                                                    |
-| Prêmio sem ninguém com 19 jogos             | baixa o mínimo para metade dos jogos do clube; se ainda vazio, não há o prêmio                                                                                                                         |
-| Artilheiros empatados em tudo               | dividem o prêmio                                                                                                                                                                                       |
-| Ano escolhido no novo jogo ausente          | a interface passa o ano corrente do aparelho; o motor só recebe o número                                                                                                                               |
-| Save aberto no meio da rodada (app fechado) | a rodada só conta depois do salvamento do passo 8; senão recomeça do passo 1 com as mesmas sementes; as partidas da IA dão o mesmo resultado, e a partida ao vivo do técnico recomeça do apito inicial |
+| Caso                                            | Regra                                                                                                                                                                                                  |
+| ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Partida encerrada por menos de 7 em campo       | vale o placar definido em `partida.md`; cartões e gols contam normal                                                                                                                                   |
+| Goleiro trocado ou expulso no jogo              | cada um soma os gols sofridos enquanto estava em campo; o jogador de linha que vai para o gol soma os dele, mas não concorre ao prêmio de goleiro                                                      |
+| Empate total até os amarelos                    | sorteio determinístico (critério 8)                                                                                                                                                                    |
+| Prêmio sem ninguém com 19 jogos                 | não há o prêmio ("sem vencedor nesta temporada"); na seleção, a vaga fica vazia                                                                                                                        |
+| Artilheiros empatados em tudo                   | dividem o prêmio                                                                                                                                                                                       |
+| Clube do técnico na zona de rebaixamento        | continua na Série A na temporada seguinte (P2); a tela mostra a zona com o aviso de que o acesso e o rebaixamento entram numa próxima versão                                                           |
+| `endSeason` chamado de novo, ou antes da 38ª    | devolve o erro e não muda o estado; a evolução e o título nunca contam duas vezes                                                                                                                      |
+| `startNextSeason` fora da fase `seasonEnd`      | devolve o erro e não muda o estado                                                                                                                                                                     |
+| App fechado entre `endSeason` e a virada        | o save fica na fase `seasonEnd`; ao abrir, volta ao resumo e o "Próxima temporada" faz a virada (as duas funções são deterministas)                                                                    |
+| Lesão longa no fim da temporada                 | termina na virada, como as suspensões (decisão 13 de `balance-targets.md`)                                                                                                                             |
+| Ídolo envelhecido ou em queda                   | continua ídolo; a regra do banco vale igual, e uma entrada nos acréscimos zera o contador (`jogadores.md`)                                                                                             |
+| Clube sem vitória ou sem gol na temporada       | a campanha fica sem "maior vitória" ou sem "artilheiro do clube"                                                                                                                                       |
+| Ano da temporada nova fora do calendário aceito | `startNextSeason` devolve `invalid-calendar` e não muda o estado                                                                                                                                       |
+| Ano escolhido no novo jogo ausente              | a interface passa o ano corrente do aparelho; o motor só recebe o número                                                                                                                               |
+| Save aberto no meio da rodada (app fechado)     | a rodada só conta depois do salvamento do passo 8; senão recomeça do passo 1 com as mesmas sementes; as partidas da IA dão o mesmo resultado, e a partida ao vivo do técnico recomeça do apito inicial |

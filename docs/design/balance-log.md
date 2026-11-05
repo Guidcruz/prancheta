@@ -2,6 +2,59 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-05: T-017, virada de temporada (medição de design, antes da implementação)
+
+**Como foi medido.** Um script de rascunho fora do repositório (`scratchpad/sim/chain.ts`), que importa o motor do commit `752aaa7` só para leitura (`newGame`, `playRound`, `getStandings`, `generateFixtures`, `bestEleven`, `elevenStrength`, `fitAttributesToOverall`) e faz, por conta própria, a evolução de `jogadores.md` e a virada de `temporada.md`. Carreiras com as sementes do `/balance` (`balance-<seed>-<i>`), IA nos 20 clubes, Realismo completo, parâmetros do repositório. A temporada 1 bate com o `/balance` da T-016 (campeão 75,2 e 17º 40,3 na semente 1, contra 75,0 e 40,3). `app/` e `scripts/` não foram tocados.
+
+### Configuração recomendada (evolução do doc, moral a meio caminho de `fans.start`), temporadas 1 / 2 / 3
+
+| Métrica                          | Semente 1 (150 carreiras)   | Semente 2 (150 carreiras)      | Meta                |
+| -------------------------------- | --------------------------- | ------------------------------ | ------------------- |
+| Força média da liga (`strength`) | 70,0 / 70,6 / 70,9          | 70,0 / 70,6 / 70,9             | ±1,0 da temporada 1 |
+| Desvio da força                  | 4,74 / 4,80 / 4,85          | 4,80 / 4,87 / 4,94             | 3,5 a 5,5           |
+| 1º − 20º em força                | 17,1 / 17,5 / 17,8          | 17,2 / 17,6 / 17,8             | 12 a 20             |
+| Gols por partida                 | 2,64 / 2,64 / 2,63          | 2,66 / 2,64 / 2,62             | 2,50 a 2,80         |
+| Empates                          | 26,1 / 25,9 / 26,2%         | 26,0 / 26,1 / 26,4%            | 24% a 28%           |
+| Mandante vence                   | 46,1 / 46,3 / 46,1%         | 45,9 / 46,1 / 45,6%            | 45% a 50%           |
+| 0×0                              | 7,2 / 7,3 / 7,2%            | 7,0 / 7,0 / 7,3%               | 6% a 9%             |
+| Goleada (≥ 3)                    | 12,3 / 12,6 / 12,4%         | 12,4 / 12,5 / 12,3%            | 8% a 13%            |
+| Pontos do campeão                | 75,2 / 75,9 / 75,4          | 76,1 / 75,7 / 74,7             | 72 a 82             |
+| Pontos do 17º                    | 40,3 / 39,9 / 40,0          | 40,0 / 40,0 / 40,5             | 39 a 45             |
+| Termômetro: média, < 20, > 90    | 53,4 · 2,3% · 0,6% em todas | 53,4 · 2,2 a 2,4% · 0,6 a 0,7% | 50 a 60; ≤ 5%; ≤ 5% |
+
+Sem inflação nem deflação perceptível em 3 temporadas: a liga inteira sobe +0,9 de força, igual para todos (o placar não muda), e a escada abre um pouco (desvio +0,1). A correlação da força com a da temporada 1 fica em 0,98 na temporada 3: a hierarquia muda devagar.
+
+**Evolução, Δ médio na 1ª virada:** até 21 anos +3,9; 22 a 26 +1,7; 27 a 30 −0,3; 31 ou mais −1,2; titulares +0,5; todos +0,9. Na 2ª virada: +2,9, +0,9, −0,2, −1,3; todos +0,3.
+
+### Variantes medidas (semente 1, 150 carreiras, 5 temporadas)
+
+| Variante                                     | Campeão (t1 → t2 → t3 → t5) | 17º (t1 → t2 → t3 → t5)   | Correlação de pontos t → t+1 | Força média t5 |
+| -------------------------------------------- | --------------------------- | ------------------------- | ---------------------------- | -------------- |
+| moral passa inteira                          | 75,2 → 76,5 → 76,4 → 77,5   | 40,3 → 40,1 → 39,6 → 39,2 | 0,52 a 0,56                  | 70,9           |
+| **moral a meio caminho de 60 (recomendada)** | 75,2 → 75,9 → 75,4 → 77,4   | 40,3 → 39,9 → 40,0 → 40,0 | 0,48 a 0,51                  | 70,9           |
+| moral zerada para 60                         | 75,2 → 75,9 → 75,3 → 76,4   | 40,3 → 40,2 → 40,3 → 40,0 | 0,44 a 0,47                  | 70,9           |
+| sem ruído no auge (moral inteira)            | 75,2 → 76,4 → 76,1 → 76,8   | 40,3 → 39,9 → 39,8 → 39,6 | 0,52 a 0,56                  | 71,2           |
+
+A moral não mexe na força da liga (a evolução quase não a sente): mexe na tabela. Passando inteira, ela leva a vantagem do embalo de uma temporada para a outra e empurra o 17º para o piso de 39. Tirar o ruído do auge infla a liga (+0,3), então o ruído fica.
+
+**Prêmios, candidatos por temporada:** cerca de 282 jogadores com 19 jogos com nota; 20 goleiros com 19 jogos; de 15 a 25 jogadores de até 21 anos com 19 jogos com nota (de 13 a 24 no Realismo simplificado, 100 carreiras); nunca zero em 750 temporadas até a 5ª da cadeia.
+
+### Carreira longa sem renovação (60 carreiras, 10 temporadas; decisão 14)
+
+| Temporada                       | 1    | 3    | 5    | 6    | 7    | 8    | 9    | 10   |
+| ------------------------------- | ---- | ---- | ---- | ---- | ---- | ---- | ---- | ---- |
+| Força média da liga             | 69,9 | 70,9 | 70,8 | 70,4 | 69,6 | 68,6 | 67,4 | 65,9 |
+| Idade média                     | 26,1 | 28,1 | 30,1 | 31,1 | 32,1 | 33,1 | 34,1 | 35,1 |
+| Gols por partida                | 2,66 | 2,63 | 2,56 | 2,54 | 2,49 | 2,44 | 2,43 | 2,35 |
+| Até 21 anos com 19 jogos        | 15   | 25   | 10   | 0    | 0    | 0    | 0    | 0    |
+| Com aposentadoria aos 35: força | 69,9 | 70,9 | 71,0 | 70,9 | 70,9 | 70,9 | 71,1 | 71,3 |
+| Com aposentadoria aos 35: idade | 26,1 | 27,2 | 27,2 | 26,9 | 26,4 | 25,7 | 25,0 | 24,2 |
+| Com aposentadoria aos 35: gols  | 2,66 | 2,64 | 2,57 | 2,56 | 2,50 | 2,48 | 2,48 | 2,45 |
+
+A queda dos gols vem dos atacantes: na cadeia sem renovação, o overall médio dos atacantes do melhor XI vai de 69,6 a 62,2 em 10 temporadas, enquanto o dos defensores vai de 70,3 a 72,5 e o dos goleiros fica em 70. Há 9 defensores no elenco para 4 vagas e 5 atacantes para até 3: os jovens de defesa entram no time, e os atacantes envelhecem sem reposição. É da composição dos elencos, não da partida; fica para a base da Etapa 4 (decisão 11).
+
+**Pedido ao `developer`:** o `--chain` do `/balance` (balance-targets.md, "Como o /balance mede"), para repetir esta tabela com o motor de verdade depois da T-017.
+
 ## 2026-11-05: T-016, parte 2 (calibragem)
 
 **Como foi medido.** `npm run balance -- --seasons 200 --seed N` (sementes 1, 2 e 3; 200 temporadas, 76.000 jogos e duelos de 20.000 por semente), sobre uma cópia do código no commit `7f880e7`, com as sobrescritas por `--params`. Os dois ajustes que ainda são constantes do motor (o fator do pendurado e o "tudo no ataque") foram medidos na mesma cópia, com a constante trocada só nela; `app/` e `scripts/` não foram tocados. Os parâmetros propostos estão em `scratchpad/t016-params.json` (carrega no `--params` sem erro).
