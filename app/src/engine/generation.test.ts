@@ -223,6 +223,7 @@ describe('newGame (US-004)', () => {
           for (const id of squad) {
             const p = state.players[id]!;
             total++;
+            expect(p.nationality, `${id} (seed ${seed})`).toBe('BR');
             if (p.nationality === 'BR') brazilians++;
             traits.set(p.trait, (traits.get(p.trait) ?? 0) + 1);
           }
