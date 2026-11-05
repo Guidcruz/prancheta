@@ -1008,11 +1008,14 @@ describe(`round and table properties over ${SEASONS} seasons of 38 rounds (US-01
         // CHAIN_SEASONS, each season played and checked like the first.
         const seasons = n % CHAIN_EVERY === 0 ? CHAIN_SEASONS : 1;
         const sizes: number[] = [];
+        // The summary each turn added, by turn.
+        const summaries: number[] = [];
         for (let k = 1; k <= seasons; k++) {
           const turn = turnOf(season, state);
           for (const p of turn.problems) found.push(`season ${n}, turn ${k}: ${p}`);
           state = turn.next;
           sizes.push(jsonBytes(state));
+          summaries.push(jsonBytes(state.pastSeasons.at(-1)));
           if (k === seasons) break;
           for (let round = 1; round <= 38; round++) {
             const played = playRound(state, params, roundInput(season, n, state, rng));
@@ -1033,7 +1036,8 @@ describe(`round and table properties over ${SEASONS} seasons of 38 rounds (US-01
           // the real numbers' digits): the state does not grow with the seasons otherwise. Not
           // from a random start, whose integer morale (0 or 100) turns into longer real numbers
           // over the first seasons and adds up to some 2 KB of digits.
-          const item = jsonBytes(state.pastSeasons.at(-1));
+          // The summary of season 2, the one the 2nd turn added (not the last one of the chain).
+          const item = summaries[1]!;
           const growth = sizes[1]! - sizes[0]!;
           if (Math.abs(growth - item) > 1024) {
             found.push(`season ${n}: grew ${growth} bytes for a summary of ${item}`);
