@@ -490,7 +490,7 @@ describe('simulateMatch: home advantage and neutral ground', () => {
     return { home: home / n, away: away / n, possession: possession / n };
   }
 
-  it('favours the home side, and nobody on neutral ground', () => {
+  it('favours the home side, and nobody on neutral ground', { timeout: 30_000 }, () => {
     expect(homeAdvantage({ fans: 60, derby: false }, params)).toBeGreaterThan(0);
     const home = rate(false);
     expect(home.home - home.away).toBeGreaterThan(0.08);

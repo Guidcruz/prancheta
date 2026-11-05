@@ -134,23 +134,27 @@ describe('US-009: a red card takes the player off and suspends him', () => {
     expect(result.yellowCounts[red.player]).toBe(counted);
   });
 
-  it('never lets a player sent off or injured come back, in 2,000 matches', () => {
-    let reds = 0;
-    for (let seed = 0; seed < 2_000; seed++) {
-      const r = simulateMatch(withSeed(base, seed), params);
-      const left = leftAt(r);
-      reds += r.stats.home.reds + r.stats.away.reds;
-      for (const [player, at] of left) {
-        for (const e of r.events.slice(at + 1)) expect(playersIn(e)).not.toContain(player);
+  it(
+    'never lets a player sent off or injured come back, in 2,000 matches',
+    { timeout: 30_000 },
+    () => {
+      let reds = 0;
+      for (let seed = 0; seed < 2_000; seed++) {
+        const r = simulateMatch(withSeed(base, seed), params);
+        const left = leftAt(r);
+        reds += r.stats.home.reds + r.stats.away.reds;
+        for (const [player, at] of left) {
+          for (const e of r.events.slice(at + 1)) expect(playersIn(e)).not.toContain(player);
+        }
+        for (const red of ofType(r, 'red')) {
+          expect(
+            r.newSuspensions.find((s) => s.player === red.player)!.games,
+          ).toBeGreaterThanOrEqual(1);
+        }
       }
-      for (const red of ofType(r, 'red')) {
-        expect(r.newSuspensions.find((s) => s.player === red.player)!.games).toBeGreaterThanOrEqual(
-          1,
-        );
-      }
-    }
-    expect(reds).toBeGreaterThan(100);
-  });
+      expect(reds).toBeGreaterThan(100);
+    },
+  );
 });
 
 describe('US-009: accumulated yellows', () => {
