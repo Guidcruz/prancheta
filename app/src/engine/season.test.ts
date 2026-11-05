@@ -557,13 +557,6 @@ describe('endSeason', () => {
       );
     }
     expect(careerLeagueTitles(state, 'nao-existe')).toBeUndefined();
-    // A state from before T-017 has no pastSeasons: the base titles.
-    const legacy = omit(finished, ['pastSeasons']);
-    const club = Object.keys(finished.clubs)[0]!;
-    expect(careerLeagueTitles(legacy as unknown as GameState, club)).toBe(
-      finished.clubs[club]!.def.titles.league,
-    );
-    expect(endSeason(legacy as unknown as GameState, params).ok).toBe(true);
   });
 
   it('keeps a summary with one human club within 3 KB, with ids and numbers only', () => {

@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-05 (Semana 1).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-05 (Semana 1). Última atualização: 2026-11-05 (T-049 feita, aguardando merge).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
@@ -58,25 +58,26 @@ Telas da 1a (`docs/design/telas/`):
 
 ## Etapa 1a: andamento das tarefas
 
-| Tarefa | Estado                                                                                                                                                                                                                                  |
-| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                                              |
-| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                                                 |
-| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                                                 |
-| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                                                     |
-| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                                             |
-| T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                                           |
-| T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle`                      |
-| T-008  | feita (PR #18 mergeado; code review aprovado): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                                                        |
-| T-009  | feita (PR #20 mergeado): `app/src/engine/match/`, goldens de partida, `ENGINE_VERSION` 4                                                                                                                                                |
-| T-010  | feita (PR #21 mergeado): cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5                                                                                                                                         |
-| T-011  | feita (PR #22 mergeado): IA pré-jogo, `suggestSheet`, `validateLineup`, `ENGINE_VERSION` segue 5                                                                                                                                        |
-| T-012  | feita (PR #24 mergeado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                                                                            |
-| T-013  | feita (PR #25 mergeado; code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                                                   |
-| T-014  | feita (PR #26 mergeado; code review aprovado em 2 rodadas e QA PASS): moral, forma, termômetro da torcida, "realismo simplificado", ídolo sempre titular, `ENGINE_VERSION` 10                                                           |
-| T-016  | feita (PR #28 mergeado): `npm run balance` com técnico-robô, regra "tirar o pé", "tudo no ataque" só a partir dos 60', `fans.reversion` 0,10, `ENGINE_VERSION` 11                                                                       |
-| T-015  | feita (PR #29 mergeado): `properties.test.ts` com as invariantes em 1.000 partidas e 30 temporadas (`PROPERTY_FULL=1`: 10.000 e 1.000) e golden novo `season-human-simplified`; `ENGINE_VERSION` segue 11                               |
-| T-017  | feita (PR #31 mergeado): `endSeason` e `startNextSeason` (prêmios, evolução e idade, títulos somados ao escudo, `strength` recalculada, temporada nova zerada), `npm run balance -- --chain N` com trava de deriva, `ENGINE_VERSION` 12 |
+| Tarefa | Estado                                                                                                                                                                                                                                                                                                                                                                                                    |
+| ------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-001  | feita (PR #4 mergeado); fundações do motor                                                                                                                                                                                                                                                                                                                                                                |
+| T-002  | feita (`GameParams`, `validateParams`, seis JSON em `app/src/params/`, `lib/params.ts`)                                                                                                                                                                                                                                                                                                                   |
+| T-003  | feita (`ClubDef`, `validateClubs`, `app/src/data/`, `content:check`, `blocklist:hash`; 322 testes; `content:check` 107)                                                                                                                                                                                                                                                                                   |
+| T-004  | feita (gerador de nomes, listas `br`, exclusões, 469 hashes de atletas; 344 testes)                                                                                                                                                                                                                                                                                                                       |
+| T-005  | feita (PR #10 mergeado); modelo do jogador no motor: `players.ts`, `testing/identity.ts`, `testing/players.ts`, golden `players.json`; 398 testes; `ENGINE_VERSION` segue 1                                                                                                                                                                                                                               |
+| T-006  | feita (`newGame`, `generateSquad`, formações, camisas realistas, joia, ídolo, `lib/generators/identity.ts` com rosto placeholder até a T-027)                                                                                                                                                                                                                                                             |
+| T-007  | feita (PR #15 mergeado; code review e QA aprovados; 517 testes, 518 com o completo de nomes): `fixtures.ts` com 380 jogos, `newGame` com `fixtures` e erro `'invalid-calendar'`, `ENGINE_VERSION` 2, `Rng.shuffle`                                                                                                                                                                                        |
+| T-008  | feita (PR #18 mergeado; code review aprovado): `strength.ts` com nota efetiva, forças de setor, fator casa, força exibida e vaga vazia; `ENGINE_VERSION` segue 3                                                                                                                                                                                                                                          |
+| T-009  | feita (PR #20 mergeado): `app/src/engine/match/`, goldens de partida, `ENGINE_VERSION` 4                                                                                                                                                                                                                                                                                                                  |
+| T-010  | feita (PR #21 mergeado): cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5                                                                                                                                                                                                                                                                                                           |
+| T-011  | feita (PR #22 mergeado): IA pré-jogo, `suggestSheet`, `validateLineup`, `ENGINE_VERSION` segue 5                                                                                                                                                                                                                                                                                                          |
+| T-012  | feita (PR #24 mergeado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                                                                                                                                                                                                                                              |
+| T-013  | feita (PR #25 mergeado; code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                                                                                                                                                                                                                     |
+| T-014  | feita (PR #26 mergeado; code review aprovado em 2 rodadas e QA PASS): moral, forma, termômetro da torcida, "realismo simplificado", ídolo sempre titular, `ENGINE_VERSION` 10                                                                                                                                                                                                                             |
+| T-016  | feita (PR #28 mergeado): `npm run balance` com técnico-robô, regra "tirar o pé", "tudo no ataque" só a partir dos 60', `fans.reversion` 0,10, `ENGINE_VERSION` 11                                                                                                                                                                                                                                         |
+| T-015  | feita (PR #29 mergeado): `properties.test.ts` com as invariantes em 1.000 partidas e 30 temporadas (`PROPERTY_FULL=1`: 10.000 e 1.000) e golden novo `season-human-simplified`; `ENGINE_VERSION` segue 11                                                                                                                                                                                                 |
+| T-017  | feita (PR #31 mergeado): `endSeason` e `startNextSeason` (prêmios, evolução e idade, títulos somados ao escudo, `strength` recalculada, temporada nova zerada), `npm run balance -- --chain N` com trava de deriva, `ENGINE_VERSION` 12                                                                                                                                                                   |
+| T-049  | feita, aguardando merge (decisões 12 e 13 da auditoria; ADR-0019): `lastRound` fora do `GameState` (`roundRecap`, `matchSheet`), `index.ts` de 347 para 174 símbolos (contrato de 152 e API de ferramentas de 22), lint `engineEntryOnly`, estado cerca de 16% menor, simulação igual (balance 200 temporadas idêntico à `main`), `ENGINE_VERSION` 13; QA PASS (1222 testes no app; `PROPERTY_FULL` 1319) |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
 
@@ -102,8 +103,8 @@ Relatórios em [`docs/reports/auditoria-2026-11-05/`](reports/auditoria-2026-11-
 9. Na 1a, jogadores só brasileiros; sul-americanos na Etapa 5.
 10. Meta da diretoria só como texto informativo na 1a, com critérios na US-025.
 11. A vibração segue o `prefers-reduced-motion`.
-12. O `architect` emagrece o `lastRound` antes do congelamento do save (T-019).
-13. O `index.ts` exporta só o contrato público, com regra de lint para quem importa o motor.
+12. ~~O `architect` emagrece o `lastRound` antes do congelamento do save (T-019).~~ Feito na T-049 (aguardando merge): o `lastRound` saiu do estado.
+13. ~~O `index.ts` exporta só o contrato público, com regra de lint para quem importa o motor.~~ Feito na T-049 (aguardando merge): 174 símbolos e regra `engineEntryOnly`.
 14. Ordem: correções da auditoria (docs e CI), depois o save (T-018, T-027, T-019), depois a T-048.
 
 Este PR de docs aplica as decisões 1 a 4, 6, 7, 9, 10 e 11 e a limpeza dos documentos; o PR de CI (5 e 6) é do `devops-engineer`; 8, 12 e 13 ficam com o `architect` e o `game-designer`.
@@ -283,7 +284,6 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - Consulta ao advogado sobre espelhar dados reais (tabela e títulos).
 - Lote de dezembro com a tabela final.
 - ADR da faixa de 62% a 68% para "20 pontos mais forte" (decisão 8 da auditoria).
-- Emagrecer o `lastRound` (decisão 12) e fechar a fronteira do `index.ts` (decisão 13).
 
 ## Dívida técnica (achados do security-auditor)
 
@@ -398,7 +398,7 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. **Correções da auditoria**, nesta ordem: este PR de docs; o PR de CI do `devops-engineer` (`/balance`, `dist.test` depois do build e `content:check`, `tests/regression/` no Vitest); a T-049 (fronteira do motor e `lastRound` fora do estado) e do `lastRound`, definida pelo `architect`.
+1. "Só brasileiros" na geração (decisão 9 da auditoria).
 2. T-018, T-027 e T-019 (save).
 3. T-048 (renovação mínima do elenco).
 4. Post da semana 2 do devlog: "Quem pode ser campeão?".

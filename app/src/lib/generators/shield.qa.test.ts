@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { ClubDef } from '../../engine/clubs.ts';
+import type { ClubDef } from '../../engine/index.ts';
 import { shieldSpecFor, shieldSvg, starGlyphs } from './shield';
 
 const clubs = JSON.parse(

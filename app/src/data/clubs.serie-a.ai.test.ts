@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
-  BENCH_LINES,
   BENCH_SIZE,
   FORMATION_SLOTS,
   newGame,
   suggestSheet,
   validateLineup,
 } from '../engine/index.ts';
+import { BENCH_LINES } from '../engine/ai.ts';
 import type { ClubDef, GameState, PlayerId } from '../engine/index.ts';
 import { fixedIdentitySource } from '../engine/testing/identity.ts';
 import { testParams } from '../engine/testing/params.ts';

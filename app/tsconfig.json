@@ -14,7 +14,7 @@
     "types": ["vite/client", "vite-plugin-pwa/svelte", "node"],
     "paths": {
       "@config": ["../config/prancheta.config.ts"],
-      "@engine/*": ["./src/engine/*"],
+      "@engine": ["./src/engine/index.ts"],
       "@lib/*": ["./src/lib/*"]
     },
     "baseUrl": ".",

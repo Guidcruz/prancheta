@@ -277,7 +277,8 @@ export interface MatchGoal {
 /**
  * What a played fixture keeps in the state (`Fixture.result`, docs/02-architecture.md, 4.1): the
  * lean part of the `MatchResult` that the table, the calendar and the results screen read. The
- * full events stay only in `GameState.lastRound` (the last round), so the save stays small.
+ * full events are not state: the application keeps them outside it (`roundRecap`, `matchSheet`;
+ * recap.ts, T-049), so the state stays small.
  */
 export interface MatchSummary {
   /** The awarded score when the match was abandoned: it decides the table (partida.md). */

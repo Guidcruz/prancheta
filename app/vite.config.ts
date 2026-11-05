@@ -11,7 +11,8 @@ export default defineConfig({
   resolve: {
     alias: {
       '@config': fileURLToPath(new URL('../config/prancheta.config.ts', import.meta.url)),
-      '@engine': fileURLToPath(new URL('./src/engine', import.meta.url)),
+      // The engine's public API only (docs/02-architecture.md, 4.1): `@engine/<file>` does not resolve.
+      '@engine': fileURLToPath(new URL('./src/engine/index.ts', import.meta.url)),
       '@lib': fileURLToPath(new URL('./src/lib', import.meta.url)),
     },
   },

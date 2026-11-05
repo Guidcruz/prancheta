@@ -14,7 +14,7 @@
     "tokens": "node scripts/tokens-to-css.mjs",
     "test": "npm test -w app",
     "test:all": "npm run lint && npm test && npm run content:check && npm run build && REQUIRE_SITE_DIST=1 npm test -w app -- ../site/src/lib/dist.test.ts",
-    "lint": "npm run lint -w app && npm run check -w app && npm run check -w site && prettier --check \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\" && bash scripts/test-hook.sh && bash scripts/test-pre-commit.sh",
+    "lint": "npm run lint -w app && eslint . && npm run check -w app && npm run check -w site && prettier --check \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\" && bash scripts/test-hook.sh && bash scripts/test-pre-commit.sh",
     "format": "prettier --write \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\"",
     "balance": "node scripts/balance.ts",
     "content:check": "node scripts/content-check.mjs",
@@ -25,10 +25,12 @@
     "og": "node scripts/og.mjs"
   },
   "devDependencies": {
+    "eslint": "^10.14.0",
     "prettier": "^3.9.10",
     "prettier-plugin-astro": "^1.1.2",
     "prettier-plugin-svelte": "^4.1.1",
-    "sharp": "^0.35.5"
+    "sharp": "^0.35.5",
+    "typescript-eslint": "^8.72.1"
   },
   "engines": {
     "node": ">=22.23.4"

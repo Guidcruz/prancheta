@@ -12,6 +12,9 @@ import {
   daysBetween,
   effectiveRating,
   energyDrain,
+  // The engine's single entry point for e^x (ADR-0007, rule 9): the robot's expected points use
+  // the same exponential as the engine, so a future swap of its implementation reaches both.
+  exp,
   goalProbability,
   homeAdvantage,
   isUnavailable,
@@ -22,9 +25,6 @@ import {
   simulateMatch,
   strengthsFromRatings,
 } from '../../app/src/engine/index.ts';
-// The engine's single entry point for e^x (ADR-0007, rule 9): the robot's expected points use the
-// same exponential as the engine, so a future swap of its implementation reaches both.
-import { exp } from '../../app/src/engine/math.ts';
 import type {
   ClubId,
   Formation,

@@ -114,7 +114,8 @@ describe('career round by round, coach club', () => {
       expect(recorded.score).toEqual(live.score);
       expect(recorded.events).toEqual(live.events);
       expect(state.round).toBe(round + 1);
-      expect(state.lastRound?.round).toBe(round);
+      expect(played.value.report.round).toBe(round);
+      expect('lastRound' in state).toBe(false);
       expect(state.lastSheets[COACH]).toEqual(sheet);
       expect(played.value.report.results).toHaveLength(10);
 

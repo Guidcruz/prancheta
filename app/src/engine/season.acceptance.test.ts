@@ -1,4 +1,3 @@
-import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import type { GameState } from './game.ts';
 import { playRound } from './round.ts';
@@ -77,26 +76,6 @@ describe('US-025: repeated turn gives identical states', () => {
     const a2 = turn(play(a.next), []);
     const b2 = turn(play(b.next), []);
     expect(JSON.stringify(b2.next)).toBe(JSON.stringify(a2.next));
-  });
-});
-
-describe('US-025: a state saved before pastSeasons keeps playing and turning', () => {
-  const legacy = JSON.parse(
-    readFileSync(new URL('./__fixtures__/state-engine-v9-round-6.json', import.meta.url), 'utf8'),
-  ) as { state: GameState };
-
-  it('goes through season 1, the turn and 38 rounds of season 2 without error', () => {
-    expect('pastSeasons' in legacy.state).toBe(false);
-    const human = Object.keys(legacy.state.clubs)[4]!;
-    const s1 = play(legacy.state);
-    const { next } = turn(s1, [human]);
-    expect(next.pastSeasons).toHaveLength(1);
-    expect(next.season).toBe(2);
-    const s2 = play(next);
-    expect(s2.round).toBe(39);
-    const again = turn(s2, [human]);
-    expect(again.next.pastSeasons).toHaveLength(2);
-    expect(Object.keys(again.next.clubs)).toHaveLength(20);
   });
 });
 

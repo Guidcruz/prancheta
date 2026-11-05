@@ -3,6 +3,6 @@
   "include": [".astro/types.d.ts", "**/*", "../config/*.ts"],
   "exclude": ["dist"],
   "compilerOptions": {
-    "paths": { "@engine/*": ["../app/src/engine/*"] }
+    "paths": { "@engine": ["../app/src/engine/index.ts"] }
   }
 }

@@ -10,7 +10,7 @@ import type { GameParams } from './params.ts';
 import type { TeamSheet } from './lineup.ts';
 import type { IdentitySource, Player } from './players.ts';
 import { fail, ok } from './result.ts';
-import type { PlayerSeasonStats, RoundReport } from './round.ts';
+import type { PlayerSeasonStats } from './round.ts';
 import { Rng, seedFromString } from './rng.ts';
 import type { SeasonSummary } from './season.ts';
 import { ENGINE_VERSION } from './version.ts';
@@ -20,9 +20,10 @@ import type { AiProfile, ClubId, EngineWarning, Formation, PlayerId, Result } fr
  * Game state and `newGame` (docs/02-architecture.md, 4.1; T-006). The state grows with the tasks
  * that own each part: this file has what a new game needs to exist (clubs, squads, players and
  * the identity of the career), the calendar (`fixtures`, T-007) and what the rounds write
- * (`lastSheets`, `seasonStats`, `lastRound`, T-013; round.ts) and the summaries of the seasons
- * closed (`pastSeasons`, T-017; season.ts). The save format (T-018/T-019) is frozen only after
- * that, so adding `pastSeasons` needs no migration.
+ * (`lastSheets`, `seasonStats`, T-013; round.ts) and the summaries of the seasons closed
+ * (`pastSeasons`, T-017; season.ts). The round's report is not state: `playRound` returns it and
+ * the application keeps its lean form (`roundRecap`, `matchSheet`; recap.ts, T-049). The save
+ * format (T-018/T-019) is frozen only after that, so these changes need no migration.
  */
 
 /** A club in the career (docs/02-architecture.md, 4.1). */
@@ -82,8 +83,6 @@ export interface GameState {
    * derived from it (`careerLeagueTitles`).
    */
   readonly pastSeasons: readonly SeasonSummary[];
-  /** The report of the last round played, with the full events (only this one is kept). */
-  readonly lastRound?: RoundReport;
 }
 
 export interface NewGameSetup {

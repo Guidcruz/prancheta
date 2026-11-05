@@ -1,8 +1,14 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { AiProfile, ClubDef, ClubSize } from '../engine/index.ts';
+import {
+  CREST_PATTERNS,
+  CREST_SHAPES,
+  CREST_SYMBOLS,
+  type AiProfile,
+  type ClubDef,
+  type ClubSize,
+} from '../engine/index.ts';
 import { parseBlocklist } from './blocklist.ts';
-import { CREST_PATTERNS, CREST_SHAPES, CREST_SYMBOLS } from '../engine/clubs.ts';
 import { checkClubData, formatClubIssues } from './check.ts';
 
 /*

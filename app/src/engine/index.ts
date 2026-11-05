@@ -1,326 +1,109 @@
 /**
- * Public API of the engine (docs/02-architecture.md, 4.1). Everything outside `engine/` imports
- * from here. The simulation functions are added by the tasks that implement them (T-002+).
+ * Public API of the engine (docs/02-architecture.md, 4.1, "Fronteira do `index.ts`"; T-049).
+ * Everything outside `engine/` (lib/, ui/, scripts/, site/ and, from Etapa 1b, server/) imports
+ * the engine only from here, and the lint enforces it (app/eslint.config.js, `engineEntryOnly`).
+ *
+ * Two blocks:
+ * - the contract: the types, functions, closed lists and field ranges that 4.1 signs. A rename
+ *   inside the engine never breaks a caller as long as this block holds;
+ * - the tools API, at the end: what only scripts/ (the /balance) needs and the contract does not
+ *   have. Its list is written symbol by symbol in 4.1; a new symbol there goes through the
+ *   architect, and using one of them in lib/, ui/, server/ or site/ is a BLOCKER in review.
+ *
+ * Everything else is internal: the engine's own files and tests import it by its file path.
  */
+
+// ---------------------------------------------------------------- contract: foundations
+
 export { ENGINE_VERSION } from './version.ts';
 export { Rng, seedFromString } from './rng.ts';
-export { PARAM_RANGES, SEASON_ROUNDS, SEASON_WEEKS, validateParams } from './params.ts';
+export type { EngineWarning, Result } from './types.ts';
+
+// ---------------------------------------------------------------- contract: functions
+
+export { validateParams } from './params.ts';
+export { validateClubs } from './clubs.ts';
+export { validatePlayer } from './players.ts';
+export { newGame } from './game.ts';
+export { playRound, prepareRound } from './round.ts';
+export { simulateMatch } from './match/simulate.ts';
+export { suggestSheet, validateLineup } from './ai.ts';
+export { teamStrength } from './strength.ts';
+export { getStandings, standingsHistory } from './standings.ts';
+export {
+  careerLeagueTitles,
+  endSeason,
+  seasonAwards,
+  startNextSeason,
+  strengthRank,
+  targetPosition,
+} from './season.ts';
+export { matchSheet, roundRecap } from './recap.ts';
+
+// ---------------------------------------------------------------- contract: closed lists and ranges
+// What the interface and the save schema (valibot, T-019) read instead of retyping them.
+
+export { PARAM_RANGES, SEASON_ROUNDS } from './params.ts';
 export {
   AI_PROFILES,
   BLOCKLIST_FIELDS,
   CLUB_SIZES,
-  DEFAULT_STRENGTH,
-  SERIE_A_CLUBS,
+  CREST_PATTERNS,
+  CREST_SHAPES,
+  CREST_SYMBOLS,
   STRENGTH_RANGE,
-  validateClubs,
 } from './clubs.ts';
 export {
   AGE_RANGE,
   ATTRIBUTE_RANGE,
   CONDITION_RANGE,
   FACE_MAX_LENGTH,
-  FIT,
-  GOALKEEPER_ATTRIBUTES,
-  IMPROVISED_MIN_FIT,
   MORALE_RANGE,
-  OUTFIELD_ATTRIBUTES,
-  OVERALL_WEIGHTS,
-  PEAK_AGE_RANGE,
   POSITIONS,
-  POTENTIAL_MAX,
   POTENTIAL_STORED_MAX,
-  PROSPECT_MAX_AGE,
-  PROSPECT_MIN_GAP,
   RATING_RANGE,
   RECENT_RATINGS_MAX,
   SHIRT_RANGE,
-  SQUAD_COMPOSITION,
   SQUAD_SIZE,
-  TRAIT_CHANCES,
   TRAITS,
-  YELLOWS_FOR_SUSPENSION,
-  attributeKeysFor,
-  attributeOf,
-  computeOverall,
-  drawGrowthCurve,
-  drawPotential,
-  drawTrait,
-  fit,
-  fitAttributesToOverall,
-  fitLevel,
-  isProspect,
-  overallWeight,
-  validatePlayer,
 } from './players.ts';
-export { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS } from './formations.ts';
-export {
-  GENERATED_OVERALL_RANGE,
-  GROUP_AGE,
-  GROUP_OVERALL,
-  HOME_NATIONALITY,
-  HOME_NATIONALITY_SHARE,
-  IDOL_MIN_AGE,
-  JEWEL_POTENTIAL_MARGIN,
-  PROFILE_WEIGHTS_BY_SIZE,
-  RESERVE_GOALKEEPER_SHIRT,
-  SOUTH_AMERICAN_NATIONALITIES,
-  SQUAD_GROUPS,
-  SQUAD_GROUP_SIZES,
-  SQUAD_SHIRTS_FROM,
-  STARTER_MODE_AGE,
-  STARTER_SHIRTS,
-  STARTER_SHIRT_ORDER,
-  START_CONDITION,
-  PRE_CAREER_APPEARANCES,
-  START_MORALE,
-  STRENGTH_TOLERANCE,
-  YOUTH_SHIRTS_FROM,
-  bestEleven,
-  checkGeneratedSquad,
-  drawClubProfile,
-  drawPreferredFormations,
-  effectiveStrength,
-  elevenStrength,
-  generateSquad,
-} from './generation.ts';
-export type { GeneratedSquad, SquadGroup, SquadProblem, SquadRequest } from './generation.ts';
-export {
-  HALF_ROUNDS,
-  MAX_SAME_VENUE_RUN,
-  YEAR_RANGE,
-  daysBetween,
-  fixtureId,
-  generateFixtures,
-  seasonCalendar,
-} from './fixtures.ts';
-export type { Fixture, FixturesError, FixturesRequest, RoundSlot } from './fixtures.ts';
-export { newGame } from './game.ts';
-export {
-  DEFAULT_STADIUM_CAPACITY,
-  MATCH_MODES,
-  ROUND_MORALE,
-  matchSeed,
-  playRound,
-  prepareRound,
-  nextRecentRatings,
-  roundBenchStreaks,
-  moraleDrift,
-  roundMoraleDeltas,
-  summarizeMatch,
-} from './round.ts';
-export type {
-  MatchMode,
-  PlayerSeasonStats,
-  RoundInput,
-  RoundPlan,
-  RoundReport,
-  RoundSetup,
-} from './round.ts';
-export {
-  EXPECTED_POINTS,
-  FANS_EXTRAS,
-  IDOL_BENCH,
-  clubIdol,
-  expectedPoints,
-  fansDelta,
-  fansVenue,
-  winlessRuns,
-} from './fans.ts';
-export type { FansDelta, FansRoundInput, FansVenue } from './fans.ts';
-export {
-  FORM_LENGTH,
-  POINTS,
-  RELEGATION_SPOTS,
-  getStandings,
-  roundTables,
-  standingsHistory,
-} from './standings.ts';
-export type { RoundTables, StandingResult, StandingRow, StandingsState } from './standings.ts';
-export {
-  LEADERSHIP_MIN_ROUNDS,
-  MILESTONE_STEP,
-  TOP_SCORER_MIN_GOALS,
-  UNBEATEN_MIN_GAMES,
-  WINLESS_MIN_GAMES,
-  isMilestone,
-  roundFacts,
-} from './facts.ts';
-export type { Fact } from './facts.ts';
-export {
-  CONDITION_MULT,
-  EMPTY_SECTOR_FIT,
-  FORMATION_MULTIPLIERS,
-  FORMATION_SECTORS,
-  GOALKEEPER_SLOT,
-  MORALE_MULT,
-  POSTURES,
-  POSTURE_EFFECTS,
-  PRESSURE_EFFECTS,
-  STARTERS_COUNT,
-  conditionMultiplier,
-  effectiveRating,
-  fillEmptyGoal,
-  homeAdvantage,
-  moraleMultiplier,
-  postureEffect,
-  sectorStrengths,
-  shownEleven,
-  strengthsFromRatings,
-  teamFactor,
-  teamStrength,
-} from './strength.ts';
-export type {
-  LineupProblem,
-  PostureEffect,
-  RatingFactors,
-  Sector,
-  ShownState,
-  StrengthContext,
-  StrengthFactors,
-  StrengthSheet,
-  StrengthTactic,
-  StrengthsResult,
-  TeamStrengths,
-} from './strength.ts';
-export {
-  BENCH_LINES,
-  CHAOTIC_POSTURE_WEIGHTS,
-  CHAOTIC_PRESSURE_WEIGHTS,
-  PROFILE_POSTURE,
-  PROFILE_PRESSURE,
-  aiSeed,
-  pickBench,
-  pickCaptainAndTakers,
-  pickEleven,
-  profileTactic,
-  strengthDelta,
-  suggestSheet,
-  validateLineup,
-} from './ai.ts';
-export type {
-  PreMatchPosture,
-  SheetProblem,
-  SuggestOptions,
-  SuggestState,
-  ValidateLineupResult,
-  Venue,
-} from './ai.ts';
-export {
-  bestForSlot,
-  correctedCondition,
-  isUnavailable,
-  kickoffBench,
-  replaceUnavailable,
-  selectionValue,
-  winsTie,
-} from './selection.ts';
-export { simulateMatch } from './match/simulate.ts';
-export { substitutionsLeft } from './match/commands.ts';
-export {
-  ABANDONED_SCORE,
-  AI_HALFTIME_TALK,
-  ASSIST_WEIGHTS,
-  ATTENDANCE,
-  BIG_CHANCE_P_GOAL,
-  CARD_FACTORS,
-  CARD_POSITION_MULT,
-  CHANCE_BOUNDS,
-  FREE_KICK_GOAL_MULT,
-  GOALKEEPER_DRAIN_SHARE,
-  GOAL_BOUNDS,
-  HALFTIME_TALKS,
-  HALFTIME_TALK_EFFECTS,
-  HALF_MINUTES,
-  INJURY_FATIGUE_WEIGHT,
-  IN_MATCH_AI,
-  INJURY_SEVERITIES,
-  LEADER_CAPTAIN_TALK_MULT,
-  MARKERS,
-  MAX_SUBS,
-  MIN_PLAYERS_ON_PITCH,
-  MISS_OUTCOMES,
-  PENALTY,
-  POSSESSION,
-  PRESSURE_CARDS,
-  PRESSURE_DRAIN,
-  RATING,
-  SHOOTER_WEIGHTS,
-  STOPPAGE,
-  SUSPENSION,
-  TACTIC_PRESETS,
-  WEIGHT_ATTRIBUTE_SCALE,
-  abandonedScore,
-  attendance,
-  chanceProbability,
-  comfortableLeadFactor,
-  energyDrain,
-  goalProbability,
-  halftimeBoost,
-  injuryProbability,
-  penaltyProbability,
-  playerCardMult,
-  redProbability,
-  sideCardRates,
-  yellowProbability,
-} from './match/rules.ts';
-export type { SideCardRates } from './match/rules.ts';
-export type {
-  ChanceKind,
-  HalftimeTalk,
-  InjurySeverity,
-  MatchCommand,
-  MatchGoal,
-  MatchSummary,
-  MatchEvent,
-  MatchInput,
-  MatchMarker,
-  MatchResult,
-  MatchStats,
-  MissOutcome,
-  TacticPreset,
-  TeamInput,
-} from './match/types.ts';
+export { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
+export { POSTURES } from './strength.ts';
 export { BENCH_SIZE } from './lineup.ts';
-export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
-export {
-  AWARD_MIN_GAMES,
-  EVOLUTION,
-  MORALE_OFFSEASON_PULL,
-  MORALE_TURN_SCALE,
-  REVELATION_MAX_AGE,
-  TARGET_MARGIN,
-  TARGET_POSITION_MAX,
-  TEAM_OF_SEASON_FORMATION,
-  ageCurve,
-  careerLeagueTitles,
-  endSeason,
-  evolutionSeed,
-  evolutionTarget,
-  evolvePlayer,
-  moraleAtTurn,
-  seasonAwards,
-  squadStrength,
-  startNextSeason,
-  strengthRank,
-  targetPosition,
-} from './season.ts';
+export { MATCH_MODES } from './round.ts';
+export { HALFTIME_TALKS, MARKERS } from './match/rules.ts';
+export { MATCH_SHEET_EVENTS } from './recap.ts';
+export { FORM_LENGTH, RELEGATION_SPOTS } from './standings.ts';
+
+// ---------------------------------------------------------------- contract: types
+
 export type {
-  AssistAward,
-  CampaignMatch,
-  ClubCampaign,
-  EvolvingPlayer,
-  GoalkeeperAward,
-  PlayerEvolution,
-  RatingAward,
-  ScorerAward,
-  SeasonAwards,
-  SeasonSummary,
-  TeamOfSeasonSlot,
-} from './season.ts';
-export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
+  AiProfile,
+  ClubId,
+  ClubSize,
+  FixtureId,
+  Formation,
+  PlayerId,
+  Position,
+  Posture,
+  Pressure,
+  Side,
+  Trait,
+} from './types.ts';
+export type {
+  BlocklistField,
+  ClubDef,
+  ClubIssue,
+  ClubProblem,
+  ClubsResult,
+  ClubTitles,
+  CrestPattern,
+  CrestShape,
+  CrestSymbol,
+  ValidateClubsOptions,
+} from './clubs.ts';
 export type {
   AttributeKey,
-  FitLevel,
   GoalkeeperAttributeKey,
   IdentitySource,
   OutfieldAttributeKey,
@@ -332,15 +115,6 @@ export type {
   PlayerProblem,
   PlayerResult,
 } from './players.ts';
-export type {
-  BlocklistField,
-  ClubDef,
-  ClubIssue,
-  ClubProblem,
-  ClubTitles,
-  ClubsResult,
-  ValidateClubsOptions,
-} from './clubs.ts';
 export type {
   AiParams,
   FansParams,
@@ -356,18 +130,75 @@ export type {
   PlayersParams,
   SeasonParams,
 } from './params.ts';
+export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
+export type { Fixture } from './fixtures.ts';
+export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
+export type { SheetProblem, SuggestOptions, SuggestState, ValidateLineupResult } from './ai.ts';
+export type { ShownState } from './strength.ts';
 export type {
-  AiProfile,
-  ClubId,
-  ClubSize,
-  EngineWarning,
-  FixtureId,
-  Formation,
-  PlayerId,
-  Position,
-  Posture,
-  Pressure,
-  Result,
-  Side,
-  Trait,
-} from './types.ts';
+  ChanceKind,
+  HalftimeChoice,
+  HalftimeTalk,
+  InjurySeverity,
+  MatchCommand,
+  MatchEvent,
+  MatchGoal,
+  MatchInput,
+  MatchMarker,
+  MatchResult,
+  MatchStats,
+  MatchSummary,
+  MissOutcome,
+  TacticPreset,
+  TeamInput,
+} from './match/types.ts';
+export type {
+  MatchMode,
+  PlayerSeasonStats,
+  RoundInput,
+  RoundPlan,
+  RoundReport,
+  RoundSetup,
+} from './round.ts';
+export type { MatchRecap, MatchSheet, MatchSheetEvent, RoundRecap } from './recap.ts';
+export type { Fact } from './facts.ts';
+export type { StandingResult, StandingRow, StandingsState } from './standings.ts';
+export type {
+  AssistAward,
+  CampaignMatch,
+  ClubCampaign,
+  GoalkeeperAward,
+  RatingAward,
+  ScorerAward,
+  SeasonAwards,
+  SeasonSummary,
+  TeamOfSeasonSlot,
+} from './season.ts';
+
+// ---------------------------------------------------------------- tools API (scripts/ only)
+// The /balance (scripts/balance/) rebuilds the engine's formulas for its coach robot and its
+// duels. Only scripts/ may use this block (docs/02-architecture.md, 4.1, "API de ferramentas");
+// the list there is the reference, and a new symbol here goes through the architect.
+
+export { exp } from './math.ts';
+export { daysBetween } from './fixtures.ts';
+export { attributeOf } from './players.ts';
+export { bestEleven, generateSquad } from './generation.ts';
+export { bestForSlot, correctedCondition, isUnavailable } from './selection.ts';
+export { pickBench, pickCaptainAndTakers } from './ai.ts';
+export {
+  GOALKEEPER_SLOT,
+  effectiveRating,
+  homeAdvantage,
+  sectorStrengths,
+  strengthsFromRatings,
+} from './strength.ts';
+export type { TeamStrengths } from './strength.ts';
+export {
+  HALF_MINUTES,
+  IN_MATCH_AI,
+  MAX_SUBS,
+  chanceProbability,
+  energyDrain,
+  goalProbability,
+} from './match/rules.ts';

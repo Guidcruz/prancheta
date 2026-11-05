@@ -144,6 +144,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- Fronteira do motor e relatório da rodada fora do estado (T-049, ADR-0019; decisões 12 e 13 da auditoria de 2026-11-05):
+  - `ENGINE_VERSION` 13. O `lastRound` saiu do `GameState`: o relatório da rodada só volta no retorno do `playRound`. Entram no contrato `roundRecap` (relatório enxuto, até cerca de 7 KB gzip) e `matchSheet` (súmula da partida, até cerca de 2,4 KB gzip com os clubes reais), para a camada de aplicação guardar fora do estado.
+  - O estado ficou cerca de 16% menor (rodada 6: de 506 para 425 KB crus e de 70 para 57 KB em gzip).
+  - O `app/src/engine/index.ts` passou de 347 para 174 símbolos: o contrato público (152) mais uma API de ferramentas (22), só para `scripts/`.
+  - Nova regra de lint `engineEntryOnly`: quem está fora do motor importa só o `index.ts`. Vale para o `app/` e para o `eslint.config.js` da raiz, que agora roda com `eslint .`.
+  - A simulação não mudou: o `/balance` de 200 temporadas dá o mesmo resultado da `main` (39 de 39 metas).
+  - O motor deixou de tolerar estado sem `pastSeasons`; estado de formato antigo é assunto das migrações do save (T-019). Saíram a fixture `state-engine-v9-round-6.json` e o `legacy-state.test.ts`.
+  - O `og.test.ts` foi para `scripts/`. No `package-lock.json` só entraram as declarações `eslint` e `typescript-eslint` na raiz; nenhuma versão mudou.
 - Infraestrutura: CI roda `content:check`, o balanceamento (200 temporadas, semente 1) e os testes do site sobre o build; ações do GitHub fixadas por SHA; hook de pre-commit que formata com o Prettier (ativado no `npm install`).
 - Motor: `ENGINE_VERSION` 12 (fim de temporada e virada). O estado do jogo ganha o histórico de temporadas passadas (`pastSeasons`, vazio no jogo novo) e o golden da virada entra; a simulação em si não muda.
 

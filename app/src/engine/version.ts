@@ -39,4 +39,10 @@
 //    `endSeason` and `startNextSeason` add the golden of the season turn. Still unpublished, the
 //    turn then rounds the morale to 2 decimals (BUG-A of T-017), so only the season-turn digest
 //    changed and that golden was written again at 12.
-export const ENGINE_VERSION = 12;
+// 13: the round's report leaves the state (T-049; docs/02-architecture.md, 4.1, "Relatório da
+//    rodada fora do estado"): `GameState.lastRound` is gone, `playRound` still returns the whole
+//    `RoundReport`, and `roundRecap` and `matchSheet` give the lean forms the application keeps.
+//    The simulation is the same (the match goldens kept their data, the scores and the events of
+//    the round goldens too): only the digests of the states changed, those of the round goldens
+//    (no report inside) and those of new-game and season-turn (they hold the version).
+export const ENGINE_VERSION = 13;

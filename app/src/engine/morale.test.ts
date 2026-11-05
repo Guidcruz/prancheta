@@ -16,6 +16,7 @@ import { simulateMatch } from './match/simulate.ts';
 import { testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
 import type { PlayerId, Trait } from './types.ts';
+import { reportOf, trackRound } from './testing/reports.ts';
 
 /*
  * Form, morale and fatigue between rounds (US-010; jogadores.md, "Moral por rodada" and "Estados
@@ -32,7 +33,7 @@ function input(round: number, extra: Partial<RoundInput> = {}): RoundInput {
 }
 
 function play(state: GameState, extra: Partial<RoundInput> = {}) {
-  const result = playRound(state, params, input(state.round, extra));
+  const result = trackRound(playRound(state, params, input(state.round, extra)));
   if (!result.ok) throw new Error(`playRound: ${result.error}`);
   return result.value;
 }
@@ -107,9 +108,9 @@ describe('US-010: fatigue goes up when playing and down when resting', () => {
       const today = before.fixtures.find((f) => f.round === r)!.date;
       const gap = daysBetween(today, before.fixtures.find((f) => f.round === r + 1)!.date)!;
       const minutes: Record<PlayerId, number> = {};
-      for (const res of after.lastRound!.results) Object.assign(minutes, res.minutes);
+      for (const res of reportOf(after).results) Object.assign(minutes, res.minutes);
       const nextMinutes: Record<PlayerId, number> = {};
-      for (const res of next.lastRound!.results) Object.assign(nextMinutes, res.minutes);
+      for (const res of reportOf(next).results) Object.assign(nextMinutes, res.minutes);
       for (const [id, p] of Object.entries(after.players)) {
         const fatigueBefore = 100 - before.players[id]!.condition;
         const fatigue = 100 - p.condition;
@@ -174,7 +175,7 @@ describe('US-010: a long spell on the bench lowers the morale', () => {
       // Back on the pitch: the streak is over.
       const back = play(s, { coaches: { [COACH]: 'full' } });
       expect(
-        Object.keys(back.state.lastRound!.results.find((x) => id in x.minutes)!.minutes),
+        Object.keys(reportOf(back.state).results.find((x) => id in x.minutes)!.minutes),
       ).toContain(id);
       expect(back.state.players[id]!.benchStreak).toBe(0);
     });
@@ -204,7 +205,7 @@ describe('US-010: a long spell on the bench lowers the morale', () => {
     for (let r = 1; r <= 5; r++) {
       const before = all[r - 1]!;
       const after = all[r]!;
-      for (const res of after.lastRound!.results) {
+      for (const res of reportOf(after).results) {
         const fixture = before.fixtures.find((f) => f.id === res.fixtureId)!;
         for (const clubId of [fixture.homeId, fixture.awayId]) {
           const squad = before.squads[clubId]!;
@@ -297,7 +298,7 @@ describe('US-010: the result moves the morale', () => {
     for (let r = 1; r <= 38; r++) {
       const before = all[r - 1]!;
       const after = all[r]!;
-      for (const res of after.lastRound!.results) {
+      for (const res of reportOf(after).results) {
         const fixture = before.fixtures.find((f) => f.id === res.fixtureId)!;
         for (const [clubId, own, other] of [
           [fixture.homeId, res.score[0], res.score[1]],
@@ -337,7 +338,7 @@ describe('US-010: the form (recentRatings, display only)', () => {
     const all = season(20261104);
     const history = new Map<PlayerId, number[]>();
     for (let r = 1; r <= 38; r++) {
-      for (const res of all[r]!.lastRound!.results) {
+      for (const res of reportOf(all[r]!).results) {
         for (const [id, rating] of Object.entries(res.ratings)) {
           if (rating === null) continue;
           history.set(id, [...(history.get(id) ?? []), rating]);
@@ -350,7 +351,7 @@ describe('US-010: the form (recentRatings, display only)', () => {
     // Somebody had a match "sem nota" (under 15 minutes) and kept his list.
     const unrated = all
       .slice(1)
-      .some((s) => s.lastRound!.results.some((x) => Object.values(x.ratings).includes(null)));
+      .some((s) => reportOf(s).results.some((x) => Object.values(x.ratings).includes(null)));
     expect(unrated).toBe(true);
   });
 });

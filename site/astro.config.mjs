@@ -14,8 +14,9 @@ export default defineConfig({
   integrations: [sitemap()],
   vite: {
     resolve: {
-      // The shield generator imports the engine's Rng; used at build time only.
-      alias: { '@engine': fileURLToPath(new URL('../app/src/engine', import.meta.url)) },
+      // The shield generator reads the engine's types through `@engine`, the public API only
+      // (docs/02-architecture.md, 4.1); used at build time only.
+      alias: { '@engine': fileURLToPath(new URL('../app/src/engine/index.ts', import.meta.url)) },
     },
   },
 });
