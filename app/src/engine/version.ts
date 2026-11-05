@@ -13,4 +13,10 @@
 //    goldens changed.
 // 5: the match (T-010) draws the chance kind (penalties, direct free kicks), cards and injuries
 //    every minute, and ends a match with fewer than 7 on one side; the match goldens changed.
-export const ENGINE_VERSION = 5;
+// 6: the match (T-012) takes the coach's commands and plays the AI's in-match rules (injury and
+//    fatigue substitutions, going for the result, "todo mundo no ataque", "segurar o resultado"),
+//    so the match goldens changed.
+// 7: T-012 reviewed (docs/design/ia-clubes.md, "Pedido ao developer" 6; partida.md, 8): rule 2
+//    at minutes 60, 70 and 80, rule 3 swaps an AM or ST, the AI decides in the second half's added
+//    time, commands with `added`, the `skip` talk, ai.subEnergy 85; the match goldens changed.
+export const ENGINE_VERSION = 7;

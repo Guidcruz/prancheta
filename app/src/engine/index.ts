@@ -152,6 +152,7 @@ export type {
 } from './ai.ts';
 export { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
 export { simulateMatch } from './match/simulate.ts';
+export { substitutionsLeft } from './match/commands.ts';
 export {
   ABANDONED_SCORE,
   AI_HALFTIME_TALK,
@@ -168,9 +169,11 @@ export {
   HALFTIME_TALK_EFFECTS,
   HALF_MINUTES,
   INJURY_FATIGUE_WEIGHT,
+  IN_MATCH_AI,
   INJURY_SEVERITIES,
   LEADER_CAPTAIN_TALK_MULT,
   MARKERS,
+  MAX_SUBS,
   MIN_PLAYERS_ON_PITCH,
   MISS_OUTCOMES,
   PENALTY,
@@ -181,6 +184,7 @@ export {
   SHOOTER_WEIGHTS,
   STOPPAGE,
   SUSPENSION,
+  TACTIC_PRESETS,
   WEIGHT_ATTRIBUTE_SCALE,
   abandonedScore,
   attendance,
@@ -200,12 +204,14 @@ export type {
   ChanceKind,
   HalftimeTalk,
   InjurySeverity,
+  MatchCommand,
   MatchEvent,
   MatchInput,
   MatchMarker,
   MatchResult,
   MatchStats,
   MissOutcome,
+  TacticPreset,
   TeamInput,
 } from './match/types.ts';
 export { BENCH_SIZE } from './lineup.ts';

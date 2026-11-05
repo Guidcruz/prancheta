@@ -15,7 +15,7 @@ import type {
 
 /*
  * Match contracts (docs/02-architecture.md, 4.1 "Partida"; docs/design/partida.md, "Eventos" and
- * "Estatísticas e notas"). `MatchCommand` arrives with the coach's commands (T-012).
+ * "Estatísticas e notas"). `MatchCommand` carries the coach's decisions during the match (T-012).
  */
 
 /** One side of a match, as `prepareRound` builds it. */
@@ -50,6 +50,58 @@ export interface MatchInput {
 export type ChanceKind = 'open' | 'freeKick' | 'penalty';
 export type MissOutcome = 'saved' | 'post' | 'wide';
 export type HalftimeTalk = 'motivate' | 'demand' | 'calm';
+/**
+ * The coach's choice at half time: one of the three talks or `skip` ("Pular": no talk at all,
+ * `halftimeBoost` 0; partida.md, "Conversa no intervalo"). The AI always talks.
+ */
+export type HalftimeChoice = HalftimeTalk | 'skip';
+/** The shortcuts of partida.md ("Comandos em jogo"): pressionar, segurar o resultado, tudo ao ataque. */
+export type TacticPreset = 'press' | 'holdResult' | 'allOut';
+
+/**
+ * A decision of the coach during the match (docs/02-architecture.md, 4.1; partida.md, "Quando um
+ * comando vale", "Comandos em jogo", "Substituições" and "Conversa no intervalo"). `minute` is the
+ * last minute played when the coach decided, and the command takes effect from the next one:
+ * - a regulation minute M (0 to 89) takes effect at M + 1; 45 also covers the first half's added
+ *   time and takes effect at 46;
+ * - `minute: 90` with `added: k` (0 to 6, only with 90; absent = 0) takes effect at 90+(k+1);
+ *   when `k` is greater than or equal to the drawn added time there is no such minute, and it is
+ *   ignored at full time (`command-too-late`).
+ * The one exception is the substitution of a player injured in that same minute, which happens at
+ * once. Only the coach's side (`controller: 'human'`) takes commands. The same seed and the same
+ * commands give the same match; an invalid command is ignored with a warning.
+ */
+export type MatchCommand =
+  | {
+      readonly minute: number;
+      readonly added?: number;
+      readonly side: Side;
+      readonly kind: 'substitution';
+      readonly out: PlayerId;
+      readonly in: PlayerId;
+    }
+  | {
+      readonly minute: number;
+      readonly added?: number;
+      readonly side: Side;
+      readonly kind: 'tactic';
+      readonly formation?: Formation;
+      readonly posture?: Posture;
+      readonly pressure?: Pressure;
+    }
+  | {
+      readonly minute: number;
+      readonly added?: number;
+      readonly side: Side;
+      readonly kind: 'preset';
+      readonly preset: TacticPreset;
+    }
+  | {
+      readonly minute: 45;
+      readonly side: Side;
+      readonly kind: 'halftimeTalk';
+      readonly talk: HalftimeChoice;
+    };
 export type InjurySeverity = 'light' | 'medium' | 'serious' | 'severe';
 
 /**
@@ -119,11 +171,12 @@ export type MatchEvent = {
       readonly formation: Formation;
       readonly posture: Posture;
       readonly pressure: Pressure;
-      readonly preset?: string;
+      /** The shortcut that caused it, when it was one (the coach's or the AI's). */
+      readonly preset?: TacticPreset;
     }
   | { readonly type: 'stoppage'; readonly minutes: number }
   | { readonly type: 'halftime'; readonly score: readonly [number, number] }
-  | { readonly type: 'halftimeTalk'; readonly side: Side; readonly talk: HalftimeTalk }
+  | { readonly type: 'halftimeTalk'; readonly side: Side; readonly talk: HalftimeChoice }
   | {
       readonly type: 'fulltime';
       readonly score: readonly [number, number];

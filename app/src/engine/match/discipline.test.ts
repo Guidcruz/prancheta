@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
+import { BENCH_SIZE } from '../lineup.ts';
 import type { GameParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
 import { FORMATION_SECTORS, GOALKEEPER_SLOT, conditionMultiplier } from '../strength.ts';
@@ -668,7 +669,13 @@ describe('edge cases (partida.md, "Casos de borda")', () => {
 
   it('replaces an injured or suspended starter with the best available reserve, with a warning', () => {
     const starters = base.home.sheet.lineup.starters;
-    const reserves = base.home.players.filter((p) => !starters.includes(p.id));
+    // A bench of BENCH_SIZE with a goalkeeper: only the first 7 of the sheet count (T-012).
+    const others = base.home.players.filter((p) => !starters.includes(p.id));
+    const reserveKeeper = others.find((p) => p.position === 'GK')!;
+    const reserves = [
+      reserveKeeper,
+      ...others.filter((p) => p !== reserveKeeper).slice(0, BENCH_SIZE - 1),
+    ];
     const out = starters[9]!; // a forward slot of the formation
     const keeper = starters[GOALKEEPER_SLOT]!;
     const home = withLineup(

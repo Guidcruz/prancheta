@@ -1,9 +1,10 @@
 import { elevenStrength } from '../generation.ts';
 import { clamp, normal } from '../math.ts';
 import type { GameParams, MatchParams } from '../params.ts';
+import type { Player } from '../players.ts';
 import { Rng } from '../rng.ts';
 import { GOALKEEPER_SLOT, homeAdvantage, type TeamStrengths } from '../strength.ts';
-import type { EngineWarning, PlayerId, Side } from '../types.ts';
+import type { EngineWarning, PlayerId, Posture, Pressure, Side } from '../types.ts';
 import {
   AI_HALFTIME_TALK,
   ASSIST_WEIGHTS,
@@ -12,13 +13,16 @@ import {
   HALF_MINUTES,
   INJURY_FATIGUE_WEIGHT,
   INJURY_SEVERITIES,
+  IN_MATCH_AI,
   MAX_PLAYER_CARD_MULT,
+  MAX_SUBS,
   MIN_PLAYERS_ON_PITCH,
   MISS_OUTCOMES,
   POSSESSION,
   SHOOTER_WEIGHTS,
   STOPPAGE,
   SUSPENSION,
+  TACTIC_PRESETS,
   WEIGHT_ATTRIBUTE_SCALE,
   abandonedScore,
   attendance,
@@ -32,6 +36,8 @@ import {
   sideCardRates,
   yellowProbability,
 } from './rules.ts';
+import { commandDetail, commandKey, prepareCommands, type PendingCommand } from './commands.ts';
+import { aiDecision, injuryReserve } from './inplay.ts';
 import {
   bestOnPitch,
   cardConsequences,
@@ -42,6 +48,7 @@ import {
 } from './summary.ts';
 import {
   captainOnPitch,
+  changeFormation,
   currentStrengths,
   freeKickGoalProbability,
   kickoffTeam,
@@ -50,6 +57,7 @@ import {
   penaltyGoalProbability,
   playersOnPitch,
   setPieceTaker,
+  substitute,
   type Appearance,
   type Slot,
   type TeamState,
@@ -58,14 +66,17 @@ import type {
   ChanceKind,
   HalftimeTalk,
   InjurySeverity,
+  MatchCommand,
   MatchEvent,
   MatchInput,
   MatchResult,
   MissOutcome,
+  TacticPreset,
 } from './types.ts';
 
 /*
- * The match, minute by minute (docs/design/partida.md, "Visão geral do cálculo"; T-009, T-010).
+ * The match, minute by minute (docs/design/partida.md, "Visão geral do cálculo"; T-009, T-010,
+ * T-012).
  *
  * One Rng per match, seeded with `input.seed`, and a fixed order of draws (partida.md,
  * "Determinismo"; the goldens of simulate.golden.test.ts pin it):
@@ -80,20 +91,25 @@ import type {
  * 3. then, home side first, each player who was on the pitch when the step began, in slot
  *    order: one draw that is a direct red, a yellow (a second yellow is a red), an injury or
  *    nothing, in this order of the cumulative probabilities; an injury then draws its severity
- *    (1) and its rounds out (1, `Rng.int`, also when the range has a single value). A player who
- *    leaves the pitch leaves his slot empty (the goalkeeper's is filled from the outfield, without
- *    a draw); a side that falls below 7 ends the match at once (step 6), with no more draws;
- *    then the energy drain of everyone on the pitch (no draw);
+ *    (1) and its rounds out (1, `Rng.int`, also when the range has a single value), and the
+ *    injured player is replaced at once, without a draw (the coach's substitution of that minute
+ *    for him, else the AI's rule 1), while there is a substitution and a reserve. A player sent
+ *    off, or injured without a substitute, leaves his slot empty (the goalkeeper's is filled from
+ *    the outfield, without a draw); a side that falls below 7 ends the match at once (step 6),
+ *    with no more draws; then the energy drain of everyone on the pitch (no draw);
  * 4. end of each half: the added time (1), its minutes as in 2 and 3, then the possession noise
  *    (1);
- * 5. half time: the talk of each chaotic side (1 each, home first);
+ * 5. half time: the talk of each chaotic side (1 each, home first), drawn even when the coach chose
+ *    the talk or `skip`, so the choice changes only the talk;
  * 6. full time, or the moment the match is abandoned: the possession noise of the half in
  *    progress, when abandoned (1), then the rating noise of each player with a rating (1 each;
  *    summary.ts).
  *
- * Extension point: T-012 applies the commands (substitutions included, so an injured player can
- * be replaced) at the start of the minute after the one they were given in, and the coach's
- * half-time talk in `halftimeTalk`. Until then a player who leaves is never replaced.
+ * Before each regulation minute M + 1 and each added minute 90+(k+1) of the second half (never in
+ * the first half's added time), with no draw: the commands given after the minute before
+ * (commands.ts), then the AI's decisions for a side with `controller: 'ai'` (inplay.ts, rules 2
+ * to 6, rule minute 90 in added time), home side first. So a command changes nothing up to its
+ * minute, and the events up to it stay the same (partida.md, "Quando um comando vale").
  */
 
 const SIDES: readonly Side[] = ['home', 'away'];
@@ -170,18 +186,24 @@ function displayedStrength(team: TeamState): number {
 }
 
 /**
- * Simulates a match (US-008; docs/02-architecture.md, 4.1): the same input and parameters give
- * the same events and result, byte for byte, on every run. Pure: the input is never changed.
- * Never throws because of a game situation; a sheet that cannot be played as given is fixed and
- * reported in `warnings` (team.ts, `kickoffTeam`).
+ * Simulates a match (US-008, US-021, US-022; docs/02-architecture.md, 4.1): the same input,
+ * parameters and commands give the same events and result, byte for byte, on every run. Pure:
+ * neither the input nor the commands are ever changed. Never throws because of a game situation;
+ * a sheet that cannot be played as given is fixed and reported in `warnings` (team.ts,
+ * `kickoffTeam`), and an invalid command is ignored with a warning (commands.ts).
  *
- * Cards, injuries, penalties and free kicks are drawn every minute (T-010); a player sent off or
- * injured leaves his slot empty, since substitutions arrive with the coach's commands (T-012).
- * A side with fewer than 7 on the pitch ends the match (`abandoned`). The half-time talk is the
- * AI's choice for both sides (ia-clubes.md, "Intervalo"), as partida.md says when there is no
- * choice; a leader captain doubles its positive effect.
+ * Cards, injuries, penalties and free kicks are drawn every minute (T-010). Up to `MAX_SUBS`
+ * substitutions per side, from the bench of the sheet (T-012): the coach's commands, and the AI's
+ * in-match rules (ia-clubes.md, "Durante o jogo"; an injured player of the coach's side too). A
+ * player sent off leaves his slot empty. A side with fewer than 7 on the pitch ends the match
+ * (`abandoned`). The half-time talk is the coach's command, else the AI's choice (ia-clubes.md,
+ * "Intervalo"); a leader captain doubles its positive effect.
  */
-export function simulateMatch(input: MatchInput, params: GameParams): MatchResult {
+export function simulateMatch(
+  input: MatchInput,
+  params: GameParams,
+  commands?: readonly MatchCommand[],
+): MatchResult {
   const { match } = params;
   const rng = new Rng(input.seed);
   const warnings: EngineWarning[] = [];
@@ -196,6 +218,11 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   }
   const home = kickoffTeam('home', input.home, warnings);
   const away = kickoffTeam('away', input.away, warnings);
+  const book = prepareCommands(
+    commands,
+    { home: input.home.controller, away: input.away.controller },
+    warnings,
+  );
   const teams = [home, away] as const;
   const teamOf = (side: Side) => (side === 'home' ? home : away);
   home.home = input.neutral ? 0 : homeAdvantage({ fans: home.fans, derby: input.derby }, params);
@@ -356,6 +383,176 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
     finish(clock, team, opponent, takerIndex, kind, pGoal);
   }
 
+  /** A substitution in slot `index`, and its event (partida.md, "Substituições"). */
+  function substitution(
+    clock: Clock,
+    team: TeamState,
+    index: number,
+    reserve: Player,
+    reason: 'tactical' | 'fatigue' | 'injury',
+  ): void {
+    const out = team.slots[index]!.app!.player.id;
+    substitute(team, index, reserve, warnings);
+    events.push({
+      ...at(clock),
+      importance: 1,
+      type: 'substitution',
+      side: team.side,
+      out,
+      in: reserve.id,
+      reason,
+    });
+  }
+
+  /**
+   * The slot and the reserve of a coach's substitution, or undefined with a warning: a
+   * substitution left, `out` on the pitch and `in` still on the bench, checked in this order.
+   */
+  function commandSubstitution(
+    team: TeamState,
+    pending: PendingCommand,
+  ): { index: number; reserve: Player } | undefined {
+    const command = pending.command;
+    if (command.kind !== 'substitution') return undefined;
+    const warn = (code: string, extra: Record<string, string> = {}) => {
+      warnings.push({ code, detail: commandDetail(command, pending.index, extra) });
+      return undefined;
+    };
+    if (team.subs >= MAX_SUBS) return warn('command-no-subs-left');
+    const index = team.slots.findIndex(
+      (s) => s.app !== undefined && s.app.player.id === command.out,
+    );
+    if (index < 0) return warn('command-player-not-on-pitch', { player: String(command.out) });
+    const reserve = team.bench.find((p) => p.id === command.in);
+    if (reserve === undefined)
+      return warn('command-player-not-on-bench', { player: String(command.in) });
+    return { index, reserve };
+  }
+
+  /**
+   * A new tactic for `team` (partida.md, "Táticas" and "Troca de formação durante o jogo"), and a
+   * `tacticChange` event only when something changed.
+   */
+  function setTactic(
+    clock: Clock,
+    team: TeamState,
+    tactic: { formation: TeamState['formation']; posture: Posture; pressure: Pressure },
+    preset: TacticPreset | undefined,
+  ): void {
+    const moved = changeFormation(team, tactic.formation);
+    if (
+      !moved &&
+      tactic.posture === team.tactic.posture &&
+      tactic.pressure === team.tactic.pressure
+    ) {
+      return;
+    }
+    team.tactic = { posture: tactic.posture, pressure: tactic.pressure };
+    events.push({
+      ...at(clock),
+      importance: 1,
+      type: 'tacticChange',
+      side: team.side,
+      formation: team.formation,
+      posture: tactic.posture,
+      pressure: tactic.pressure,
+      ...(preset === undefined ? {} : { preset }),
+    });
+  }
+
+  /** A coach's command when it takes effect, at the start of `clock`. */
+  function applyCommand(clock: Clock, team: TeamState, pending: PendingCommand): void {
+    const command = pending.command;
+    if (command.kind === 'substitution') {
+      const sub = commandSubstitution(team, pending);
+      if (sub !== undefined) substitution(clock, team, sub.index, sub.reserve, 'tactical');
+      return;
+    }
+    if (command.kind === 'tactic') {
+      setTactic(
+        clock,
+        team,
+        {
+          formation: command.formation ?? team.formation,
+          posture: command.posture ?? team.tactic.posture,
+          pressure: command.pressure ?? team.tactic.pressure,
+        },
+        undefined,
+      );
+      return;
+    }
+    const set = TACTIC_PRESETS[command.preset];
+    setTactic(
+      clock,
+      team,
+      {
+        formation: team.formation,
+        posture: set.posture ?? team.tactic.posture,
+        pressure: set.pressure,
+      },
+      command.preset,
+    );
+  }
+
+  /**
+   * Between two minutes (partida.md, "Quando um comando vale"): the commands given after the
+   * minute of `key` (`commandKey`), then the AI's decisions after it, with the rule minute
+   * `minute` (90 in the second half's added time), home side first; they take effect at `clock`,
+   * the start of the next minute.
+   */
+  function between(key: number, minute: number, clock: Clock): void {
+    const pending = book.byMinute.size === 0 ? undefined : book.byMinute.get(key);
+    // The AI's in-match rules start at minute 60: before it, only the commands can do anything.
+    if (pending === undefined && minute < IN_MATCH_AI.chaoticChaseFrom) return;
+    for (const team of teams) {
+      if (pending !== undefined) {
+        for (const p of pending) {
+          if (p.done || p.command.side !== team.side) continue;
+          p.done = true;
+          applyCommand(clock, team, p);
+        }
+      }
+      if (team.input.controller === 'human') continue;
+      const theirs = teamOf(team.side === 'home' ? 'away' : 'home').goals;
+      const decision = aiDecision(team, minute, team.goals, theirs, params.ai);
+      const sub = decision.substitution;
+      if (sub !== undefined) {
+        substitution(clock, team, sub.index, sub.reserve, sub.reason);
+        if (sub.reason === 'tactical') team.chased = true; // rule 3's, once a match
+      }
+      const tactic = decision.tactic;
+      if (tactic !== undefined) {
+        setTactic(clock, team, { formation: team.formation, ...tactic }, tactic.preset);
+      }
+    }
+  }
+
+  /**
+   * An injured player leaves at once (partida.md, "Lesões"): the coach's substitution of this
+   * minute with him as `out` replaces him, else the AI's rule 1 (the reserve with the highest
+   * selection value for the slot), for both controllers; without a substitution or a reserve, his
+   * slot stays empty.
+   */
+  function replaceInjured(clock: Clock, team: TeamState, index: number, app: Appearance): void {
+    let reserve: Player | undefined;
+    const pending = book.byMinute
+      .get(commandKey(clock.minute, clock.added))
+      ?.find(
+        (p) =>
+          !p.done &&
+          p.command.kind === 'substitution' &&
+          p.command.side === team.side &&
+          p.command.out === app.player.id,
+      );
+    if (pending !== undefined) {
+      pending.done = true;
+      reserve = commandSubstitution(team, pending)?.reserve;
+    }
+    reserve ??= injuryReserve(team, index);
+    if (reserve === undefined) leavePitch(team, index);
+    else substitution(clock, team, index, reserve, 'injury');
+  }
+
   /** A red card: the player leaves the pitch and is not replaced (partida.md, "Cartões"). */
   function sendOff(
     clock: Clock,
@@ -438,7 +635,7 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
           player: app.player.id,
           severity: injury.severity,
         });
-        leavePitch(team, index);
+        replaceInjured(clock, team, index, app);
       }
       checkShort(team);
       if (abandoned !== undefined) return;
@@ -485,9 +682,9 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   }
 
   /**
-   * The half-time talk of a side at its half-time score: the AI's (ia-clubes.md, "Intervalo"); the
-   * coach's choice is T-012. Without a choice, the coach's club (`controller: 'human'`) gets the
-   * `traditional` talk, never a chaotic draw (ia-clubes.md, "Clube do técnico humano").
+   * The AI's half-time talk of a side at its half-time score (ia-clubes.md, "Intervalo"), used
+   * when the coach gave none. The coach's club (`controller: 'human'`) gets the `traditional`
+   * talk, never a chaotic draw (ia-clubes.md, "Clube do técnico humano").
    */
   function halftimeTalk(team: TeamState, own: number, theirs: number): HalftimeTalk {
     // `kickoffTeam` already turned an unknown profile and the human side into `traditional`.
@@ -498,11 +695,14 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
 
   const possession: number[] = [];
   let end: Clock = { minute: 0, half: 1 };
+  /** The half-time talks were given (the match reached half time). */
+  let talked = false;
   if (abandoned === undefined) {
     play: for (const half of [1, 2] as const) {
       const last = half * HALF_MINUTES;
       for (let minute = last - HALF_MINUTES + 1; minute <= last; minute++) {
         end = { minute, half };
+        between(commandKey(minute - 1), minute - 1, end);
         playMinute(end);
         if (abandoned !== undefined) break play;
       }
@@ -517,6 +717,9 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
       end = { minute: last, ...(added > 0 ? { added } : {}), half };
       for (let extra = 1; extra <= added; extra++) {
         end = { minute: last, added: extra, half };
+        // In the second half's added time the commands of 90+(extra − 1) and the AI take effect
+        // too; in the first half's they wait for minute 46.
+        if (half === 2) between(commandKey(last, extra - 1), last, end);
         playMinute(end);
         if (abandoned !== undefined) break play;
       }
@@ -524,11 +727,14 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
 
       if (half === 1) {
         events.push({ ...at(end), importance: 2, type: 'halftime', score: score() });
+        talked = true;
         // 5. Half-time talk: `halftimeBoost` of the second half, by the half-time score; a leader
         // captain on the pitch doubles a positive effect.
         for (const team of teams) {
           const theirs = teamOf(team.side === 'home' ? 'away' : 'home').goals;
-          const talk = halftimeTalk(team, team.goals, theirs);
+          // The chaotic draw happens even when the coach chose: the choice changes only the talk.
+          const ai = halftimeTalk(team, team.goals, theirs);
+          const talk = book.talks[team.side]?.talk ?? ai;
           const leader = captainOnPitch(team)?.player.trait === 'leader';
           team.talk = talk;
           team.halftimeBoost = halftimeBoost(talk, team.goals, theirs, leader);
@@ -539,6 +745,23 @@ export function simulateMatch(input: MatchInput, params: GameParams): MatchResul
   }
   // 6. An abandoned match closes the possession of the half in progress.
   if (abandoned !== undefined) possession.push(halfPossession());
+  // Commands that never had a next minute: of minute 90 beyond the drawn added time, or of a
+  // moment an abandoned match never reached (the half-time talk too).
+  if (!talked) {
+    for (const side of SIDES) {
+      const t = book.talks[side];
+      if (t !== undefined) {
+        warnings.push({ code: 'command-too-late', detail: commandDetail(t.command, t.index) });
+      }
+    }
+  }
+  for (const key of [...book.byMinute.keys()].sort((a, b) => a - b)) {
+    for (const p of book.byMinute.get(key)!) {
+      if (!p.done) {
+        warnings.push({ code: 'command-too-late', detail: commandDetail(p.command, p.index) });
+      }
+    }
+  }
 
   const final = abandoned === undefined ? score() : abandonedScore(score(), abandoned);
   events.push({

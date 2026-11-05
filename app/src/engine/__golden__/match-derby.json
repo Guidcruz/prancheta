@@ -1,5 +1,5 @@
 {
-  "engineVersion": 5,
+  "engineVersion": 7,
   "name": "match-derby",
   "data": {
     "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
@@ -241,6 +241,16 @@
         "side": "away",
         "player": "clube-teste-02#3",
         "triggersSuspension": false
+      },
+      {
+        "minute": 71,
+        "half": 2,
+        "importance": 1,
+        "type": "tacticChange",
+        "side": "away",
+        "formation": "4-4-2",
+        "posture": "attacking",
+        "pressure": "medium"
       },
       {
         "minute": 90,

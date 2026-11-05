@@ -1,9 +1,10 @@
 import { AI_PROFILES } from '../clubs.ts';
 import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
+import { BENCH_SIZE } from '../lineup.ts';
 import { clamp } from '../math.ts';
 import type { MatchParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
-import { bestForSlot, correctedCondition } from '../selection.ts';
+import { bestForSlot, correctedCondition, winsTie } from '../selection.ts';
 import {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
@@ -27,7 +28,7 @@ import type {
   Side,
 } from '../types.ts';
 import { FREE_KICK_GOAL_MULT, SUSPENSION, goalProbability, penaltyProbability } from './rules.ts';
-import type { HalftimeTalk, TeamInput } from './types.ts';
+import type { HalftimeChoice, TeamInput } from './types.ts';
 
 /*
  * A team on the pitch during a match: who is in each slot, their energy and what they did. The
@@ -39,6 +40,8 @@ import type { HalftimeTalk, TeamInput } from './types.ts';
 export interface Appearance {
   readonly player: Player;
   readonly side: Side;
+  /** Took the pitch at kick-off (a starter); false for a substitute (rule 2 never takes him off). */
+  readonly starter: boolean;
   /** Energy on the pitch, 0..100; starts at the player's condition. */
   energy: number;
   /** Attributes the match reads, through `attributeOf` ("Atributo ausente"). */
@@ -61,7 +64,7 @@ export interface Appearance {
   reds: number;
   /** Why he was sent off, when he was. */
   redReason?: 'direct' | 'secondYellow';
-  /** False once he left the pitch (red card or injury); he never comes back. */
+  /** False once he left the pitch (red card, injury or substitution); he never comes back. */
   onPitch: boolean;
 }
 
@@ -91,6 +94,17 @@ export interface TeamState {
   /** Everyone who took the pitch, in order of entry (starters by slot first). */
   readonly appearances: Appearance[];
   /**
+   * Reserves who can still come on, in the order of the sheet: the first {@link BENCH_SIZE} of
+   * `lineup.bench` that are in the squad, available and not starters, without the one who took an
+   * unavailable starter's slot at kick-off (he is already on the pitch) and without anyone who
+   * already came on.
+   */
+  readonly bench: Player[];
+  /** Substitutions made so far (at most `MAX_SUBS`). */
+  subs: number;
+  /** The AI already made rule 3's substitution (ia-clubes.md, "Durante o jogo"; once a match). */
+  chased: boolean;
+  /**
    * The profile the match plays by (the half-time talk without a choice; the in-match rules of
    * T-012): an unknown one plays as `traditional` (partida.md, "Casos de borda"), and so does the
    * coach's club, `controller: 'human'` (ia-clubes.md, "Clube do técnico humano").
@@ -108,7 +122,7 @@ export interface TeamState {
   /** `halftimeBoost(t)` of `T(t)`: 0 in the first half. */
   halftimeBoost: number;
   /** The half-time talk, once it was given (the second half of "Acalmar" has fewer yellows). */
-  talk: HalftimeTalk | undefined;
+  talk: HalftimeChoice | undefined;
   goals: number;
   shots: number;
   onTarget: number;
@@ -142,7 +156,12 @@ function inRange(value: unknown, min: number, max: number): value is number {
   return typeof value === 'number' && value >= min && value <= max;
 }
 
-function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appearance {
+function appearance(
+  player: Player,
+  side: Side,
+  starter: boolean,
+  warnings: EngineWarning[],
+): Appearance {
   const energy = correctedCondition(player);
   if (!inRange(player.condition, 0, 100)) {
     warnings.push({
@@ -162,6 +181,7 @@ function appearance(player: Player, side: Side, warnings: EngineWarning[]): Appe
   return {
     player,
     side,
+    starter,
     energy,
     finishing: attributeOf(player, 'finishing'),
     passing: attributeOf(player, 'passing'),
@@ -272,9 +292,13 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     used.add(id);
     return player;
   });
-  // Injured or suspended starters: the best available reserve takes the slot.
+  // Injured or suspended starters: the best available reserve takes the slot. The bench is the
+  // first BENCH_SIZE of the sheet (partida.md, "Substituições"); the rest is never used.
+  if (lineup.bench.length > BENCH_SIZE) {
+    warnings.push({ code: 'lineup-bench-too-long', detail: { side, count: lineup.bench.length } });
+  }
   const bench: Player[] = [];
-  for (const id of lineup.bench) {
+  for (const id of lineup.bench.slice(0, BENCH_SIZE)) {
     const player = byId.get(id);
     if (player === undefined || used.has(id) || unavailable(player)) continue;
     if (bench.some((p) => p.id === id)) continue;
@@ -306,7 +330,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     const slot: Slot = { position, sector: sectors[i]!, app: undefined, ratingBase: 0 };
     const player = filled.slots[i];
     if (player !== undefined) {
-      const app = appearance(player, side, warnings);
+      const app = appearance(player, side, true, warnings);
       appearances.push(app);
       occupy(slot, app);
     }
@@ -321,6 +345,9 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     ratings: new Array<number | undefined>(slots.length).fill(undefined),
     order: new Array<Appearance | undefined>(slots.length).fill(undefined),
     appearances,
+    bench,
+    subs: 0,
+    chased: false,
     profile,
     fans,
     home: 0,
@@ -331,6 +358,110 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
     shots: 0,
     onTarget: 0,
   };
+}
+
+/**
+ * `eff` of `player` in a slot of `position` with `energy` (partida.md, "Nota efetiva"), with the
+ * same operations as {@link occupy} and {@link currentStrengths}, so a player in a slot gets
+ * the same number bit for bit.
+ */
+export function slotEff(player: Player, position: Position, energy: number): number {
+  return (
+    player.overall *
+    fit(player.position, position) *
+    moraleMultiplier(player.morale) *
+    conditionMultiplier(energy)
+  );
+}
+
+/** `eff` of the player in slot `index` now (0 for an empty slot). */
+export function currentEff(team: TeamState, index: number): number {
+  const slot = team.slots[index]!;
+  return slot.app === undefined ? 0 : slot.ratingBase * conditionMultiplier(slot.app.energy);
+}
+
+/**
+ * A substitution (partida.md, "Substituições"): the player in slot `index` leaves for good, and
+ * `reserve` (one of `team.bench`) takes **his** slot with his own condition. Counts one
+ * substitution. The caller checks the limit and that `reserve` is on the bench.
+ */
+export function substitute(
+  team: TeamState,
+  index: number,
+  reserve: Player,
+  warnings: EngineWarning[],
+): void {
+  const slot = team.slots[index]!;
+  if (slot.app !== undefined) slot.app.onPitch = false;
+  const app = appearance(reserve, team.side, false, warnings);
+  team.appearances.push(app);
+  occupy(slot, app);
+  team.bench.splice(team.bench.indexOf(reserve), 1);
+  team.subs += 1;
+}
+
+/**
+ * Formation change during the match (partida.md, "Troca de formação durante o jogo"):
+ * 1. in the slot order of the current formation, each player on the pitch takes the first free
+ *    slot of the new one with the **same position** as the slot he is in (so whoever is in goal
+ *    stays there, even an outfield player);
+ * 2. in the slot order of the new formation, each slot still free gets, among those left over,
+ *    the one with the highest `eff` there (energy and morale of the moment); ties by higher
+ *    overall, then younger, then lower ID (`winsTie`);
+ * 3. with N on the pitch, exactly 11 − N slots stay empty: the last free ones of step 2.
+ * The same formation is not a change: nothing moves. Returns whether the formation changed.
+ */
+export function changeFormation(team: TeamState, formation: Formation): boolean {
+  if (formation === team.formation) return false;
+  const positions = FORMATION_SLOTS[formation];
+  const sectors = FORMATION_SECTORS[formation];
+  const placed: (Appearance | undefined)[] = new Array<Appearance | undefined>(
+    positions.length,
+  ).fill(undefined);
+  const leftover: Appearance[] = [];
+  for (const slot of team.slots) {
+    const app = slot.app;
+    if (app === undefined) continue;
+    let target = -1;
+    for (let j = 0; j < positions.length; j++) {
+      if (placed[j] === undefined && positions[j] === slot.position) {
+        target = j;
+        break;
+      }
+    }
+    if (target >= 0) placed[target] = app;
+    else leftover.push(app);
+  }
+  for (let j = 0; j < positions.length && leftover.length > 0; j++) {
+    if (placed[j] !== undefined) continue;
+    let best = 0;
+    let bestValue = slotEff(leftover[0]!.player, positions[j]!, leftover[0]!.energy);
+    for (let k = 1; k < leftover.length; k++) {
+      const app = leftover[k]!;
+      const value = slotEff(app.player, positions[j]!, app.energy);
+      if (
+        value > bestValue ||
+        (value === bestValue && winsTie(app.player, k, leftover[best]!.player, best))
+      ) {
+        best = k;
+        bestValue = value;
+      }
+    }
+    placed[j] = leftover[best];
+    leftover.splice(best, 1);
+  }
+  team.formation = formation;
+  for (let j = 0; j < positions.length; j++) {
+    const slot: Slot = {
+      position: positions[j]!,
+      sector: sectors[j]!,
+      app: undefined,
+      ratingBase: 0,
+    };
+    occupy(slot, placed[j]);
+    team.slots[j] = slot;
+  }
+  return true;
 }
 
 /**
@@ -394,8 +525,8 @@ export function playersOnPitch(team: TeamState): number {
 }
 
 /**
- * Takes the player in slot `index` off the pitch for good (red card or injury; there are no
- * substitutions until T-012): his slot stays empty ("Vaga vazia"). When it is the goal, the
+ * Takes the player in slot `index` off the pitch for good without a substitute (red card, or an
+ * injury with no substitution left): his slot stays empty ("Vaga vazia"). When it is the goal, the
  * outfield player with the highest `physical` goes in goal and **his** slot is the empty one
  * (partida.md, "Casos de borda": goalkeeper sent off or injured without a substitution).
  */

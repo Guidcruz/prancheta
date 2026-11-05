@@ -1,6 +1,6 @@
 import { execFileSync } from 'node:child_process';
 import { test } from 'vitest';
-import { fixtureInput, testGame } from '../testing/match.ts';
+import { aiFixtureInput, testGame } from '../testing/match.ts';
 import { testParams } from '../testing/params.ts';
 import { simulateMatch } from './simulate.ts';
 
@@ -8,7 +8,8 @@ import { simulateMatch } from './simulate.ts';
  * Bench of `simulateMatch` (docs/02-architecture.md, 5 "Desempenho": below 0.3 ms per match in
  * the CI's Node; docs/03-test-plan.md, "Bancada do motor"). Not blocking: `npm run bench -w app`
  * prints the time per match and never fails on it. Each match is the next of the 380 fixtures of
- * a new game, so every formation and profile is in the mix.
+ * a new game, with the AI's sheets on both sides (bench of 7, so the in-match AI substitutes), so
+ * every formation and profile is in the mix.
  *
  * Two figures:
  * - plain Node (the one the target is about): the engine runs without a build step (ADR-0007),
@@ -20,18 +21,18 @@ const TARGET_MS = 0.3;
 const BATCH = 50;
 const params = testParams();
 const state = testGame();
-const inputs = state.fixtures.map((fixture) => fixtureInput(state, fixture));
+const inputs = state.fixtures.map((fixture) => aiFixtureInput(state, fixture));
 let next = 0;
 
 function plainNodeMs(matches: number): number {
   const url = (path: string) => JSON.stringify(new URL(path, import.meta.url).href);
   const script = [
     `const { simulateMatch } = await import(${url('./simulate.ts')});`,
-    `const { fixtureInput, testGame } = await import(${url('../testing/match.ts')});`,
+    `const { aiFixtureInput, testGame } = await import(${url('../testing/match.ts')});`,
     `const { testParams } = await import(${url('../testing/params.ts')});`,
     'const params = testParams();',
     'const state = testGame();',
-    'const inputs = state.fixtures.map((f) => fixtureInput(state, f));',
+    'const inputs = state.fixtures.map((f) => aiFixtureInput(state, f));',
     'for (let i = 0; i < 2000; i++) simulateMatch(inputs[i % inputs.length], params);',
     'const start = process.hrtime.bigint();',
     `for (let i = 0; i < ${matches}; i++) simulateMatch(inputs[i % inputs.length], params);`,

@@ -23,12 +23,14 @@ import { fixedIdentitySource } from '../engine/testing/identity.ts';
 import { testParams } from '../engine/testing/params.ts';
 
 /*
- * Quick report of the match engine (T-009; cards, injuries and set pieces since T-010) with the
+ * Quick report of the match engine (T-009; cards, injuries and set pieces since T-010; the AI's
+ * in-match rules since T-012: substitutions and tactics by the score) with the
  * 20 real clubs, against the 1a targets of docs/design/balance-targets.md. It only REPORTS: tuning is the /balance's job (T-016), so the
  * assertions below are sanity bounds far outside the targets, never the targets themselves.
  *
  * The full report runs only with `MATCH_METRICS=1` (like NAMES_FULL_CHECK):
- * `MATCH_METRICS=1 npm test -w app -- --silent=false src/data/match-metrics.test.ts`. Without it,
+ * `MATCH_METRICS=1 npm test -w app -- --silent=false src/data/match-metrics.test.ts` (add
+ * `MATCH_METRICS_SUB_ENERGY=65` to report another `ai.subEnergy`). Without it,
  * a short version (2 careers, 500 duels of each) checks the same sanity bounds in a second.
  *
  * - League: 30 careers (seeds 1..30) × the 380 matches of season 1 = 11,400 matches, both sides
@@ -48,7 +50,14 @@ import { testParams } from '../engine/testing/params.ts';
 const clubs = JSON.parse(
   readFileSync(new URL('./clubs.serie-a.json', import.meta.url), 'utf8'),
 ) as ClubDef[];
-const params = testParams();
+/**
+ * `MATCH_METRICS_SUB_ENERGY` replaces `ai.subEnergy` for the report (85 since the CEO's approval,
+ * ia-clubes.md "Parâmetros"; 65 to compare with the value before it).
+ */
+const SUB_ENERGY = process.env.MATCH_METRICS_SUB_ENERGY;
+const base = testParams();
+const params =
+  SUB_ENERGY === undefined ? base : { ...base, ai: { ...base.ai, subEnergy: Number(SUB_ENERGY) } };
 const FULL = process.env.MATCH_METRICS === '1';
 const CAREERS = FULL ? 30 : 2;
 const DUEL_MATCHES = FULL ? 20_000 : 500;
@@ -139,6 +148,9 @@ interface Tally {
   penaltyGoals: number;
   freeKicks: number;
   abandoned: number;
+  subs: number;
+  subReasons: Map<string, number>;
+  tacticChanges: Map<string, number>;
 }
 
 function tally(): Tally {
@@ -160,6 +172,9 @@ function tally(): Tally {
     penaltyGoals: 0,
     freeKicks: 0,
     abandoned: 0,
+    subs: 0,
+    subReasons: new Map(),
+    tacticChanges: new Map(),
   };
 }
 
@@ -184,6 +199,14 @@ function add(t: Tally, result: MatchResult): void {
     if (e.type === 'goal' && e.kind === 'penalty') t.penaltyGoals += 1;
     if ((e.type === 'goal' || e.type === 'chance') && e.kind === 'freeKick') t.freeKicks += 1;
     if (e.type === 'fulltime' && e.abandoned) t.abandoned += 1;
+    if (e.type === 'substitution') {
+      t.subs += 1;
+      t.subReasons.set(e.reason, (t.subReasons.get(e.reason) ?? 0) + 1);
+    }
+    if (e.type === 'tacticChange') {
+      const key = e.preset ?? e.posture;
+      t.tacticChanges.set(key, (t.tacticChanges.get(key) ?? 0) + 1);
+    }
   }
 }
 
@@ -291,7 +314,7 @@ describe('T-009/T-010/T-011 match metrics with the 20 real clubs (report only, n
       const n = league.matches;
       const top = [...league.scores.entries()].sort((x, y) => y[1] - x[1]).slice(0, 5);
       const lines = [
-        `[T-011 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}`,
+        `[T-012 metrics] league: ${n} matches (${CAREERS} careers × 380), duels: ${d20.matches} + ${d30.matches}; ai.subEnergy ${params.ai.subEnergy}`,
         `  goals per match        ${(league.goals / n).toFixed(3)}   target 2.65 (2.50–2.80)`,
         `  0x0                    ${pct(league.nilNil, n)}   target 7% (6–9%)`,
         `  draws                  ${pct(league.draws, n)}   target 26% (24–28%)`,
@@ -303,6 +326,8 @@ describe('T-009/T-010/T-011 match metrics with the 20 real clubs (report only, n
         `  injuries per match     ${(league.injuries / n).toFixed(3)}   target 0.30 (0.20–0.40); mean rounds out ${(league.injuryRounds / (league.injuries || 1)).toFixed(2)} (target 2–3)`,
         `  penalties per match    ${(league.penalties / n).toFixed(3)}   target 0.25 (0.17–0.33); converted ${pct(league.penaltyGoals, league.penalties || 1)} (target 72–82%)`,
         `  direct free kicks      ${(league.freeKicks / n).toFixed(3)} per match (no target); abandoned matches ${league.abandoned}`,
+        `  substitutions          ${(league.subs / n / 2).toFixed(2)} per team   target 3 to 4 per team (ia-clubes.md); ${[...league.subReasons.entries()].map(([r, c]) => `${r} ${(c / n / 2).toFixed(2)}`).join(', ')}`,
+        `  AI tactic changes      ${[...league.tacticChanges.entries()].map(([k, c]) => `${k} ${(c / n / 2).toFixed(2)}`).join(', ')} per team`,
         `  most common scores     ${top.map(([s, c]) => `${s} ${pct(c, n)}`).join(', ')}   target 1x1 and 1x0 in the top 3`,
         `  league, shown gap >= 10: ${gap10.matches} matches, stronger wins ${pct(gap10.strongerWins, gap10.matches || 1)}, draws ${pct(gap10.draws, gap10.matches || 1)}`,
         `  duel 80x60 (gap 20)    stronger wins ${pct(d20.strongWins, d20.matches)}   target 65% (62–68%); draws ${pct(d20.draws, d20.matches)}; goals ${(d20.goals / d20.matches).toFixed(2)}`,
