@@ -9,7 +9,7 @@ import { testParams } from '../engine/testing/params.ts';
  * Report of the fans thermometer and of the season with the morale between rounds (T-014),
  * against docs/design/torcida.md ("Simulação": mean 50 to 60, at most 5% of the rounds below 20
  * and at most 5% above 90) and the season targets of balance-targets.md (champion 72 to 82
- * points, 17th 40 to 46, 2.5 to 2.8 goals per match). It only REPORTS: tuning is the /balance's
+ * points, 17th 39 to 45 since the CEO's decision of 2026-11-05, 2.5 to 2.8 goals per match). It only REPORTS: tuning is the /balance's
  * (T-016), so the assertions are sanity bounds far outside the targets.
  *
  * The full report (100 seasons: careers with seeds 1..100, season 1 each, the 20 real clubs, the
@@ -83,7 +83,7 @@ describe('T-014 report: the fans thermometer and the season with the morale', ()
     const matches = SEASONS * 380;
     console.info(
       `[T-014 fans] ${SEASONS} seasons, ${fans.length} club-rounds: mean ${mean(fans).toFixed(1)}, sd ${sd(fans).toFixed(1)}, below 20 ${pct(below20, fans.length)}, above 90 ${pct(above90, fans.length)} (torcida.md: mean 50 to 60, at most 5% each); at the end of the season mean ${mean(finalFans).toFixed(1)}, min ${Math.min(...finalFans).toFixed(1)}, max ${Math.max(...finalFans).toFixed(1)}\n` +
-        `[T-014 season] goals per match ${(goals / matches).toFixed(3)} (2.5 to 2.8); champion ${mean(champions).toFixed(1)} pts (${Math.min(...champions)} to ${Math.max(...champions)}; 72 to 82); 17th ${mean(seventeenths).toFixed(1)} pts (${Math.min(...seventeenths)} to ${Math.max(...seventeenths)}; 40 to 46); final morale mean ${mean(morale).toFixed(1)}, sd ${sd(morale).toFixed(1)}`,
+        `[T-014 season] goals per match ${(goals / matches).toFixed(3)} (2.5 to 2.8); champion ${mean(champions).toFixed(1)} pts (${Math.min(...champions)} to ${Math.max(...champions)}; 72 to 82); 17th ${mean(seventeenths).toFixed(1)} pts (${Math.min(...seventeenths)} to ${Math.max(...seventeenths)}; 39 to 45); final morale mean ${mean(morale).toFixed(1)}, sd ${sd(morale).toFixed(1)}`,
     );
     for (const f of fans) {
       expect(f).toBeGreaterThanOrEqual(0);
