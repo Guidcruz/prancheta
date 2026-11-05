@@ -807,12 +807,15 @@ function tacticLabel(id: string): string {
 /**
  * The rows of a multi-seed run's seed: the RARE_TARGETS stop counting there (`verdict: 'pooled'`),
  * since they are judged on the seeds together ({@link pooledRows}).
+ * The rare rows already informative are left as they are.
  */
 export function withPooledVerdict(report: Report): Report {
   return {
     ...report,
     rows: report.rows.map((r) =>
-      isRare(r.id) ? { ...r, required: false, verdict: 'pooled' as const } : r,
+      // An informative rare row (CHAIN_INFO_TARGETS, a season past CHAIN_REQUIRED_SEASONS) stays
+      // informative: it does not count in the total either.
+      isRare(r.id) && r.required ? { ...r, required: false, verdict: 'pooled' as const } : r,
     ),
   };
 }

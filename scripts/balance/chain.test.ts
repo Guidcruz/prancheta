@@ -23,6 +23,7 @@ import {
   chainRows,
   exitCode,
   pooledRows,
+  withPooledVerdict,
 } from './metrics.ts';
 import { loadParams, serieAClubs } from './options.ts';
 import { collect, planJobs, type Job } from './run.ts';
@@ -238,6 +239,18 @@ describe('chainRows', () => {
     for (const k of [2, 3]) {
       expect(pooled.find((r) => r.id === `chain-s${k}-weakInG4`)!.required).toBe(false);
     }
+    // In each seed they read as informative, not "veredito no total"; the other rare ones do.
+    const seed = withPooledVerdict({ ...buildReport(run), rows: [...main] });
+    for (const k of [2, 3]) {
+      const weak = seed.rows.find((r) => r.id === `chain-s${k}-weakInG4`)!;
+      expect(weak.required).toBe(false);
+      expect(weak.verdict).toBeUndefined();
+      expect(seed.rows.find((r) => r.id === `chain-s${k}-smallChampion`)).toMatchObject({
+        required: false,
+        verdict: 'pooled',
+      });
+    }
+    expect(seed.rows.find((r) => r.id === 'weakInG4')!.verdict).toBe('pooled');
   });
 
   it('pools the rare targets of every season of the chain over the seeds', () => {
