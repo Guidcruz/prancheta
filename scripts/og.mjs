@@ -335,10 +335,11 @@ async function loadModules() {
   if (!hooked) {
     hooked = true;
     registerHooks({
-      // The shield generator imports the engine's Rng through the "@engine" alias (Vite/TS paths).
+      // The shield generator imports the engine through the "@engine" alias (Vite/TS paths),
+      // which is the engine's public API only (docs/02-architecture.md, 4.1).
       resolve(specifier, context, nextResolve) {
-        if (specifier.startsWith('@engine/')) {
-          const file = resolve(root, 'app/src/engine', `${specifier.slice(8)}.ts`);
+        if (specifier === '@engine') {
+          const file = resolve(root, 'app/src/engine/index.ts');
           return nextResolve(pathToFileURL(file).href, context);
         }
         return nextResolve(specifier, context);
@@ -346,15 +347,15 @@ async function loadModules() {
     });
   }
   const url = (p) => pathToFileURL(resolve(root, p)).href;
-  const [{ config }, { share }, { tower }, shield, rng] = await Promise.all([
+  const [{ config }, { share }, { tower }, shield, engine] = await Promise.all([
     import(url('config/prancheta.config.ts')),
     import(url('site/src/data/share.ts')),
     import(url('site/src/lib/stadium-geometry.ts')),
     import(url('app/src/lib/generators/shield.ts')),
-    import(url('app/src/engine/rng.ts')),
+    import(url('app/src/engine/index.ts')),
   ]);
   const clubs = JSON.parse(readFileSync(resolve(root, 'app/src/data/clubs.serie-a.json'), 'utf8'));
-  return { config, share, tower, shield, rng, clubs };
+  return { config, share, tower, shield, engine, clubs };
 }
 
 /**
@@ -363,13 +364,13 @@ async function loadModules() {
  */
 export async function generate({ outDir = resolve(root, 'site/public/og'), slugs } = {}) {
   const sharp = await loadSharp();
-  const { config, share, tower, shield, rng, clubs } = await loadModules();
+  const { config, share, tower, shield, engine, clubs } = await loadModules();
   mkdirSync(outDir, { recursive: true });
   const measure = (text, size) => measureWith(sharp, text, size, 800, FONT_FAMILY_800);
   const out = [];
   for (const entry of share.filter((e) => !slugs || slugs.includes(e.slug))) {
     const layout = await layoutTitle(entry.ogTitle, measure);
-    const shields = pickClubs(clubs, entry.slug, rng.Rng, rng.seedFromString).map((c) =>
+    const shields = pickClubs(clubs, entry.slug, engine.Rng, engine.seedFromString).map((c) =>
       shield.shieldSvg(shield.shieldSpecFor(c), 96),
     );
     const svg = buildSvg({ name: config.name, title: entry.ogTitle, layout, shields, tower });

@@ -1,9 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import clubsData from '../../data/clubs.serie-a.json';
 import {
-  bestEleven,
-  elevenStrength,
   newGame,
+  teamStrength,
   validatePlayer,
   type ClubDef,
   type GameState,
@@ -129,9 +128,10 @@ describe('QA: generated squads with the real clubs and real names (300 seeds)', 
         const jewel = Math.max(...youth.map((p) => p.potential));
         if (jewel < floor && jewel < Math.max(...youth.map((p) => p.overall))) bad(`${tag}: jewel`);
         if (jewel < Math.min(floor, 95)) bad(`${tag}: jewel ${jewel} < ${floor}`);
-        // force of best XI within 0.5 of the effective strength
-        const xi = bestEleven(squad, cs.preferredFormations[0]);
-        const force = elevenStrength(xi);
+        // force of best XI within 0.5 of the effective strength. In a new game everyone is fit
+        // and there is no last sheet, so the displayed strength is the best XI of the whole
+        // squad in the first preferred formation (docs/02-architecture.md, 4.1, "Força").
+        const force = teamStrength(state, def.id)!;
         if (Math.abs(force - cs.strength) > 0.5 + 1e-9)
           bad(`${tag}: force ${force.toFixed(2)} vs ${cs.strength.toFixed(2)}`);
         if (cs.preferredFormations[0] === cs.preferredFormations[1]) bad(`${tag}: same formations`);
@@ -146,8 +146,7 @@ describe('QA: generated squads with the real clubs and real names (300 seeds)', 
     const low = clubs.reduce((a, b) => (b.strength! < a.strength! ? b : a));
     for (const seed of SEEDS.slice(0, 100)) {
       const state = game(seed);
-      const mean = (id: string) =>
-        elevenStrength(bestEleven(squadOf(state, id), state.clubs[id]!.preferredFormations[0]));
+      const mean = (id: string) => teamStrength(state, id)!;
       expect(mean(top.id), `seed ${seed}`).toBeGreaterThan(mean(low.id));
       for (const def of clubs) sum[def.id] = (sum[def.id] ?? 0) + mean(def.id);
     }

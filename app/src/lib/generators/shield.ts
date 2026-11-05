@@ -1,5 +1,4 @@
-import type { ClubSize } from '@engine/types';
-import type { CrestPattern, CrestShape, CrestSymbol } from '@engine/clubs';
+import type { ClubSize, CrestPattern, CrestShape, CrestSymbol } from '@engine';
 
 /*
  * Club crest generator, style A v5 (docs/art/escudos-estilos/README.md, ADR-0014).

@@ -1,4 +1,4 @@
-import { Rng } from '@engine/rng';
+import { Rng } from '@engine';
 
 /**
  * Fictional player names (US-003). The name is produced here, outside the engine, and is a pure

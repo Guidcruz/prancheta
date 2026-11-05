@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CREST_PATTERNS, CREST_SHAPES, CREST_SYMBOLS, type ClubDef } from '../../engine/clubs.ts';
+import { CREST_PATTERNS, CREST_SHAPES, CREST_SYMBOLS, type ClubDef } from '../../engine/index.ts';
 import {
   contrastRatio,
   medallionColors,

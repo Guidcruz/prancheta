@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { homeAdvantage, newGame, sectorStrengths, teamStrength } from '../engine/index.ts';
+import { newGame, teamStrength } from '../engine/index.ts';
+import { homeAdvantage, sectorStrengths } from '../engine/strength.ts';
 import type { ClubDef, GameState } from '../engine/index.ts';
 import { bestEleven } from '../engine/generation.ts';
 import { fixedIdentitySource } from '../engine/testing/identity.ts';

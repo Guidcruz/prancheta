@@ -1,8 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { bestEleven, generateSquad } from '../engine/generation.ts';
 import {
-  bestEleven,
-  generateSquad,
   newGame,
   seedFromString,
   simulateMatch,
