@@ -15,82 +15,82 @@ Convenções usadas nas histórias:
 
 ## Índice
 
-| ID     | Título                                                     | Etapa | Prioridade | Estado   |
-| ------ | ---------------------------------------------------------- | ----- | ---------- | -------- |
-| US-001 | Cadastro e validação dos 20 clubes da Série A              | 1a    | Must       | pronta   |
-| US-002 | Uniformes gerados por código                               | 1a    | Must       | pronta   |
-| US-003 | Gerador de nomes fictícios de jogadores                    | 1a    | Must       | pronta   |
-| US-004 | Modelo de jogador e geração dos elencos                    | 1a    | Must       | pronta   |
-| US-005 | Avatares de jogadores gerados por código                   | 1a    | Should     | pronta   |
-| US-006 | Calendário da Série A (38 rodadas)                         | 1a    | Must       | pronta   |
-| US-007 | Motor: força por setor a partir de escalação e tática      | 1a    | Must       | pronta   |
-| US-008 | Motor: partida simulada minuto a minuto, determinística    | 1a    | Must       | pronta   |
-| US-009 | Motor: cartões, suspensões, lesões simples e pênaltis      | 1a    | Must       | pronta   |
-| US-010 | Forma, moral e fadiga entre rodadas                        | 1a    | Must       | pronta   |
-| US-011 | IA dos clubes: escalação, rotação e substituições          | 1a    | Must       | pronta   |
-| US-012 | Rodada completa e tabela de classificação com desempate    | 1a    | Must       | pronta   |
-| US-013 | Ferramenta de balanceamento (`npm run balance`)            | 1a    | Must       | pronta   |
-| US-014 | Novo jogo: configuração da carreira                        | 1a    | Must       | pronta   |
-| US-015 | Navegação principal (celular e desktop) e tela do clube    | 1a    | Must       | pronta   |
-| US-016 | Tela do elenco e card do jogador                           | 1a    | Must       | pronta   |
-| US-017 | Escalação com arrastar e soltar                            | 1a    | Must       | pronta   |
-| US-018 | Ajustes táticos, capitão e cobradores                      | 1a    | Must       | pronta   |
-| US-019 | Jogar rodada no modo "só resultado"                        | 1a    | Must       | pronta   |
-| US-020 | Partida animada no campo 2D                                | 1a    | Must       | pronta   |
-| US-021 | Comandos e substituições durante a partida                 | 1a    | Must       | pronta   |
-| US-022 | Conversa no intervalo                                      | 1a    | Should     | pronta   |
-| US-023 | Tela da tabela                                             | 1a    | Must       | pronta   |
-| US-024 | Tela do calendário e resultados                            | 1a    | Must       | pronta   |
-| US-025 | Fim de temporada e passagem para a seguinte                | 1a    | Must       | pronta   |
-| US-026 | Termômetro da torcida e clássicos                          | 1a    | Must       | pronta   |
-| US-027 | Sistema de templates de texto                              | 1a    | Must       | pronta   |
-| US-028 | Notícias da rodada (jornal)                                | 1a    | Must       | pronta   |
-| US-029 | Rede social simples (torcedores e canal de TV)             | 1a    | Must       | pronta   |
-| US-030 | Entrevista pós-jogo em múltipla escolha                    | 1a    | Should     | pronta   |
-| US-031 | Ferramenta de repetição de templates                       | 1a    | Should     | pronta   |
-| US-032 | Salvamento automático com 3 versões e gravação segura      | 1a    | Must       | pronta   |
-| US-033 | Versão do formato de save e migração                       | 1a    | Must       | pronta   |
-| US-034 | Vários saves: listar, continuar e apagar                   | 1a    | Must       | pronta   |
-| US-035 | Exportar save                                              | 1a    | Must       | pronta   |
-| US-036 | Importar save                                              | 1a    | Must       | pronta   |
-| US-037 | Armazenamento persistente e lembrete de exportar           | 1a    | Must       | pronta   |
-| US-038 | PWA instalável e jogável offline                           | 1a    | Must       | pronta   |
-| US-039 | Aviso de nova versão e novidades no jogo                   | 1a    | Must       | pronta   |
-| US-040 | Estrutura de tradução e escolha de idioma                  | 1a    | Must       | pronta   |
-| US-041 | Marcas fictícias no cenário                                | 1a    | Must       | pronta   |
-| US-042 | Tutorial e primeiros passos                                | 1a    | Should     | pronta   |
-| US-043 | Tela "Sobre": aviso de ficção, versão, privacidade e links | 1a    | Must       | pronta   |
-| US-044 | Preferências: tema, vibração, tipo de partida, rede social | 1a    | Should     | pronta   |
-| US-045 | Tratamento e registro de erros sem dados pessoais          | 1a    | Must       | pronta   |
-| US-046 | Estatísticas de uso do site sem cookies                    | 1a    | Could      | pronta   |
-| US-047 | Criar conta anônima com apelido e passkey                  | 1b    | Must       | rascunho |
-| US-048 | Código de recuperação                                      | 1b    | Must       | pronta   |
-| US-049 | Entrar de novo e recuperar a conta em outro aparelho       | 1b    | Must       | pronta   |
-| US-050 | Apagar a conta                                             | 1b    | Must       | pronta   |
-| US-051 | Criar liga online da Série A                               | 1b    | Must       | pronta   |
-| US-052 | Entrar na liga por código de convite                       | 1b    | Must       | pronta   |
-| US-053 | Escolha de clubes: livre e sorteio                         | 1b    | Must       | pronta   |
-| US-054 | Escolha de clubes por draft                                | 1b    | Could      | pronta   |
-| US-055 | Preparar a rodada online e confirmar "Pronto"              | 1b    | Must       | pronta   |
-| US-056 | Servidor processa a rodada com o mesmo motor               | 1b    | Must       | pronta   |
-| US-057 | Modo ao vivo: partidas vistas juntas                       | 1b    | Must       | pronta   |
-| US-058 | Modo assíncrono: aviso de rodada processada                | 1b    | Must       | pronta   |
-| US-059 | Resultados, tabela e notícias da liga para todos           | 1b    | Must       | pronta   |
-| US-060 | Inatividade: a IA assume o clube                           | 1b    | Must       | pronta   |
-| US-061 | Dono da liga troca o modo no meio da temporada             | 1b    | Should     | pronta   |
-| US-062 | Mensagens prontas e emojis                                 | 1b    | Must       | pronta   |
-| US-063 | Fim de temporada e duração da liga online                  | 1b    | Must       | pronta   |
-| US-064 | Lista de privacidade da 1b auditada e política atualizada  | 1b    | Must       | pronta   |
-| US-065 | Denunciar apelido ou nome de liga                          | 1b    | Must       | rascunho |
-| US-066 | Temporada base nos dados de clubes e no novo jogo          | 1a    | Must       | pronta   |
-| US-067 | Lote anual de atualização da temporada base                | 1a    | Should     | pronta   |
-| US-068 | Títulos da carreira somam ao histórico do clube            | 1a    | Must       | pronta   |
-| US-069 | Força inicial pela colocação da temporada anterior         | 1a    | Must       | pronta   |
-| US-070 | Placar ao vivo dos outros jogos na partida                 | 1a    | Should     | pronta   |
-| US-071 | Tabela ao vivo: se terminasse agora, intervalo e fim       | 1a    | Should     | pronta   |
-| US-072 | Importância do gol em outro jogo                           | 1a    | Should     | pronta   |
-| US-073 | Plantão dos outros jogos na tela da partida                | 1a    | Should     | pronta   |
-| US-074 | Preferência "Plantão dos outros jogos"                     | 1a    | Should     | pronta   |
+| ID     | Título                                                          | Etapa | Prioridade | Estado   |
+| ------ | --------------------------------------------------------------- | ----- | ---------- | -------- |
+| US-001 | Cadastro e validação dos 20 clubes da Série A                   | 1a    | Must       | pronta   |
+| US-002 | Uniformes gerados por código                                    | 1a    | Must       | pronta   |
+| US-003 | Gerador de nomes fictícios de jogadores                         | 1a    | Must       | pronta   |
+| US-004 | Modelo de jogador e geração dos elencos                         | 1a    | Must       | pronta   |
+| US-005 | Avatares de jogadores gerados por código                        | 1a    | Should     | pronta   |
+| US-006 | Calendário da Série A (38 rodadas)                              | 1a    | Must       | pronta   |
+| US-007 | Motor: força por setor a partir de escalação e tática           | 1a    | Must       | pronta   |
+| US-008 | Motor: partida simulada minuto a minuto, determinística         | 1a    | Must       | pronta   |
+| US-009 | Motor: cartões, suspensões, lesões simples e pênaltis           | 1a    | Must       | pronta   |
+| US-010 | Forma, moral e fadiga entre rodadas                             | 1a    | Must       | pronta   |
+| US-011 | IA dos clubes: escalação, rotação e substituições               | 1a    | Must       | pronta   |
+| US-012 | Rodada completa e tabela de classificação com desempate         | 1a    | Must       | pronta   |
+| US-013 | Ferramenta de balanceamento (`npm run balance`)                 | 1a    | Must       | pronta   |
+| US-014 | Novo jogo: configuração da carreira                             | 1a    | Must       | pronta   |
+| US-015 | Navegação principal (celular e desktop) e tela do clube         | 1a    | Must       | pronta   |
+| US-016 | Tela do elenco e card do jogador                                | 1a    | Must       | pronta   |
+| US-017 | Escalação com arrastar e soltar                                 | 1a    | Must       | pronta   |
+| US-018 | Ajustes táticos, capitão e cobradores                           | 1a    | Must       | pronta   |
+| US-019 | Jogar rodada no modo "só resultado"                             | 1a    | Must       | pronta   |
+| US-020 | Partida animada no campo 2D                                     | 1a    | Must       | pronta   |
+| US-021 | Comandos e substituições durante a partida                      | 1a    | Must       | pronta   |
+| US-022 | Conversa no intervalo                                           | 1a    | Should     | pronta   |
+| US-023 | Tela da tabela                                                  | 1a    | Must       | pronta   |
+| US-024 | Tela do calendário e resultados                                 | 1a    | Must       | pronta   |
+| US-025 | Fim de temporada e passagem para a seguinte                     | 1a    | Must       | pronta   |
+| US-026 | Termômetro da torcida e clássicos                               | 1a    | Must       | pronta   |
+| US-027 | Sistema de templates de texto                                   | 1a    | Must       | pronta   |
+| US-028 | Notícias da rodada (jornal)                                     | 1a    | Must       | pronta   |
+| US-029 | Rede social simples (torcedores e canal de TV)                  | 1a    | Must       | pronta   |
+| US-030 | Entrevista pós-jogo em múltipla escolha                         | 1a    | Should     | pronta   |
+| US-031 | Ferramenta de repetição de templates                            | 1a    | Should     | pronta   |
+| US-032 | Salvamento automático com 3 versões e gravação segura           | 1a    | Must       | pronta   |
+| US-033 | Versão do formato de save e migração                            | 1a    | Must       | pronta   |
+| US-034 | Vários saves: listar, continuar e apagar                        | 1a    | Must       | pronta   |
+| US-035 | Exportar save                                                   | 1a    | Must       | pronta   |
+| US-036 | Importar save                                                   | 1a    | Must       | pronta   |
+| US-037 | Armazenamento persistente e lembrete de exportar                | 1a    | Must       | pronta   |
+| US-038 | PWA instalável e jogável offline                                | 1a    | Must       | pronta   |
+| US-039 | Aviso de nova versão e novidades no jogo                        | 1a    | Must       | pronta   |
+| US-040 | Estrutura de tradução e escolha de idioma                       | 1a    | Must       | pronta   |
+| US-041 | Marcas fictícias no cenário                                     | 1a    | Must       | pronta   |
+| US-042 | Tutorial e primeiros passos                                     | 1a    | Should     | pronta   |
+| US-043 | Tela "Sobre": aviso de ficção, versão, privacidade e links      | 1a    | Must       | pronta   |
+| US-044 | Preferências: tema, vibração, tipo de partida, rede social, som | 1a    | Should     | pronta   |
+| US-045 | Tratamento e registro de erros sem dados pessoais               | 1a    | Must       | pronta   |
+| US-046 | Estatísticas de uso do site sem cookies                         | 1a    | Could      | pronta   |
+| US-047 | Criar conta anônima com apelido e passkey                       | 1b    | Must       | rascunho |
+| US-048 | Código de recuperação                                           | 1b    | Must       | pronta   |
+| US-049 | Entrar de novo e recuperar a conta em outro aparelho            | 1b    | Must       | pronta   |
+| US-050 | Apagar a conta                                                  | 1b    | Must       | pronta   |
+| US-051 | Criar liga online da Série A                                    | 1b    | Must       | pronta   |
+| US-052 | Entrar na liga por código de convite                            | 1b    | Must       | pronta   |
+| US-053 | Escolha de clubes: livre e sorteio                              | 1b    | Must       | pronta   |
+| US-054 | Escolha de clubes por draft                                     | 1b    | Could      | pronta   |
+| US-055 | Preparar a rodada online e confirmar "Pronto"                   | 1b    | Must       | pronta   |
+| US-056 | Servidor processa a rodada com o mesmo motor                    | 1b    | Must       | pronta   |
+| US-057 | Modo ao vivo: partidas vistas juntas                            | 1b    | Must       | pronta   |
+| US-058 | Modo assíncrono: aviso de rodada processada                     | 1b    | Must       | pronta   |
+| US-059 | Resultados, tabela e notícias da liga para todos                | 1b    | Must       | pronta   |
+| US-060 | Inatividade: a IA assume o clube                                | 1b    | Must       | pronta   |
+| US-061 | Dono da liga troca o modo no meio da temporada                  | 1b    | Should     | pronta   |
+| US-062 | Mensagens prontas e emojis                                      | 1b    | Must       | pronta   |
+| US-063 | Fim de temporada e duração da liga online                       | 1b    | Must       | pronta   |
+| US-064 | Lista de privacidade da 1b auditada e política atualizada       | 1b    | Must       | pronta   |
+| US-065 | Denunciar apelido ou nome de liga                               | 1b    | Must       | rascunho |
+| US-066 | Temporada base nos dados de clubes e no novo jogo               | 1a    | Must       | pronta   |
+| US-067 | Lote anual de atualização da temporada base                     | 1a    | Should     | pronta   |
+| US-068 | Títulos da carreira somam ao histórico do clube                 | 1a    | Must       | pronta   |
+| US-069 | Força inicial pela colocação da temporada anterior              | 1a    | Must       | pronta   |
+| US-070 | Placar ao vivo dos outros jogos na partida                      | 1a    | Should     | pronta   |
+| US-071 | Tabela ao vivo: se terminasse agora, intervalo e fim            | 1a    | Should     | pronta   |
+| US-072 | Importância do gol em outro jogo                                | 1a    | Should     | pronta   |
+| US-073 | Plantão dos outros jogos na tela da partida                     | 1a    | Should     | pronta   |
+| US-074 | Preferência "Plantão dos outros jogos"                          | 1a    | Should     | pronta   |
 
 Totais: 55 histórias da 1a (US-001 a US-046 e US-066 a US-074) e 19 da 1b (US-047 a US-065). US-066 a US-069 vêm da regra do CEO sobre os dados de referência dos clubes (2026-11-04) e foram acrescentadas no fim, fora da ordem de dependência do índice: na 1a, entram junto da US-001 (dados), da US-025 (fim de temporada) e da US-032/US-033 (save). US-070 a US-074 vêm do pedido do CEO de 2026-11-05 (placar, tabela ao vivo e plantão dos outros jogos da rodada, "como na TV") e entram depois da partida animada (US-020), da conversa do intervalo (US-022) e da tela da tabela (US-023). Depois das decisões de 2026-11-04 e do acréscimo de 2026-11-05: 72 prontas e 2 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
 
@@ -816,7 +816,7 @@ Cenário: fechar o app no meio
 
 **Prioridade:** Must
 **Depende de:** US-002, US-019
-**Notas:** [PROJETO.md › Animações e engajamento saudável](PROJETO.md#animações-e-engajamento-saudável): campo 2D em canvas, jogadores como bolinhas nas cores do uniforme, narração em texto rolando, pausa dramática antes de revelar se foi gol, comemoração com escudo e nome do artilheiro, vibração no Android. "Animada completa" mostra todos os lances que o motor marca como visíveis; "só lances principais" mostra só gols, chances claras, cartões vermelhos e pênaltis. A animação é desenhada a partir dos eventos do motor; nunca muda o resultado. O tipo de partida pode ser trocado entre rodadas (US-019, US-044). Sem áudio na Etapa 1, só vibração no Android (decisão P5).
+**Notas:** [PROJETO.md › Animações e engajamento saudável](PROJETO.md#animações-e-engajamento-saudável): campo 2D em canvas, jogadores como bolinhas nas cores do uniforme, narração em texto rolando, pausa dramática antes de revelar se foi gol, comemoração com escudo e nome do artilheiro, vibração no Android. "Animada completa" mostra todos os lances que o motor marca como visíveis; "só lances principais" mostra só gols, chances claras, cartões vermelhos e pênaltis. A animação é desenhada a partir dos eventos do motor; nunca muda o resultado. O tipo de partida pode ser trocado entre rodadas (US-019, US-044). Áudio essencial sem custo (decisão do CEO de 2026-11-05, que troca a P5; ADR-0016; proposta em `docs/audio/lotes/2026-11-05-essencial.md`): apitos, gol, trave, pênalti, cartões, lesão e torcida ambiente, todos sintetizados por código no navegador, sem arquivo de áudio e sem custo; começa desligado (US-044); sai da camada de interface a partir dos eventos do motor, quando a animação os revela, e nunca muda o resultado. Além do áudio, a vibração no Android. O áudio é uma tarefa própria, depois da T-033.
 
 ### Critérios de aceite
 
@@ -846,11 +846,58 @@ Cenário: vibração opcional
   Dado um Android com a vibração ligada nas preferências (US-044)
   Quando o clube do jogador marca
   Então o aparelho vibra uma vez; com a vibração desligada, não vibra
+
+Cenário: som só quando a animação revela o lance
+  Dado o som ligado (US-044) e um gol que o motor já marcou
+  Quando a animação termina a pausa dramática e revela o gol
+  Então tocam a rede e a explosão da torcida nesse instante, nunca antes
+  E o resultado e os eventos do motor são idênticos aos de uma partida com o som desligado
+
+Esquema do Cenário: eventos com som
+  Dado o som ligado e o evento "<evento>" revelado na partida assistida
+  Então toca "<som>" e a narração mostra o texto do evento
+
+  Exemplos:
+    | evento                         | som                               |
+    | início de cada tempo           | 1 apito longo                     |
+    | intervalo e fim                | apitos do intervalo e do fim      |
+    | gol                            | rede e explosão da torcida        |
+    | bola na trave                  | ping metálico e "ohhh" curto      |
+    | pênalti marcado                | apito e silêncio de tensão        |
+    | cartão amarelo e vermelho      | apito curto; apito longo e baque  |
+    | lesão                          | tom sutil e torcida mais baixa    |
+    | defesa difícil (opcional)      | palmada de luva, volume baixo     |
+    | substituição (opcional)        | dois toques suaves, volume baixo  |
+    | "todo mundo no ataque" (opcional, só do clube do técnico) | crescendo de torcida, volume baixo |
+
+Cenário: nenhum evento só por som
+  Dado o som mudo, desligado ou sem suporte no aparelho
+  Quando acontecem gol, cartão, lesão, substituição, pênalti e fim de jogo
+  Então cada um continua visível na narração, no ícone ou no placar, como com o som ligado
+  E nenhum aviso crítico depende de áudio
+
+Cenário: torcida segue a partida
+  Dado o som ligado e a partida em andamento
+  Então a torcida ambiente fica baixa no jogo normal e sobe com ataque perigoso já mostrado e depois dos 75 minutos
+  E cai quando a partida é pausada e no intervalo
+  E nunca antecipa o desfecho de um lance
+
+Cenário: velocidade rápida e "só resultado"
+  Dado o som ligado
+  Quando a partida roda em velocidade rápida
+  Então só tocam os apitos e o gol
+  E no modo "só resultado" toca apenas o apito final
+
+Cenário: aba em segundo plano
+  Dado o som ligado e a partida na tela
+  Quando a aba perde o foco e depois volta
+  Então o áudio é suspenso e retomado sem mostrar erro ao jogador
 ```
 
 ### Fora do escopo desta história
 
-- Áudio de qualquer tipo: efeitos (apito, rede, torcida) e narração em voz (decisão P5; só com lote aprovado pelo CEO com a estimativa de créditos).
+- Narração em voz e música (só com lote aprovado pelo CEO com a estimativa de créditos do ElevenLabs).
+- Cantos de torcida por clube, estádio cheio ou vazio pelo termômetro da torcida e gravações de torcida (a gravação CC0 só entra se a síntese não convencer e depois de o CEO ouvir e aprovar).
 - Replay (Etapa 4).
 
 ---
@@ -1713,13 +1760,13 @@ Cenário: contato ou link vazio
 
 ---
 
-## US-044: Preferências: tema, vibração, tipo de partida, rede social
+## US-044: Preferências: tema, vibração, tipo de partida, rede social, som
 
-**Como** jogador, **quero** escolher tema claro ou escuro, ligar ou desligar a vibração, trocar o tipo de partida e esconder a rede social, **para** jogar do meu jeito.
+**Como** jogador, **quero** escolher tema claro ou escuro, ligar ou desligar a vibração e o som, trocar o tipo de partida e esconder a rede social, **para** jogar do meu jeito.
 
 **Prioridade:** Should
 **Depende de:** US-015, US-020, US-029
-**Notas:** [Padrões de design](PROJETO.md#padrões-de-design) (escuro padrão, claro opcional) e [Rede social › Limites](PROJETO.md#rede-social-do-jogo) (desligar a aba). Preferências ficam no aparelho. Decisões do CEO: o tipo de partida (animada completa, só lances principais, só resultado) pode ser trocado durante a carreira, aqui e ao jogar a rodada (US-019); o realismo fica fixo depois de criar a carreira (US-014). Sem opção de áudio na Etapa 1 (decisão P5). Idioma em US-040; lembrete de exportar em US-037. Tela em `docs/design/telas/preferencias.md`.
+**Notas:** [Padrões de design](PROJETO.md#padrões-de-design) (escuro padrão, claro opcional) e [Rede social › Limites](PROJETO.md#rede-social-do-jogo) (desligar a aba). Preferências ficam no aparelho. Decisões do CEO: o tipo de partida (animada completa, só lances principais, só resultado) pode ser trocado durante a carreira, aqui e ao jogar a rodada (US-019); o realismo fica fixo depois de criar a carreira (US-014). Áudio essencial sem custo (decisão do CEO de 2026-11-05, que troca a P5; ADR-0016): o som começa desligado; na primeira vez que a tela de partida abre, uma pergunta única, "Quer ouvir o estádio?", com "Sim, ligar o som" e "Agora não"; o toque em "Sim" é o primeiro gesto que o navegador exige. Se ligar: Geral 60%, Efeitos 80%, Torcida 50%. A resposta é lembrada e a pergunta não volta; depois só as Preferências mudam. Quatro controles: Geral, Efeitos, Torcida e Mudo; o mudo também é um botão sempre visível na tela de partida (US-020). Valores no aparelho, sem dado pessoal e sem estatística de uso do som. Idioma em US-040; lembrete de exportar em US-037. Tela em `docs/design/telas/preferencias.md`.
 
 ### Critérios de aceite
 
@@ -1738,9 +1785,41 @@ Cenário: trocar o tipo de partida
   Quando o jogador escolhe "só lances principais" nas Preferências
   Então a próxima rodada dessa carreira é mostrada só com lances principais, e a escolha continua depois de reabrir o jogo
 
-Cenário: realismo fixo e sem áudio (P5)
+Cenário: realismo fixo
   Dado as Preferências com uma carreira aberta
-  Então o realismo da carreira aparece só como informação, sem controle para trocar, e não existe opção de áudio
+  Então o realismo da carreira aparece só como informação, sem controle para trocar
+
+Cenário: som desligado por padrão com pergunta única
+  Dado o primeiro acesso e nenhuma resposta anterior
+  Quando a tela de partida abre pela primeira vez
+  Então o som está desligado e nenhum som toca antes da resposta
+  E aparece a pergunta "Quer ouvir o estádio?" com "Sim, ligar o som" e "Agora não"
+
+Esquema do Cenário: resposta à pergunta única
+  Dado a pergunta "Quer ouvir o estádio?" na tela
+  Quando o jogador escolhe "<resposta>"
+  Então o som fica <estado>
+  E a pergunta não volta, nem depois de reabrir o jogo
+
+  Exemplos:
+    | resposta        | estado                                                       |
+    | Sim, ligar o som | ligado, com Geral 60%, Efeitos 80% e Torcida 50%             |
+    | Agora não       | desligado, ainda alterável nas Preferências                  |
+
+Cenário: controles de volume e mudo
+  Dado as Preferências
+  Então existem os controles Geral, Efeitos, Torcida e Mudo, cada um com rótulo de texto e alvo de toque de pelo menos 44px
+  E ao mexer num volume ou no mudo a mudança vale na hora e continua depois de reabrir o jogo
+  E o mudo silencia tudo sem perder os volumes escolhidos
+
+Cenário: botão de mudo na tela de partida
+  Dado a tela de partida com o som ligado
+  Então há um botão de mudo sempre visível, com ícone e rótulo de texto, alvo de pelo menos 44px, que não cobre o placar nem os botões de comando
+  E o estado dele é o mesmo do controle Mudo das Preferências
+
+Cenário: sem som ninguém perde informação
+  Dado o som desligado ou mudo
+  Então todo evento da partida continua visível em texto, ícone ou placar
 
 Cenário: desligar a rede social
   Dado a rede social desligada
@@ -1750,7 +1829,8 @@ Cenário: desligar a rede social
 ### Fora do escopo desta história
 
 - Tamanho de fonte ajustável (Etapa 2).
-- Opção de áudio (só quando houver lote de áudio aprovado pelo CEO).
+- Volume separado para narração em voz (quinto controle; só se a narração entrar, com lote aprovado pelo CEO e estimativa de créditos).
+- Som de interface (toques e confirmações) fica a critério do `ux-designer` na tarefa do áudio; se entrar, obedece ao Efeitos e ao Mudo.
 
 ---
 
@@ -2834,7 +2914,7 @@ Cenário: regra determinística e sem efeito no motor
 
 Fila: um plantão por vez; o de nível mais alto passa à frente; no mesmo nível, vale a ordem dos eventos do motor. Quando um plantão termina e há 2 ou mais curtos esperando (por exemplo, em velocidade rápida), eles saem juntos num plantão só ("3 gols na rodada", com o placar de cada jogo). Os tempos exatos (o curto dentro de 2 a 3 s) são do `ux-designer` e contam em tempo real, não em minutos de jogo. A partida assistida continua por trás e nunca para sozinha por causa de um plantão. Com a partida pausada pelo técnico (comandos, US-021), nenhum plantão novo começa e o tempo do que está na tela para. No intervalo e no apito final a fila é descartada, porque a tabela do intervalo e o "como ficou" (US-071) já mostram tudo (proposta, a confirmar com o `ux-designer`). Nenhum plantão cobre o placar da partida assistida nem os botões de comando. A faixa de placares (US-070) atualiza em todo gol, com ou sem plantão. O que aparece depende da preferência "Plantão dos outros jogos" (US-074). Ritmo: cerca de 25 gols por rodada nos outros 9 jogos, um a cada 3 ou 4 minutos de jogo.
 
-Estilo de "plantão" genérico: nenhuma marca, vinheta, nome, bordão ou visual que imite uma emissora ou um programa de TV real (regra de nomes reais do `CLAUDE.md`). O visual é do `art-director` e do `ux-designer`; os textos são do `content-writer` e passam pelo CEO no lote. Sem som na Etapa 1 (P5): nada de vinheta sonora. Quando o áudio entrar, com lote aprovado pelo CEO e estimativa de créditos, pode-se avaliar uma vinheta própria do plantão, também sem imitar emissora real. Online e "Tempo real": mesma dependência da US-070.
+Estilo de "plantão" genérico: nenhuma marca, vinheta, nome, bordão ou visual que imite uma emissora ou um programa de TV real (regra de nomes reais do `CLAUDE.md`). O visual é do `art-director` e do `ux-designer`; os textos são do `content-writer` e passam pelo CEO no lote. Som do plantão (decisão do CEO de 2026-11-05, que troca a P5; ADR-0016): o plantão grande toca três notas subindo com um colchão suave; o curto toca um bip baixíssimo; os dois seguem a preferência da US-074 e o som geral (US-044). São notas simples, sem melodia reconhecível e sem imitar vinheta de emissora real, e nunca usam o som do gol da partida assistida. Online e "Tempo real": mesma dependência da US-070.
 
 ### Critérios de aceite
 
@@ -2868,6 +2948,26 @@ Cenário: não cobre a partida e reduz movimento
   Então ele não se sobrepõe ao placar da partida assistida nem aos botões de comando
   E com prefers-reduced-motion ele aparece e some sem animação de entrada e saída
 
+Esquema do Cenário: som do plantão segue a preferência
+  Dado o som ligado e a preferência "<valor>" (US-074)
+  Quando entram um plantão curto e um plantão grande
+  Então toca <sons>
+
+  Exemplos:
+    | valor             | sons                                   |
+    | Todos os gols     | o bip baixíssimo e as três notas       |
+    | Só os importantes | só as três notas                       |
+    | Desligado         | nenhum som de plantão                  |
+
+Cenário: o plantão não abafa a partida
+  Dado o som ligado e um plantão que entra junto do apito ou do gol da partida assistida
+  Então o apito ou o gol toca por cima e o som do plantão cede
+  E com o som desligado ou mudo nenhum som de plantão toca
+
+Cenário: plantão nunca só por som
+  Dado qualquer plantão com o som ligado
+  Então o texto, o placar e o ícone do plantão aparecem como sem som, e com prefers-reduced-motion o plantão não ganha som extra
+
 Cenário: sem marca real de TV
   Dado a lista bloqueada de conteúdo, com nomes de emissoras, programas e bordões de TV reais mantidos pelo content-writer
   Quando npm run content:check roda
@@ -2876,7 +2976,7 @@ Cenário: sem marca real de TV
 
 ### Fora do escopo desta história
 
-- Som e vinheta sonora (P5; só com lote de áudio aprovado pelo CEO).
+- Vinheta sonora com melodia própria e voz de locutor no plantão (só com lote aprovado pelo CEO e estimativa de créditos).
 - Plantão de cartão vermelho, pênalti perdido ou lesão em outro jogo.
 - Replay do gol de outro jogo (Etapa 4).
 - Plantão no modo "só resultado".
@@ -2943,7 +3043,7 @@ Cenário: persiste e não muda o resultado
 - Metas e confiança da diretoria, demissão, propostas, base, histórico, replay, editor local, ritmo "Tempo real", sincronização de saves, SAF e dívida herdada (Etapa 4).
 - América do Sul, olheiros, resto do mundo, altitude e clima, espanhol e inglês completos (Etapa 5).
 - Ligas grandes com várias divisões, notificações push, modo férias, bloqueio, página pública da liga, painel de admin completo, apoio via PIX, limites contra abuso (Etapa 6).
-- Áudio de qualquer tipo, efeitos e narração em voz (P5); estatísticas de uso dentro do jogo (P11); comandos durante a partida no online (P6).
+- Narração em voz, música e cantos de torcida por clube (o áudio essencial sem custo está dentro, ver P5); estatísticas de uso dentro do jogo (P11); comandos durante a partida no online (P6).
 - Patrocinadores reais e qualquer anúncio ou convite para patrocinar (desligados pelo ADR-0015); chat de texto livre (este, nunca).
 
 ## Decisões do CEO (2026-11-04)
@@ -2954,7 +3054,7 @@ Respostas às perguntas do `/kickoff`, registradas em `docs/status.md` ("Decisõ
 2. **P2. Depois da 38ª rodada, sem Série B.** Nova temporada com os mesmos 20 clubes: os 4 últimos aparecem como "zona de rebaixamento", sem efeito, e os jogadores envelhecem e evoluem pela curva de idade; o clube do jogador continua na Série A mesmo entre os 4 últimos. A subida de 4 clubes fica para quando houver lista aprovada. (US-025, US-063)
 3. **P3. Opções do novo jogo de etapas futuras.** Escondidas na Etapa 1, nem desabilitadas nem com "em breve"; voltam quando o sistema existir. (US-014)
 4. **P4. Idiomas na 1a.** Interface inteira em pt-BR, es e en desde a 1a, com o CI bloqueando chave faltando; notícias, rede social e mensagens prontas também nos três, com menos variações em es e en, completando até a Etapa 5. (US-040, US-028, US-031, US-062)
-5. **P5. Áudio na Etapa 1.** Nenhum áudio, só vibração no Android; a opção "Áudio" fica escondida até o CEO aprovar um lote com a estimativa de créditos. (US-020, US-044)
+5. **P5. Áudio na Etapa 1.** ~~Nenhum áudio, só vibração no Android.~~ Trocada em 2026-11-05 pelo áudio essencial sem custo (ver a seção "Decisões do CEO sobre o áudio essencial" abaixo). (US-020, US-044, US-073)
 6. **P6. Comandos durante a partida no online ao vivo.** Não na 1b: a partida online é simulada inteira no servidor e transmitida igual para todos, com tática e escalação definidas antes do "Pronto". (US-057, US-021)
 7. **P7. Denúncia de apelido na 1b.** Sim, uma denúncia mínima (registro no servidor, tratado à mão, sem painel). Segue aberto quem trata e em quanto tempo (ver abaixo). (US-065)
 8. **P8. Aparelho sem passkey.** O online exige passkey; quem não tem suporte recebe a explicação, e a carreira offline não é afetada. (US-047)
@@ -2991,6 +3091,19 @@ O CEO aceitou as recomendações das perguntas abertas 9 e 10 do pedido de 2026-
 9. **D9. Fronteira da Libertadores no plantão.** O plantão usa a mesma fronteira da tabela da 1a: a "Zona da Libertadores", do 2º ao 6º (`docs/design/temporada.md`), no lugar do G4. Na US-072, k = 6 e o motivo `libertadoresRace`. (US-072, US-073)
 10. **D10. "Como ficou" no "só resultado".** Aparece também no resumo do modo "só resultado" (US-019), no mesmo formato da partida assistida. (US-071, US-019)
 11. **D11. A conversa do intervalo cita a tabela ao vivo.** Decisão do CEO de 2026-11-05: as três opções da conversa ganham variações de texto que citam a situação da tabela ao vivo (Z4, zona da Libertadores, liderança, rival direto), sem mudar o efeito no motor; o lote de textos do `content-writer` passa pelo CEO. Uma opção nova "Mostrar a tabela", com efeito próprio, fica como ideia para depois da calibragem da T-016. (US-071, US-022)
+
+### Decisões do CEO sobre o áudio essencial (2026-11-05)
+
+O CEO pediu para começar pelo simples e essencial e trocou a P5 ("sem áudio de nenhum tipo na Etapa 1") pelo **áudio essencial sem custo**, e aceitou todas as recomendações do lote `docs/audio/lotes/2026-11-05-essencial.md` (decisões 1 a 6 abaixo). O ADR-0016 registra a mudança; o número será ajustado. Custo: R$ 0 e 0 crédito do ElevenLabs. O ElevenLabs fica só para a narração em voz, que segue exigindo lote, estimativa de créditos e ok escrito do CEO.
+
+1. **Som desligado por padrão.** Começa desligado; na primeira partida, a pergunta única "Quer ouvir o estádio?" (que também é o primeiro gesto exigido pelo navegador). (US-044, US-020)
+2. **Torcida por síntese.** Feita por código, sem arquivo de áudio; gravação CC0 só se a síntese não convencer, e só depois de o CEO ouvir e aprovar, com registro de licença em `docs/audio/inventario.md`. (US-020)
+3. **Itens opcionais incluídos, em volume baixo.** Defesa difícil, substituição e "todo mundo no ataque". (US-020)
+4. **Plantão com som.** O plantão grande tem som e o curto tem um bip baixíssimo, os dois seguindo a preferência da US-074. (US-073, US-074)
+5. **Mudo sempre à mão.** Botão de mudo sempre visível na tela de partida, mais os volumes nas Preferências (Geral, Efeitos, Torcida e Mudo). (US-044, US-020)
+6. **Tarefa própria.** O áudio é uma tarefa separada, depois da T-033 (tela de partida), para não atrasar a tela. (`docs/status.md`)
+
+Regra que vale para todas as histórias: nenhum evento é informado só por som; tudo que toca também aparece em texto, ícone ou placar, e os testes E2E checam isso com o som mudo.
 
 ### Perguntas que seguem abertas
 

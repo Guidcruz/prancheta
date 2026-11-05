@@ -84,6 +84,24 @@ Telas da 1a (`docs/design/telas/`):
 - Tempo: +5 a 8 s na suíte padrão; a versão completa (`PROPERTY_FULL=1`) leva cerca de 9 min e roda antes de cada release.
 - Golden novo `season-human-simplified` (temporada com técnico humano no realismo simplificado); sem subir o `ENGINE_VERSION`.
 
+## Decisão do CEO em 2026-11-05 (áudio essencial)
+
+A P5 ("sem áudio de nenhum tipo na Etapa 1") foi trocada pelo **áudio essencial sem custo** (R$ 0, 0 crédito do ElevenLabs). Fonte: `docs/audio/lotes/2026-11-05-essencial.md`; o CEO aceitou todas as recomendações. O ADR-0016 está sendo escrito pelo `architect`. Requisitos atualizados: US-020, US-044, US-073, "Fora do escopo" e P5 em `docs/01-requirements.md`.
+
+1. O som começa desligado, com a pergunta única "Quer ouvir o estádio?" na primeira partida.
+2. A torcida é feita por síntese; gravação CC0 só se não convencer, ouvida e aprovada pelo CEO antes.
+3. Entram em volume baixo: defesa difícil, substituição e "todo mundo no ataque".
+4. O plantão grande tem som e o curto tem um bip baixíssimo, seguindo a preferência da US-074.
+5. Botão de mudo sempre visível na tela de partida, mais os volumes nas Preferências (Geral, Efeitos, Torcida, Mudo).
+6. O áudio é uma tarefa própria, depois da T-033.
+
+Pendências derivadas:
+
+- T-047, áudio essencial (depois da T-033): módulo `app/src/lib/audio/`, receitas por código, diretor puro testado em Vitest, página de bancada só em desenvolvimento, pergunta única, controles e botão de mudo, E2E com som mudo (todos os eventos visíveis).
+- ADR-0016 (`docs/adr/0016-audio-essencial-sem-custo.md`) aceito; `docs/02-architecture.md` §4.6 traz o desenho do `app/src/lib/audio/`.
+- Meta de peso: até 15 KB gzip de código e 300 KB de áudio no total, fora do precache da PWA.
+- `developer`, na T-047: medir a CPU da torcida em celular fraco (meta: menos de 5% em segundo plano).
+
 ## Decisões e ideias do CEO em 2026-11-05 (T-015)
 
 1. Súmula do jogo antigo: ver o que aconteceu numa partida já jogada (US-024, já nos requisitos).
@@ -346,3 +364,4 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
 4. Placar e tabela ao vivo da rodada (US-070 a US-074).
 5. Lote de clubes de dezembro, com a tabela final de 2026.
+6. Áudio essencial (tarefa própria, depois da T-033; ver a decisão de 2026-11-05).

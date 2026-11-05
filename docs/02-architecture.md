@@ -41,6 +41,7 @@ app/src/lib/
   i18n.ts            textos de interface (existe)
   generators/        escudo (existe), uniforme, nomes, avatar (SVG por código, fora do motor)
   errors/            registro local de erros sem dados pessoais
+  audio/             áudio essencial sintetizado (Web Audio), carregado sob demanda (ADR-0016)
   online/            cliente da API e do WebSocket (1b)
 app/src/ui/          telas Svelte; canvas da partida
 server/              (1b) Hono, Db, salas, contas; importa só engine/ e params/
@@ -82,7 +83,7 @@ scripts/             balance.ts, content-check.mjs, template-repeat.ts, check-pr
 ### Interface (`app/src/ui/`)
 
 - Telas e componentes Svelte 5 segundo `docs/design/telas/` (ux-designer). Roteamento por estado simples (sem biblioteca de rotas), com abas embaixo no celular e barra lateral a partir de 900 px.
-- Fala só com `lib/career` (carreira), `lib/online` (1b), `lib/i18n` e `lib/content`. Nunca importa `engine/` para calcular regra, só para usar tipos e funções de leitura (`getStandings`, `teamStrength`).
+- Fala só com `lib/career` (carreira), `lib/online` (1b), `lib/i18n`, `lib/content` e `lib/audio` (som, ADR-0016; §4.6). Nunca importa `engine/` para calcular regra, só para usar tipos e funções de leitura (`getStandings`, `teamStrength`).
 - Partida animada em `ui/match/`: canvas 2D desenhado a partir dos `MatchEvent`. As posições das bolinhas são decorativas e geradas a partir dos eventos. A animação nunca muda o resultado. `prefers-reduced-motion` desliga câmera lenta, tremor e comemoração.
 - Erros inesperados caem numa fronteira de erro por tela ("Tentar de novo" / "Voltar ao início"), que registra em `lib/errors` e não toca no save.
 
@@ -846,6 +847,137 @@ Só as colunas marcadas como "pessoa" se ligam a alguém. São exatamente a list
 
 Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram rota, código de status, código de erro e `leagueId` aleatório, mas não apelido, `accountId` nem credential id (US-064).
 
+### 4.6 Áudio essencial (`app/src/lib/audio/`; ADR-0016, T-047)
+
+Desenho do Passo 1 do lote `docs/audio/lotes/2026-11-05-essencial.md`: 17 sons e a torcida em 3 camadas, sintetizados com Web Audio. O motor não muda. Os nomes finais são do `developer`; as fronteiras e as formas abaixo não.
+
+```
+app/src/lib/audio/
+  index.ts        casca (pacote principal, ≤ 1 KB gzip): API pública, desbloqueio do AudioContext no gesto, import() do resto
+  prefs.ts        AudioPrefs, valores padrão e normalizeAudioPrefs (puro; não grava nada)
+  manifest.json   id do som → receita ou arquivos, bus, prioridade, ganho, intervalo mínimo (já existe, vazio)
+  tuning.json     os números das receitas (seção 3 do lote), ajustados na página de bancada
+  director.ts     puro: MatchEvent + contexto → cues e alvo da torcida (sem AudioContext)
+  mixer.ts        AudioContext, buses master/sfx/crowd, compressor, ducking, 4 vozes, cooldown
+  recipes/        uma função por receita (whistle.ts, crowd.ts, goal.ts, flash.ts, ui.ts)
+  webaudio.ts     SoundBackend com Web Audio; fake.ts, SoundBackend falso para os testes
+```
+
+**Chunks.** `index.ts` e `prefs.ts` vão no pacote principal. `director.ts`, `mixer.ts`, `recipes/`, `webaudio.ts`, `manifest.json` e `tuning.json` formam um chunk próprio (`audio-[hash].js`), carregado por `import()` só quando `prefs.muted` é `false`. O `workbox` do `vite-plugin-pwa` ganha `globIgnores` para esse chunk e para `audio/*`, e uma regra de cache de execução (`CacheFirst`) para os dois. Gravações, se houver, ficam em `app/public/audio/`.
+
+**API da casca** (`index.ts`):
+
+```ts
+type SoundId =
+  | 'whistle_start'
+  | 'whistle_half'
+  | 'whistle_full'
+  | 'goal'
+  | 'post'
+  | 'save'
+  | 'penalty'
+  | 'yellow'
+  | 'red'
+  | 'injury'
+  | 'sub'
+  | 'all_out'
+  | 'flash_short'
+  | 'flash_big'
+  | 'ui_tap'
+  | 'ui_ok'
+  | 'ui_back';
+
+interface AudioPrefs {
+  asked: boolean; // a pergunta "Quer ouvir o estádio?" já foi respondida
+  muted: boolean; // padrão true; "Sim, ligar o som" grava false
+  master: number; // 0..1, padrão 0.6
+  sfx: number; // 0..1, padrão 0.8
+  crowd: number; // 0..1, padrão 0.5
+}
+
+interface MatchAudioContext {
+  userSide: Side; // lado do clube do técnico
+  derby: boolean; // clássico: base da torcida +0,10
+  view: 'full' | 'highlights' | 'result';
+  speed: 'normal' | 'fast'; // em 'fast' só apitos e gol
+  flashPref: 'all' | 'important' | 'off'; // preferência do plantão (US-074)
+}
+
+interface RevealState {
+  minute: number;
+  added?: number;
+  score: readonly [number, number];
+}
+
+interface GameAudio {
+  unlock(): void; // chamar de forma síncrona dentro de pointerdown/click
+  setPrefs(prefs: AudioPrefs): void; // muted → nada carrega nem toca
+  ui(id: 'ui_tap' | 'ui_ok' | 'ui_back'): void;
+  matchStart(ctx: MatchAudioContext): void;
+  reveal(event: MatchEvent, state: RevealState): void; // no instante em que a animação revela
+  flash(level: 'short' | 'big' | 'group'): void;
+  pause(): void;
+  resume(): void;
+  matchEnd(): void;
+  setMood(mood: { thermometer: number; capacity: number; fillRatio: number }): void; // aceito e ignorado no Passo 1
+}
+```
+
+Toda chamada antes de `unlock()`, com `muted`, sem suporte a Web Audio ou antes de o chunk chegar retorna sem fazer nada e nunca lança. A casca cria o `AudioContext` (ou chama `resume()`) dentro do próprio gesto, antes do `import()`, e liga `visibilitychange` (`suspend`/`resume`) e `navigator.audioSession.type = 'ambient'`, onde existir.
+
+**Diretor** (`director.ts`, função pura, testada em Vitest):
+
+```ts
+interface Cue {
+  id: SoundId;
+  variant?: 'muffled';
+} // 'muffled': gol do adversário
+type CrowdCommand =
+  | { kind: 'base'; target: number } // i alvo de 0 a 1
+  | { kind: 'bump'; delta: number; ms: number } // ataque perigoso: +0,25 por 4 s
+  | { kind: 'hush'; ms: number }; // silêncio de tensão do pênalti
+function direct(
+  event: MatchEvent,
+  ctx: MatchAudioContext,
+  state: RevealState,
+): { cues: readonly Cue[]; crowd: readonly CrowdCommand[] };
+```
+
+O diretor aplica as tabelas 2.1 a 2.3 do lote (eventos, intensidade da torcida, plantão) e as regras de ritmo; `mixer.ts` aplica prioridade, ducking, polifonia e volumes. As receitas ficam atrás de `SoundBackend` (`play(cue, when)`, `crowd(cmd)`, `setGains({ master, sfx, crowd })`, `suspend()`, `resume()`), então nada de `AudioContext` aparece nos testes.
+
+**`manifest.json`** (esquema; validado por teste):
+
+```json
+{
+  "version": 1,
+  "sounds": {
+    "whistle_full": {
+      "kind": "synth",
+      "recipe": "whistle_full",
+      "bus": "sfx",
+      "priority": 1,
+      "gainDb": -3,
+      "cooldownMs": 0
+    },
+    "crowd_murmur": {
+      "kind": "sample",
+      "files": { "opus": "audio/crowd_murmur.ogg", "aac": "audio/crowd_murmur.m4a" },
+      "bus": "crowd",
+      "loop": true,
+      "priority": 5,
+      "gainDb": 0,
+      "cooldownMs": 0
+    }
+  }
+}
+```
+
+No Passo 1 todas as entradas são `kind: "synth"`; a segunda linha acima só mostra a forma da gravação CC0, se a torcida precisar.
+
+**Preferências.** Os valores de `AudioPrefs` são gravados pelo mesmo caminho das outras preferências (store `kv`, por `lib/career`; T-041) e entregues ao módulo por `setPrefs`. O `lib/audio` não toca no IndexedDB. Como `kv` não faz parte do `CareerSave`, o `schemaVersion` não muda; ao ler, `normalizeAudioPrefs` completa campos ausentes com os padrões.
+
+**Quem chama.** A camada de partida em `ui/match/` chama `reveal` no mesmo ponto em que revela o lance no canvas e na narração (T-032/T-033); a faixa do plantão chama `flash`; os botões primários chamam `ui`. A pergunta única, o botão de mudo e o bloco de som das Preferências são do `ux-designer`, com textos em `app/src/content/<idioma>/`.
+
 ## 5. Transversais
 
 - **Configuração:** `config/prancheta.config.ts`. Nenhum literal de marca fora dele. Os limites do online (máximo de humanos por modo, padrão 8 no ao vivo e 20 por divisão no assíncrono, nunca acima de um por clube, ADR-0013 revisado; prazos permitidos, limite de draft, limite de mensagens) ficam em `server/src/config.ts` com valores padrão e podem ser sobrescritos por variáveis do Cloudflare (US-051: mudar sem código).
@@ -858,6 +990,7 @@ Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram r
   - `engine/**`: as regras que já existem e mais `**/params/**`, `**/data/**`, `@config`, `node:*` e o global `Intl` (depende da localidade). O TypeScript usa `erasableSyntaxOnly` para o motor rodar no Node sem compilação.
   - `lib/**` não importa `ui/**`.
   - `ui/**` não importa `lib/save/**` direto (só por `lib/career`).
+  - `lib/audio/**` importa de `engine/**` só com `import type` e não importa `lib/save/**` nem `lib/career/**` (ADR-0016).
   - `server/**` importa do app só `app/src/engine/**`, `app/src/params/**` e, pelo ADR-0012, `app/src/lib/generators/names.ts`, `identity.ts`, a especificação do rosto (sem o desenho) e `app/src/content/names/**`.
   - `.svelte` sem texto literal (regra local `no-raw-text`).
 - **Desempenho:**
@@ -935,6 +1068,7 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | T-042 | Tutorial e primeiros passos                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | US-042                         | 1a    | T-030        | `/feature` | M       | a fazer              |
 | T-043 | Estatísticas sem cookies só no site (se a P11 for aprovada)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | US-046                         | 1a    | —            | `/quick`   | P       | a fazer              |
 | T-044 | Nomes retirados: `content/names/retired.json` (hashes + `rev`), `npm run names:retire`, `renameRetired` ao abrir e importar, aviso nas novidades, testes (ADR-0012). Aceite: a conformidade real do ADR-0012 (o save mantém os nomes) é testada aqui, em conjunto com a T-018                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | US-003, US-033                 | 1a    | T-004, T-019 | `/feature` | P       | a fazer              |
+| T-047 | Áudio essencial (Passo 1): `app/src/lib/audio/` e `manifest.json` conforme §4.6 (casca, diretor puro, mixagem, receitas, chunk fora do precache), página de bancada só em desenvolvimento, pergunta única "Quer ouvir o estádio?", botão de mudo na tela de partida, bloco de som nas Preferências (Geral, Efeitos, Torcida, Mudo; se a T-041 ainda não existir, o bloco entra nela), testes do diretor e do `manifest.json`, E2E com som mudo. Motor intacto. Lote: `docs/audio/lotes/2026-11-05-essencial.md` (ADR-0016)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | US-020, US-044, US-073, US-074 | 1a    | T-033        | `/feature` | M       | a fazer              |
 | T-050 | Esqueleto do servidor: workspace `server/`, Hono, `Db` (D1 e `node:sqlite`), migração SQL 0001, erros, logs sem PII, teste de esquema de privacidade, lint (fronteira com a exceção do ADR-0012), CI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | US-064 (esquema)               | 1b    | T-013        | `/feature` | M       | a fazer              |
 | T-051 | Topologia: adaptador `functions/api/[[route]].ts`, Worker `prancheta-rooms` com o DO, `wrangler` de produção e prévia, `_headers`, `docs/04-deploy.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | ADR-0010                       | 1b    | T-050        | `/feature` | M       | a fazer              |
 | T-052 | Filtro de apelido e de nome de liga                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | US-047, US-051                 | 1b    | T-050        | `/feature` | M       | a fazer              |
@@ -955,7 +1089,7 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | T-067 | Draft                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | US-054                         | 1b    | T-057, T-058 | `/feature` | M       | a fazer              |
 | T-068 | Auditoria de privacidade da 1b (`security-auditor`) e política do site atualizada                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | US-064                         | 1b    | T-050..T-066 | `/feature` | M       | a fazer              |
 
-**Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). A T-044 entrou pelo ADR-0012; os números T-045 a T-049 ficam livres para tarefas que surgirem na 1a.
+**Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). A T-044 entrou pelo ADR-0012; a T-047 entrou pelo ADR-0016 (áudio essencial), logo depois da T-033; os números T-045, T-046 (sugeridos pelo `product-manager` para o placar ao vivo), T-048 e T-049 ficam livres para tarefas que surgirem na 1a.
 
 ## 8. Decisões pendentes do CEO
 
