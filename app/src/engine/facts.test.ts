@@ -157,6 +157,13 @@ describe('roundFacts: runs', () => {
     ]);
   });
 
+  it('the end has priority in the mirror case too: DDDDW', () => {
+    // 4 without winning end on the same round that 5 without losing would be a milestone.
+    expect(mine('DDDDW')).toEqual([
+      { kind: 'winlessEnded', clubId: 'c01', games: 4, round: 5, opponentId: 'c20' },
+    ]);
+  });
+
   it('counts the awarded score of an abandoned match', () => {
     const fixtures = run('WWWWW');
     const last = game(6, 'c01', 'c20', [0, 3]);
