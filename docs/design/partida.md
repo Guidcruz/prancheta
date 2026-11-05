@@ -231,7 +231,7 @@ O lesionado sai na hora: o técnico (ou a IA) escolhe o substituto; sem substitu
 Por minuto, cada jogador em campo:
 
 ```
-pYellow = cards.yellowPerMinute × pressure.cards × positionMult × traitMult × (já tem amarelo ? 0.5 : 1)
+pYellow = cards.yellowPerMinute × pressure.cards × positionMult × traitMult × (já tem amarelo ? cards.bookedMult : 1)
           × (clássico ? cards.derbyMult : 1) × (acalmar no intervalo e 2º tempo ? 0.75 : 1)
 pRed    = cards.redPerMinute × pressure.cards × positionMult × traitMult
 ```
@@ -486,8 +486,9 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `cards.yellowPerMinute`      | 0,0020                                      | 0–0,005      | cerca de 4 amarelos por jogo                               |
 | `cards.redPerMinute`         | 0,00003                                     | 0–0,0002     | cerca de 0,07 vermelho direto por jogo                     |
 | `cards.derbyMult`            | 1,2                                         | 1–1,5        | clássico é mais quente                                     |
+| `cards.bookedMult`           | 0,5 (proposta 0,20 na T-016, parte 2)       | 0–1          | o pendurado leva o segundo amarelo com esta parte da taxa  |
 
-**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), fator do pendurado `BOOKED_MULT = 0.5` (candidato a `cards.bookedMult` na T-016, "Calibragem dos vermelhos"), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
+**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
 
 ## Pedido ao `developer` (critérios de aceite)
 

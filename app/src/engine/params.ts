@@ -37,6 +37,8 @@ export interface MatchParams {
     readonly yellowPerMinute: number;
     readonly redPerMinute: number;
     readonly derbyMult: number;
+    /** A player who already has a yellow ("pendurado") gets the next one at this share of the rate. */
+    readonly bookedMult: number;
   };
 }
 
@@ -157,6 +159,7 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
       yellowPerMinute: num(0, 0.005),
       redPerMinute: num(0, 0.0002),
       derbyMult: num(1, 1.5),
+      bookedMult: num(0, 1), // partida.md, "Calibragem dos vermelhos" (T-016)
     },
   },
   players: { growthMin: num(0.5, 1), growthMax: num(1, 1.5) },

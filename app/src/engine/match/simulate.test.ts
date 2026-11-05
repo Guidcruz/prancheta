@@ -692,6 +692,8 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
       'penaltyShare',
       'freeKickShare',
       'assistShare',
+      'comfortableLeadGoals',
+      'comfortableLeadPower',
     ] as const;
     for (const edge of ['min', 'max'] as const) {
       const match = { ...params.match } as Record<string, unknown>;
@@ -705,6 +707,7 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
         yellowPerMinute: ranges.cards.yellowPerMinute[edge],
         redPerMinute: ranges.cards.redPerMinute[edge],
         derbyMult: ranges.cards.derbyMult[edge],
+        bookedMult: ranges.cards.bookedMult[edge],
       };
       const edgeParams = { ...params, match } as unknown as GameParams;
       for (let seed = 0; seed < 30; seed++) {

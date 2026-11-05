@@ -156,6 +156,18 @@ describe('cards (partida.md, "Cartões e suspensão")', () => {
     expect(sideCardRates('low', false, false, match).yellow).toBeCloseTo(0.0014, 15);
   });
 
+  it('takes the booked factor from match.cards.bookedMult (0.5 by default)', () => {
+    expect(match.cards.bookedMult).toBe(0.5);
+    const tuned = sideCardRates('medium', false, false, {
+      cards: { ...match.cards, bookedMult: 0.2 },
+    });
+    const mult = playerCardMult('CB', 'quiet');
+    expect(yellowProbability(tuned, mult, true)).toBeCloseTo(0.002 * 1.3 * 0.2, 15);
+    expect(yellowProbability(tuned, mult, false)).toBe(yellowProbability(rates, mult, false));
+    const off = sideCardRates('medium', false, false, { cards: { ...match.cards, bookedMult: 0 } });
+    expect(yellowProbability(off, mult, true)).toBe(0);
+  });
+
   it('builds pRed without the derby nor the booked factor', () => {
     const derby = sideCardRates('high', true, true, match);
     expect(derby.red).toBeCloseTo(0.00003 * 1.4, 15);
@@ -167,7 +179,7 @@ describe('cards (partida.md, "Cartões e suspensão")', () => {
 
   it('clamps to 0..1 and never goes above the ceiling the match loop uses', () => {
     const huge = sideCardRates('high', true, false, {
-      cards: { yellowPerMinute: 5, redPerMinute: 5, derbyMult: 1.5 },
+      cards: { yellowPerMinute: 5, redPerMinute: 5, derbyMult: 1.5, bookedMult: 1 },
     });
     expect(yellowProbability(huge, 1, false)).toBe(1);
     expect(redProbability(huge, 1)).toBe(1);
