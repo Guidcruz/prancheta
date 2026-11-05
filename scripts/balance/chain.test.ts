@@ -1,7 +1,13 @@
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { beforeAll, describe, expect, it } from 'vitest';
+import { endSeason, startNextSeason } from '../../app/src/engine/index.ts';
+import { balanceIdentitySource } from './identity.ts';
 import {
+  G4_TO,
+  Z4_FROM,
+  ladderCut,
+  playSeason,
   runCareer,
   runSeason,
   seasonStart,
@@ -9,15 +15,24 @@ import {
   type CareerRecord,
   type SeasonRecord,
 } from './league.ts';
-import { CHAIN_REQUIRED_SEASONS, buildReport, chainRows, exitCode, pooledRows } from './metrics.ts';
+import {
+  CHAIN_INFO_NOTE,
+  CHAIN_INFO_TARGETS,
+  CHAIN_REQUIRED_SEASONS,
+  buildReport,
+  chainRows,
+  exitCode,
+  pooledRows,
+} from './metrics.ts';
 import { loadParams, serieAClubs } from './options.ts';
 import { collect, planJobs, type Job } from './run.ts';
 
 /*
  * `/balance --chain N` (T-017; balance-targets.md, "Cadeia de temporadas"; docs/02-architecture.md,
  * 4.1): careers of N seasons turned by the engine, season 1 equal to the single-season run, the
- * league targets by season of the chain (required up to the 3rd), the "Virada de temporada" rows,
- * and the same output with any number of workers.
+ * league targets by season of the chain (required up to the 3rd, but for the targets of decision
+ * 15), the "Virada de temporada" rows with the drift lock, the weakest and strongest clubs of season
+ * 1 for the whole career, and the same output with any number of workers.
  */
 
 const loaded = loadParams();
@@ -61,6 +76,31 @@ describe('runCareer', { timeout: 120_000 }, () => {
     }
   });
 
+  it('cuts every season by the weakest and strongest clubs of season 1 (decision 15)', () => {
+    const start = seasonStart(ctx, 1);
+    const cut = ladderCut(start);
+    // Season 2 of this career, turned by the engine, has another ladder than season 1.
+    const closed = endSeason(playSeason(ctx, start, 1).state, ctx.params, []);
+    if (!closed.ok) throw new Error(closed.error);
+    const next = startNextSeason(closed.value.state, ctx.params, balanceIdentitySource());
+    if (!next.ok) throw new Error(next.error);
+    expect(ladderCut(next.value).strongest).not.toEqual(cut.strongest);
+    expect(career.seasons[1]!.strength).toEqual(strengthRecord(next.value, cut));
+    expect(career.seasons[1]!.strength).not.toEqual(strengthRecord(next.value));
+    for (const s of career.seasons) {
+      const position = (id: string) => s.positions[id]!;
+      expect(s.table.weakInG4, `season ${s.season}`).toBe(
+        cut.weakest.some((id) => position(id) <= G4_TO),
+      );
+      expect(s.table.strongChampion, `season ${s.season}`).toBe(
+        cut.strongest.includes(s.table.champion),
+      );
+      expect(s.table.strongRelegated, `season ${s.season}`).toBe(
+        cut.strongest.some((id) => position(id) >= Z4_FROM),
+      );
+    }
+  });
+
   it('collects the seasons of the careers by season of the chain, in job order', () => {
     const jobs: Job[] = [{ kind: 'season', index: 1, chain: 3, seed: 1 }];
     const results = collect(jobs, [career]);
@@ -69,7 +109,9 @@ describe('runCareer', { timeout: 120_000 }, () => {
     const rows = buildReport(results).rows;
     expect(rows.filter((r) => r.id.startsWith('turn-')).map((r) => r.id)).toEqual(
       [1, 2, 3].flatMap((k) =>
-        ['strengthMean', 'strengthSd', 'strengthRange'].map((m) => `turn-s${k}-${m}`),
+        ['strengthMean', 'strengthSd', 'strengthRange', 'sizeGap', 'ladderGap'].map(
+          (m) => `turn-s${k}-${m}`,
+        ),
       ),
     );
     for (const id of ['goals', 'draws', 'champion', 'seventeenth', 'fansMean']) {
@@ -82,8 +124,15 @@ describe('runCareer', { timeout: 120_000 }, () => {
 });
 
 /** A record of season `season` whose clubs start with the given strength numbers. */
-function withStrength(record: SeasonRecord, season: number, mean: number, sd: number, range = 17) {
-  return { ...record, season, strength: { mean, sd, range } };
+function withStrength(
+  record: SeasonRecord,
+  season: number,
+  mean: number,
+  sd: number,
+  range = 17,
+  gaps = { sizeGap: 2, ladderGap: 12 },
+) {
+  return { ...record, season, strength: { mean, sd, range, ...gaps } };
 }
 
 describe('chainRows', () => {
@@ -114,6 +163,81 @@ describe('chainRows', () => {
     expect(exitCode({ rows })).toBe(1);
     expect(chainRows({ chain: [chain[0]!] })).toEqual([]);
     expect(chainRows({})).toEqual([]);
+  });
+
+  it('fails the drift lock when a gap moves more than 0.5 from season 1 (decision 15)', () => {
+    const at = (season: number, sizeGap: number, ladderGap: number) => [
+      withStrength(base, season, 70, 4.8, 17, { sizeGap, ladderGap }),
+    ];
+    const chain = [at(1, 2, 12), at(2, 2.4, 11.55), at(3, 2.51, 11.4), at(4, 4, 15)];
+    const rows = chainRows({ chain });
+    const get = (id: string) => rows.find((r) => r.id === id)!;
+    expect(get('turn-s1-sizeGap')).toMatchObject({ value: 2, status: 'dentro', required: false });
+    expect(get('turn-s1-ladderGap')).toMatchObject({ value: 12, required: false });
+    expect(get('turn-s2-sizeGap')).toMatchObject({ status: 'dentro', required: true });
+    expect(get('turn-s2-sizeGap').value).toBeCloseTo(0.4, 10);
+    expect(get('turn-s2-ladderGap')).toMatchObject({ status: 'dentro', required: true });
+    expect(get('turn-s2-ladderGap').value).toBeCloseTo(-0.45, 10);
+    // An artificial drift above 0.5: out, and the run fails.
+    expect(get('turn-s3-sizeGap')).toMatchObject({ status: 'fora', required: true });
+    expect(get('turn-s3-sizeGap').value).toBeCloseTo(0.51, 10);
+    expect(get('turn-s3-ladderGap')).toMatchObject({ status: 'fora', required: true });
+    expect(get('turn-s3-ladderGap').shown).toBe('-0,60 (11,40)');
+    expect(exitCode({ rows: rows.filter((r) => /^turn-s3-(size|ladder)Gap$/.test(r.id)) })).toBe(1);
+    expect(exitCode({ rows: rows.filter((r) => /^turn-s2-/.test(r.id)) })).toBe(0);
+    // From the 4th season on the lock is informative too.
+    expect(get('turn-s4-sizeGap')).toMatchObject({ status: 'fora', required: false });
+  });
+
+  it('makes the big champion and the weak club in the G4 informative in seasons 2 and 3', () => {
+    const chain = [1, 2, 3, 4].map((k) => [withStrength(base, k, 70, 4.8)]);
+    const rows = chainRows({ chain });
+    const get = (id: string) => rows.find((r) => r.id === id)!;
+    expect(CHAIN_INFO_TARGETS).toEqual(['bigChampion', 'weakInG4']);
+    for (const k of [2, 3]) {
+      for (const id of CHAIN_INFO_TARGETS) {
+        expect(get(`chain-s${k}-${id}`), `${k} ${id}`).toMatchObject({
+          required: false,
+          note: CHAIN_INFO_NOTE,
+        });
+      }
+      // The other targets of the same season still count.
+      for (const id of ['champion', 'smallChampion', 'z4Escape']) {
+        expect(get(`chain-s${k}-${id}`).required, `${k} ${id}`).toBe(true);
+      }
+    }
+    expect(CHAIN_INFO_NOTE).toContain('decisão 15 do CEO, 2026-11-05');
+    // From the 4th season on everything is informative, without the note.
+    expect(get('chain-s4-bigChampion').required).toBe(false);
+    expect(get('chain-s4-bigChampion').note).toBeUndefined();
+    // Season 1 (the main block) keeps both required.
+    const main = buildReport({
+      seasons: [base],
+      chain,
+      robotSeasons: [],
+      calibrated: new Map(),
+      tactical: new Map(),
+    }).rows;
+    for (const id of CHAIN_INFO_TARGETS) {
+      expect(
+        main.find((r) => r.id === id),
+        id,
+      ).toMatchObject({ required: true });
+      expect(main.find((r) => r.id === id)!.note).toBeUndefined();
+    }
+    // In the total of the seeds the weak club in the G4 of seasons 2 and 3 does not count either.
+    const run = {
+      seasons: [base],
+      chain,
+      robotSeasons: [],
+      calibrated: new Map(),
+      tactical: new Map(),
+    };
+    const pooled = pooledRows([run, run]);
+    expect(pooled.find((r) => r.id === 'weakInG4')!.required).toBe(true);
+    for (const k of [2, 3]) {
+      expect(pooled.find((r) => r.id === `chain-s${k}-weakInG4`)!.required).toBe(false);
+    }
   });
 
   it('pools the rare targets of every season of the chain over the seeds', () => {
