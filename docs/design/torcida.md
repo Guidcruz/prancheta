@@ -32,11 +32,11 @@ reversão    = fans.reversion × (termômetro − fans.baseline)
 termômetro  = clamp(termômetro + Δ, 0, 100)
 ```
 
-Começa em `fans.start = 60` para todos ("começo de temporada é esperança").
+Começa em `fans.start = 60` para todos ("começo de temporada é esperança"), no jogo novo e em toda virada de temporada.
 
 **Leituras fixadas (T-014, `game-designer`, 2026-11-05):**
 
-- **Força nos pontos esperados:** `ClubState.strength`, a força-alvo efetiva da carreira (o número da tela de Novo jogo), dos dois clubes. Não é a força do XI da rodada: a torcida espera pelo nome e pelo elenco, não pela escalação. Com a força do XI, escalar reservas baixaria a expectativa e daria termômetro de graça a quem poupa o time. Na virada para a 2ª temporada (T-017), a `strength` precisa ser recalculada depois da evolução, senão a expectativa fica presa ao elenco do ano anterior (pendência da T-017).
+- **Força nos pontos esperados:** `ClubState.strength`, a força-alvo efetiva da carreira (o número da tela de Novo jogo), dos dois clubes. Não é a força do XI da rodada: a torcida espera pelo nome e pelo elenco, não pela escalação. Com a força do XI, escalar reservas baixaria a expectativa e daria termômetro de graça a quem poupa o time. Na virada de temporada (T-017), a `strength` é recalculada uma vez, depois da evolução: a força do melhor XI do elenco evoluído (`temporada.md`, "Força dos clubes na virada"). Ela fica fixa a temporada toda: a expectativa é de pré-temporada, e a força exibida do clube e a dos pontos esperados são o mesmo campo, então mudam juntas.
 - **Zona:** G4 = posições 1 a 4, Z4 = 17 a 20, pela tabela **depois** da rodada (com o jogo que acabou de acontecer), as duas da 6ª rodada em diante. O jejum não tem corte de rodada: ele só existe do 4º jogo.
 - **Teto das decisões:** vale só para as escolhas do técnico (posts e entrevista). O ídolo no banco entra **depois** do teto: quem responde a todos os posts não esconde o ídolo no banco. Faixa da parcela: −5 a +4.
 - **Partida encerrada (W.O.):** conta pelo placar definido, nos pontos, na goleada e no jejum.
@@ -123,12 +123,12 @@ Os quatro primeiros são valores fixos da ADR-0005 (o `match.homeBase` da ADR-00
 
 ## Casos de borda
 
-| Caso                                      | Regra                                                                                                  |
-| ----------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| Termômetro passaria de 100 ou de 0        | corta na borda                                                                                         |
-| Clube sem capacidade de estádio na lista  | usa o padrão por porte: grande 45.000, médio 30.000, pequeno 15.000                                    |
-| Partida encerrada por menos de 7          | conta como resultado normal para a torcida                                                             |
-| Decisão enviada para clube da IA          | ignorada, com aviso; o termômetro da IA não recebe decisões nem o ídolo no banco                       |
-| Ídolo lesionado ou suspenso fora de campo | não conta como "no banco" e zera o contador                                                            |
-| Nova temporada (opção B)                  | termômetro volta para `fans.start`, mais 5 para o campeão e menos 5 para quem terminou entre 13º e 16º |
-| Aba da rede social desligada              | o termômetro continua igual; só os posts somem                                                         |
+| Caso                                      | Regra                                                                                                                                                                                                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Termômetro passaria de 100 ou de 0        | corta na borda                                                                                                                                                                                                                                                        |
+| Clube sem capacidade de estádio na lista  | usa o padrão por porte: grande 45.000, médio 30.000, pequeno 15.000                                                                                                                                                                                                   |
+| Partida encerrada por menos de 7          | conta como resultado normal para a torcida                                                                                                                                                                                                                            |
+| Decisão enviada para clube da IA          | ignorada, com aviso; o termômetro da IA não recebe decisões nem o ídolo no banco                                                                                                                                                                                      |
+| Ídolo lesionado ou suspenso fora de campo | não conta como "no banco" e zera o contador                                                                                                                                                                                                                           |
+| Nova temporada (virada, P2)               | termômetro volta a `fans.start` para os 20 clubes, sem bônus de campeão nem desconto pela zona de rebaixamento (a zona não tem efeito na 1a, e 5 pontos de termômetro são 0,3 ponto de mando: ninguém sente); a decisão pendente zera e o `idolBenchStreak` volta a 0 |
+| Aba da rede social desligada              | o termômetro continua igual; só os posts somem                                                                                                                                                                                                                        |

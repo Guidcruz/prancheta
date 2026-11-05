@@ -82,14 +82,14 @@ atributo ausente = clamp(round(0.4 × overall), 1, 99)
 
 ## Estados que mudam
 
-| Estado    | Faixa       | Começa em         | Muda com                                                                                      |
-| --------- | ----------- | ----------------- | --------------------------------------------------------------------------------------------- |
-| Condição  | 0 a 100     | 100               | cai no jogo, recupera 7 por dia (`partida.md`, "Cansaço"); volta a 100 na virada da temporada |
-| Moral     | 0 a 100     | `Rng.int(50, 70)` | resultados, banco, torcida, conversa do intervalo (abaixo)                                    |
-| Forma     | nota 3 a 10 | "sem jogos"       | média das notas dos últimos 5 jogos; **só exibição**                                          |
-| Lesão     | rodadas     | 0                 | `partida.md`, "Lesões"; desconta 1 por rodada; termina na virada da temporada                 |
-| Suspensão | jogos       | 0                 | `partida.md`, "Cartões"; desconta 1 por jogo do clube; termina na virada da temporada         |
-| Amarelos  | contador    | 0                 | zera ao chegar a 3 (gera suspensão) e no fim da temporada; no Realismo simplificado fica em 0 |
+| Estado    | Faixa       | Começa em         | Muda com                                                                                                  |
+| --------- | ----------- | ----------------- | --------------------------------------------------------------------------------------------------------- |
+| Condição  | 0 a 100     | 100               | cai no jogo, recupera 7 por dia (`partida.md`, "Cansaço"); volta a 100 na virada da temporada             |
+| Moral     | 0 a 100     | `Rng.int(50, 70)` | resultados, banco, torcida, conversa do intervalo (abaixo); na virada, metade do caminho até `fans.start` |
+| Forma     | nota 3 a 10 | "sem jogos"       | média das notas dos últimos 5 jogos; **só exibição**; volta a "sem jogos" na virada                       |
+| Lesão     | rodadas     | 0                 | `partida.md`, "Lesões"; desconta 1 por rodada; termina na virada da temporada (decisão 13)                |
+| Suspensão | jogos       | 0                 | `partida.md`, "Cartões"; desconta 1 por jogo do clube; termina na virada da temporada                     |
+| Amarelos  | contador    | 0                 | zera ao chegar a 3 (gera suspensão) e no fim da temporada; no Realismo simplificado fica em 0             |
 
 **Frações.** Condição e moral são números reais (o cansaço tira 0,3 por minuto; o profissional perde −1,5). O motor não arredonda o estado: só corta em 0 e 100. A interface mostra o inteiro arredondado (`Math.round`). Lesão, suspensão e amarelos são inteiros.
 
@@ -132,6 +132,8 @@ Um por jogador. `drawTrait` sorteia só Líder 10%, Temperamental 15%, Profissio
 
 **Ídolo no banco (regra em uma frase):** se o técnico humano deixa o ídolo apto fora de campo duas rodadas seguidas ou mais, a torcida dele perde 1 por rodada. "Apto" = nem lesionado nem suspenso no início da rodada; "fora de campo" = não entrou nem nos acréscimos; o contador (`idolBenchStreak`) zera quando ele entra em campo ou fica inapto. **Só vale para clube humano** (o que está em `sheets` ou `coaches` da rodada; `torcida.md`, "Decisões do técnico"): a IA escala pela força e não faz escolha para a torcida, e punir a IA por escalar o melhor seria ruído que ninguém vê. Num clube da IA o contador nem anda (fica em 0). Entra no termômetro depois do teto das decisões (`torcida.md`, "Fórmula").
 
+**O ídolo é o mesmo jogador a carreira toda na 1a** (T-017): não há novo sorteio na virada, mesmo que ele envelheça, caia de nível ou deixe de ser titular. Ídolo é história com a torcida, não o melhor do elenco no momento; o veterano em queda que a torcida pede é um dilema de técnico, e custa pouco resolvê-lo (uma entrada nos acréscimos zera o contador). Na 1a ninguém sai do clube, então o clube nunca fica sem ídolo. Quando houver saída (venda, Etapa 3; aposentadoria, Etapa 4, ou a renovação mínima da decisão 14 de `balance-targets.md`), o clube escolhe um novo pela regra da geração aplicada ao melhor XI do momento (titular de 29 anos ou mais com maior overall; sem nenhum, o de maior overall), e o traço dele vira Ídolo.
+
 Vaias, pedido de saída e ídolo contra a torcida: Etapa 3.
 
 ## Potencial
@@ -140,12 +142,15 @@ Teto do `overall`. Nunca aparece como número na 1a (olheiros: Etapa 5). O jogo 
 
 ## Evolução (uma vez, no fim da temporada)
 
+**Regra em uma frase:** no fim de cada temporada, cada jogador sobe ou desce pela curva da idade, os jovens crescem mais quando jogam e estão animados, ninguém passa do potencial, e todos fazem aniversário.
+
 ```
 ageEff = idade − (peakAge − 27)
 Δ = curva(ageEff)
 se Δ > 0: Δ = Δ × growth × (1.0 + 0.2 × min(1, minutos / (38 × 90 × 0.6))) × (0.9 + 0.2 × moral / 100)
 Δ = round(Δ + Normal(0, 1))
 se Δ > 0: Δ = min(Δ, potential − overall)
+alvo = clamp(overall + Δ, 1, 99)
 idade = idade + 1
 ```
 
@@ -153,9 +158,27 @@ idade = idade + 1
 | -------- | ---- | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ---- |
 | curva    | +5   | +4    | +3    | +2    | +1    | 0     | −1    | −2    | −3   |
 
+**Entradas, para implementar sem interpretar (T-017):**
+
+| Termo               | De onde vem                                                                                                                                                                                                                                                                                                              |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| quem evolui         | todos os jogadores do estado (os 20 clubes), na fase do `endSeason` (`temporada.md`, "Fim de temporada"), depois dos prêmios                                                                                                                                                                                             |
+| `idade`             | a da temporada que acabou (antes do `+ 1`)                                                                                                                                                                                                                                                                               |
+| `peakAge`, `growth` | do jogador (sorteados na geração; não mudam)                                                                                                                                                                                                                                                                             |
+| `minutos`           | `seasonStats[id].minutes` (minutos regulamentares); quem não entrou em campo tem 0                                                                                                                                                                                                                                       |
+| `moral`             | `morale` depois da rodada 38, antes da puxada da virada                                                                                                                                                                                                                                                                  |
+| `Normal(0, 1)`      | `normal(rng, 0, 1)` de `math.ts` (soma de 6 uniformes), com um `Rng` por jogador: ``new Rng(seedFromString(`${seed}-s${season}-evolution-${playerId}`))``, em que `season` é a temporada que acabou. Uma semente por jogador deixa o resultado igual em qualquer ordem de processamento e não gasta o `Rng` de mais nada |
+| `round`             | `Math.round` (meio para cima: 2,5 → 3 e −2,5 → −2), como no resto do motor                                                                                                                                                                                                                                               |
+| teto                | `potential − overall`, que é sempre ≥ 0; só corta Δ positivo                                                                                                                                                                                                                                                             |
+| atributos           | `fitAttributesToOverall(attributes, position, alvo)` ("Ajuste ao alvo"); com `alvo = overall`, os atributos não mudam                                                                                                                                                                                                    |
+| o que não muda      | `potential`, `peakAge`, `growth`, posição, traço, camisa                                                                                                                                                                                                                                                                 |
+
 - Cada jogador tem a própria curva (`PROJETO.md`): `peakAge` sorteado entre 26 e 29 e `growth` entre `players.growthMin = 0.8` e `players.growthMax = 1.2`.
-- Minutos (1,0 a 1,2) e moral (0,9 a 1,1) são os multiplicadores da fórmula das Brasilidades; CT e auxiliar entram na Etapa 3 como mais dois multiplicadores.
-- O novo overall é `alvo = clamp(overall + Δ, 1, 99)` e os atributos chegam lá pelo "Ajuste ao alvo" (deslocamento grosso de Δ, depois ajuste fino). O overall final é **exatamente** o alvo. Como o Δ positivo já foi cortado em `potential − overall` e o negativo só desce, o resultado nunca passa do potencial; o potencial não muda na evolução.
+- Minutos (1,0 a 1,2) e moral (0,9 a 1,1) são os multiplicadores da fórmula das Brasilidades; CT e auxiliar entram na Etapa 3 como mais dois multiplicadores. A referência dos minutos (60% de 38 jogos de 90 minutos, 2.052 minutos) é constante.
+- O novo overall é o `alvo`, e os atributos chegam lá pelo "Ajuste ao alvo" (deslocamento grosso de Δ, depois ajuste fino). O overall final é **exatamente** o alvo. Como o Δ positivo já foi cortado em `potential − overall` e o negativo só desce, o resultado nunca passa do potencial.
+- **O ruído no auge desce mais do que sobe, de propósito.** Quem está no auge (curva 0) e já no potencial só pode descer pelo ruído: em média −0,3 por temporada. Isso segura a inflação que os jovens trazem: medido, tirar o ruído do auge deixa a força média da liga cerca de 0,3 ponto mais alta nas temporadas 4 e 5 (71,3 contra 71,0) (`balance-log.md`, 2026-11-05, T-017). Fica como está.
+
+**Medido (cadeias de temporadas, IA nos 20 clubes; `balance-log.md`):** Δ médio na 1ª virada de +3,9 para quem tem até 21 anos, +1,7 de 22 a 26, −0,3 de 27 a 30 e −1,2 de 31 em diante; +0,5 nos titulares e +0,9 no elenco todo. A força média da liga vai de 70,0 a 70,6 na temporada 2 e 70,9 na 3.
 
 **Exemplo.** Meia de 20 anos, overall 64, potencial 80, `peakAge` 28 (`ageEff` 19 → +5), `growth` 1,1, jogou 1.800 minutos (fator 1,18), moral 70 (1,04): `5 × 1,1 × 1,18 × 1,04 = 6,7`, mais o ruído → cerca de +7, overall 71.
 
@@ -175,7 +198,7 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 **Variação por carreira:** `strength` efetiva = `strength + Normal(0, generation.clubStrengthSd)`, com `generation.clubStrengthSd = 1.5` (decisão 3 de `balance-targets.md`).
 
-**Atualização anual:** a força de cada clube segue a colocação final do último campeonato real, na escada única acima; o porte não muda pela colocação (`clubes-serie-a.md`, "Atualização anual").
+**Atualização anual:** a força de cada clube segue a colocação final do último campeonato real, na escada única acima; o porte não muda pela colocação (`clubes-serie-a.md`, "Atualização anual"). Isso vale para o lote de clubes de quem começa um jogo novo. **Dentro da carreira**, da 2ª temporada em diante, a força é a do melhor XI do elenco evoluído, sem escada nem colocação (`temporada.md`, "Força dos clubes na virada"; decisão D8 do CEO).
 
 **Elenco de 25 (constante):** 3 GOL, 5 ZAG, 4 LAT, 4 VOL, 4 MEI, 5 ATA. O tamanho sai da composição; não há parâmetro de tamanho de elenco (ver "Parâmetros").
 
@@ -217,6 +240,8 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 | `players.growthMax`         | 1,2           | 1,0–1,5 | idem                                            |
 | `generation.clubStrengthSd` | 1,5           | 0–4     | cada carreira com favoritos um pouco diferentes |
 
+A evolução não tem outro parâmetro: `growthMin` e `growthMax` são o botão do quanto os jovens crescem (e da inflação da liga, decisão 11 de `balance-targets.md`). Curva, ruído de 1, multiplicadores de minutos e de moral e a referência de minutos são constantes.
+
 **Constantes:** tabelas de posição, pesos, curva de idade, chances de traço, efeitos de moral, composição do elenco (3/5/4/4/4/5 = 25, com os grupos titulares 11, reservas 7, elenco 4, jovens 3), faixas de overall por grupo, limiar de "promessa" (até 23 anos e `potential − overall ≥ 10`) e a regra de suspensão (3 amarelos ou 1 vermelho, em `partida.md`). Ficam no código, documentados aqui, porque são regra do jogo e não botão do `/balance`; viram parâmetro só se uma rodada do `/balance` precisar mexer neles.
 
 **Por que não há `generation.squadSize`:** tamanho sem composição não diz ao motor quantos de cada posição gerar, e uma composição parametrizável seria uma tabela a mais para validar sem nenhuma meta de `balance-targets.md` que dependa dela. 25 cabe numa tela do celular e dá rotação para as 8 quartas da temporada.
@@ -225,28 +250,31 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 
 ## Limites dos campos (o validador do save confere)
 
-| Campo            | Faixa                   | Tipo    | Por quê                                                                                                |
-| ---------------- | ----------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| atributos        | 1 a 99                  | inteiro | regra da nota                                                                                          |
-| `overall`        | 1 a 99, igual à fórmula | inteiro | 35–92 só na geração; a evolução pode sair dessa faixa                                                  |
-| `potential`      | `overall` a 99          | inteiro | teto; 95 é o máximo na geração                                                                         |
-| `age`            | 15 a 60                 | inteiro | a geração dá 17 a 34; 60 é só sanidade até a aposentadoria (Etapa 4), para um save longo nunca quebrar |
-| `peakAge`        | 26 a 29                 | inteiro | curva pessoal                                                                                          |
-| `growth`         | 0,5 a 1,5               | real    | as faixas mais largas de `players.growthMin/Max`: mudar o parâmetro não invalida saves antigos         |
-| `shirt`          | 1 a 99                  | inteiro | única no clube (validada na montagem do elenco, T-006)                                                 |
-| `condition`      | 0 a 100                 | real    | ver "Frações"                                                                                          |
-| `morale`         | 0 a 100                 | real    | ver "Frações"                                                                                          |
-| `yellowCount`    | 0 a 2                   | inteiro | o 3º amarelo zera o contador e gera suspensão                                                          |
-| lesão, suspensão | ≥ 0                     | inteiro | contadores                                                                                             |
+| Campo            | Faixa                   | Tipo    | Por quê                                                                                                                                  |
+| ---------------- | ----------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------- |
+| atributos        | 1 a 99                  | inteiro | regra da nota                                                                                                                            |
+| `overall`        | 1 a 99, igual à fórmula | inteiro | 35–92 só na geração; a evolução pode sair dessa faixa                                                                                    |
+| `potential`      | `overall` a 99          | inteiro | teto; 95 é o máximo na geração                                                                                                           |
+| `age`            | 15 a 99                 | inteiro | a geração dá 17 a 34; sem aposentadoria na 1a e com temporadas sem fim (P2), 60 seria atingido na temporada 28; 99 é só sanidade (T-017) |
+| `peakAge`        | 26 a 29                 | inteiro | curva pessoal                                                                                                                            |
+| `growth`         | 0,5 a 1,5               | real    | as faixas mais largas de `players.growthMin/Max`: mudar o parâmetro não invalida saves antigos                                           |
+| `shirt`          | 1 a 99                  | inteiro | única no clube (validada na montagem do elenco, T-006)                                                                                   |
+| `condition`      | 0 a 100                 | real    | ver "Frações"                                                                                                                            |
+| `morale`         | 0 a 100                 | real    | ver "Frações"                                                                                                                            |
+| `yellowCount`    | 0 a 2                   | inteiro | o 3º amarelo zera o contador e gera suspensão                                                                                            |
+| lesão, suspensão | ≥ 0                     | inteiro | contadores                                                                                                                               |
 
 ## Casos de borda
 
-| Caso                                                    | Regra                                                                 |
-| ------------------------------------------------------- | --------------------------------------------------------------------- |
-| Evolução levaria um atributo acima de 99 ou abaixo de 1 | corta na borda; o ajuste fino compensa em outro atributo de peso > 0  |
-| Fórmula arredondada passaria do potencial               | não acontece: o alvo já respeita o potencial e o ajuste fino o atinge |
-| Goleiro na linha precisa de `finishing`/`passing`/etc.  | "Atributo ausente": `round(0.4 × overall)`                            |
-| Jovem já no potencial                                   | Δ positivo vira 0; Δ negativo (raro, pelo ruído) vale                 |
-| Clube sem titular ≥ 29 para ídolo                       | ídolo é o titular de maior overall                                    |
-| Dois jogadores gerados com o mesmo nome no clube        | o gerador de nomes resolve (fora do motor); o motor usa IDs           |
-| Lista de clubes sem `strength` ou com porte inválido    | `strength` ausente vira 70; porte inválido vira médio; registra aviso |
+| Caso                                                    | Regra                                                                                                                                                                                             |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Evolução levaria um atributo acima de 99 ou abaixo de 1 | corta na borda; o ajuste fino compensa em outro atributo de peso > 0                                                                                                                              |
+| Fórmula arredondada passaria do potencial               | não acontece: o alvo já respeita o potencial e o ajuste fino o atinge                                                                                                                             |
+| Goleiro na linha precisa de `finishing`/`passing`/etc.  | "Atributo ausente": `round(0.4 × overall)`                                                                                                                                                        |
+| Jovem já no potencial                                   | Δ positivo vira 0; Δ negativo (raro, pelo ruído) vale                                                                                                                                             |
+| Jogador que não entrou em campo na temporada            | minutos 0 (fator 1,0); evolui normalmente                                                                                                                                                         |
+| Veterano em queda abaixo do potencial                   | o ruído pode dar Δ positivo (raro); vale, até o potencial                                                                                                                                         |
+| Idade passaria de 60 (save muito longo)                 | sem a renovação da decisão 14, o jogador gerado com 34 anos chega a 61 na temporada 28; o save não pode ficar inválido por isso: o limite de `age` passa a 15 a 99 (pedido ao `developer`, T-017) |
+| Clube sem titular ≥ 29 para ídolo                       | ídolo é o titular de maior overall                                                                                                                                                                |
+| Dois jogadores gerados com o mesmo nome no clube        | o gerador de nomes resolve (fora do motor); o motor usa IDs                                                                                                                                       |
+| Lista de clubes sem `strength` ou com porte inválido    | `strength` ausente vira 70; porte inválido vira médio; registra aviso                                                                                                                             |

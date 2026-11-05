@@ -1,5 +1,7 @@
 import type { ClubDef } from '../../app/src/engine/index.ts';
 import {
+  CHAIN_REQUIRED_SEASONS,
+  chainPrefix,
   clubName,
   exitCode,
   notMeasured,
@@ -25,6 +27,37 @@ export interface RunInfo {
   /** Dotted paths of the parameters `--params` changed. */
   readonly overrides: readonly string[];
   readonly paramsFile?: string;
+  /** Seasons of each career (`--chain`); absent in a single-season run. */
+  readonly chain?: number;
+}
+
+/** The seasons of a `--chain` run found in the rows (2, 3, …), in order. */
+function chainSeasons(rows: readonly MetricRow[]): number[] {
+  const seasons = new Set<number>();
+  for (const r of rows) {
+    const m = /^chain-s(\d+)-/.exec(r.id);
+    if (m) seasons.add(Number(m[1]));
+  }
+  return [...seasons].sort((a, b) => a - b);
+}
+
+/** The sections of a `--chain` run: the turn rows, then each season of the chain. */
+function chainSections(rows: readonly MetricRow[]) {
+  const sections: { title: string; ids: (id: string) => boolean }[] = [];
+  if (rows.some((r) => r.id.startsWith('turn-'))) {
+    sections.push({
+      title: `Virada de temporada (força no início de cada temporada; da ${CHAIN_REQUIRED_SEASONS + 1}ª em diante, informativa)`,
+      ids: (id) => id.startsWith('turn-'),
+    });
+  }
+  for (const season of chainSeasons(rows)) {
+    const info = season > CHAIN_REQUIRED_SEASONS ? ' (informativa)' : '';
+    sections.push({
+      title: `Temporada ${season} da cadeia${info}: metas da 1a da liga (duelos e robô só na temporada 1)`,
+      ids: (id) => id.startsWith(chainPrefix(season)),
+    });
+  }
+  return sections;
 }
 
 const SECTIONS: readonly { readonly title: string; readonly ids: (id: string) => boolean }[] = [
@@ -117,12 +150,17 @@ export function formatText(report: Report, info: RunInfo, clubs: readonly ClubDe
   lines.push(
     `/balance: ${info.seasons} temporadas (${info.matches} jogos), semente ${info.seed}, duelos de ${info.duels} jogos, ${robot}`,
   );
+  if (info.chain !== undefined) {
+    lines.push(
+      `Cadeia: ${info.seasons} carreiras de ${info.chain} temporadas encadeadas pelo endSeason e o startNextSeason do motor; o bloco principal é a temporada 1`,
+    );
+  }
   lines.push(
     info.overrides.length === 0
       ? 'Parâmetros: app/src/params/ sem sobrescrita'
       : `Parâmetros: app/src/params/ com ${info.paramsFile ?? '--params'} por cima (${info.overrides.join(', ')})`,
   );
-  for (const section of SECTIONS) {
+  for (const section of [...SECTIONS, ...chainSections(report.rows)]) {
     const rows = report.rows.filter((r) => section.ids(r.id));
     if (rows.length === 0) continue;
     lines.push('', section.title);
@@ -176,6 +214,20 @@ export function formatText(report: Report, info: RunInfo, clubs: readonly ClubDe
 }
 
 function jsonOf(report: Report, info: RunInfo) {
+  const seasons = chainSeasons(report.rows);
+  const chain =
+    info.chain === undefined
+      ? {}
+      : {
+          chain: {
+            turn: report.rows.filter((r) => r.id.startsWith('turn-')),
+            seasons: seasons.map((season) => ({
+              season,
+              required: season <= CHAIN_REQUIRED_SEASONS,
+              rows: report.rows.filter((r) => r.id.startsWith(chainPrefix(season))),
+            })),
+          },
+        };
   return {
     run: info,
     exitCode: exitCode(report),
@@ -186,6 +238,7 @@ function jsonOf(report: Report, info: RunInfo) {
     titles: report.titles,
     robot: report.robot ?? null,
     tacticsByProfile: report.tacticsByProfile,
+    ...chain,
   };
 }
 

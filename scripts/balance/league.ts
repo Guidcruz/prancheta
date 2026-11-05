@@ -1,4 +1,11 @@
-import { getStandings, newGame, playRound, seedFromString } from '../../app/src/engine/index.ts';
+import {
+  endSeason,
+  getStandings,
+  newGame,
+  playRound,
+  seedFromString,
+  startNextSeason,
+} from '../../app/src/engine/index.ts';
 import type {
   AiProfile,
   ClubDef,
@@ -21,7 +28,8 @@ import { robotRoundInput } from './robot.ts';
  * club is played by the AI, or one of them by the robot coach (robot.ts).
  *
  * A season is reduced to a small record of counts (`SeasonRecord`), the same in a worker thread
- * or in the main one; metrics.ts turns the records into the report.
+ * or in the main one; metrics.ts turns the records into the report. With `--chain N` (T-017) a
+ * career plays N seasons in a row, turned by the engine (`runCareer`).
  */
 
 /** Year of the careers (the calendar of season 1). */
@@ -31,13 +39,22 @@ export const Z4_ROUND = 30;
 /** Positions of the relegation zone and of the G4. */
 export const Z4_FROM = 17;
 export const G4_TO = 4;
-/** Clubs of the "clube fraco" cut: the weakest of the career's ladder (decision 9). */
+/**
+ * Clubs of the "clube fraco" cut: the weakest of the career's ladder (decision 9). In a `--chain`
+ * run, those of season 1 for the whole career (balance-targets.md, "Recorte de cada métrica na
+ * cadeia"; decision 15).
+ */
 export const WEAK_CLUBS = 4;
 /**
  * Clubs of the "6 mais fortes" cut: the strongest of the career's ladder, the second reading of
  * "campeão grande" and "grande rebaixado" (clubes-serie-a.md, "Pedido ao developer", item 4).
  */
 export const STRONG_CLUBS = 6;
+/**
+ * Clubs of each end of the ladder in the drift lock of a `--chain` run (decision 15): the 4
+ * strongest against the 4 weakest of season 1.
+ */
+export const DRIFT_LADDER_CLUBS = 4;
 /** "6 a 8 pontos atrás do 16º" (decision 9). */
 export const Z4_GAP = { min: 6, max: 8 } as const;
 /** A starter below this condition marks a tired sheet (ia-clubes.md, "Pedido ao developer" 3). */
@@ -106,8 +123,39 @@ export interface TableRecord {
   z4GapEscaped: number;
 }
 
+/**
+ * The `strength` of the 20 clubs at the start of a season (balance-targets.md, "Virada de
+ * temporada"): the mean, the standard deviation (population, over the 20) and the gap from the
+ * 1st to the 20th; and the two gaps of the drift lock (decision 15): the mean of the big clubs
+ * minus that of the others, and the mean of the DRIFT_LADDER_CLUBS strongest minus that of the
+ * DRIFT_LADDER_CLUBS weakest, both of season 1.
+ */
+export interface StrengthRecord {
+  mean: number;
+  sd: number;
+  range: number;
+  sizeGap: number;
+  ladderGap: number;
+}
+
+/**
+ * The clubs a season of a career is cut by: the weakest and the strongest of the ladder (decision
+ * 9 and clubes-serie-a.md, item 4) and the two ends of the drift lock (decision 15). In a
+ * `--chain` run they are those of season 1, for the whole career.
+ */
+export interface LadderCut {
+  weakest: readonly ClubId[];
+  strongest: readonly ClubId[];
+  driftWeakest: readonly ClubId[];
+  driftStrongest: readonly ClubId[];
+}
+
 export interface SeasonRecord {
   index: number;
+  /** Season of the career (`--chain`); absent in a single-season run (season 1). */
+  season?: number;
+  /** The clubs' strength at the start of the season; only in a `--chain` run. */
+  strength?: StrengthRecord;
   /** Club played by the robot coach in this season, if any. */
   robot?: ClubId;
   matches: MatchTally;
@@ -275,10 +323,90 @@ export function seasonStart(ctx: BalanceContext, index: number): GameState {
 
 /** Plays season `index` (with the robot coaching `robot`, if given) and reduces it to a record. */
 export function runSeason(ctx: BalanceContext, index: number, robot?: ClubId): SeasonRecord {
-  const { params } = ctx;
+  return playSeason(ctx, seasonStart(ctx, index), index, robot).record;
+}
+
+/** The ladder cut of a state: its own weakest and strongest clubs (ties by id). */
+export function ladderCut(state: Pick<GameState, 'clubs'>): LadderCut {
+  return {
+    weakest: weakestClubs(state),
+    strongest: strongestClubs(state),
+    driftWeakest: weakestClubs(state, DRIFT_LADDER_CLUBS),
+    driftStrongest: strongestClubs(state, DRIFT_LADDER_CLUBS),
+  };
+}
+
+/**
+ * The strength record of the 20 clubs of a state; the ladder gap between the ends of `cut` (by
+ * default the state's own, which is season 1's in season 1).
+ */
+export function strengthRecord(
+  state: Pick<GameState, 'clubs'>,
+  cut: Pick<LadderCut, 'driftWeakest' | 'driftStrongest'> = ladderCut(state),
+): StrengthRecord {
+  const clubs = Object.values(state.clubs);
+  const values = clubs.map((c) => c.strength);
+  const mean = values.reduce((s, x) => s + x, 0) / values.length;
+  const variance = values.reduce((s, x) => s + (x - mean) * (x - mean), 0) / values.length;
+  const meanOf = (xs: readonly number[]) => xs.reduce((s, x) => s + x, 0) / xs.length;
+  const strengthOf = (ids: readonly ClubId[]) => ids.map((id) => state.clubs[id]!.strength);
+  const big = clubs.filter((c) => c.def.size === 'big').map((c) => c.strength);
+  const others = clubs.filter((c) => c.def.size !== 'big').map((c) => c.strength);
+  return {
+    mean,
+    sd: Math.sqrt(variance),
+    range: Math.max(...values) - Math.min(...values),
+    sizeGap: meanOf(big) - meanOf(others),
+    ladderGap: meanOf(strengthOf(cut.driftStrongest)) - meanOf(strengthOf(cut.driftWeakest)),
+  };
+}
+
+/** A career of `seasons` seasons in a row (`--chain`): its records, season by season. */
+export interface CareerRecord {
+  index: number;
+  seasons: SeasonRecord[];
+}
+
+/**
+ * Career `index` of a `--chain` run (balance-targets.md, "Cadeia de temporadas"): the same new
+ * career as season `index` of a single-season run, then `seasons` seasons in a row through the
+ * engine's `endSeason` (no human club) and `startNextSeason`, every club played by the AI. Each
+ * record has its season and the clubs' strength at its start. The weakest and strongest clubs are
+ * those of season 1 in every season (decision 15). A refused turn is a programming error: it
+ * throws.
+ */
+export function runCareer(ctx: BalanceContext, index: number, seasons: number): CareerRecord {
+  const records: SeasonRecord[] = [];
   let state = seasonStart(ctx, index);
-  const weakest = weakestClubs(state);
-  const strongest = strongestClubs(state);
+  const cut = ladderCut(state);
+  for (let season = 1; season <= seasons; season++) {
+    const strength = strengthRecord(state, cut);
+    const played = playSeason(ctx, state, index, undefined, cut);
+    records.push({ ...played.record, season, strength });
+    if (season === seasons) break;
+    const closed = endSeason(played.state, ctx.params, []);
+    if (!closed.ok) throw new Error(`endSeason refused career ${index}: ${closed.error}`);
+    const next = startNextSeason(closed.value.state, ctx.params, balanceIdentitySource());
+    if (!next.ok) throw new Error(`startNextSeason refused career ${index}: ${next.error}`);
+    state = next.value;
+  }
+  return { index, seasons: records };
+}
+
+/**
+ * Plays the 38 rounds of a season from `start` and reduces it to a record; the weakest and
+ * strongest clubs are those of `cut` (by default the ladder at `start`).
+ */
+export function playSeason(
+  ctx: BalanceContext,
+  start: GameState,
+  index: number,
+  robot?: ClubId,
+  cut: Pick<LadderCut, 'weakest' | 'strongest'> = ladderCut(start),
+): { state: GameState; record: SeasonRecord } {
+  const { params } = ctx;
+  let state = start;
+  const { weakest, strongest } = cut;
   const sizes: Record<ClubId, ClubSize> = {};
   for (const [id, club] of Object.entries(state.clubs)) sizes[id] = club.def.size;
   const matches = emptyMatchTally();
@@ -323,13 +451,16 @@ export function runSeason(ctx: BalanceContext, index: number, robot?: ClubId): S
     positions[row.clubId] = row.position;
   }
   return {
-    index,
-    ...(robot === undefined ? {} : { robot }),
-    matches,
-    sheets,
-    fans,
-    table: tableRecord(final, afterZ4Round ?? final, sizes, weakest, strongest),
-    points,
-    positions,
+    state,
+    record: {
+      index,
+      ...(robot === undefined ? {} : { robot }),
+      matches,
+      sheets,
+      fans,
+      table: tableRecord(final, afterZ4Round ?? final, sizes, weakest, strongest),
+      points,
+      positions,
+    },
   };
 }

@@ -51,6 +51,7 @@ describe('parseArgs', () => {
       options: {
         seasons: 3,
         seeds: [7],
+        chain: 1,
         duels: 0,
         paramsFile: 'x.json',
         robot: undefined,
@@ -73,6 +74,27 @@ describe('parseArgs', () => {
     }
     const repeated = parseArgs(['--seed', '1,2,1']);
     expect(!repeated.ok && repeated.error).toContain('repetida');
+  });
+
+  it('reads --chain from 1 to 30 (T-017), 1 by default', () => {
+    const plain = parseArgs([]);
+    expect(plain.ok && plain.options.chain).toBe(1);
+    for (const [raw, value] of [
+      ['1', 1],
+      ['3', 3],
+      ['30', 30],
+    ] as const) {
+      const parsed = parseArgs(['--chain', raw]);
+      expect(parsed.ok && parsed.options.chain, raw).toBe(value);
+    }
+    expect(parseArgs(['--chain=10']).ok).toBe(true);
+    for (const raw of ['0', '31', '-1', '2.5', 'x']) {
+      const parsed = parseArgs(['--chain', raw]);
+      expect(parsed.ok, raw).toBe(false);
+      expect(!parsed.ok && parsed.error, raw).toContain('--chain');
+    }
+    expect(parseArgs(['--chain']).ok).toBe(false);
+    expect(USAGE).toContain('--chain <n>');
   });
 
   it('documents the four exit codes in the help', () => {

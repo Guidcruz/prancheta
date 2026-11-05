@@ -34,4 +34,9 @@
 //    and the test parameters follow app/src/params/ (baseChance 0.087, kChance 0.125,
 //    comfortableLeadPower 0.85, cards.bookedMult 0.20, fans.reversion 0.10); the match (but the
 //    derby), round and season goldens changed, and the new-game digest (it holds the version).
-export const ENGINE_VERSION = 11;
+// 12: the end of the season (T-017): the state gains `pastSeasons` (empty in a new game), so the
+//    new-game golden and the digests of the round goldens changed (nothing else in them did);
+//    `endSeason` and `startNextSeason` add the golden of the season turn. Still unpublished, the
+//    turn then rounds the morale to 2 decimals (BUG-A of T-017), so only the season-turn digest
+//    changed and that golden was written again at 12.
+export const ENGINE_VERSION = 12;

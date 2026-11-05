@@ -10,8 +10,8 @@ import type { ClubId, PlayerId, Position, Result, Trait } from './types.ts';
  *
  * Name and face are resolved once, when a player is created, by an IdentitySource received as an
  * argument (ADR-0012); the engine never imports lib/ nor content/. Squad generation, the joia
- * and the idol live in generation.ts and `newGame` in game.ts (T-006); evolution at the end of
- * the season is T-017.
+ * and the idol live in generation.ts and `newGame` in game.ts (T-006); the evolution at the end of
+ * the season is in season.ts (T-017).
  */
 
 /** Attributes of outfield players (docs/design/jogadores.md, "Atributos e nota geral"). */
@@ -189,8 +189,12 @@ export const POTENTIAL_MAX = 95;
  * legitimate save (an overall above 95 keeps potential = overall) must never be refused.
  */
 export const POTENTIAL_STORED_MAX = 99;
-/** Valid stored `age`: generation gives 17..34; the rest is sanity for long careers. */
-export const AGE_RANGE: { readonly min: number; readonly max: number } = { min: 15, max: 60 };
+/**
+ * Valid stored `age` (jogadores.md, "Limites dos campos"; T-017): generation gives 17..34, and
+ * with endless seasons and no retirement in 1a (P2) a player of 34 would pass 60 in season 28, so
+ * the save must still be valid; 99 is only sanity.
+ */
+export const AGE_RANGE: { readonly min: number; readonly max: number } = { min: 15, max: 99 };
 /** Valid shirt number (unique per club, checked where the squad is built, T-006). */
 export const SHIRT_RANGE: { readonly min: number; readonly max: number } = { min: 1, max: 99 };
 /** Share of `overall` used for an attribute the player does not have ("Atributo ausente"). */

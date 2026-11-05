@@ -12,7 +12,13 @@ import {
   type DuelResult,
   type DuelTally,
 } from './duels.ts';
-import { runSeason, type BalanceContext, type SeasonRecord } from './league.ts';
+import {
+  runCareer,
+  runSeason,
+  type BalanceContext,
+  type CareerRecord,
+  type SeasonRecord,
+} from './league.ts';
 
 /*
  * The work of a /balance run as a list of independent jobs (a season, or a chunk of a duel), run
@@ -21,17 +27,21 @@ import { runSeason, type BalanceContext, type SeasonRecord } from './league.ts';
  * the report is the same with any number of workers.
  */
 
-/** One season of the league (with the robot coaching `robot`, if given). */
+/**
+ * One season of the league (with the robot coaching `robot`, if given), or with `chain` (2 or
+ * more, never with the robot) a career of that many seasons in a row, run in one job.
+ */
 export interface SeasonJob {
   readonly kind: 'season';
   readonly index: number;
   readonly robot?: string;
+  readonly chain?: number;
 }
 
 /** A job of a run: a season or a chunk of a duel, of the base seed `seed`. */
 export type Job = (SeasonJob | DuelJob) & { readonly seed: number };
 
-export type JobResult = SeasonRecord | DuelResult;
+export type JobResult = SeasonRecord | CareerRecord | DuelResult;
 
 /** What every job needs besides itself (sent once to each worker). */
 export type RunContext = Omit<BalanceContext, 'seed'>;
@@ -48,10 +58,17 @@ export function planJobs(options: {
   readonly duels: number;
   readonly robot?: string;
   readonly seed: number;
+  /** Seasons of each career (`--chain`); 1 (the default) is the single-season run. */
+  readonly chain?: number;
 }): Job[] {
   const { seed } = options;
+  const chain = options.chain ?? 1;
   const jobs: Job[] = [];
-  for (let i = 1; i <= options.seasons; i++) jobs.push({ kind: 'season', index: i, seed });
+  for (let i = 1; i <= options.seasons; i++) {
+    jobs.push(
+      chain > 1 ? { kind: 'season', index: i, chain, seed } : { kind: 'season', index: i, seed },
+    );
+  }
   if (options.robot !== undefined) {
     for (let i = 1; i <= options.seasons; i++) {
       jobs.push({ kind: 'season', index: i, robot: options.robot, seed });
@@ -74,7 +91,7 @@ export function planJobs(options: {
 
 /** Dispatch rank of a job: the longest first (robot seasons, then "tudo no ataque"). */
 function rank(job: Job): number {
-  if (job.kind === 'season') return job.robot === undefined ? 2 : 0;
+  if (job.kind === 'season') return job.robot === undefined && job.chain === undefined ? 2 : 0;
   return job.kind === 'allOut' ? 1 : 3;
 }
 
@@ -92,6 +109,9 @@ export function dispatchOrder(jobs: readonly Job[]): number[] {
 
 /** Runs one job in this thread. */
 export function runJob(ctx: RunContext, job: Job): JobResult {
+  if (job.kind === 'season' && job.chain !== undefined && job.chain > 1) {
+    return runCareer({ ...ctx, seed: job.seed }, job.index, job.chain);
+  }
   if (job.kind === 'season') return runSeason({ ...ctx, seed: job.seed }, job.index, job.robot);
   return runDuelJob(ctx.params, job.seed, job);
 }
@@ -167,7 +187,10 @@ export function bySeed(
 
 /** The results of a run, by part, in job order. */
 export interface RunResults {
+  /** The AI seasons; in a `--chain` run, season 1 of each career. */
   readonly seasons: readonly SeasonRecord[];
+  /** `--chain` only: `chain[k]` = season k + 1 of every career, in job order. */
+  readonly chain?: readonly (readonly SeasonRecord[])[];
   readonly robotSeasons: readonly SeasonRecord[];
   readonly calibrated: ReadonlyMap<CalibratedGap, DuelTally>;
   readonly tactical: ReadonlyMap<string, DuelTally>;
@@ -181,6 +204,7 @@ export function collect(jobs: readonly Job[], results: readonly JobResult[]): Ru
   const calibrated = new Map<CalibratedGap, DuelTally>();
   const tactical = new Map<string, DuelTally>();
   let allOut: AllOutTally | undefined;
+  const chain: SeasonRecord[][] = [];
   const sum = <T extends object>(a: T, b: T) => {
     for (const key of Object.keys(b) as (keyof T)[]) {
       (a[key] as number) = (a[key] as number) + (b[key] as number);
@@ -188,7 +212,10 @@ export function collect(jobs: readonly Job[], results: readonly JobResult[]): Ru
   };
   jobs.forEach((job, i) => {
     const result = results[i]!;
-    if (job.kind === 'season') {
+    if (job.kind === 'season' && job.chain !== undefined && job.chain > 1) {
+      (result as CareerRecord).seasons.forEach((record, k) => (chain[k] ??= []).push(record));
+      seasons.push((result as CareerRecord).seasons[0]!);
+    } else if (job.kind === 'season') {
       (job.robot === undefined ? seasons : robotSeasons).push(result as SeasonRecord);
     } else if (job.kind === 'calibrated') {
       const t = calibrated.get(job.gap) ?? emptyDuelTally();
@@ -203,5 +230,12 @@ export function collect(jobs: readonly Job[], results: readonly JobResult[]): Ru
       sum(allOut, result as AllOutTally);
     }
   });
-  return { seasons, robotSeasons, calibrated, tactical, ...(allOut ? { allOut } : {}) };
+  return {
+    seasons,
+    ...(chain.length > 0 ? { chain } : {}),
+    robotSeasons,
+    calibrated,
+    tactical,
+    ...(allOut ? { allOut } : {}),
+  };
 }

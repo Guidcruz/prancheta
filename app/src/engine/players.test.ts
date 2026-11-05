@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  AGE_RANGE,
   FACE_MAX_LENGTH,
   FIT,
   GOALKEEPER_ATTRIBUTES,
@@ -531,7 +532,7 @@ describe('validatePlayer', () => {
       [{ peakAge: 30 }, 'peakAge:out-of-range'],
       [{ growth: 1.6 }, 'growth:out-of-range'],
       [{ age: 14 }, 'age:out-of-range'],
-      [{ age: 61 }, 'age:out-of-range'],
+      [{ age: 100 }, 'age:out-of-range'],
       [{ shirt: 0 }, 'shirt:out-of-range'],
       [{ shirt: 100 }, 'shirt:out-of-range'],
       [{ nameSeed: -1 }, 'nameSeed:out-of-range'],
@@ -557,6 +558,14 @@ describe('validatePlayer', () => {
     expect(validatePlayer(testPlayer({ growth: 0.5 })).ok).toBe(true);
     expect(validatePlayer(testPlayer({ growth: 1.5 })).ok).toBe(true);
     expect(validatePlayer(testPlayer({ growth: 0.49 })).ok).toBe(false);
+  });
+
+  it('accepts the ages of a long career up to 99 (AGE_RANGE 15..99, T-017)', () => {
+    expect(AGE_RANGE).toEqual({ min: 15, max: 99 });
+    for (const age of [15, 60, 61, 99]) {
+      expect(validatePlayer(testPlayer({ age })).ok, String(age)).toBe(true);
+    }
+    expect(validatePlayer(testPlayer({ age: 99.5 })).ok).toBe(false);
   });
 
   it('accepts every trait, the idol included', () => {

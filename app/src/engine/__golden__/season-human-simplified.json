@@ -1,5 +1,5 @@
 {
-  "engineVersion": 11,
+  "engineVersion": 12,
   "name": "season-human-simplified",
   "data": {
     "human": "clube-teste-01",
@@ -283,6 +283,6 @@
       "winless": 49,
       "winlessEnded": 36
     },
-    "digest": "68031ba2"
+    "digest": "7a775ba7"
   }
 }

@@ -1,6 +1,12 @@
 import type { ClubDef, ClubId } from '../../app/src/engine/index.ts';
 import { REFERENCE_VARIANT, TACTIC_VARIANTS, type AllOutTally, type DuelTally } from './duels.ts';
-import { emptyMatchTally, mergeMatchTally, type MatchTally, type SeasonRecord } from './league.ts';
+import {
+  emptyMatchTally,
+  mergeMatchTally,
+  type MatchTally,
+  type SeasonRecord,
+  type StrengthRecord,
+} from './league.ts';
 import type { RunResults } from './run.ts';
 
 /*
@@ -49,6 +55,42 @@ export const BIG_RELEGATED_NOTE =
  * run has more than one (balance-log.md, decision 4).
  */
 export const RARE_TARGETS: readonly string[] = ['smallChampion', 'weakInG4', 'z4EscapeGap'];
+
+/**
+ * Seasons of a `--chain` career that count as required targets (balance-targets.md, "Virada de
+ * temporada"; docs/02-architecture.md, 4.1, T-017); from the next one on they are informative.
+ */
+export const CHAIN_REQUIRED_SEASONS = 3;
+
+/** Prefix of the rows of season `k` of a `--chain` run (`chain-s2-goals`). */
+export const chainPrefix = (season: number) => `chain-s${season}-`;
+/** Prefix of the "Virada de temporada" rows of season `k` (`turn-s2-strengthMean`). */
+export const turnPrefix = (season: number) => `turn-s${season}-`;
+
+/** The id of a row without its `--chain` prefix. */
+export const baseId = (id: string) => id.replace(/^(chain|turn)-s\d+-/, '');
+
+/** A rare table target, of the single season or of any season of a chain (RARE_TARGETS). */
+export const isRare = (id: string) => RARE_TARGETS.includes(id.replace(/^chain-s\d+-/, ''));
+
+/** Most the league's mean strength may move from season 1 in seasons 2 and 3 (decision 11). */
+export const CHAIN_STRENGTH_DRIFT = 1;
+
+/**
+ * Most the two gaps of the drift lock (big minus the other clubs; the 4 strongest minus the 4
+ * weakest of season 1) may move from season 1 in seasons 2 and 3 (decision 15).
+ */
+export const CHAIN_GAP_DRIFT = 0.5;
+
+/**
+ * Targets required in season 1 that are informative in the turned seasons of a chain (decision
+ * 15): their rates are too noisy in 200 seasons to find a drift; the drift lock measures it.
+ */
+export const CHAIN_INFO_TARGETS: readonly string[] = ['bigChampion', 'weakInG4'];
+
+/** Why CHAIN_INFO_TARGETS do not count in seasons 2 and 3 of a chain. */
+export const CHAIN_INFO_NOTE =
+  'informativa nas temporadas 2 e 3 da cadeia, obrigatória na temporada 1; a trava de deriva mede a virada (decisão 15 do CEO, 2026-11-05)';
 
 /** Half-width of the points per game reference of the tactical duels (balance-log.md). */
 export const PPG_TOLERANCE = 0.04;
@@ -576,6 +618,8 @@ export function buildReport(
     ),
   ];
 
+  rows.push(...chainRows(results));
+
   const titleCount = new Map<ClubId, number>();
   for (const s of seasons)
     titleCount.set(s.table.champion, (titleCount.get(s.table.champion) ?? 0) + 1);
@@ -602,6 +646,151 @@ export function buildReport(
   return { rows, titles, topScores: top, tacticsByProfile, ...(robot ? { robot } : {}) };
 }
 
+/**
+ * A row measured on the league seasons: not the duels, the tactics, the robot nor the targets of
+ * later stages, which do not change with `--chain`.
+ */
+function isLeagueRow(id: string): boolean {
+  return !(
+    ['strong20', 'upset30', 'allOut', 'strong10', 'draws0'].includes(id) ||
+    /^(tactic-|robot|future-)/.test(id)
+  );
+}
+
+/**
+ * The rows of a `--chain` run (empty without one): for each season of the chain from the 2nd,
+ * every 1a league target measured on that season of all careers (`chain-s<k>-<id>`, without the
+ * duels and the robot, which do not change with the chain), and for every season the "Virada de
+ * temporada" rows (`turn-s<k>-...`): the league's mean `strength`, within ±1.0 of season 1 from
+ * season 2 on, its deviation, 3.5 to 5.5, the gap from the 1st to the 20th, 12 to 20, and the
+ * drift lock (decision 15): the gap between the big clubs and the others and the one between the
+ * 4 strongest and the 4 weakest of season 1, each within ±0.5 of season 1 from season 2 on.
+ * Seasons up to CHAIN_REQUIRED_SEASONS are required; the later ones are informative. In seasons 2
+ * to CHAIN_REQUIRED_SEASONS the CHAIN_INFO_TARGETS are informative too (CHAIN_INFO_NOTE).
+ */
+export function chainRows(results: Pick<RunResults, 'chain'>): MetricRow[] {
+  const chain = results.chain ?? [];
+  if (chain.length < 2) return [];
+  const rows: MetricRow[] = [];
+  const meanOf = (records: readonly SeasonRecord[], f: (s: StrengthRecord) => number) => {
+    const values = records.flatMap((r) => (r.strength === undefined ? [] : [f(r.strength)]));
+    return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : undefined;
+  };
+  const first = meanOf(chain[0]!, (s) => s.mean);
+  const gaps = [
+    {
+      key: 'sizeGap',
+      label: 'Força: grandes − não grandes',
+      drift: 'Deriva da força: grandes − não grandes',
+    },
+    {
+      key: 'ladderGap',
+      label: 'Força: 4 mais fortes − 4 mais fracos',
+      drift: 'Deriva da força: 4 mais fortes − 4 mais fracos da temporada 1',
+    },
+  ] as const;
+  const firstGap = Object.fromEntries(
+    gaps.map((g) => [g.key, meanOf(chain[0]!, (s) => s[g.key])]),
+  ) as Record<(typeof gaps)[number]['key'], number | undefined>;
+  const signed = (v: number) => `${v >= 0 ? '+' : ''}${num(v, 2)}`;
+  chain.forEach((records, i) => {
+    const season = i + 1;
+    const required = season <= CHAIN_REQUIRED_SEASONS;
+    const label = (text: string) => `${text}, temporada ${season}`;
+    const mean = meanOf(records, (s) => s.mean);
+    rows.push(
+      season === 1
+        ? row(
+            `${turnPrefix(season)}strengthMean`,
+            label('Força média da liga'),
+            mean,
+            (v) => num(v, 2),
+            'referência das temporadas seguintes',
+            () => true,
+            false,
+          )
+        : row(
+            `${turnPrefix(season)}strengthMean`,
+            label('Força média da liga'),
+            mean,
+            (v) => `${num(v, 2)} (${v - first! >= 0 ? '+' : ''}${num(v - first!, 2)})`,
+            `±${num(CHAIN_STRENGTH_DRIFT, 1)} da temporada 1`,
+            (v) => first !== undefined && Math.abs(v - first) <= CHAIN_STRENGTH_DRIFT,
+            required,
+          ),
+      row(
+        `${turnPrefix(season)}strengthSd`,
+        label('Desvio da força'),
+        meanOf(records, (s) => s.sd),
+        (v) => num(v, 2),
+        '3,5 a 5,5',
+        { min: 3.5, max: 5.5 },
+        required,
+      ),
+      row(
+        `${turnPrefix(season)}strengthRange`,
+        label('1º − 20º em força'),
+        meanOf(records, (s) => s.range),
+        (v) => num(v, 1),
+        '12 a 20',
+        { min: 12, max: 20 },
+        required,
+      ),
+      ...gaps.map((g) => {
+        const id = `${turnPrefix(season)}${g.key}`;
+        const value = meanOf(records, (s) => s[g.key]);
+        const base = firstGap[g.key];
+        if (season === 1) {
+          return row(
+            id,
+            label(g.label),
+            value,
+            (v) => num(v, 2),
+            'referência da trava de deriva',
+            () => true,
+            false,
+          );
+        }
+        // The drift lock: the gap of this season minus that of season 1 (decision 15).
+        return row(
+          id,
+          label(g.drift),
+          value === undefined || base === undefined ? undefined : value - base,
+          (d) => `${signed(d)} (${num(value!, 2)})`,
+          `±${num(CHAIN_GAP_DRIFT, 1)} da temporada 1 (decisão 15)`,
+          { min: -CHAIN_GAP_DRIFT, max: CHAIN_GAP_DRIFT },
+          required,
+        );
+      }),
+    );
+  });
+  chain.forEach((records, i) => {
+    const season = i + 1;
+    if (season === 1) return;
+    const report = buildReport({
+      seasons: records,
+      robotSeasons: [],
+      calibrated: new Map(),
+      tactical: new Map(),
+    });
+    for (const r of report.rows) {
+      if (!isLeagueRow(r.id)) continue;
+      const rest: MetricRow = { ...r };
+      delete (rest as { note?: string }).note;
+      const required = season <= CHAIN_REQUIRED_SEASONS;
+      const info = required && CHAIN_INFO_TARGETS.includes(r.id);
+      rows.push({
+        ...rest,
+        id: `${chainPrefix(season)}${r.id}`,
+        label: `${r.label}, temporada ${season}`,
+        required: r.required && required && !info,
+        ...(info ? { note: CHAIN_INFO_NOTE } : {}),
+      });
+    }
+  });
+  return rows;
+}
+
 function tacticLabel(id: string): string {
   const labels: Record<string, string> = {
     defensive: 'postura defensiva',
@@ -618,26 +807,34 @@ function tacticLabel(id: string): string {
 /**
  * The rows of a multi-seed run's seed: the RARE_TARGETS stop counting there (`verdict: 'pooled'`),
  * since they are judged on the seeds together ({@link pooledRows}).
+ * The rare rows already informative are left as they are.
  */
 export function withPooledVerdict(report: Report): Report {
   return {
     ...report,
     rows: report.rows.map((r) =>
-      RARE_TARGETS.includes(r.id) ? { ...r, required: false, verdict: 'pooled' as const } : r,
+      // An informative rare row (CHAIN_INFO_TARGETS, a season past CHAIN_REQUIRED_SEASONS) stays
+      // informative: it does not count in the total either.
+      isRare(r.id) && r.required ? { ...r, required: false, verdict: 'pooled' as const } : r,
     ),
   };
 }
 
-/** The RARE_TARGETS rows measured on the seasons of every seed together. */
+/**
+ * The RARE_TARGETS rows measured on the seasons of every seed together; in a `--chain` run, also
+ * those of each season of the chain (its seasons of every seed together).
+ */
 export function pooledRows(runs: readonly RunResults[]): MetricRow[] {
+  const length = Math.max(0, ...runs.map((r) => r.chain?.length ?? 0));
+  const chain = Array.from({ length }, (_, k) => runs.flatMap((r) => r.chain?.[k] ?? []));
   const all: RunResults = {
     seasons: runs.flatMap((r) => r.seasons),
+    ...(length > 0 ? { chain } : {}),
     robotSeasons: [],
     calibrated: new Map(),
     tactical: new Map(),
   };
-  const rows = buildReport(all).rows;
-  return RARE_TARGETS.map((id) => rows.find((r) => r.id === id)!);
+  return buildReport(all).rows.filter((r) => isRare(r.id));
 }
 
 /** Required rows that were not measured in this run ("n/a": no league, duels or robot). */

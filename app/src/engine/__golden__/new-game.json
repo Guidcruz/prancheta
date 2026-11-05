@@ -1,9 +1,9 @@
 {
-  "engineVersion": 11,
+  "engineVersion": 12,
   "name": "new-game",
   "data": {
     "header": {
-      "engineVersion": 11,
+      "engineVersion": 12,
       "retiredNamesRev": 0,
       "seed": 20261104,
       "year": 2026,
@@ -14,7 +14,8 @@
         "realism": "full"
       },
       "lastSheets": {},
-      "seasonStats": {}
+      "seasonStats": {},
+      "pastSeasons": []
     },
     "warnings": [],
     "clubs": [
@@ -2083,6 +2084,6 @@
         "s1-r20-clube-teste-11-clube-teste-17"
       ]
     },
-    "digest": "1ef41e5b"
+    "digest": "4d2b2f16"
   }
 }

@@ -18,9 +18,23 @@ import type {
   TeamInput,
 } from './match/types.ts';
 import type { GameParams } from './params.ts';
-import { RATING_RANGE, RECENT_RATINGS_MAX, type Player } from './players.ts';
+import { bestEleven, elevenStrength } from './generation.ts';
+import {
+  AGE_RANGE,
+  RATING_RANGE,
+  RECENT_RATINGS_MAX,
+  computeOverall,
+  type Player,
+} from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
-import { MATCH_MODES, playRound, type MatchMode, type RoundInput } from './round.ts';
+import {
+  MATCH_MODES,
+  playRound,
+  type MatchMode,
+  type PlayerSeasonStats,
+  type RoundInput,
+} from './round.ts';
+import { MORALE_OFFSEASON_PULL, MORALE_TURN_SCALE, endSeason, startNextSeason } from './season.ts';
 import { isUnavailable } from './selection.ts';
 import { POINTS, getStandings, type StandingRow } from './standings.ts';
 import { syntheticClubs } from './testing/clubs.ts';
@@ -985,6 +999,201 @@ describe(`round and table properties over ${SEASONS} seasons of 38 rounds (US-01
           fanDecisions: {},
         });
         expect(over.ok ? 'ok' : over.error).toBe('season-over');
+        // The turn (T-017): every season closes and turns; every 5th one goes on as a chain of
+        // CHAIN_SEASONS, each season played and checked like the first.
+        const seasons = n % CHAIN_EVERY === 0 ? CHAIN_SEASONS : 1;
+        const sizes: number[] = [];
+        // The summary each turn added, by turn.
+        const summaries: number[] = [];
+        for (let k = 1; k <= seasons; k++) {
+          const turn = turnOf(season, state);
+          for (const p of turn.problems) found.push(`season ${n}, turn ${k}: ${p}`);
+          state = turn.next;
+          sizes.push(jsonBytes(state));
+          summaries.push(jsonBytes(state.pastSeasons.at(-1)));
+          if (k === seasons) break;
+          for (let round = 1; round <= 38; round++) {
+            const played = playRound(state, params, roundInput(season, n, state, rng));
+            if (!played.ok)
+              throw new Error(`season ${n}.${k + 1}, round ${round}: ${played.error}`);
+            const problems = roundProblems(
+              season,
+              state,
+              played.value.state,
+              played.value.report.results,
+            );
+            for (const p of problems) found.push(`season ${n}.${k + 1}, ${p}`);
+            state = played.value.state;
+          }
+        }
+        if (sizes.length >= 2 && !season.random) {
+          // The start of season 3 is the start of season 2 plus one summary (and the noise of
+          // the real numbers' digits): the state does not grow with the seasons otherwise. Not
+          // from a random start, whose integer morale (0 or 100) turns into longer real numbers
+          // over the first seasons and adds up to some 2 KB of digits.
+          // The summary of season 2, the one the 2nd turn added (not the last one of the chain).
+          const item = summaries[1]!;
+          const growth = sizes[1]! - sizes[0]!;
+          // The absolute limit (3 KB per season) is checked on the real career, with a new game
+          // state, in season.acceptance.test.ts: a random start carries digit noise a real game lacks.
+          if (Math.abs(growth - item) > 1024) {
+            found.push(`season ${n}: grew ${growth} bytes for a summary of ${item}`);
+          }
+        }
+      }
+      expect(found.slice(0, 20)).toEqual([]);
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// 3. The end of the season and the turn (US-025; T-017)
+// ---------------------------------------------------------------------------------------------
+
+/** Every CHAIN_EVERY-th season of section 2 goes on for CHAIN_SEASONS seasons in a row. */
+const CHAIN_EVERY = 5;
+const CHAIN_SEASONS = 3;
+/** Careers of the evolution property (the acceptance asks for 1,000). */
+const EVOLUTION_CAREERS = 1_000;
+const CAREERS_PER_TEST = 100;
+
+const jsonBytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
+
+/**
+ * The invariants of one evolution (jogadores.md, "Evolução"): age exactly + 1, the overall by the
+ * formula and never above the potential, inside 1..99, and potential, peakAge, growth, position,
+ * trait and shirt untouched.
+ */
+function evolutionProblems(before: GameState, after: GameState): string[] {
+  const out: string[] = [];
+  for (const [id, b] of Object.entries(before.players)) {
+    const a = after.players[id];
+    if (a === undefined) {
+      out.push(`${id} is gone`);
+      continue;
+    }
+    if (a.age !== b.age + 1) out.push(`${id}: age ${b.age} → ${a.age}`);
+    if (a.overall !== computeOverall(a.position, a.attributes)) out.push(`${id}: overall formula`);
+    if (a.overall > a.potential) out.push(`${id}: overall ${a.overall} > ${a.potential}`);
+    if (a.overall < 1 || a.overall > 99) out.push(`${id}: overall ${a.overall}`);
+    if (b.overall <= b.potential && a.overall > b.overall && a.overall > b.potential) {
+      out.push(`${id}: passed the potential`);
+    }
+    for (const key of ['potential', 'peakAge', 'growth', 'position', 'trait', 'shirt'] as const) {
+      if (a[key] !== b[key]) out.push(`${id}: ${key} changed`);
+    }
+    if (a.age < AGE_RANGE.min || a.age > AGE_RANGE.max) out.push(`${id}: age ${a.age}`);
+  }
+  return out;
+}
+
+/**
+ * Closes a season at round 39 (`endSeason` with the season's humans) and turns it, with the
+ * problems of both: the evolution, a second close refused, the new season's start (temporada.md,
+ * "A virada": counters at 0, condition 100, form empty, morale half way to fans.start, the fans at
+ * fans.start, the strength of the evolved XI), 25 per squad and one idol per club, and the
+ * determinism of the turn.
+ */
+function turnOf(season: Season, state: GameState): { next: GameState; problems: string[] } {
+  const out: string[] = [];
+  const humans = [...season.humans.keys()];
+  const closed = endSeason(state, params, humans);
+  if (!closed.ok) throw new Error(`endSeason: ${closed.error}`);
+  const again = endSeason(closed.value.state, params, humans);
+  if (again.ok) out.push('endSeason accepted a second call');
+  out.push(...evolutionProblems(state, closed.value.state));
+  if (Object.keys(closed.value.summary.campaigns).join() !== humans.join()) {
+    out.push(`campaigns ${Object.keys(closed.value.summary.campaigns).join()}`);
+  }
+  const turned = startNextSeason(closed.value.state, params, fixedIdentitySource());
+  if (!turned.ok) throw new Error(`startNextSeason: ${turned.error}`);
+  const next = turned.value;
+  const twice = startNextSeason(closed.value.state, params, fixedIdentitySource());
+  if (JSON.stringify(twice) !== JSON.stringify(turned)) out.push('the turn is not deterministic');
+  if (next.season !== state.season + 1 || next.round !== 1 || next.phase !== 'season') {
+    out.push(`next season ${next.season}, round ${next.round}, ${next.phase}`);
+  }
+  if (next.fixtures.length !== 380 || next.fixtures.some((f) => f.result !== undefined)) {
+    out.push('the new calendar');
+  }
+  if (Object.keys(next.seasonStats).length > 0 || 'lastRound' in next) out.push('not cleared');
+  const closedPlayers = closed.value.state.players;
+  for (const [id, p] of Object.entries(next.players)) {
+    const was = closedPlayers[id]!;
+    if (p.condition !== 100) out.push(`${id}: condition ${p.condition}`);
+    if (p.injuryRounds !== 0 || p.suspendedGames !== 0 || p.yellowCount !== 0) {
+      out.push(`${id}: ${p.injuryRounds}/${p.suspendedGames}/${p.yellowCount}`);
+    }
+    if (p.benchStreak !== 0 || p.recentRatings.length !== 0) out.push(`${id}: bench or form`);
+    const pulled = was.morale + MORALE_OFFSEASON_PULL * (params.fans.start - was.morale);
+    const morale = Math.round(pulled * MORALE_TURN_SCALE) / MORALE_TURN_SCALE;
+    if (Math.abs(p.morale - morale) > 1e-9 || p.morale < 0 || p.morale > 100) {
+      out.push(`${id}: morale ${was.morale} → ${p.morale}`);
+    }
+  }
+  for (const [clubId, club] of Object.entries(next.clubs)) {
+    if (club.fans !== params.fans.start || club.idolBenchStreak !== 0) out.push(`${clubId}: fans`);
+    const squad = next.squads[clubId]!.map((id) => next.players[id]!);
+    const strength = elevenStrength(bestEleven(squad, club.preferredFormations[0]));
+    if (Math.abs(club.strength - strength) >= 1e-9) out.push(`${clubId}: strength`);
+    if (squad.length !== 25) out.push(`${clubId}: ${squad.length} players`);
+    if (squad.filter((p) => p.trait === 'idol').length !== 1) out.push(`${clubId}: idols`);
+  }
+  if (next.pastSeasons.length !== state.season) out.push(`${next.pastSeasons.length} summaries`);
+  return { next, problems: out };
+}
+
+const careerTests = Array.from(
+  { length: Math.ceil(EVOLUTION_CAREERS / CAREERS_PER_TEST) },
+  (_, k) =>
+    [k * CAREERS_PER_TEST + 1, Math.min(EVOLUTION_CAREERS, (k + 1) * CAREERS_PER_TEST)] as const,
+);
+
+describe(`evolution properties over ${EVOLUTION_CAREERS} careers (jogadores.md; T-017)`, () => {
+  it.each(careerTests)(
+    'careers %i to %i: age + 1, overall by the formula and within the potential, curve intact',
+    { timeout: 300_000 },
+    (from, to) => {
+      const found: string[] = [];
+      for (let n = from; n <= to; n++) {
+        const created = newGame(
+          { seed: seedFromString(`properties-career-${n}`), year: 2026, realism: 'full' },
+          syntheticClubs(20),
+          params,
+          fixedIdentitySource(),
+        );
+        if (!created.ok) throw new Error(`newGame ${n}: ${created.error}`);
+        // The end of a made-up season: any minutes and morale, so every branch of the formula
+        // runs (no minutes, more than the reference, morale at the edges).
+        const rng = new Rng(seedFromString(`properties-career-stats-${n}`));
+        const players: Record<PlayerId, Player> = {};
+        const seasonStats: Record<PlayerId, PlayerSeasonStats> = {};
+        for (const [id, p] of Object.entries(created.value.players)) {
+          players[id] = {
+            ...p,
+            morale: rng.int(0, 4) === 0 ? 100 * rng.int(0, 1) : rng.next() * 100,
+          };
+          const minutes = rng.int(0, 3) === 0 ? 0 : rng.int(0, 3420);
+          if (minutes > 0) {
+            seasonStats[id] = {
+              games: 38,
+              minutes,
+              goals: 0,
+              assists: 0,
+              yellows: 0,
+              reds: 0,
+              ratingSum: 0,
+              ratedGames: 0,
+              conceded: 0,
+            };
+          }
+        }
+        const finished: GameState = { ...created.value, round: 39, players, seasonStats };
+        const closed = endSeason(finished, params, []);
+        if (!closed.ok) throw new Error(`endSeason ${n}: ${closed.error}`);
+        for (const p of evolutionProblems(finished, closed.value.state)) {
+          found.push(`career ${n}: ${p}`);
+        }
       }
       expect(found.slice(0, 20)).toEqual([]);
     },
