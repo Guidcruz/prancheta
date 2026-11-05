@@ -26,6 +26,7 @@ import {
   type PlayerIssue,
   type PlayerResult,
 } from './players.ts';
+import { SOUTH_AMERICAN_NATIONALITIES } from './generation.ts';
 import { PARAM_RANGES } from './params.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { fixedIdentitySource } from './testing/identity.ts';
@@ -513,6 +514,16 @@ describe('validatePlayer', () => {
     expect(badPosition.map((i) => `${i.field}:${i.problem}`)).toEqual([
       'position:invalid-position',
     ]);
+  });
+
+  it('still accepts the South American nationalities of older saves (T-069)', () => {
+    // Etapa 1 generates only BR, but saves from before kept a few AR, UY and other CONMEBOL
+    // players; they must stay valid with no migration.
+    for (const nationality of SOUTH_AMERICAN_NATIONALITIES) {
+      const checked = validatePlayer(testPlayer({ nationality }));
+      expect(checked.ok, nationality).toBe(true);
+      if (checked.ok) expect(checked.value.nationality).toBe(nationality);
+    }
   });
 
   it('accepts a face of exactly 32 characters and ids with large numbers', () => {

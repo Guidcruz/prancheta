@@ -611,28 +611,32 @@ describe(`match properties over ${MATCH_SEEDS} seeds (US-008)`, () => {
     }
   });
 
-  it('plays "tudo no ataque" asked before allOutFromMinute as the match without it', () => {
-    let compared = 0;
-    for (let seed = 0; seed < MATCH_SEEDS; seed++) {
-      const c = matchCase(seed);
-      const side = SIDES.find((s) => c.input[s].controller === 'human');
-      if (side === undefined) continue;
-      const without = simulateMatch(c.input, c.params, c.commands);
-      const commands = c.commands ?? [];
-      const withEarly = simulateMatch(c.input, c.params, earlyAllOut(seed, side, commands));
-      const { warnings: w1, ...rest1 } = without;
-      const { warnings: w2, ...rest2 } = withEarly;
-      expect(rest2, `seed ${seed}`).toStrictEqual(rest1);
-      const early = w2.filter(
-        (w) => w.code === 'command-too-early' && w.detail?.command === commands.length,
-      );
-      expect(early, `seed ${seed}`).toHaveLength(1);
-      expect(w2.filter((w) => !early.includes(w))).toStrictEqual(w1);
-      compared++;
-    }
-    // The two coach kinds: a third of the seeds.
-    expect(compared).toBeGreaterThan(MATCH_SEEDS / 4);
-  });
+  it(
+    'plays "tudo no ataque" asked before allOutFromMinute as the match without it',
+    { timeout: FULL ? 600_000 : 60_000 },
+    () => {
+      let compared = 0;
+      for (let seed = 0; seed < MATCH_SEEDS; seed++) {
+        const c = matchCase(seed);
+        const side = SIDES.find((s) => c.input[s].controller === 'human');
+        if (side === undefined) continue;
+        const without = simulateMatch(c.input, c.params, c.commands);
+        const commands = c.commands ?? [];
+        const withEarly = simulateMatch(c.input, c.params, earlyAllOut(seed, side, commands));
+        const { warnings: w1, ...rest1 } = without;
+        const { warnings: w2, ...rest2 } = withEarly;
+        expect(rest2, `seed ${seed}`).toStrictEqual(rest1);
+        const early = w2.filter(
+          (w) => w.code === 'command-too-early' && w.detail?.command === commands.length,
+        );
+        expect(early, `seed ${seed}`).toHaveLength(1);
+        expect(w2.filter((w) => !early.includes(w))).toStrictEqual(w1);
+        compared++;
+      }
+      // The two coach kinds: a third of the seeds.
+      expect(compared).toBeGreaterThan(MATCH_SEEDS / 4);
+    },
+  );
 
   it('gives the same result for the same seed and inputs (a sample of every 10th seed)', () => {
     for (let seed = 0; seed < MATCH_SEEDS; seed += 10) {

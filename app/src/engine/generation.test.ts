@@ -206,7 +206,7 @@ describe('newGame (US-004)', () => {
   });
 
   it(
-    'draws starters most often at 27, about 90% Brazilians and the trait chances',
+    'draws starters most often at 27, only Brazilians and the trait chances',
     { timeout: 30_000 },
     () => {
       const ages = new Map<number, number>();
@@ -223,6 +223,7 @@ describe('newGame (US-004)', () => {
           for (const id of squad) {
             const p = state.players[id]!;
             total++;
+            expect(p.nationality, `${id} (seed ${seed})`).toBe('BR');
             if (p.nationality === 'BR') brazilians++;
             traits.set(p.trait, (traits.get(p.trait) ?? 0) + 1);
           }
@@ -230,8 +231,9 @@ describe('newGame (US-004)', () => {
       }
       const mode = [...ages.entries()].sort((a, b) => b[1] - a[1])[0]![0];
       expect(mode).toBe(27);
-      expect(brazilians / total).toBeGreaterThan(0.88);
-      expect(brazilians / total).toBeLessThan(0.92);
+      // Etapa 1: every generated player is Brazilian (T-069, jogadores.md "Nacionalidade").
+      expect(total).toBe(40 * 20 * 25);
+      expect(brazilians).toBe(total);
       expect(traits.get('idol')).toBe(40 * 20);
       expect(traits.get('quiet')! / total).toBeGreaterThan(0.5);
       expect(traits.get('quiet')! / total).toBeLessThan(0.58);

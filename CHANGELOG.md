@@ -6,6 +6,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Só brasileiros na geração (T-069, decisão 9 da auditoria, US-003): na Etapa 1a todo jogador gerado é brasileiro; os sul-americanos ficam para a Etapa 5. Mudam só nacionalidade, nome e rosto de parte dos jogadores (o jogo de referência tinha 2 estrangeiros e 34 jogadores ganharam nome e rosto novos); placares, tabelas e forças não mudam, e o balanceamento de 200 temporadas sai idêntico (39 de 39 metas). Saves antigos com jogadores argentinos ou uruguaios continuam válidos. `ENGINE_VERSION` 14.
+
 - Fim de temporada e virada para a seguinte (T-017, US-025; é o motor, as telas são da T-037):
   - Prêmios da temporada: artilheiro, garçom, melhor jogador, revelação, melhor goleiro e seleção do campeonato. Quem não chega a 19 jogos não concorre, e o prêmio fica "sem vencedor" se ninguém chega. Saem também o campeão, a zona de rebaixamento (sem efeito por enquanto) e a campanha do clube do técnico.
   - Evolução dos jogadores: no fim do ano todos fazem aniversário e mudam de nível conforme a idade. Jovens tendem a crescer e veteranos a cair. A idade vai até 99 anos, para uma carreira longa nunca invalidar o save.

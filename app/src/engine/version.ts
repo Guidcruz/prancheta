@@ -45,4 +45,9 @@
 //    The simulation is the same (the match goldens kept their data, the scores and the events of
 //    the round goldens too): only the digests of the states changed, those of the round goldens
 //    (no report inside) and those of new-game and season-turn (they hold the version).
-export const ENGINE_VERSION = 13;
+// 14: only Brazilians in the generation (T-069; jogadores.md, "Nacionalidade", decision 9 of the
+//    2026-11-05 audit): HOME_NATIONALITY_SHARE goes from 0.9 to 1, and the nationality draw is
+//    still consumed, so the squad's Rng sequence, the strengths, the matches and the tables are
+//    the same. Only the players' nationality and identity (the names and faces are asked per
+//    nationality, and the BR group is bigger) changed in new-game, and the digests of the states.
+export const ENGINE_VERSION = 14;

@@ -109,10 +109,19 @@ const SHIFT_SEARCH = 3;
 /** Single-point moves of the fallback before giving up with a warning. */
 const MAX_FINE_STEPS = 44;
 
-/** 90% Brazilians; the rest from the other South American countries (jogadores.md). */
+/**
+ * Etapa 1: every generated player is Brazilian (jogadores.md, "Nacionalidade"; decision 9 of the
+ * 2026-11-05 audit). The share goes back below 1 in Etapa 5, with the South American clubs and the
+ * Spanish name lists; `drawNationality` still consumes its draw so the squad's `Rng` sequence
+ * does not shift.
+ */
 export const HOME_NATIONALITY = 'BR';
-export const HOME_NATIONALITY_SHARE = 0.9;
-/** The other nine CONMEBOL countries, ISO 3166-1 alpha-2, drawn with equal chance. */
+export const HOME_NATIONALITY_SHARE = 1;
+/**
+ * The other nine CONMEBOL countries, ISO 3166-1 alpha-2, drawn with equal chance. Not drawn in
+ * Etapa 1 (kept for Etapa 5); the save validator still accepts any two-letter code, so old saves
+ * with these players stay valid.
+ */
 export const SOUTH_AMERICAN_NATIONALITIES: readonly string[] = [
   'AR',
   'BO',
@@ -328,7 +337,12 @@ function drawAttributes(rng: Rng, position: Position, overall: number): PlayerAt
   return fitAttributesToOverall(start, position, overall);
 }
 
-/** One draw: below 0.9 Brazilian, otherwise one of the nine others by the same draw. */
+/**
+ * One draw: below `HOME_NATIONALITY_SHARE` Brazilian, otherwise one of the nine others by the
+ * same draw. The draw is always consumed, even at share 1. With share 1, `u` (in [0, 1)) is always
+ * below it, so the branch of the others is unreachable and its `1 − share` never divides by zero;
+ * it only runs again once the share goes back below 1 (Etapa 5).
+ */
 function drawNationality(rng: Rng): string {
   const u = rng.next();
   if (u < HOME_NATIONALITY_SHARE) return HOME_NATIONALITY;
