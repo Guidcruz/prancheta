@@ -71,7 +71,22 @@ Telas da 1a (`docs/design/telas/`):
 | T-009  | feita (PR #20 mergeado): `app/src/engine/match/`, goldens de partida, `ENGINE_VERSION` 4                                                                                                                           |
 | T-010  | feita (PR #21 mergeado): cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5                                                                                                                    |
 | T-011  | feita (PR #22 mergeado): IA pré-jogo, `suggestSheet`, `validateLineup`, `ENGINE_VERSION` segue 5                                                                                                                   |
-| T-012  | em andamento (PR em aberto; code review aprovado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                             |
+| T-012  | feita (PR #24 mergeado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                                                       |
+| T-013  | em andamento (PR em aberto; code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                          |
+
+## Dados da temporada (T-013, 20 temporadas)
+
+| Métrica          | Valor atual | Meta    |
+| ---------------- | ----------- | ------- |
+| Campeão (pontos) | 73,8        | 72–82   |
+| 17º colocado     | 41,1        | 40–46   |
+| Gols por jogo    | 2,77        | 2,5–2,8 |
+| Trocas por time  | 3,5         | 3–4     |
+
+## Decisões do CEO em 2026-11-05 (T-013)
+
+1. Notícias novas "perdeu a invencibilidade" e "acabou o jejum" aprovadas.
+2. Plano dos Workers na 1b: começar no gratuito, com medição; o pago só se a rodada passar de cerca de 8 ms. O `architect` mediu que só abrir e gravar o estado leva de 9 a 21 ms, então o pago é provável.
 
 ## Decisões do CEO durante a T-003 (2026-11-04)
 
@@ -150,6 +165,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 
 ## Concluído (mergeado em 2026-11-04)
 
+- PR #24: T-012 mergeada (comandos na partida e IA em jogo; `ENGINE_VERSION` 7).
 - PR #23: Node no Codespace.
 - PR #22: T-011 mergeada (IA pré-jogo, `suggestSheet`, `validateLineup`; `ENGINE_VERSION` segue 5).
 - PR #21: T-010 mergeada (cartões, lesões, pênaltis e faltas, jogo encerrado, `ENGINE_VERSION` 5).
@@ -208,7 +224,7 @@ Notas:
 
 ## Em andamento
 
-- **T-012** (comandos na partida e IA em jogo): PR em aberto; code review aprovado.
+- **T-013** (rodada e temporada): PR em aberto; code review e QA aprovados.
 - Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
 
 ## Concluído em 2026-11-04 (T-008 e patrocínio)
@@ -228,6 +244,9 @@ Notas:
 
 ## Pendências de conteúdo
 
+- Textos das duas notícias novas ("perdeu a invencibilidade" e "acabou o jejum") e do "primeiro líder" (`leadership took` na rodada 1).
+- Juntar os artilheiros empatados numa nota só ("dividem").
+- Filtrar as cerca de 14 suspensões por rodada: só as do clube do técnico e do próximo adversário.
 - O `content-writer` vai precisar de um template de jogo encerrado (W.O.), usado quando `fulltime.abandoned` for verdadeiro.
 
 ## Pendências do CEO
@@ -245,8 +264,8 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-013: rodada e temporada (`prepareRound`, `playRound`, moral, lesões e suspensões entre rodadas, "só resultado" com a IA jogando pelo técnico, "Cobrar").
+1. T-014: moral, forma, termômetro da torcida e "realismo simplificado".
 2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
-4. T-014 a T-016 da Etapa 1a (a T-016 traz "tirar o pé" e o ajuste de `baseChance`).
+4. T-015 e T-016 da Etapa 1a (a T-016 traz "tirar o pé" e o ajuste de `baseChance`).
 5. Lote de clubes de dezembro, com a tabela final de 2026.
