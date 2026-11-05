@@ -1,4 +1,5 @@
 import { SERIE_A_CLUBS } from './clubs.ts';
+import type { MatchSummary } from './match/types.ts';
 import { SEASON_ROUNDS, SEASON_WEEKS, type SeasonParams } from './params.ts';
 import { fail, ok } from './result.ts';
 import { Rng, seedFromString } from './rng.ts';
@@ -22,7 +23,7 @@ import type { ClubId, FixtureId, Result } from './types.ts';
  * by fixtures.test.ts; it does not depend on the seed, since the shuffle only relabels the slots).
  */
 
-/** A league match (docs/02-architecture.md, 4.1). `result` arrives with the rounds (T-013). */
+/** A league match (docs/02-architecture.md, 4.1). `result` is written by `playRound` (T-013). */
 export interface Fixture {
   /** `s${season}-r${round}-${homeId}-${awayId}`. */
   readonly id: FixtureId;
@@ -32,6 +33,8 @@ export interface Fixture {
   readonly date: string;
   readonly homeId: ClubId;
   readonly awayId: ClubId;
+  /** Absent until the round is played; the table is derived from these (`getStandings`). */
+  readonly result?: MatchSummary;
 }
 
 /** When a round is played (temporada.md, "Datas"). */

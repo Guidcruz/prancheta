@@ -255,3 +255,30 @@ export interface MatchResult {
   readonly attendance: number;
   readonly warnings: readonly EngineWarning[];
 }
+
+/** A goal kept in the season's results (the scorers of US-024), in match order. */
+export interface MatchGoal {
+  readonly side: Side;
+  readonly scorer: PlayerId;
+  readonly assist?: PlayerId;
+  readonly kind: ChanceKind;
+  readonly minute: number;
+  readonly added?: number;
+}
+
+/**
+ * What a played fixture keeps in the state (`Fixture.result`, docs/02-architecture.md, 4.1): the
+ * lean part of the `MatchResult` that the table, the calendar and the results screen read. The
+ * full events stay only in `GameState.lastRound` (the last round), so the save stays small.
+ */
+export interface MatchSummary {
+  /** The awarded score when the match was abandoned: it decides the table (partida.md). */
+  readonly score: readonly [number, number];
+  readonly abandoned: boolean;
+  /** The real goals (they count for the scorers even in an abandoned match). */
+  readonly goals: readonly MatchGoal[];
+  /** Yellows and reds of each side are the table's tie-breaks 6 and 7 (temporada.md). */
+  readonly stats: Readonly<Record<Side, MatchStats>>;
+  readonly motm?: PlayerId;
+  readonly attendance: number;
+}
