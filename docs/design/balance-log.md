@@ -150,3 +150,25 @@ Os números conferem com a medição na cópia antes da aplicação (tabela "ant
 
 - **Pedido ao `developer`, se o CEO aprovar:** o comando `allOut` (preset e postura) antes do minuto 60 é ignorado com o aviso `command-too-early`; a tela só mostra o botão a partir dos 60'. Aceite: as 35 metas e as 3 raras iguais às desta medição; o duelo "tudo no ataque desde o apito inicial" sai do relatório (ou passa a começar aos 60', com V − D dentro de ±3 e pontos por jogo dentro de ±0,04); um teste com o comando no minuto 30 mostra a partida igual à sem comando, mais o aviso.
 - **Meta nova (proposta, referência que não bloqueia):** "nenhum comando ou tática usado do apito ao fim rende mais de +0,04 ponto por jogo sobre a referência", porque vitórias − derrotas não pega o efeito dos 3 pontos.
+
+### Decisão do CEO: "todo mundo no ataque" só a partir dos 60' (2026-11-05)
+
+**Aprovada pelo CEO e aplicada pelo `developer`.** Parâmetro novo `match.allOutFromMinute` = 60 (faixa de 0 a 80): o comando com `minute: 59` vale (a partir do minuto 60, pela regra "o comando leva o último minuto jogado"); antes disso é ignorado. No `/balance`, o duelo "tudo no ataque desde o apito inicial" saiu e entraram dois obrigatórios, os dois com vitórias − derrotas dentro de ±3: `allout-60` (o atalho: "tudo no ataque" com pressão alta, desde o minuto 60) e `allout-60-medium` (a postura com pressão média, desde o minuto 60).
+
+**Medição** (`npm run balance -- --seasons 200 --seed 1,2,3`): 36 de 36 metas obrigatórias dentro em cada semente, as 3 metas raras dentro no total (1,5%, 6,0% e 7,8%), código de saída 0. As outras métricas não mudaram.
+
+| Desde o minuto 60, contra 4-4-2 equilibrada média | Semente 1 | Semente 2 | Semente 3 | Média  | Meta               |
+| ------------------------------------------------- | --------- | --------- | --------- | ------ | ------------------ |
+| Atalho (pressão alta): V − D                      | +1,0      | +1,1      | +1,5      | +1,2   | −3 a +3 p.p.       |
+| Postura (pressão média): V − D                    | +0,7      | +1,4      | +0,9      | +1,0   | −3 a +3 p.p.       |
+| Atalho: pontos por jogo sobre a referência        | +0,012    | +0,026    | +0,036    | +0,025 | ±0,04 (referência) |
+| Postura: pontos por jogo sobre a referência       | +0,006    | +0,032    | +0,030    | +0,023 | ±0,04 (referência) |
+| "Tudo no ataque" a partir de 0×1 aos 75'          | +3,7      | +3,5      | +3,1      | +3,4   | ≥ +3 p.p.          |
+
+**O +0,036 da semente 3 pede acompanhamento, não meta nova.**
+
+- **É ruído de amostra.** Com 20.000 duelos, os pontos por jogo têm erro padrão de cerca de 0,0095, e a diferença para a referência (outra amostra de 20.000) de cerca de 0,013. As três sementes (+0,012 a +0,036) cabem nesse ruído em volta da média de +0,025. A faixa de ±0,04 está a cerca de 3 erros padrão da referência numa semente só: um valor isolado perto dela não diz nada.
+- **O efeito médio é pequeno.** +0,025 por jogo é cerca de +0,9 ponto numa temporada em que o técnico ataca com tudo em todos os jogos a partir dos 60', inclusive quando está ganhando, o que ninguém faz. Antes da regra, o uso desde o minuto 0, medido na temporada inteira, já rendia só +0,6 ponto sobre o robô bom, dentro do ruído; desde os 60' a exposição é um terço do jogo.
+- **Proposta (sem aplicar):**
+  1. Os pontos por jogo das táticas e comandos (referência, não bloqueiam) passam a ser lidos **na média das 3 sementes**, como as metas raras (decisão 12 de `balance-targets.md`). Média de hoje: +0,025 e +0,023, dentro de ±0,04 com folga (erro padrão da média de cerca de 0,0075). Pedido ao `developer` (não urgente): a soma das 3 sementes imprimir também essas linhas.
+  2. **Gatilho de reavaliação:** se a média das 3 sementes passar de +0,04, ou se uma mudança mexer em `allOutPower`, `allOutDef`, `allOutFromMinute`, `kChance` ou no cansaço, o `game-designer` repete a medição de temporada (robô bom contra robô "sempre tudo no ataque a partir dos 60'", 3 × 200 temporadas pareadas). Uma meta só nasce se essa medição mostrar ganho acima de +1 ponto por temporada sobre o robô bom.
