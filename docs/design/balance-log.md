@@ -82,12 +82,12 @@ Fica fora em todas as sementes só o "grande rebaixado", que é dado de clube (d
 
 ### Decisões do CEO (2026-11-05: "recomendados")
 
-| Decisão               | O que foi aprovado                                                                                                                                                               | Valor aplicado |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
-| 1. Zebra              | `match.kChance` 0,14 → 0,125                                                                                                                                                     | 0,125          |
-| 2. "Tudo no ataque"   | posturas do comando: ataque ×1,10 → ×1,25, defesa ×0,85 → ×0,78 (constante de regra, `partida.md`), com o duelo novo "tudo no ataque desde o apito inicial" (V − D dentro de ±3) | ×1,25 · ×0,78  |
-| 3. "Grande rebaixado" | informativo na temporada única; volta a valer na carreira longa (`balance-targets.md`, decisão 12)                                                                               | —              |
-| 4. Metas raras        | campeão pequeno, clube fraco no G4 e fuga do Z4 de 6 a 8 pontos julgados no total das 3 sementes (`balance-targets.md`, decisão 12)                                              | —              |
+| Decisão               | O que foi aprovado                                                                                                                                                                                                          | Valor aplicado |
+| --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1. Zebra              | `match.kChance` 0,14 → 0,125                                                                                                                                                                                                | 0,125          |
+| 2. "Tudo no ataque"   | posturas do comando: ataque ×1,10 → ×1,25, defesa ×0,85 → ×0,78 (viraram os parâmetros `match.allOutPower` e `match.allOutDef`, `partida.md`), com o duelo novo "tudo no ataque desde o apito inicial" (V − D dentro de ±3) | ×1,25 · ×0,78  |
+| 3. "Grande rebaixado" | informativo na temporada única; volta a valer na carreira longa (`balance-targets.md`, decisão 12)                                                                                                                          | —              |
+| 4. Metas raras        | campeão pequeno, clube fraco no G4 e fuga do Z4 de 6 a 8 pontos julgados no total das 3 sementes (`balance-targets.md`, decisão 12)                                                                                         | —              |
 
 Junto com as decisões, entram os ajustes da ordem já aprovada: `match.comfortableLeadPower` 0,85, `match.baseChance` 0,087, `cards.bookedMult` 0,20 (o fator do pendurado vira parâmetro) e `fans.reversion` 0,10. Aplicação pelo `developer`, com `ENGINE_VERSION` 11 e goldens novos.
 
