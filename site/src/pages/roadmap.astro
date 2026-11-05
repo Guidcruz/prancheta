@@ -4,16 +4,17 @@ import StageTable from '../components/StageTable.astro';
 import PageHero from '../components/PageHero.astro';
 import FinalCta from '../components/FinalCta.astro';
 import { stages, roadmapNote } from '../lib/roadmap';
+import { GAME_PLAYABLE } from '../data/game';
 // Single source: docs/roadmap.md (the table). Changed there, changed here on the next build.
 ---
 
 <Base title="Roteiro" current="roadmap" share="roadmap">
   <PageHero
     title="Roteiro"
-    lead={`Cada etapa termina com uma versão jogável, publicada aqui. ${roadmapNote}`}
+    lead={`${GAME_PLAYABLE ? 'Cada etapa termina com uma versão jogável.' : 'Cada etapa termina com uma versão jogável. Hoje ainda não há uma: o jogo está em desenvolvimento.'} ${roadmapNote}`}
   />
   <section class="sec flow wide" aria-label="Etapas do jogo">
-    <StageTable {stages} variant="full" />
+    <StageTable {stages} variant="full" text="summary" />
   </section>
   <FinalCta />
 </Base>
