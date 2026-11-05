@@ -359,6 +359,8 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
+- **Auditoria geral (`/audit`, quatro eixos) logo depois do merge da T-017** (combinado com o CEO em 2026-11-05): o motor fica completo e o trabalho passa para save e telas.
+
 1. T-017 (virada de temporada: `endSeason`/`startNextSeason`, recalcula a `strength` dos clubes).
 2. CI com `/balance` (medir o runner de 2 vCPU), `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`); `PROPERTY_FULL=1` antes de release.
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
