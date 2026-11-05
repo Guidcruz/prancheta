@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Comandos do técnico e IA em jogo (T-012, US-021 e US-022) em `app/src/engine/match/`:
+  - `simulateMatch(input, params, commands?)` aceita até 5 substituições, mudança de formação, postura e pressão, os atalhos de tática e a conversa do intervalo, incluindo "Pular". Sem comandos, as chamadas de dois argumentos continuam válidas.
+  - O comando vale a partir do minuto seguinte, com prefixo idêntico: os eventos até o minuto do comando não mudam. Também vale nos acréscimos do 2º tempo (`added`).
+  - IA em jogo, regras 1 a 6: (1) troca por lesão; (2) cansaço, aos 60, 70 e 80 minutos; (3) perdendo, vai ao ataque e põe um atacante; (4) segura o resultado quando ganha por 1 gol; (5) tudo ao ataque no fim; (6) guarda a 5ª troca. O clube do técnico humano só tem a regra 1; no "só resultado" a IA joga as seis por ele.
+  - Troca de formação com jogador a menos: as últimas vagas livres da ordem da formação ficam vazias.
+  - Avisos `command-*` para comando recusado ou corrigido; a partida nunca lança por causa de um comando.
+  - `substitutionsLeft(events, side)`, `MAX_SUBS`, `TACTIC_PRESETS` e `IN_MATCH_AI` exportados pelo motor.
+  - `ENGINE_VERSION` 7: os eventos e os goldens de partida mudam.
+
 - IA pré-jogo (T-011, US-011) em `app/src/engine/`:
   - `suggestSheet` monta a ficha de cada clube: XI pelo valor de seleção, rotação com reserva descansado, banco de 1 goleiro e 6 de linha, capitão e cobradores.
   - Tática por perfil, com o Δ de força e o mando; o Caótico sorteia; time cansado joga com pressão baixa.
@@ -84,6 +93,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- `ai.subEnergy` de 65 para 85 (aprovado pelo CEO em 2026-11-04): dá cerca de 3,5 trocas por time, dentro da meta de 3 a 4.
 - Textos do site sem patrocínio: a seção "Patrocinadores" e o "Quer anunciar?" saem, a pergunta sobre anúncios responde que o jogo não tem e que as marcas do cenário são fictícias, e o rodapé fala em "marcas".
 - Etiqueta da página inicial passa a "Em desenvolvimento · acompanhe no devlog", e o subtítulo do jogo (`home.subtitle`) muda nos três idiomas ("Versão zero. Acompanhe a construção no devlog."), sem "em público".
 - `ENGINE_VERSION` passa a 2 (calendário no estado inicial).
