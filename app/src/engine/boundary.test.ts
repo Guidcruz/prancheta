@@ -75,13 +75,13 @@ describe('engine lint boundary', () => {
     expect(await ruleIds(code, 'src/engine/__fixture__.test.ts')).toEqual([]);
   });
 
-  it('keeps engine/testing/ out of production lib/ and ui/, but not out of their tests', async () => {
+  it('keeps engine/testing/ out of lib/ and ui/, their tests included (T-049)', async () => {
     const relative = "import '../engine/testing/golden.ts';";
     const alias = "import '@engine/testing/golden.ts';";
     expect(await ruleIds(relative, 'src/lib/fixture.ts')).toContain('no-restricted-imports');
     expect(await ruleIds(alias, 'src/ui/fixture.ts')).toContain('no-restricted-imports');
-    expect(await ruleIds(relative, 'src/lib/fixture.test.ts')).toEqual([]);
-    expect(await ruleIds(alias, 'src/ui/fixture.test.ts')).toEqual([]);
+    expect(await ruleIds(relative, 'src/lib/fixture.test.ts')).toContain('no-restricted-imports');
+    expect(await ruleIds(alias, 'src/ui/fixture.test.ts')).toContain('no-restricted-imports');
   });
 
   it('keeps blocklist hashes and node:* out of production lib/ and ui/, but not out of tests', async () => {
@@ -114,5 +114,67 @@ describe('engine lint boundary', () => {
     expect(await ruleIds("import '../lib/save/db.ts';", 'src/ui/fixture.ts')).toContain(
       'no-restricted-imports',
     );
+  });
+});
+
+/*
+ * The engine's front door (docs/02-architecture.md, 4.1, "Fronteira do `index.ts`", and 5; T-049):
+ * outside app/src/engine/ the engine comes only from index.ts or `@engine` without a subpath, in
+ * production code and in tests alike. The same pattern covers scripts/, site/ and server/ through
+ * the root eslint.config.js (scripts/boundary.test.ts).
+ */
+describe('engine front door: index.ts only, outside the engine', () => {
+  it('refuses @engine/rng in a file of lib/', async () => {
+    const code = "import { Rng } from '@engine/rng';\nexport const r = new Rng(1);";
+    expect(await ruleIds(code, 'src/lib/generators/fixture.ts')).toContain('no-restricted-imports');
+  });
+
+  it.each([
+    ['lib/', 'src/lib/fixture.ts', "import '../engine/rng.ts';"],
+    [
+      'lib/ (type only)',
+      'src/lib/generators/fixture.ts',
+      "import type { Side } from '../../engine/types.ts';",
+    ],
+    ['a test of lib/', 'src/lib/fixture.test.ts', "import '../engine/clubs.ts';"],
+    ['a test of lib/ (alias)', 'src/lib/fixture.test.ts', "import '@engine/clubs';"],
+    ['ui/', 'src/ui/fixture.ts', "import '../engine/match/simulate.ts';"],
+    [
+      'a .svelte of ui/',
+      'src/ui/Fixture.svelte',
+      '<script lang="ts">import \'@engine/round\';</script>',
+    ],
+    ['a test of ui/', 'src/ui/fixture.test.ts', "import '../engine/round.ts';"],
+    ['production data/', 'src/data/fixture.ts', "import '../engine/clubs.ts';"],
+    ['main.ts', 'src/main.ts', "import '@engine/rng';"],
+  ])('refuses an engine file in %s', async (_label, file, code) => {
+    expect(await ruleIds(code, file)).toContain('no-restricted-imports');
+  });
+
+  it.each([
+    [
+      'lib/',
+      'src/lib/generators/fixture.ts',
+      "import { Rng } from '@engine';\nexport const r = new Rng(1);",
+    ],
+    [
+      'lib/ (path)',
+      'src/lib/fixture.ts',
+      "import { Rng } from '../engine/index.ts';\nexport const r = new Rng(1);",
+    ],
+    [
+      'a test of ui/',
+      'src/ui/fixture.test.ts',
+      "import type { Side } from '../engine/index.ts';\nexport const s: Side = 'home';",
+    ],
+  ])('accepts the public API in %s', async (_label, file, code) => {
+    expect(await ruleIds(code, file)).toEqual([]);
+  });
+
+  it("lets the engine's own tests and the data tests (real clubs) import its files", async () => {
+    const code = "import { exp } from './math.ts';\nexport const e = exp(1);";
+    expect(await ruleIds(code, 'src/engine/__fixture__.test.ts')).toEqual([]);
+    const data = "import { BENCH_LINES } from '../engine/ai.ts';\nexport const b = BENCH_LINES;";
+    expect(await ruleIds(data, 'src/data/fixture.test.ts')).toEqual([]);
   });
 });

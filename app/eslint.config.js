@@ -141,6 +141,19 @@ const engineImportPatterns = [
   { group: ['svelte', 'svelte/*', 'idb'], message: 'The engine has no UI or storage dependency.' },
 ];
 
+/**
+ * The engine's front door (docs/02-architecture.md, 4.1, "Fronteira do `index.ts`", and 5;
+ * T-049): outside app/src/engine/ the engine is imported only from app/src/engine/index.ts (by a
+ * relative path) or `@engine` without a subpath, never one of its files. Tests outside the engine
+ * follow the same rule; only the engine's own files, tests included, import its internals. The
+ * root eslint.config.js applies the same pattern to scripts/, site/ and server/.
+ */
+export const engineEntryOnly = {
+  group: ['**/engine/**', '!**/engine/index.ts', '@engine/**'],
+  message:
+    'Outside the engine, import it only from app/src/engine/index.ts or "@engine" (docs/02-architecture.md, 4.1).',
+};
+
 const libPatterns = {
   noUi: { group: ['**/ui/**'], message: 'lib/ does not import ui/.' },
 };
@@ -208,11 +221,20 @@ export default [
     },
   },
   {
+    // Everything of app/src/ outside the engine (main.ts, the production code of data/) reaches
+    // the engine only through its public API. The tests of data/ are the engine's acceptance
+    // tests on the real clubs, which the engine cannot import (rule above): like the engine's own
+    // tests, they use its internals and its test helpers.
+    files: ['src/**/*.{ts,svelte}'],
+    ignores: ['src/engine/**', 'src/data/**/*.test.ts'],
+    rules: { 'no-restricted-imports': ['error', { patterns: [engineEntryOnly] }] },
+  },
+  {
     files: ['src/lib/**/*.{ts,svelte}'],
     rules: {
       'no-restricted-imports': [
         'error',
-        { patterns: [libPatterns.noUi, appTestingImports, appBuildOnlyImports] },
+        { patterns: [libPatterns.noUi, appTestingImports, appBuildOnlyImports, engineEntryOnly] },
       ],
     },
   },
@@ -222,18 +244,23 @@ export default [
       'no-restricted-imports': [
         'error',
         {
-          patterns: [uiPatterns.noSave, appTestingImports, appBuildOnlyImports],
+          patterns: [uiPatterns.noSave, appTestingImports, appBuildOnlyImports, engineEntryOnly],
         },
       ],
     },
   },
   {
-    // Tests of lib/ and ui/ may use the engine test helpers; the other boundaries still hold.
+    // Tests of lib/ and ui/ may use node:* and the build-only data; the engine only through its
+    // public API, as in production (T-049).
     files: ['src/lib/**/*.test.ts'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [libPatterns.noUi] }] },
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [libPatterns.noUi, engineEntryOnly] }],
+    },
   },
   {
     files: ['src/ui/**/*.test.ts'],
-    rules: { 'no-restricted-imports': ['error', { patterns: [uiPatterns.noSave] }] },
+    rules: {
+      'no-restricted-imports': ['error', { patterns: [uiPatterns.noSave, engineEntryOnly] }],
+    },
   },
 ];
