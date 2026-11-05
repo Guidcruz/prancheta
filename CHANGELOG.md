@@ -6,12 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
-- Fim de temporada e virada no motor (T-017, US-025, parte do motor; as telas são da T-037):
-  - `endSeason` fecha a temporada depois da rodada 38: campeão, zona de rebaixamento (sem efeito), prêmios (artilheiro, garçom, melhor jogador, revelação, melhor goleiro e seleção do campeonato, com "sem vencedor" quando ninguém joga 19 jogos), a campanha do clube do técnico e a evolução de todos os jogadores pela curva de idade, com o aniversário.
-  - `startNextSeason` começa a temporada seguinte com os mesmos 20 clubes: calendário novo, todos aptos e descansados, lesões, suspensões e amarelos encerrados, a moral a meio caminho de 60, a torcida de volta ao começo e a força de cada clube recalculada pelo elenco evoluído.
-  - Os títulos ganhos na carreira somam aos do histórico do clube (`careerLeagueTitles`), a partir do resumo de cada temporada, que guarda só números e identificadores, nunca nomes.
-  - A idade válida de um jogador vai até 99 anos, para uma carreira longa nunca invalidar o save.
-  - `npm run balance -- --chain N`: carreiras de N temporadas encadeadas, com as metas por temporada e a força da liga a cada virada; as temporadas 1 a 3 contam, as seguintes são informativas. Sem `--chain`, a saída é a mesma de antes.
+- Fim de temporada e virada para a seguinte (T-017, US-025; é o motor, as telas são da T-037):
+  - Prêmios da temporada: artilheiro, garçom, melhor jogador, revelação, melhor goleiro e seleção do campeonato. Quem não chega a 19 jogos não concorre, e o prêmio fica "sem vencedor" se ninguém chega. Saem também o campeão, a zona de rebaixamento (sem efeito por enquanto) e a campanha do clube do técnico.
+  - Evolução dos jogadores: no fim do ano todos fazem aniversário e mudam de nível conforme a idade. Jovens tendem a crescer e veteranos a cair. A idade vai até 99 anos, para uma carreira longa nunca invalidar o save.
+  - Os títulos ganhos na carreira somam aos que o clube já tinha no escudo (as estrelas). O resumo de cada temporada guarda só números e identificadores, nunca nomes.
+  - A força de cada clube é recalculada com o elenco já evoluído: quem formou bons jovens sobe, quem envelheceu desce.
+  - Temporada nova com os mesmos 20 clubes: calendário novo, tabela, estatísticas e cartões zerados, todos aptos e descansados e a torcida de volta ao começo.
+  - A moral leva metade do humor para o ano seguinte: ela anda até a metade do caminho de volta ao 60 (decisão 13 do CEO).
+  - Lesões e suspensões terminam na virada: ninguém começa o ano seguinte machucado ou suspenso (decisão 13 do CEO).
+  - `npm run balance -- --chain N`: carreiras de N temporadas encadeadas, com as metas por temporada e a força da liga a cada virada. As temporadas 1 a 3 contam e as seguintes são só informativas. Há uma trava de deriva que confere se a virada não deixa os grandes cada vez mais fortes ou fracos que os demais (decisão 15 do CEO). Sem `--chain`, a saída é a mesma de antes.
 
 - Garantia de qualidade do motor (T-015), sem mudança para quem joga:
   - Testes automáticos conferem as regras do jogo em 1.000 partidas e 30 temporadas.
@@ -140,6 +143,8 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Capturas de tela do site implementado em `docs/design/`.
 
 ### Alterado
+
+- Motor: `ENGINE_VERSION` 12 (fim de temporada e virada). O estado do jogo ganha o histórico de temporadas passadas (`pastSeasons`, vazio no jogo novo) e o golden da virada entra; a simulação em si não muda.
 
 - Calibragem da partida e da ferramenta (T-016, parte 2), com as decisões do CEO de 2026-11-05:
   - Tirar o pé: quem vence por 2 gols ou mais passa a atacar menos. Com isso saem menos goleadas (12,3% dos jogos) e o time que está ganhando deixa de pressionar até o fim.
