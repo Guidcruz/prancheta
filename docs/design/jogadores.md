@@ -89,7 +89,7 @@ atributo ausente = clamp(round(0.4 × overall), 1, 99)
 | Forma     | nota 3 a 10 | "sem jogos"       | média das notas dos últimos 5 jogos; **só exibição**                                          |
 | Lesão     | rodadas     | 0                 | `partida.md`, "Lesões"; desconta 1 por rodada; termina na virada da temporada                 |
 | Suspensão | jogos       | 0                 | `partida.md`, "Cartões"; desconta 1 por jogo do clube; termina na virada da temporada         |
-| Amarelos  | contador    | 0                 | zera ao chegar a 3 (gera suspensão) e no fim da temporada                                     |
+| Amarelos  | contador    | 0                 | zera ao chegar a 3 (gera suspensão) e no fim da temporada; no Realismo simplificado fica em 0 |
 
 **Frações.** Condição e moral são números reais (o cansaço tira 0,3 por minuto; o profissional perde −1,5). O motor não arredonda o estado: só corta em 0 e 100. A interface mostra o inteiro arredondado (`Math.round`). Lesão, suspensão e amarelos são inteiros.
 
@@ -102,25 +102,35 @@ Forma e moral: o `PROJETO.md` lista as duas; na 1a só a moral mexe no jogo e a 
 | Entrou em campo e o time venceu / empatou / perdeu      | +3 / 0 / −3                                           |
 | Clássico                                                | resultado acima × 2                                   |
 | Esperava jogar e não entrou (2ª rodada seguida ou mais) | −2 por rodada                                         |
-| Deriva da torcida                                       | 1 ponto na direção do termômetro (`fans.moraleDrift`) |
+| Deriva da torcida                                       | até 1 ponto na direção do termômetro, sem passar dele |
 | Conversa "cobrar" no intervalo                          | −3 para temperamentais em campo                       |
 | Voltou de lesão                                         | sem mudança                                           |
 
 "Entrou em campo" vale mesmo para quem entrou só nos acréscimos, com 0 minuto regulamentar (`partida.md`, "Minutos jogados").
 
-"Esperava jogar" = `overall ≥ média dos overall dos 11 titulares da rodada − 3`. Traços: **profissional** sofre só metade das quedas; **temperamental** sofre o dobro da queda por banco. Moral sempre entre 0 e 100.
+"Esperava jogar" = `overall ≥ média dos overall dos 11 titulares da rodada − 3`. Traços: **profissional** sofre só metade das quedas por resultado e por banco; **temperamental** sofre o dobro da queda por banco. Moral sempre entre 0 e 100.
+
+**Como o motor lê a tabela (T-014, revisado pelo `game-designer` em 2026-11-05):**
+
+- **Uma conta só.** Todas as linhas da rodada leem a moral e o termômetro do **início da rodada**, somam e cortam em 0 e 100 uma vez. A ordem das linhas não muda o resultado.
+- **Deriva:** `deriva = clamp(termômetro − moral, −fans.moraleDrift, +fans.moraleDrift)`, com os dois valores do início da rodada. Anda até 1 ponto e para no termômetro: moral 79,5 com termômetro 80 vai a 80,0, não a 80,5, e não fica oscilando em volta (a tela mostraria 80, 81, 80, … sem motivo). Com moral igual ao termômetro, não anda. Vale para todo o elenco, tenha jogado ou não.
+- **Profissional:** a metade vale para cada componente negativo de resultado (derrota) e de banco, um a um, nunca para o saldo. **A deriva é igual para todos** (ADR-0005 e `brasilidades.md`: "1 ponto na direção do termômetro"), para baixo também; ela não é queda por desempenho, é o clima do clube. Exemplos: vitória (+3) com deriva para baixo (−1) dá +2, como para qualquer um; derrota (−3 → −1,5) com deriva para cima (+1) dá −0,5; derrota em clássico (−6 → −3) com deriva para baixo (−1) dá −4.
+- **"Esperava jogar":** a média é a do `overall` (sem `fit`, moral nem condição) de quem começou a partida pelo clube, mesmo que tenha saído ou sido expulso; quem entrou depois não entra na média. Lesionado ou suspenso no início da rodada não esperava jogar, e o contador do banco volta a 0 (quem volta de lesão recomeça a contar). Uma rodada em que ele não esperava jogar também zera o contador. Quem entrou em campo, nem que nos acréscimos, zera o contador.
+- **"Cobrar":** os −3 do temperamental não passam pela metade (profissional e temperamental são traços diferentes; um jogador tem um só).
 
 ## Traço de personalidade
 
 Um por jogador. `drawTrait` sorteia só Líder 10%, Temperamental 15%, Profissional 20% e Discreto 55%. O **ídolo não é sorteado**: na montagem do elenco (T-006), o escolhido tem o traço sorteado substituído por Ídolo (um traço por jogador). Exatamente 1 ídolo por clube, validado onde o elenco é montado.
 
-| Traço         | Chance na geração                             | Efeito mecânico na 1a                                          | Uso nas notícias e rede social     |
-| ------------- | --------------------------------------------- | -------------------------------------------------------------- | ---------------------------------- |
-| Líder         | 10%                                           | como capitão, dobra o efeito positivo da conversa do intervalo | discursos, cobra o grupo           |
-| Temperamental | 15%                                           | cartões ×1,5; banco dói em dobro; "cobrar" tira moral          | polêmica, indireta quando no banco |
-| Profissional  | 20%                                           | metade das quedas de moral                                     | elogios da imprensa                |
-| Ídolo         | 1 por clube (veterano ≥ 29 com maior overall) | no banco 2 rodadas seguidas: termômetro −1 por rodada          | torcida pede, comemora com ele     |
-| Discreto      | o resto                                       | nenhum                                                         | poucas notícias                    |
+| Traço         | Chance na geração                            | Efeito mecânico na 1a                                          | Uso nas notícias e rede social     |
+| ------------- | -------------------------------------------- | -------------------------------------------------------------- | ---------------------------------- |
+| Líder         | 10%                                          | como capitão, dobra o efeito positivo da conversa do intervalo | discursos, cobra o grupo           |
+| Temperamental | 15%                                          | cartões ×1,5; banco dói em dobro; "cobrar" tira moral          | polêmica, indireta quando no banco |
+| Profissional  | 20%                                          | metade das quedas de moral por resultado e por banco           | elogios da imprensa                |
+| Ídolo         | 1 por clube (titular ≥ 29 com maior overall) | no banco 2 rodadas seguidas, em clube humano: termômetro −1    | torcida pede, comemora com ele     |
+| Discreto      | o resto                                      | nenhum                                                         | poucas notícias                    |
+
+**Ídolo no banco (regra em uma frase):** se o técnico humano deixa o ídolo apto fora de campo duas rodadas seguidas ou mais, a torcida dele perde 1 por rodada. "Apto" = nem lesionado nem suspenso no início da rodada; "fora de campo" = não entrou nem nos acréscimos; o contador (`idolBenchStreak`) zera quando ele entra em campo ou fica inapto. **Só vale para clube humano** (o que está em `sheets` ou `coaches` da rodada; `torcida.md`, "Decisões do técnico"): a IA escala pela força e não faz escolha para a torcida, e punir a IA por escalar o melhor seria ruído que ninguém vê. Num clube da IA o contador nem anda (fica em 0). Entra no termômetro depois do teto das decisões (`torcida.md`, "Fórmula").
 
 Vaias, pedido de saída e ídolo contra a torcida: Etapa 3.
 
@@ -161,6 +171,8 @@ Validade: inteiro entre 55 e 85. Se a lista não trouxer `strength`, vale 70, co
 
 Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (metas 72–82 e 40–46). Se o `/balance` do motor mostrar campeão abaixo de 72, a correção é abrir a escada (o maior para 79), não mexer na partida.
 
+**Motor com a moral (T-014, 2 × 100 carreiras):** campeão 77,4 e 76,6, 17º 40,1 e 40,2 (antes da moral: 75,6 e 41,2). A moral alarga a tabela pelos dois lados, porque amplia a sorte de quem embala, não a vantagem do mais forte (os pontos por posição de força quase não mudam). O 17º já estava abaixo do centro da meta (43) antes da moral, e nenhum botão existente o sobe sem baixar mais o campeão: subir o fundo da escada (62/63 → 64/64) dá +0,4; `baseChance` 0,087 dá 0; `kChance` 0,13 dá +0,5 e −1,0 no campeão; `moraleMult` de 0,97 a 1,03 dá +0,5 e −1,6. A referência real é cerca de 42 pontos para o 17º (mínimo 39, máximo 45). Decisão para o CEO na T-016: ver o relatório da T-014.
+
 **Variação por carreira:** `strength` efetiva = `strength + Normal(0, generation.clubStrengthSd)`, com `generation.clubStrengthSd = 1.5` (decisão 3 de `balance-targets.md`).
 
 **Atualização anual:** a força de cada clube segue a colocação final do último campeonato real, na escada única acima; o porte não muda pela colocação (`clubes-serie-a.md`, "Atualização anual").
@@ -180,7 +192,7 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 - Overall sempre entre 35 e 92. Depois de gerar, o motor desloca todos os overall do elenco pelo mesmo valor `d` (inteiro) para que a força do melhor XI na formação preferida fique a 0,5 ponto da `strength` efetiva. Como o improvisado anda `d × fit` e o XI pode mudar, o motor mede os `d` vizinhos de `round(alvo − força)` e fica com o mais perto (empate: menor `|d|`, depois o menor `d`). **Plano B** (cerca de 2 em 1.000 elencos, quando nenhum `d` cai na janela): os titulares do melhor XI andam 1 ponto cada, vaga a vaga, na direção do alvo, até entrar na janela (cada ponto move a média cerca de 0,09). Aceito: o efeito é invisível e a força continua exata.
 - **Força efetiva** não é arredondada nem cortada (é real); a janela de 0,5 e o piso da joia a usam como está.
 - **Atributos:** cada atributo com peso > 0 = `overall + Normal(0, 6)` (não há termo de perfil: o ruído de 6 já faz o atacante rápido e o atacante finalizador; um "estilo" de jogador seria um sistema a mais que ninguém sente no resultado); atributos de peso 0 = `overall − 20 + Normal(0, 8)`; todos entre 1 e 99; depois o "Ajuste fino" (seção "Ajuste ao alvo") leva a fórmula ao `overall` gerado. O deslocamento do elenco para a força-alvo é o "Deslocamento grosso" seguido do ajuste fino, jogador a jogador.
-- **Potencial:** até 23 anos, `overall + round(U^1.5 × (30 − 2 × (idade − 17)))` com `U = Rng.next()`; de 24 a 26, `overall + Rng.int(0, 4)`; 27 ou mais, igual ao overall. Máximo 95. Um dos jovens de cada clube é a **joia**: potencial de pelo menos `strength + 8` (a história do jovem que vira craque precisa existir em todo clube). O potencial é sorteado **depois** do deslocamento do elenco (sobre o overall final), para valer `potential ≥ overall`; a joia é o jovem de maior potencial e, se ficar abaixo do piso `min(95, ceil(strength efetiva + 8))`, sobe para ele (e nunca abaixo do próprio overall). Joia e ídolo são regras do elenco (T-006), não do jogador avulso. **Desempates** (ídolo com o mesmo overall, joia com o mesmo potencial): o primeiro na ordem do elenco (XI por vaga, reservas, elenco, jovens).
+- **Potencial:** até 23 anos, `overall + round(U^1.5 × (30 − 2 × (idade − 17)))` com `U = Rng.next()`; de 24 a 26, `overall + Rng.int(0, 4)`; 27 ou mais, igual ao overall. Máximo 95. Um dos jovens de cada clube é a **joia**: potencial de pelo menos `strength + 8` (a história do jovem que vira craque precisa existir em todo clube). O potencial é sorteado **depois** do deslocamento do elenco (sobre o overall final), para valer `potential ≥ overall`; a joia é o jovem de maior potencial e, se ficar abaixo do piso `min(95, ceil(strength efetiva + 8))`, sobe para ele (e nunca abaixo do próprio overall). Joia e ídolo são regras do elenco (T-006), não do jogador avulso. **O ídolo sai dos 11 titulares gerados** (revisado em 2026-11-05): o titular de 29 anos ou mais com maior overall; sem titular de 29 ou mais, o titular de maior overall. Antes ele saía do elenco inteiro, e em 5,7% dos clubes (229 de 4.000, 200 carreiras) caía num reserva, 39 deles o goleiro reserva, que a IA e o técnico quase nunca escalam: o clube levava −1 de termômetro em até 37 das 38 rodadas sem ninguém ter decidido nada. **Desempates** (ídolo com o mesmo overall, joia com o mesmo potencial): o primeiro na ordem do elenco (XI por vaga, reservas, elenco, jovens).
 - **Nacionalidade:** 90% brasileiros, 10% de outros países da América do Sul, divididos igualmente entre os 9 outros países da CONMEBOL (Argentina, Bolívia, Chile, Colômbia, Equador, Paraguai, Peru, Uruguai, Venezuela). Pesos iguais de propósito: é só o nome e a bandeira, e uma tabela de pesos não muda nenhuma meta. Enquanto não houver lista de nomes em espanhol (pedido ao `content-writer`, passa pelo CEO), o gerador usa nomes brasileiros para eles. Nomes e avatares vêm de `app/src/lib/generators/` (fora do motor), sempre fictícios; o motor só guarda a semente do nome e do rosto.
 - **Formação preferida:** sorteada entre as duas do perfil do clube (ver `ia-clubes.md`); a sorteada vai primeiro em `preferredFormations`, o elenco é montado para ela e ela vence o empate da IA. O Caótico recebe duas formações distintas sorteadas entre as seis; elas só moldam o elenco, porque no jogo ele continua sorteando a cada partida.
 - **Partidas pelo clube (`clubAppearances`):** titulares, reservas e elenco começam com 1 (`PRE_CAREER_APPEARANCES`, constante: já estrearam antes da carreira); os 3 jovens começam com 0. Serve só ao marcador `estreia` (`partida.md`, "Marcadores do resultado") e não aparece na interface da 1a como total de jogos.
@@ -235,6 +247,6 @@ Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (meta
 | Fórmula arredondada passaria do potencial               | não acontece: o alvo já respeita o potencial e o ajuste fino o atinge |
 | Goleiro na linha precisa de `finishing`/`passing`/etc.  | "Atributo ausente": `round(0.4 × overall)`                            |
 | Jovem já no potencial                                   | Δ positivo vira 0; Δ negativo (raro, pelo ruído) vale                 |
-| Clube sem veterano ≥ 29 para ídolo                      | ídolo é o titular de maior overall                                    |
+| Clube sem titular ≥ 29 para ídolo                       | ídolo é o titular de maior overall                                    |
 | Dois jogadores gerados com o mesmo nome no clube        | o gerador de nomes resolve (fora do motor); o motor usa IDs           |
 | Lista de clubes sem `strength` ou com porte inválido    | `strength` ausente vira 70; porte inválido vira médio; registra aviso |

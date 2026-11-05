@@ -61,9 +61,9 @@ Com 3 ou mais clubes empatados até o critério 4, pula o 5 e segue do 6.
 1. Validar as escalações; a IA monta as suas (`ia-clubes.md`).
 2. Simular as 10 partidas (cada uma com a sua semente; o jogo do técnico pode ser ao vivo, as outras rodam em paralelo e a tela pode mostrar os placares da rodada).
 3. Atualizar tabela, artilharia e estatísticas.
-4. Descontar suspensões cumpridas e rodadas de lesão; aplicar as novas.
-5. Moral dos jogadores (`jogadores.md`), depois termômetro da torcida (`torcida.md`).
-6. Recuperar condição até a próxima rodada (dias de intervalo × 7). Depois da rodada 38 não há recuperação: a condição volta a 100 na virada da temporada ("Fim de temporada", passo 4).
+4. Descontar suspensões cumpridas e rodadas de lesão; aplicar as novas. No Realismo simplificado (`partida.md`) não há novas: nem suspensão, nem lesão que passe da partida, e o contador de amarelos não muda (fica em 0 a carreira toda). Sem elas, não saem os fatos `suspended` e `injured`.
+5. Moral dos jogadores (`jogadores.md`), depois termômetro da torcida (`torcida.md`). Os dois leem o estado do início da rodada (moral, termômetro, quem estava lesionado ou suspenso) mais os resultados; o termômetro usa a tabela já com a rodada.
+6. Recuperar condição até a próxima rodada (dias de intervalo × 7). Depois da rodada 38 não há recuperação: a condição volta a 100 na virada da temporada ("Fim de temporada", passo 4). No Realismo simplificado a condição volta a 100 depois de toda rodada, a 38 inclusive (igual ao que a virada faria).
 7. Gerar os fatos para notícias e rede social (lista de marcadores de `partida.md` + fatos da tabela abaixo).
 8. Salvamento automático.
 

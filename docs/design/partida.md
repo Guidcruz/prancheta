@@ -426,7 +426,9 @@ Mudança em relação à T-010 (o `developer` tinha lido "placar dado para todos
 | ------- | ------------------------------------ | --------------------------------------------------------------- |
 | Fadiga  | como acima                           | dentro do jogo igual; entre jogos todos voltam a 100            |
 | Lesões  | como acima                           | o lesionado sai do jogo, mas está disponível na rodada seguinte |
-| Cartões | suspensão por 3 amarelos ou vermelho | cartões e expulsão no jogo, sem suspensão                       |
+| Cartões | suspensão por 3 amarelos ou vermelho | cartões e expulsão no jogo, sem suspensão nem contador (1)      |
+
+(1) No simplificado o contador de amarelos (`yellowCount`) não muda: fica em 0 a carreira toda. Por isso nenhum `yellow` sai com `triggersSuspension` verdadeiro (só o 3º amarelo acumulado o marca), a tela nunca mostra "pendurado" e a narração nunca diz "está fora do próximo jogo". Os amarelos e vermelhos continuam nas estatísticas da temporada (`seasonStats`) e no desempate da tabela. Regra em uma frase: no simplificado, cartão e lesão só valem dentro do jogo.
 
 O modo escolhido vale para todos os clubes da carreira, não só para o do jogador, para a tabela não ficar desigual.
 
