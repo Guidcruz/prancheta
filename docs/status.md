@@ -108,7 +108,7 @@ Regressão: 988 testes passando e 1 pulado.
 
 Pendências derivadas:
 
-- T-016: `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%).
+- T-016: `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%); medir a métrica nova "time pequeno no G4" (uma zebra positiva, aprovada pelo CEO em 2026-11-05), com a meta em `docs/design/balance-targets.md`.
 - T-017: recalcular a `strength` dos clubes na virada da temporada.
 - T-059 (online): as 3 regras de servidor para `fanDecisions` e a fronteira de `app/src/content/` para os valores da entrevista.
 
