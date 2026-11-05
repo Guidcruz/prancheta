@@ -1034,6 +1034,8 @@ describe(`round and table properties over ${SEASONS} seasons of 38 rounds (US-01
           // The summary of season 2, the one the 2nd turn added (not the last one of the chain).
           const item = summaries[1]!;
           const growth = sizes[1]! - sizes[0]!;
+          // The absolute limit (3 KB per season) is checked on the real career, with a new game
+          // state, in season.acceptance.test.ts: a random start carries digit noise a real game lacks.
           if (Math.abs(growth - item) > 1024) {
             found.push(`season ${n}: grew ${growth} bytes for a summary of ${item}`);
           }

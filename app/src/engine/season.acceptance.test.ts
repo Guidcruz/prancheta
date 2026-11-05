@@ -104,7 +104,7 @@ describe('US-025: a career of 5 chained seasons', () => {
   it('stays valid: 20 clubs, 500 players, valid attributes, pastSeasons within 3 KB each', () => {
     const human = Object.keys(testGame(5).clubs)[0]!;
     let state = testGame(5);
-    const sizes: number[] = [];
+    const sizes: number[] = [bytes(state)];
     for (let season = 1; season <= 5; season++) {
       expect(state.season).toBe(season);
       state = play(state);
@@ -131,7 +131,13 @@ describe('US-025: a career of 5 chained seasons', () => {
       // Ids of the calendar never repeat across seasons.
       expect(state.fixtures.every((f) => f.id.startsWith(`s${season + 1}-`))).toBe(true);
     }
-    // The state grows by about a summary a season, not by the squads.
-    expect(sizes[4]! - sizes[0]!).toBeLessThan(4 * 4 * 1024);
+    // The state grows at most 3 KB between the starts of two following seasons, on every turn from
+    // the start of season 2 on (sizes[0] is the start of season 1). The first step, from the new
+    // game, is not measured here: it is +16 KB, the first appearance of the season data (last
+    // sheets, stats, evolved reals) and not a growth per turn.
+    expect(sizes).toHaveLength(6);
+    const growth = sizes.slice(2).map((size, k) => size - sizes[k + 1]!);
+    expect(growth).toHaveLength(4);
+    for (const g of growth) expect(g, JSON.stringify(growth)).toBeLessThanOrEqual(3 * 1024);
   }, 120_000);
 });
