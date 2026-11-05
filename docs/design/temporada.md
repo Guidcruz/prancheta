@@ -73,21 +73,25 @@ Com 3 ou mais clubes empatados até o critério 4, pula o 5 e segue do 6.
 
 O motor emite os fatos (`Fact`, `facts.ts`), nunca texto; a camada de conteúdo escolhe quais viram notícia. Todos saem da tabela depois da rodada comparada com a de antes e dos resultados da rodada.
 
-| Fato (`kind`)                | Quando sai                                                                                                                                                       |
-| ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `leadership` `took`          | o líder mudou; na rodada 1, o primeiro líder (`rounds = 1`; o conteúdo lê "primeiro líder do campeonato")                                                        |
-| `leadership` `lost`          | junto com o `took`, para o líder anterior, com as rodadas seguidas que ele liderou; não sai na rodada 1                                                          |
-| `leadership` `kept`          | só nos marcos: quando as rodadas seguidas na liderança, contando esta, chegam a 5, 10, 15, …                                                                     |
-| `enteredZ4` / `leftZ4`       | da rodada 2 em diante, para quem entrou ou saiu dos 4 últimos; na rodada 1 não sai nenhum (não há Z4 antes do primeiro jogo, e "4 entraram" seria ruído)         |
-| `unbeaten` (invencibilidade) | só nos marcos: N jogos seguidos sem perder com N = 5, 10, 15, …                                                                                                  |
-| `winless` (jejum)            | só nos marcos: N jogos seguidos sem vencer com N = 4, 9, 14, … (o mínimo e depois a cada 5)                                                                      |
-| `championClinched`           | uma vez, na rodada em que o título fica garantido                                                                                                                |
-| `relegatedClinched`          | uma vez por clube, na rodada em que a queda fica garantida                                                                                                       |
-| `topScorerOfRound`           | quem fez mais gols reais na rodada, **só se fez 2 ou mais**; empatados no topo saem todos (na ordem do primeiro gol) e o conteúdo junta numa nota só ("dividem") |
-| `decisiveLastRound`          | no relatório da rodada 37: `title` se o campeão não está definido, `relegation` se ao menos uma vaga de queda está em aberto                                     |
-| `suspended` / `injured`      | toda suspensão e lesão nova da rodada, com os jogos (ou rodadas) de fora                                                                                         |
+| Fato (`kind`)                              | Quando sai                                                                                                                                                       |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `leadership` `took`                        | o líder mudou; na rodada 1, o primeiro líder (`rounds = 1`; o conteúdo lê "primeiro líder do campeonato")                                                        |
+| `leadership` `lost`                        | junto com o `took`, para o líder anterior, com as rodadas seguidas que ele liderou; não sai na rodada 1                                                          |
+| `leadership` `kept`                        | só nos marcos: quando as rodadas seguidas na liderança, contando esta, chegam a 5, 10, 15, …                                                                     |
+| `enteredZ4` / `leftZ4`                     | da rodada 2 em diante, para quem entrou ou saiu dos 4 últimos; na rodada 1 não sai nenhum (não há Z4 antes do primeiro jogo, e "4 entraram" seria ruído)         |
+| `unbeaten` (invencibilidade)               | só nos marcos: N jogos seguidos sem perder com N = 5, 10, 15, …                                                                                                  |
+| `winless` (jejum)                          | só nos marcos: N jogos seguidos sem vencer com N = 4, 9, 14, … (o mínimo e depois a cada 5)                                                                      |
+| `unbeatenEnded` (perdeu a invencibilidade) | o clube perde depois de N ≥ 5 jogos seguidos sem perder; campos `clubId`, `games` (N, sem contar a derrota), `round`, `opponentId` (quem o venceu)               |
+| `winlessEnded` (acabou o jejum)            | o clube vence depois de N ≥ 4 jogos seguidos sem vencer; campos `clubId`, `games` (N, sem contar a vitória), `round`, `opponentId` (quem ele venceu)             |
+| `championClinched`                         | uma vez, na rodada em que o título fica garantido                                                                                                                |
+| `relegatedClinched`                        | uma vez por clube, na rodada em que a queda fica garantida                                                                                                       |
+| `topScorerOfRound`                         | quem fez mais gols reais na rodada, **só se fez 2 ou mais**; empatados no topo saem todos (na ordem do primeiro gol) e o conteúdo junta numa nota só ("dividem") |
+| `decisiveLastRound`                        | no relatório da rodada 37: `title` se o campeão não está definido, `relegation` se ao menos uma vaga de queda está em aberto                                     |
+| `suspended` / `injured`                    | toda suspensão e lesão nova da rodada, com os jogos (ou rodadas) de fora                                                                                         |
 
-**Marcos das séries** (`leadership kept`, `unbeaten`, `winless`): uma regra só, "sai no mínimo e depois a cada 5". O mínimo é constante: liderança 5, invencibilidade 5, jejum 4. A série que acaba não gera fato na 1a (ver "Propostas para o conteúdo").
+**Marcos das séries** (`leadership kept`, `unbeaten`, `winless`): uma regra só, "sai no mínimo e depois a cada 5". O mínimo é constante: liderança 5, invencibilidade 5, jejum 4.
+
+**Fim das séries** (`unbeatenEnded`, `winlessEnded`; decisão do CEO, 2026-11-05): o mínimo é o mesmo da série, então toda série que já virou notícia tem a sua notícia de fim, e nenhuma outra tem. Saem uma vez, na rodada em que a série acaba, com o placar da tabela (partida encerrada conta pelo placar definido). **O fim tem prioridade:** na rodada em que sai um `unbeatenEnded` ou `winlessEnded` de um clube, não sai `unbeaten` nem `winless` desse clube (acontece quando os últimos jogos da série foram empates: "perdeu a invencibilidade de 5" e "4 jogos sem vencer" na mesma rodada; medido em cerca de 2% dos fins). A liderança perdida já é o `leadership lost`.
 
 Campeão antecipado e rebaixado matemático: quando a diferença de pontos é maior que `3 × rodadas restantes`; empate nessa conta não define (depende de desempate) e só vale na última rodada.
 
@@ -100,13 +104,15 @@ Campeão antecipado e rebaixado matemático: quando a diferença de pontos é ma
 | `winless`                        | 2,88                       | 1,20              |
 | `topScorerOfRound`               | 3,32                       | 2,13              |
 | `enteredZ4`                      | 0,70                       | 0,60              |
-| tabela (sem suspensão nem lesão) | 10,8                       | 6,1               |
+| `unbeatenEnded` (N ≥ 5)          | —                          | 0,62              |
+| `winlessEnded` (N ≥ 4)           | —                          | 0,99              |
+| tabela (sem suspensão nem lesão) | 10,8                       | 7,6               |
 | `suspended`                      | 14,2                       | 14,2              |
 | `injured`                        | 3,2                        | 3,2               |
 
 Em 95% das rodadas alguém faz 2 gols ou mais, então o artilheiro da rodada quase sempre existe. Suspensões e lesões são muitas (cerca de 0,7 e 0,16 por clube e rodada) e não são notícia por si: a camada de conteúdo só transforma em nota as do clube do técnico e as do próximo adversário dele.
 
-**Propostas para o conteúdo (não entram na T-013):** "perdeu a invencibilidade de N jogos" e "acabou o jejum de N jogos" são as melhores notícias de série e pedem dois fatos novos (`unbeatenEnded`, `winlessEnded`, com N ≥ o mínimo). Ficam para quando o `content-writer` tiver os templates, com ok do CEO.
+**Mínimos do fim de série, medidos** (por rodada, 60 temporadas): `unbeatenEnded` com N ≥ 5, 6, 7, 8 dá 0,62, 0,39, 0,25, 0,16; `winlessEnded` com N ≥ 3, 4, 5, 6 dá 1,66, 0,99, 0,59, 0,37. Ficam 5 e 4, os mínimos das séries: um pouco mais de uma invencibilidade e de um jejum encerrados por clube na temporada (1,2 e 1,9), e a regra cabe numa frase. Se o jejum de 4 encerrado parecer notícia fraca no teste com amigos, o próximo passo é subir os dois mínimos do jejum para 5 juntos (série e fim), não só o do fim.
 
 ## Força e dificuldade na escolha do clube
 
