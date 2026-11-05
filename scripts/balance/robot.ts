@@ -22,6 +22,9 @@ import {
   simulateMatch,
   strengthsFromRatings,
 } from '../../app/src/engine/index.ts';
+// The engine's single entry point for e^x (ADR-0007, rule 9): the robot's expected points use the
+// same exponential as the engine, so a future swap of its implementation reaches both.
+import { exp } from '../../app/src/engine/math.ts';
 import type {
   ClubId,
   Formation,
@@ -115,7 +118,7 @@ export function expectedPoints(own: TeamStrengths, theirs: TeamStrengths, params
     chanceProbability(a.power, d.defense, params.match) *
     goalProbability(a.atk, d.goalkeeper, params.match);
   const poisson = (lambda: number) => {
-    const p: number[] = [Math.exp(-lambda)];
+    const p: number[] = [exp(-lambda)];
     for (let k = 1; k <= MAX_GOALS; k++) p.push((p[k - 1]! * lambda) / k);
     return p;
   };
