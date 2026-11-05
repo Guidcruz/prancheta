@@ -88,6 +88,7 @@ async function run(
 
   const started = process.hrtime.bigint();
   const jobs = options.seeds.flatMap((seed) => planJobs({ ...options, seed }));
+  const chain = options.chain > 1 ? { chain: options.chain } : {};
   const results = await execute({ params: loaded.params, clubs }, jobs, options.workers);
   const parts = bySeed(jobs, results);
   const runs = options.seeds.map((seed) => {
@@ -103,6 +104,7 @@ async function run(
       ...(options.robot === undefined ? {} : { robot: options.robot }),
       overrides: loaded.overrides,
       ...(options.paramsFile === undefined ? {} : { paramsFile: options.paramsFile }),
+      ...chain,
     };
     return { collected, report, info };
   });

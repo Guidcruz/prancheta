@@ -24,6 +24,11 @@ export interface BalanceOptions {
    * the rare targets on all of them together.
    */
   readonly seeds: readonly number[];
+  /**
+   * Seasons of each career (`--chain`, 1 to CHAIN_MAX; T-017): with 2 or more, each league season
+   * is a career that goes on through the engine's season turn. 1 is the single-season run.
+   */
+  readonly chain: number;
   /** Matches of each duel (calibrated, tactical and "tudo no ataque"); 0 skips the duels. */
   readonly duels: number;
   /** File with parameter overrides (same shape as GameParams, any subset of it). */
@@ -36,12 +41,20 @@ export interface BalanceOptions {
   readonly help: boolean;
 }
 
+/** Most seasons of a `--chain` career. */
+export const CHAIN_MAX = 30;
+/** Seasons of a `--chain` career that count as required targets; the later ones are info. */
+export const CHAIN_REQUIRED = 3;
+
 export const USAGE = `Uso: npm run balance -- [opções]
 
   --seasons <n>    temporadas da Série A (padrão 200; 0 pula a liga e o robô)
   --seed <n>       semente base, inteiro >= 0 (padrão 1); várias separadas por vírgula
                    (--seed 1,2,3) rodam cada uma e julgam as metas raras (campeão pequeno,
                    clube fraco no G4, fuga do Z4 de 6 a 8 pontos) na soma das temporadas
+  --chain <n>      temporadas encadeadas por carreira, de 1 a ${CHAIN_MAX} (padrão 1): cada temporada
+                   da liga vira uma carreira com evolução e virada do motor; as temporadas 1 a
+                   ${CHAIN_REQUIRED} contam como metas obrigatórias, as seguintes são informativas
   --duels <n>      jogos de cada duelo calibrado e tático (padrão 20000; 0 pula os duelos)
   --params <arq>   JSON com parâmetros que sobrescrevem os de app/src/params/ (qualquer parte)
   --robot <clube>  clube do técnico-robô (padrão ${DEFAULT_ROBOT_CLUB}; "none" pula o robô)
@@ -80,6 +93,7 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
   let seasons = 200;
   let seeds: readonly number[] = [1];
   let duels = 20_000;
+  let chain = 1;
   let paramsFile: string | undefined;
   let robot: string | undefined = DEFAULT_ROBOT_CLUB;
   let json = false;
@@ -106,6 +120,14 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
         const v = integer(name, next(), 0);
         if (typeof v === 'string') return { ok: false, error: v };
         duels = v;
+        break;
+      }
+      case '--chain': {
+        const v = integer(name, next(), 1);
+        if (typeof v === 'string' || v > CHAIN_MAX) {
+          return { ok: false, error: `--chain precisa de um inteiro de 1 a ${CHAIN_MAX}` };
+        }
+        chain = v;
         break;
       }
       case '--workers': {
@@ -138,7 +160,10 @@ export function parseArgs(argv: readonly string[]): ParsedArgs {
         return { ok: false, error: `opção desconhecida: ${flag}` };
     }
   }
-  return { ok: true, options: { seasons, seeds, duels, paramsFile, robot, json, workers, help } };
+  return {
+    ok: true,
+    options: { seasons, seeds, chain, duels, paramsFile, robot, json, workers, help },
+  };
 }
 
 const repoFile = (path: string) => new URL(`../../${path}`, import.meta.url);
