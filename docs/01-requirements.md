@@ -1074,7 +1074,8 @@ Cenário: nova temporada (P2)
   Dado o fim da temporada 1
   Quando o jogador toca "Próxima temporada"
   Então começa a temporada 2 com os mesmos 20 clubes, um calendário novo, tabela zerada, idade de todos +1 e atributos ajustados pela curva de idade
-  E suspensões por amarelo zeram, enquanto lesões em curso continuam
+  E suspensões, amarelos e lesões terminam na virada (a pausa entre temporadas é maior que a lesão mais longa; decisão 13 do CEO, 2026-11-05)
+  E a moral de cada jogador faz metade do caminho até 60 (decisão 13 do CEO, 2026-11-05)
 
 Cenário: determinismo da virada
   Dado o mesmo save no fim da temporada
@@ -2721,7 +2722,8 @@ Cenário: porte não entra na força
 Cenário: colocação na carreira não muda a força (D8)
   Dado uma carreira em que um clube termina a temporada 1 numa posição diferente da sua referência
   Quando começa a temporada 2 (US-025)
-  Então a strength desse clube na carreira é a mesma da temporada 1
+  Então a strength desse clube não é reatribuída pela escada de referência por causa da colocação
+  E ela só muda pelo recálculo da virada, a partir do melhor XI do elenco depois da evolução (temporada.md, "Fim de temporada")
 ```
 
 ### Fora do escopo desta história
