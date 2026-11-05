@@ -1,16 +1,11 @@
-import { readFileSync } from 'node:fs';
-import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { Fixture } from './fixtures.ts';
 import { newGame, type ClubState, type GameState } from './game.ts';
-import { BENCH_SIZE } from './lineup.ts';
 import {
   ABANDONED_SCORE,
-  MAX_SUBS,
   MIN_PLAYERS_ON_PITCH,
   MISS_OUTCOMES,
   RATING,
-  STOPPAGE,
   SUSPENSION,
   abandonedScore,
 } from './match/rules.ts';
@@ -27,14 +22,12 @@ import { RATING_RANGE, RECENT_RATINGS_MAX, type Player } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { MATCH_MODES, playRound, type MatchMode, type RoundInput } from './round.ts';
 import { isUnavailable } from './selection.ts';
-import { POINTS, RELEGATION_SPOTS, getStandings, type StandingRow } from './standings.ts';
+import { POINTS, getStandings, type StandingRow } from './standings.ts';
 import { syntheticClubs } from './testing/clubs.ts';
-import { GOLDEN_DIR } from './testing/golden.ts';
 import { fixedIdentitySource } from './testing/identity.ts';
 import { aiFixtureInput, aiTeamInput, fixtureInput, testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
 import type { ClubId, PlayerId, Side } from './types.ts';
-import { ENGINE_VERSION } from './version.ts';
 
 /*
  * Property tests of T-015 (docs/03-test-plan.md, "Propriedade (invariantes em 1.000 sementes)";
@@ -53,7 +46,7 @@ import { ENGINE_VERSION } from './version.ts';
  * cards and short sides, and the "tudo no ataque" asked too early; (2) whole seasons with the AI
  * and human coaches, both realisms and new or random starting states: one game per club and
  * round, the table against the scores and the tie-breaks, the states between rounds, the
- * determinism; (3) the consistency of the `season-full` golden.
+ * determinism. The consistency of the season goldens is checked in round.golden.test.ts.
  *
  * `PROPERTY_FULL=1` runs the full counts (10,000 matches and 1,000 seasons; about 9 minutes,
  * like NAMES_FULL_CHECK: before a release and when the engine changes a lot):
@@ -64,6 +57,17 @@ const MATCH_SEEDS = FULL ? 10_000 : 1_000;
 const SEASONS = FULL ? 1_000 : 30;
 /** Seasons per test, so a long run shows its progress and each case has its own timeout. */
 const SEASONS_PER_TEST = 10;
+
+/*
+ * The rule numbers come from the design documents, not from the engine's constants, so a wrong
+ * constant fails here (docs/design/partida.md, "Substituições" and "Acréscimos").
+ */
+/** "Até 5 por jogo (`match.maxSubs = 5`), sem limite de paradas". */
+const DOC_MAX_SUBS = 5;
+/** "banco de 7 (`match.benchSize = 7`)". */
+const DOC_BENCH_SIZE = 7;
+/** "Primeiro tempo: `Rng.int(0, 3)` minutos; segundo tempo: `Rng.int(2, 6)`". */
+const DOC_STOPPAGE = { 1: { min: 0, max: 3 }, 2: { min: 2, max: 6 } } as const;
 
 const params = testParams();
 const SIDES: readonly Side[] = ['home', 'away'];
@@ -95,7 +99,8 @@ function nonFinite(value: unknown, path: string, out: string[]): void {
 
 const game = testGame();
 const fixtures = game.fixtures;
-type Kind = 'plain' | 'ai' | 'coach-home' | 'coach-away' | 'harsh' | 'harsh-short';
+type Kind = 'plain' | 'ai' | 'coach-home' | 'coach-away' | 'harsh' | 'harsh-short' | 'both-short';
+/** The kinds the seeds go through; `both-short` has its own test (a W.O. at kick-off). */
 const KINDS: readonly Kind[] = ['plain', 'ai', 'coach-home', 'coach-away', 'harsh', 'harsh-short'];
 
 /** The same team with some players changed and some starters replaced by unknown ids. */
@@ -151,7 +156,7 @@ function coachCommands(seed: number, side: Side, team: TeamInput): MatchCommand[
       side,
       kind: 'substitution',
       out: starters[1 + (seed % 10)]!,
-      in: bench[seed % BENCH_SIZE]!,
+      in: bench[seed % DOC_BENCH_SIZE]!,
     },
     {
       minute: 45,
@@ -178,7 +183,7 @@ function coachCommands(seed: number, side: Side, team: TeamInput): MatchCommand[
       side,
       kind: 'substitution',
       out: starters[2 + (seed % 9)]!,
-      in: bench[(seed + 3) % BENCH_SIZE]!,
+      in: bench[(seed + 3) % DOC_BENCH_SIZE]!,
     },
   ];
 }
@@ -234,8 +239,8 @@ function matchProblems(c: MatchCase, result: MatchResult): string[] {
     }
   }
   const benches = {
-    home: new Set(input.home.sheet.lineup.bench.slice(0, BENCH_SIZE)),
-    away: new Set(input.away.sheet.lineup.bench.slice(0, BENCH_SIZE)),
+    home: new Set(input.home.sheet.lineup.bench.slice(0, DOC_BENCH_SIZE)),
+    away: new Set(input.away.sheet.lineup.bench.slice(0, DOC_BENCH_SIZE)),
   };
 
   // The kick-off XI: who took the pitch without coming on as a substitute.
@@ -256,7 +261,8 @@ function matchProblems(c: MatchCase, result: MatchResult): string[] {
       // A kick-off replacement for an unavailable starter comes from the bench.
       if (!starters.includes(id) && !benches[side].has(id)) bad(`${id} started from nowhere`);
     }
-    if (c.kind !== 'harsh-short' && pitch[side].size !== 11) {
+    const short = c.kind === 'both-short' || (c.kind === 'harsh-short' && side === 'home');
+    if (!short && pitch[side].size !== 11) {
       bad(`${side} kicked off with ${pitch[side].size}`);
     }
   }
@@ -275,6 +281,18 @@ function matchProblems(c: MatchCase, result: MatchResult): string[] {
   let injured: { side: Side; player: PlayerId; index: number } | undefined;
   let short: Side | undefined;
 
+  /** Reserves still able to come on: on the bench, in the squad, available, never on the pitch. */
+  const reservesLeft = (side: Side) =>
+    [...benches[side]].filter((id) => {
+      const p = byId.get(id);
+      return (
+        p !== undefined &&
+        !isUnavailable(p) &&
+        !input[side].sheet.lineup.starters.includes(id) &&
+        !used[side].has(id) &&
+        !gone.has(id)
+      );
+    }).length;
   const on = (side: Side, id: PlayerId | undefined, what: string, at: string) => {
     if (id === undefined || !pitch[side].has(id)) bad(`${at}: ${what} ${id} not on the pitch`);
   };
@@ -314,7 +332,14 @@ function matchProblems(c: MatchCase, result: MatchResult): string[] {
         bad(`${at} after ${short} fell below ${MIN_PLAYERS_ON_PITCH}`);
       }
     }
-    // The injured player's substitution, if any, comes right after his injury.
+    // The injured player's substitution, if any, comes right after his injury; without it, his
+    // side had no substitution or no reserve left (partida.md, "Substituições", 4th item).
+    if (injured !== undefined && injured.index === index - 1) {
+      const swapped = e.type === 'substitution' && e.reason === 'injury';
+      if (!swapped && subs[injured.side] < DOC_MAX_SUBS && reservesLeft(injured.side) > 0) {
+        bad(`${at}: ${injured.player} injured and not replaced with subs and reserves left`);
+      }
+    }
     if (injured !== undefined && injured.index !== index - 1) injured = undefined;
     // A penalty has exactly one outcome, the very next event.
     if (penalty !== undefined) {
@@ -408,14 +433,14 @@ function matchProblems(c: MatchCase, result: MatchResult): string[] {
         used[e.side].add(e.in);
         subs[e.side]++;
         // partida.md, "Substituições": up to 5 per match, no limit of stops.
-        if (subs[e.side] > MAX_SUBS) bad(`${at}: substitution ${subs[e.side]} of ${e.side}`);
+        if (subs[e.side] > DOC_MAX_SUBS) bad(`${at}: substitution ${subs[e.side]} of ${e.side}`);
         break;
       case 'stoppage': {
         const half = e.half;
         const last = half === 1 ? 45 : 90;
         if (stoppage[half] !== undefined) bad(`${at}: two stoppages in the half`);
         if (e.minute !== last || e.added !== undefined) bad(`${at}: stoppage off the last minute`);
-        if (e.minutes < STOPPAGE[half].min || e.minutes > STOPPAGE[half].max) {
+        if (e.minutes < DOC_STOPPAGE[half].min || e.minutes > DOC_STOPPAGE[half].max) {
           bad(`${at}: ${e.minutes} added minutes`);
         }
         stoppage[half] = e.minutes;
@@ -517,6 +542,7 @@ describe(`match properties over ${MATCH_SEEDS} seeds (US-008)`, () => {
     { timeout: FULL ? 600_000 : 60_000 },
     () => {
       const found: string[] = [];
+      // Matches (not events) that reach each edge the invariants talk about.
       const seen = {
         abandoned: 0,
         reds: 0,
@@ -529,22 +555,47 @@ describe(`match properties over ${MATCH_SEEDS} seeds (US-008)`, () => {
         const c = matchCase(seed);
         const result = simulateMatch(c.input, c.params, c.commands);
         for (const p of matchProblems(c, result)) found.push(`seed ${seed} (${c.kind}): ${p}`);
-        for (const e of result.events) {
-          if (e.type === 'fulltime' && e.abandoned) seen.abandoned++;
-          if (e.type === 'red') seen.reds++;
-          if (e.type === 'red' && e.reason === 'secondYellow') seen.secondYellows++;
-          if (e.type === 'penaltyAwarded') seen.penalties++;
-          if (e.type === 'yellow' && e.triggersSuspension) seen.suspendingYellows++;
-          if (e.type === 'substitution' && e.reason === 'injury') seen.injurySubs++;
-        }
+        const has = (test: (e: MatchEvent) => boolean) => (result.events.some(test) ? 1 : 0);
+        seen.abandoned += has((e) => e.type === 'fulltime' && e.abandoned);
+        seen.reds += has((e) => e.type === 'red');
+        seen.secondYellows += has((e) => e.type === 'red' && e.reason === 'secondYellow');
+        seen.penalties += has((e) => e.type === 'penaltyAwarded');
+        seen.suspendingYellows += has((e) => e.type === 'yellow' && e.triggersSuspension);
+        seen.injurySubs += has((e) => e.type === 'substitution' && e.reason === 'injury');
       }
       expect(found.slice(0, 20)).toEqual([]);
-      // The stressed kinds reach every edge the invariants talk about.
       for (const [what, count] of Object.entries(seen)) {
-        expect(count, `${what} in ${MATCH_SEEDS} matches`).toBeGreaterThan(MATCH_SEEDS / 100);
+        expect(count, `matches with ${what} in ${MATCH_SEEDS}`).toBeGreaterThan(MATCH_SEEDS / 10);
       }
     },
   );
+
+  it('ends at kick-off, 0×3, a match with both sides below 7 (the home side is checked first)', () => {
+    const both = (team: TeamInput): TeamInput => ({
+      ...team,
+      sheet: {
+        ...team.sheet,
+        lineup: {
+          ...team.sheet.lineup,
+          starters: team.sheet.lineup.starters.map((id, i) =>
+            i < 6 ? id : `${team.clubId}#ghost`,
+          ),
+        },
+      },
+    });
+    for (let seed = 0; seed < MATCH_SEEDS; seed += 50) {
+      const base = matchCase(seed);
+      const c: MatchCase = {
+        ...base,
+        kind: 'both-short',
+        input: { ...base.input, home: both(base.input.home), away: both(base.input.away) },
+      };
+      const result = simulateMatch(c.input, c.params, c.commands);
+      expect(matchProblems(c, result), `seed ${seed}`).toEqual([]);
+      expect(result.events.map((e) => e.type)).toEqual(['kickoff', 'fulltime']);
+      expect(result.score).toEqual([0, ABANDONED_SCORE]);
+    }
+  });
 
   it('plays "tudo no ataque" asked before allOutFromMinute as the match without it', () => {
     let compared = 0;
@@ -938,59 +989,4 @@ describe(`round and table properties over ${SEASONS} seasons of 38 rounds (US-01
       expect(found.slice(0, 20)).toEqual([]);
     },
   );
-});
-
-// ---------------------------------------------------------------------------------------------
-// 3. The season-full golden (round.golden.test.ts; T-014, T-016)
-// ---------------------------------------------------------------------------------------------
-
-describe('golden season-full: a whole season, consistent with itself', () => {
-  const file = JSON.parse(readFileSync(join(GOLDEN_DIR, 'season-full.json'), 'utf8')) as {
-    engineVersion: number;
-    data: {
-      table: [ClubId, number, number, number, number, number, number, number, number][];
-      kinds: Record<string, number>;
-      lastFacts: { kind: string }[][];
-      digest: string;
-    };
-  };
-  const { table, kinds, lastFacts, digest } = file.data;
-
-  it('was written by this ENGINE_VERSION and covers the 38 rounds of the 20 clubs', () => {
-    expect(file.engineVersion).toBe(ENGINE_VERSION);
-    expect(table).toHaveLength(20);
-    expect(new Set(table.map((r) => r[0])).size).toBe(20);
-    for (const [clubId, points, wins, draws, losses] of table) {
-      expect(wins + draws + losses, clubId).toBe(38);
-      expect(points, clubId).toBe(POINTS.win * wins + POINTS.draw * draws);
-    }
-    expect(lastFacts).toHaveLength(2); // rounds 37 and 38
-    expect(digest).toMatch(/^[0-9a-f]{1,8}$/);
-  });
-
-  it('has a table whose totals add up and whose order follows criteria 1 to 4', () => {
-    const sum = (k: number) => table.reduce((s, r) => s + (r[k] as number), 0);
-    const games = 380;
-    expect(sum(2)).toBe(sum(4)); // wins = losses
-    expect(sum(3) % 2).toBe(0);
-    expect(sum(1)).toBe(POINTS.win * games - sum(3) / 2);
-    expect(sum(5)).toBe(sum(6)); // goals for = against
-    for (let i = 0; i + 1 < table.length; i++) {
-      const [, pa, wa, , , gfa, gaa] = table[i]!;
-      const [, pb, wb, , , gfb, gab] = table[i + 1]!;
-      const key = (p: number, w: number, gf: number, ga: number) => [p, w, gf - ga, gf];
-      const a = key(pa, wa, gfa, gaa);
-      const b = key(pb, wb, gfb, gab);
-      const first = a.findIndex((x, k) => x !== b[k]);
-      if (first >= 0) expect(a[first]!, `row ${i + 1}`).toBeGreaterThan(b[first]!);
-    }
-  });
-
-  it('counts the season facts: one champion, four relegated, the decisive last round', () => {
-    expect(kinds.championClinched).toBe(1);
-    expect(kinds.relegatedClinched).toBe(RELEGATION_SPOTS);
-    for (const n of Object.values(kinds)) expect(Number.isInteger(n) && n > 0).toBe(true);
-    const all = lastFacts.flat().map((f) => f.kind);
-    for (const kind of all) expect(kinds[kind], kind).toBeGreaterThan(0);
-  });
 });
