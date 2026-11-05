@@ -119,6 +119,13 @@ run('built site (site/dist)', () => {
     expect(bad).toEqual([]);
   });
 
+  it('keeps internal ADR numbers and infra jargon out of the public pages', () => {
+    const bad = pages.filter((f) =>
+      /\bADR-\d+|Durable Objects|\bWorkers\b|\bD1\b/.test(readFileSync(f, 'utf8')),
+    );
+    expect(bad).toEqual([]);
+  });
+
   it('has one h1, a skip link, a main, lang and canonical per page', () => {
     for (const f of pages) {
       const h = readFileSync(f, 'utf8');

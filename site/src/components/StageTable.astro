@@ -17,9 +17,6 @@ const escapeHtml = (t: string) =>
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
   );
-/** Keeps ADR numbers together ("ADR-0013" never breaks at the hyphen). */
-const nb = (t: string) =>
-  escapeHtml(t).replace(/ADR-\d+/g, (m) => `<span class="nowrap">${m}</span>`);
 const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') : s.delivery);
 ---
 
@@ -36,7 +33,7 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
           <p class="state-line">
             <StatusBadge status={s.status} />
           </p>
-          <p class="what" set:html={nb(detail(s))} />
+          <p class="what" set:html={escapeHtml(detail(s))} />
         </li>
       );
     })}
@@ -73,7 +70,7 @@ const detail = (s: Stage) => (text === 'summary' ? (stageSummaries[s.id] ?? '') 
                 {s.id}
               </th>
               <td class="name body-strong">{s.name}</td>
-              {full && <td class="what" set:html={nb(detail(s))} />}
+              {full && <td class="what" set:html={escapeHtml(detail(s))} />}
               <td class="state">
                 <StatusBadge status={s.status} />
               </td>
