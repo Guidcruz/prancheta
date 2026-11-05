@@ -432,7 +432,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 
 ## Determinismo
 
-- Cada partida tem a própria semente: `seedFromString("<seasonSeed>-r<rodada>-<mandanteId>-<visitanteId>")`. Mudar uma partida não muda as outras, e as 10 partidas da rodada podem ser simuladas em qualquer ordem.
+- Cada partida tem a própria semente: ``seedFromString(`${seed}-s${season}-r${round}-${homeId}-${awayId}`)``, em que `seed` é a semente da carreira e `season` o número da temporada na carreira (o mesmo formato de `docs/02-architecture.md`, §4.1). Mudar uma partida não muda as outras, e as 10 partidas da rodada podem ser simuladas em qualquer ordem.
 - Ordem fixa dos sorteios em cada minuto: mandante (chance, tipo, finalizador, resultado, assistência), visitante (idem), depois cartões e lesões de cada jogador em campo na ordem da escalação, mandante primeiro. Forma do dia: no apito inicial, mandante e depois visitante. O `developer` pode mudar a ordem, desde que seja fixa e testada.
 - Os comandos entram como lista `(minuto, time, comando)`. Mesma semente + mesmos comandos = mesma partida. Isso dá o replay e a partida do servidor na 1b.
 
