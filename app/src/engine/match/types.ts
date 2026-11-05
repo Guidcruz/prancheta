@@ -68,7 +68,9 @@ export type TacticPreset = 'press' | 'holdResult' | 'allOut';
  *   when `k` is greater than or equal to the drawn added time there is no such minute, and it is
  *   ignored at full time (`command-too-late`).
  * The one exception is the substitution of a player injured in that same minute, which happens at
- * once. Only the coach's side (`controller: 'human'`) takes commands. The same seed and the same
+ * once. Only the coach's side (`controller: 'human'`) takes commands. "Tudo no ataque" (the
+ * `allOut` preset, or `posture: 'allOut'`) takes effect only from `match.allOutFromMinute`
+ * (60): before it the command is ignored (`command-too-early`). The same seed and the same
  * commands give the same match; an invalid command is ignored with a warning.
  */
 export type MatchCommand =

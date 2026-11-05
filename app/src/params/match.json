@@ -1,6 +1,6 @@
 {
-  "baseChance": 0.09,
-  "kChance": 0.14,
+  "baseChance": 0.087,
+  "kChance": 0.125,
   "conversion": 0.15,
   "kFinish": 0.09,
   "midWeight": 0.5,
@@ -10,7 +10,17 @@
   "penaltyShare": 0.015,
   "freeKickShare": 0.06,
   "assistShare": 0.7,
+  "comfortableLeadGoals": 2,
+  "comfortableLeadPower": 0.85,
+  "allOutPower": 1.25,
+  "allOutDef": 0.78,
+  "allOutFromMinute": 60,
   "fatigue": { "drainPerMinute": 0.3, "recoveryPerDay": 7 },
   "injury": { "basePerMinute": 0.00012 },
-  "cards": { "yellowPerMinute": 0.002, "redPerMinute": 0.00003, "derbyMult": 1.2 }
+  "cards": {
+    "yellowPerMinute": 0.002,
+    "redPerMinute": 0.00003,
+    "derbyMult": 1.2,
+    "bookedMult": 0.2
+  }
 }

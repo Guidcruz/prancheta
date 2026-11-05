@@ -15,7 +15,7 @@
     "test:all": "npm run lint && npm test && npm run build",
     "lint": "npm run lint -w app && npm run check -w app && npm run check -w site && prettier --check \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\" && bash scripts/test-hook.sh",
     "format": "prettier --write \"**/*.{ts,js,mjs,svelte,astro,md,json,css}\"",
-    "balance": "echo \"scripts/balance.ts ainda não existe (tarefa da Etapa 1)\" && exit 1",
+    "balance": "node scripts/balance.ts",
     "content:check": "node scripts/content-check.mjs",
     "blocklist:hash": "node scripts/hash-blocklist.mjs",
     "blocklist:hash:athletes": "node scripts/hash-blocklist.mjs --out app/src/data/athletes-blocklist.sha256.json",

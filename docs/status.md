@@ -74,6 +74,34 @@ Telas da 1a (`docs/design/telas/`):
 | T-012  | feita (PR #24 mergeado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                                                       |
 | T-013  | feita (code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                                               |
 | T-014  | feita (PR aberto; code review aprovado em 2 rodadas e QA PASS): moral, forma, termômetro da torcida, "realismo simplificado", ídolo sempre titular, `ENGINE_VERSION` 10                                            |
+| T-016  | feita (PR aberto): `npm run balance` com técnico-robô, regra "tirar o pé", "tudo no ataque" só a partir dos 60', `fans.reversion` 0,10, `ENGINE_VERSION` 11                                                        |
+
+## Métricas finais da T-016 (3 sementes de 200 temporadas)
+
+36 de 36 metas obrigatórias dentro em cada semente; as 3 metas raras dentro no total das 3.
+
+| Métrica                      | Valor final | Meta      |
+| ---------------------------- | ----------- | --------- |
+| Gols por jogo                | 2,64        | 2,5–2,8   |
+| Goleadas                     | 12,3%       | 8–13%     |
+| Vermelhos por jogo           | 0,18        | 0,11–0,25 |
+| Zebra por 30 pontos          | 8,3%        | 8–12%     |
+| Mais forte por 20 pontos     | 62,8%       | —         |
+| Campeão (pontos)             | 75          | 72–82     |
+| 17º colocado                 | 40          | 39–45     |
+| Técnico-robô (por temporada) | +4,2 pontos | —         |
+
+## Decisões do CEO em 2026-11-05 (T-016)
+
+1. Recomendações aceitas: `kChance` 0,125, "tudo no ataque" mais forte, "grande rebaixado" só informativo na temporada única e metas raras julgadas com 3 sementes.
+2. "Tudo no ataque" só pode ser usado a partir dos 60'.
+3. Texto de instalação do site para Android e iOS.
+
+Pendências derivadas:
+
+- `devops-engineer`: ligar o `/balance` no CI e medir o runner de 2 vCPU.
+- Gatilho de reavaliação do "tudo no ataque" (`docs/design/balance-log.md`): repetir a medição se a média das 3 sementes passar de +0,04 ou se mexerem em `allOutPower`, `allOutDef`, `allOutFromMinute`, `kChance` ou no cansaço.
+- "Grande rebaixado" volta a valer como meta na carreira longa.
 
 ## Dados da temporada (T-013, 20 temporadas)
 
@@ -108,7 +136,7 @@ Regressão: 988 testes passando e 1 pulado.
 
 Pendências derivadas:
 
-- T-016: `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%); medir a métrica nova "time pequeno no G4" (uma zebra positiva, aprovada pelo CEO em 2026-11-05), com a meta em `docs/design/balance-targets.md`.
+- T-016 (feita, ver abaixo): `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%); medir a métrica nova "time pequeno no G4" (uma zebra positiva, aprovada pelo CEO em 2026-11-05), com a meta em `docs/design/balance-targets.md`.
 - T-017: recalcular a `strength` dos clubes na virada da temporada.
 - T-059 (online): as 3 regras de servidor para `fanDecisions` e a fronteira de `app/src/content/` para os valores da entrevista.
 
@@ -254,6 +282,7 @@ Notas:
 ## Em andamento
 
 - **T-014** (moral, forma, termômetro e realismo simplificado): PR aberto; code review e QA aprovados.
+- **T-016** (balanceamento e calibragem do motor): PR aberto.
 - Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
 
 ## Concluído em 2026-11-04 (T-008 e patrocínio)
@@ -291,11 +320,14 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 - **Técnico interino e período sem técnico (Etapa 4, registrado em 2026-11-04):** quando um clube demite o técnico, o auxiliar assume como interino por 1 a 3 rodadas e joga no perfil "Tradicional"; "efeito técnico novo" com ganho de moral nos primeiros jogos; notícias e posts ("fulano é o interino", "diretoria busca nome no mercado"); no modo "técnico livre", o técnico humano demitido fica desempregado algumas rodadas até receber proposta. Vale para os clubes da IA e para o clube do técnico humano.
 - **Post "Quem pode ser campeão?" (devlog, sugestão do CEO para o post da próxima semana, registrado em 2026-11-05):** chance de título por clube em 1.000 temporadas, por que o mais forte nem sempre ganha, zebras e arrancadas contra o rebaixamento, o projeto de longo prazo do clube médio e a comparação com o campeonato real. Números em `docs/design/balance-targets.md`, decisões 8 a 11.
+- **Perfil do clube que muda com o tempo (Etapas 3 e 4, registrado em 2026-11-05):** hoje o perfil é sorteado no início da carreira e fica fixo. Na carreira longa ele passa a mudar com a diretoria, que é quem o define: eleição a cada 3 temporadas (uma chapa nova pode trocar o perfil, com notícia e conversa com a diretoria), crise financeira (o clube endividado vira Vendedor por algumas temporadas) e subida de porte (puxa para o lado mais ambicioso, como já prevê `docs/design/temporada.md`). No máximo uma troca a cada 3 temporadas, sempre anunciada no jornal. Ajuda na meta de estabilidade da liga (`docs/design/balance-targets.md`, decisão 11).
+- **"Mostrar a tabela" na conversa do intervalo (a avaliar depois da T-016, registrado em 2026-11-05):** quarta opção da conversa do intervalo, com efeito que depende da tabela ao vivo: motiva quando o resultado parcial favorece o clube e pressiona quando não, ajudando ou travando jogadores conforme o temperamento. Mexe no motor: precisa de regra do `game-designer` e de calibragem. A parte só de texto (as conversas citam a tabela) já é critério da US-071 (D11).
+- **Técnicos da IA com nome e qualidade (Etapa 4, registrado em 2026-11-05):** cada clube da IA passa a ter um técnico com nome gerado e uma qualidade que muda o rendimento do time (o técnico-robô da T-016 mostrou que um bom técnico vale cerca de +4 pontos por temporada). As demissões seguem a regra do `PROJETO.md` (barra de confiança de 0 a 100, meta pela força, paciência pelo porte, ritmo pelo perfil; o "Caótico" troca mais), com o interino do item acima. Contratar bem faz um clube subir; errar faz um grande afundar. Gera histórias para o jornal e ajuda a meta de estabilidade da liga (campeões que mudam ao longo das décadas).
 
 ## Próximo
 
-1. T-015 e T-016 da Etapa 1a (a T-016 traz "tirar o pé", o ajuste de `baseChance` e `fans.reversion` 0,10).
-2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
+1. T-015 e T-017 da Etapa 1a (a T-017 recalcula a `strength` dos clubes na virada da temporada).
+2. CI com `REQUIRE_SITE_DIST=1` depois do build, `NAMES_FULL_CHECK=1` e o `/balance` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
 4. Placar e tabela ao vivo da rodada (US-070 a US-074).
 5. Lote de clubes de dezembro, com a tabela final de 2026.

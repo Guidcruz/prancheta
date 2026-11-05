@@ -27,6 +27,7 @@ import {
   abandonedScore,
   attendance,
   chanceProbability,
+  comfortableLeadFactor,
   energyDrain,
   halftimeBoost,
   injuryProbability,
@@ -221,6 +222,7 @@ export function simulateMatch(
   const book = prepareCommands(
     commands,
     { home: input.home.controller, away: input.away.controller },
+    match.allOutFromMinute,
     warnings,
   );
   const teams = [home, away] as const;
@@ -338,8 +340,10 @@ export function simulateMatch(
     opponent: TeamState,
     theirs: TeamStrengths,
   ): void {
+    // "Tirar o pé": the side leading comfortably creates less (the score of this very moment).
+    const power = own.power * comfortableLeadFactor(team.goals, opponent.goals, match);
     const pChance = chanceProbability(
-      own.power + team.dayForm,
+      power + team.dayForm,
       theirs.defense + opponent.dayForm,
       match,
     );

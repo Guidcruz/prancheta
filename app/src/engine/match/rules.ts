@@ -93,10 +93,11 @@ export const CARD_POSITION_MULT: { readonly [P in Position]: number } = {
 /**
  * The other card factors (partida.md, "Cartões e suspensão" and "Conversa no intervalo"):
  * - `hothead`: `traitMult` of the temperamental trait (1 for the others);
- * - `booked`: a player who already has a yellow ("pendurado") gets the next one at half the rate;
  * - `calm`: yellows of a side that heard "Acalmar" at half time, in the second half.
+ * The factor of a player who already has a yellow ("pendurado") is the parameter
+ * `match.cards.bookedMult` (T-016, partida.md "Calibragem dos vermelhos").
  */
-export const CARD_FACTORS = { hothead: 1.5, booked: 0.5, calm: 0.75 } as const;
+export const CARD_FACTORS = { hothead: 1.5, calm: 0.75 } as const;
 /**
  * Suspension in 1a: the 3rd accumulated yellow suspends for 1 game and resets the counter; a red
  * suspends for 1 game. The two yellows of a second-yellow red never enter the accumulation.
@@ -263,6 +264,20 @@ export function chanceProbability(
   return clamp(p, CHANCE_BOUNDS.min, CHANCE_BOUNDS.max);
 }
 
+/**
+ * "Tirar o pé" (partida.md, "Calibragem das goleadas"): the factor on the `Power` of a side whose
+ * lead is `own − other` goals. `match.comfortableLeadPower` once the lead reaches
+ * `match.comfortableLeadGoals`, else 1. It is the team that relaxes, on top of the posture and for
+ * every controller; the `Defense` never changes. No draw: the same score gives the same factor.
+ */
+export function comfortableLeadFactor(
+  own: number,
+  other: number,
+  match: Pick<MatchParams, 'comfortableLeadGoals' | 'comfortableLeadPower'>,
+): number {
+  return own - other >= match.comfortableLeadGoals ? match.comfortableLeadPower : 1;
+}
+
 /** `pGoal = clamp(conversion × exp(kFinish × (shot − gkEff) / 10), 0.04, 0.40)`. */
 export function goalProbability(
   shot: number,
@@ -292,6 +307,8 @@ export interface SideCardRates {
   readonly yellow: number;
   /** `cards.redPerMinute × pressure.cards`. */
   readonly red: number;
+  /** `cards.bookedMult`: the yellow rate's factor for a player who already has one. */
+  readonly bookedMult: number;
 }
 
 /**
@@ -313,6 +330,7 @@ export function sideCardRates(
       (derby ? match.cards.derbyMult : 1) *
       (calm ? CARD_FACTORS.calm : 1),
     red: match.cards.redPerMinute * p,
+    bookedMult: match.cards.bookedMult,
   };
 }
 
@@ -330,10 +348,10 @@ export function playerCardMult(position: Position, trait: Trait): number {
 
 /**
  * Yellow card in one minute: `pYellow = side yellow rate × positionMult × traitMult × (already
- * booked ? 0.5 : 1)`, clamped to 0..1 (a second yellow is a red).
+ * booked ? cards.bookedMult : 1)`, clamped to 0..1 (a second yellow is a red).
  */
 export function yellowProbability(rates: SideCardRates, mult: number, booked: boolean): number {
-  return clamp(rates.yellow * mult * (booked ? CARD_FACTORS.booked : 1), 0, 1);
+  return clamp(rates.yellow * mult * (booked ? rates.bookedMult : 1), 0, 1);
 }
 
 /**

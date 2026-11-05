@@ -41,7 +41,7 @@ Começa em `fans.start = 60` para todos ("começo de temporada é esperança").
 - **Teto das decisões:** vale só para as escolhas do técnico (posts e entrevista). O ídolo no banco entra **depois** do teto: quem responde a todos os posts não esconde o ídolo no banco. Faixa da parcela: −5 a +4.
 - **Partida encerrada (W.O.):** conta pelo placar definido, nos pontos, na goleada e no jejum.
 
-**Exemplo.** Clube médio de força 70, termômetro 50, vence em casa um grande de força 76: d = 70 − 76 + 4 = −2; esperado = 1,40 − 0,08 = 1,32; resultado = 4 × (3 − 1,32) = +6,7; reversão = 0,08 × (50 − 55) = −0,4; o técnico respondeu bem a um post (+2). Δ = 6,7 + 2 + 0,4 = +9,1 → termômetro 59. A mesma vitória num clássico: 4 × 1,68 × 1,5 = +10,1.
+**Exemplo** (com `fans.reversion` 0,08, o valor de antes da T-016; com 0,10 a reversão seria −0,5). Clube médio de força 70, termômetro 50, vence em casa um grande de força 76: d = 70 − 76 + 4 = −2; esperado = 1,40 − 0,08 = 1,32; resultado = 4 × (3 − 1,32) = +6,7; reversão = 0,08 × (50 − 55) = −0,4; o técnico respondeu bem a um post (+2). Δ = 6,7 + 2 + 0,4 = +9,1 → termômetro 59. A mesma vitória num clássico: 4 × 1,68 × 1,5 = +10,1.
 
 **Simulação (protótipo, 100 temporadas, 20 clubes):** média 53,5, desvio 16,4; abaixo de 20 em 2,8% das rodadas e acima de 90 em 0,9% (meta: média 50 a 60, no máximo 5% em cada extremo). Com `fans.reversion = 0.05` o termômetro ficava extremo demais (6,2% abaixo de 20).
 
@@ -115,7 +115,7 @@ O torcedor fanático exagera: usa a faixa acima ou abaixo da real, na direção 
 | `fans.baseline`        | 55            | 40–70           | para onde o humor volta sem resultados       |
 | `fans.resultWeight`    | 4             | 1–8             | uma vitória inesperada vale cerca de +7      |
 | `fans.derbyResultMult` | 1,5           | 1–3             | clássico mexe mais                           |
-| `fans.reversion`       | 0,08          | 0–0,2           | mantém os extremos raros (protótipo)         |
+| `fans.reversion`       | 0,10 (T-016)  | 0–0,2           | mantém os extremos raros (protótipo)         |
 | `fans.decisionCap`     | 4             | 0–10            | decisões contam, sem virar fazenda de pontos |
 | `fans.baseOccupancy`   | 0,62          | 0,3–1           | 61% de ocupação com humor médio              |
 

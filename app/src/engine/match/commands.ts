@@ -1,5 +1,5 @@
 import { FORMATIONS } from '../formations.ts';
-import { POSTURE_EFFECTS, PRESSURE_EFFECTS } from '../strength.ts';
+import { POSTURES, PRESSURE_EFFECTS } from '../strength.ts';
 import type { EngineWarning, Side } from '../types.ts';
 import { HALFTIME_CHOICES, HALF_MINUTES, MAX_SUBS, STOPPAGE, TACTIC_PRESETS } from './rules.ts';
 import type { HalftimeChoice, MatchCommand, MatchEvent, TeamInput } from './types.ts';
@@ -23,7 +23,10 @@ import type { HalftimeChoice, MatchCommand, MatchEvent, TeamInput } from './type
  *   with a minute other than 90; a half-time talk away from minute 45), `command-unknown-formation`,
  *   `command-unknown-posture`, `command-unknown-pressure`, `command-unknown-preset`,
  *   `command-unknown-talk`, then `command-ai-side` (the side is played by the AI: only the coach's
- *   side takes commands) and `command-duplicate-talk` (the first talk of a side counts);
+ *   side takes commands), `command-too-early` (a command that puts the side in "tudo no ataque",
+ *   the `allOut` preset or a `tactic` with `posture: 'allOut'`, taking effect before
+ *   `match.allOutFromMinute`; `detail.from` is that minute) and `command-duplicate-talk` (the
+ *   first talk of a side counts);
  * - when it takes effect, by the match situation: `command-no-subs-left`,
  *   `command-player-not-on-pitch`, `command-player-not-on-bench` (not on the bench, already used,
  *   or the reserve who took an unavailable starter's slot at kick-off);
@@ -135,7 +138,7 @@ function shapeProblem(command: MatchCommand): { code: string; value?: string } |
     if (formation !== undefined && !(FORMATIONS as readonly unknown[]).includes(formation)) {
       return { code: 'command-unknown-formation', value: String(formation) };
     }
-    if (c['posture'] !== undefined && !has(POSTURE_EFFECTS, c['posture'])) {
+    if (c['posture'] !== undefined && !(POSTURES as readonly unknown[]).includes(c['posture'])) {
       return { code: 'command-unknown-posture', value: String(c['posture']) };
     }
     if (c['pressure'] !== undefined && !has(PRESSURE_EFFECTS, c['pressure'])) {
@@ -152,13 +155,28 @@ function shapeProblem(command: MatchCommand): { code: string; value?: string } |
 }
 
 /**
+ * Whether a well-formed command puts its side in "tudo no ataque" before `allOutFrom` (partida.md,
+ * "Táticas"; T-016): the `allOut` preset, or a `tactic` with `posture: 'allOut'` whatever its
+ * pressure, whose first minute (`minute + 1`) comes before `allOutFrom`. A command of minute 90 is
+ * never early (`allOutFrom` is at most 76).
+ */
+function allOutTooEarly(command: MatchCommand, allOutFrom: number): boolean {
+  const allOut =
+    (command.kind === 'preset' && TACTIC_PRESETS[command.preset].posture === 'allOut') ||
+    (command.kind === 'tactic' && command.posture === 'allOut');
+  return allOut && command.minute + 1 < allOutFrom;
+}
+
+/**
  * Checks the commands at kick-off and sorts them by moment, keeping the list order within one.
- * `controllers` says who plays each side: a command for an AI side is ignored. Never throws: a
- * malformed command (a damaged save) is ignored with a warning.
+ * `controllers` says who plays each side: a command for an AI side is ignored. `allOutFrom` is
+ * `match.allOutFromMinute`: "tudo no ataque" asked to take effect before it is ignored. Never
+ * throws: a malformed command (a damaged save) is ignored with a warning.
  */
 export function prepareCommands(
   commands: readonly MatchCommand[] | undefined,
   controllers: Readonly<Record<Side, TeamInput['controller']>>,
+  allOutFrom: number,
   warnings: EngineWarning[],
 ): CommandBook {
   const byMinute = new Map<number, PendingCommand[]>();
@@ -179,6 +197,13 @@ export function prepareCommands(
     }
     if (controllers[command.side] !== 'human') {
       warnings.push({ code: 'command-ai-side', detail: commandDetail(command, index) });
+      continue;
+    }
+    if (allOutTooEarly(command, allOutFrom)) {
+      warnings.push({
+        code: 'command-too-early',
+        detail: commandDetail(command, index, { from: allOutFrom }),
+      });
       continue;
     }
     if (command.kind === 'halftimeTalk') {

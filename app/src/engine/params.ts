@@ -25,12 +25,32 @@ export interface MatchParams {
   readonly penaltyShare: number;
   readonly freeKickShare: number;
   readonly assistShare: number;
+  /**
+   * "Tirar o pé" (partida.md, "Calibragem das goleadas"): a side leading by at least
+   * `comfortableLeadGoals` creates chances with its `Power × comfortableLeadPower`. 1 turns it off.
+   */
+  readonly comfortableLeadGoals: number;
+  readonly comfortableLeadPower: number;
+  /**
+   * "Tudo no ataque" (partida.md, "Táticas"; T-016): the `allOut` posture multiplies the attacking
+   * power by `allOutPower` and the defence by `allOutDef`. The other postures are rule constants.
+   */
+  readonly allOutPower: number;
+  readonly allOutDef: number;
+  /**
+   * The first minute "tudo no ataque" can be played (partida.md, "Táticas"; T-016): a command
+   * that would put the side in `allOut` before it (a command of minute M plays from M + 1) is
+   * ignored with `command-too-early`. 0 or 1 turns the rule off.
+   */
+  readonly allOutFromMinute: number;
   readonly fatigue: { readonly drainPerMinute: number; readonly recoveryPerDay: number };
   readonly injury: { readonly basePerMinute: number };
   readonly cards: {
     readonly yellowPerMinute: number;
     readonly redPerMinute: number;
     readonly derbyMult: number;
+    /** A player who already has a yellow ("pendurado") gets the next one at this share of the rate. */
+    readonly bookedMult: number;
   };
 }
 
@@ -110,6 +130,12 @@ export type ParamRanges<T> = T extends readonly number[]
     : { readonly [K in keyof T]-?: ParamRanges<T[K]> };
 
 const num = (min: number, max: number): NumberRange => ({ kind: 'number', min, max });
+const int = (min: number, max: number): NumberRange => ({
+  kind: 'number',
+  min,
+  max,
+  integer: true,
+});
 /** A value fixed by an ADR: changing it is an ADR, not a parameter tweak. */
 const fixed = (value: number): NumberRange => num(value, value);
 
@@ -135,12 +161,25 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
     penaltyShare: num(0, 0.05),
     freeKickShare: num(0, 0.15),
     assistShare: num(0, 1),
+    // partida.md, "Calibragem das goleadas": the rule is for a lead of 2 or more; the factor
+    // range is 0.7 to 1 (1 turns the rule off).
+    comfortableLeadGoals: int(2, 5),
+    comfortableLeadPower: num(0.7, 1),
+    // partida.md, "Táticas": "tudo no ataque" goes further than the attacking posture (1.05 and
+    // 0.95), so the power never goes below 1.05 and the defence never above 0.95.
+    allOutPower: num(1.05, 1.5),
+    allOutDef: num(0.6, 0.95),
+    // partida.md, "Táticas": 0 (or 1) turns the rule off. At most 76: the /balance duel "0×1
+    // after 75'" sends "todo mundo no ataque" at minute 75 (it plays from 76), so a later minute
+    // would turn that target into an ignored command; the AI and the robot (from 80') stay after.
+    allOutFromMinute: int(0, 76),
     fatigue: { drainPerMinute: num(0.1, 0.6), recoveryPerDay: num(3, 15) },
     injury: { basePerMinute: num(0, 0.0005) },
     cards: {
       yellowPerMinute: num(0, 0.005),
       redPerMinute: num(0, 0.0002),
       derbyMult: num(1, 1.5),
+      bookedMult: num(0, 1), // partida.md, "Calibragem dos vermelhos" (T-016)
     },
   },
   players: { growthMin: num(0.5, 1), growthMax: num(1, 1.5) },

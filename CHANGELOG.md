@@ -4,7 +4,34 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ## [Não lançado]
 
+### Alterado
+
+- Calibragem da partida e da ferramenta (T-016, parte 2), com as decisões do CEO de 2026-11-05:
+  - Tirar o pé: quem vence por 2 gols ou mais passa a atacar menos. Com isso saem menos goleadas (12,3% dos jogos) e o time que está ganhando deixa de pressionar até o fim.
+  - Menos cartões vermelhos (0,18 por jogo): quem está pendurado se cuida mais.
+  - Um pouco mais de zebra: o time 30 pontos mais fraco vence 8,3% das vezes, e o 20 pontos mais forte vence 62,8%.
+  - "Todo mundo no ataque" virou uma aposta de verdade: dá mais força de ataque, mas deixa a defesa bem mais exposta. Só pode ser usado a partir dos 60 minutos.
+  - Torcida: o termômetro volta ao normal um pouco mais rápido (`fans.reversion` 0,10).
+  - Temporada: campeão com cerca de 75 pontos e 17º com cerca de 40; 2,64 gols por jogo.
+  - Motor: `ENGINE_VERSION` 11. Os goldens de partida, rodada e temporada mudam.
+  - `npm run balance` agora mede o "tudo no ataque" a partir dos 60 minutos, aponta comandos de duelo ignorados como falha e trata "grande rebaixado" só como informação na temporada única. Em 3 sementes de 200 temporadas, as 36 metas obrigatórias ficam dentro em cada uma e as 3 raras ficam dentro no total. O técnico-robô ganha cerca de 4,2 pontos por temporada.
+
 ### Adicionado
+
+- Ajustes da ferramenta de balanceamento (T-016, revisão da parte 1 e pedidos do `game-designer`):
+  - Fator do pendurado como parâmetro: `match.cards.bookedMult` (faixa de 0 a 1), ainda em 0,5. Nenhum resultado muda e os goldens ficam iguais; o valor novo entra com os outros parâmetros da T-016, quando o CEO decidir.
+  - Códigos de saída do `npm run balance`: 0 com tudo dentro, 1 com alguma meta obrigatória fora, 2 erro de uso e 3 falha da própria ferramenta (antes, uma falha saía com 1, como se fosse meta fora).
+  - `--seed 1,2,3`: roda as três sementes, mostra cada uma e julga as metas raras (campeão pequeno, clube fraco no G4 e fuga do Z4 de 6 a 8 pontos) na soma das 600 temporadas; as outras metas continuam semente a semente. Com uma semente, nada muda.
+  - Novas linhas informativas, que não contam no código de saída: pontos por jogo de cada tática contra a referência (4-4-2 equilibrada contra ela mesma, faixa de ±0,04), "campeão entre os 6 mais fortes" e "algum dos 6 mais fortes rebaixado", e as metas de etapas futuras, como "n/a".
+  - Aviso no resumo quando uma meta obrigatória fica sem medida (`--robot none`, `--duels 0`), e no stderr quando o arquivo do `--params` tem uma chave `__proto__` (ignorada).
+  - As tarefas longas (temporadas do técnico-robô e "tudo no ataque") são distribuídas primeiro entre as threads; a saída não muda.
+
+- Ferramenta de balanceamento e regra "tirar o pé" (T-016, parte 1; US-013):
+  - `npm run balance` (`scripts/balance.ts`): simula temporadas completas da Série A só com o motor, os duelos calibrados (0, 10, 20 e 30 pontos de diferença), os duelos táticos (cada formação, postura e pressão contra a 4-4-2 equilibrada) e o "tudo no ataque" a partir de 0×1 aos 75'. Para cada meta da Etapa 1a de `balance-targets.md`, mostra o valor medido, a meta e "dentro" ou "fora".
+  - Opções `--seasons`, `--seed`, `--duels`, `--params <arquivo>` (sobrescreve parâmetros sem mexer em `app/src/params/`), `--robot <clube>`, `--json` e `--workers`. A mesma semente dá a mesma saída, com qualquer número de threads; o tempo sai à parte.
+  - Código de saída 1 quando alguma meta obrigatória fica fora, para o CI usar depois.
+  - Técnico-robô bom (decisão 10): escala pelo rendimento, faz rodízio nas semanas com dois jogos, escolhe a tática contra o adversário, conversa no intervalo pelo placar e faz as decisões da torcida até o teto. Joga no lugar da IA no mesmo clube e nas mesmas sementes; no Coritibom ganha cerca de 4 pontos por temporada.
+  - Regra "tirar o pé" no motor: quem ganha por 2 gols ou mais cria menos (`match.comfortableLeadGoals` e `match.comfortableLeadPower`). Entra neutra (fator 1): nenhum resultado muda e os goldens ficam iguais; o valor é do `game-designer`, na parte 2.
 
 - Moral, forma, torcida e "realismo simplificado" (T-014, US-010, US-026 e partes de US-009 e US-004) em `app/src/engine/`:
   - Moral entre rodadas: quem joga numa vitória ganha 3 pontos de moral, no empate fica igual e numa derrota perde 3; no clássico o efeito dobra. Quem esperava jogar e fica no banco perde 2 por rodada, a partir da 2ª seguida. O profissional sofre só metade das quedas e o temperamental sofre o dobro da queda por ficar no banco. A moral também anda até 1 ponto por rodada em direção ao humor da torcida, sem passar dele.

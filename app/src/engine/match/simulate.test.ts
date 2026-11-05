@@ -692,6 +692,11 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
       'penaltyShare',
       'freeKickShare',
       'assistShare',
+      'comfortableLeadGoals',
+      'comfortableLeadPower',
+      'allOutPower',
+      'allOutDef',
+      'allOutFromMinute',
     ] as const;
     for (const edge of ['min', 'max'] as const) {
       const match = { ...params.match } as Record<string, unknown>;
@@ -705,6 +710,7 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
         yellowPerMinute: ranges.cards.yellowPerMinute[edge],
         redPerMinute: ranges.cards.redPerMinute[edge],
         derbyMult: ranges.cards.derbyMult[edge],
+        bookedMult: ranges.cards.bookedMult[edge],
       };
       const edgeParams = { ...params, match } as unknown as GameParams;
       for (let seed = 0; seed < 30; seed++) {
@@ -714,22 +720,52 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
     }
   });
 
-  it('accepts every formation and tactic on both sides', () => {
+  it('accepts every formation and pre-match tactic on both sides', () => {
     for (const formation of FORMATIONS) {
       expect(FORMATION_SLOTS[formation]).toHaveLength(11);
-      for (const posture of ['defensive', 'balanced', 'attacking', 'allOut'] as const) {
+      // `allOut` is not a sheet posture: it is a match command (below and commands.test.ts).
+      for (const posture of ['defensive', 'balanced', 'attacking'] as const) {
         for (const pressure of ['low', 'medium', 'high'] as const) {
           const team = teamInputFrom(home.clubId, home.players, {
             formation,
-            tactic: { posture: posture as 'balanced', pressure },
+            tactic: { posture, pressure },
           });
           const other = teamInputFrom(away.clubId, away.players, {
             formation,
-            tactic: { posture: posture as 'balanced', pressure },
+            tactic: { posture, pressure },
           });
-          expectSane(simulateMatch({ ...derbyInput, home: team, away: other }, params));
+          const result = simulateMatch({ ...derbyInput, home: team, away: other }, params);
+          expectSane(result);
+          expect(result.warnings.filter((w) => w.code.startsWith('tactic-'))).toEqual([]);
         }
       }
+    }
+  });
+
+  it('plays a sheet with "tudo no ataque" (a damaged save) as balanced, with a warning (T-016)', () => {
+    // The type refuses it; the runtime gets it only from a damaged save. Like any unknown posture
+    // (partida.md, "Valor desconhecido na entrada"): `balanced`, one warning per side.
+    for (const pressure of ['low', 'medium', 'high'] as const) {
+      const sheet = (side: TeamInput, posture: string) => ({
+        ...side,
+        sheet: { ...side.sheet, tactic: { posture: posture as 'balanced', pressure } },
+      });
+      const allOut = simulateMatch(
+        { ...derbyInput, home: sheet(home, 'allOut'), away: sheet(away, 'allOut') },
+        params,
+      );
+      const balanced = simulateMatch(
+        { ...derbyInput, home: sheet(home, 'balanced'), away: sheet(away, 'balanced') },
+        params,
+      );
+      expect(allOut.warnings).toEqual([
+        { code: 'tactic-unknown-posture', detail: { side: 'home', posture: 'allOut' } },
+        { code: 'tactic-unknown-posture', detail: { side: 'away', posture: 'allOut' } },
+        ...balanced.warnings,
+      ]);
+      expect(JSON.stringify({ ...allOut, warnings: [] })).toBe(
+        JSON.stringify({ ...balanced, warnings: [] }),
+      );
     }
   });
 });

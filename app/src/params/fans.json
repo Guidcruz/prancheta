@@ -7,7 +7,7 @@
   "baseline": 55,
   "resultWeight": 4,
   "derbyResultMult": 1.5,
-  "reversion": 0.08,
+  "reversion": 0.1,
   "decisionCap": 4,
   "baseOccupancy": 0.62
 }

@@ -12,6 +12,7 @@ import {
   effectiveRating,
   homeAdvantage,
   moraleMultiplier,
+  postureEffect,
   sectorStrengths,
   strengthsFromRatings,
   teamFactor,
@@ -155,8 +156,9 @@ describe('formations and tactics (partida.md, "Formações" and "Táticas")', ()
     const reference = strengthsOf(players, '4-4-2');
     for (const posture of ['defensive', 'balanced', 'attacking', 'allOut'] as const) {
       const s = strengthsOf(players, '4-4-2', { home: 0 }, posture);
-      expect(s.power).toBeCloseTo(reference.power * POSTURE_EFFECTS[posture].power, 10);
-      expect(s.defense).toBeCloseTo(reference.defense * POSTURE_EFFECTS[posture].def, 10);
+      const effect = postureEffect(posture, params.match);
+      expect(s.power).toBeCloseTo(reference.power * effect.power, 10);
+      expect(s.defense).toBeCloseTo(reference.defense * effect.def, 10);
       expect(s.def).toBe(reference.def);
     }
     for (const pressure of ['low', 'medium', 'high'] as const) {
@@ -165,6 +167,35 @@ describe('formations and tactics (partida.md, "Formações" and "Táticas")', ()
       expect(s.def).toBe(reference.def);
       expect(s.atk).toBe(reference.atk);
     }
+  });
+
+  it('takes "tudo no ataque" from match.allOutPower and match.allOutDef (T-016)', () => {
+    expect(postureEffect('allOut', params.match)).toEqual({
+      power: params.match.allOutPower,
+      def: params.match.allOutDef,
+    });
+    expect(postureEffect('attacking', params.match)).toBe(POSTURE_EFFECTS.attacking);
+    const players = eleven('4-4-2', 70);
+    const reference = strengthsOf(players, '4-4-2');
+    const tuned = { ...params, match: { ...params.match, allOutPower: 1.3, allOutDef: 0.7 } };
+    const result = sectorStrengths(
+      players,
+      sheetOf('4-4-2', players, 'allOut'),
+      { home: 0 },
+      tuned,
+    );
+    if (!result.ok) throw new Error('expected ok');
+    expect(result.value.power).toBeCloseTo(reference.power * 1.3, 10);
+    expect(result.value.defense).toBeCloseTo(reference.defense * 0.7, 10);
+    // The pre-match postures do not read the parameters.
+    const attacking = sectorStrengths(
+      players,
+      sheetOf('4-4-2', players, 'attacking'),
+      { home: 0 },
+      tuned,
+    );
+    if (!attacking.ok) throw new Error('expected ok');
+    expect(attacking.value.power).toBeCloseTo(reference.power * 1.05, 10);
   });
 
   it('weighs midfield and attack by match.midWeight in the power', () => {
