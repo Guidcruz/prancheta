@@ -6,6 +6,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Fim de temporada e virada no motor (T-017, US-025, parte do motor; as telas são da T-037):
+  - `endSeason` fecha a temporada depois da rodada 38: campeão, zona de rebaixamento (sem efeito), prêmios (artilheiro, garçom, melhor jogador, revelação, melhor goleiro e seleção do campeonato, com "sem vencedor" quando ninguém joga 19 jogos), a campanha do clube do técnico e a evolução de todos os jogadores pela curva de idade, com o aniversário.
+  - `startNextSeason` começa a temporada seguinte com os mesmos 20 clubes: calendário novo, todos aptos e descansados, lesões, suspensões e amarelos encerrados, a moral a meio caminho de 60, a torcida de volta ao começo e a força de cada clube recalculada pelo elenco evoluído.
+  - Os títulos ganhos na carreira somam aos do histórico do clube (`careerLeagueTitles`), a partir do resumo de cada temporada, que guarda só números e identificadores, nunca nomes.
+  - A idade válida de um jogador vai até 99 anos, para uma carreira longa nunca invalidar o save.
+  - `npm run balance -- --chain N`: carreiras de N temporadas encadeadas, com as metas por temporada e a força da liga a cada virada; as temporadas 1 a 3 contam, as seguintes são informativas. Sem `--chain`, a saída é a mesma de antes.
+
 - Garantia de qualidade do motor (T-015), sem mudança para quem joga:
   - Testes automáticos conferem as regras do jogo em 1.000 partidas e 30 temporadas.
   - Antes de cada lançamento roda a versão completa, com 10.000 partidas e 1.000 temporadas.
