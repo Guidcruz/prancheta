@@ -13,6 +13,7 @@ import { playRound } from './round.ts';
 import {
   AWARD_MIN_GAMES,
   MORALE_OFFSEASON_PULL,
+  MORALE_TURN_DECIMALS,
   REVELATION_MAX_AGE,
   TARGET_POSITION_MAX,
   ageCurve,
@@ -20,6 +21,7 @@ import {
   endSeason,
   evolutionTarget,
   evolvePlayer,
+  moraleAtTurn,
   seasonAwards,
   squadStrength,
   startNextSeason,
@@ -638,6 +640,16 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
     expect(next.squads).toBe(closed.squads);
   });
 
+  it('rounds the morale of the turn to 2 decimals, in range (BUG-A of T-017)', () => {
+    expect(MORALE_TURN_DECIMALS).toBe(2);
+    expect(moraleAtTurn(80, 60)).toBe(70);
+    expect(moraleAtTurn(64.69681177721688, 60)).toBe(62.35);
+    expect(moraleAtTurn(21.123456789, 60)).toBe(40.56);
+    expect(moraleAtTurn(0, 60)).toBe(30);
+    expect(moraleAtTurn(100, 100)).toBe(100);
+    expect(moraleAtTurn(0.004, 0)).toBe(0);
+  });
+
   it('turns every player as the table says', () => {
     expect(MORALE_OFFSEASON_PULL).toBe(0.5);
     expect(Object.keys(next.players)).toHaveLength(500);
@@ -649,7 +661,11 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
       expect(after.yellowCount).toBe(0);
       expect(after.benchStreak).toBe(0);
       expect(after.recentRatings).toEqual([]);
-      expect(after.morale).toBeCloseTo(before.morale + 0.5 * (60 - before.morale), 12);
+      const pulled = before.morale + 0.5 * (60 - before.morale);
+      expect(after.morale).toBe(moraleAtTurn(before.morale, 60));
+      expect(Math.abs(after.morale - pulled)).toBeLessThanOrEqual(0.005 + 1e-9);
+      // Two decimals at most (BUG-A of T-017: the state does not grow in digits).
+      expect(after.morale).toBe(Math.round(after.morale * 100) / 100);
       const turnedKeys = [
         'condition',
         'injuryRounds',

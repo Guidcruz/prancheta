@@ -34,7 +34,12 @@ import {
   type PlayerSeasonStats,
   type RoundInput,
 } from './round.ts';
-import { MORALE_OFFSEASON_PULL, endSeason, startNextSeason } from './season.ts';
+import {
+  MORALE_OFFSEASON_PULL,
+  MORALE_TURN_DECIMALS,
+  endSeason,
+  startNextSeason,
+} from './season.ts';
 import { isUnavailable } from './selection.ts';
 import { POINTS, getStandings, type StandingRow } from './standings.ts';
 import { syntheticClubs } from './testing/clubs.ts';
@@ -1119,7 +1124,8 @@ function turnOf(season: Season, state: GameState): { next: GameState; problems: 
       out.push(`${id}: ${p.injuryRounds}/${p.suspendedGames}/${p.yellowCount}`);
     }
     if (p.benchStreak !== 0 || p.recentRatings.length !== 0) out.push(`${id}: bench or form`);
-    const morale = was.morale + MORALE_OFFSEASON_PULL * (params.fans.start - was.morale);
+    const pulled = was.morale + MORALE_OFFSEASON_PULL * (params.fans.start - was.morale);
+    const morale = Math.round(pulled * 10 ** MORALE_TURN_DECIMALS) / 10 ** MORALE_TURN_DECIMALS;
     if (Math.abs(p.morale - morale) > 1e-9 || p.morale < 0 || p.morale > 100) {
       out.push(`${id}: morale ${was.morale} → ${p.morale}`);
     }
