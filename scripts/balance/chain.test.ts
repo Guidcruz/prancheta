@@ -161,6 +161,15 @@ describe('npm run balance -- --chain', { timeout: 120_000 }, () => {
     expect(text).toContain('Virada de temporada');
   });
 
+  it('gives with --chain 1 byte for byte the output without --chain', () => {
+    const plain = ['--seasons', '1', '--duels', '0', '--robot', 'none', '--workers', '1'];
+    for (const format of [[], ['--json']]) {
+      const without = run([...plain, ...format]);
+      expect(without.status, format.join()).not.toBe(3);
+      expect(run([...plain, ...format, '--chain', '1']).stdout).toBe(without.stdout);
+    }
+  });
+
   it('refuses a chain outside 1 to 30 with the usage exit code', () => {
     expect(run(['--chain', '0']).status).toBe(2);
     expect(run(['--chain', '31']).status).toBe(2);
