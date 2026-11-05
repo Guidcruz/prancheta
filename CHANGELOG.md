@@ -11,20 +11,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - Antes de cada lançamento roda a versão completa, com 10.000 partidas e 1.000 temporadas.
   - Jogo de referência novo: uma temporada com técnico humano no realismo simplificado.
 
-### Alterado
-
-- Calibragem da partida e da ferramenta (T-016, parte 2), com as decisões do CEO de 2026-11-05:
-  - Tirar o pé: quem vence por 2 gols ou mais passa a atacar menos. Com isso saem menos goleadas (12,3% dos jogos) e o time que está ganhando deixa de pressionar até o fim.
-  - Menos cartões vermelhos (0,18 por jogo): quem está pendurado se cuida mais.
-  - Um pouco mais de zebra: o time 30 pontos mais fraco vence 8,3% das vezes, e o 20 pontos mais forte vence 62,8%.
-  - "Todo mundo no ataque" virou uma aposta de verdade: dá mais força de ataque, mas deixa a defesa bem mais exposta. Só pode ser usado a partir dos 60 minutos.
-  - Torcida: o termômetro volta ao normal um pouco mais rápido (`fans.reversion` 0,10).
-  - Temporada: campeão com cerca de 75 pontos e 17º com cerca de 40; 2,64 gols por jogo.
-  - Motor: `ENGINE_VERSION` 11. Os goldens de partida, rodada e temporada mudam.
-  - `npm run balance` agora mede o "tudo no ataque" a partir dos 60 minutos, aponta comandos de duelo ignorados como falha e trata "grande rebaixado" só como informação na temporada única. Em 3 sementes de 200 temporadas, as 36 metas obrigatórias ficam dentro em cada uma e as 3 raras ficam dentro no total. O técnico-robô ganha cerca de 4,2 pontos por temporada.
-
-### Adicionado
-
 - Ajustes da ferramenta de balanceamento (T-016, revisão da parte 1 e pedidos do `game-designer`):
   - Fator do pendurado como parâmetro: `match.cards.bookedMult` (faixa de 0 a 1), ainda em 0,5. Nenhum resultado muda e os goldens ficam iguais; o valor novo entra com os outros parâmetros da T-016, quando o CEO decidir.
   - Códigos de saída do `npm run balance`: 0 com tudo dentro, 1 com alguma meta obrigatória fora, 2 erro de uso e 3 falha da própria ferramenta (antes, uma falha saía com 1, como se fosse meta fora).
@@ -147,6 +133,16 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Capturas de tela do site implementado em `docs/design/`.
 
 ### Alterado
+
+- Calibragem da partida e da ferramenta (T-016, parte 2), com as decisões do CEO de 2026-11-05:
+  - Tirar o pé: quem vence por 2 gols ou mais passa a atacar menos. Com isso saem menos goleadas (12,3% dos jogos) e o time que está ganhando deixa de pressionar até o fim.
+  - Menos cartões vermelhos (0,18 por jogo): quem está pendurado se cuida mais.
+  - Um pouco mais de zebra: o time 30 pontos mais fraco vence 8,3% das vezes, e o 20 pontos mais forte vence 62,8%.
+  - "Todo mundo no ataque" virou uma aposta de verdade: dá mais força de ataque, mas deixa a defesa bem mais exposta. Só pode ser usado a partir dos 60 minutos.
+  - Torcida: o termômetro volta ao normal um pouco mais rápido (`fans.reversion` 0,10).
+  - Temporada: campeão com cerca de 75 pontos e 17º com cerca de 40; 2,64 gols por jogo.
+  - Motor: `ENGINE_VERSION` 11. Os goldens de partida, rodada e temporada mudam.
+  - `npm run balance` agora mede o "tudo no ataque" a partir dos 60 minutos, aponta comandos de duelo ignorados como falha e trata "grande rebaixado" só como informação na temporada única. Em 3 sementes de 200 temporadas, as 36 metas obrigatórias ficam dentro em cada uma e as 3 raras ficam dentro no total. O técnico-robô ganha cerca de 4,2 pontos por temporada.
 
 - `ai.subEnergy` de 65 para 85 (aprovado pelo CEO em 2026-11-04): dá cerca de 3,5 trocas por time, dentro da meta de 3 a 4.
 - Textos do site sem patrocínio: a seção "Patrocinadores" e o "Quer anunciar?" saem, a pergunta sobre anúncios responde que o jogo não tem e que as marcas do cenário são fictícias, e o rodapé fala em "marcas".
