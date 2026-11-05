@@ -41,6 +41,7 @@ app/src/lib/
   i18n.ts            textos de interface (existe)
   generators/        escudo (existe), uniforme, nomes, avatar (SVG por código, fora do motor)
   errors/            registro local de erros sem dados pessoais
+  audio/             áudio essencial sintetizado (Web Audio), carregado sob demanda (ADR-0016)
   online/            cliente da API e do WebSocket (1b)
 app/src/ui/          telas Svelte; canvas da partida
 server/              (1b) Hono, Db, salas, contas; importa só engine/ e params/
@@ -82,7 +83,7 @@ scripts/             balance.ts, content-check.mjs, template-repeat.ts, check-pr
 ### Interface (`app/src/ui/`)
 
 - Telas e componentes Svelte 5 segundo `docs/design/telas/` (ux-designer). Roteamento por estado simples (sem biblioteca de rotas), com abas embaixo no celular e barra lateral a partir de 900 px.
-- Fala só com `lib/career` (carreira), `lib/online` (1b), `lib/i18n` e `lib/content`. Nunca importa `engine/` para calcular regra, só para usar tipos e funções de leitura (`getStandings`, `teamStrength`).
+- Fala só com `lib/career` (carreira), `lib/online` (1b), `lib/i18n`, `lib/content` e `lib/audio` (som, ADR-0016; §4.6). Nunca importa `engine/` para calcular regra, só para usar tipos e funções de leitura (`getStandings`, `teamStrength`).
 - Partida animada em `ui/match/`: canvas 2D desenhado a partir dos `MatchEvent`. As posições das bolinhas são decorativas e geradas a partir dos eventos. A animação nunca muda o resultado. `prefers-reduced-motion` desliga câmera lenta, tremor e comemoração.
 - Erros inesperados caem numa fronteira de erro por tela ("Tentar de novo" / "Voltar ao início"), que registra em `lib/errors` e não toca no save.
 
@@ -693,6 +694,7 @@ Notas do contrato:
   - **Desempenho:** a bancada `round.bench.ts` mede **cerca de 6,7 a 7,8 ms por rodada no Node puro** (7,1 ms numa execução de conferência), contra 5,8 ms na T-013. As 10 partidas não mudaram (cerca de 2,2 ms); o acréscimo está fora delas, na aplicação da rodada. A rodada continua com folga na meta de 2 s do celular. Para o servidor, ver o §5, o item 8 (decisão 5) e o item 9.
   - **Save:** os campos já estavam no §4.1 (`fans`, `idolBenchStreak`, `benchStreak`, `recentRatings`), e o formato só congela na T-019, então não há migração.
   - **Fronteiras:** a T-015 acrescenta os testes de propriedade em 1.000 sementes (moral, condição e termômetro em 0..100, entre outros) e confere o `season-full` regravado aqui; a T-016 calibra os pesos de `fans.*` pelo `/balance`; a T-017 recalcula `ClubState.strength` depois da evolução, porque os pontos esperados leem esse número, e aplica a regra de virada do termômetro; a T-035 traz a função da reação a post e as telas que alimentam o pendente.
+  - **Testes de propriedade e golden de temporada (T-015):** `app/src/engine/properties.test.ts` confere as invariantes de partida, rodada, tabela e estado entre rodadas em 1.000 partidas e 30 temporadas (padrão) ou 10.000 partidas e 1.000 temporadas (`PROPERTY_FULL=1`, antes de release). Golden novo `season-human-simplified` (temporada inteira no realismo simplificado com um técnico humano no modo `result` e decisões da torcida): tabela final, termômetro e moral média por clube, `idolBenchStreak` do humano, fatos por tipo e digest; não exigiu subir o `ENGINE_VERSION` (arquivo novo). As conferências do `season-full` (38 rodadas, somas da tabela, campeão e rebaixados) ficam no `round.golden.test.ts`, sobre os dados calculados antes do `expectGolden`.
 - **Calibragem e `/balance` (T-016):** a ferramenta `npm run balance` (`scripts/balance.ts` e `scripts/balance/`) e a calibragem que o CEO aprovou em 2026-11-05 (`docs/design/balance-log.md`). As regras de jogo novas estão em `docs/design/partida.md` ("Calibragem das goleadas", "Calibragem dos vermelhos", "Táticas").
   - **Parâmetros novos em `match.json`** (faixas em `PARAM_RANGES`, `app/src/engine/params.ts`; os valores são os de `app/src/params/match.json`):
 
@@ -845,6 +847,137 @@ Só as colunas marcadas como "pessoa" se ligam a alguém. São exatamente a list
 
 Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram rota, código de status, código de erro e `leagueId` aleatório, mas não apelido, `accountId` nem credential id (US-064).
 
+### 4.6 Áudio essencial (`app/src/lib/audio/`; ADR-0016, T-047)
+
+Desenho do Passo 1 do lote `docs/audio/lotes/2026-11-05-essencial.md`: 17 sons e a torcida em 3 camadas, sintetizados com Web Audio. O motor não muda. Os nomes finais são do `developer`; as fronteiras e as formas abaixo não.
+
+```
+app/src/lib/audio/
+  index.ts        casca (pacote principal, ≤ 1 KB gzip): API pública, desbloqueio do AudioContext no gesto, import() do resto
+  prefs.ts        AudioPrefs, valores padrão e normalizeAudioPrefs (puro; não grava nada)
+  manifest.json   id do som → receita ou arquivos, bus, prioridade, ganho, intervalo mínimo (já existe, vazio)
+  tuning.json     os números das receitas (seção 3 do lote), ajustados na página de bancada
+  director.ts     puro: MatchEvent + contexto → cues e alvo da torcida (sem AudioContext)
+  mixer.ts        AudioContext, buses master/sfx/crowd, compressor, ducking, 4 vozes, cooldown
+  recipes/        uma função por receita (whistle.ts, crowd.ts, goal.ts, flash.ts, ui.ts)
+  webaudio.ts     SoundBackend com Web Audio; fake.ts, SoundBackend falso para os testes
+```
+
+**Chunks.** `index.ts` e `prefs.ts` vão no pacote principal. `director.ts`, `mixer.ts`, `recipes/`, `webaudio.ts`, `manifest.json` e `tuning.json` formam um chunk próprio (`audio-[hash].js`), carregado por `import()` só quando `prefs.muted` é `false`. O `workbox` do `vite-plugin-pwa` ganha `globIgnores` para esse chunk e para `audio/*`, e uma regra de cache de execução (`CacheFirst`) para os dois. Gravações, se houver, ficam em `app/public/audio/`.
+
+**API da casca** (`index.ts`):
+
+```ts
+type SoundId =
+  | 'whistle_start'
+  | 'whistle_half'
+  | 'whistle_full'
+  | 'goal'
+  | 'post'
+  | 'save'
+  | 'penalty'
+  | 'yellow'
+  | 'red'
+  | 'injury'
+  | 'sub'
+  | 'all_out'
+  | 'flash_short'
+  | 'flash_big'
+  | 'ui_tap'
+  | 'ui_ok'
+  | 'ui_back';
+
+interface AudioPrefs {
+  asked: boolean; // a pergunta "Quer ouvir o estádio?" já foi respondida
+  muted: boolean; // padrão true; "Sim, ligar o som" grava false
+  master: number; // 0..1, padrão 0.6
+  sfx: number; // 0..1, padrão 0.8
+  crowd: number; // 0..1, padrão 0.5
+}
+
+interface MatchAudioContext {
+  userSide: Side; // lado do clube do técnico
+  derby: boolean; // clássico: base da torcida +0,10
+  view: 'full' | 'highlights' | 'result';
+  speed: 'normal' | 'fast'; // em 'fast' só apitos e gol
+  flashPref: 'all' | 'important' | 'off'; // preferência do plantão (US-074)
+}
+
+interface RevealState {
+  minute: number;
+  added?: number;
+  score: readonly [number, number];
+}
+
+interface GameAudio {
+  unlock(): void; // chamar de forma síncrona dentro de pointerdown/click
+  setPrefs(prefs: AudioPrefs): void; // muted → nada carrega nem toca
+  ui(id: 'ui_tap' | 'ui_ok' | 'ui_back'): void;
+  matchStart(ctx: MatchAudioContext): void;
+  reveal(event: MatchEvent, state: RevealState): void; // no instante em que a animação revela
+  flash(level: 'short' | 'big' | 'group'): void;
+  pause(): void;
+  resume(): void;
+  matchEnd(): void;
+  setMood(mood: { thermometer: number; capacity: number; fillRatio: number }): void; // aceito e ignorado no Passo 1
+}
+```
+
+Toda chamada antes de `unlock()`, com `muted`, sem suporte a Web Audio ou antes de o chunk chegar retorna sem fazer nada e nunca lança. A casca cria o `AudioContext` (ou chama `resume()`) dentro do próprio gesto, antes do `import()`, e liga `visibilitychange` (`suspend`/`resume`) e `navigator.audioSession.type = 'ambient'`, onde existir.
+
+**Diretor** (`director.ts`, função pura, testada em Vitest):
+
+```ts
+interface Cue {
+  id: SoundId;
+  variant?: 'muffled';
+} // 'muffled': gol do adversário
+type CrowdCommand =
+  | { kind: 'base'; target: number } // i alvo de 0 a 1
+  | { kind: 'bump'; delta: number; ms: number } // ataque perigoso: +0,25 por 4 s
+  | { kind: 'hush'; ms: number }; // silêncio de tensão do pênalti
+function direct(
+  event: MatchEvent,
+  ctx: MatchAudioContext,
+  state: RevealState,
+): { cues: readonly Cue[]; crowd: readonly CrowdCommand[] };
+```
+
+O diretor aplica as tabelas 2.1 a 2.3 do lote (eventos, intensidade da torcida, plantão) e as regras de ritmo; `mixer.ts` aplica prioridade, ducking, polifonia e volumes. As receitas ficam atrás de `SoundBackend` (`play(cue, when)`, `crowd(cmd)`, `setGains({ master, sfx, crowd })`, `suspend()`, `resume()`), então nada de `AudioContext` aparece nos testes.
+
+**`manifest.json`** (esquema; validado por teste):
+
+```json
+{
+  "version": 1,
+  "sounds": {
+    "whistle_full": {
+      "kind": "synth",
+      "recipe": "whistle_full",
+      "bus": "sfx",
+      "priority": 1,
+      "gainDb": -3,
+      "cooldownMs": 0
+    },
+    "crowd_murmur": {
+      "kind": "sample",
+      "files": { "opus": "audio/crowd_murmur.ogg", "aac": "audio/crowd_murmur.m4a" },
+      "bus": "crowd",
+      "loop": true,
+      "priority": 5,
+      "gainDb": 0,
+      "cooldownMs": 0
+    }
+  }
+}
+```
+
+No Passo 1 todas as entradas são `kind: "synth"`; a segunda linha acima só mostra a forma da gravação CC0, se a torcida precisar.
+
+**Preferências.** Os valores de `AudioPrefs` são gravados pelo mesmo caminho das outras preferências (store `kv`, por `lib/career`; T-041) e entregues ao módulo por `setPrefs`. O `lib/audio` não toca no IndexedDB. Como `kv` não faz parte do `CareerSave`, o `schemaVersion` não muda; ao ler, `normalizeAudioPrefs` completa campos ausentes com os padrões.
+
+**Quem chama.** A camada de partida em `ui/match/` chama `reveal` no mesmo ponto em que revela o lance no canvas e na narração (T-032/T-033); a faixa do plantão chama `flash`; os botões primários chamam `ui`. A pergunta única, o botão de mudo e o bloco de som das Preferências são do `ux-designer`, com textos em `app/src/content/<idioma>/`.
+
 ## 5. Transversais
 
 - **Configuração:** `config/prancheta.config.ts`. Nenhum literal de marca fora dele. Os limites do online (máximo de humanos por modo, padrão 8 no ao vivo e 20 por divisão no assíncrono, nunca acima de um por clube, ADR-0013 revisado; prazos permitidos, limite de draft, limite de mensagens) ficam em `server/src/config.ts` com valores padrão e podem ser sobrescritos por variáveis do Cloudflare (US-051: mudar sem código).
@@ -857,6 +990,7 @@ Não se grava IP, user-agent, e-mail nem data de nascimento. Os logs registram r
   - `engine/**`: as regras que já existem e mais `**/params/**`, `**/data/**`, `@config`, `node:*` e o global `Intl` (depende da localidade). O TypeScript usa `erasableSyntaxOnly` para o motor rodar no Node sem compilação.
   - `lib/**` não importa `ui/**`.
   - `ui/**` não importa `lib/save/**` direto (só por `lib/career`).
+  - `lib/audio/**` importa de `engine/**` só com `import type` e não importa `lib/save/**` nem `lib/career/**` (ADR-0016).
   - `server/**` importa do app só `app/src/engine/**`, `app/src/params/**` e, pelo ADR-0012, `app/src/lib/generators/names.ts`, `identity.ts`, a especificação do rosto (sem o desenho) e `app/src/content/names/**`.
   - `.svelte` sem texto literal (regra local `no-raw-text`).
 - **Desempenho:**
@@ -904,7 +1038,7 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | T-012 | Comandos na partida: substituições, táticas, atalhos, conversa do intervalo, IA em jogo (regras 1–6); implementa a "Troca de formação durante o jogo" de `docs/design/partida.md`; exclui das substituições o reserva que entrou no apito no lugar de um titular indisponível (continua em `lineup.bench`; ver §4.1, T-010); usa o `BENCH_SIZE` compartilhado de `lineup.ts` e lê o lado humano como Tradicional nas regras em jogo (ver §4.1, T-011)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | US-021, US-022, US-011         | 1a    | T-010, T-011 | `/feature` | M       | feita (PR em aberto) |
 | T-013 | `prepareRound`/`playRound`: 10 partidas, suspensões, lesões, recuperação por dias, idempotência, `getStandings` com desempate, fatos da tabela; `teamStrength` sem escalação passa a usar `lastSheets`; aplica entre rodadas `newSuspensions`, `yellowCounts` (mesclando, só vem quem jogou) e `injuryRounds` (de `newInjuries`; ver §4.1, T-010); chama o `suggestSheet` com a opção do clube humano para o clube humano sem ficha (ver §4.1, T-011); passa a cada `simulateMatch` os comandos de `RoundInput.commands` da partida; no modo "só resultado", passa o clube do técnico com `controller: 'ai'` e `profile: 'traditional'` (e `controller: 'human'` nos outros modos); aplica com a moral da rodada os −3 do "Cobrar" aos temperamentais em campo no intervalo (ver §4.1, T-012)                                                                                                                                                                                                                           | US-012, US-019 (motor)         | 1a    | T-007, T-012 | `/feature` | G       | feita (PR em aberto) |
 | T-014 | Moral e fadiga entre rodadas, termômetro da torcida, modo "realismo simplificado" (ver §4.1, "Entre rodadas (T-014)"): `roundMoraleDeltas` com resultado, banco, "Cobrar" e deriva somados antes do único `clamp`; `benchStreak` (`roundBenchStreaks`); a forma (`recentRatings`, `nextRecentRatings`); o termômetro dos 20 clubes (`fans.ts`: `fansDelta`, pontos esperados, extras, reversão) e o `idolBenchStreak` só em clube humano; `RoundInput.fanDecisions` só de clube humano, com os avisos `round-fan-decision-not-human` e `round-invalid-fan-decision`; o simplificado sem suspensão, sem lesão fora da partida, sem `yellowCount` e com condição 100 entre rodadas; ídolo gerado sempre titular (`'idol-not-starter'`); `ENGINE_VERSION` 10 com `round-first` e `season-full` regravados                                                                                                                                                                                                                  | US-010, US-026                 | 1a    | T-013        | `/feature` | M       | feita (PR em aberto) |
-| T-015 | Testes de propriedade em 1.000 sementes e conferência do golden da temporada inteira (o `season-full` já foi regravado na T-014)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | US-008, US-012                 | 1a    | T-014        | `/feature` | P       | a fazer              |
+| T-015 | Testes de propriedade em 1.000 sementes e conferência do golden da temporada inteira (o `season-full` já foi regravado na T-014)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | US-008, US-012                 | 1a    | T-014        | `/feature` | P       | feita (PR em aberto) |
 | T-016 | `scripts/balance.ts` (liga, duelos calibrados, duelos táticos, `--seasons/--seed/--duels/--params`, tempo) e `npm run balance`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          | US-013                         | 1a    | T-014        | `/feature` | M       | feita (PR em aberto) |
 | T-017 | Fim de temporada: prêmios, resumo, evolução e idade, `endSeason`/`startNextSeason` (com `incoming` opcional para a opção B; `identities` para os clubes que entram). Aceite: a semente de `generateSquad` inclui a temporada (clube que volta não repete elenco nem ids). Parte do estado da T-013: `endSeason` exige `round` 39 (o `playRound` já devolve `season-over`), tira campeão e rebaixados (`RELEGATION_SPOTS`) de `getStandings`, artilharia e prêmios de `seasonStats` (média da nota = `ratingSum / ratedGames`; o melhor goleiro lê `conceded / games` só dos goleiros de posição, porque `conceded` soma também os defensores), grava `pastSeasons` (campo ainda ausente no código) e passa a `phase: 'seasonEnd'`; `startNextSeason` zera `fixtures` (calendário novo), `seasonStats` e `lastRound`, e recupera a condição (depois da 38ª o `playRound` não recupera), para o estado não crescer com as temporadas; `lastSheets` pode ficar, porque o `shownEleven` ignora a ficha que não resolve mais | US-025 (motor)                 | 1a    | T-014        | `/feature` | M       | a fazer              |
 | T-018 | Save: IndexedDB, snapshots gzip + SHA-256, gravação segura com 3 versões, abrir com volta, banco de teste, limite de 10 carreiras. Aceite: a conformidade real do ADR-0012 (o save mantém os nomes ao reabrir) é testada aqui, em conjunto com a T-044                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | US-032, US-034 (dados)         | 1a    | T-013        | `/feature` | M       | a fazer              |
@@ -934,6 +1068,7 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | T-042 | Tutorial e primeiros passos                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | US-042                         | 1a    | T-030        | `/feature` | M       | a fazer              |
 | T-043 | Estatísticas sem cookies só no site (se a P11 for aprovada)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             | US-046                         | 1a    | —            | `/quick`   | P       | a fazer              |
 | T-044 | Nomes retirados: `content/names/retired.json` (hashes + `rev`), `npm run names:retire`, `renameRetired` ao abrir e importar, aviso nas novidades, testes (ADR-0012). Aceite: a conformidade real do ADR-0012 (o save mantém os nomes) é testada aqui, em conjunto com a T-018                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           | US-003, US-033                 | 1a    | T-004, T-019 | `/feature` | P       | a fazer              |
+| T-047 | Áudio essencial (Passo 1): `app/src/lib/audio/` e `manifest.json` conforme §4.6 (casca, diretor puro, mixagem, receitas, chunk fora do precache), página de bancada só em desenvolvimento, pergunta única "Quer ouvir o estádio?", botão de mudo na tela de partida, bloco de som nas Preferências (Geral, Efeitos, Torcida, Mudo; se a T-041 ainda não existir, o bloco entra nela), testes do diretor e do `manifest.json`, E2E com som mudo. Motor intacto. Lote: `docs/audio/lotes/2026-11-05-essencial.md` (ADR-0016)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              | US-020, US-044, US-073, US-074 | 1a    | T-033        | `/feature` | M       | a fazer              |
 | T-050 | Esqueleto do servidor: workspace `server/`, Hono, `Db` (D1 e `node:sqlite`), migração SQL 0001, erros, logs sem PII, teste de esquema de privacidade, lint (fronteira com a exceção do ADR-0012), CI                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    | US-064 (esquema)               | 1b    | T-013        | `/feature` | M       | a fazer              |
 | T-051 | Topologia: adaptador `functions/api/[[route]].ts`, Worker `prancheta-rooms` com o DO, `wrangler` de produção e prévia, `_headers`, `docs/04-deploy.md`                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  | ADR-0010                       | 1b    | T-050        | `/feature` | M       | a fazer              |
 | T-052 | Filtro de apelido e de nome de liga                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     | US-047, US-051                 | 1b    | T-050        | `/feature` | M       | a fazer              |
@@ -954,7 +1089,7 @@ O E2E roda o golden da partida também dentro do WebKit, para detectar diferenç
 | T-067 | Draft                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   | US-054                         | 1b    | T-057, T-058 | `/feature` | M       | a fazer              |
 | T-068 | Auditoria de privacidade da 1b (`security-auditor`) e política do site atualizada                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       | US-064                         | 1b    | T-050..T-066 | `/feature` | M       | a fazer              |
 
-**Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). A T-044 entrou pelo ADR-0012; os números T-045 a T-049 ficam livres para tarefas que surgirem na 1a.
+**Caminho crítico da 1a:** T-001 → T-002 → T-005 → T-008 → T-009 → T-010 → T-011/T-012 → T-013 → T-014 → T-016 (primeiro `/balance` do motor). Em paralelo, e sem depender do motor: T-003, T-004, T-021. Depois vêm save (T-018..T-020) e a interface (T-023 em diante). A T-044 entrou pelo ADR-0012; a T-047 entrou pelo ADR-0016 (áudio essencial), logo depois da T-033; os números T-045, T-046 (sugeridos pelo `product-manager` para o placar ao vivo), T-048 e T-049 ficam livres para tarefas que surgirem na 1a.
 
 ## 8. Decisões pendentes do CEO
 

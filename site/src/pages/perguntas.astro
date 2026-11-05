@@ -1,6 +1,7 @@
 ---
 import Base from '../layouts/Base.astro';
 import { config } from '../../../config/prancheta.config.ts';
+import { GAME_PLAYABLE } from '../data/game';
 import FaqItem from '../components/FaqItem.astro';
 import StatusBadge from '../components/StatusBadge.astro';
 import FinalCta from '../components/FinalCta.astro';
@@ -29,7 +30,8 @@ const { supportEmail, discussionsUrl, repository } = config.contacts;
       </FaqItem>
       <FaqItem question={`Já dá para jogar?`}>
         <p>
-          Ainda não de verdade. A versão atual é a zero: uma tela e um botão. O jogo está em
+          Ainda não de verdade.{' '}
+          {GAME_PLAYABLE ? 'A versão atual é a zero: uma tela e um botão. ' : ''}O jogo está em
           desenvolvimento e cresce toda semana. O <a href={`${base}roadmap/`}>roteiro</a> mostra o
           estado de cada etapa, sem data prometida.
         </p>

@@ -1,6 +1,7 @@
 ---
 import Button from './Button.astro';
 import { config } from '../../../config/prancheta.config.ts';
+import { GAME_PLAYABLE } from '../data/game';
 interface Props {
   title?: string;
   primary?: { href: string; label: string };
@@ -8,7 +9,9 @@ interface Props {
 }
 const {
   title = 'Pronto para a prancheta?',
-  primary = { href: `${config.paths.game}/`, label: `Abrir a versão atual (v${config.version})` },
+  primary = GAME_PLAYABLE
+    ? { href: `${config.paths.game}/`, label: `Abrir a versão atual (v${config.version})` }
+    : { href: `${config.paths.site}devlog/`, label: 'Acompanhe o desenvolvimento' },
   secondary = { href: `${config.paths.site}roadmap/`, label: 'Ver o roteiro' },
 } = Astro.props;
 ---

@@ -2,6 +2,7 @@
 import { config } from '../../../config/prancheta.config.ts';
 import { navItems } from '../lib/nav';
 import Icon from './Icon.astro';
+import { GAME_PLAYABLE } from '../data/game';
 interface Props {
   current?: string;
 }
@@ -23,8 +24,8 @@ const base = config.paths.site;
       ))}
     </nav>
     <div class="actions">
-      <a class="play botao" href={`${config.paths.game}/`}>
-        Jogar
+      <a class="play botao" href={GAME_PLAYABLE ? `${config.paths.game}/` : `${base}devlog/`}>
+        {GAME_PLAYABLE ? 'Jogar' : 'Acompanhar'}
       </a>
       <details class="mobile">
         <summary class="rotulo">
