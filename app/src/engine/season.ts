@@ -249,7 +249,8 @@ export function evolutionSeed(
  * The player after the evolution and the birthday (jogadores.md, "Evolução"): the new overall by
  * {@link evolutionTarget} with the noise of his own stream (so the order of processing never
  * matters), the attributes moved to it by `fitAttributesToOverall` (unchanged when the overall
- * does not move) and `age + 1`, capped at AGE_RANGE.max. Nothing else changes (potential, peakAge, growth, trait, shirt).
+ * does not move) and `age + 1`, capped at AGE_RANGE.max. Nothing else changes (potential,
+ * peakAge, growth, trait, shirt).
  */
 export function evolvePlayer(
   state: Pick<GameState, 'seed' | 'season'>,
