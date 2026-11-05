@@ -370,6 +370,17 @@ Regressão do site: BUG-SITE-001 ("Brasileirão" no site) corrigido; o teste `ne
 | BUG-SITE-001: "Brasileirão" no site                                                      | QA do site  | `site/src/lib/dist.test.ts::never says "Brasileirão"`                                                                                                                                                  | 2026-11-04 |
 | BUG-A da T-017: a moral da virada de temporada ganhava casas decimais e o estado crescia | QA da T-017 | `app/src/engine/season.test.ts::rounds the morale of the turn to 2 decimals, in range (BUG-A of T-017)`; a propriedade em `app/src/engine/properties.test.ts` (crescimento do estado entre temporadas) | 2026-11-05 |
 
+### QA da T-049 (fronteira do motor e relatório da rodada fora do estado)
+
+| Critério                                                             | Teste                                                                                                                                                                                   |
+| -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `@engine/rng` em `lib/` falha no lint                                | `app/src/engine/boundary.test.ts::refuses @engine/rng in a file of lib/` (conferido também injetando o arquivo no disco e rodando `eslint`)                                             |
+| Sem `lastRound` no estado, com os 20 clubes reais, nos 2 realismos   | `app/src/data/recap.acceptance.test.ts` (38 rodadas, `endSeason`, `startNextSeason`)                                                                                                    |
+| `RoundRecap` até 8 KB e `MatchSheet` das 10 partidas até 3 KB (gzip) | `app/src/data/recap.acceptance.test.ts` (medido: recap 6.825 B, súmulas 2.273 B no máximo das 38 rodadas)                                                                               |
+| `roundRecap`/`matchSheet` puras, só eventos de súmula                | `app/src/data/recap.acceptance.test.ts` e `app/src/engine/recap.test.ts`                                                                                                                |
+| API de ferramentas fora de `lib/`, `ui/`, `main.ts` e `site/`        | `app/src/data/tools-api.boundary.test.ts` (lê os imports; a lista de símbolos espelha o §4.1 e deve mudar junto)                                                                        |
+| Simulação igual à da `origin/main`, balance igual                    | Manual de QA (worktree temporário): temporada completa nos 2 realismos, 2 sementes, hashes de relatórios/estado/tabela/virada iguais; `npm run balance -- --seasons 200 --seed 1` igual |
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.
