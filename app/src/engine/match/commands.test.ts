@@ -531,20 +531,20 @@ describe('"tudo no ataque" only from minute 60 (partida.md, "Táticas"; T-016)',
     expect(r.warnings.map((w) => w.code)).toEqual(['command-ai-side']);
   });
 
-  it('follows match.allOutFromMinute: 0 turns the rule off, 80 moves it', () => {
+  it('follows match.allOutFromMinute: 0 turns the rule off, 76 (the top of the range) moves it', () => {
     const at = (allOutFromMinute: number, minute: number) =>
       simulateMatch(coached, { ...params, match: { ...params.match, allOutFromMinute } }, [
         { minute, side: 'home', kind: 'preset', preset: 'allOut' },
       ]);
     expect(at(0, 0).warnings).toEqual([]);
     expect(ofType(at(0, 0), 'tacticChange')[0]).toMatchObject({ minute: 1, posture: 'allOut' });
-    expect(at(80, 70).warnings).toEqual([
+    expect(at(76, 74).warnings).toEqual([
       {
         code: 'command-too-early',
-        detail: { command: 0, side: 'home', minute: 70, kind: 'preset', from: 80 },
+        detail: { command: 0, side: 'home', minute: 74, kind: 'preset', from: 76 },
       },
     ]);
-    expect(at(80, 79).warnings).toEqual([]);
+    expect(at(76, 75).warnings).toEqual([]);
   });
 
   it('is deterministic', () => {

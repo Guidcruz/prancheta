@@ -65,7 +65,10 @@ export const POSTURE_EFFECTS: { readonly [P in Exclude<Posture, 'allOut'>]: Post
   attacking: { power: 1.05, def: 0.95 },
 };
 
-/** Every posture, `allOut` included: the valid values of a sheet or a command. */
+/**
+ * Every posture, `allOut` included: the valid values of a match command and of the tactic on the
+ * pitch. A sheet takes only the three pre-match ones (`POSTURE_EFFECTS`; `allOut` from minute 60).
+ */
 export const POSTURES: readonly Posture[] = ['defensive', 'balanced', 'attacking', 'allOut'];
 
 /** The effect of `posture`: the table for the pre-match ones, the parameters for `allOut`. */

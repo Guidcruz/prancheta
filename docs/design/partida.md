@@ -142,7 +142,7 @@ Cada chute do mandante vale cerca de 8% a mais e cada chute do visitante cerca d
 - O comando que levaria a postura `allOut` a valer antes do minuto 60 é ignorado no apito, com o aviso `command-too-early` (`detail` com `command`, `side`, `minute`, `kind` e `from`, o minuto mínimo). A partida fica exatamente igual à sem o comando.
 - A trava cobre os dois caminhos: o atalho "Todo mundo no ataque" (`preset: 'allOut'`) e o comando `tactic` com `posture: 'allOut'`, com qualquer pressão (ou sem ela) e com ou sem troca de formação. O comando inteiro é ignorado, não só a postura.
 - O minuto que conta é o em que o comando passa a valer ("Quando um comando vale"): o comando de `minute: M` vale a partir de `M + 1`. Com 60, vale o comando de `minute` 59 em diante, que é o da tela parada em 60'; o de `minute` 58 (a tela em 59') é cedo. Nos acréscimos do 2º tempo o comando nunca é cedo.
-- Do minuto 60 em diante, nada muda. A IA e o técnico-robô do `/balance` só usam o "tudo no ataque" a partir dos 80' (`ia-clubes.md`, "Durante o jogo"), então nenhuma meta se move; a faixa do parâmetro para em 80 para nunca alcançar a regra da IA. 0 (ou 1) desliga a regra.
+- Do minuto 60 em diante, nada muda. A IA e o técnico-robô do `/balance` só usam o "tudo no ataque" a partir dos 80' (`ia-clubes.md`, "Durante o jogo"), então nenhuma meta se move. A faixa do parâmetro para em 76: o duelo do `/balance` "perdendo por 1 depois dos 75'" manda o comando no minuto 75, que vale do 76; um minuto mais tarde o ignoraria e a meta perderia o sentido (a IA e o robô, dos 80', ficam sempre depois). 0 (ou 1) desliga a regra.
 - Uma ficha anterior ao jogo com `allOut` (save danificado: o tipo recusa, mas pode chegar ao motor) é uma postura desconhecida como as outras: vira `balanced` com o aviso `tactic-unknown-posture` ("Valor desconhecido na entrada").
 
 Com a regra, a postura não vira tática para o jogo todo: o `/balance` mede o uso mais longo possível nos duelos "tudo no ataque desde o minuto 60" (o atalho, com pressão alta, e a postura direta com pressão média), obrigatórios, com vitórias − derrotas dentro de ±3 p.p. contra a 4-4-2 equilibrada média; a postura ainda cansa e dá mais cartões pela pressão alta do atalho.
@@ -495,7 +495,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `match.comfortableLeadPower` | 0,85 (T-016; era 1, neutro)        | 0,7–1        | "tirar o pé": quem ganha com folga cria menos; 1 desliga   |
 | `match.allOutPower`          | 1,25 (T-016; era a constante 1,10) | 1,05–1,50    | "tudo no ataque" multiplica o `power` ("Táticas")          |
 | `match.allOutDef`            | 0,78 (T-016; era a constante 0,85) | 0,60–0,95    | "tudo no ataque" multiplica a `def` ("Táticas")            |
-| `match.allOutFromMinute`     | 60 (T-016; antes não havia limite) | 0–80         | "tudo no ataque" só vale deste minuto em diante; 0 desliga |
+| `match.allOutFromMinute`     | 60 (T-016; antes não havia limite) | 0–76         | "tudo no ataque" só vale deste minuto em diante; 0 desliga |
 | `fatigue.drainPerMinute`     | 0,30                               | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
 | `fatigue.recoveryPerDay`     | 7                                  | 3–15         | 3 dias não bastam para voltar inteiro                      |
 | `injury.basePerMinute`       | 0,00012                            | 0–0,0005     | cerca de 0,3 lesão por jogo                                |

@@ -158,7 +158,7 @@ function shapeProblem(command: MatchCommand): { code: string; value?: string } |
  * Whether a well-formed command puts its side in "tudo no ataque" before `allOutFrom` (partida.md,
  * "Táticas"; T-016): the `allOut` preset, or a `tactic` with `posture: 'allOut'` whatever its
  * pressure, whose first minute (`minute + 1`) comes before `allOutFrom`. A command of minute 90 is
- * never early (`allOutFrom` is at most 80).
+ * never early (`allOutFrom` is at most 76).
  */
 function allOutTooEarly(command: MatchCommand, allOutFrom: number): boolean {
   const allOut =

@@ -169,9 +169,10 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
     // 0.95), so the power never goes below 1.05 and the defence never above 0.95.
     allOutPower: num(1.05, 1.5),
     allOutDef: num(0.6, 0.95),
-    // partida.md, "Táticas": 0 (or 1) turns the rule off; never later than the AI's own "todo
-    // mundo no ataque" (ia-clubes.md, "Durante o jogo": from minute 80).
-    allOutFromMinute: int(0, 80),
+    // partida.md, "Táticas": 0 (or 1) turns the rule off. At most 76: the /balance duel "0×1
+    // after 75'" sends "todo mundo no ataque" at minute 75 (it plays from 76), so a later minute
+    // would turn that target into an ignored command; the AI and the robot (from 80') stay after.
+    allOutFromMinute: int(0, 76),
     fatigue: { drainPerMinute: num(0.1, 0.6), recoveryPerDay: num(3, 15) },
     injury: { basePerMinute: num(0, 0.0005) },
     cards: {
