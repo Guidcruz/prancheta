@@ -4,6 +4,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ## [Não lançado]
 
+### Adicionado
+
+- Garantia de qualidade do motor (T-015), sem mudança para quem joga:
+  - Testes automáticos conferem as regras do jogo em 1.000 partidas e 30 temporadas.
+  - Antes de cada lançamento roda a versão completa, com 10.000 partidas e 1.000 temporadas.
+  - Jogo de referência novo: uma temporada com técnico humano no realismo simplificado.
+
 ### Alterado
 
 - Calibragem da partida e da ferramenta (T-016, parte 2), com as decisões do CEO de 2026-11-05:

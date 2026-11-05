@@ -75,6 +75,19 @@ Telas da 1a (`docs/design/telas/`):
 | T-013  | feita (code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                                               |
 | T-014  | feita (PR aberto; code review aprovado em 2 rodadas e QA PASS): moral, forma, termômetro da torcida, "realismo simplificado", ídolo sempre titular, `ENGINE_VERSION` 10                                            |
 | T-016  | feita (PR aberto): `npm run balance` com técnico-robô, regra "tirar o pé", "tudo no ataque" só a partir dos 60', `fans.reversion` 0,10, `ENGINE_VERSION` 11                                                        |
+| T-015  | feita (PR aberto): `properties.test.ts` com as invariantes em 1.000 partidas e 30 temporadas (`PROPERTY_FULL=1`: 10.000 e 1.000) e golden novo `season-human-simplified`; `ENGINE_VERSION` segue 11                |
+
+## Resultados da T-015 (testes de propriedade)
+
+- Nenhuma invariante falhou, ou seja, nenhum bug encontrado no motor.
+- Mutações de teste detectadas: 7 pelo `developer` e 8 de 9 pelo revisor; a 9ª foi coberta depois.
+- Tempo: +5 a 8 s na suíte padrão; a versão completa (`PROPERTY_FULL=1`) leva cerca de 9 min e roda antes de cada release.
+- Golden novo `season-human-simplified` (temporada com técnico humano no realismo simplificado); sem subir o `ENGINE_VERSION`.
+
+## Decisões e ideias do CEO em 2026-11-05 (T-015)
+
+1. Súmula do jogo antigo: ver o que aconteceu numa partida já jogada (US-024, já nos requisitos).
+2. Impedimento e VAR, e perfil de arbitragem: já registrados em "Ideias registradas para etapas futuras", para depois da Etapa 1a.
 
 ## Métricas finais da T-016 (3 sementes de 200 temporadas)
 
@@ -328,8 +341,8 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-015 e T-017 da Etapa 1a (a T-017 recalcula a `strength` dos clubes na virada da temporada).
-2. CI com `REQUIRE_SITE_DIST=1` depois do build, `NAMES_FULL_CHECK=1` e o `/balance` (`devops-engineer`).
+1. T-017 (virada de temporada: `endSeason`/`startNextSeason`, recalcula a `strength` dos clubes).
+2. CI com `/balance` (medir o runner de 2 vCPU), `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`); `PROPERTY_FULL=1` antes de release.
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
 4. Placar e tabela ao vivo da rodada (US-070 a US-074).
 5. Lote de clubes de dezembro, com a tabela final de 2026.
