@@ -35,6 +35,8 @@ function run(seed: number) {
   let outSuspended = 0;
   let goals = 0;
   let highPressure = 0;
+  /** Facts of the rounds, by kind. */
+  const facts: Record<string, number> = {};
   /** Substitutions of the in-match AI (T-012), by reason. */
   const subs: Record<string, number> = { injury: 0, fatigue: 0, tactical: 0 };
   const lastXi = new Map<string, Set<PlayerId>>();
@@ -80,6 +82,7 @@ function run(seed: number) {
 
     const played = playRound(state, params, { round, sheets: {}, commands: {}, fanDecisions: {} });
     if (!played.ok) throw new Error(`playRound ${round}: ${played.error}`);
+    for (const f of played.value.report.facts) facts[f.kind] = (facts[f.kind] ?? 0) + 1;
     for (const result of played.value.report.results) {
       goals += result.score[0] + result.score[1];
       for (const e of result.events) if (e.type === 'substitution') subs[e.reason]! += 1;
@@ -110,6 +113,7 @@ function run(seed: number) {
     subs,
     goals,
     highPressure,
+    facts,
     champion: table[0]!.points,
     seventeenth: table[16]!.points,
   };
@@ -129,6 +133,7 @@ describe('T-011/T-013 acceptance: chained season with the 20 real clubs, through
       let high = 0;
       const tables: string[] = [];
       const subs: Record<string, number> = { injury: 0, fatigue: 0, tactical: 0 };
+      const facts: Record<string, number> = {};
       for (const seed of [1, 2, 3]) {
         const r = run(seed);
         expect(r.problems).toEqual([]);
@@ -141,15 +146,32 @@ describe('T-011/T-013 acceptance: chained season with the 20 real clubs, through
         high += r.highPressure;
         tables.push(`seed ${seed}: champion ${r.champion}, 17th ${r.seventeenth}`);
         for (const [reason, n] of Object.entries(r.subs)) subs[reason]! += n;
+        for (const [kind, n] of Object.entries(r.facts)) facts[kind] = (facts[kind] ?? 0) + n;
       }
+      const rounds = 3 * 38;
+      const perRound = (n: number) => n / rounds;
+      const tableFacts = Object.entries(facts)
+        .filter(([kind]) => kind !== 'suspended' && kind !== 'injured')
+        .reduce((sum, [, n]) => sum + n, 0);
+      const ended = (facts.unbeatenEnded ?? 0) + (facts.winlessEnded ?? 0);
+      const byKind = Object.entries(facts)
+        .sort(([a], [b]) => (a < b ? -1 : 1))
+        .map(([kind, n]) => `${kind} ${perRound(n).toFixed(2)}`)
+        .join(', ');
       const teams = 3 * 380 * 2;
       const perTeam = (n: number) => (n / teams).toFixed(2);
       const all = subs.injury! + subs.fatigue! + subs.tactical!;
       console.info(
         `[T-011 e2e] sheets ${sheets}; player-rounds out ${out} (suspended ${sus}); rotations of tired starters ${rot}; starters below ${ROTATION}: ${tired}; high pressure ${((100 * high) / sheets).toFixed(1)}%\n` +
           `[T-012 e2e] substitutions per team ${perTeam(all)} (ia-clubes.md: 3 to 4 per team): injury ${perTeam(subs.injury!)}, fatigue ${perTeam(subs.fatigue!)}, tactical ${perTeam(subs.tactical!)}\n` +
-          `[T-013 e2e] goals per match ${(goals / (3 * 380)).toFixed(3)}; ${tables.join('; ')}`,
+          `[T-013 e2e] goals per match ${(goals / (3 * 380)).toFixed(3)}; ${tables.join('; ')}\n` +
+          `[T-013 e2e] facts per round: table ${perRound(tableFacts).toFixed(2)} (temporada.md: about 7.6), run ends ${perRound(ended).toFixed(2)} (1.4 to 1.8); ${byKind}`,
       );
+      // Sanity bounds around the measured 60-season figures (3 seasons here, so a wider band).
+      expect(perRound(tableFacts)).toBeGreaterThan(6.6);
+      expect(perRound(tableFacts)).toBeLessThan(8.6);
+      expect(perRound(ended)).toBeGreaterThan(1.1);
+      expect(perRound(ended)).toBeLessThan(2.1);
       expect(sheets).toBe(3 * 380 * 2);
       expect(out).toBeGreaterThan(0);
       expect(sus).toBeGreaterThan(0);
