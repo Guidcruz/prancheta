@@ -789,7 +789,7 @@ function applyRound(
     results,
     facts: roundFacts(applied, round, results, tables),
   };
-  return { state: { ...applied, lastRound: report }, report };
+  return { state: applied, report };
 }
 
 /**
@@ -830,7 +830,8 @@ function fanDecisionsOf(
  * same input (its sheets and coaches), the 10 matches with `simulateMatch` and the commands of each
  * fixture (the same plan and commands the live screen replayed, so the score is the one the
  * coach saw), then steps 3 to 7 of temporada.md (see the header). Returns the new state (round
- * + 1, `lastRound` = the report) and the report.
+ * + 1) and the report, which is not kept in the state (T-049): the application keeps its lean
+ * form (`roundRecap`, `matchSheet`; recap.ts).
  *
  * Idempotent: `round-already-played` when `input.round` is a round already played (nothing
  * changes), `season-over` after round 38, `round-not-open` for a round after the current one.

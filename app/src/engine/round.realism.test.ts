@@ -6,6 +6,7 @@ import { getStandings } from './standings.ts';
 import { testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
 import type { PlayerId } from './types.ts';
+import { reportOf, trackRound } from './testing/reports.ts';
 
 /*
  * The "Realismo simplificado" between rounds (partida.md, "Modo Realismo simplificado"; T-014):
@@ -22,7 +23,7 @@ function input(round: number, extra: Partial<RoundInput> = {}): RoundInput {
 }
 
 function play(state: GameState, extra: Partial<RoundInput> = {}) {
-  const result = playRound(state, params, input(state.round, extra));
+  const result = trackRound(playRound(state, params, input(state.round, extra)));
   if (!result.ok) throw new Error(`playRound: ${result.error}`);
   return result.value;
 }
@@ -77,9 +78,9 @@ describe('simplified realism', () => {
         // The yellow counter does not move in the simplified realism (partida.md, (1)).
         expect(p.yellowCount, `round ${r}, ${id}`).toBe(0);
       }
-      const facts = s.lastRound!.facts;
+      const facts = reportOf(s).facts;
       expect(facts.some((f) => f.kind === 'suspended' || f.kind === 'injured')).toBe(false);
-      for (const res of s.lastRound!.results) {
+      for (const res of reportOf(s).results) {
         reds += res.events.filter((e) => e.type === 'red').length;
         yellows += res.events.filter((e) => e.type === 'yellow').length;
         for (const e of res.events) {
@@ -106,9 +107,9 @@ describe('simplified realism', () => {
     const all = season('simplified');
     let back = 0;
     for (let r = 1; r < 38; r++) {
-      for (const res of all[r]!.lastRound!.results) {
+      for (const res of reportOf(all[r]!).results) {
         for (const { player } of res.newInjuries) {
-          if (all[r + 1]!.lastRound!.results.some((x) => player in x.minutes)) back++;
+          if (reportOf(all[r + 1]!).results.some((x) => player in x.minutes)) back++;
         }
       }
     }
@@ -144,11 +145,11 @@ describe('simplified realism', () => {
       p.id === a ? { suspendedGames: 1 } : p.id === b ? { injuryRounds: 2 } : undefined,
     );
     s = play(s).state;
-    expect(s.lastRound!.results.some((x) => a in x.minutes || b in x.minutes)).toBe(false);
+    expect(reportOf(s).results.some((x) => a in x.minutes || b in x.minutes)).toBe(false);
     expect([s.players[a]!.suspendedGames, s.players[b]!.injuryRounds]).toEqual([0, 1]);
     s = play(s).state;
     expect(s.players[b]!.injuryRounds).toBe(0);
-    expect(s.lastRound!.results.some((x) => b in x.minutes)).toBe(false);
+    expect(reportOf(s).results.some((x) => b in x.minutes)).toBe(false);
   });
 
   it('the morale, the form and the thermometer move as in the full realism', () => {

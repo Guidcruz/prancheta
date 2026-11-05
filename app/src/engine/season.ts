@@ -34,8 +34,8 @@ import { ENGINE_VERSION } from './version.ts';
  *    here, `careerLeagueTitles`).
  *
  * `startNextSeason` (only with `phase: 'seasonEnd'`): season + 1, year + 1, round 1, the new
- * calendar (the only draw, by the new season's stream), `seasonStats` cleared and `lastRound`
- * removed (`lastSheets` stays), the players rested and fit with half of the way of their morale to
+ * calendar (the only draw, by the new season's stream), `seasonStats` cleared (`lastSheets`
+ * stays), the players rested and fit with half of the way of their morale to
  * `fans.start`, the thermometers back to `fans.start` and the strength recalculated from the
  * evolved squads (temporada.md, "Força dos clubes na virada").
  *
@@ -693,8 +693,8 @@ function playerAtTurn(player: Player, fansStart: number): Player {
 /**
  * The turn to the next season (temporada.md, "startNextSeason" and the tables of "A virada"):
  * - season + 1, year + 1, round 1, `phase: 'season'`, the calendar of the new season (its own
- *   stream `${seed}-fixtures-${season}`, dates by the new year), `seasonStats` cleared, `lastRound`
- *   removed and `lastSheets` kept;
+ *   stream `${seed}-fixtures-${season}`, dates by the new year), `seasonStats` cleared and
+ *   `lastSheets` kept;
  * - every player with condition 100, no injury, suspension, yellow card nor bench streak, no form
  *   ("sem jogos") and the morale half of the way to `fans.start` (MORALE_OFFSEASON_PULL), rounded
  *   to hundredths ({@link moraleAtTurn}); age,
@@ -750,13 +750,8 @@ export function startNextSeason(
     };
   }
 
-  // `lastRound` is left out, not set to undefined: the state stays JSON-exact.
-  const rest: Omit<GameState, 'lastRound'> & { lastRound?: GameState['lastRound'] } = {
-    ...state,
-  };
-  delete rest.lastRound;
   return ok({
-    ...rest,
+    ...state,
     engineVersion: ENGINE_VERSION,
     season,
     year,

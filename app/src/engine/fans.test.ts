@@ -20,6 +20,7 @@ import { homeAdvantage } from './strength.ts';
 import { testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
 import type { ClubId, PlayerId } from './types.ts';
+import { reportOf, trackRound } from './testing/reports.ts';
 
 /*
  * The fans thermometer (US-026; torcida.md, "Fórmula", "Decisões do técnico", "Efeitos"; T-014):
@@ -37,7 +38,7 @@ function input(round: number, extra: Partial<RoundInput> = {}): RoundInput {
 }
 
 function play(state: GameState, extra: Partial<RoundInput> = {}) {
-  const result = playRound(state, params, input(state.round, extra));
+  const result = trackRound(playRound(state, params, input(state.round, extra)));
   if (!result.ok) throw new Error(`playRound: ${result.error}`);
   return result;
 }
@@ -250,7 +251,7 @@ function expectedFans(
   const out = new Map<ClubId, { fans: number; idolBenchStreak: number; decisions: number }>();
   const round = before.round;
   const table = getStandings(after);
-  for (const res of after.lastRound!.results) {
+  for (const res of reportOf(after).results) {
     const f = before.fixtures.find((x) => x.id === res.fixtureId)!;
     for (const [clubId, otherId, venue, own, other] of [
       [f.homeId, f.awayId, 'home', res.score[0], res.score[1]],
@@ -608,7 +609,7 @@ describe('the idol left on the bench (idolBenchStreak)', () => {
     // On the pitch again: the streak is over.
     const back = play(s, { coaches: { [COACH]: 'full' } }).value.state;
     const idol = clubIdol(s.squads[COACH]!, s.players)!;
-    expect(back.lastRound!.results.some((x) => idol.id in x.minutes)).toBe(true);
+    expect(reportOf(back).results.some((x) => idol.id in x.minutes)).toBe(true);
     expect(back.clubs[COACH]!.idolBenchStreak).toBe(0);
   });
 
@@ -620,7 +621,7 @@ describe('the idol left on the bench (idolBenchStreak)', () => {
     let human = withPlayers(state, (p) => (p.id === idol.id ? { overall: 20 } : undefined));
     for (let r = 1; r <= 4; r++) {
       s = play(s).value.state;
-      expect(s.lastRound!.results.some((x) => idol.id in x.minutes)).toBe(false);
+      expect(reportOf(s).results.some((x) => idol.id in x.minutes)).toBe(false);
       expect(s.players[idol.id]!.injuryRounds + s.players[idol.id]!.suspendedGames).toBe(0);
       expect(s.clubs[COACH]!.idolBenchStreak).toBe(0);
       // The same club as the coach's ("só resultado": the AI picks for him) does count.
@@ -666,10 +667,10 @@ describe('playRound shares the tables with the facts', () => {
     const all = season(20261104);
     for (const r of [1, 6, 20, 37, 38]) {
       const state = all[r]!;
-      const results = state.lastRound!.results;
+      const results = reportOf(state).results;
       const facts = roundFacts(state, r, results, roundTables(state, r));
       expect(facts).toEqual(roundFacts(state, r, results));
-      expect(facts).toEqual(state.lastRound!.facts);
+      expect(facts).toEqual(reportOf(state).facts);
     }
   });
 });

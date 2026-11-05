@@ -21,6 +21,7 @@ import { testGame } from './testing/match.ts';
 import { expectedMorale, expectedMoraleParts } from './testing/morale.ts';
 import { testParams } from './testing/params.ts';
 import type { ClubId, PlayerId, Side } from './types.ts';
+import { reportOf, trackRound } from './testing/reports.ts';
 
 /*
  * The round (US-012; temporada.md, "Ordem do processamento de uma rodada"; T-013): prepareRound
@@ -36,7 +37,7 @@ function input(round: number, extra: Partial<RoundInput> = {}): RoundInput {
 }
 
 function play(state: GameState, extra: Partial<RoundInput> = {}) {
-  const result = playRound(state, params, input(state.round, extra));
+  const result = trackRound(playRound(state, params, input(state.round, extra)));
   if (!result.ok) throw new Error(`playRound: ${result.error}`);
   return result;
 }
@@ -101,7 +102,7 @@ function sideOf(match: MatchInput, clubId: ClubId): Side | undefined {
 describe('playRound: the table (US-012)', () => {
   it('each club has exactly one more game, and the numbers match the scores', () => {
     const [before, after] = states();
-    const report = after!.lastRound!;
+    const report = reportOf(after!);
     expect(report.round).toBe(1);
     expect(report.season).toBe(1);
     expect(report.results).toHaveLength(10);
@@ -132,7 +133,7 @@ describe('playRound: the table (US-012)', () => {
 
   it('keeps the goals with their scorers in the fixture (US-024)', () => {
     const after = states()[1]!;
-    for (const result of after.lastRound!.results) {
+    for (const result of reportOf(after).results) {
       const summary = after.fixtures.find((f) => f.id === result.fixtureId)!.result!;
       const goals = result.events.filter((e) => e.type === 'goal');
       expect(summary.goals.map((g) => g.scorer)).toEqual(goals.map((g) => g.scorer));
@@ -244,27 +245,27 @@ describe('playRound: suspensions (US-009)', () => {
     expect(after1.players[star]!.suspendedGames).toBe(1);
     const after2 = play(after1).value.state;
     expect(after2.players[star]!.suspendedGames).toBe(0);
-    expect(after2.lastRound!.results.some((r) => star in r.minutes)).toBe(false);
+    expect(reportOf(after2).results.some((r) => star in r.minutes)).toBe(false);
   });
 
   it('a red card: suspended in the next round, served, and back', () => {
     const all = states();
     let found = 0;
     for (let r = 1; r < 37 && found < 3; r++) {
-      for (const result of all[r]!.lastRound!.results) {
+      for (const result of reportOf(all[r]!).results) {
         for (const e of result.events) {
           if (e.type !== 'red') continue;
           const id = e.player;
           const games = result.newSuspensions.find((s) => s.player === id)!.games;
           expect(all[r]!.players[id]!.suspendedGames).toBe(games);
-          expect(all[r]!.lastRound!.facts).toContainEqual({
+          expect(reportOf(all[r]!).facts).toContainEqual({
             kind: 'suspended',
             playerId: id,
             games,
           });
           // Not fielded while suspended; the counter goes down one per game of his club.
           for (let k = 1; k <= games; k++) {
-            expect(all[r + k]!.lastRound!.results.some((x) => id in x.minutes)).toBe(false);
+            expect(reportOf(all[r + k]!).results.some((x) => id in x.minutes)).toBe(false);
             expect(all[r + k]!.players[id]!.suspendedGames).toBe(games - k);
           }
           found++;
@@ -278,7 +279,7 @@ describe('playRound: suspensions (US-009)', () => {
     const all = states();
     let found = 0;
     for (let r = 1; r < 37 && found < 5; r++) {
-      for (const result of all[r]!.lastRound!.results) {
+      for (const result of reportOf(all[r]!).results) {
         for (const e of result.events) {
           if (e.type !== 'yellow' || !e.triggersSuspension) continue;
           const id = e.player;
@@ -286,7 +287,7 @@ describe('playRound: suspensions (US-009)', () => {
           expect(all[r - 1]!.players[id]!.yellowCount).toBe(2);
           expect(all[r]!.players[id]!.yellowCount).toBe(0);
           expect(all[r]!.players[id]!.suspendedGames).toBe(1);
-          expect(all[r + 1]!.lastRound!.results.some((x) => id in x.minutes)).toBe(false);
+          expect(reportOf(all[r + 1]!).results.some((x) => id in x.minutes)).toBe(false);
           expect(all[r + 1]!.players[id]!.suspendedGames).toBe(0);
           expect(all[r + 1]!.players[id]!.yellowCount).toBe(0);
           found++;
@@ -334,16 +335,16 @@ describe('playRound: injuries (US-009)', () => {
     const all = states();
     let found = 0;
     for (let r = 1; r < 30 && found < 5; r++) {
-      for (const result of all[r]!.lastRound!.results) {
+      for (const result of reportOf(all[r]!).results) {
         for (const { player, rounds } of result.newInjuries) {
           expect(all[r]!.players[player]!.injuryRounds).toBe(rounds);
-          expect(all[r]!.lastRound!.facts).toContainEqual({
+          expect(reportOf(all[r]!).facts).toContainEqual({
             kind: 'injured',
             playerId: player,
             games: rounds,
           });
           for (let k = 1; k <= rounds && r + k <= 38; k++) {
-            expect(all[r + k]!.lastRound!.results.some((x) => player in x.minutes)).toBe(false);
+            expect(reportOf(all[r + k]!).results.some((x) => player in x.minutes)).toBe(false);
             expect(all[r + k]!.players[player]!.injuryRounds).toBe(rounds - k);
           }
           found++;
@@ -364,7 +365,7 @@ describe('playRound: condition between rounds', () => {
       const next = before.fixtures.find((f) => f.round === r + 1)!.date;
       const days = daysBetween(today, next)!;
       const energy: Record<PlayerId, number> = {};
-      for (const result of after.lastRound!.results) Object.assign(energy, result.finalEnergy);
+      for (const result of reportOf(after).results) Object.assign(energy, result.finalEnergy);
       for (const [id, p] of Object.entries(after.players)) {
         const base = energy[id] ?? before.players[id]!.condition;
         expect(p.condition, `round ${r}, ${id}`).toBe(Math.min(100, base + 7 * days));
@@ -372,8 +373,8 @@ describe('playRound: condition between rounds', () => {
     }
     // Sunday → Wednesday is 3 days, Wednesday → Sunday 4: a 90-minute player is not back to 100.
     const r3 = all[3]!;
-    const tired = r3
-      .lastRound!.results.flatMap((x) => Object.entries(x.finalEnergy))
+    const tired = reportOf(r3)
+      .results.flatMap((x) => Object.entries(x.finalEnergy))
       .find(([, e]) => e < 75);
     expect(tired).toBeDefined();
     expect(r3.players[tired![0]]!.condition).toBeLessThan(100);
@@ -381,7 +382,7 @@ describe('playRound: condition between rounds', () => {
 
   it('no recovery after round 38 (the next season is T-017)', () => {
     const last = states()[38]!;
-    for (const result of last.lastRound!.results) {
+    for (const result of reportOf(last).results) {
       for (const [id, e] of Object.entries(result.finalEnergy))
         expect(last.players[id]!.condition).toBe(e);
     }
@@ -391,7 +392,7 @@ describe('playRound: condition between rounds', () => {
 describe('playRound: other bookkeeping', () => {
   it('counts the appearances and the season stats of who took the pitch', () => {
     const [before, after] = states();
-    for (const result of after!.lastRound!.results) {
+    for (const result of reportOf(after!).results) {
       for (const [id, minutes] of Object.entries(result.minutes)) {
         expect(after!.players[id]!.clubAppearances).toBe(before!.players[id]!.clubAppearances + 1);
         const goals = result.events.filter((e) => e.type === 'goal' && e.scorer === id).length;
@@ -417,7 +418,7 @@ describe('playRound: other bookkeeping', () => {
     let checked = 0;
     for (let r = 1; r <= 38; r++) {
       const before = all[r - 1]!;
-      for (const result of all[r]!.lastRound!.results) {
+      for (const result of reportOf(all[r]!).results) {
         const fixture = before.fixtures.find((f) => f.id === result.fixtureId)!;
         const goals = result.events.filter((e) => e.type === 'goal');
         for (const side of ['home', 'away'] as const) {
@@ -794,8 +795,8 @@ describe('playRound: "Cobrar" and the morale (partida.md, "Cobrar e a moral")', 
     for (let r = 1; r <= 38; r++) {
       const before = all[r - 1]!;
       const after = all[r]!;
-      const parts = expectedMoraleParts(before, after.lastRound!.results);
-      for (const result of after.lastRound!.results) {
+      const parts = expectedMoraleParts(before, reportOf(after).results);
+      for (const result of reportOf(after).results) {
         for (const e of result.events) {
           if (e.type === 'halftimeTalk' && e.talk === 'demand') demanded++;
         }
