@@ -28,7 +28,11 @@ const miniClubs = clubsById(['botafogueira', 'corinto', 'palmeral', 'coritibom']
     slogan={config.slogan['pt-BR']}
     sloganHighlight={config.slogan.short['pt-BR']}
     lead="Você é o técnico. Escala o time, mexe na tática, grita da beira do campo e encara a tabela. Tudo no celular, em rodadas de poucos minutos."
-    note={`O ${config.name} está em desenvolvimento. A versão que você abre hoje ainda é bem pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.`}
+    note={
+      GAME_PLAYABLE
+        ? `O ${config.name} está em desenvolvimento. A versão que você abre hoje ainda é bem pequena: uma tela e um botão. Ela cresce toda semana, e você acompanha tudo no devlog.`
+        : `O ${config.name} está em desenvolvimento. Ele cresce toda semana, e você acompanha tudo no devlog.`
+    }
     primary={
       GAME_PLAYABLE
         ? { href: `${config.paths.game}/`, label: `Abrir a versão atual (v${config.version})` }

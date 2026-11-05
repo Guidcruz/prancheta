@@ -3,6 +3,7 @@ import Base from '../layouts/Base.astro';
 import PageHero from '../components/PageHero.astro';
 import GlassCard from '../components/GlassCard.astro';
 import { config } from '../../../config/prancheta.config.ts';
+import { GAME_PLAYABLE } from '../data/game';
 ---
 
 <Base title="Apoiar" current="apoiar" share="apoiar">
@@ -15,9 +16,13 @@ import { config } from '../../../config/prancheta.config.ts';
     <GlassCard>
       <p>
         Por enquanto, a melhor forma de apoiar é{' '}
-        <strong>jogar a versão atual, contar o que achou e compartilhar o devlog</strong>. Um canal
-        de apoio financeiro, com recompensas só cosméticas, entra quando o jogo estiver mais
-        completo.
+        <strong>
+          {GAME_PLAYABLE
+            ? 'jogar a versão atual, contar o que achou e compartilhar o devlog'
+            : 'acompanhar o devlog, contar o que achou e compartilhar com amigos'}
+        </strong>
+        . Um canal de apoio financeiro, com recompensas só cosméticas, entra quando o jogo estiver
+        mais completo.
       </p>
     </GlassCard>
     <p class="caption minors">
