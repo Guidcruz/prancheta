@@ -86,8 +86,13 @@ Convenções usadas nas histórias:
 | US-067 | Lote anual de atualização da temporada base                | 1a    | Should     | pronta   |
 | US-068 | Títulos da carreira somam ao histórico do clube            | 1a    | Must       | pronta   |
 | US-069 | Força inicial pela colocação da temporada anterior         | 1a    | Must       | pronta   |
+| US-070 | Placar ao vivo dos outros jogos na partida                 | 1a    | Should     | pronta   |
+| US-071 | Tabela ao vivo: se terminasse agora, intervalo e fim       | 1a    | Should     | pronta   |
+| US-072 | Importância do gol em outro jogo                           | 1a    | Should     | pronta   |
+| US-073 | Plantão dos outros jogos na tela da partida                | 1a    | Should     | pronta   |
+| US-074 | Preferência "Plantão dos outros jogos"                     | 1a    | Should     | pronta   |
 
-Totais: 50 histórias da 1a (US-001 a US-046 e US-066 a US-069) e 19 da 1b (US-047 a US-065). US-066 a US-069 vêm da regra do CEO sobre os dados de referência dos clubes (2026-11-04) e foram acrescentadas no fim, fora da ordem de dependência do índice: na 1a, entram junto da US-001 (dados), da US-025 (fim de temporada) e da US-032/US-033 (save). Depois das decisões de 2026-11-04: 67 prontas e 2 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
+Totais: 55 histórias da 1a (US-001 a US-046 e US-066 a US-074) e 19 da 1b (US-047 a US-065). US-066 a US-069 vêm da regra do CEO sobre os dados de referência dos clubes (2026-11-04) e foram acrescentadas no fim, fora da ordem de dependência do índice: na 1a, entram junto da US-001 (dados), da US-025 (fim de temporada) e da US-032/US-033 (save). US-070 a US-074 vêm do pedido do CEO de 2026-11-05 (placar, tabela ao vivo e plantão dos outros jogos da rodada, "como na TV") e entram depois da partida animada (US-020), da conversa do intervalo (US-022) e da tela da tabela (US-023). Depois das decisões de 2026-11-04 e do acréscimo de 2026-11-05: 72 prontas e 2 em rascunho (US-047, domínio definitivo; US-065, quem trata as denúncias e em quanto tempo).
 
 ---
 
@@ -2183,7 +2188,7 @@ Cenário: processamento único
 
 **Prioridade:** Must
 **Depende de:** US-056, US-020
-**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) (prazo curto, resultado simulado na hora e visto por todos juntos, placares ao vivo, mensagens prontas). A partida é exibida a partir dos eventos já simulados pelo servidor, no mesmo ritmo para todos. Decisão P6: sem comandos durante a partida no online da 1b; tática e escalação valem como definidas antes do "Pronto".
+**Notas:** [PROJETO.md › Modo online](PROJETO.md#modo-online) (prazo curto, resultado simulado na hora e visto por todos juntos, placares ao vivo, mensagens prontas). A partida é exibida a partir dos eventos já simulados pelo servidor, no mesmo ritmo para todos. Decisão P6: sem comandos durante a partida no online da 1b; tática e escalação valem como definidas antes do "Pronto". O placar ao vivo dos outros jogos é a faixa da carreira (US-070), que define o comportamento; o critério abaixo continua sendo o do online. A tabela ao vivo (US-071), a importância do gol (US-072), o plantão (US-073) e a preferência dele (US-074) valem também aqui, com o clube de cada humano no lugar do clube do técnico, e dependem da T-063.
 
 ### Critérios de aceite
 
@@ -2637,6 +2642,269 @@ Cenário: colocação na carreira não muda a força (D8)
 
 ---
 
+## US-070: Placar ao vivo dos outros jogos na partida
+
+**Como** técnico assistindo à partida do meu clube, **quero** ver numa faixa discreta os placares dos outros 9 jogos da rodada, atualizados a cada gol, **para** saber o que acontece com os concorrentes sem sair do meu jogo.
+
+**Prioridade:** Should
+**Depende de:** US-012, US-020
+**Notas:** Pedido do CEO (2026-11-05), "como na TV", em cinco histórias: esta faixa, a tabela ao vivo (US-071), a importância do gol (US-072), o plantão (US-073) e a preferência do plantão (US-074). [temporada.md › Ordem do processamento de uma rodada](design/temporada.md#ordem-do-processamento-de-uma-rodada), passo 2: as outras 9 partidas rodam em paralelo, cada uma com a sua semente, e os comandos do técnico (US-021) só recalculam a partida dele; por isso a faixa nunca desfaz um gol já mostrado. Vale nos tipos "animada completa" e "só lances principais" (partida assistida, ritmo "No meu ritmo"); no "só resultado" não há transmissão e os outros resultados aparecem só no resumo (US-019). Relógio comum: um gol do minuto M de outro jogo aparece quando a partida assistida chega ao minuto M; com a partida pausada (comandos, intervalo), a faixa para; "Pular" (US-020) vai ao resumo com os 10 resultados. Acréscimos (proposta, a confirmar com o `game-designer`): os de todos os jogos correm no relógio da partida assistida; quando ela termina, os jogos que ainda teriam acréscimos mostram o placar final de uma vez, todos marcados "encerrado". Volume: cerca de 25 gols por rodada nos outros 9 jogos, um a cada 3 ou 4 minutos de jogo. A faixa existe com qualquer valor da preferência do plantão (US-074), inclusive "Desligado". No online, a US-057 já pede "um placar ao vivo dos outros jogos da rodada atualiza a cada gol": a faixa é a mesma e a US-057 continua dona do critério no online (T-063); no ritmo "Tempo real" (Etapa 4) a faixa também é a mesma. Os nomes curtos vêm dos dados dos clubes e os textos de `app/src/content/<idioma>/`.
+
+### Critérios de aceite
+
+```gherkin
+Cenário: faixa com os outros 9 jogos
+  Dado a partida do clube do técnico em "animada completa" ou "só lances principais"
+  Quando a transmissão começa
+  Então a faixa mostra os outros 9 jogos da rodada, cada um com o nome curto dos dois clubes e o placar 0 x 0
+  E a faixa não se sobrepõe ao placar da partida assistida nem aos botões de comando, em largura de celular e de desktop
+
+Cenário: placar muda no minuto do gol
+  Dado um outro jogo da rodada em que o motor registra um gol no minuto M
+  Quando a partida assistida chega ao minuto M
+  Então o placar desse jogo na faixa muda nesse minuto, e não antes
+  E o placar que mudou fica destacado pelo tempo definido pelo ux-designer, com ícone de gol e rótulo de texto, não só por cor
+  E com prefers-reduced-motion o destaque aparece sem animação
+
+Cenário: fim da partida assistida
+  Dado a partida assistida no apito final
+  Então os 9 placares da faixa são iguais aos do motor e aos do resumo da rodada (US-019), todos marcados "encerrado"
+
+Cenário: partida pausada
+  Dado a partida assistida pausada para comandos (US-021) ou no intervalo (US-022)
+  Então nenhum placar da faixa muda até a partida voltar a correr
+
+Cenário: sem transmissão no "só resultado"
+  Dado o tipo de partida "só resultado"
+  Quando o jogador joga a rodada
+  Então não aparece a faixa; os outros 9 resultados aparecem no resumo (US-019)
+```
+
+### Fora do escopo desta história
+
+- Outros lances dos outros jogos na faixa (cartões, pênaltis perdidos, lesões).
+- Assistir a outro jogo da rodada ou trocar de partida.
+
+---
+
+## US-071: Tabela ao vivo: se terminasse agora, intervalo e fim
+
+**Como** técnico, **quero** ver a classificação como estaria se a rodada terminasse agora, com setas de quem sobe e quem desce, com um toque durante o jogo, sozinha no intervalo e "como ficou" no fim, **para** acompanhar o efeito dos placares sem parar a partida.
+
+**Prioridade:** Should
+**Depende de:** US-012, US-019, US-022, US-023, US-070
+**Notas:** Pedido do CEO (2026-11-05). "Se terminasse agora" é a tabela oficial de antes da rodada mais os 10 jogos com o placar do minuto atual contado como final, inclusive o jogo do técnico. O desempate é o da tabela oficial (US-012, P1; [temporada.md › Pontos e tabela](design/temporada.md#pontos-e-tabela)): os cartões até o minuto atual contam nos critérios 6 e 7, o confronto direto conta o jogo em andamento quando os dois empatados se enfrentam nesta rodada, e o sorteio do critério 8 usa a mesma semente. A ordem tem de ser a que o motor daria; onde fica o cálculo é decisão do `architect`. As setas comparam com a tabela oficial do início da rodada, não com o minuto anterior. A tabela usa os rótulos de zona e o "seu clube" da tela da tabela (US-023), com um título que deixa claro que é parcial. Três momentos: durante o jogo, abre por cima da partida com um toque e a partida continua correndo; no intervalo, aparece sozinha junto da conversa do intervalo (US-022), sem tomar o lugar dela; no apito final da partida assistida, a tela mostra "como ficou" no mesmo formato (antes ou dentro do resumo da rodada, US-019; o lugar é do `ux-designer`). No modo "só resultado", que não tem transmissão, o "como ficou" aparece no resumo da rodada (US-019), no mesmo formato (decisão D10 do CEO, 2026-11-05). A versão resumida, usada pelo plantão grande (US-073), tem 5 linhas: o clube do técnico e os 2 vizinhos de cada lado (nas pontas, as 5 primeiras ou as 5 últimas). Online e "Tempo real": mesma dependência da US-070.
+
+### Critérios de aceite
+
+```gherkin
+Cenário: mesma regra da tabela oficial
+  Dado a tabela antes da rodada e os placares e cartões dos 10 jogos no minuto M
+  Quando o jogador abre a tabela ao vivo no minuto M
+  Então a ordem e as colunas P, J, V, E, D, GP, GC e SG são as da tabela oficial calculada com esses placares e cartões como resultados finais, com os mesmos critérios de desempate (P1)
+
+Cenário: setas de quem sobe e quem desce
+  Dado um clube 10º antes da rodada que está 7º na tabela ao vivo e outro 7º que está 9º
+  Então o primeiro mostra seta para cima e "+3" em texto, e o segundo seta para baixo e "−2", cada seta com rótulo acessível
+  E quem não mudou de posição mostra o ícone de "sem mudança", com rótulo
+  E com prefers-reduced-motion as setas e as trocas de linha aparecem sem animação
+
+Cenário: abre com um toque e não interrompe
+  Dado a partida assistida correndo no minuto M
+  Quando o jogador toca o botão da tabela ao vivo, com alvo de toque de pelo menos 44 px
+  Então a tabela abre sem pausar o relógio da partida e atualiza a cada gol enquanto está aberta
+  E um toque fecha a tabela, com a partida no mesmo minuto em que estaria sem ela
+
+Cenário: tabela no intervalo
+  Dado a partida assistida chegando ao intervalo
+  Então a tela mostra sozinha a tabela ao vivo do intervalo, com setas e o clube do técnico destacado
+  E as 3 opções da conversa do intervalo (US-022) continuam visíveis, sem sobreposição com a tabela, com alvos de pelo menos 44 px
+  E escolher uma opção ou "Pular" tem o mesmo efeito que sem a tabela
+
+Cenário: como ficou no fim
+  Dado o apito final da partida assistida
+  Então a tela mostra "como ficou", no mesmo formato, igual à tabela oficial depois da rodada, com as setas em relação ao início da rodada
+
+Cenário: como ficou no "só resultado" (D10)
+  Dado o tipo de partida "só resultado"
+  Quando o jogador joga a rodada
+  Então o resumo da rodada (US-019) mostra "como ficou", no mesmo formato, igual à tabela oficial depois da rodada, com as setas em relação ao início da rodada e o clube do técnico destacado
+
+Cenário: resultado e tabela oficial intocados
+  Dado o mesmo save e a mesma semente
+  Quando a rodada é jogada uma vez abrindo a tabela ao vivo e outra sem abrir
+  Então os eventos do motor e os placares são idênticos
+  E a tela da tabela (US-023) só muda depois que a rodada é aplicada
+```
+
+### Fora do escopo desta história
+
+- Simular cenários ("e se eu empatar?") ou projetar o fim do campeonato.
+- Artilharia ao vivo.
+
+---
+
+## US-072: Importância do gol em outro jogo
+
+**Como** técnico, **quero** que o jogo saiba quais gols dos outros jogos mexem na minha situação, e quanto, **para** que a transmissão destaque o que importa, como na TV.
+
+**Prioridade:** Should
+**Depende de:** US-071; confirmação do critério e do valor de N pelo `game-designer` (em `docs/design/`) antes de a tarefa começar
+**Notas:** Pedido do CEO (2026-11-05); exemplos dele: o rival direto empatou, o líder está perdendo, um concorrente contra o rebaixamento virou o jogo. É a regra que o plantão (US-073) usa para escolher o tamanho e a ordem da fila. Critério proposto, **a confirmar com o `game-designer`**: tudo é medido na tabela ao vivo (US-071) logo antes e logo depois do gol, e o gol de um dos outros 9 jogos recebe o nível mais alto entre as regras que valem ("você" é o clube do técnico).
+
+| Nível | Nome   | Quando                                                                                                   | Motivo (indicativo)                  | Plantão                |
+| ----- | ------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------- |
+| 3     | Título | você está na briga pelo título e o gol mexe nela                                                         | `titleRace`                          | grande, passa à frente |
+| 2     | Zona   | você está na briga da Libertadores ou na da queda e o gol mexe nela                                      | `relegationRace`, `libertadoresRace` | grande                 |
+| 1     | Você   | a sua posição mudou, ou o gol mudou os pontos do clube logo acima ou logo abaixo de você, a até N pontos | `position`, `directRival`            | grande                 |
+| 0     | Comum  | nenhuma das anteriores                                                                                   | `none`                               | curto                  |
+
+- **Briga de uma fronteira** entre as posições k e k+1: quem está até a posição k e tem no máximo `P(k+1) + N` pontos, mais quem está depois da posição k e tem pelo menos `P(k) − N` pontos, em que `P(i)` é a pontuação do i-ésimo colocado. Fica vazia quando os dois lados estão a mais de N pontos. Fronteiras: título, k = 1; Libertadores, k = 6 (a última posição da "Zona da Libertadores" da tabela; D9); queda, k = 16.
+- **O gol mexe na briga** quando muda os pontos ao vivo de um clube da briga ou muda quem está de cada lado da fronteira.
+- **Mudar os pontos** é mudar o resultado ao vivo daquele jogo (vitória, empate ou derrota). O gol que só amplia a vantagem (de 2 x 0 para 3 x 0) não muda pontos, mas pode mudar a posição pelo saldo.
+- **Motivo:** sai junto do nível e escolhe a linha "o que mudou para você" do plantão grande (por exemplo, "O líder está perdendo", "Seu rival direto empatou", "Você entrou no Z4"); o texto é do `content-writer`. Se mais de uma regra vale, vence a de nível mais alto; no nível 2, `relegationRace` antes de `libertadoresRace`; no nível 1, `position` antes de `directRival`. Os nomes dos códigos são do `architect`.
+- **N** é parâmetro novo em `app/src/params/` (o nome é do `architect`); sugestão de valor: 3, uma vitória.
+- **Sem nível acima de 0:** na rodada 1 (a tabela parte do zero e quase todo gol mexe em posição; a mesma razão dos fatos `enteredZ4` em `temporada.md`). Gol do jogo do técnico não passa por esta regra: já aparece na partida.
+- **Volume:** o `game-designer` mede com a ferramenta de balanceamento a média de gols de cada nível por rodada, por faixa da tabela, e ajusta N. No começo da temporada, com poucos pontos, as brigas são largas e o nível 3 pode ficar frequente; o ajuste (N menor nas primeiras rodadas, por exemplo) é dele.
+- **Zonas:** a Sul-Americana não entra. A briga da Libertadores usa a mesma fronteira da tabela da 1a, a "Zona da Libertadores" do 2º ao 6º (`temporada.md`), no lugar do G4 citado no pedido (decisão D9 do CEO, 2026-11-05), mesmo com as copas ainda sem valer; se a zona mudar na tabela, k muda junto.
+
+### Critérios de aceite
+
+```gherkin
+Esquema do Cenário: nível e motivo do gol (a confirmar com o game-designer)
+  Dado N = 3, a rodada <rodada> e a tabela ao vivo logo antes de um gol num dos outros 9 jogos
+  E <situação>
+  Quando o gol acontece
+  Então o nível do gol é <nível> e o motivo é <motivo>
+
+  Exemplos:
+    | rodada | situação                                                                                                                             | nível | motivo           |
+    | 10     | o 1º tem 20 pontos e você é 2º com 18; o líder empatava e sofre o gol que o deixa perdendo                                           | 3     | titleRace        |
+    | 10     | o 1º tem 20, o 2º 12 e você é 3º com 11, fora da briga da Libertadores e da queda; o líder empatava e sofre o gol que o deixa perdendo | 0     | none             |
+    | 10     | você é 16º com 15 pontos e o 17º tem 13; o 18º, com 12 e perdendo, vira o jogo                                                       | 2     | relegationRace   |
+    | 10     | você é 6º com 30, longe do líder, e o 7º tem 29 perdendo; o 7º empata                                                                | 2     | libertadoresRace |
+    | 10     | você é 10º com 25, fora das três brigas; o 11º, com 24 e perdendo, empata e você continua 10º                                        | 1     | directRival      |
+    | 10     | você é 10º, fora das três brigas; o 11º, com os mesmos pontos e já vencendo por 1 x 0, faz o 2º gol e passa à sua frente pelo saldo  | 1     | position         |
+    | 10     | você é 10º, fora das três brigas; o 9º, 2 pontos à frente e vencendo por 2 x 0, faz o 3º gol e nenhuma posição muda                  | 0     | none             |
+    | 10     | você é 10º, fora das três brigas; o 18º vira o jogo e a sua posição não muda                                                         | 0     | none             |
+    | 1      | qualquer gol num dos outros 9 jogos                                                                                                  | 0     | none             |
+
+Cenário: regra determinística e sem efeito no motor
+  Dado a mesma tabela ao vivo antes e depois de um gol e o mesmo N
+  Quando o nível é calculado duas vezes
+  Então o nível e o motivo são os mesmos
+  E os eventos do motor e os placares da rodada não dependem do cálculo
+```
+
+### Fora do escopo desta história
+
+- Importância de cartão vermelho, pênalti perdido ou lesão em outros jogos.
+- Zona da Sul-Americana e vagas de copa valendo (Etapa 5).
+- Importância dos gols do próprio jogo do técnico.
+
+---
+
+## US-073: Plantão dos outros jogos na tela da partida
+
+**Como** técnico, **quero** que todo gol dos outros jogos seja anunciado como num plantão de TV, curto para o gol comum e grande para o que mexe comigo, **para** sentir a rodada inteira sem perder a minha partida.
+
+**Prioridade:** Should
+**Depende de:** US-070, US-071, US-072
+**Notas:** Pedido do CEO (2026-11-05), com a correção dele de que todo gol em outro jogo é anunciado, como na TV. Dois tamanhos, escolhidos pelo nível da US-072:
+
+- **Plantão curto (nível 0):** uma faixa que entra por 2 a 3 segundos com "GOL", o clube que marcou, o placar novo e o minuto, e some.
+- **Plantão grande (níveis 1 a 3):** um cartão de destaque por alguns segundos com o clube que marcou, o placar novo, o minuto e a linha "o que mudou para você" (motivo da US-072); depois o cartão vira a tabela resumida (US-071: o clube do técnico e os 2 vizinhos de cada lado), com as setas de quem sobe e quem desce.
+
+Fila: um plantão por vez; o de nível mais alto passa à frente; no mesmo nível, vale a ordem dos eventos do motor. Quando um plantão termina e há 2 ou mais curtos esperando (por exemplo, em velocidade rápida), eles saem juntos num plantão só ("3 gols na rodada", com o placar de cada jogo). Os tempos exatos (o curto dentro de 2 a 3 s) são do `ux-designer` e contam em tempo real, não em minutos de jogo. A partida assistida continua por trás e nunca para sozinha por causa de um plantão. Com a partida pausada pelo técnico (comandos, US-021), nenhum plantão novo começa e o tempo do que está na tela para. No intervalo e no apito final a fila é descartada, porque a tabela do intervalo e o "como ficou" (US-071) já mostram tudo (proposta, a confirmar com o `ux-designer`). Nenhum plantão cobre o placar da partida assistida nem os botões de comando. A faixa de placares (US-070) atualiza em todo gol, com ou sem plantão. O que aparece depende da preferência "Plantão dos outros jogos" (US-074). Ritmo: cerca de 25 gols por rodada nos outros 9 jogos, um a cada 3 ou 4 minutos de jogo.
+
+Estilo de "plantão" genérico: nenhuma marca, vinheta, nome, bordão ou visual que imite uma emissora ou um programa de TV real (regra de nomes reais do `CLAUDE.md`). O visual é do `art-director` e do `ux-designer`; os textos são do `content-writer` e passam pelo CEO no lote. Sem som na Etapa 1 (P5): nada de vinheta sonora. Quando o áudio entrar, com lote aprovado pelo CEO e estimativa de créditos, pode-se avaliar uma vinheta própria do plantão, também sem imitar emissora real. Online e "Tempo real": mesma dependência da US-070.
+
+### Critérios de aceite
+
+```gherkin
+Cenário: gol comum gera plantão curto
+  Dado a preferência "Todos os gols" e um gol de nível 0 num outro jogo no minuto M
+  Quando a partida assistida chega ao minuto M
+  Então entra um plantão curto com "GOL", o clube que marcou, o placar novo e o minuto, que some sozinho entre 2 e 3 segundos depois
+  E o relógio da partida assistida não para
+
+Cenário: gol importante gera plantão grande
+  Dado um gol de nível 1, 2 ou 3 num outro jogo
+  Então entra o plantão grande com o clube que marcou, o placar novo, o minuto e a linha "o que mudou para você" do motivo da US-072, com ícone e texto, não só cor
+  E em seguida o cartão mostra a tabela resumida com o clube do técnico e os 2 vizinhos de cada lado, com as setas
+  E o relógio da partida assistida não para
+
+Cenário: fila com prioridade e agrupamento
+  Dado um plantão na tela e, esperando, dois gols de nível 0 e depois um de nível 2
+  Quando o plantão da tela termina
+  Então o próximo é o de nível 2
+  E depois dele os dois de nível 0 saem juntos num único plantão, com os dois placares
+
+Cenário: pausa, intervalo e fim
+  Dado um plantão na tela e outro na fila
+  Quando o técnico pausa a partida para dar um comando
+  Então o tempo do plantão na tela para e nenhum novo começa até a partida voltar a correr
+  E ao chegar ao intervalo ou ao apito final, a fila é descartada
+
+Cenário: não cobre a partida e reduz movimento
+  Dado qualquer plantão na tela, em largura de celular e de desktop
+  Então ele não se sobrepõe ao placar da partida assistida nem aos botões de comando
+  E com prefers-reduced-motion ele aparece e some sem animação de entrada e saída
+
+Cenário: sem marca real de TV
+  Dado a lista bloqueada de conteúdo, com nomes de emissoras, programas e bordões de TV reais mantidos pelo content-writer
+  Quando npm run content:check roda
+  Então nenhum texto do plantão, em nenhum idioma, contém um item dessa lista
+```
+
+### Fora do escopo desta história
+
+- Som e vinheta sonora (P5; só com lote de áudio aprovado pelo CEO).
+- Plantão de cartão vermelho, pênalti perdido ou lesão em outro jogo.
+- Replay do gol de outro jogo (Etapa 4).
+- Plantão no modo "só resultado".
+
+---
+
+## US-074: Preferência "Plantão dos outros jogos"
+
+**Como** jogador, **quero** escolher se o plantão anuncia todos os gols dos outros jogos, só os importantes ou nenhum, **para** ter a transmissão do meu jeito.
+
+**Prioridade:** Should
+**Depende de:** US-044, US-073
+**Notas:** Pedido do CEO (2026-11-05). Opção nas Preferências (US-044), com três valores: "Todos os gols" (padrão), "Só os importantes" (só o plantão grande; o gol comum só atualiza e destaca a faixa) e "Desligado" (só a faixa de placares, US-070). Não muda o motor nem a tabela ao vivo (US-071). Fica no aparelho, como as outras preferências da US-044. Entra junto da US-073, para o plantão nunca existir sem como desligar.
+
+### Critérios de aceite
+
+```gherkin
+Cenário: valor padrão
+  Dado o primeiro acesso
+  Então "Plantão dos outros jogos" vale "Todos os gols"
+
+Esquema do Cenário: o que cada valor mostra
+  Dado a preferência "<valor>"
+  Quando sai um gol de nível 0 e depois um de nível 2 em outros jogos
+  Então aparece <plantões>
+  E a faixa de placares atualiza e destaca os dois jogos
+
+  Exemplos:
+    | valor             | plantões                   |
+    | Todos os gols     | o plantão curto e o grande |
+    | Só os importantes | só o plantão grande        |
+    | Desligado         | nenhum plantão             |
+
+Cenário: persiste e não muda o resultado
+  Dado a preferência trocada para "Desligado"
+  Então a escolha continua depois de reabrir o jogo
+  E com o mesmo save e a mesma semente, os eventos do motor e os placares são iguais aos de "Todos os gols"
+```
+
+### Fora do escopo desta história
+
+- Escolher o plantão por clube ou por briga (por exemplo, "só a briga contra a queda").
+
+---
+
 ## Requisitos não funcionais
 
 | Área            | Requisito                                                                                                | Como verificamos                         |
@@ -2699,13 +2967,20 @@ O CEO aceitou as recomendações das perguntas abertas 4 a 8 desta revisão. A n
 7. **D7. Onde aparece o total de títulos.** Na 1a, só para o clube do jogador (tela do clube), além da cerimônia de título e das notícias; a ficha de outros clubes fica para a Etapa 4, com "Histórico e recordes". (US-068)
 8. **D8. Colocação dentro da carreira.** Não mexe na força da temporada seguinte da carreira; a força na carreira vem do elenco e da curva de idade (US-025). (US-069)
 
+### Decisões do CEO sobre o placar e a tabela ao vivo (2026-11-05)
+
+O CEO aceitou as recomendações das perguntas abertas 9 e 10 do pedido de 2026-11-05 (US-070 a US-074). A numeração segue a das perguntas (D9 e D10).
+
+9. **D9. Fronteira da Libertadores no plantão.** O plantão usa a mesma fronteira da tabela da 1a: a "Zona da Libertadores", do 2º ao 6º (`docs/design/temporada.md`), no lugar do G4. Na US-072, k = 6 e o motivo `libertadoresRace`. (US-072, US-073)
+10. **D10. "Como ficou" no "só resultado".** Aparece também no resumo do modo "só resultado" (US-019), no mesmo formato da partida assistida. (US-071, US-019)
+
 ### Perguntas que seguem abertas
 
 1. **P7 (resto). Quem trata as denúncias e em quanto tempo?** Recomendo que, na 1b, o próprio CEO trate, com prazo de até 72 horas para renomear à força ou remover um apelido ou nome de liga ofensivo, e que o `architect` defina como o CEO fica sabendo de uma denúncia nova (sem painel). Um prazo semanal seria mais leve, mas deixa um apelido ofensivo visível para menores por dias. Trava a US-065.
 2. **P13 (resto). Discussions do GitHub ou formulário no devlog?** Recomendo as Discussions do repositório público: custo zero, nada para construir nem guardar do nosso lado, moderação pronta e exigência de conta no GitHub (que só aceita maiores de 13 anos). O formulário no devlog pediria um lugar para guardar as respostas, ou seja, dado pessoal novo com ADR e `security-auditor`. Não trava nenhuma história: a tela Sobre lê o link da configuração.
 3. **Tipo de partida por carreira ou para o aparelho?** As decisões não dizem se trocar o tipo de partida vale só para a carreira aberta ou para todas as carreiras do aparelho. Recomendo por carreira, porque ele é escolhido no novo jogo (US-014). Os critérios de US-019 e US-044 foram escritos para valer nos dois casos, então não trava nada; a resposta orienta o `ux-designer` e o `architect`.
 
-As perguntas 4 a 8 foram respondidas (ver D4 a D8 acima).
+As perguntas 4 a 10 foram respondidas (ver D4 a D8 e D9 e D10 acima).
 
 Insumos pendentes que travam histórias (não são perguntas novas):
 

@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Moral, forma, torcida e "realismo simplificado" (T-014, US-010, US-026 e partes de US-009 e US-004) em `app/src/engine/`:
+  - Moral entre rodadas: quem joga numa vitória ganha 3 pontos de moral, no empate fica igual e numa derrota perde 3; no clássico o efeito dobra. Quem esperava jogar e fica no banco perde 2 por rodada, a partir da 2ª seguida. O profissional sofre só metade das quedas e o temperamental sofre o dobro da queda por ficar no banco. A moral também anda até 1 ponto por rodada em direção ao humor da torcida, sem passar dele.
+  - Forma: a média das últimas 5 notas de cada jogador, para o técnico ler ao escalar.
+  - Termômetro da torcida (de 0 a 100, começa em 60), para os 20 clubes: sobe quando o time faz mais do que se esperava do confronto e desce quando faz menos. Contam ainda a goleada (3 gols ou mais de diferença), o jejum (a partir do 4º jogo sem vencer), estar entre os 4 primeiros ou na zona de rebaixamento (da 6ª rodada em diante), as decisões do técnico com a torcida e deixar o ídolo no banco. Ele puxa o mando de campo: de cerca de +3% com a torcida fria a +7% com ela em festa.
+  - Modo "realismo simplificado": sem suspensões nem lesões, e a condição física volta a 100 entre as rodadas.
+  - O ídolo do clube agora é sempre um titular.
+  - `ENGINE_VERSION` 10: os goldens de rodada e de temporada mudam.
+  - Em 100 temporadas, o termômetro fica em média 53,6 e a rodada leva cerca de 7 ms.
+
 - Rodada e temporada (T-013, US-009, US-012 e US-019) em `app/src/engine/`:
   - `prepareRound` e `playRound`: a rodada completa, com as 10 partidas, a IA escalando os clubes, a ficha sugerida para o técnico e o `RoundSetup`. São idempotentes e recusam com `round-already-played`, `round-not-open` e `season-over`.
   - Entre rodadas: a suspensão é cumprida, os amarelos são mesclados, as lesões contam rodadas e a condição se recupera por dias. O "Cobrar" custa 3 pontos de moral aos temperamentais.

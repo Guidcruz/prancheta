@@ -18,6 +18,7 @@ import {
 import { getStandings } from './standings.ts';
 import { shownEleven, teamStrength } from './strength.ts';
 import { testGame } from './testing/match.ts';
+import { expectedMorale, expectedMoraleParts } from './testing/morale.ts';
 import { testParams } from './testing/params.ts';
 import type { ClubId, PlayerId, Side } from './types.ts';
 
@@ -720,9 +721,14 @@ describe('playRound: "Cobrar" and the morale (partida.md, "Cobrar e a moral")', 
   }
 
   function coachRound(talk: 'demand' | 'skip' | 'motivate') {
-    const hotheads = withPlayers(testGame(), (p) =>
+    // Morale equal to the thermometer: no drift, so only the result, the bench and the talk move.
+    const changed = withPlayers(testGame(), (p) =>
       p.clubId === COACH ? { trait: 'hothead', morale: 60 } : undefined,
     );
+    const hotheads: GameState = {
+      ...changed,
+      clubs: { ...changed.clubs, [COACH]: { ...changed.clubs[COACH]!, fans: 60 } },
+    };
     const plan = prepareRound(hotheads, params, { coaches: { [COACH]: 'full' } });
     if (!plan.ok) throw new Error('prepareRound');
     const match = plan.value.matches.find((m) => sideOf(m, COACH) !== undefined)!;
@@ -759,9 +765,12 @@ describe('playRound: "Cobrar" and the morale (partida.md, "Cobrar e a moral")', 
     );
     expect(heard.has(sub.out)).toBe(true);
     expect(heard.has(sub.in)).toBe(false);
+    const parts = expectedMoraleParts(hotheads, after.report.results);
     for (const id of squad) {
-      const expected = heard.has(id) ? 60 + ROUND_MORALE.demandTalkHothead : 60;
-      expect(after.state.players[id]!.morale, id).toBe(expected);
+      const own = parts.get(id)!;
+      expect(own.demand, id).toBe(heard.has(id) ? ROUND_MORALE.demandTalkHothead : 0);
+      expect(own.drift, id).toBe(0);
+      expect(after.state.players[id]!.morale, id).toBe(expectedMorale(hotheads, id, own));
     }
     expect(team.sheet.lineup.starters.length).toBe(11);
   });
@@ -769,31 +778,32 @@ describe('playRound: "Cobrar" and the morale (partida.md, "Cobrar e a moral")', 
   it('"Pular" and the other talks take nothing', () => {
     for (const talk of ['skip', 'motivate'] as const) {
       const { hotheads, after } = coachRound(talk);
-      for (const id of hotheads.squads[COACH]!) expect(after.state.players[id]!.morale).toBe(60);
+      const parts = expectedMoraleParts(hotheads, after.report.results);
+      for (const id of hotheads.squads[COACH]!) {
+        const own = parts.get(id)!;
+        expect(own.demand).toBe(0);
+        const rest = own.result + own.bench;
+        expect(after.state.players[id]!.morale).toBe(Math.max(0, Math.min(100, 60 + rest)));
+      }
     }
   });
 
-  it('the AI\'s "Cobrar" counts too, and nothing else moves the morale in T-013', () => {
+  it('the AI\'s "Cobrar" counts too, and every morale follows the table of jogadores.md', () => {
     const all = states();
     let demanded = 0;
-    for (let r = 1; r <= 10; r++) {
+    for (let r = 1; r <= 38; r++) {
       const before = all[r - 1]!;
       const after = all[r]!;
-      const expected = new Map<PlayerId, number>();
+      const parts = expectedMoraleParts(before, after.lastRound!.results);
       for (const result of after.lastRound!.results) {
         for (const e of result.events) {
-          if (e.type !== 'halftimeTalk' || e.talk !== 'demand') continue;
-          demanded++;
-          const fixture = before.fixtures.find((f) => f.id === result.fixtureId)!;
-          const club = e.side === 'home' ? fixture.homeId : fixture.awayId;
-          for (const id of heardTheTalk(result, new Set(before.squads[club]))) {
-            if (before.players[id]!.trait === 'hothead') expected.set(id, -3);
-          }
+          if (e.type === 'halftimeTalk' && e.talk === 'demand') demanded++;
         }
       }
       for (const [id, p] of Object.entries(after.players)) {
-        const delta = expected.get(id) ?? 0;
-        expect(p.morale).toBe(Math.max(0, Math.min(100, before.players[id]!.morale + delta)));
+        const own = parts.get(id)!;
+        expect(p.morale, `round ${r}, ${id}`).toBe(expectedMorale(before, id, own));
+        expect(p.benchStreak, `round ${r}, ${id}`).toBe(own.benchStreak);
       }
     }
     expect(demanded).toBeGreaterThan(0);

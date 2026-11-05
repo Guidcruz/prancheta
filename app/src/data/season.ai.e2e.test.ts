@@ -10,7 +10,9 @@ import { testParams } from '../engine/testing/params.ts';
  * through `playRound` (T-013), which applies condition, injuries, suspensions and yellow counts
  * between rounds (before T-013 this test did it by hand). Before each round, every sheet of
  * `prepareRound` goes through validateLineup and is checked for injured, suspended or foreign
- * players. Morale between rounds (except the "Cobrar"), form, benchStreak and the fans are T-014.
+ * players. Since T-014 the rounds also move the morale, the form, `benchStreak` and the fans
+ * thermometer of every club: every round, they stay within their bounds (US-010, US-026); the
+ * 100-season report of the thermometer is app/src/data/fans-metrics.test.ts.
  */
 const clubs = JSON.parse(
   readFileSync(new URL('./clubs.serie-a.json', import.meta.url), 'utf8'),
@@ -40,6 +42,8 @@ function run(seed: number) {
   /** Substitutions of the in-match AI (T-012), by reason. */
   const subs: Record<string, number> = { injury: 0, fatigue: 0, tactical: 0 };
   const lastXi = new Map<string, Set<PlayerId>>();
+  /** Every club's thermometer after every round. */
+  const fans: number[] = [];
 
   for (let round = 1; round <= 38; round++) {
     const plan = prepareRound(state, params);
@@ -97,6 +101,16 @@ function run(seed: number) {
       }
     }
     state = played.value.state;
+    for (const p of Object.values(state.players)) {
+      if (!(p.morale >= 0 && p.morale <= 100))
+        problems.push(`r${round} ${p.id}: morale ${p.morale}`);
+      if (p.recentRatings.length > 5) problems.push(`r${round} ${p.id}: form too long`);
+    }
+    for (const [id, club] of Object.entries(state.clubs)) {
+      if (!(club.fans >= 0 && club.fans <= 100))
+        problems.push(`r${round} ${id}: fans ${club.fans}`);
+      fans.push(club.fans);
+    }
   }
   for (const row of getStandings(state)) {
     if (row.played !== 38) problems.push(`seed ${seed}: ${row.clubId} played ${row.played}`);
@@ -116,6 +130,7 @@ function run(seed: number) {
     facts,
     champion: table[0]!.points,
     seventeenth: table[16]!.points,
+    fans,
   };
 }
 
@@ -134,6 +149,7 @@ describe('T-011/T-013 acceptance: chained season with the 20 real clubs, through
       const tables: string[] = [];
       const subs: Record<string, number> = { injury: 0, fatigue: 0, tactical: 0 };
       const facts: Record<string, number> = {};
+      const fans: number[] = [];
       for (const seed of [1, 2, 3]) {
         const r = run(seed);
         expect(r.problems).toEqual([]);
@@ -145,6 +161,7 @@ describe('T-011/T-013 acceptance: chained season with the 20 real clubs, through
         goals += r.goals;
         high += r.highPressure;
         tables.push(`seed ${seed}: champion ${r.champion}, 17th ${r.seventeenth}`);
+        fans.push(...r.fans);
         for (const [reason, n] of Object.entries(r.subs)) subs[reason]! += n;
         for (const [kind, n] of Object.entries(r.facts)) facts[kind] = (facts[kind] ?? 0) + n;
       }
@@ -165,7 +182,8 @@ describe('T-011/T-013 acceptance: chained season with the 20 real clubs, through
         `[T-011 e2e] sheets ${sheets}; player-rounds out ${out} (suspended ${sus}); rotations of tired starters ${rot}; starters below ${ROTATION}: ${tired}; high pressure ${((100 * high) / sheets).toFixed(1)}%\n` +
           `[T-012 e2e] substitutions per team ${perTeam(all)} (ia-clubes.md: 3 to 4 per team): injury ${perTeam(subs.injury!)}, fatigue ${perTeam(subs.fatigue!)}, tactical ${perTeam(subs.tactical!)}\n` +
           `[T-013 e2e] goals per match ${(goals / (3 * 380)).toFixed(3)}; ${tables.join('; ')}\n` +
-          `[T-013 e2e] facts per round: table ${perRound(tableFacts).toFixed(2)} (temporada.md: about 7.6), run ends ${perRound(ended).toFixed(2)} (1.4 to 1.8); ${byKind}`,
+          `[T-013 e2e] facts per round: table ${perRound(tableFacts).toFixed(2)} (temporada.md: about 7.6), run ends ${perRound(ended).toFixed(2)} (1.4 to 1.8); ${byKind}\n` +
+          `[T-014 e2e] fans thermometer: mean ${(fans.reduce((a, b) => a + b, 0) / fans.length).toFixed(1)}, below 20 ${((100 * fans.filter((f) => f < 20).length) / fans.length).toFixed(1)}%, above 90 ${((100 * fans.filter((f) => f > 90).length) / fans.length).toFixed(1)}%`,
       );
       // Sanity bounds around the measured 60-season figures (3 seasons here, so a wider band).
       expect(perRound(tableFacts)).toBeGreaterThan(6.6);

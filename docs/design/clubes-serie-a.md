@@ -73,7 +73,7 @@ Sem o motor de partida, estimei com um modelo simplificado (Poisson, mando +4, 3
 
 | Métrica (`balance-targets.md`)              | Meta          | Antes (6/8/6, escada por porte) | Depois (12/5/3, escada única) | Leitura                                         |
 | ------------------------------------------- | ------------- | ------------------------------- | ----------------------------- | ----------------------------------------------- |
-| Pontos do campeão / do 17º                  | 72–82 / 40–46 | sem mudança                     | sem mudança                   | mesma escada                                    |
+| Pontos do campeão / do 17º                  | 72–82 / 39–45 | sem mudança                     | sem mudança                   | mesma escada                                    |
 | Campeão por porte: grande                   | 50%–85%       | ~92% no modelo                  | ~87% no modelo                | cai um pouco; o modelo exagera os dois          |
 | Campeão por porte: pequeno                  | 0,5%–3%       | 0%                              | ~1%                           | Bragantão (71) às vezes ganha                   |
 | Temporadas com ao menos um grande rebaixado | 40%–80%       | ~4%                             | **~97%**                      | acima da meta no modelo; conferir no `/balance` |
@@ -173,4 +173,4 @@ O que muda no código (não aplicado por mim):
    - contagem por porte e perfil (ordem `[total, ambitious, traditional, academy, seller, chaotic]`): grande `[12, 4, 4, 3, 1, 0]`, médio `[5, 0, 1, 2, 1, 1]`, pequeno `[3, 0, 1, 0, 2, 0]`;
    - trocar "strength dentro da faixa do porte" por: as 20 forças, ordenadas, são exatamente `LADDER` (`[78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62]`), ou seja, soma 1.400 e só os três empates previstos; e a ordem de força bate com a coluna "Ref. 2026" (`strength` = `LADDER[ref − 1]`);
    - o teste que lê a tabela deste doc continua igual (colunas `Clube`, `Porte`, `strength`, `aiProfile`, `stadium.capacity`, títulos); o teste que compara `size` com o lote de nomes falha até a coluna "Porte" do lote ser atualizada (ver "Porte").
-4. **`/balance`** de 200 temporadas: campeão 72–82 pontos, 17º 40–46, ocupação 55%–70% (sem mudança esperada); e imprimir "campeão por porte" e "temporadas com grande rebaixado" pelo porte **e** pelos 6 mais fortes, para a decisão do CEO.
+4. **`/balance`** de 200 temporadas: campeão 72–82 pontos, 17º 39–45 (meta revista pelo CEO em 2026-11-05), ocupação 55%–70% (sem mudança esperada); e imprimir "campeão por porte" e "temporadas com grande rebaixado" pelo porte **e** pelos 6 mais fortes, para a decisão do CEO.

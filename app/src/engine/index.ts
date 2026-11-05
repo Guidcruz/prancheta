@@ -102,6 +102,9 @@ export {
   matchSeed,
   playRound,
   prepareRound,
+  nextRecentRatings,
+  roundBenchStreaks,
+  moraleDrift,
   roundMoraleDeltas,
   summarizeMatch,
 } from './round.ts';
@@ -113,6 +116,17 @@ export type {
   RoundReport,
   RoundSetup,
 } from './round.ts';
+export {
+  EXPECTED_POINTS,
+  FANS_EXTRAS,
+  IDOL_BENCH,
+  clubIdol,
+  expectedPoints,
+  fansDelta,
+  fansVenue,
+  winlessRuns,
+} from './fans.ts';
+export type { FansDelta, FansRoundInput, FansVenue } from './fans.ts';
 export {
   FORM_LENGTH,
   POINTS,

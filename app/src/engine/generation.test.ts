@@ -114,9 +114,9 @@ function stateProblems(state: GameState): string[] {
     const floor = Math.min(POTENTIAL_MAX, Math.ceil(club.strength + JEWEL_POTENTIAL_MARGIN));
     check(Math.max(...youth.map((p) => p.potential)) >= floor, `${clubId}: no joia`);
 
-    // Idol: exactly one, the veteran (29+) with the highest overall, or the best starter.
+    // Idol: exactly one, the starter of 29+ with the highest overall, or the best starter.
     const idols = squad.filter((p) => p.trait === 'idol');
-    const veterans = squad.filter((p) => p.age >= IDOL_MIN_AGE);
+    const veterans = squad.slice(0, 11).filter((p) => p.age >= IDOL_MIN_AGE);
     const pool = veterans.length > 0 ? veterans : squad.slice(0, 11);
     check(
       idols.length === 1 && idols[0]!.overall === Math.max(...pool.map((p) => p.overall)),
@@ -163,10 +163,21 @@ describe('newGame (US-004)', () => {
 
   it('keeps every squad rule in 200 seeds', { timeout: 30_000 }, () => {
     const problems: string[] = [];
+    let idols = 0;
+    let startingIdols = 0;
     for (let seed = 1; seed <= 200; seed++) {
-      problems.push(...stateProblems(play(seed * 7919)).map((p) => `seed ${seed * 7919}: ${p}`));
+      const state = play(seed * 7919);
+      problems.push(...stateProblems(state).map((p) => `seed ${seed * 7919}: ${p}`));
+      for (const squad of Object.values(state.squads)) {
+        const at = squad.findIndex((id) => state.players[id]!.trait === 'idol');
+        idols++;
+        if (at >= 0 && at < 11) startingIdols++;
+      }
     }
     expect(problems).toEqual([]);
+    // 200 careers × 20 clubs: every idol is one of the 11 generated starters.
+    expect(idols).toBe(4000);
+    expect(startingIdols).toBe(idols);
   });
 
   it('lays the squad out as XI by slot, 7 reserves, 4 rotation, 3 youth', () => {
@@ -475,6 +486,12 @@ describe('generateSquad', () => {
     expect(checkGeneratedSquad(broken, 'clube-teste-01', 70).sort()).toEqual(
       ['composition', 'duplicate-shirt', 'idol-count'].sort(),
     );
+    // The idol must be one of the 11 starters (jogadores.md, revised on 2026-11-05).
+    const benchIdol = squad.map((p, i) => ({
+      ...p,
+      trait: i === 15 ? ('idol' as const) : p.trait === 'idol' ? ('quiet' as const) : p.trait,
+    }));
+    expect(checkGeneratedSquad(benchIdol, 'clube-teste-01', 70)).toEqual(['idol-not-starter']);
     expect(checkGeneratedSquad(squad.slice(1), 'clube-teste-02', 99)).toEqual(
       expect.arrayContaining(['size', 'wrong-club', 'no-jewel']),
     );

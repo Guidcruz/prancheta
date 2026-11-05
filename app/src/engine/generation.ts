@@ -158,7 +158,7 @@ export const PRE_CAREER_APPEARANCES = 1;
 
 /** The "joia": the youth with the highest potential gets at least `strength + 8` (cap 95). */
 export const JEWEL_POTENTIAL_MARGIN = 8;
-/** The idol is the player of at least this age with the highest overall. */
+/** The idol is the generated starter of at least this age with the highest overall. */
 export const IDOL_MIN_AGE = 29;
 
 /**
@@ -480,13 +480,17 @@ function argMax<T>(items: readonly T[], score: (item: T) => number): number {
 }
 
 /**
- * The idol (jogadores.md, "Traço de personalidade"): the player aged 29 or more with the highest
- * overall; a club without one picks the starter with the highest overall. Ties: squad order.
+ * The idol (jogadores.md, "Traço de personalidade" and "Geração de elencos", revised on
+ * 2026-11-05): among the 11 generated starters, the one aged 29 or more with the highest overall;
+ * without a starter of 29 or more, the starter with the highest overall. Ties: squad order. Never
+ * a reserve: a reserve idol (5.7% of the clubs before) cost his club −1 of thermometer almost
+ * every round without anyone deciding it.
  */
 function idolIndex(players: readonly DraftBase[]): number {
-  const veterans = players.map((p, i) => ({ p, i })).filter(({ p }) => p.age >= IDOL_MIN_AGE);
+  const starters = players.slice(0, SQUAD_GROUP_SIZES.starters);
+  const veterans = starters.map((p, i) => ({ p, i })).filter(({ p }) => p.age >= IDOL_MIN_AGE);
   if (veterans.length > 0) return veterans[argMax(veterans, ({ p }) => p.overall)]!.i;
-  return argMax(players.slice(0, SQUAD_GROUP_SIZES.starters), (p) => p.overall);
+  return argMax(starters, (p) => p.overall);
 }
 
 export type SquadProblem =
@@ -496,12 +500,14 @@ export type SquadProblem =
   | 'wrong-club'
   | 'duplicate-shirt'
   | 'idol-count'
+  | 'idol-not-starter'
   | 'no-jewel';
 
 /**
  * Squad-level rules of a generated squad (jogadores.md: composition 3/5/4/4/4/5, unique shirts,
- * exactly one idol, a joia among the youth with potential ≥ strength + 8 or 95). Per-player rules
- * are {@link validatePlayer}'s. Returns the problems found; empty when the squad is valid.
+ * exactly one idol, among the 11 starters, a joia among the youth with potential ≥ strength + 8
+ * or 95). Per-player rules are {@link validatePlayer}'s. Returns the problems found; empty when
+ * the squad is valid.
  */
 export function checkGeneratedSquad(
   players: readonly Player[],
@@ -518,6 +524,8 @@ export function checkGeneratedSquad(
   if (players.some((p) => p.clubId !== clubId)) problems.add('wrong-club');
   if (new Set(players.map((p) => p.shirt)).size !== players.length) problems.add('duplicate-shirt');
   if (players.filter((p) => p.trait === 'idol').length !== 1) problems.add('idol-count');
+  const idolAt = players.findIndex((p) => p.trait === 'idol');
+  if (idolAt >= SQUAD_GROUP_SIZES.starters) problems.add('idol-not-starter');
   const floor = Math.min(POTENTIAL_MAX, Math.ceil(strength + JEWEL_POTENTIAL_MARGIN));
   const youth = players.slice(SQUAD_SIZE - SQUAD_GROUP_SIZES.youth);
   if (!youth.some((p) => p.potential >= floor)) problems.add('no-jewel');

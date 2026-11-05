@@ -102,8 +102,9 @@ export interface Player {
   readonly suspendedGames: number;
   /** Resets on reaching 3 (which suspends) and at the end of the season, so 0..2. */
   readonly yellowCount: number;
-  /** Last {@link RECENT_RATINGS_MAX} match ratings, 3..10 (form; display only). */
+  /** Last {@link RECENT_RATINGS_MAX} match ratings, 3..10, oldest first (form; display only). */
   readonly recentRatings: readonly number[];
+  /** Rounds in a row he expected to play and did not take the pitch (round.ts, T-014). */
   readonly benchStreak: number;
   readonly clubAppearances: number;
 }
