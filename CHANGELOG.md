@@ -4,6 +4,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ## [Não lançado]
 
+### Infraestrutura
+
+- CI roda `content:check`, o balanceamento (200 temporadas, semente 1) e os testes do site sobre o build; ações do GitHub fixadas por SHA; hook de pre-commit que formata com o Prettier (ativado no `npm install`).
+
 ### Adicionado
 
 - Fim de temporada e virada para a seguinte (T-017, US-025; é o motor, as telas são da T-037):

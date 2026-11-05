@@ -22,8 +22,8 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with: { node-version-file: '.nvmrc', cache: 'npm' }
       - name: Instalar
         run: npm ci
@@ -33,10 +33,18 @@ jobs:
         run: npm run lint
       - name: Testes unitários e do motor
         run: npm test
+      - name: Conferir dados e conteúdo (clubes, lista bloqueada)
+        run: npm run content:check
+      - name: Balanceamento (200 temporadas, semente 1; bloqueia pelo código de saída)
+        # 200 é o mínimo: com 100, as metas raras ficam instáveis (a semente 1 sai com código 1).
+        # Runner de 2 vCPU. Se passar de 3 min, quem decide a próxima medida é o CEO.
+        run: npm run balance -- --seasons 200 --seed 1 --workers 2
       - name: Auditoria de dependências
         run: npm audit --audit-level=high
       - name: Build do site e do jogo
         run: npm run build
+      - name: Testes do site sobre o build (dist.test e roadmap.test)
+        run: REQUIRE_SITE_DIST=1 npm test -w app -- ../site/src/lib/dist.test.ts ../site/src/lib/roadmap.test.ts
       - name: Conferir a saída
         run: |
           test -f dist/index.html

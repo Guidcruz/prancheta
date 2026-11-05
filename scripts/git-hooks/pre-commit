@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# Formata com o Prettier os arquivos staged suportados e os adiciona de novo ao commit.
+# Escolha: --write (e não --check) para o commit nunca travar por espaço em branco;
+# o CI continua com `prettier --check` como rede de segurança.
+set -euo pipefail
+cd "$(git rev-parse --show-toplevel)"
+
+mapfile -d '' files < <(git diff --cached --name-only --diff-filter=ACMR -z -- \
+  '*.ts' '*.js' '*.mjs' '*.svelte' '*.astro' '*.md' '*.json' '*.css')
+[ "${#files[@]}" -eq 0 ] && exit 0
+
+# Arquivos com alterações não staged: formatar misturaria o que não vai no commit.
+for f in "${files[@]}"; do
+  if ! git diff --quiet -- "$f"; then
+    echo "pre-commit: $f tem alterações fora do stage; faça 'git add $f' ou 'git stash' e tente de novo." >&2
+    exit 1
+  fi
+done
+
+npx --no-install prettier --write --log-level warn "${files[@]}"
+git add -- "${files[@]}"
