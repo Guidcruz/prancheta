@@ -33,7 +33,9 @@ import { balanceIdentitySource } from './identity.ts';
  * - "tudo no ataque": equal squads (70, 4-4-2, balanced, medium, both `human`), each sample a
  *   match that is 0×1 after minute 75 (the next seed is tried until one is); the trailing side's
  *   P(not losing) when it keeps balanced against the same match with "todo mundo no ataque" from
- *   minute 76 (a command of minute 75: the first 75 minutes are the same).
+ *   minute 76 (a command of minute 75: the first 75 minutes are the same);
+ * - reference: the reference against itself, as a tactical duel, for the points per game of the
+ *   tactical duels (balance-log.md, "Robô ofensivo"; a reference that never fails the run).
  *
  * A pair of squads plays DUEL_PAIR_MATCHES matches, the listed home side alternating (on neutral
  * ground it only changes the draw order). Every sample `n` has its own seeds, so a duel split into
@@ -67,6 +69,9 @@ export interface TacticVariant {
 }
 
 const REFERENCE = { formation: '4-4-2', posture: 'balanced', pressure: 'medium' } as const;
+
+/** The reference against itself: the base of the points per game of the tactical duels. */
+export const REFERENCE_VARIANT: TacticVariant = { ...REFERENCE, id: 'reference' };
 
 /** Every adjustment of the 1a against the reference ("allOut" is only a command: own duel). */
 export const TACTIC_VARIANTS: readonly TacticVariant[] = [
@@ -210,14 +215,22 @@ function pairs<T>(make: (pair: number) => T): (n: number) => T {
   };
 }
 
-/** Samples `from` (inclusive) to `to` (exclusive) of a calibrated duel. */
-export function calibratedDuel(
+/** The match of sample `n` of a calibrated or tactical duel, and the side of its first team. */
+export interface DuelSample {
+  readonly input: MatchInput;
+  /** The side of the first team of the tally: the stronger, or the variant. */
+  readonly first: Side;
+}
+
+/**
+ * Sample `n` of the calibrated duel `gap`: the stronger squad (`duel-a`) is the first team, home
+ * on even samples and away on odd ones.
+ */
+export function calibratedSamples(
   params: GameParams,
   seed: number,
   gap: CalibratedGap,
-  from: number,
-  to: number,
-): DuelTally {
+): (n: number) => DuelSample {
   const [strong, weak] = GAP_STRENGTHS[gap];
   const reference = { ...REFERENCE } as const;
   const teams = pairs((pair) => {
@@ -227,8 +240,7 @@ export function calibratedDuel(
       duelTeam('duel-b', duelSquad(params, 'duel-b', label, weak, '4-4-2'), reference, 'ai'),
     ] as const;
   });
-  const tally = emptyDuelTally();
-  for (let n = from; n < to; n++) {
+  return (n) => {
     const [a, b] = teams(n);
     const firstHome = n % 2 === 0;
     const input = neutralMatch(
@@ -237,19 +249,19 @@ export function calibratedDuel(
       firstHome ? a : b,
       firstHome ? b : a,
     );
-    addDuel(tally, simulateMatch(input, params), firstHome);
-  }
-  return tally;
+    return { input, first: firstHome ? 'home' : 'away' };
+  };
 }
 
-/** Samples `from` to `to` of a tactical duel: the variant is the first side of the tally. */
-export function tacticalDuel(
+/**
+ * Sample `n` of the tactical duel of `variant`: the variant (`duel-var`) is the first team, home on
+ * even samples and away on odd ones, against the reference (`duel-ref`).
+ */
+export function tacticalSamples(
   params: GameParams,
   seed: number,
   variant: TacticVariant,
-  from: number,
-  to: number,
-): DuelTally {
+): (n: number) => DuelSample {
   const teams = pairs((pair) => {
     const label = `balance-${seed}-tactic-${pair}`;
     return [
@@ -267,8 +279,7 @@ export function tacticalDuel(
       ),
     ] as const;
   });
-  const tally = emptyDuelTally();
-  for (let n = from; n < to; n++) {
+  return (n) => {
     const [v, r] = teams(n);
     const firstHome = n % 2 === 0;
     const input = neutralMatch(
@@ -277,9 +288,44 @@ export function tacticalDuel(
       firstHome ? v : r,
       firstHome ? r : v,
     );
-    addDuel(tally, simulateMatch(input, params), firstHome);
+    return { input, first: firstHome ? 'home' : 'away' };
+  };
+}
+
+function tallySamples(
+  params: GameParams,
+  sample: (n: number) => DuelSample,
+  from: number,
+  to: number,
+): DuelTally {
+  const tally = emptyDuelTally();
+  for (let n = from; n < to; n++) {
+    const { input, first } = sample(n);
+    addDuel(tally, simulateMatch(input, params), first === 'home');
   }
   return tally;
+}
+
+/** Samples `from` (inclusive) to `to` (exclusive) of a calibrated duel. */
+export function calibratedDuel(
+  params: GameParams,
+  seed: number,
+  gap: CalibratedGap,
+  from: number,
+  to: number,
+): DuelTally {
+  return tallySamples(params, calibratedSamples(params, seed, gap), from, to);
+}
+
+/** Samples `from` to `to` of a tactical duel: the variant is the first side of the tally. */
+export function tacticalDuel(
+  params: GameParams,
+  seed: number,
+  variant: TacticVariant,
+  from: number,
+  to: number,
+): DuelTally {
+  return tallySamples(params, tacticalSamples(params, seed, variant), from, to);
 }
 
 /** Goals of each side up to the end of regulation minute `minute` of the second half. */
@@ -307,13 +353,32 @@ function endedBy(events: readonly MatchEvent[], minute: number): boolean {
 const notLost = (result: MatchResult, side: Side) =>
   side === 'home' ? result.score[0] >= result.score[1] : result.score[1] >= result.score[0];
 
-/** Samples `from` to `to` of the "tudo no ataque" duel (see the header). */
-export function allOutDuel(
+/** One sample of the "tudo no ataque" duel: the match kept balanced and the one gone all out. */
+export interface AllOutSample {
+  readonly n: number;
+  /** Seeds tried for this sample (the last one is the sample's, when there is one). */
+  readonly tries: number;
+  readonly match?: {
+    readonly input: MatchInput;
+    /** The side 0×1 down after minute ALL_OUT_MINUTE. */
+    readonly trailing: Side;
+    readonly kept: MatchResult;
+    readonly allOut: MatchResult;
+  };
+}
+
+/**
+ * Samples `from` to `to` of the "tudo no ataque" duel (see the header): for each `n`, the seeds
+ * `balance-<seed>-allout-<n>-<t>` are tried in order until a match is 0×1 or 1×0 after minute
+ * ALL_OUT_MINUTE (and was not abandoned by then); that match is played again with the trailing
+ * side's "todo mundo no ataque" command of minute ALL_OUT_MINUTE.
+ */
+export function* allOutSamples(
   params: GameParams,
   seed: number,
   from: number,
   to: number,
-): AllOutTally {
+): Generator<AllOutSample> {
   const teams = pairs((pair) => {
     const label = `balance-${seed}-allout-${pair}`;
     return [
@@ -331,12 +396,13 @@ export function allOutDuel(
       ),
     ] as const;
   });
-  const tally = emptyAllOutTally();
   for (let n = from; n < to; n++) {
     const [a, b] = teams(n);
     const firstHome = n % 2 === 0;
-    for (let t = 0; t < ALL_OUT_MAX_TRIES; t++) {
-      tally.tries += 1;
+    let found: AllOutSample['match'];
+    let tries = 0;
+    while (found === undefined && tries < ALL_OUT_MAX_TRIES) {
+      const t = tries++;
       const input = neutralMatch(
         `allout-${n}-${t}`,
         seedFromString(`balance-${seed}-allout-${n}-${t}`),
@@ -351,11 +417,27 @@ export function allOutDuel(
       const allOut = simulateMatch(input, params, [
         { minute: ALL_OUT_MINUTE, side: trailing, kind: 'preset', preset: 'allOut' },
       ]);
-      tally.samples += 1;
-      if (notLost(kept, trailing)) tally.keptNotLost += 1;
-      if (notLost(allOut, trailing)) tally.allOutNotLost += 1;
-      break;
+      found = { input, trailing, kept, allOut };
     }
+    yield found === undefined ? { n, tries } : { n, tries, match: found };
+  }
+}
+
+/** Samples `from` to `to` of the "tudo no ataque" duel, as a tally. */
+export function allOutDuel(
+  params: GameParams,
+  seed: number,
+  from: number,
+  to: number,
+): AllOutTally {
+  const tally = emptyAllOutTally();
+  for (const sample of allOutSamples(params, seed, from, to)) {
+    tally.tries += sample.tries;
+    if (sample.match === undefined) continue;
+    const { trailing, kept, allOut } = sample.match;
+    tally.samples += 1;
+    if (notLost(kept, trailing)) tally.keptNotLost += 1;
+    if (notLost(allOut, trailing)) tally.allOutNotLost += 1;
   }
   return tally;
 }
@@ -366,7 +448,7 @@ export type DuelResult = DuelTally | AllOutTally;
 export function runDuelJob(params: GameParams, seed: number, job: DuelJob): DuelResult {
   if (job.kind === 'calibrated') return calibratedDuel(params, seed, job.gap, job.from, job.to);
   if (job.kind === 'allOut') return allOutDuel(params, seed, job.from, job.to);
-  const variant = TACTIC_VARIANTS.find((v) => v.id === job.variant);
+  const variant = [...TACTIC_VARIANTS, REFERENCE_VARIANT].find((v) => v.id === job.variant);
   if (variant === undefined) throw new Error(`unknown tactic variant ${job.variant}`);
   return tacticalDuel(params, seed, variant, job.from, job.to);
 }
