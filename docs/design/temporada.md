@@ -299,6 +299,14 @@ A regra da 1a (a lesão termina na virada, decisão 13 de `balance-targets.md`) 
 - **Lesões graves de longa duração:** o CEO pediu que entrem lesões de até cerca de 1 ano (o caso típico é a ruptura de ligamento do joelho), seguindo as regras do futebol brasileiro. Antes de virar regra, o `game-designer` pesquisa e registra: tempos de recuperação por tipo de lesão, frequência real, o que as regras de inscrição da CBF permitem ao clube nesse caso (por exemplo, inscrever um substituto ou manter o lesionado inscrito) e o efeito no contrato e no salário (Etapa 3).
 - **Hoje:** a lesão mais longa da 1a é a "grave", de até 20 rodadas (`partida.md`, "Lesões"); a escala nova, com a lesão de cerca de 1 ano, entra com a calibragem da Etapa 2 e uma rodada de `/balance`.
 
+### Suspensões entre temporadas: revisar na Etapa 2 (pedido do CEO, 2026-11-05)
+
+Na 1a, tudo zera na virada: amarelos acumulados e suspensões, inclusive a de quem foi expulso na última rodada sem jogo para cumprir. Na Etapa 2, junto com o STJD (já no roteiro), o `game-designer` pesquisa o regulamento da CBF e define, com fonte:
+
+- **Suspensão automática pendente** (3 amarelos ou expulsão sem jogo cumprido no fim do campeonato): se passa para a próxima edição da mesma competição, se vale em outra competição ou se prescreve.
+- **Penas do STJD** (julgamento por agressão, por exemplo): contadas em jogos ou em dias, se atravessam a pausa e em quais competições valem.
+- **Amarelos:** quando zeram (fim da competição, fase ou turno), conforme o regulamento de cada competição.
+
 ## Casos de borda
 
 | Caso                                            | Regra                                                                                                                                                                                                  |
