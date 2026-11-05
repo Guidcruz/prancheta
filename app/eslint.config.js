@@ -1,5 +1,6 @@
 import tseslint from 'typescript-eslint';
 import svelte from 'eslint-plugin-svelte';
+import { engineEntryOnly } from './eslint.engine-entry.js';
 
 /*
  * Boundaries (docs/02-architecture.md, 5; ADR-0007). app/src/engine/boundary.test.ts proves
@@ -140,19 +141,6 @@ const engineImportPatterns = [
   },
   { group: ['svelte', 'svelte/*', 'idb'], message: 'The engine has no UI or storage dependency.' },
 ];
-
-/**
- * The engine's front door (docs/02-architecture.md, 4.1, "Fronteira do `index.ts`", and 5;
- * T-049): outside app/src/engine/ the engine is imported only from app/src/engine/index.ts (by a
- * relative path) or `@engine` without a subpath, never one of its files. Tests outside the engine
- * follow the same rule; only the engine's own files, tests included, import its internals. The
- * root eslint.config.js applies the same pattern to scripts/, site/ and server/.
- */
-export const engineEntryOnly = {
-  group: ['**/engine/**', '!**/engine/index.ts', '@engine/**'],
-  message:
-    'Outside the engine, import it only from app/src/engine/index.ts or "@engine" (docs/02-architecture.md, 4.1).',
-};
 
 const libPatterns = {
   noUi: { group: ['**/ui/**'], message: 'lib/ does not import ui/.' },

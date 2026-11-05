@@ -35,6 +35,16 @@ describe('engine front door outside app/', () => {
     expect(await ruleIds(code, 'scripts/fixture.mjs')).toContain('no-restricted-syntax');
     const template = 'const f = `${root}/' + ENGINE + '/math.ts`;';
     expect(await ruleIds(template, 'scripts/fixture.mjs')).toContain('no-restricted-syntax');
+    // The engine folder alone, to be joined with a file name.
+    const folder = `const f = resolve(root, '${ENGINE}', 'rng.ts');`;
+    expect(await ruleIds(folder, 'scripts/fixture.mjs')).toContain('no-restricted-syntax');
+    const folderSlash = `const f = resolve(root, '${ENGINE}/', 'rng.ts');`;
+    expect(await ruleIds(folderSlash, 'scripts/fixture.mjs')).toContain('no-restricted-syntax');
+  });
+
+  it('accepts other folders whose name starts like the engine', async () => {
+    const code = `const f = resolve(root, '${ENGINE}-notes', 'x.md');`;
+    expect(await ruleIds(code, 'scripts/fixture.mjs')).toEqual([]);
   });
 
   it.each([
