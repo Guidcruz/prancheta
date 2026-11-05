@@ -31,9 +31,12 @@ import { balanceIdentitySource } from './identity.ts';
  *   commands, so the tactic under test stays the same for the 90 minutes (the AI's in-match rules
  *   would change the posture by the score). A formation variant gets a squad generated for that
  *   formation, as every club's squad is generated for its preferred one. "Tudo no ataque desde o
- *   apito inicial" is one of them: `allOut` is only reachable through a command, so the variant
- *   starts as the reference and sends "todo mundo no ataque" at minute 0, which holds from minute 1
- *   to the end (balance-log.md, T-016: the posture must not become a dominant tactic);
+ *   minuto 60" is two of them: `allOut` is only reachable through a command, and only from
+ *   `match.allOutFromMinute` (partida.md, "Táticas"; T-016), so the variant starts as the
+ *   reference and goes all out at the first minute the rule allows, until the end, whatever the
+ *   score: the longest use a coach can make of it (the posture must not become a dominant
+ *   tactic). One sends the shortcut (with high pressure), the other the posture with medium
+ *   pressure;
  * - "tudo no ataque": equal squads (70, 4-4-2, balanced, medium, both `human`), each sample a
  *   match that is 0×1 after minute 75 (the next seed is tried until one is); the trailing side's
  *   P(not losing) when it keeps balanced against the same match with "todo mundo no ataque" from
@@ -70,12 +73,22 @@ export interface TacticVariant {
   readonly formation: Formation;
   readonly posture: Exclude<Posture, 'allOut'>;
   readonly pressure: Pressure;
-  /** A preset the variant sends at minute 0, so it holds for the whole match. */
-  readonly kickoffPreset?: 'allOut';
+  /**
+   * "Tudo no ataque" sent at {@link allOutCommandMinute}, so it holds from
+   * `match.allOutFromMinute` to the end: the shortcut (`allOut` with high pressure) or the
+   * posture alone (`tactic` with `posture: 'allOut'` and the variant's pressure).
+   */
+  readonly allOut?: 'preset' | 'posture';
 }
 
-/** Minute of the kick-off preset command: it holds from minute 1. */
-export const KICKOFF_COMMAND_MINUTE = 0;
+/**
+ * Minute of the "tudo no ataque" command of a variant: the last minute played before
+ * `match.allOutFromMinute`, so the posture holds from that minute (60 → a command of minute 59,
+ * the screen at 60'; partida.md, "Quando um comando vale").
+ */
+export function allOutCommandMinute(params: GameParams): number {
+  return Math.max(0, params.match.allOutFromMinute - 1);
+}
 
 const REFERENCE = { formation: '4-4-2', posture: 'balanced', pressure: 'medium' } as const;
 
@@ -84,7 +97,7 @@ export const REFERENCE_VARIANT: TacticVariant = { ...REFERENCE, id: 'reference' 
 
 /**
  * Every adjustment of the 1a against the reference. "allOut" is only a command: it has its own
- * duel from 0×1 at 75' (below), and the `allout-start` variant plays it from the kick-off.
+ * duel from 0×1 at 75' (below), and the `allout-60` variants play it from minute 60 to the end.
  */
 export const TACTIC_VARIANTS: readonly TacticVariant[] = [
   ...(['4-3-3', '4-2-3-1', '3-5-2', '3-4-3', '5-3-2'] as const).map((formation) => ({
@@ -102,7 +115,8 @@ export const TACTIC_VARIANTS: readonly TacticVariant[] = [
     id: `pressure-${pressure}`,
     pressure,
   })),
-  { ...REFERENCE, id: 'allout-start', kickoffPreset: 'allOut' },
+  { ...REFERENCE, id: 'allout-60', allOut: 'preset' },
+  { ...REFERENCE, id: 'allout-60-medium', allOut: 'posture' },
 ];
 
 /** Wins, draws and defeats of the first side of a duel (the stronger, or the variant). */
@@ -233,7 +247,7 @@ export interface DuelSample {
   readonly input: MatchInput;
   /** The side of the first team of the tally: the stronger, or the variant. */
   readonly first: Side;
-  /** The commands of the match: the variant's kick-off preset, if any. */
+  /** The commands of the match: the variant's "tudo no ataque" from minute 60, if any. */
   readonly commands: readonly MatchCommand[];
 }
 
@@ -266,6 +280,19 @@ export function calibratedSamples(
     );
     return { input, first: firstHome ? 'home' : 'away', commands: [] };
   };
+}
+
+/** The "tudo no ataque" command of `variant` for its side, if it has one. */
+function allOutCommands(params: GameParams, variant: TacticVariant, side: Side): MatchCommand[] {
+  const minute = allOutCommandMinute(params);
+  switch (variant.allOut) {
+    case 'preset':
+      return [{ minute, side, kind: 'preset', preset: 'allOut' }];
+    case 'posture':
+      return [{ minute, side, kind: 'tactic', posture: 'allOut', pressure: variant.pressure }];
+    default:
+      return [];
+  }
 }
 
 /**
@@ -304,18 +331,7 @@ export function tacticalSamples(
       firstHome ? r : v,
     );
     const first: Side = firstHome ? 'home' : 'away';
-    const commands: MatchCommand[] =
-      variant.kickoffPreset === undefined
-        ? []
-        : [
-            {
-              minute: KICKOFF_COMMAND_MINUTE,
-              side: first,
-              kind: 'preset',
-              preset: variant.kickoffPreset,
-            },
-          ];
-    return { input, first, commands };
+    return { input, first, commands: allOutCommands(params, variant, first) };
   };
 }
 

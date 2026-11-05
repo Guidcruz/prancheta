@@ -607,7 +607,8 @@ function tacticLabel(id: string): string {
     attacking: 'postura ofensiva',
     'pressure-low': 'pressão baixa',
     'pressure-high': 'pressão alta',
-    'allout-start': '"tudo no ataque" desde o apito inicial',
+    'allout-60': '"tudo no ataque" desde o minuto 60 (atalho, pressão alta)',
+    'allout-60-medium': '"tudo no ataque" desde o minuto 60 (postura, pressão média)',
   };
   return labels[id] ?? id;
 }

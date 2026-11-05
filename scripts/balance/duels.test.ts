@@ -4,9 +4,9 @@ import type { MatchCommand, MatchEvent, MatchInput, Side } from '../../app/src/e
 import {
   ALL_OUT_MINUTE,
   DUEL_PAIR_MATCHES,
-  KICKOFF_COMMAND_MINUTE,
   REFERENCE_VARIANT,
   TACTIC_VARIANTS,
+  allOutCommandMinute,
   allOutDuel,
   allOutSamples,
   calibratedDuel,
@@ -133,35 +133,68 @@ describe('tactical duel', () => {
   });
 });
 
-describe('"tudo no ataque" from the kick-off', () => {
-  const variant = TACTIC_VARIANTS.find((v) => v.id === 'allout-start')!;
-  const sample = tacticalSamples(params, SEED, variant);
+describe('"tudo no ataque" from minute 60', () => {
+  const preset = TACTIC_VARIANTS.find((v) => v.id === 'allout-60')!;
+  const posture = TACTIC_VARIANTS.find((v) => v.id === 'allout-60-medium')!;
 
-  it('starts as the reference and sends "todo mundo no ataque" at minute 0, on its own side', () => {
-    expect(variant).toMatchObject({ formation: '4-4-2', posture: 'balanced', pressure: 'medium' });
-    for (let n = 0; n < 2; n++) {
-      const { input, first, commands } = sample(n);
-      expect(input[first].clubId).toBe('duel-var');
-      expect(commands).toEqual([
-        { minute: KICKOFF_COMMAND_MINUTE, side: first, kind: 'preset', preset: 'allOut' },
-      ]);
-      const result = simulateMatch(input, params, commands);
-      expect(result.warnings).toEqual([]);
-      // The variant plays "tudo no ataque" with high pressure from minute 1 to the end.
-      const changes = result.events.filter((e) => e.type === 'tacticChange');
-      expect(changes).toHaveLength(1);
-      expect(changes[0]).toMatchObject({
-        half: 1,
-        minute: 1,
-        side: first,
-        posture: 'allOut',
-        pressure: 'high',
-      });
-    }
+  it('replaces the kick-off duel: the rule ignores "tudo no ataque" at minute 0', () => {
+    expect(TACTIC_VARIANTS.some((v) => v.id === 'allout-start')).toBe(false);
+    const { input, first } = tacticalSamples(params, SEED, REFERENCE_VARIANT)(0);
+    const kickoff: MatchCommand = { minute: 0, side: first, kind: 'preset', preset: 'allOut' };
+    const r = simulateMatch(input, params, [kickoff]);
+    expect(r.warnings.map((w) => w.code)).toEqual(['command-too-early']);
+    expect(r.events).toEqual(simulateMatch(input, params).events);
   });
 
-  it('tallies the variant with its command', () => {
-    expect(tacticalDuel(params, SEED, variant, 0, 20)).toEqual(byHand(sample, 0, 20));
+  it('sends the command at the last minute before match.allOutFromMinute', () => {
+    expect(params.match.allOutFromMinute).toBe(60);
+    expect(allOutCommandMinute(params)).toBe(59);
+    const at = (allOutFromMinute: number) =>
+      allOutCommandMinute({ ...params, match: { ...params.match, allOutFromMinute } });
+    expect([at(0), at(1), at(80)]).toEqual([0, 0, 79]);
+  });
+
+  it.each([
+    [preset, { kind: 'preset', preset: 'allOut' }, 'high'],
+    [posture, { kind: 'tactic', posture: 'allOut', pressure: 'medium' }, 'medium'],
+  ] as const)(
+    '$id: starts as the reference and goes all out from minute 60 on its own side',
+    (variant, command, pressure) => {
+      expect(variant).toMatchObject({
+        formation: '4-4-2',
+        posture: 'balanced',
+        pressure: 'medium',
+      });
+      const sample = tacticalSamples(params, SEED, variant);
+      for (let n = 0; n < 2; n++) {
+        const { input, first, commands } = sample(n);
+        expect(input[first].clubId).toBe('duel-var');
+        expect(commands).toEqual([{ minute: 59, side: first, ...command }]);
+        const result = simulateMatch(input, params, commands);
+        expect(result.warnings).toEqual([]);
+        // The variant plays "tudo no ataque" from minute 60 to the end; the first hour is the
+        // match without the command.
+        const changes = result.events.filter((e) => e.type === 'tacticChange');
+        expect(changes).toHaveLength(1);
+        expect(changes[0]).toMatchObject({
+          half: 2,
+          minute: 60,
+          side: first,
+          posture: 'allOut',
+          pressure,
+        });
+        const before = (events: readonly MatchEvent[]) =>
+          events.filter((e) => e.half === 1 || e.minute < 60);
+        expect(before(result.events)).toEqual(before(simulateMatch(input, params).events));
+      }
+    },
+  );
+
+  it('tallies the variants with their command', () => {
+    for (const variant of [preset, posture]) {
+      const sample = tacticalSamples(params, SEED, variant);
+      expect(tacticalDuel(params, SEED, variant, 0, 20)).toEqual(byHand(sample, 0, 20));
+    }
   });
 });
 

@@ -282,19 +282,30 @@ describe('buildReport', () => {
     expect(byId(report.rows, 'tactic-attacking')).toMatchObject({ value: 0.1, status: 'fora' });
     // A variant that did not run is "n/a", never "fora".
     expect(byId(report.rows, 'tactic-5-3-2').status).toBe('n/a');
-    // "Tudo no ataque" from the kick-off is a tactic like the others: required, within ±3 p.p.
-    expect(byId(report.rows, 'tactic-allout-start')).toMatchObject({
-      status: 'n/a',
-      required: true,
-    });
-    const allOutStart = buildReport({
+    // "Tudo no ataque" from minute 60 (the shortcut and the posture) is a tactic like the others:
+    // required, within ±3 p.p.; the kick-off duel is gone (the rule ignores the command).
+    expect(report.rows.some((r) => r.id === 'tactic-allout-start')).toBe(false);
+    for (const id of ['tactic-allout-60', 'tactic-allout-60-medium']) {
+      expect(byId(report.rows, id)).toMatchObject({ status: 'n/a', required: true });
+    }
+    const allOut60 = buildReport({
       ...results,
-      tactical: new Map([['allout-start', duel(38, 22, 40)]]),
+      tactical: new Map([
+        ['allout-60', duel(38, 22, 40)],
+        ['allout-60-medium', duel(42, 20, 38)],
+      ]),
     });
-    expect(byId(allOutStart.rows, 'tactic-allout-start').value).toBeCloseTo(-0.02, 12);
-    expect(byId(allOutStart.rows, 'tactic-allout-start')).toMatchObject({
+    expect(byId(allOut60.rows, 'tactic-allout-60').value).toBeCloseTo(-0.02, 12);
+    expect(byId(allOut60.rows, 'tactic-allout-60')).toMatchObject({
       status: 'dentro',
-      label: 'Tática "tudo no ataque" desde o apito inicial contra 4-4-2 equilibrada média (V − D)',
+      label:
+        'Tática "tudo no ataque" desde o minuto 60 (atalho, pressão alta) contra 4-4-2 equilibrada média (V − D)',
+    });
+    expect(byId(allOut60.rows, 'tactic-allout-60-medium').value).toBeCloseTo(0.04, 12);
+    expect(byId(allOut60.rows, 'tactic-allout-60-medium')).toMatchObject({
+      status: 'fora',
+      label:
+        'Tática "tudo no ataque" desde o minuto 60 (postura, pressão média) contra 4-4-2 equilibrada média (V − D)',
     });
     expect(byId(report.rows, 'allOut').value).toBeCloseTo(0.04, 12);
     expect(byId(report.rows, 'allOut').status).toBe('dentro');
