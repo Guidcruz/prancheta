@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from './game.ts';
 import { bestEleven, elevenStrength } from './generation.ts';
-import { computeOverall, fitAttributesToOverall, type Player } from './players.ts';
+import {
+  AGE_RANGE,
+  computeOverall,
+  fitAttributesToOverall,
+  validatePlayer,
+  type Player,
+} from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { playRound } from './round.ts';
 import {
@@ -125,6 +131,14 @@ describe('evolution (jogadores.md, "Evolução")', () => {
     expect(omit(after, moved)).toEqual(omit(player, moved));
     // Its own stream: the same player, season and seed always give the same result.
     expect(evolvePlayer(state, player, 1800)).toEqual(after);
+  });
+
+  it('caps the age at AGE_RANGE.max, so the player stays valid', () => {
+    const veteran = testPlayer({ age: AGE_RANGE.max, peakAge: 27, potential: 76 });
+    const after = evolvePlayer({ seed: 1, season: 70 }, veteran, 0);
+    expect(after.age).toBe(AGE_RANGE.max);
+    expect(validatePlayer(after).ok).toBe(true);
+    expect(evolvePlayer({ seed: 1, season: 70 }, { ...veteran, age: 98 }, 0).age).toBe(99);
   });
 
   it('keeps the attributes when the overall does not move', () => {
@@ -359,6 +373,15 @@ describe('endSeason', () => {
     expect(first.state).toStrictEqual(copy);
   });
 
+  it('refuses a state without clubs with the phase in the detail', () => {
+    const empty = { ...finished, clubs: {}, squads: {}, players: {} };
+    expect(endSeason(empty, params)).toEqual({
+      ok: false,
+      error: 'season-not-finished',
+      detail: { season: 1, round: 39, phase: 'season', reason: 'no-clubs' },
+    });
+  });
+
   it('never changes its input', () => {
     const copy = structuredClone(finished);
     ended(finished, [human]);
@@ -566,6 +589,18 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
     });
     const again = startNextSeason(next, params, identities);
     expect(again.ok ? 'ok' : again.error).toBe('season-not-ended');
+  });
+
+  it('names the calendar problem of a broken club set in invalid-clubs', () => {
+    const [dropped, ...rest] = Object.keys(closed.clubs);
+    const clubs = Object.fromEntries(rest.map((id) => [id, closed.clubs[id]!]));
+    const r = startNextSeason({ ...closed, clubs }, params, identities);
+    expect(r).toEqual({
+      ok: false,
+      error: 'invalid-clubs',
+      detail: { reason: 'invalid-club-count', detail: { count: 19, expected: 20 } },
+    });
+    expect(dropped).toBeDefined();
   });
 
   it('refuses incoming clubs (no rule yet) and a year outside the calendar', () => {

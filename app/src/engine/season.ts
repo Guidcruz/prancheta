@@ -6,6 +6,7 @@ import { START_CONDITION, bestEleven, elevenStrength, idNumber } from './generat
 import { clamp, normal } from './math.ts';
 import { SEASON_ROUNDS, type GameParams } from './params.ts';
 import {
+  AGE_RANGE,
   MORALE_RANGE,
   fitAttributesToOverall,
   type IdentitySource,
@@ -248,7 +249,7 @@ export function evolutionSeed(
  * The player after the evolution and the birthday (jogadores.md, "Evolução"): the new overall by
  * {@link evolutionTarget} with the noise of his own stream (so the order of processing never
  * matters), the attributes moved to it by `fitAttributesToOverall` (unchanged when the overall
- * does not move) and `age + 1`. Nothing else changes (potential, peakAge, growth, trait, shirt).
+ * does not move) and `age + 1`, capped at AGE_RANGE.max. Nothing else changes (potential, peakAge, growth, trait, shirt).
  */
 export function evolvePlayer(
   state: Pick<GameState, 'seed' | 'season'>,
@@ -262,7 +263,10 @@ export function evolvePlayer(
     target === player.overall
       ? player.attributes
       : fitAttributesToOverall(player.attributes, player.position, target);
-  return { ...player, overall: target, attributes, age: player.age + 1 };
+  // Capped at AGE_RANGE.max (99, sanity only; some 65 seasons away) so the state never becomes
+  // invalid for the validator.
+  const age = Math.min(player.age + 1, AGE_RANGE.max);
+  return { ...player, overall: target, attributes, age };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -330,6 +334,10 @@ function ratingAward(list: readonly Candidate[]): RatingAward | undefined {
  * - team of the season: the 4-3-3 slot by slot in formation order, natural position only, at
  *   least AWARD_MIN_GAMES rated games, as the best player, never the same player twice.
  * Nobody reaching the minimum: no award (absent, an empty list or a slot without ids).
+ *
+ * In the `seasonEnd` phase the screens read the awards from `pastSeasons.at(-1)`, never from this
+ * function: after `endSeason` the ages are a year older (the revelation would change) and, after
+ * `startNextSeason`, `seasonStats` is empty.
  */
 export function seasonAwards(state: Pick<GameState, 'players' | 'seasonStats'>): SeasonAwards {
   const all = candidates(state);
@@ -534,6 +542,9 @@ function seasonFinished(state: Pick<GameState, 'phase' | 'round'>): boolean {
  * `humans` are the clubs with a human coach (the career's club; in an online league every club
  * with an owner); without them the summary has no campaign.
  *
+ * `params` is reserved (part of the contract, docs/02-architecture.md, 4.1) and not read yet: the
+ * end of the season has no parameter in 1a.
+ *
  * `season-not-finished` in any other state (before round 39, or already closed): nothing changes,
  * so the evolution and the title never count twice. Warning: `season-unknown-club` for a club of
  * `humans` that is not in the state (ignored); a repeated club counts once.
@@ -557,7 +568,12 @@ export function endSeason(
   const champion = table[0];
   if (champion === undefined) {
     // No clubs: a broken state, not a game situation the rules can close.
-    return fail('season-not-finished', { reason: 'no-clubs' });
+    return fail('season-not-finished', {
+      season: state.season,
+      round: state.round,
+      phase: state.phase,
+      reason: 'no-clubs',
+    });
   }
   const relegationZone = table.slice(-RELEGATION_SPOTS).map((r) => r.clubId);
 
@@ -627,6 +643,10 @@ export function endSeason(
  * "Força" of the best XI of the whole squad in its first preferred formation, as the generation
  * picks it (`bestEleven`, everyone fit and fresh), unrounded, without the ladder nor any
  * renormalisation. Undefined for an unknown club.
+ *
+ * The screens read `ClubState.strength`, never this function: in the `seasonEnd` phase the squad
+ * has already evolved, so it gives the next season's number while `strength` (and the board's
+ * target of the summary) is still the one of the season that ended.
  */
 export function squadStrength(
   state: Pick<GameState, 'clubs' | 'players' | 'squads'>,
@@ -701,7 +721,7 @@ export function startNextSeason(
   if (!fixtures.ok) {
     return fixtures.error === 'invalid-calendar'
       ? fail('invalid-calendar', fixtures.detail)
-      : fail('invalid-clubs', fixtures.detail);
+      : fail('invalid-clubs', { reason: fixtures.error, detail: fixtures.detail });
   }
 
   const players: Record<PlayerId, Player> = {};
