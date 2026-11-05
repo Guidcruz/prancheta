@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-03 (Dia 1).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-05 (Semana 1).
 
 ## Etapa atual: 1a — Brasileirão Série A (em andamento)
 
@@ -290,6 +290,7 @@ Notas:
 Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etapa chegar, e as regras passam pelo CEO antes de virar ADR ou requisito.
 
 - **Técnico interino e período sem técnico (Etapa 4, registrado em 2026-11-04):** quando um clube demite o técnico, o auxiliar assume como interino por 1 a 3 rodadas e joga no perfil "Tradicional"; "efeito técnico novo" com ganho de moral nos primeiros jogos; notícias e posts ("fulano é o interino", "diretoria busca nome no mercado"); no modo "técnico livre", o técnico humano demitido fica desempregado algumas rodadas até receber proposta. Vale para os clubes da IA e para o clube do técnico humano.
+- **Post "Quem pode ser campeão?" (devlog, sugestão do CEO para o post da próxima semana, registrado em 2026-11-05):** chance de título por clube em 1.000 temporadas, por que o mais forte nem sempre ganha, zebras e arrancadas contra o rebaixamento, o projeto de longo prazo do clube médio e a comparação com o campeonato real. Números em `docs/design/balance-targets.md`, decisões 8 a 11.
 
 ## Próximo
 
