@@ -169,9 +169,9 @@ LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64
 
 Validade: inteiro entre 55 e 85. Se a lista não trouxer `strength`, vale 70, com aviso.
 
-Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (metas 72–82 e 40–46). Se o `/balance` do motor mostrar campeão abaixo de 72, a correção é abrir a escada (o maior para 79), não mexer na partida.
+Com essa escada, o protótipo deu campeão com 73,7 pontos e 17º com 40,7 (metas 72–82 e 39–45; a do 17º revista pelo CEO em 2026-11-05). Se o `/balance` do motor mostrar campeão abaixo de 72, a correção é abrir a escada (o maior para 79), não mexer na partida.
 
-**Motor com a moral (T-014, 2 × 100 carreiras):** campeão 77,4 e 76,6, 17º 40,1 e 40,2 (antes da moral: 75,6 e 41,2). A moral alarga a tabela pelos dois lados, porque amplia a sorte de quem embala, não a vantagem do mais forte (os pontos por posição de força quase não mudam). O 17º já estava abaixo do centro da meta (43) antes da moral, e nenhum botão existente o sobe sem baixar mais o campeão: subir o fundo da escada (62/63 → 64/64) dá +0,4; `baseChance` 0,087 dá 0; `kChance` 0,13 dá +0,5 e −1,0 no campeão; `moraleMult` de 0,97 a 1,03 dá +0,5 e −1,6. A referência real é cerca de 42 pontos para o 17º (mínimo 39, máximo 45). Decisão para o CEO na T-016: ver o relatório da T-014.
+**Motor com a moral (T-014, 2 × 100 carreiras):** campeão 77,4 e 76,6, 17º 40,1 e 40,2 (antes da moral: 75,6 e 41,2). A moral alarga a tabela pelos dois lados, porque amplia a sorte de quem embala, não a vantagem do mais forte (os pontos por posição de força quase não mudam). O 17º já estava abaixo do centro da meta antiga (43) antes da moral, e nenhum botão existente o sobe sem baixar mais o campeão: subir o fundo da escada (62/63 → 64/64) dá +0,4; `baseChance` 0,087 dá 0; `kChance` 0,13 dá +0,5 e −1,0 no campeão; `moraleMult` de 0,97 a 1,03 dá +0,5 e −1,6. A referência real é cerca de 42 pontos para o 17º (mínimo 39, máximo 45). **Decidido (aprovado pelo CEO em 2026-11-05):** a meta passa a 42, de 39 a 45, e a moral fica como está (`balance-targets.md`, decisão 8). Na T-016 o 17º só é medido; não há correção para ele.
 
 **Variação por carreira:** `strength` efetiva = `strength + Normal(0, generation.clubStrengthSd)`, com `generation.clubStrengthSd = 1.5` (decisão 3 de `balance-targets.md`).
 

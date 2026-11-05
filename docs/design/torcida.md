@@ -55,7 +55,7 @@ Começa em `fans.start = 60` para todos ("começo de temporada é esperança").
 | correções + `fans.reversion = 0.10`                   | 16,3   | 2,7% | 1,0% | 77,3    | 40,2 |
 | correções + `fans.reversion = 0.12`                   | 14,7   | 1,5% | 0,4% | 76,9    | 40,1 |
 
-As correções não mexem no termômetro: a deriva é pequena perto do ±3 do resultado, e o ídolo da IA no banco era raro na média (cerca de 0,3 rodada por clube e temporada), embora pesado no clube atingido. **Proposta para a T-016** (uma por vez, depois de "tirar o pé" e de `baseChance`): `fans.reversion` de 0,08 para **0,10**. Métrica que deve mudar: termômetro abaixo de 20, de 4,4% para cerca de 2,7%. Métricas que não podem piorar: média de 50 a 60 e o desvio acima de 15 (o termômetro tem que andar; com 0,12 ele fica parado demais), pontos do campeão e do 17º (a reversão não os mexe: 77,3 e 40,2).
+As correções não mexem no termômetro: a deriva é pequena perto do ±3 do resultado, e o ídolo da IA no banco era raro na média (cerca de 0,3 rodada por clube e temporada), embora pesado no clube atingido. **Proposta para a T-016** (uma por vez, depois de "tirar o pé" e de `baseChance`): `fans.reversion` de 0,08 para **0,10**. Métrica que deve mudar: termômetro abaixo de 20, de 4,4% para cerca de 2,7%. Métricas que não podem piorar: média de 50 a 60 e o desvio acima de 15 (o termômetro tem que andar; com 0,12 ele fica parado demais), pontos do campeão e do 17º (a reversão não os mexe: 77,3 e 40,2; a meta do 17º é de 39 a 45 desde 2026-11-05, `balance-targets.md`, decisão 8).
 
 ## Decisões do técnico que mexem no termômetro (1a)
 
