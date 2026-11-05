@@ -14,7 +14,8 @@ import type { GameState } from './game.ts';
 import type { TeamSheet } from './lineup.ts';
 import type { Player } from './players.ts';
 import { playRound, prepareRound, type RoundInput } from './round.ts';
-import { getStandings } from './standings.ts';
+import { roundFacts } from './facts.ts';
+import { getStandings, roundTables } from './standings.ts';
 import { homeAdvantage } from './strength.ts';
 import { testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
@@ -647,5 +648,18 @@ describe('determinism of the morale, the form and the thermometer', () => {
     };
     for (const realism of ['full', 'simplified'] as const)
       expect(run(realism)).toEqual(run(realism));
+  });
+});
+
+describe('playRound shares the tables with the facts', () => {
+  it('roundFacts with the tables given is the same as without them', () => {
+    const all = season(20261104);
+    for (const r of [1, 6, 20, 37, 38]) {
+      const state = all[r]!;
+      const results = state.lastRound!.results;
+      const facts = roundFacts(state, r, results, roundTables(state, r));
+      expect(facts).toEqual(roundFacts(state, r, results));
+      expect(facts).toEqual(state.lastRound!.facts);
+    }
   });
 });

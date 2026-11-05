@@ -19,7 +19,7 @@ import { RECENT_RATINGS_MAX, type Player } from './players.ts';
 import { fail, ok } from './result.ts';
 import { seedFromString } from './rng.ts';
 import { isUnavailable } from './selection.ts';
-import { getStandings } from './standings.ts';
+import { roundTables, type StandingRow } from './standings.ts';
 import type {
   ClubId,
   ClubSize,
@@ -451,8 +451,16 @@ export function roundBenchStreaks(
   matches: readonly MatchInput[],
   results: readonly MatchResult[],
 ): Map<PlayerId, number> {
+  return benchStreaksOf(state, clubMatches(state.players, matches, results));
+}
+
+/** {@link roundBenchStreaks} on the round's matches by club, computed once by the caller. */
+function benchStreaksOf(
+  state: Pick<GameState, 'players' | 'squads'>,
+  clubs: ReadonlyMap<ClubId, ClubMatch>,
+): Map<PlayerId, number> {
   const streaks = new Map<PlayerId, number>();
-  for (const club of clubMatches(state.players, matches, results).values()) {
+  for (const club of clubs.values()) {
     for (const id of state.squads[club.clubId] ?? []) {
       const p = state.players[id];
       if (p === undefined) continue;
@@ -480,6 +488,22 @@ export function roundMoraleDeltas(
   matches: readonly MatchInput[],
   results: readonly MatchResult[],
 ): Map<PlayerId, number> {
+  const clubs = clubMatches(state.players, matches, results);
+  return moraleDeltasOf(state, params, clubs, benchStreaksOf(state, clubs), matches, results);
+}
+
+/**
+ * {@link roundMoraleDeltas} with the round's matches by club and the new bench streaks, computed
+ * once by the caller.
+ */
+function moraleDeltasOf(
+  state: Pick<GameState, 'players' | 'squads' | 'clubs'>,
+  params: Pick<GameParams, 'fans'>,
+  clubs: ReadonlyMap<ClubId, ClubMatch>,
+  streaks: ReadonlyMap<PlayerId, number>,
+  matches: readonly MatchInput[],
+  results: readonly MatchResult[],
+): Map<PlayerId, number> {
   const { players } = state;
   const deltas = new Map<PlayerId, number>();
   const add = (p: Player, delta: number) => {
@@ -491,10 +515,9 @@ export function roundMoraleDeltas(
       p,
       delta < 0 && p.trait === 'professional' ? delta * ROUND_MORALE.professionalDropMult : delta,
     );
-  const streaks = roundBenchStreaks(state, matches, results);
   const drift = params.fans.moraleDrift;
 
-  for (const club of clubMatches(players, matches, results).values()) {
+  for (const club of clubs.values()) {
     const outcome =
       club.scored > club.conceded
         ? ROUND_MORALE.win
@@ -559,22 +582,23 @@ export function moraleDrift(fans: number, morale: number, drift: number): number
  * (`decisions`, capped in fansDelta) and the idol left on the bench, `idolBenchStreak` = rounds in
  * a row in which the idol did not take the pitch while able to (not injured nor suspended), −1
  * from the 2nd (IDOL_BENCH) after the cap. An AI club's streak stays at 0. `state` has the round's
- * results; `before` is the state the round started from (who was injured or suspended).
+ * results; `before` is the state the round started from (who was injured or suspended); `table`
+ * is the table after the round (the one the facts read too); `matches` are the round's matches by
+ * club.
  */
 function roundFans(
   state: GameState,
   before: Readonly<Record<PlayerId, Player>>,
   params: GameParams,
-  matches: readonly MatchInput[],
-  results: readonly MatchResult[],
+  matches: ReadonlyMap<ClubId, ClubMatch>,
+  table: readonly StandingRow[],
   humans: ReadonlySet<ClubId>,
   decisions: ReadonlyMap<ClubId, number>,
 ): Record<ClubId, ClubState> {
   const clubs: Record<ClubId, ClubState> = { ...state.clubs };
-  const table = getStandings(state);
   const position = new Map(table.map((row) => [row.clubId, row.position]));
   const winless = winlessRuns(state.fixtures, state.round);
-  for (const match of clubMatches(before, matches, results).values()) {
+  for (const match of matches.values()) {
     const club = state.clubs[match.clubId];
     if (club === undefined) continue;
     const human = humans.has(match.clubId);
@@ -702,8 +726,10 @@ function applyRound(
     clubsPlayed.add(match.home.clubId);
     clubsPlayed.add(match.away.clubId);
   }
-  const morale = roundMoraleDeltas(state, params, plan.matches, results);
-  const benchStreaks = roundBenchStreaks(state, plan.matches, results);
+  // Computed once and passed on: the matches by club, the bench streaks, the tables.
+  const byClub = clubMatches(state.players, plan.matches, results);
+  const benchStreaks = benchStreaksOf(state, byClub);
+  const morale = moraleDeltasOf(state, params, byClub, benchStreaks, plan.matches, results);
   const recovery = params.match.fatigue.recoveryPerDay * recoveryDays(state.fixtures, round);
 
   const players: Record<PlayerId, Player> = {};
@@ -727,13 +753,15 @@ function applyRound(
     };
   }
 
-  // 5, after the morale: the fans of every club, on the table with this round.
+  // 5, after the morale: the fans of every club, on the table with this round. The tables do
+  // not depend on the players nor on the fans, so the facts read the same ones.
+  const tables = roundTables({ ...state, fixtures }, round);
   const clubs = roundFans(
     { ...state, fixtures },
     state.players,
     params,
-    plan.matches,
-    results,
+    byClub,
+    tables.now,
     humans,
     decisions,
   );
@@ -759,7 +787,7 @@ function applyRound(
     season: state.season,
     round,
     results,
-    facts: roundFacts(applied, round, results),
+    facts: roundFacts(applied, round, results, tables),
   };
   return { state: { ...applied, lastRound: report }, report };
 }

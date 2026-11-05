@@ -6,6 +6,7 @@ import {
   POINTS,
   RELEGATION_SPOTS,
   roundTables,
+  type RoundTables,
   type StandingRow,
   type StandingsState,
 } from './standings.ts';
@@ -161,15 +162,18 @@ function runs(fixtures: readonly Fixture[], round: number): Map<ClubId, ClubRuns
 
 /**
  * The facts of `round`, already applied to `state` (its fixtures have the round's results and
- * its players the new suspensions). `results` are the round's matches in fixture order.
+ * its players the new suspensions). `results` are the round's matches in fixture order. `tables`
+ * (optional) is `roundTables(state, round)` when the caller already has it (playRound shares it
+ * with the fans thermometer).
  */
 export function roundFacts(
   state: StandingsState & { readonly players: Readonly<Record<PlayerId, Player>> },
   round: number,
   results: readonly MatchResult[],
+  tables: RoundTables = roundTables(state, round),
 ): Fact[] {
   const facts: Fact[] = [];
-  const { before, now, leaders } = roundTables(state, round);
+  const { before, now, leaders } = tables;
 
   // Leadership.
   const leader = now[0]?.clubId;
