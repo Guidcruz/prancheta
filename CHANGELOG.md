@@ -6,6 +6,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Ferramenta de balanceamento e regra "tirar o pé" (T-016, parte 1; US-013):
+  - `npm run balance` (`scripts/balance.ts`): simula temporadas completas da Série A só com o motor, os duelos calibrados (0, 10, 20 e 30 pontos de diferença), os duelos táticos (cada formação, postura e pressão contra a 4-4-2 equilibrada) e o "tudo no ataque" a partir de 0×1 aos 75'. Para cada meta da Etapa 1a de `balance-targets.md`, mostra o valor medido, a meta e "dentro" ou "fora".
+  - Opções `--seasons`, `--seed`, `--duels`, `--params <arquivo>` (sobrescreve parâmetros sem mexer em `app/src/params/`), `--robot <clube>`, `--json` e `--workers`. A mesma semente dá a mesma saída, com qualquer número de threads; o tempo sai à parte.
+  - Código de saída 1 quando alguma meta obrigatória fica fora, para o CI usar depois.
+  - Técnico-robô bom (decisão 10): escala pelo rendimento, faz rodízio nas semanas com dois jogos, escolhe a tática contra o adversário, conversa no intervalo pelo placar e faz as decisões da torcida até o teto. Joga no lugar da IA no mesmo clube e nas mesmas sementes; no Coritibom ganha cerca de 4 pontos por temporada.
+  - Regra "tirar o pé" no motor: quem ganha por 2 gols ou mais cria menos (`match.comfortableLeadGoals` e `match.comfortableLeadPower`). Entra neutra (fator 1): nenhum resultado muda e os goldens ficam iguais; o valor é do `game-designer`, na parte 2.
+
 - Moral, forma, torcida e "realismo simplificado" (T-014, US-010, US-026 e partes de US-009 e US-004) em `app/src/engine/`:
   - Moral entre rodadas: quem joga numa vitória ganha 3 pontos de moral, no empate fica igual e numa derrota perde 3; no clássico o efeito dobra. Quem esperava jogar e fica no banco perde 2 por rodada, a partir da 2ª seguida. O profissional sofre só metade das quedas e o temperamental sofre o dobro da queda por ficar no banco. A moral também anda até 1 ponto por rodada em direção ao humor da torcida, sem passar dele.
   - Forma: a média das últimas 5 notas de cada jogador, para o técnico ler ao escalar.
