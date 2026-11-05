@@ -79,6 +79,8 @@ export interface TacticVariant {
    * posture alone (`tactic` with `posture: 'allOut'` and the variant's pressure).
    */
   readonly allOut?: 'preset' | 'posture';
+  /** A reference row: shown with its target, never in the exit code. */
+  readonly info?: true;
 }
 
 /**
@@ -117,6 +119,8 @@ export const TACTIC_VARIANTS: readonly TacticVariant[] = [
   })),
   { ...REFERENCE, id: 'allout-60', allOut: 'preset' },
   { ...REFERENCE, id: 'allout-60-medium', allOut: 'posture' },
+  // Informative (review of T-016): the posture with low pressure, the one that tires least.
+  { ...REFERENCE, id: 'allout-60-low', pressure: 'low', allOut: 'posture', info: true },
 ];
 
 /** Wins, draws and defeats of the first side of a duel (the stronger, or the variant). */
@@ -335,6 +339,29 @@ export function tacticalSamples(
   };
 }
 
+/**
+ * A duel match whose command the engine ignored (`command-too-early`, or any other `command-*`
+ * warning) measures the match without it, so its target would read "fora" for no reason: that is
+ * an error of the tool (exit code 3), e.g. a `match.allOutFromMinute` override later than the
+ * minute the duel sends "tudo no ataque" at.
+ */
+export function playDuelMatch(
+  input: MatchInput,
+  params: GameParams,
+  commands: readonly MatchCommand[],
+): MatchResult {
+  const result = simulateMatch(input, params, commands);
+  const ignored = result.warnings.filter((w) => w.code.startsWith('command-'));
+  if (ignored.length > 0) {
+    const codes = [...new Set(ignored.map((w) => w.code))].join(', ');
+    throw new Error(
+      `duel ${input.fixtureId}: the engine ignored a command (${codes}); ` +
+        `match.allOutFromMinute is ${params.match.allOutFromMinute}`,
+    );
+  }
+  return result;
+}
+
 function tallySamples(
   params: GameParams,
   sample: (n: number) => DuelSample,
@@ -344,7 +371,7 @@ function tallySamples(
   const tally = emptyDuelTally();
   for (let n = from; n < to; n++) {
     const { input, first, commands } = sample(n);
-    addDuel(tally, simulateMatch(input, params, commands), first === 'home');
+    addDuel(tally, playDuelMatch(input, params, commands), first === 'home');
   }
   return tally;
 }
@@ -457,7 +484,7 @@ export function* allOutSamples(
       const [h, aw] = scoreAfter(kept.events, ALL_OUT_MINUTE);
       if (!((h === 0 && aw === 1) || (h === 1 && aw === 0))) continue;
       const trailing: Side = h === 0 ? 'home' : 'away';
-      const allOut = simulateMatch(input, params, [
+      const allOut = playDuelMatch(input, params, [
         { minute: ALL_OUT_MINUTE, side: trailing, kind: 'preset', preset: 'allOut' },
       ]);
       found = { input, trailing, kept, allOut };

@@ -288,6 +288,18 @@ describe('buildReport', () => {
     for (const id of ['tactic-allout-60', 'tactic-allout-60-medium']) {
       expect(byId(report.rows, id)).toMatchObject({ status: 'n/a', required: true });
     }
+    // The low-pressure one is a reference: "fora" never fails the run.
+    const low = buildReport({
+      ...results,
+      tactical: new Map([['allout-60-low', duel(45, 20, 35)]]),
+    });
+    expect(byId(low.rows, 'tactic-allout-60-low')).toMatchObject({
+      status: 'fora',
+      required: false,
+      label:
+        'Tática "tudo no ataque" desde o minuto 60 (postura, pressão baixa) contra 4-4-2 equilibrada média (V − D)',
+    });
+    expect(exitCode({ rows: low.rows.filter((r) => r.id === 'tactic-allout-60-low') })).toBe(0);
     const allOut60 = buildReport({
       ...results,
       tactical: new Map([

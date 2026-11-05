@@ -339,6 +339,7 @@ export function buildReport(
         pp,
         '0 (−3 a +3 p.p.)',
         { min: -0.03, max: 0.03 },
+        v.info !== true,
       ),
     ),
     row(
@@ -609,6 +610,7 @@ function tacticLabel(id: string): string {
     'pressure-high': 'pressão alta',
     'allout-60': '"tudo no ataque" desde o minuto 60 (atalho, pressão alta)',
     'allout-60-medium': '"tudo no ataque" desde o minuto 60 (postura, pressão média)',
+    'allout-60-low': '"tudo no ataque" desde o minuto 60 (postura, pressão baixa)',
   };
   return labels[id] ?? id;
 }

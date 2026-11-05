@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { seedFromString, simulateMatch } from '../../app/src/engine/index.ts';
+import { PARAM_RANGES, seedFromString, simulateMatch } from '../../app/src/engine/index.ts';
 import type { MatchCommand, MatchEvent, MatchInput, Side } from '../../app/src/engine/index.ts';
 import {
   ALL_OUT_MINUTE,
@@ -151,7 +151,7 @@ describe('"tudo no ataque" from minute 60', () => {
     expect(allOutCommandMinute(params)).toBe(59);
     const at = (allOutFromMinute: number) =>
       allOutCommandMinute({ ...params, match: { ...params.match, allOutFromMinute } });
-    expect([at(0), at(1), at(80)]).toEqual([0, 0, 79]);
+    expect([at(0), at(1), at(76)]).toEqual([0, 0, 75]);
   });
 
   it.each([
@@ -189,6 +189,16 @@ describe('"tudo no ataque" from minute 60', () => {
       }
     },
   );
+
+  it('keeps the informative low-pressure variant out of the exit code', () => {
+    const low = TACTIC_VARIANTS.find((v) => v.id === 'allout-60-low')!;
+    expect(low).toMatchObject({ pressure: 'low', allOut: 'posture', info: true });
+    expect(TACTIC_VARIANTS.filter((v) => v.info).map((v) => v.id)).toEqual(['allout-60-low']);
+    const { first, commands } = tacticalSamples(params, SEED, low)(0);
+    expect(commands).toEqual([
+      { minute: 59, side: first, kind: 'tactic', posture: 'allOut', pressure: 'low' },
+    ]);
+  });
 
   it('tallies the variants with their command', () => {
     for (const variant of [preset, posture]) {
@@ -308,5 +318,27 @@ describe('a duel split into chunks', () => {
     expect(sumAllOut([allOutDuel(params, SEED, 0, 12), allOutDuel(params, SEED, 12, 30)])).toEqual(
       allOutDuel(params, SEED, 0, 30),
     );
+  });
+});
+
+describe('a duel command the engine ignores is an error of the tool (review of T-016)', () => {
+  const late = (allOutFromMinute: number) => ({
+    ...params,
+    match: { ...params.match, allOutFromMinute },
+  });
+
+  it('caps match.allOutFromMinute at the minute the 0×1 duel plays "tudo no ataque" from', () => {
+    expect(PARAM_RANGES.match.allOutFromMinute).toMatchObject({ min: 0, max: ALL_OUT_MINUTE + 1 });
+    // At the top of the range every duel still plays its command.
+    const top = late(PARAM_RANGES.match.allOutFromMinute.max);
+    expect(allOutDuel(top, SEED, 0, 3).samples).toBe(3);
+    for (const variant of TACTIC_VARIANTS.filter((v) => v.allOut !== undefined)) {
+      expect(tacticalDuel(top, SEED, variant, 0, 2).matches).toBe(2);
+    }
+  });
+
+  it('throws (exit code 3) instead of measuring the match without the command', () => {
+    // Beyond the range (only a bug gets here: the validator refuses 77).
+    expect(() => allOutDuel(late(77), SEED, 0, 3)).toThrow(/command-too-early/);
   });
 });
