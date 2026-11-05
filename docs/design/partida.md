@@ -240,7 +240,7 @@ pRed    = cards.redPerMinute × pressure.cards × positionMult × traitMult
 | -------------- | --- | --- | --- | --- | --- | --- |
 | `positionMult` | 0,2 | 1,3 | 1,1 | 1,3 | 0,9 | 0,8 |
 
-`traitMult` = 1,5 para temperamental, 1,0 para os outros. `positionMult` é o da **posição da vaga** em que o jogador está no minuto, não o da posição natural (como os pesos de finalizador e assistência): um volante improvisado de lateral usa 1,1, e o jogador de linha que foi para o gol usa 0,2. O fator 0,5 depois do amarelo é o jogador "jogando pendurado" (`BOOKED_MULT`, constante por enquanto; ver "Calibragem dos vermelhos").
+`traitMult` = 1,5 para temperamental, 1,0 para os outros. `positionMult` é o da **posição da vaga** em que o jogador está no minuto, não o da posição natural (como os pesos de finalizador e assistência): um volante improvisado de lateral usa 1,1, e o jogador de linha que foi para o gol usa 0,2. O fator `cards.bookedMult` (0,5) depois do amarelo é o jogador "jogando pendurado" (ver "Calibragem dos vermelhos").
 
 `cards.yellowPerMinute = 0.0020` dá cerca de 4 amarelos por jogo (motor, T-010: 3,89). `cards.redPerMinute = 0.00003` dá cerca de 0,07 vermelho direto por jogo (motor: 0,068). Com o fator 0,5, o segundo amarelo dá cerca de 0,20 por jogo (motor: 0,205), e o total fica em cerca de 0,27, acima da meta de 0,11 a 0,25 de `balance-targets.md`.
 
@@ -268,7 +268,7 @@ Segundo amarelo vira vermelho. Expulso sai e não é substituído; o time joga c
 A estimativa antiga deste documento ("cerca de 0,18 vermelho por jogo somando o segundo amarelo") estava errada no texto; a fórmula está certa e o motor a reproduz. A conta, para um jogador com taxa de amarelo `λ` por minuto em `T` minutos (cerca de 95, com acréscimos), com o segundo amarelo a `0,5 × λ`:
 
 ```
-P(segundo amarelo) = (1 − exp(−λ × T / 2))²        (vale só com BOOKED_MULT = 0,5)
+P(segundo amarelo) = (1 − exp(−λ × T / 2))²        (vale só com `cards.bookedMult` = 0,5)
 λ = cards.yellowPerMinute × positionMult × traitMult × pressure.cards
 ```
 
