@@ -2,6 +2,35 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-05: T-017, metas da cadeia (motor real)
+
+**Como foi medido.** `npm run balance -- --chain 3 --seasons 200 --seed 1,2,3 --duels 0 --robot none` com o motor da T-017 (commit `06d9a82`), numa cópia do repositório no scratchpad. Só na cópia, três chaves trocadas por variável de ambiente: a constante `MORALE_OFFSEASON_PULL` (0,5 ou 1, que é a moral zerada para 60), a evolução ligada ou desligada (desligada: o jogador passa igual pela virada, sem evolução nem aniversário) e o recorte do clube fraco e dos 6 mais fortes (pela força de cada temporada ou pela da temporada 1). `app/` e `scripts/` do repositório não foram tocados. A linha "virada da T-017, recorte atual" é a saída do code reviewer (`scratchpad/chain3-200.txt`), e a cópia a repete.
+
+**Campeão grande, por semente (1 / 2 / 3) e no total das sementes.** A temporada 1 é a mesma em todas as variantes: 83,0 / 80,5 / 82,5%, total 82,0%.
+
+| Variante                               | Temporada 2                | Temporada 3                |
+| -------------------------------------- | -------------------------- | -------------------------- |
+| virada da T-017 (moral a meio caminho) | 87,0 / 79,0 / 85,5 → 83,8% | 88,0 / 84,0 / 83,5 → 85,2% |
+| moral zerada para 60                   | 85,0 / 81,0 / 82,5 → 82,8% | 85,0 / 88,5 / 82,5 → 85,3% |
+| sem evolução (moral a meio caminho)    | 83,0 / 80,0 / 84,0 → 82,3% | 88,0 / 79,5 / 81,5 → 83,0% |
+| controle: sem evolução e moral zerada  | 81,0 / 78,5 / 84,5 → 81,3% | 87,0 / 83,5 / 83,5 → 84,7% |
+
+**Clube fraco no G4, no total das sementes.** A temporada 1 é de 6,0% em todas as variantes.
+
+| Variante                              | Recorte por temporada (T-017) | Recorte da temporada 1         |
+| ------------------------------------- | ----------------------------- | ------------------------------ |
+| virada da T-017                       | 3,8% · 4,7%                   | 4,8% · 5,5%                    |
+| moral zerada para 60                  | 5,3% · 4,0%                   | 6,0% · 4,5%                    |
+| sem evolução                          | 6,3% · 4,8%                   | igual (a força quase não muda) |
+| controle: sem evolução e moral zerada | 6,0% · 5,8%                   | igual                          |
+
+**Leitura.**
+
+- **Campeão grande:** é amostra. O erro por semente é de cerca de 2,7 pontos, e a temporada 1 já está a 3 pontos do teto de 85%. O controle sem evolução e sem moral também sai da faixa numa semente (87,0%). A evolução não favorece os grandes: no script de rascunho, que o `--chain` reproduz, grandes e não grandes ganham a mesma força (+0,61 e +0,58 na temporada 2; +0,93 e +0,92 na 3), e a idade média deles é igual.
+- **Moral (hipótese do code reviewer):** não se sustenta. Zerar a moral muda as duas metas em menos de 1,5 ponto, com sinais trocados entre as temporadas.
+- **Clube fraco no G4:** a evolução custa cerca de 1 ponto (média de −1,3 nas quatro comparações), menos que o erro de 0,9 ponto por temporada no total. Boa parte disso é do recorte por temporada: ele tira da conta os fracos que cresceram, que são justamente os que chegam ao G4. Com o recorte da temporada 1 fica em 4,8% e 5,5%.
+- **Proposta:** recorte da temporada 1 e decisão 15 de `balance-targets.md`.
+
 ## 2026-11-05: T-017, virada de temporada (medição de design, antes da implementação)
 
 **Como foi medido.** Um script de rascunho fora do repositório (`scratchpad/sim/chain.ts`), que importa o motor do commit `752aaa7` só para leitura (`newGame`, `playRound`, `getStandings`, `generateFixtures`, `bestEleven`, `elevenStrength`, `fitAttributesToOverall`) e faz, por conta própria, a evolução de `jogadores.md` e a virada de `temporada.md`. Carreiras com as sementes do `/balance` (`balance-<seed>-<i>`), IA nos 20 clubes, Realismo completo, parâmetros do repositório. A temporada 1 bate com o `/balance` da T-016 (campeão 75,2 e 17º 40,3 na semente 1, contra 75,0 e 40,3). `app/` e `scripts/` não foram tocados.
