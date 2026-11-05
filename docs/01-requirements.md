@@ -174,7 +174,7 @@ Cenário: SVG seguro
 
 **Prioridade:** Must
 **Depende de:** —
-**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade) (nomes reais de atletas têm direito de imagem). Listas de prenomes, sobrenomes e apelidos de boleiro ficam em arquivos de conteúdo, revisados pelo CEO. Na Etapa 1 a nacionalidade é só brasileira; outras entram na Etapa 5.
+**Notas:** [PROJETO.md › Clubes, nomes e identidade](PROJETO.md#clubes-nomes-e-identidade) (nomes reais de atletas têm direito de imagem). Listas de prenomes, sobrenomes e apelidos de boleiro ficam em arquivos de conteúdo, revisados pelo CEO. Na 1a só brasileiros (decisão do CEO, 2026-11-05); os sul-americanos entram na Etapa 5.
 
 ### Critérios de aceite
 
@@ -847,6 +847,11 @@ Cenário: vibração opcional
   Quando o clube do jogador marca
   Então o aparelho vibra uma vez; com a vibração desligada, não vibra
 
+Cenário: vibração respeita reduzir movimento (decisão 11 da auditoria de 2026-11-05)
+  Dado um Android com a vibração ligada e o sistema com prefers-reduced-motion ativo
+  Quando o clube do jogador marca
+  Então o aparelho não vibra
+
 Cenário: som só quando a animação revela o lance
   Dado o som ligado (US-044) e um gol que o motor já marcou
   Quando a animação termina a pausa dramática e revela o gol
@@ -1077,6 +1082,48 @@ Cenário: nova temporada (P2)
   E suspensões, amarelos e lesões terminam na virada (a pausa entre temporadas é maior que a lesão mais longa; decisão 13 do CEO, 2026-11-05)
   E a moral de cada jogador faz metade do caminho até 60 (decisão 13 do CEO, 2026-11-05)
 
+Esquema do Cenário: prêmios (fonte: docs/design/temporada.md, "Prêmios")
+  Dado a rodada 38 processada e o prêmio "<prêmio>"
+  Quando o fim da temporada é calculado
+  Então o vencedor é "<critério>" entre quem "<concorre>"
+
+  Exemplos:
+    | prêmio         | critério                                                          | concorre                                              |
+    | artilheiro     | mais gols; desempate: menos jogos, mais assistências              | todos com ao menos 1 gol                              |
+    | garçom         | mais assistências; desempate: menos jogos, mais gols              | todos com ao menos 1 assistência                      |
+    | melhor jogador | maior média de nota                                               | ao menos 19 jogos com nota                            |
+    | revelação      | maior média de nota                                               | ao menos 19 jogos com nota e até 21 anos na temporada |
+    | melhor goleiro | menor média de gols sofridos por jogo                             | goleiros de posição com ao menos 19 jogos             |
+
+Cenário: empate no artilheiro ou no garçom
+  Dado dois jogadores empatados em gols, jogos e assistências
+  Quando o prêmio de artilheiro é calculado
+  Então os dois dividem o prêmio e aparecem juntos no resumo
+
+Cenário: seleção do campeonato
+  Dado a rodada 38 processada
+  Quando o fim da temporada é calculado
+  Então a seleção tem 11 vagas de um 4-3-3 (1 goleiro, 2 zagueiros, 2 laterais, 1 volante, 2 meias e 3 atacantes)
+  E cada vaga vai para o de maior média de nota na posição natural da vaga, com ao menos 19 jogos com nota, sem repetir jogador
+
+Cenário: prêmio sem vencedor
+  Dado que ninguém atinge o mínimo de 19 jogos para um prêmio
+  Quando o resumo é mostrado
+  Então a tela mostra "sem vencedor nesta temporada" nesse prêmio
+  E, na seleção, a vaga correspondente fica vazia
+
+Cenário: campanha do clube do técnico
+  Dado a rodada 38 processada e um clube do técnico
+  Quando o resumo é mostrado
+  Então mostra a posição e os pontos, a maior vitória, a maior derrota, o artilheiro do clube e quem evoluiu (overall de antes e de depois)
+  E a maior vitória ou derrota, quando o clube não teve, e o artilheiro, quando o clube não fez gols, simplesmente não aparecem
+
+Cenário: meta da diretoria só como texto informativo (decisão 10 da auditoria de 2026-11-05)
+  Dado a campanha do clube do técnico
+  Quando o resumo é mostrado
+  Então diz se a meta da diretoria foi cumprida ou não (posição menor ou igual à posição-meta, calculada pela força da temporada que acabou)
+  E não há cobrança, queda de confiança nem demissão
+
 Cenário: determinismo da virada
   Dado o mesmo save no fim da temporada
   Quando a virada é feita duas vezes
@@ -1086,7 +1133,7 @@ Cenário: determinismo da virada
 ### Fora do escopo desta história
 
 - Acesso e rebaixamento reais, com a troca dos 4 últimos por clubes que sobem (Etapa 2, depois da lista da Série B aprovada pelo CEO); base, aposentadoria e histórico (Etapa 4).
-- Metas e avaliação da diretoria (Etapa 4).
+- Cobrança, confiança e demissão pela diretoria (Etapa 4); na 1a a meta aparece só como texto informativo.
 
 ---
 
@@ -3096,7 +3143,7 @@ O CEO aceitou as recomendações das perguntas abertas 9 e 10 do pedido de 2026-
 
 ### Decisões do CEO sobre o áudio essencial (2026-11-05)
 
-O CEO pediu para começar pelo simples e essencial e trocou a P5 ("sem áudio de nenhum tipo na Etapa 1") pelo **áudio essencial sem custo**, e aceitou todas as recomendações do lote `docs/audio/lotes/2026-11-05-essencial.md` (decisões 1 a 6 abaixo). O ADR-0016 registra a mudança; o número será ajustado. Custo: R$ 0 e 0 crédito do ElevenLabs. O ElevenLabs fica só para a narração em voz, que segue exigindo lote, estimativa de créditos e ok escrito do CEO.
+O CEO pediu para começar pelo simples e essencial e trocou a P5 ("sem áudio de nenhum tipo na Etapa 1") pelo **áudio essencial sem custo**, e aceitou todas as recomendações do lote `docs/audio/lotes/2026-11-05-essencial.md` (decisões 1 a 6 abaixo). O [ADR-0016](adr/0016-audio-essencial-sem-custo.md) registra a mudança. Custo: R$ 0 e 0 crédito do ElevenLabs. O ElevenLabs fica só para a narração em voz, que segue exigindo lote, estimativa de créditos e ok escrito do CEO.
 
 1. **Som desligado por padrão.** Começa desligado; na primeira partida, a pergunta única "Quer ouvir o estádio?" (que também é o primeiro gesto exigido pelo navegador). (US-044, US-020)
 2. **Torcida por síntese.** Feita por código, sem arquivo de áudio; gravação CC0 só se a síntese não convencer, e só depois de o CEO ouvir e aprovar, com registro de licença em `docs/audio/inventario.md`. (US-020)
@@ -3110,13 +3157,11 @@ Regra que vale para todas as histórias: nenhum evento é informado só por som;
 ### Perguntas que seguem abertas
 
 1. **P7 (resto). Quem trata as denúncias e em quanto tempo?** Recomendo que, na 1b, o próprio CEO trate, com prazo de até 72 horas para renomear à força ou remover um apelido ou nome de liga ofensivo, e que o `architect` defina como o CEO fica sabendo de uma denúncia nova (sem painel). Um prazo semanal seria mais leve, mas deixa um apelido ofensivo visível para menores por dias. Trava a US-065.
-2. **P13 (resto). Discussions do GitHub ou formulário no devlog?** Recomendo as Discussions do repositório público: custo zero, nada para construir nem guardar do nosso lado, moderação pronta e exigência de conta no GitHub (que só aceita maiores de 13 anos). O formulário no devlog pediria um lugar para guardar as respostas, ou seja, dado pessoal novo com ADR e `security-auditor`. Não trava nenhuma história: a tela Sobre lê o link da configuração.
-3. **Tipo de partida por carreira ou para o aparelho?** As decisões não dizem se trocar o tipo de partida vale só para a carreira aberta ou para todas as carreiras do aparelho. Recomendo por carreira, porque ele é escolhido no novo jogo (US-014). Os critérios de US-019 e US-044 foram escritos para valer nos dois casos, então não trava nada; a resposta orienta o `ux-designer` e o `architect`.
+2. **Tipo de partida por carreira ou para o aparelho?** As decisões não dizem se trocar o tipo de partida vale só para a carreira aberta ou para todas as carreiras do aparelho. Recomendo por carreira, porque ele é escolhido no novo jogo (US-014). Os critérios de US-019 e US-044 foram escritos para valer nos dois casos, então não trava nada; a resposta orienta o `ux-designer` e o `architect`.
 
-As perguntas 4 a 10 foram respondidas (ver D4 a D8 e D9 e D10 acima).
+As perguntas 4 a 10 foram respondidas (ver D4 a D8 e D9 e D10 acima). A P13 (resto) foi fechada: o canal são as Discussions do GitHub, lidas de `contacts.discussionsUrl` (decisão 4 do site, 2026-11-04).
 
 Insumos pendentes que travam histórias (não são perguntas novas):
 
-- **Lista dos 20 clubes da Série A** (`/content nomes série A`, aprovada pelo CEO): trava a US-001.
 - **Domínio definitivo** (item 4 da auditoria do dia 1): trava a US-047, porque a passkey fica presa ao domínio em que foi criada. Recomendo decidir antes de começar a 1b.
 - **Lista reserva de clubes que podem subir da Série B**, com nomes aprovados pelo CEO: trava o primeiro lote da US-067.

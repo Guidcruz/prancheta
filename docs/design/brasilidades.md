@@ -41,7 +41,7 @@ Parâmetros: `ban.cutoffDates = [30/06, 31/12]`, `ban.graceDays = 45`, `ban.wind
 
 - Cartões: suspensão automática (3 amarelos ou 1 vermelho), avisada na escalação.
 - Escalação irregular: escalar jogador suspenso é permitido, mas custa os pontos do jogo (vão ao adversário), multa e confiança −15. É a "virada de mesa" real (Portuguesa 2013, São Paulo 1999).
-- Expulsão por agressão: julgamento em 2 a 4 rodadas, pena de 2 a 6 jogos. O técnico decide pedir **efeito suspensivo**: o jogador segue jogando até o julgamento; se a pena for confirmada, dobra. Chance de absolvição: 30%; de redução: 30%; de confirmação: 40%. _(Substituída: no real a pena não dobra. Vale a regra de "Efeito suspensivo: como funciona no real" abaixo, aprovada pelo CEO em 2026-11-05; a troca no `PROJETO.md` é formalizada em ADR.)_
+- Expulsão por agressão: julgamento em 2 a 4 rodadas, pena de 2 a 6 jogos. O técnico decide pedir **efeito suspensivo**: o jogador segue jogando até o julgamento; se a pena for confirmada, dobra. Chance de absolvição: 30%; de redução: 30%; de confirmação: 40%. _(Substituída: no real a pena não dobra. Vale a regra de "Efeito suspensivo: como funciona no real" abaixo, aprovada pelo CEO em 2026-11-05 e formalizada no ADR-0017, que prevalece sobre este trecho do `PROJETO.md`.)_
 - Torcida: briga ou invasão (probabilidade cresce com termômetro abaixo de 30 ou acima de 90 em clássico): perda de mando (um jogo de portões fechados, bilheteria zero) e multa.
 - Recurso ao Pleno: o clube pode recorrer de qualquer pena; a decisão sai 3 a 6 rodadas depois, com 25% de chance de reduzir e 10% de agravar.
 - Virada de mesa por liminar: evento raro (≤ 2% por temporada, só no estilo Realista): um clube da IA rebaixado volta pela Justiça comum e a divisão joga com um time a mais na temporada seguinte (Gama 2000).
@@ -87,7 +87,7 @@ A pena é da pessoa: transferido, o jogador a leva para o clube novo, na mesma c
 
 ### Regra aprovada (CEO, 2026-11-05; entra na Etapa 2)
 
-> Substitui o "se a pena for confirmada, dobra". Como a regra atual está no `PROJETO.md`, a troca é ADR depois do ok do CEO. Os números ainda não foram simulados: o STJD é da Etapa 2 e não existe no motor; as contas abaixo são de esperança simples, e a medição entra no pedido ao `developer`.
+> Substitui o "se a pena for confirmada, dobra" do `PROJETO.md`; a troca está formalizada no ADR-0017 (aceito pelo CEO em 2026-11-05). Os números ainda não foram simulados: o STJD é da Etapa 2 e não existe no motor; as contas abaixo são de esperança simples, e a medição entra no pedido ao `developer`.
 
 **Regra em uma frase:** o expulso fica 1 jogo de fora na hora; o STJD julga na semana e desconta esse jogo; se a pena passar de 2 jogos, você pode recorrer: ele cumpre 2 e joga até o Pleno, que pode absolver, reduzir, manter ou aumentar, e o que sobrar ele cumpre logo depois.
 

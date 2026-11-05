@@ -17,5 +17,8 @@
 | 0013 | Liga online: até 8 humanos no ao vivo e até 20 por divisão (um por clube) no assíncrono (revisão do CEO); Séries A e B juntas na Etapa 2                                                                                  | 2026-11-04 |
 | 0014 | Escudos podem lembrar o real na silhueta, nas cores e no tipo de padrão, nunca no símbolo, iniciais, sigla, nome ou composição; dados `crest*` fixos por clube; revisão jurídica dos de risco médio antes do lançamento   | 2026-11-04 |
 | 0015 | Patrocínio real desligado e não anunciado (nada de "Patrocine aqui"); placas, placar e camisas só com marcas fictícias como cenário; receita só do apoio voluntário; ligar exige ADR novo e revisão do `security-auditor` | 2026-11-04 |
+| 0016 | Áudio essencial sem custo na 1a: efeitos e torcida sintetizados no navegador (Web Audio), sem crédito de ElevenLabs; a narração com voz continua no ElevenLabs, só com ok do CEO                                          | 2026-11-05 |
+| 0017 | Efeito suspensivo fiel ao real: a pena não dobra; vermelho direto com motivo, automática descontada e risco no Pleno (Etapa 2)                                                                                            | 2026-11-05 |
+| 0018 | Favorito por 20 pontos: meta "cerca de 65%" vira a faixa de 62% a 68%, centro realista 63%, com `kChance` 0,125; favorito e zebra com menos de 1 ponto de folga                                                           | 2026-11-05 |
 
 Decisões pendentes: `docs/status.md`.
