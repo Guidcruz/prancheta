@@ -637,8 +637,6 @@ export function endSeason(
     awards,
     campaigns,
   };
-  // A state from before T-017 has no `pastSeasons` yet.
-  const past: readonly SeasonSummary[] = Array.isArray(state.pastSeasons) ? state.pastSeasons : [];
   return ok(
     {
       state: {
@@ -646,7 +644,7 @@ export function endSeason(
         engineVersion: ENGINE_VERSION,
         phase: 'seasonEnd',
         players,
-        pastSeasons: [...past, summary],
+        pastSeasons: [...state.pastSeasons, summary],
       },
       summary,
     },
@@ -783,6 +781,5 @@ export function careerLeagueTitles(
   if (!Object.hasOwn(state.clubs, clubId)) return undefined;
   const club = state.clubs[clubId];
   if (club === undefined) return undefined;
-  const past = Array.isArray(state.pastSeasons) ? state.pastSeasons : [];
-  return club.def.titles.league + past.filter((s) => s.championId === clubId).length;
+  return club.def.titles.league + state.pastSeasons.filter((s) => s.championId === clubId).length;
 }
