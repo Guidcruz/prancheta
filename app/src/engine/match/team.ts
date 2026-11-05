@@ -8,7 +8,7 @@ import { correctedCondition, kickoffBench, replaceUnavailable, winsTie } from '.
 import {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
-  POSTURE_EFFECTS,
+  POSTURES,
   PRESSURE_EFFECTS,
   conditionMultiplier,
   fillEmptyGoal,
@@ -144,7 +144,7 @@ function isFormation(value: unknown): value is Formation {
 }
 
 function isPosture(value: unknown): value is Posture {
-  return typeof value === 'string' && Object.prototype.hasOwnProperty.call(POSTURE_EFFECTS, value);
+  return typeof value === 'string' && (POSTURES as readonly string[]).includes(value);
 }
 
 function isPressure(value: unknown): value is Pressure {
@@ -456,7 +456,7 @@ export function changeFormation(team: TeamState, formation: Formation): boolean 
  */
 export function currentStrengths(
   team: TeamState,
-  match: Pick<MatchParams, 'midWeight' | 'missingPlayerPenalty'>,
+  match: Pick<MatchParams, 'midWeight' | 'missingPlayerPenalty' | 'allOutPower' | 'allOutDef'>,
   home: number = team.home,
 ): TeamStrengths {
   if (team.slots[GOALKEEPER_SLOT]!.app === undefined) return NO_STRENGTH;

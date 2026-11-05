@@ -694,6 +694,8 @@ describe('simulateMatch: edge cases never throw (partida.md, "Casos de borda")',
       'assistShare',
       'comfortableLeadGoals',
       'comfortableLeadPower',
+      'allOutPower',
+      'allOutDef',
     ] as const;
     for (const edge of ['min', 'max'] as const) {
       const match = { ...params.match } as Record<string, unknown>;

@@ -4,10 +4,10 @@ import { POSITIONS } from './players.ts';
 import { Rng } from './rng.ts';
 import {
   FORMATION_MULTIPLIERS,
-  POSTURE_EFFECTS,
   PRESSURE_EFFECTS,
   effectiveRating,
   homeAdvantage,
+  postureEffect,
   sectorStrengths,
   teamStrength,
   type TeamStrengths,
@@ -109,7 +109,10 @@ describe('strength (property, 1,000 seeds)', () => {
     );
     const maxPressure = Math.max(...PRESSURES.map((p) => PRESSURE_EFFECTS[p].mid));
     const maxPosture = Math.max(
-      ...POSTURES.flatMap((p) => [POSTURE_EFFECTS[p].power, POSTURE_EFFECTS[p].def]),
+      ...POSTURES.flatMap((p) => {
+        const effect = postureEffect(p, params.match);
+        return [effect.power, effect.def];
+      }),
     );
     const ceiling = maxEff * maxShape * maxPressure * maxPosture * (1 + maxHome);
     for (let seed = 1; seed <= SEEDS; seed++) {

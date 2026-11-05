@@ -132,10 +132,12 @@ Cada chute do mandante vale cerca de 8% a mais e cada chute do visitante cerca d
 | Postura | Defensiva                           | Menos chances criadas, menos sofridas                       | `power` 0,95 · `def` 1,05              |
 |         | Equilibrada                         | Referência                                                  | 1,00 · 1,00                            |
 |         | Ofensiva                            | Mais chances criadas, mais sofridas                         | 1,05 · 0,95                            |
-|         | Tudo no ataque (só comando em jogo) | Aposta para buscar o resultado                              | 1,10 · 0,85                            |
+|         | Tudo no ataque (só comando em jogo) | Aposta para buscar o resultado                              | 1,10 · 0,85 (parâmetros, abaixo)       |
 | Pressão | Baixa                               | Meio rende menos, cansa menos, menos cartões                | `mid` 0,96 · `drain` 0,8 · `cards` 0,7 |
 |         | Média                               | Referência                                                  | 1,00 · 1,0 · 1,0                       |
 |         | Alta                                | Meio rende mais (bola recuperada), cansa mais, mais cartões | 1,05 · 1,4 · 1,4                       |
+
+**"Tudo no ataque" é parâmetro** (T-016): `power` × `match.allOutPower` e `def` × `match.allOutDef`, para o `/balance` poder ajustar a aposta. São os dois únicos efeitos de postura que são parâmetros; as outras três posturas são constantes.
 
 Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 37,6% com 2,79 gols; defensiva × equilibrada, 36,4% / 28,1% / 35,6% com 2,37 gols; pressão alta, 37,6% / 25,9% / 36,5%. Nenhuma opção domina; o que muda é o tipo de jogo, e a escolha certa depende do placar e do adversário.
 
@@ -480,6 +482,8 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `match.assistShare`          | 0,70                                        | 0–1          | maioria dos gols com assistência                           |
 | `match.comfortableLeadGoals` | 2                                           | 2–5          | "tirar o pé" vale a partir de 2 gols de vantagem           |
 | `match.comfortableLeadPower` | 1 (neutro; proposta 0,85 na T-016, parte 2) | 0,7–1        | "tirar o pé": quem ganha com folga cria menos; 1 desliga   |
+| `match.allOutPower`          | 1,10 (proposta 1,25 na T-016, parte 2)      | 1,05–1,50    | "tudo no ataque" multiplica o `power` ("Táticas")          |
+| `match.allOutDef`            | 0,85 (proposta 0,78 na T-016, parte 2)      | 0,60–0,95    | "tudo no ataque" multiplica a `def` ("Táticas")            |
 | `fatigue.drainPerMinute`     | 0,30                                        | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
 | `fatigue.recoveryPerDay`     | 7                                           | 3–15         | 3 dias não bastam para voltar inteiro                      |
 | `injury.basePerMinute`       | 0,00012                                     | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
@@ -488,7 +492,7 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 | `cards.derbyMult`            | 1,2                                         | 1–1,5        | clássico é mais quente                                     |
 | `cards.bookedMult`           | 0,5 (proposta 0,20 na T-016, parte 2)       | 0–1          | o pendurado leva o segundo amarelo com esta parte da taxa  |
 
-**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura, pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
+**Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura (menos "tudo no ataque", que é `match.allOutPower` e `match.allOutDef` desde a T-016), pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
 
 ## Pedido ao `developer` (critérios de aceite)
 

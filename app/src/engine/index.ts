@@ -153,6 +153,7 @@ export {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
   MORALE_MULT,
+  POSTURES,
   POSTURE_EFFECTS,
   PRESSURE_EFFECTS,
   STARTERS_COUNT,
@@ -161,6 +162,7 @@ export {
   fillEmptyGoal,
   homeAdvantage,
   moraleMultiplier,
+  postureEffect,
   sectorStrengths,
   shownEleven,
   strengthsFromRatings,
@@ -169,6 +171,7 @@ export {
 } from './strength.ts';
 export type {
   LineupProblem,
+  PostureEffect,
   RatingFactors,
   Sector,
   ShownState,

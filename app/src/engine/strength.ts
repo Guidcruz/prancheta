@@ -15,7 +15,8 @@ import type { ClubId, Formation, PlayerId, Position, Posture, Pressure, Result }
  * form (`dayForm`) is added on top by the match (T-009), and `T(t)` already takes the missing
  * players and the half-time talk as inputs, both 0 by default.
  *
- * The tables below are rule constants of partida.md ("Constantes"), not /balance knobs.
+ * The tables below are rule constants of partida.md ("Constantes"), not /balance knobs; only the
+ * "tudo no ataque" posture reads its effect from the parameters (`postureEffect`).
  */
 
 /** The four lines of a team: the goalkeeper is in none of the three strength sectors. */
@@ -47,15 +48,35 @@ export const FORMATION_MULTIPLIERS: {
   '5-3-2': { def: 1.05, mid: 0.95, atk: 0.97 },
 };
 
-/** Posture effects on the attacking power and the defence (partida.md, "Táticas"). */
-export const POSTURE_EFFECTS: {
-  readonly [P in Posture]: { readonly power: number; readonly def: number };
-} = {
+/** Effect of a posture on the attacking power and the defence. */
+export interface PostureEffect {
+  readonly power: number;
+  readonly def: number;
+}
+
+/**
+ * Posture effects of the pre-match postures on the attacking power and the defence (partida.md,
+ * "Táticas"), rule constants. "Tudo no ataque" (`allOut`) is a /balance knob since T-016:
+ * `match.allOutPower` and `match.allOutDef` ({@link postureEffect}).
+ */
+export const POSTURE_EFFECTS: { readonly [P in Exclude<Posture, 'allOut'>]: PostureEffect } = {
   defensive: { power: 0.95, def: 1.05 },
   balanced: { power: 1.0, def: 1.0 },
   attacking: { power: 1.05, def: 0.95 },
-  allOut: { power: 1.1, def: 0.85 },
 };
+
+/** Every posture, `allOut` included: the valid values of a sheet or a command. */
+export const POSTURES: readonly Posture[] = ['defensive', 'balanced', 'attacking', 'allOut'];
+
+/** The effect of `posture`: the table for the pre-match ones, the parameters for `allOut`. */
+export function postureEffect(
+  posture: Posture,
+  match: Pick<MatchParams, 'allOutPower' | 'allOutDef'>,
+): PostureEffect {
+  return posture === 'allOut'
+    ? { power: match.allOutPower, def: match.allOutDef }
+    : POSTURE_EFFECTS[posture];
+}
 
 /**
  * Pressure effect on the midfield (partida.md, "Táticas"). The energy drain and the card
@@ -201,7 +222,7 @@ export function strengthsFromRatings(
   tactic: StrengthTactic,
   ratings: readonly (number | undefined)[],
   factors: RatingFactors,
-  match: Pick<MatchParams, 'midWeight' | 'missingPlayerPenalty'>,
+  match: Pick<MatchParams, 'midWeight' | 'missingPlayerPenalty' | 'allOutPower' | 'allOutDef'>,
 ): TeamStrengths {
   const sectors = FORMATION_SECTORS[formation];
   if (ratings.length !== sectors.length) {
@@ -250,7 +271,7 @@ export function strengthsFromRatings(
 
   const t = teamFactor({ ...factors, missing: empty }, match);
   const shape = FORMATION_MULTIPLIERS[formation];
-  const posture = POSTURE_EFFECTS[tactic.posture];
+  const posture = postureEffect(tactic.posture, match);
   const def = mean(defSum, defCount) * shape.def * t;
   const mid = mean(midSum, midCount) * shape.mid * PRESSURE_EFFECTS[tactic.pressure].mid * t;
   const atk = mean(atkSum, atkCount) * shape.atk * t;

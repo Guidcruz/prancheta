@@ -1,5 +1,5 @@
 import { FORMATIONS } from '../formations.ts';
-import { POSTURE_EFFECTS, PRESSURE_EFFECTS } from '../strength.ts';
+import { POSTURES, PRESSURE_EFFECTS } from '../strength.ts';
 import type { EngineWarning, Side } from '../types.ts';
 import { HALFTIME_CHOICES, HALF_MINUTES, MAX_SUBS, STOPPAGE, TACTIC_PRESETS } from './rules.ts';
 import type { HalftimeChoice, MatchCommand, MatchEvent, TeamInput } from './types.ts';
@@ -135,7 +135,7 @@ function shapeProblem(command: MatchCommand): { code: string; value?: string } |
     if (formation !== undefined && !(FORMATIONS as readonly unknown[]).includes(formation)) {
       return { code: 'command-unknown-formation', value: String(formation) };
     }
-    if (c['posture'] !== undefined && !has(POSTURE_EFFECTS, c['posture'])) {
+    if (c['posture'] !== undefined && !(POSTURES as readonly unknown[]).includes(c['posture'])) {
       return { code: 'command-unknown-posture', value: String(c['posture']) };
     }
     if (c['pressure'] !== undefined && !has(PRESSURE_EFFECTS, c['pressure'])) {

@@ -31,6 +31,12 @@ export interface MatchParams {
    */
   readonly comfortableLeadGoals: number;
   readonly comfortableLeadPower: number;
+  /**
+   * "Tudo no ataque" (partida.md, "Táticas"; T-016): the `allOut` posture multiplies the attacking
+   * power by `allOutPower` and the defence by `allOutDef`. The other postures are rule constants.
+   */
+  readonly allOutPower: number;
+  readonly allOutDef: number;
   readonly fatigue: { readonly drainPerMinute: number; readonly recoveryPerDay: number };
   readonly injury: { readonly basePerMinute: number };
   readonly cards: {
@@ -153,6 +159,10 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
     // range is 0.7 to 1 (1 turns the rule off).
     comfortableLeadGoals: int(2, 5),
     comfortableLeadPower: num(0.7, 1),
+    // partida.md, "Táticas": "tudo no ataque" goes further than the attacking posture (1.05 and
+    // 0.95), so the power never goes below 1.05 and the defence never above 0.95.
+    allOutPower: num(1.05, 1.5),
+    allOutDef: num(0.6, 0.95),
     fatigue: { drainPerMinute: num(0.1, 0.6), recoveryPerDay: num(3, 15) },
     injury: { basePerMinute: num(0, 0.0005) },
     cards: {
