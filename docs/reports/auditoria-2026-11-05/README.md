@@ -20,6 +20,19 @@ Nenhum bug de jogo foi encontrado. O motor está verde e coberto. Os achados se 
 
 ## Decisões do CEO
 
-A lista consolidada, com a recomendação do Orquestrador, está na mensagem de 2026-11-05. O resultado vai registrado abaixo quando o CEO decidir.
+O CEO aceitou todas as recomendações em 2026-11-05 ("recomendados"):
 
-_(pendente)_
+1. Fica a branch da sessão, porque o ambiente exige. Regra escrita: nenhum commit novo enquanto houver PR aberto da branch.
+2. Um PR por tarefa. ADR, pesquisa e texto de site vão em PR próprio.
+3. O relatório do code review e do QA vai como comentário no PR.
+4. Em PR só de motor, o teste do CEO é conferir a tabela de métricas e os riscos; o teste manual fica "N/A, só motor".
+5. O CI passa a rodar `/balance`, `dist.test` depois do build e `content:check`, a cargo do `devops-engineer`. Se o `/balance` passar de 3 min no runner, roda 100 temporadas no PR e 200 na `main`.
+6. `main` vermelha é prioridade zero e a correção vai num PR `fix(ci)` próprio.
+7. Prettier roda automático antes do commit, e o `npm run test:all` passa a ser obrigatório também no caminho leve e no `/devlog`.
+8. A meta "20 pontos mais forte vence cerca de 65%" vira a faixa de 62% a 68%, com centro realista em 63% (ADR).
+9. Na 1a, os jogadores são só brasileiros, como na US-003; os sul-americanos entram na Etapa 5.
+10. A meta da diretoria aparece só como texto informativo na 1a e entra nos critérios da US-025.
+11. A vibração segue o `prefers-reduced-motion`.
+12. O `architect` emagrece o `lastRound` antes do congelamento do save (T-019).
+13. O `index.ts` passa a exportar só o contrato público, com uma regra de lint para quem importa o motor.
+14. Ordem: primeiro as correções da auditoria (docs e CI), depois o save (T-018, T-027, T-019), depois a T-048.

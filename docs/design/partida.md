@@ -9,7 +9,7 @@
 | Entra na 1a                                                                         | Fica para depois                                                       |
 | ----------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | Formação, postura e pressão; comandos em jogo; até 5 substituições                  | Altitude e clima (Etapa 5, "Mando de campo, altitude e clima")         |
-| Mando de campo pelo termômetro da torcida (+ fator casa, se aprovado)               | Treino semanal e comissão técnica mexendo em fadiga e lesões (Etapa 3) |
+| Mando de campo pelo termômetro da torcida + fator casa fixo (ADR-0011)              | Treino semanal e comissão técnica mexendo em fadiga e lesões (Etapa 3) |
 | Cansaço dentro do jogo e entre jogos; lesões simples; cartões e suspensão de 1 jogo | STJD: agressão, efeito suspensivo, escalação irregular (Etapa 2)       |
 | Pênaltis e faltas diretas; capitão e cobradores; conversa no intervalo              | Calendário congestionado com copas (Etapa 2)                           |
 | Clássicos (rivalidade)                                                              | Incidentes de torcida, portões fechados (Etapa 2/3)                    |

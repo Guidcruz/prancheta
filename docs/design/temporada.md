@@ -15,7 +15,7 @@
 | Expectativa da diretoria só informativa (decisão 6), pela força              | Barra de confiança, cobrança e demissão (Etapa 4)                       |
 | Evolução e envelhecimento no fim da temporada                                | Base, aposentadorias com festa, histórico e recordes (Etapa 4)          |
 
-Na 1a o ritmo é sempre "No meu ritmo": a rodada avança quando o jogador toca em "Jogar rodada". O tipo de carreira é, na prática, "clube fixo" e o estilo Tranquilo e o Realista só mudam o texto da diretoria (demissão: Etapa 4).
+Na 1a o ritmo é sempre "No meu ritmo": a rodada avança quando o jogador toca em "Jogar rodada". O tipo de carreira é, na prática, "clube fixo". O estilo (Tranquilo ou Realista) não aparece na 1a: o novo jogo esconde as opções de etapas futuras (decisão P3, US-014), e a diretoria fala só com o tom do porte ("Expectativa da diretoria"). O estilo entra na Etapa 4, com a confiança e a demissão.
 
 ## Tabela de jogos
 
@@ -142,7 +142,7 @@ Na temporada 1, a `strength` é a força efetiva da carreira; da 2ª em diante, 
 
 Isto troca a meta por porte do `PROJETO.md` ("o porte define as metas e a paciência"): vai para a ADR da Etapa 4 (o `architect` abre). Na 1a só muda o texto mostrado.
 
-No estilo Tranquilo o texto é "a diretoria espera"; no Realista, "a diretoria cobra". A confiança de 0 a 100 e a demissão entram na Etapa 4.
+Na 1a não há estilo (escondido pela P3, US-014): o texto da meta usa só o tom do porte da tabela acima. Na Etapa 4, com o estilo, o Tranquilo diz "a diretoria espera" e o Realista, "a diretoria cobra"; a confiança de 0 a 100 e a demissão (só no Realista) entram junto.
 
 ## Porte na carreira (Etapa 4, decisão do CEO)
 

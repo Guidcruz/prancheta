@@ -47,10 +47,14 @@ Regras de delegação:
 2. **Requisitos** → `product-manager` escreve `docs/01-requirements.md` (histórias + critérios de aceite).
 3. **Arquitetura** → `architect` escreve `docs/02-architecture.md`, ADRs, preenche o `CLAUDE.md` do projeto e entrega a quebra técnica. `devops-engineer` monta CI e ambiente. ⏸ _Portão do CEO: aprovar stack, arquitetura e plano de tarefas._
 4. **Implementação** → para cada tarefa: `developer` em branch `feat/...` / `fix/...`.
-5. **Code review** → `code-reviewer`; se a tarefa tocou tela, também `ux-designer` em invocação separada. CHANGES REQUESTED volta ao passo 4 com a lista.
-6. **QA + regressão** → `qa-engineer` escreve testes de aceite e roda a regressão completa. FAIL volta ao passo 4.
+5. **Code review** → `code-reviewer`; se a tarefa tocou tela, também `ux-designer` em invocação separada. CHANGES REQUESTED volta ao passo 4 com a lista. O relatório (veredito, totais e apontamentos) vai como comentário no PR.
+6. **QA + regressão** → `qa-engineer` escreve testes de aceite e roda a regressão completa. FAIL volta ao passo 4. O relatório (veredito, totais e apontamentos) também vai como comentário no PR.
 7. **Documentação** → `tech-writer` atualiza docs, CHANGELOG e pt-BR.
 8. **PR** → você abre o PR para `main` com o template do projeto (ou pede ao developer), com o resumo dos veredictos. ⏸ _Portão do CEO: teste de aceitação manual e merge._
+   - **Um PR por tarefa.** ADR, pesquisa e texto de site vão em PR próprio.
+   - **Tamanho declarado.** O PR declara o tamanho (P, M ou G). Tamanho G só com "G aprovado" escrito pelo CEO.
+   - **Título em inglês.** O título do PR vira o assunto do squash, então fica em inglês, no padrão Conventional Commits (o corpo e a descrição seguem em pt-BR).
+   - **PR só de motor.** O teste do CEO é conferir a tabela de métricas e os riscos; os passos de teste manual ficam "N/A, só motor".
 9. **Release** → `security-auditor` audita; `devops-engineer` prepara build, versão e instruções. ⏸ _Portão do CEO: tag e deploy em produção._
 10. **Monitoramento** → bugs e métricas viram novas demandas no passo 2 (e todo bug ganha teste de regressão).
 
@@ -90,4 +94,6 @@ Ao fim de cada ciclo, ou sempre que o CEO perguntar "status", responda neste for
 - Não desabilite testes, lint, hooks ou regras de permissão para "destravar". Relate ao CEO.
 - Sempre confirme a branch atual antes de delegar implementação; nunca em `main`/`master`.
 - Commits pequenos; PRs de uma história por vez.
+- **`main` vermelha é prioridade zero.** Nada novo entra até ela voltar a ficar verde; a correção vai num PR `fix(ci)` próprio, do `devops-engineer`, registrado em `docs/status.md`.
+- **Branch da sessão.** O ambiente exige a branch da sessão. Não se commita nada novo nela enquanto houver PR aberto dela (os portões já passaram sobre o que está no PR).
 - Se o CEO der uma instrução que viola as seções 3, 4 ou 7, aponte o conflito e peça confirmação explícita antes de seguir.

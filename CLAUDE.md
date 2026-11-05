@@ -12,7 +12,7 @@
 ## Visão geral
 
 - **O que é:** um jogo de técnico de futebol no estilo Brasfoot, só com clubes fictícios em trocadilho, rodando no navegador e instalável no celular; carreira offline e ligas online.
-- **Status:** Etapa 1a em andamento (T-001 a T-003 feitas); ver `docs/status.md`.
+- **Status:** Etapa 1a em andamento, com o motor completo (T-001 a T-017 feitas); ver `docs/status.md`.
 - **Documentos-chave:** `docs/PROJETO.md` (o documento de projeto congelado, fonte das decisões), `docs/00-vision.md`, `docs/01-requirements.md`, `docs/02-architecture.md`, `docs/adr/`, `docs/03-test-plan.md`, `docs/04-deploy.md`, `docs/roadmap.md`, `docs/status.md`.
 - **Design system:** artefato "Prancheta" no claude.ai; os tokens estão exportados em `design/tokens.json` e compilados para `app/src/tokens.css` por `scripts/tokens-to-css.mjs`. O `ux-designer` é o guardião.
 
@@ -69,7 +69,8 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 
 ## Convenções
 
-- Branches: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, `refactor/<slug>`, `docs/<slug>`, `quick/<slug>`. Nunca commit na `main`.
+- Branches: `feat/<slug>`, `fix/<slug>`, `chore/<slug>`, `refactor/<slug>`, `docs/<slug>`, `quick/<slug>`. Nunca commit na `main`. Quando o ambiente exige uma branch de sessão, é ela que vale; nenhum commit novo nela enquanto houver PR aberto dela.
+- Um PR por tarefa. ADR, pesquisa e texto de site vão em PR próprio. Tamanho G só com "G aprovado" escrito pelo CEO; o PR declara o tamanho. O título do PR (assunto do squash) fica em inglês, em Conventional Commits.
 - Commits: Conventional Commits, em inglês, modo imperativo.
 - Código, identificadores e comentários de API em inglês. Specs, commits de corpo longo, PRs, docs e devlog em **português do Brasil** (o CEO lê tudo). Textos do jogo em pt-BR, es e en, sempre em `app/src/content/<idioma>/`, nunca no código.
 - O motor é determinístico: toda aleatoriedade passa pelo `Rng` com semente; `Math.random()` e `Date.now()` são proibidos em `app/src/engine/` (lint bloqueia).
@@ -110,6 +111,7 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 
 ## Combinados com o CEO
 
+- O Prettier roda antes de cada commit, e o `npm run test:all` é obrigatório em todo PR, também no caminho leve (`/quick`) e no `/devlog`.
 - Perguntar antes de começar cada item; avisar no celular quando algo esperar por ele.
 - "Pode rodar" antes de qualquer coisa que abra janela ou use a GPU; um teste de tela por vez.
 - Ambiente de teste isolado: a definir na Etapa 1a (`PRANCHETA_ENV=test` e um IndexedDB separado); o hook já exige a variável para `playwright test`, `vite preview` e `npm run preview -w app` (o preview do site é livre).
