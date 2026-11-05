@@ -153,7 +153,7 @@ Os números conferem com a medição na cópia antes da aplicação (tabela "ant
 
 ### Decisão do CEO: "todo mundo no ataque" só a partir dos 60' (2026-11-05)
 
-**Aprovada pelo CEO e aplicada pelo `developer`.** Parâmetro novo `match.allOutFromMinute` = 60 (faixa de 0 a 80): o comando com `minute: 59` vale (a partir do minuto 60, pela regra "o comando leva o último minuto jogado"); antes disso é ignorado. No `/balance`, o duelo "tudo no ataque desde o apito inicial" saiu e entraram dois obrigatórios, os dois com vitórias − derrotas dentro de ±3: `allout-60` (o atalho: "tudo no ataque" com pressão alta, desde o minuto 60) e `allout-60-medium` (a postura com pressão média, desde o minuto 60).
+**Aprovada pelo CEO e aplicada pelo `developer`.** Parâmetro novo `match.allOutFromMinute` = 60 (faixa de 0 a 76): o comando com `minute: 59` vale (a partir do minuto 60, pela regra "o comando leva o último minuto jogado"); antes disso é ignorado. No `/balance`, o duelo "tudo no ataque desde o apito inicial" saiu e entraram dois obrigatórios, os dois com vitórias − derrotas dentro de ±3: `allout-60` (o atalho: "tudo no ataque" com pressão alta, desde o minuto 60) e `allout-60-medium` (a postura com pressão média, desde o minuto 60).
 
 **Medição** (`npm run balance -- --seasons 200 --seed 1,2,3`): 36 de 36 metas obrigatórias dentro em cada semente, as 3 metas raras dentro no total (1,5%, 6,0% e 7,8%), código de saída 0. As outras métricas não mudaram.
 
