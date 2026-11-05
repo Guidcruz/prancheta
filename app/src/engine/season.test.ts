@@ -13,7 +13,7 @@ import { playRound } from './round.ts';
 import {
   AWARD_MIN_GAMES,
   MORALE_OFFSEASON_PULL,
-  MORALE_TURN_DECIMALS,
+  MORALE_TURN_SCALE,
   REVELATION_MAX_AGE,
   TARGET_POSITION_MAX,
   ageCurve,
@@ -641,7 +641,7 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
   });
 
   it('rounds the morale of the turn to 2 decimals, in range (BUG-A of T-017)', () => {
-    expect(MORALE_TURN_DECIMALS).toBe(2);
+    expect(MORALE_TURN_SCALE).toBe(100);
     expect(moraleAtTurn(80, 60)).toBe(70);
     expect(moraleAtTurn(64.69681177721688, 60)).toBe(62.35);
     expect(moraleAtTurn(21.123456789, 60)).toBe(40.56);

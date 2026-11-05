@@ -53,19 +53,20 @@ export const TEAM_OF_SEASON_FORMATION: Formation = '4-3-3';
 /** At the turn the morale makes this share of the way to `fans.start` (decision 13). */
 export const MORALE_OFFSEASON_PULL = 0.5;
 /**
- * Decimal places of the morale after the turn: the pull halves the morale of the season, whose
- * drift towards the thermometer leaves long real numbers, and kept whole those digits would make
- * the state grow from one season to the next (BUG-A of T-017; at most 0.005 of morale, nothing a
- * match can tell).
+ * The morale after the turn is rounded to hundredths (1 / MORALE_TURN_SCALE): the pull halves the
+ * morale of the season, whose drift towards the thermometer leaves long real numbers, and kept
+ * whole those digits would make the state grow from one season to the next (BUG-A of T-017; at
+ * most 0.005 of morale, nothing a match can tell).
  */
-export const MORALE_TURN_DECIMALS = 2;
+export const MORALE_TURN_SCALE = 100;
 
 /** The morale of a player at the turn: half of the way to `fansStart`, rounded and in range. */
 export function moraleAtTurn(morale: number, fansStart: number): number {
-  const scale = 10 ** MORALE_TURN_DECIMALS;
   const pulled = morale + MORALE_OFFSEASON_PULL * (fansStart - morale);
-  return clamp(Math.round(pulled * scale) / scale, MORALE_RANGE.min, MORALE_RANGE.max);
+  const rounded = Math.round(pulled * MORALE_TURN_SCALE) / MORALE_TURN_SCALE;
+  return clamp(rounded, MORALE_RANGE.min, MORALE_RANGE.max);
 }
+
 /** The board's target never asks for worse than this position ("não cair"). */
 export const TARGET_POSITION_MAX = 16;
 /** The board's target: `min(strengthRank + TARGET_MARGIN, TARGET_POSITION_MAX)`. */
@@ -698,7 +699,7 @@ function playerAtTurn(player: Player, fansStart: number): Player {
  *   removed and `lastSheets` kept;
  * - every player with condition 100, no injury, suspension, yellow card nor bench streak, no form
  *   ("sem jogos") and the morale half of the way to `fans.start` (MORALE_OFFSEASON_PULL), rounded
- *   to MORALE_TURN_DECIMALS ({@link moraleAtTurn}); age,
+ *   to hundredths ({@link moraleAtTurn}); age,
  *   overall and attributes already moved in `endSeason`; everything else kept (the idol too);
  * - every club with the thermometer at `fans.start`, `idolBenchStreak` 0 and the strength of its
  *   evolved squad ({@link squadStrength}); profile and formations kept.
