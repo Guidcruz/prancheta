@@ -1,11 +1,11 @@
 import { afterAll, describe, expect, it } from 'vitest';
-import { config } from '../../../config/prancheta.config';
+import { config } from '../config/prancheta.config';
 import { mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 // Share images (scripts/og.mjs, docs/art/og-image.md). Renders into a temp folder.
-const ogUrl = new URL('../../../scripts/og.mjs', import.meta.url).href;
+const ogUrl = new URL('./og.mjs', import.meta.url).href;
 const load = async () => (await import(/* @vite-ignore */ ogUrl)) as any; // eslint-disable-line @typescript-eslint/no-explicit-any
 
 const tempDirs: string[] = [];

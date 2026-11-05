@@ -10,7 +10,12 @@ import { describe, expect, it } from 'vitest';
  * every source file of the site (.astro, .ts, .mjs, .js, .css, tests included), finds each
  * module it loads (static and dynamic imports, re-exports, `new URL(..., import.meta.url)`, CSS
  * `@import`) and resolves it. The engine itself is not on the list: the site reaches it only
- * through the shield generator, which reads `@engine` (the public API, alias in astro.config.mjs).
+ * through the shield generator, which reads `@engine` (the public API); astro.config.mjs only
+ * points that alias at it (ALLOWED_ONLY_FROM).
+ *
+ * Reads through `fs` (`readFileSync(join(...))`, `existsSync`...) are not module loads, and this
+ * scanner does not see them: a file of the site that reads from outside site/ that way is caught
+ * only in review.
  */
 
 const repo = fileURLToPath(new URL('../../../', import.meta.url));
@@ -25,20 +30,15 @@ const ALLOWED = [
   'config/prancheta.config.ts',
   'docs/roadmap.md',
   'app/src/tokens.css',
+  'design/tokens.json',
   'app/src/data/*.json',
   'app/src/lib/generators/shield.ts',
 ];
 
-/**
- * Outside the list, waiting for the architect (reported in the T-049 PR), each with the files
- * that read it today. Nothing else may join this table: a new path goes to ALLOWED through 3.
- */
-const PENDING: Record<string, readonly string[]> = {
-  // The light background of the theme-color tag, read from the design tokens (T-021 site).
-  'design/tokens.json': ['site/src/layouts/Base.astro'],
-  // The test of the share images runs the generator of the site build (`node ../scripts/og.mjs`).
-  'scripts/og.mjs': ['site/src/lib/og.test.ts'],
-  // The target of the `@engine` alias for the shield generator (3, "Site").
+/** Paths of 3 "Site" that only the files listed with them may read. */
+const ALLOWED_ONLY_FROM: Record<string, readonly string[]> = {
+  // The target of the `@engine` alias, for the shield generator to resolve; no other file of the
+  // site reads the engine.
   'app/src/engine/index.ts': ['site/astro.config.mjs'],
 };
 
@@ -120,12 +120,12 @@ function outsideReads(): Map<string, Set<string>> {
 describe('what the site reads from outside site/ (T-049)', () => {
   const reads = outsideReads();
 
-  it('is only the fixed list of 3 "Site" (and the paths waiting for the architect)', () => {
+  it('is only the fixed list of 3 "Site"', () => {
     const extra: string[] = [];
     for (const [path, by] of reads) {
       if (allowed(path)) continue;
-      const pending = PENDING[path];
-      if (pending !== undefined && [...by].every((f) => pending.includes(f))) continue;
+      const only = ALLOWED_ONLY_FROM[path];
+      if (only !== undefined && [...by].every((f) => only.includes(f))) continue;
       extra.push(`${path} (read by ${[...by].join(', ')})`);
     }
     expect(extra).toEqual([]);
@@ -136,6 +136,7 @@ describe('what the site reads from outside site/ (T-049)', () => {
       'config/prancheta.config.ts',
       'docs/roadmap.md',
       'app/src/tokens.css',
+      'design/tokens.json',
       'app/src/data/clubs.serie-a.json',
       'app/src/lib/generators/shield.ts',
     ]) {
