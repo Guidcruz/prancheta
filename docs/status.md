@@ -103,7 +103,7 @@ Regressão: 988 testes passando e 1 pulado.
 
 1. Meta do 17º recentrada em 42, de 39 a 45.
 2. Topo da tabela mantido como está, sem deixar os favoritos mais dominantes (hoje o mais forte é campeão em cerca de 24% das temporadas e algum dos 3 favoritos termina na metade de baixo em 26%).
-3. Placar e tabela ao vivo da rodada na tela de partida, no estilo TV: plantão curto em todo gol, plantão grande no gol que mexe com o técnico, tabela no intervalo e no fim, e opção nos ajustes. História em redação (`product-manager`).
+3. Placar e tabela ao vivo da rodada na tela de partida, no estilo TV: plantão curto em todo gol, plantão grande no gol que mexe com o técnico, tabela no intervalo e no fim, e opção nos ajustes. Registrada como US-070 a US-074 (Should, 1a); duas perguntas abertas para o CEO (G4 ou zona da Libertadores no plantão; "como ficou" também no modo só resultado).
 4. O devlog pode citar inspirações reais, como campeonatos e jogos, como referência.
 
 Pendências derivadas:
@@ -296,5 +296,5 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 1. T-015 e T-016 da Etapa 1a (a T-016 traz "tirar o pé", o ajuste de `baseChance` e `fans.reversion` 0,10).
 2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
-4. Placar e tabela ao vivo da rodada (história em redação).
+4. Placar e tabela ao vivo da rodada (US-070 a US-074).
 5. Lote de clubes de dezembro, com a tabela final de 2026.
