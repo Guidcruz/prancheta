@@ -201,7 +201,20 @@ export function congestedRound(state: GameState, clubId: ClubId): boolean {
   return near(index - 1) || near(index + 1);
 }
 
-/** The opponent as the pre-match screen shows him: his last sheet, else the AI's sheet now. */
+/**
+ * A sheet as the kick-off plays it (partida.md, "Valor desconhecido na entrada"): a posture that
+ * is not a pre-match one (`allOut` from a damaged save, or anything else) is `balanced`.
+ */
+export function asKickoffSheet(sheet: TeamSheet): TeamSheet {
+  const posture: unknown = sheet.tactic.posture;
+  if ((POSTURES as readonly unknown[]).includes(posture)) return sheet;
+  return { ...sheet, tactic: { ...sheet.tactic, posture: 'balanced' } };
+}
+
+/**
+ * The opponent as the pre-match screen shows him: his last sheet, else the AI's sheet now, with
+ * the posture the kick-off would play ({@link asKickoffSheet}).
+ */
 function opponentStrengths(
   state: GameState,
   params: GameParams,
@@ -210,8 +223,9 @@ function opponentStrengths(
 ): TeamStrengths | undefined {
   const opponent = match[otherSide(side)];
   const home = otherSide(side) === 'home' && !match.neutral ? homeOf(match, params) : 0;
-  for (const sheet of [state.lastSheets[opponent.clubId], opponent.sheet]) {
-    if (sheet === undefined) continue;
+  for (const given of [state.lastSheets[opponent.clubId], opponent.sheet]) {
+    if (given === undefined) continue;
+    const sheet = asKickoffSheet(given);
     const energy: Record<PlayerId, number> = {};
     const slots = FORMATION_SLOTS[sheet.lineup.formation] ?? [];
     sheet.lineup.starters.forEach((id, i) => {

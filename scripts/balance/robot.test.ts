@@ -5,10 +5,15 @@ import {
   prepareRound,
   validateLineup,
 } from '../../app/src/engine/index.ts';
-import type { GameState, MatchCommand, TeamStrengths } from '../../app/src/engine/index.ts';
+import type {
+  GameState,
+  MatchCommand,
+  TeamSheet,
+  TeamStrengths,
+} from '../../app/src/engine/index.ts';
 import { seasonStart } from './league.ts';
 import { loadParams, serieAClubs } from './options.ts';
-import { expectedPoints, robotRoundInput, robotTalk } from './robot.ts';
+import { asKickoffSheet, expectedPoints, robotRoundInput, robotTalk } from './robot.ts';
 
 /*
  * The robot coach (balance-targets.md, decision 10): valid sheets and commands, the same input for
@@ -71,6 +76,33 @@ describe('robotRoundInput', () => {
     expect(talks).toHaveLength(1);
     expect(talks[0]!.minute).toBe(HALF_MINUTES);
     for (const c of commands) expect(c.minute).toBeGreaterThanOrEqual(HALF_MINUTES);
+  });
+
+  it('reads an opponent\'s last sheet with "tudo no ataque" as balanced, like the kick-off', () => {
+    const input = robotRoundInput(start, params, CLUB);
+    const plan = prepareRound(start, params, input);
+    if (!plan.ok) throw new Error('plan');
+    const match = plan.value.matches.find((m) => m.home.clubId === CLUB || m.away.clubId === CLUB)!;
+    const opponent = match.home.clubId === CLUB ? match.away : match.home;
+    const withPosture = (posture: string): GameState => ({
+      ...start,
+      lastSheets: {
+        ...start.lastSheets,
+        [opponent.clubId]: {
+          ...opponent.sheet,
+          tactic: { ...opponent.sheet.tactic, posture: posture as 'balanced' },
+        },
+      },
+    });
+    expect(robotRoundInput(withPosture('allOut'), params, CLUB)).toEqual(
+      robotRoundInput(withPosture('balanced'), params, CLUB),
+    );
+    const allOut = { ...opponent.sheet, tactic: { posture: 'allOut', pressure: 'high' } };
+    expect(asKickoffSheet(allOut as unknown as TeamSheet).tactic).toEqual({
+      posture: 'balanced',
+      pressure: 'high',
+    });
+    expect(asKickoffSheet(opponent.sheet)).toBe(opponent.sheet);
   });
 
   it('is the same for the same state, and never changes it', () => {
