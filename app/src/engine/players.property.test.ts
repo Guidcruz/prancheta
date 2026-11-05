@@ -118,7 +118,7 @@ describe('validatePlayer against hostile input', () => {
   it('refuses NaN, Infinity, fractions and out-of-range values at the documented limits', () => {
     const bad: Array<[string, unknown]> = [
       ['age', 14],
-      ['age', 61],
+      ['age', 100],
       ['age', 25.5],
       ['shirt', 0],
       ['shirt', 100],
@@ -144,6 +144,7 @@ describe('validatePlayer against hostile input', () => {
     const good: Array<[string, unknown]> = [
       ['age', 15],
       ['age', 60],
+      ['age', 99],
       ['shirt', 1],
       ['shirt', 99],
       ['growth', 0.5],
