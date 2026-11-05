@@ -115,7 +115,7 @@ Peso de cada jogador de linha para ser o finalizador de uma jogada: `shooterWeig
 
 Se não é gol: trave 7%, defesa do goleiro 48%, para fora 45%. Na jogada que termina em gol, há assistência em 70% dos casos (`match.assistShare`), de um companheiro sorteado com peso `assistWeight[setor] × passing / 60` (MEI 3,0, LAT 1,5, ATA 1,5, VOL 1,2, ZAG 0,5; GOL 0), também pelo setor da vaga. Atributo que o jogador não tem (goleiro na linha) vale `round(0.4 × overall)` ("Atributo ausente" em `jogadores.md`); a força do goleiro é sempre o `eff`, então jogador de linha no gol não precisa de `reflexes`.
 
-**Exemplo numérico.** Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Na finalização, com atacantes de finishing 78 (fit 1, moral 50, descansados) e goleiros de eff 66 nos dois times:
+**Exemplo numérico** (com `baseChance` 0,090 e `kChance` 0,14, os valores de antes da T-016). Mandante com força 74, visitante com 68, termômetro do mandante 60, 4-4-2 equilibrada nos dois, todos descansados, moral 50, fator casa aprovado. `home = 0.05 + 0.02 + 0.06 × 0.60 = 0.106`. Power do mandante ≈ 74 × 1,106 = 81,8; Defense do visitante ≈ 68. Diferença 13,8 → `pChance = 0.090 × exp(0.14 × 1.38) = 0.109` por minuto, cerca de 10 oportunidades no jogo. No sentido contrário, diferença −13,8 → 0,074 por minuto, cerca de 7. Na finalização, com atacantes de finishing 78 (fit 1, moral 50, descansados) e goleiros de eff 66 nos dois times:
 
 | Quem chuta | `shot`            | `gkEff` do goleiro que defende | `pGoal`                                       |
 | ---------- | ----------------- | ------------------------------ | --------------------------------------------- |
@@ -132,12 +132,12 @@ Cada chute do mandante vale cerca de 8% a mais e cada chute do visitante cerca d
 | Postura | Defensiva                           | Menos chances criadas, menos sofridas                       | `power` 0,95 · `def` 1,05              |
 |         | Equilibrada                         | Referência                                                  | 1,00 · 1,00                            |
 |         | Ofensiva                            | Mais chances criadas, mais sofridas                         | 1,05 · 0,95                            |
-|         | Tudo no ataque (só comando em jogo) | Aposta para buscar o resultado                              | 1,10 · 0,85 (parâmetros, abaixo)       |
+|         | Tudo no ataque (só comando em jogo) | Aposta para buscar o resultado                              | 1,25 · 0,78 (parâmetros, abaixo)       |
 | Pressão | Baixa                               | Meio rende menos, cansa menos, menos cartões                | `mid` 0,96 · `drain` 0,8 · `cards` 0,7 |
 |         | Média                               | Referência                                                  | 1,00 · 1,0 · 1,0                       |
 |         | Alta                                | Meio rende mais (bola recuperada), cansa mais, mais cartões | 1,05 · 1,4 · 1,4                       |
 
-**"Tudo no ataque" é parâmetro** (T-016): `power` × `match.allOutPower` e `def` × `match.allOutDef`, para o `/balance` poder ajustar a aposta. São os dois únicos efeitos de postura que são parâmetros; as outras três posturas são constantes.
+**"Tudo no ataque" é uma aposta de verdade** (T-016, aprovado pelo CEO em 2026-11-05): o time vai bem mais à frente e se expõe bem mais, com `power` × `match.allOutPower` (1,25) e `def` × `match.allOutDef` (0,78), no lugar dos 1,10 · 0,85 de antes. São os dois únicos efeitos de postura que são parâmetros; as outras três posturas são constantes. Perdendo por 1 aos 75', o comando "todo mundo no ataque" aumenta a chance de não perder em 3 a 4 pontos (era 1,4), com mais gols dos dois lados no fim. Ela não vira tática para o jogo todo: desde o apito inicial, contra a 4-4-2 equilibrada média, fica dentro de ±3 p.p. de vitórias − derrotas (o `/balance` mede no duelo "tudo no ataque desde o apito inicial", obrigatório), e ainda cansa e dá mais cartões pela pressão alta.
 
 Protótipo com elencos iguais: ofensiva × equilibrada termina 36,8% / 25,6% / 37,6% com 2,79 gols; defensiva × equilibrada, 36,4% / 28,1% / 35,6% com 2,37 gols; pressão alta, 37,6% / 25,9% / 36,5%. Nenhuma opção domina; o que muda é o tipo de jogo, e a escolha certa depende do placar e do adversário.
 
@@ -242,7 +242,7 @@ pRed    = cards.redPerMinute × pressure.cards × positionMult × traitMult
 | -------------- | --- | --- | --- | --- | --- | --- |
 | `positionMult` | 0,2 | 1,3 | 1,1 | 1,3 | 0,9 | 0,8 |
 
-`traitMult` = 1,5 para temperamental, 1,0 para os outros. `positionMult` é o da **posição da vaga** em que o jogador está no minuto, não o da posição natural (como os pesos de finalizador e assistência): um volante improvisado de lateral usa 1,1, e o jogador de linha que foi para o gol usa 0,2. O fator `cards.bookedMult` (0,5) depois do amarelo é o jogador "jogando pendurado" (ver "Calibragem dos vermelhos").
+`traitMult` = 1,5 para temperamental, 1,0 para os outros. `positionMult` é o da **posição da vaga** em que o jogador está no minuto, não o da posição natural (como os pesos de finalizador e assistência): um volante improvisado de lateral usa 1,1, e o jogador de linha que foi para o gol usa 0,2. O fator `cards.bookedMult` (0,20 desde a T-016; era 0,5) depois do amarelo é o jogador "jogando pendurado" (ver "Calibragem dos vermelhos").
 
 `cards.yellowPerMinute = 0.0020` dá cerca de 4 amarelos por jogo (motor, T-010: 3,89). `cards.redPerMinute = 0.00003` dá cerca de 0,07 vermelho direto por jogo (motor: 0,068). Com o fator 0,5, o segundo amarelo dá cerca de 0,20 por jogo (motor: 0,205), e o total fica em cerca de 0,27, acima da meta de 0,11 a 0,25 de `balance-targets.md`.
 
@@ -467,30 +467,30 @@ O modo escolhido vale para todos os clubes da carreira, não só para o do jogad
 
 **Organização do arquivo.** Cansaço, lesões e cartões são grupos dentro de `match.json`: `fatigue.*`, `injury.*` e `cards.*` deste documento são, no arquivo e no código, `match.fatigue.*`, `match.injury.*` e `match.cards.*` (ex.: `match.fatigue.drainPerMinute`, `match.cards.derbyMult`). No texto, a forma curta vale como apelido da completa.
 
-| Parâmetro                    | Valor inicial                               | Faixa válida | Por quê                                                    |
-| ---------------------------- | ------------------------------------------- | ------------ | ---------------------------------------------------------- |
-| `match.baseChance`           | 0,090                                       | 0,03–0,20    | cerca de 8,6 oportunidades por time em jogo equilibrado    |
-| `match.kChance`              | 0,14                                        | 0,05–0,40    | 20 pontos de diferença → 65% de vitória (protótipo 66,9%)  |
-| `match.conversion`           | 0,15                                        | 0,05–0,30    | cerca de 1,3 gol por time em jogo equilibrado              |
-| `match.kFinish`              | 0,09                                        | 0,00–0,30    | finalizador e goleiro pesam, sem dominar                   |
-| `match.midWeight`            | 0,5                                         | 0,3–0,7      | meio e ataque pesam igual na criação, como no `PROJETO.md` |
-| `match.dayFormSd`            | 3                                           | 0–6          | dia bom e dia ruim; botão secundário da zebra              |
-| `match.homeBase`             | 0,05 (ADR-0011, opção A)                    | 0–0,08       | leva o mandante a 47% de vitórias                          |
-| `match.missingPlayerPenalty` | 0,07                                        | 0,03–0,12    | um a menos pesa, sem decidir o jogo sozinho                |
-| `match.penaltyShare`         | 0,015                                       | 0–0,05       | cerca de 0,25 pênalti por jogo                             |
-| `match.freeKickShare`        | 0,06                                        | 0–0,15       | falta perigosa de vez em quando                            |
-| `match.assistShare`          | 0,70                                        | 0–1          | maioria dos gols com assistência                           |
-| `match.comfortableLeadGoals` | 2                                           | 2–5          | "tirar o pé" vale a partir de 2 gols de vantagem           |
-| `match.comfortableLeadPower` | 1 (neutro; proposta 0,85 na T-016, parte 2) | 0,7–1        | "tirar o pé": quem ganha com folga cria menos; 1 desliga   |
-| `match.allOutPower`          | 1,10 (proposta 1,25 na T-016, parte 2)      | 1,05–1,50    | "tudo no ataque" multiplica o `power` ("Táticas")          |
-| `match.allOutDef`            | 0,85 (proposta 0,78 na T-016, parte 2)      | 0,60–0,95    | "tudo no ataque" multiplica a `def` ("Táticas")            |
-| `fatigue.drainPerMinute`     | 0,30                                        | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
-| `fatigue.recoveryPerDay`     | 7                                           | 3–15         | 3 dias não bastam para voltar inteiro                      |
-| `injury.basePerMinute`       | 0,00012                                     | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
-| `cards.yellowPerMinute`      | 0,0020                                      | 0–0,005      | cerca de 4 amarelos por jogo                               |
-| `cards.redPerMinute`         | 0,00003                                     | 0–0,0002     | cerca de 0,07 vermelho direto por jogo                     |
-| `cards.derbyMult`            | 1,2                                         | 1–1,5        | clássico é mais quente                                     |
-| `cards.bookedMult`           | 0,5 (proposta 0,20 na T-016, parte 2)       | 0–1          | o pendurado leva o segundo amarelo com esta parte da taxa  |
+| Parâmetro                    | Valor inicial                      | Faixa válida | Por quê                                                    |
+| ---------------------------- | ---------------------------------- | ------------ | ---------------------------------------------------------- |
+| `match.baseChance`           | 0,087 (T-016; era 0,090)           | 0,03–0,20    | cerca de 8,3 oportunidades por time em jogo equilibrado    |
+| `match.kChance`              | 0,125 (T-016; era 0,14)            | 0,05–0,40    | 20 pontos → cerca de 63% de vitória; zebra de 30 em 8,5%   |
+| `match.conversion`           | 0,15                               | 0,05–0,30    | cerca de 1,3 gol por time em jogo equilibrado              |
+| `match.kFinish`              | 0,09                               | 0,00–0,30    | finalizador e goleiro pesam, sem dominar                   |
+| `match.midWeight`            | 0,5                                | 0,3–0,7      | meio e ataque pesam igual na criação, como no `PROJETO.md` |
+| `match.dayFormSd`            | 3                                  | 0–6          | dia bom e dia ruim; botão secundário da zebra              |
+| `match.homeBase`             | 0,05 (ADR-0011, opção A)           | 0–0,08       | leva o mandante a 47% de vitórias                          |
+| `match.missingPlayerPenalty` | 0,07                               | 0,03–0,12    | um a menos pesa, sem decidir o jogo sozinho                |
+| `match.penaltyShare`         | 0,015                              | 0–0,05       | cerca de 0,25 pênalti por jogo                             |
+| `match.freeKickShare`        | 0,06                               | 0–0,15       | falta perigosa de vez em quando                            |
+| `match.assistShare`          | 0,70                               | 0–1          | maioria dos gols com assistência                           |
+| `match.comfortableLeadGoals` | 2                                  | 2–5          | "tirar o pé" vale a partir de 2 gols de vantagem           |
+| `match.comfortableLeadPower` | 0,85 (T-016; era 1, neutro)        | 0,7–1        | "tirar o pé": quem ganha com folga cria menos; 1 desliga   |
+| `match.allOutPower`          | 1,25 (T-016; era a constante 1,10) | 1,05–1,50    | "tudo no ataque" multiplica o `power` ("Táticas")          |
+| `match.allOutDef`            | 0,78 (T-016; era a constante 0,85) | 0,60–0,95    | "tudo no ataque" multiplica a `def` ("Táticas")            |
+| `fatigue.drainPerMinute`     | 0,30                               | 0,1–0,6      | 90 minutos custam cerca de 28 de energia                   |
+| `fatigue.recoveryPerDay`     | 7                                  | 3–15         | 3 dias não bastam para voltar inteiro                      |
+| `injury.basePerMinute`       | 0,00012                            | 0–0,0005     | cerca de 0,3 lesão por jogo                                |
+| `cards.yellowPerMinute`      | 0,0020                             | 0–0,005      | cerca de 4 amarelos por jogo                               |
+| `cards.redPerMinute`         | 0,00003                            | 0–0,0002     | cerca de 0,07 vermelho direto por jogo                     |
+| `cards.derbyMult`            | 1,2                                | 1–1,5        | clássico é mais quente                                     |
+| `cards.bookedMult`           | 0,20 (T-016; era 0,5)              | 0–1          | o pendurado leva o segundo amarelo com esta parte da taxa  |
 
 **Constantes** (no código, documentadas aqui; viram parâmetro só se o `/balance` pedir): tabelas de formação, postura (menos "tudo no ataque", que é `match.allOutPower` e `match.allOutDef` desde a T-016), pressão, `positionMult`, pesos de finalizador e assistência, gravidade de lesões, divisão trave/defesa/fora, conversa do intervalo, `maxSubs = 5` e `benchSize = 7` (regra do jogo no `PROJETO.md`, não botão de balanceamento), limite de suspensão (3 amarelos), `condMult`, `moraleMult` e `EMPTY_SECTOR_FIT = 0.90` ("Vaga vazia").
 

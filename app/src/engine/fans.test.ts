@@ -80,9 +80,11 @@ describe('fansDelta: the formula of torcida.md', () => {
   it('the example: a medium club (70) at 50 beats a big one (76) at home, +2 of decisions → 59', () => {
     const expected = expectedPoints(70, 76, 'home');
     expect(expected).toBeCloseTo(1.32, 10);
+    // The example of torcida.md keeps fans.reversion 0.08, the value before T-016.
+    const example = { ...fansParams, reversion: 0.08 };
     const move = fansDelta(
       base({ fans: 50, scored: 1, conceded: 0, expected, position: 8, round: 3, decisions: 2 }),
-      fansParams,
+      example,
     );
     expect(move.result).toBeCloseTo(6.72, 10);
     expect(move.reversion).toBeCloseTo(-0.4, 10);
@@ -91,6 +93,13 @@ describe('fansDelta: the formula of torcida.md', () => {
     expect(move.delta).toBeCloseTo(9.12, 10);
     expect(move.fans).toBeCloseTo(59.12, 10);
     expect(Math.round(move.fans)).toBe(59);
+    // With the T-016 reversion (0.10): −0.5, still 59.
+    const tuned = fansDelta(
+      base({ fans: 50, scored: 1, conceded: 0, expected, position: 8, round: 3, decisions: 2 }),
+      fansParams,
+    );
+    expect(tuned.reversion).toBeCloseTo(-0.5, 10);
+    expect(Math.round(tuned.fans)).toBe(59);
     // The same win in a derby: 4 × 1.68 × 1.5 = +10.1.
     const derby = fansDelta(
       base({ fans: 50, scored: 1, conceded: 0, expected, derby: true }),
@@ -154,11 +163,12 @@ describe('fansDelta: the formula of torcida.md', () => {
     expect(fansDelta(base({ decisions: -7 }), fansParams).decisions).toBe(-4);
     expect(fansDelta(base({ decisions: 3 }), fansParams).decisions).toBe(3);
     expect(fansDelta(base({ decisions: 3 }), { ...fansParams, decisionCap: 0 }).decisions).toBe(0);
-    expect(fansDelta(base({ fans: 80 }), fansParams).reversion).toBeCloseTo(2, 10);
-    expect(fansDelta(base({ fans: 30 }), fansParams).reversion).toBeCloseTo(-2, 10);
+    // fans.reversion 0.10 (T-016): 25 above the baseline 55 gives 2.5.
+    expect(fansDelta(base({ fans: 80 }), fansParams).reversion).toBeCloseTo(2.5, 10);
+    expect(fansDelta(base({ fans: 30 }), fansParams).reversion).toBeCloseTo(-2.5, 10);
     // Without results nor decisions, the thermometer only goes back towards the baseline.
     const still = base({ expected: 1 });
-    expect(fansDelta({ ...still, fans: 80 }, fansParams).fans).toBeCloseTo(78, 10);
+    expect(fansDelta({ ...still, fans: 80 }, fansParams).fans).toBeCloseTo(77.5, 10);
     expect(fansDelta({ ...still, fans: 55 }, fansParams).fans).toBe(55);
   });
 

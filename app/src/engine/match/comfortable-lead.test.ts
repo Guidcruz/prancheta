@@ -10,15 +10,17 @@ import type { MatchEvent, MatchInput, MatchResult } from './types.ts';
 /*
  * "Tirar o pé" (partida.md, "Calibragem das goleadas"; T-016): a side leading by
  * `match.comfortableLeadGoals` or more creates chances with `Power × match.comfortableLeadPower`.
- * The repository value is neutral (1) until the game-designer tunes it with the /balance, so the
- * goldens of the match, the round and the season do not move (they run with testParams()).
+ * The repository value is 0.85 since the T-016 calibration (the CEO's decision of 2026-11-05);
+ * the comparisons below turn the rule off (1) for their reference.
  */
 
-const neutral = testParams();
+const params = testParams();
 const relaxed = (power: number, goals = 2): GameParams => ({
-  ...neutral,
-  match: { ...neutral.match, comfortableLeadPower: power, comfortableLeadGoals: goals },
+  ...params,
+  match: { ...params.match, comfortableLeadPower: power, comfortableLeadGoals: goals },
 });
+/** "Tirar o pé" turned off: the reference of the comparisons. */
+const neutral = relaxed(1);
 
 describe('comfortableLeadFactor', () => {
   it('is 1 for every score with the neutral factor', () => {
@@ -61,9 +63,10 @@ describe('the parameters of "tirar o pé"', () => {
     match: { ...neutral.match, ...patch },
   });
 
-  it('are neutral in the test parameters (the goldens run with them)', () => {
-    expect(neutral.match.comfortableLeadPower).toBe(1);
-    expect(neutral.match.comfortableLeadGoals).toBe(2);
+  it('are the T-016 values in the test parameters (the goldens run with them)', () => {
+    expect(params.match.comfortableLeadPower).toBe(0.85);
+    expect(params.match.comfortableLeadGoals).toBe(2);
+    expect(validateParams(params).ok).toBe(true);
     expect(validateParams(neutral).ok).toBe(true);
   });
 

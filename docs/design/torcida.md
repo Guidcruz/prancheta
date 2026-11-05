@@ -115,7 +115,7 @@ O torcedor fanático exagera: usa a faixa acima ou abaixo da real, na direção 
 | `fans.baseline`        | 55            | 40–70           | para onde o humor volta sem resultados       |
 | `fans.resultWeight`    | 4             | 1–8             | uma vitória inesperada vale cerca de +7      |
 | `fans.derbyResultMult` | 1,5           | 1–3             | clássico mexe mais                           |
-| `fans.reversion`       | 0,08          | 0–0,2           | mantém os extremos raros (protótipo)         |
+| `fans.reversion`       | 0,10 (T-016)  | 0–0,2           | mantém os extremos raros (protótipo)         |
 | `fans.decisionCap`     | 4             | 0–10            | decisões contam, sem virar fazenda de pontos |
 | `fans.baseOccupancy`   | 0,62          | 0,3–1           | 61% de ocupação com humor médio              |
 

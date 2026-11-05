@@ -151,7 +151,8 @@ describe('loadParams', () => {
     expect(loaded.ok).toBe(true);
     if (!loaded.ok) return;
     expect(loaded.params.match.comfortableLeadPower).toBe(0.85);
-    expect(loaded.params.match.baseChance).toBe(0.09);
+    const repoMatch = repositoryParams()['match'] as { baseChance: number };
+    expect(loaded.params.match.baseChance).toBe(repoMatch.baseChance);
     expect(loaded.overrides).toEqual(['match.comfortableLeadPower']);
     expect(loaded.warnings).toEqual([]);
     expect(repoFiles()).toEqual(before);

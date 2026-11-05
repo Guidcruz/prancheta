@@ -29,4 +29,9 @@
 //    the form, `benchStreak`, the fans thermometer of every club (`fans`, `idolBenchStreak`,
 //    `fanDecisions`) and the simplified realism; the morale moves the strength of the next
 //    rounds, so the round goldens changed (the match goldens did not).
-export const ENGINE_VERSION = 10;
+// 11: the T-016 calibration (balance-log.md, the CEO's decisions of 2026-11-05): "tudo no ataque"
+//    becomes the parameters match.allOutPower 1.25 and match.allOutDef 0.78 (was 1.10 and 0.85),
+//    and the test parameters follow app/src/params/ (baseChance 0.087, kChance 0.125,
+//    comfortableLeadPower 0.85, cards.bookedMult 0.20, fans.reversion 0.10); the match (but the
+//    derby), round and season goldens changed, and the new-game digest (it holds the version).
+export const ENGINE_VERSION = 11;

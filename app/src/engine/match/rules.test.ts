@@ -38,9 +38,13 @@ const { match } = params;
 
 describe('chance and goal probabilities (partida.md, "Chance de oportunidade e finalização")', () => {
   it('reproduces the numeric example: 13.8 points up → 0.109 a minute, down → 0.074', () => {
-    // Power ≈ 74 × 1.106 = 81.8 against Defense 68.
-    expect(chanceProbability(81.8, 68, match)).toBeCloseTo(0.109, 3);
-    expect(chanceProbability(68, 81.8, match)).toBeCloseTo(0.0742, 3);
+    // Power ≈ 74 × 1.106 = 81.8 against Defense 68. The example of partida.md keeps the values of
+    // before the T-016 calibration (baseChance 0.090, kChance 0.14).
+    const example = { ...match, baseChance: 0.09, kChance: 0.14 };
+    expect(chanceProbability(81.8, 68, example)).toBeCloseTo(0.109, 3);
+    expect(chanceProbability(68, 81.8, example)).toBeCloseTo(0.0742, 3);
+    // With the T-016 values (0.087, 0.125): 0.087 × exp(±0.125 × 1.38).
+    expect(chanceProbability(81.8, 68, match)).toBeCloseTo(0.087 * Math.exp(0.125 * 1.38), 12);
     expect(chanceProbability(70, 70, match)).toBeCloseTo(match.baseChance, 12);
   });
 
@@ -150,19 +154,20 @@ describe('cards (partida.md, "Cartões e suspensão")', () => {
     );
     const all = sideCardRates('high', true, true, match);
     expect(yellowProbability(all, playerCardMult('CB', 'hothead'), true)).toBeCloseTo(
-      0.002 * 1.4 * 1.3 * 1.5 * 0.5 * 1.2 * 0.75,
+      0.002 * 1.4 * 1.3 * 1.5 * 0.2 * 1.2 * 0.75,
       15,
     );
     expect(sideCardRates('low', false, false, match).yellow).toBeCloseTo(0.0014, 15);
   });
 
-  it('takes the booked factor from match.cards.bookedMult (0.5 by default)', () => {
-    expect(match.cards.bookedMult).toBe(0.5);
+  it('takes the booked factor from match.cards.bookedMult (0.20 since T-016)', () => {
+    expect(match.cards.bookedMult).toBe(0.2);
     const tuned = sideCardRates('medium', false, false, {
-      cards: { ...match.cards, bookedMult: 0.2 },
+      cards: { ...match.cards, bookedMult: 0.5 },
     });
     const mult = playerCardMult('CB', 'quiet');
-    expect(yellowProbability(tuned, mult, true)).toBeCloseTo(0.002 * 1.3 * 0.2, 15);
+    expect(yellowProbability(rates, mult, true)).toBeCloseTo(0.002 * 1.3 * 0.2, 15);
+    expect(yellowProbability(tuned, mult, true)).toBeCloseTo(0.002 * 1.3 * 0.5, 15);
     expect(yellowProbability(tuned, mult, false)).toBe(yellowProbability(rates, mult, false));
     const off = sideCardRates('medium', false, false, { cards: { ...match.cards, bookedMult: 0 } });
     expect(yellowProbability(off, mult, true)).toBe(0);
