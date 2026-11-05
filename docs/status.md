@@ -74,6 +74,34 @@ Telas da 1a (`docs/design/telas/`):
 | T-012  | feita (PR #24 mergeado): comandos na partida, IA em jogo, `ENGINE_VERSION` 7                                                                                                                                       |
 | T-013  | feita (code review e QA aprovados): `prepareRound`, `playRound`, `getStandings`, fatos da tabela, `ENGINE_VERSION` 9                                                                                               |
 | T-014  | feita (PR aberto; code review aprovado em 2 rodadas e QA PASS): moral, forma, termômetro da torcida, "realismo simplificado", ídolo sempre titular, `ENGINE_VERSION` 10                                            |
+| T-016  | feita (PR aberto): `npm run balance` com técnico-robô, regra "tirar o pé", "tudo no ataque" só a partir dos 60', `fans.reversion` 0,10, `ENGINE_VERSION` 11                                                        |
+
+## Métricas finais da T-016 (3 sementes de 200 temporadas)
+
+36 de 36 metas obrigatórias dentro em cada semente; as 3 metas raras dentro no total das 3.
+
+| Métrica                      | Valor final | Meta      |
+| ---------------------------- | ----------- | --------- |
+| Gols por jogo                | 2,64        | 2,5–2,8   |
+| Goleadas                     | 12,3%       | 8–13%     |
+| Vermelhos por jogo           | 0,18        | 0,11–0,25 |
+| Zebra por 30 pontos          | 8,3%        | 8–12%     |
+| Mais forte por 20 pontos     | 62,8%       | —         |
+| Campeão (pontos)             | 75          | 72–82     |
+| 17º colocado                 | 40          | 39–45     |
+| Técnico-robô (por temporada) | +4,2 pontos | —         |
+
+## Decisões do CEO em 2026-11-05 (T-016)
+
+1. Recomendações aceitas: `kChance` 0,125, "tudo no ataque" mais forte, "grande rebaixado" só informativo na temporada única e metas raras julgadas com 3 sementes.
+2. "Tudo no ataque" só pode ser usado a partir dos 60'.
+3. Texto de instalação do site para Android e iOS.
+
+Pendências derivadas:
+
+- `devops-engineer`: ligar o `/balance` no CI e medir o runner de 2 vCPU.
+- Gatilho de reavaliação do "tudo no ataque" (`docs/design/balance-log.md`): repetir a medição se a média das 3 sementes passar de +0,04 ou se mexerem em `allOutPower`, `allOutDef`, `allOutFromMinute`, `kChance` ou no cansaço.
+- "Grande rebaixado" volta a valer como meta na carreira longa.
 
 ## Dados da temporada (T-013, 20 temporadas)
 
@@ -108,7 +136,7 @@ Regressão: 988 testes passando e 1 pulado.
 
 Pendências derivadas:
 
-- T-016: `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%); medir a métrica nova "time pequeno no G4" (uma zebra positiva, aprovada pelo CEO em 2026-11-05), com a meta em `docs/design/balance-targets.md`.
+- T-016 (feita, ver abaixo): `fans.reversion` 0,10; medir a fuga do Z4 (meta de 15% a 30% dos que estão no Z4 na rodada 30 se salvarem; hoje cerca de 20%); reconferir "grande rebaixado" (95%, fora da meta de 40% a 80%) e "pequeno campeão" (3,5%, acima de 3%); medir a métrica nova "time pequeno no G4" (uma zebra positiva, aprovada pelo CEO em 2026-11-05), com a meta em `docs/design/balance-targets.md`.
 - T-017: recalcular a `strength` dos clubes na virada da temporada.
 - T-059 (online): as 3 regras de servidor para `fanDecisions` e a fronteira de `app/src/content/` para os valores da entrevista.
 
@@ -254,6 +282,7 @@ Notas:
 ## Em andamento
 
 - **T-014** (moral, forma, termômetro e realismo simplificado): PR aberto; code review e QA aprovados.
+- **T-016** (balanceamento e calibragem do motor): PR aberto.
 - Teste de conformidade do patrocínio (`app/src/lib/sponsorship.test.ts`) e `config.sponsorship.enabled = false`: em revisão (ADR-0015).
 
 ## Concluído em 2026-11-04 (T-008 e patrocínio)
@@ -297,8 +326,8 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-015 e T-016 da Etapa 1a (a T-016 traz "tirar o pé", o ajuste de `baseChance` e `fans.reversion` 0,10).
-2. CI com `REQUIRE_SITE_DIST=1` depois do build e `NAMES_FULL_CHECK=1` (`devops-engineer`).
+1. T-015 e T-017 da Etapa 1a (a T-017 recalcula a `strength` dos clubes na virada da temporada).
+2. CI com `REQUIRE_SITE_DIST=1` depois do build, `NAMES_FULL_CHECK=1` e o `/balance` (`devops-engineer`).
 3. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro).
 4. Placar e tabela ao vivo da rodada (US-070 a US-074).
 5. Lote de clubes de dezembro, com a tabela final de 2026.
