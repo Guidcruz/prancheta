@@ -986,11 +986,20 @@ Cenário: rodada inteira
 Cenário: clássico identificado
   Dado um jogo contra um rival
   Então o card mostra o rótulo "Clássico" em texto
+
+Cenário: súmula de um jogo já jogado (decisão do CEO, 2026-11-05)
+  Dado um jogo já jogado, do clube do técnico ou de outro clube
+  Quando o jogador toca no placar
+  Então vê a súmula do jogo: placar e autores dos gols com o minuto, assistências, cartões (amarelo e vermelho, com o minuto), substituições, lesões, estatísticas dos dois times (finalizações, posse ou o que o motor registrar) e o melhor em campo com a nota
+  E os dados vêm do que o motor já guarda da partida, sem simular de novo
+  E o resultado nunca é indicado só por cor
 ```
 
 ### Fora do escopo desta história
 
 - Datas reais e notificação de dia de rodada (Etapa 4).
+- Rever o jogo lance a lance a partir da semente (replay, Etapa 4).
+- Histórico de temporadas anteriores (campeões, artilheiros, campanhas): histórico de carreira, Etapa 4.
 
 ---
 
