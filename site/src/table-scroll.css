@@ -1,0 +1,94 @@
+/* Shared by TableScroll.astro and the devlog posts (see rehype-table-scroll.mjs). */
+/* Standings-table look: the container is the card, rows are 48px with a divider. */
+.scroll {
+  overflow-x: auto;
+  /* Scroll hint: edge shadows that show only where there is more to scroll to. */
+  background:
+    linear-gradient(to right, var(--surface-1), var(--surface-1)) left center / 16px 100% local
+      no-repeat,
+    linear-gradient(to left, var(--surface-1), var(--surface-1)) right center / 16px 100% local
+      no-repeat,
+    linear-gradient(to right, color-mix(in srgb, var(--ink) 16%, transparent), transparent) left
+      center / 16px 100% scroll no-repeat,
+    linear-gradient(to left, color-mix(in srgb, var(--ink) 16%, transparent), transparent) right
+      center / 16px 100% scroll no-repeat,
+    var(--surface-1);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--space-2) 0;
+  margin-bottom: var(--space-3);
+}
+.scroll table {
+  min-width: var(--table-min);
+}
+.scroll thead th {
+  border-bottom: 1px solid var(--line);
+}
+.scroll tbody td,
+.scroll tbody th {
+  height: 48px;
+  vertical-align: middle;
+}
+.scroll tbody tr:last-child > * {
+  border-bottom: 0;
+}
+/* Rows stay transparent so the edge shadows show; only the fixed column is opaque. */
+.scroll tr > :first-child {
+  position: sticky;
+  left: 0;
+  background: var(--surface-1);
+}
+/* The fixed column casts its own edge shadow, so scrolling from the left reads as such. */
+.scroll tr > :first-child::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: 6px;
+  pointer-events: none;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--ink) 10%, transparent),
+    transparent
+  );
+}
+.scroll tr[aria-current='step'] > :first-child {
+  background: var(--grass-soft);
+}
+.scroll tr[aria-current='step'] {
+  background: var(--grass-soft);
+}
+.scroll {
+  container-type: inline-size;
+}
+.scroll .inline-state {
+  display: none;
+}
+@media (max-width: 719.98px) {
+  .stack table {
+    min-width: 0;
+  }
+  .stack .col-state {
+    display: none;
+  }
+  .stack .inline-state {
+    display: block;
+    margin-top: var(--space-1);
+  }
+  .stack .inline-state .badge {
+    height: auto;
+    min-height: 24px;
+    padding-block: 2px;
+    white-space: normal;
+  }
+  .stack tr > :first-child {
+    width: 40%;
+  }
+}
+.scroll tbody th {
+  color: var(--ink);
+  font: var(--type-body-strong);
+  text-transform: none;
+  letter-spacing: 0;
+}

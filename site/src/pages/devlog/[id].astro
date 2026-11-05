@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import '../../table-scroll.css';
 import PageHero from '../../components/PageHero.astro';
 import { getCollection, render } from 'astro:content';
 export async function getStaticPaths() {
@@ -39,9 +40,11 @@ const kicker = `${post.data.date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }
     background: none;
     padding: 0;
   }
-  .post table {
-    display: block;
-    overflow-x: auto;
+  .post .scroll table {
+    display: table;
+    border: 0;
+    border-radius: 0;
+    background: none;
   }
   .post blockquote {
     margin: 0 0 var(--space-4);

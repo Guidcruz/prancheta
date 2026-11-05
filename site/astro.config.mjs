@@ -1,6 +1,8 @@
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
 import { fileURLToPath } from 'node:url';
+import { satteri } from '@astrojs/markdown-satteri';
+import { tableScroll } from './src/hast-table-scroll.mjs';
 import { config } from '../config/prancheta.config.ts';
 
 export default defineConfig({
@@ -8,6 +10,7 @@ export default defineConfig({
   base: config.paths.site,
   trailingSlash: 'always',
   build: { format: 'directory' },
+  markdown: { processor: satteri({ hastPlugins: [tableScroll] }) },
   integrations: [sitemap()],
   vite: {
     resolve: {
