@@ -79,3 +79,22 @@ Fica fora em todas as sementes só o "grande rebaixado", que é dado de clube (d
 2. Se o CEO aprovar a decisão 2: posturas de "tudo no ataque" ×1,25 · ×0,78 em `strength.ts` e em `partida.md`. Aceite: "tudo no ataque" de +3,1 a +3,7 p.p. nas 3 sementes; um duelo novo de referência, "tudo no ataque desde o apito inicial", com V − D dentro de ±3.
 3. Duelos táticos com pontos por jogo (referência) e `--seed 1,2,3` somando as metas raras (não urgentes).
 4. Depois dos itens 1 e 2: aplicar `t016-params.json` em `app/src/params/` (`/quick`) e rodar o `/balance` das 3 sementes para fechar este registro.
+
+### Decisões do CEO (2026-11-05: "recomendados")
+
+| Decisão               | O que foi aprovado                                                                                                                                                               | Valor aplicado |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------- |
+| 1. Zebra              | `match.kChance` 0,14 → 0,125                                                                                                                                                     | 0,125          |
+| 2. "Tudo no ataque"   | posturas do comando: ataque ×1,10 → ×1,25, defesa ×0,85 → ×0,78 (constante de regra, `partida.md`), com o duelo novo "tudo no ataque desde o apito inicial" (V − D dentro de ±3) | ×1,25 · ×0,78  |
+| 3. "Grande rebaixado" | informativo na temporada única; volta a valer na carreira longa (`balance-targets.md`, decisão 12)                                                                               | —              |
+| 4. Metas raras        | campeão pequeno, clube fraco no G4 e fuga do Z4 de 6 a 8 pontos julgados no total das 3 sementes (`balance-targets.md`, decisão 12)                                              | —              |
+
+Junto com as decisões, entram os ajustes da ordem já aprovada: `match.comfortableLeadPower` 0,85, `match.baseChance` 0,087, `cards.bookedMult` 0,20 (o fator do pendurado vira parâmetro) e `fans.reversion` 0,10. Aplicação pelo `developer`, com `ENGINE_VERSION` 11 e goldens novos.
+
+### Medição final (3 sementes)
+
+_A preencher com a tabela do `developer` depois da aplicação: `npm run balance -- --seasons 200 --seed N`, com N = 1, 2 e 3, e as metas raras somadas nas 3 sementes._
+
+| Métrica | Semente 1 | Semente 2 | Semente 3 | Meta |
+| ------- | --------- | --------- | --------- | ---- |
+|         |           |           |           |      |
