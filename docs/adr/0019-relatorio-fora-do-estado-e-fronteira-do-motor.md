@@ -56,6 +56,7 @@ O contrato (§4.1, "Relatório da rodada fora do estado"):
 - **API de ferramentas:** um bloco separado e comentado no `index.ts`, só para `scripts/` (o `/balance` e o `og.mjs`). Hoje é `exp`, mais o que a T-049 achar nos imports de `scripts/`. A lista fica escrita no §4.1, símbolo por símbolo, e símbolo novo nela passa pelo `architect`;
 - **interno:** todo o resto sai do `index.ts` e continua descrito no §4.1 como regra do motor, não como contrato. Os testes do motor importam pelo caminho do arquivo;
 - **lint:** em `lib/**`, `ui/**`, `scripts/**`, `site/**` e, na 1b, `server/**`, uma regra de importação restrita só aceita `app/src/engine/index.ts` ou `@engine` sem subcaminho, inclusive nos testes desses lugares. Só os arquivos de `app/src/engine/` importam internos. O site, além disso, só lê de fora de `site/` a lista fixa do §3.
+- **ajuste da T-049 (architect, 2026-11-05):** a regra vale para todo `app/src/` fora do motor, inclusive `main.ts` e o código de produção de `app/src/data/`. A única exceção são os testes de `app/src/data/` (`*.test.ts`): são os testes de aceite do motor com os clubes reais, que não podem morar em `engine/` (o motor não importa `data/`) e precisam, como os testes do motor, de internos e de `engine/testing/`. Eles pegam do `index.ts` o que é do contrato e só o resto pelo caminho do arquivo. A exceção não abre a fronteira para quem é de fora: uma renomeação interna que os quebre quebra no mesmo `npm test` do PR que renomeia. As condições estão no §4.1, "Fronteira do `index.ts`".
 
 A fronteira não muda nenhum resultado e, sozinha, não subiria a `ENGINE_VERSION`.
 
@@ -77,6 +78,6 @@ A fronteira não muda nenhum resultado e, sozinha, não subiria a `ENGINE_VERSIO
 ## Conformidade
 
 - O `GameState` não tem `lastRound`; um teste da T-049 confere o estado depois do `playRound`. Campo de relatório ou de súmula de volta no `GameState` exige ADR novo.
-- Importar arquivo interno do motor fora de `app/src/engine/` falha no lint (`npm run lint`), e um teste prova que a regra pega `@engine/rng` em `lib/`. Desligar a regra num arquivo é BLOCKER na revisão.
+- Importar arquivo interno do motor fora de `app/src/engine/` falha no lint (`npm run lint`), e um teste prova que a regra pega `@engine/rng` em `lib/`. Desligar a regra num arquivo é BLOCKER na revisão. A exceção dos testes de `app/src/data/` é a única (ajuste da T-049, acima); outra exceção exige ADR.
 - Símbolo novo no `index.ts` precisa estar assinado no §4.1 (contrato) ou na lista da API de ferramentas; o revisor confere. Símbolo da API de ferramentas usado em `lib/`, `ui/`, `server/` ou `site/` é BLOCKER.
 - `matchSheets` com súmula de temporada passada, ou leitura de estado sem `pastSeasons` dentro do motor, é BLOCKER; a tolerância a formatos antigos mora em `lib/save/migrations/`.
