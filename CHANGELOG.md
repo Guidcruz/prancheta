@@ -6,6 +6,18 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Rodada e temporada (T-013, US-009, US-012 e US-019) em `app/src/engine/`:
+  - `prepareRound` e `playRound`: a rodada completa, com as 10 partidas, a IA escalando os clubes, a ficha sugerida para o técnico e o `RoundSetup`. São idempotentes e recusam com `round-already-played`, `round-not-open` e `season-over`.
+  - Entre rodadas: a suspensão é cumprida, os amarelos são mesclados, as lesões contam rodadas e a condição se recupera por dias. O "Cobrar" custa 3 pontos de moral aos temperamentais.
+  - Modo "só resultado": a IA joga pelo técnico como Tradicional. Os comandos da partida ao vivo valem na rodada gravada.
+  - `getStandings` com os 8 critérios de desempate; o sorteio final muda a cada temporada.
+  - Fatos da tabela com cadência nova (cerca de 7,5 por rodada) e duas notícias novas, aprovadas pelo CEO: "perdeu a invencibilidade de N" (`unbeatenEnded`) e "acabou o jejum de N" (`winlessEnded`).
+  - `seasonStats` com gols sofridos, para o prêmio de goleiro.
+  - A força exibida desconta suspensos e lesionados.
+  - `ENGINE_VERSION` 9: os goldens mudam.
+  - Bancada da rodada: de 5,6 a 7,4 ms por rodada no Node.
+  - Testes de ponta a ponta: temporada encadeada e carreira com o placar ao vivo igual ao gravado.
+
 - Comandos do técnico e IA em jogo (T-012, US-021 e US-022) em `app/src/engine/match/`:
   - `simulateMatch(input, params, commands?)` aceita até 5 substituições, mudança de formação, postura e pressão, os atalhos de tática e a conversa do intervalo, incluindo "Pular". Sem comandos, as chamadas de dois argumentos continuam válidas.
   - O comando vale a partir do minuto seguinte, com prefixo idêntico: os eventos até o minuto do comando não mudam. Também vale nos acréscimos do 2º tempo (`added`).

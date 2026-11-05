@@ -82,14 +82,14 @@ atributo ausente = clamp(round(0.4 × overall), 1, 99)
 
 ## Estados que mudam
 
-| Estado    | Faixa       | Começa em         | Muda com                                                   |
-| --------- | ----------- | ----------------- | ---------------------------------------------------------- |
-| Condição  | 0 a 100     | 100               | cai no jogo, recupera 7 por dia (`partida.md`, "Cansaço")  |
-| Moral     | 0 a 100     | `Rng.int(50, 70)` | resultados, banco, torcida, conversa do intervalo (abaixo) |
-| Forma     | nota 3 a 10 | "sem jogos"       | média das notas dos últimos 5 jogos; **só exibição**       |
-| Lesão     | rodadas     | 0                 | `partida.md`, "Lesões"; desconta 1 por rodada              |
-| Suspensão | jogos       | 0                 | `partida.md`, "Cartões"; desconta 1 por jogo do clube      |
-| Amarelos  | contador    | 0                 | zera ao chegar a 3 (gera suspensão) e no fim da temporada  |
+| Estado    | Faixa       | Começa em         | Muda com                                                                                      |
+| --------- | ----------- | ----------------- | --------------------------------------------------------------------------------------------- |
+| Condição  | 0 a 100     | 100               | cai no jogo, recupera 7 por dia (`partida.md`, "Cansaço"); volta a 100 na virada da temporada |
+| Moral     | 0 a 100     | `Rng.int(50, 70)` | resultados, banco, torcida, conversa do intervalo (abaixo)                                    |
+| Forma     | nota 3 a 10 | "sem jogos"       | média das notas dos últimos 5 jogos; **só exibição**                                          |
+| Lesão     | rodadas     | 0                 | `partida.md`, "Lesões"; desconta 1 por rodada; termina na virada da temporada                 |
+| Suspensão | jogos       | 0                 | `partida.md`, "Cartões"; desconta 1 por jogo do clube; termina na virada da temporada         |
+| Amarelos  | contador    | 0                 | zera ao chegar a 3 (gera suspensão) e no fim da temporada                                     |
 
 **Frações.** Condição e moral são números reais (o cansaço tira 0,3 por minuto; o profissional perde −1,5). O motor não arredonda o estado: só corta em 0 e 100. A interface mostra o inteiro arredondado (`Math.round`). Lesão, suspensão e amarelos são inteiros.
 

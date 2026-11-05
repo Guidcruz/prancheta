@@ -96,6 +96,43 @@ export {
 export type { Fixture, FixturesError, FixturesRequest, RoundSlot } from './fixtures.ts';
 export { newGame } from './game.ts';
 export {
+  DEFAULT_STADIUM_CAPACITY,
+  MATCH_MODES,
+  ROUND_MORALE,
+  matchSeed,
+  playRound,
+  prepareRound,
+  roundMoraleDeltas,
+  summarizeMatch,
+} from './round.ts';
+export type {
+  MatchMode,
+  PlayerSeasonStats,
+  RoundInput,
+  RoundPlan,
+  RoundReport,
+  RoundSetup,
+} from './round.ts';
+export {
+  FORM_LENGTH,
+  POINTS,
+  RELEGATION_SPOTS,
+  getStandings,
+  roundTables,
+  standingsHistory,
+} from './standings.ts';
+export type { RoundTables, StandingResult, StandingRow, StandingsState } from './standings.ts';
+export {
+  LEADERSHIP_MIN_ROUNDS,
+  MILESTONE_STEP,
+  TOP_SCORER_MIN_GOALS,
+  UNBEATEN_MIN_GAMES,
+  WINLESS_MIN_GAMES,
+  isMilestone,
+  roundFacts,
+} from './facts.ts';
+export type { Fact } from './facts.ts';
+export {
   CONDITION_MULT,
   EMPTY_SECTOR_FIT,
   FORMATION_MULTIPLIERS,
@@ -120,6 +157,7 @@ export type {
   LineupProblem,
   RatingFactors,
   Sector,
+  ShownState,
   StrengthContext,
   StrengthFactors,
   StrengthSheet,
@@ -150,7 +188,15 @@ export type {
   ValidateLineupResult,
   Venue,
 } from './ai.ts';
-export { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
+export {
+  bestForSlot,
+  correctedCondition,
+  isUnavailable,
+  kickoffBench,
+  replaceUnavailable,
+  selectionValue,
+  winsTie,
+} from './selection.ts';
 export { simulateMatch } from './match/simulate.ts';
 export { substitutionsLeft } from './match/commands.ts';
 export {
@@ -205,6 +251,8 @@ export type {
   HalftimeTalk,
   InjurySeverity,
   MatchCommand,
+  MatchGoal,
+  MatchSummary,
   MatchEvent,
   MatchInput,
   MatchMarker,

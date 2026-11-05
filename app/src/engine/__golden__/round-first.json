@@ -1,0 +1,128 @@
+{
+  "engineVersion": 9,
+  "name": "round-first",
+  "data": {
+    "results": [
+      {
+        "fixtureId": "s1-r1-clube-teste-20-clube-teste-06",
+        "score": [2, 0],
+        "goals": ["clube-teste-20#10@45", "clube-teste-20#10@46"],
+        "motm": "clube-teste-20#10",
+        "attendance": 24664
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-02-clube-teste-03",
+        "score": [0, 1],
+        "goals": ["clube-teste-03#9@25"],
+        "motm": "clube-teste-03#1",
+        "attendance": 13280
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-19-clube-teste-13",
+        "score": [5, 1],
+        "goals": [
+          "clube-teste-19#10@2",
+          "clube-teste-13#10@16",
+          "clube-teste-19#16@38",
+          "clube-teste-19#11@55",
+          "clube-teste-19#16@59",
+          "clube-teste-19#2@79"
+        ],
+        "motm": "clube-teste-19#16",
+        "attendance": 24031
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-15-clube-teste-10",
+        "score": [2, 2],
+        "goals": [
+          "clube-teste-15#8@29",
+          "clube-teste-10#10@40",
+          "clube-teste-10#11@41",
+          "clube-teste-15#18@85"
+        ],
+        "motm": "clube-teste-10#11",
+        "attendance": 21502
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-04-clube-teste-05",
+        "score": [3, 0],
+        "goals": ["clube-teste-04#11@34", "clube-teste-04#11@45", "clube-teste-04#11@89"],
+        "motm": "clube-teste-04#11",
+        "attendance": 14545
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-07-clube-teste-12",
+        "score": [2, 2],
+        "goals": [
+          "clube-teste-07#9@14",
+          "clube-teste-12#17@28",
+          "clube-teste-12#17@29",
+          "clube-teste-07#9@49"
+        ],
+        "motm": "clube-teste-07#9",
+        "attendance": 16442
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-16-clube-teste-09",
+        "score": [0, 1],
+        "goals": ["clube-teste-09#7@8"],
+        "motm": "clube-teste-09#7",
+        "attendance": 22134
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-08-clube-teste-01",
+        "score": [3, 4],
+        "goals": [
+          "clube-teste-08#10@1",
+          "clube-teste-01#2@12",
+          "clube-teste-01#6@20",
+          "clube-teste-01#5@25",
+          "clube-teste-08#11@38",
+          "clube-teste-01#10@51",
+          "clube-teste-08#7@74"
+        ],
+        "motm": "clube-teste-01#10",
+        "attendance": 17075
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-14-clube-teste-18",
+        "score": [5, 0],
+        "goals": [
+          "clube-teste-14#11@31",
+          "clube-teste-14#17@46",
+          "clube-teste-14#11@52",
+          "clube-teste-14#11@60",
+          "clube-teste-14#16@75"
+        ],
+        "motm": "clube-teste-14#11",
+        "attendance": 20869
+      },
+      {
+        "fixtureId": "s1-r1-clube-teste-17-clube-teste-11",
+        "score": [0, 1],
+        "goals": ["clube-teste-11#11@11"],
+        "motm": "clube-teste-11#1",
+        "attendance": 22766
+      }
+    ],
+    "facts": [
+      {
+        "kind": "leadership",
+        "clubId": "clube-teste-14",
+        "change": "took",
+        "rounds": 1
+      },
+      {
+        "kind": "topScorerOfRound",
+        "playerId": "clube-teste-04#11",
+        "goals": 3
+      },
+      {
+        "kind": "topScorerOfRound",
+        "playerId": "clube-teste-14#11",
+        "goals": 3
+      }
+    ],
+    "digest": "b4b615e3"
+  }
+}

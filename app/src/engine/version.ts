@@ -19,4 +19,10 @@
 // 7: T-012 reviewed (docs/design/ia-clubes.md, "Pedido ao developer" 6; partida.md, 8): rule 2
 //    at minutes 60, 70 and 80, rule 3 swaps an AM or ST, the AI decides in the second half's added
 //    time, commands with `added`, the `skip` talk, ai.subEnergy 85; the match goldens changed.
-export const ENGINE_VERSION = 7;
+// 8: the rounds (T-013): the state gains `lastSheets` and `seasonStats` (the new-game golden
+//    changed), and the displayed strength without a lineup reads the last sheet.
+// 9: T-013 reviewed: `MatchResult.conceded` (the match goldens gain the field, nothing else in
+//    them changed), the tie-break draw has the season in its label, the facts follow the cadence
+//    of temporada.md (milestones, run ends), and the displayed strength replaces the unavailable
+//    starters of the last sheet as the kick-off does; the round goldens changed.
+export const ENGINE_VERSION = 9;

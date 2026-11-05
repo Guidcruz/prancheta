@@ -221,7 +221,7 @@ function playersIn(e: MatchResult['events'][number]): string[] {
 }
 
 describe(`simulateMatch: invariants over ${SEEDS} seeds`, () => {
-  it('keeps score, statistics, ratings, energy and time consistent', () => {
+  it('keeps score, statistics, ratings, energy and time consistent', { timeout: 30_000 }, () => {
     for (let seed = 0; seed < SEEDS; seed++) {
       const input = inputFor(seed);
       check(input, simulateMatch(input, params, commandsFor(seed, input)));

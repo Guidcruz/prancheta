@@ -50,7 +50,7 @@ Vitória 3, empate 1, derrota 0. Colunas: posição, clube, P, J, V, E, D, GP, G
 5. Confronto direto (só quando o empate é entre exatamente 2 clubes): pontos nos dois jogos entre eles, depois saldo nesses jogos
 6. Menos cartões vermelhos
 7. Menos cartões amarelos
-8. Sorteio: ordem de `seedFromString("<seed>-tiebreak-<clubId>")`, menor primeiro (determinístico e sem gastar sorteios do `Rng` da temporada)
+8. Sorteio: ordem de ``seedFromString(`${seed}-s${season}-tiebreak-${clubId}`)``, menor primeiro (determinístico e sem gastar sorteios do `Rng` da temporada). A temporada entra no rótulo, no mesmo formato das sementes das partidas (`docs/02-architecture.md`, §4.1): sem ela, o mesmo clube ganharia o sorteio em todas as temporadas da carreira, uma vantagem fixa e escondida.
 
 Com 3 ou mais clubes empatados até o critério 4, pula o 5 e segue do 6.
 
@@ -63,13 +63,56 @@ Com 3 ou mais clubes empatados até o critério 4, pula o 5 e segue do 6.
 3. Atualizar tabela, artilharia e estatísticas.
 4. Descontar suspensões cumpridas e rodadas de lesão; aplicar as novas.
 5. Moral dos jogadores (`jogadores.md`), depois termômetro da torcida (`torcida.md`).
-6. Recuperar condição até a próxima rodada (dias de intervalo × 7).
+6. Recuperar condição até a próxima rodada (dias de intervalo × 7). Depois da rodada 38 não há recuperação: a condição volta a 100 na virada da temporada ("Fim de temporada", passo 4).
 7. Gerar os fatos para notícias e rede social (lista de marcadores de `partida.md` + fatos da tabela abaixo).
 8. Salvamento automático.
 
-**Fatos da tabela para o `content-writer`:** `liderança` (assumiu, perdeu, manteve por N rodadas), `entrouZ4` / `saiuZ4`, `invencibilidade` (N jogos sem perder, N ≥ 5), `jejum` (N jogos sem vencer, N ≥ 4), `campeãoAntecipado`, `rebaixadoMatematicamente`, `artilheiroDaRodada`, `últimaRodadaDecisiva` (título ou rebaixamento em aberto antes da 38).
+### Fatos da tabela para o `content-writer`
+
+**Regra em uma frase:** a rodada só gera fato do que mudou ou do que virou marco; série que continua não vira notícia toda semana.
+
+O motor emite os fatos (`Fact`, `facts.ts`), nunca texto; a camada de conteúdo escolhe quais viram notícia. Todos saem da tabela depois da rodada comparada com a de antes e dos resultados da rodada.
+
+| Fato (`kind`)                              | Quando sai                                                                                                                                                       |
+| ------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `leadership` `took`                        | o líder mudou; na rodada 1, o primeiro líder (`rounds = 1`; o conteúdo lê "primeiro líder do campeonato")                                                        |
+| `leadership` `lost`                        | junto com o `took`, para o líder anterior, com as rodadas seguidas que ele liderou; não sai na rodada 1                                                          |
+| `leadership` `kept`                        | só nos marcos: quando as rodadas seguidas na liderança, contando esta, chegam a 5, 10, 15, …                                                                     |
+| `enteredZ4` / `leftZ4`                     | da rodada 2 em diante, para quem entrou ou saiu dos 4 últimos; na rodada 1 não sai nenhum (não há Z4 antes do primeiro jogo, e "4 entraram" seria ruído)         |
+| `unbeaten` (invencibilidade)               | só nos marcos: N jogos seguidos sem perder com N = 5, 10, 15, …                                                                                                  |
+| `winless` (jejum)                          | só nos marcos: N jogos seguidos sem vencer com N = 4, 9, 14, … (o mínimo e depois a cada 5)                                                                      |
+| `unbeatenEnded` (perdeu a invencibilidade) | o clube perde depois de N ≥ 5 jogos seguidos sem perder; campos `clubId`, `games` (N, sem contar a derrota), `round`, `opponentId` (quem o venceu)               |
+| `winlessEnded` (acabou o jejum)            | o clube vence depois de N ≥ 4 jogos seguidos sem vencer; campos `clubId`, `games` (N, sem contar a vitória), `round`, `opponentId` (quem ele venceu)             |
+| `championClinched`                         | uma vez, na rodada em que o título fica garantido                                                                                                                |
+| `relegatedClinched`                        | uma vez por clube, na rodada em que a queda fica garantida                                                                                                       |
+| `topScorerOfRound`                         | quem fez mais gols reais na rodada, **só se fez 2 ou mais**; empatados no topo saem todos (na ordem do primeiro gol) e o conteúdo junta numa nota só ("dividem") |
+| `decisiveLastRound`                        | no relatório da rodada 37: `title` se o campeão não está definido, `relegation` se ao menos uma vaga de queda está em aberto                                     |
+| `suspended` / `injured`                    | toda suspensão e lesão nova da rodada, com os jogos (ou rodadas) de fora                                                                                         |
+
+**Marcos das séries** (`leadership kept`, `unbeaten`, `winless`): uma regra só, "sai no mínimo e depois a cada 5". O mínimo é constante: liderança 5, invencibilidade 5, jejum 4.
+
+**Fim das séries** (`unbeatenEnded`, `winlessEnded`; decisão do CEO, 2026-11-05): o mínimo é o mesmo da série, então toda série que já virou notícia tem a sua notícia de fim, e nenhuma outra tem. Saem uma vez, na rodada em que a série acaba, com o placar da tabela (partida encerrada conta pelo placar definido). **O fim tem prioridade:** na rodada em que sai um `unbeatenEnded` ou `winlessEnded` de um clube, não sai `unbeaten` nem `winless` desse clube (acontece quando os últimos jogos da série foram empates: "perdeu a invencibilidade de 5" e "4 jogos sem vencer" na mesma rodada; medido em cerca de 2% dos fins). A liderança perdida já é o `leadership lost`.
 
 Campeão antecipado e rebaixado matemático: quando a diferença de pontos é maior que `3 × rodadas restantes`; empate nessa conta não define (depende de desempate) e só vale na última rodada.
+
+**Volume medido (T-013, 60 temporadas encadeadas com os 20 clubes, `playRound`, 2.280 rodadas):**
+
+| Fato por rodada                  | Antes (todo fato que vale) | Com a regra acima |
+| -------------------------------- | -------------------------- | ----------------- |
+| `leadership kept`                | 0,74                       | 0,11              |
+| `unbeaten`                       | 1,90                       | 0,76              |
+| `winless`                        | 2,88                       | 1,20              |
+| `topScorerOfRound`               | 3,32                       | 2,13              |
+| `enteredZ4`                      | 0,70                       | 0,60              |
+| `unbeatenEnded` (N ≥ 5)          | —                          | 0,62              |
+| `winlessEnded` (N ≥ 4)           | —                          | 0,99              |
+| tabela (sem suspensão nem lesão) | 10,8                       | 7,6               |
+| `suspended`                      | 14,2                       | 14,2              |
+| `injured`                        | 3,2                        | 3,2               |
+
+Em 95% das rodadas alguém faz 2 gols ou mais, então o artilheiro da rodada quase sempre existe. Suspensões e lesões são muitas (cerca de 0,7 e 0,16 por clube e rodada) e não são notícia por si: a camada de conteúdo só transforma em nota as do clube do técnico e as do próximo adversário dele.
+
+**Mínimos do fim de série, medidos** (por rodada, 60 temporadas): `unbeatenEnded` com N ≥ 5, 6, 7, 8 dá 0,62, 0,39, 0,25, 0,16; `winlessEnded` com N ≥ 3, 4, 5, 6 dá 1,66, 0,99, 0,59, 0,37. Ficam 5 e 4, os mínimos das séries: um pouco mais de uma invencibilidade e de um jejum encerrados por clube na temporada (1,2 e 1,9), e a regra cabe numa frase. Se o jejum de 4 encerrado parecer notícia fraca no teste com amigos, o próximo passo é subir os dois mínimos do jejum para 5 juntos (série e fim), não só o do fim.
 
 ## Força e dificuldade na escolha do clube
 
@@ -112,10 +155,12 @@ No estilo Tranquilo o texto é "a diretoria espera"; no Realista, "a diretoria c
 Sempre, ao fim da rodada 38:
 
 1. **Cerimônia do campeão** e lista dos 4 rebaixados.
-2. **Prêmios:** artilheiro (gols; desempate: menos jogos, depois mais assistências), garçom (assistências), melhor jogador (maior média de nota com ao menos 19 jogos), revelação (idem, até 21 anos), seleção do campeonato (melhor média por vaga num 4-3-3, ao menos 19 jogos), melhor goleiro (menos gols sofridos por jogo, ao menos 19 jogos).
+2. **Prêmios:** artilheiro (gols; desempate: menos jogos, depois mais assistências), garçom (assistências), melhor jogador (maior média de nota com ao menos 19 jogos), revelação (idem, até 21 anos), seleção do campeonato (melhor média por vaga num 4-3-3, ao menos 19 jogos), melhor goleiro (jogador de posição GOL com menos `conceded / games`, ao menos 19 jogos; desempate: mais jogos, depois maior média de nota).
 3. **Resumo do técnico:** posição, meta cumprida ou não, maior vitória, maior derrota, artilheiro do clube, "quem evoluiu" (a evolução calculada no passo 4).
-4. **Evolução e idade** (`jogadores.md`), amarelos zerados, lesões terminadas.
+4. **Evolução e idade** (`jogadores.md`), depois a **virada:** `seasonStats` zerado, amarelos zerados, lesões e suspensões terminadas, condição 100 para todos (a pré-temporada é o descanso; não há recuperação depois da rodada 38). A moral passa como está. A ordem importa: prêmios, resumo e evolução leem o `seasonStats` (a evolução usa os minutos) antes de ele ser zerado.
 5. **Lembrete** discreto de exportar o save (`PROJETO.md`, "Saves e backup").
+
+**Gols sofridos na temporada (`PlayerSeasonStats.conceded`):** a soma, partida a partida, dos gols reais sofridos pelo time com o jogador em campo no gol ou na defesa, o mesmo contador que a nota da partida já usa (`Appearance.conceded`). Entra na T-013, junto com o resto do `seasonStats`: o campo é novo nesta versão do save, e acrescentá-lo depois pediria migração. O prêmio lê só quem é goleiro de posição; o número dos defensores fica disponível, sem uso na 1a.
 
 Depois disso, uma de duas opções (decisão 5 de `balance-targets.md`, do CEO):
 
@@ -142,6 +187,7 @@ Recomendo a B: dá motivo para a última rodada importar também para quem está
 | Caso                                        | Regra                                                                                                                                                                                                  |
 | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Partida encerrada por menos de 7 em campo   | vale o placar definido em `partida.md`; cartões e gols contam normal                                                                                                                                   |
+| Goleiro trocado ou expulso no jogo          | cada um soma os gols sofridos enquanto estava em campo; o jogador de linha que vai para o gol soma os dele, mas não concorre ao prêmio de goleiro                                                      |
 | Empate total até os amarelos                | sorteio determinístico (critério 8)                                                                                                                                                                    |
 | Prêmio sem ninguém com 19 jogos             | baixa o mínimo para metade dos jogos do clube; se ainda vazio, não há o prêmio                                                                                                                         |
 | Artilheiros empatados em tudo               | dividem o prêmio                                                                                                                                                                                       |

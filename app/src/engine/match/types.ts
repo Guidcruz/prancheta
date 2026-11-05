@@ -235,6 +235,12 @@ export interface MatchResult {
   /** Energy at the final whistle, for every player who took the pitch. */
   readonly finalEnergy: Readonly<Record<PlayerId, number>>;
   /**
+   * Real goals conceded by the team while the player was on the pitch in the goal slot or a
+   * defence slot (the counter of the rating), for every player who took the pitch. The players
+   * who occupied the goal add up to the opponent's real goals.
+   */
+  readonly conceded: Readonly<Record<PlayerId, number>>;
+  /**
    * Players injured in the match, in order of the injuries, with the rounds out drawn for the
    * severity (partida.md, "Lesões"). Counting the rounds down is the round's job (T-013).
    */
@@ -254,4 +260,31 @@ export interface MatchResult {
   readonly markers: readonly MatchMarker[];
   readonly attendance: number;
   readonly warnings: readonly EngineWarning[];
+}
+
+/** A goal kept in the season's results (the scorers of US-024), in match order. */
+export interface MatchGoal {
+  readonly side: Side;
+  readonly scorer: PlayerId;
+  readonly assist?: PlayerId;
+  readonly kind: ChanceKind;
+  readonly minute: number;
+  readonly added?: number;
+}
+
+/**
+ * What a played fixture keeps in the state (`Fixture.result`, docs/02-architecture.md, 4.1): the
+ * lean part of the `MatchResult` that the table, the calendar and the results screen read. The
+ * full events stay only in `GameState.lastRound` (the last round), so the save stays small.
+ */
+export interface MatchSummary {
+  /** The awarded score when the match was abandoned: it decides the table (partida.md). */
+  readonly score: readonly [number, number];
+  readonly abandoned: boolean;
+  /** The real goals (they count for the scorers even in an abandoned match). */
+  readonly goals: readonly MatchGoal[];
+  /** Yellows and reds of each side are the table's tie-breaks 6 and 7 (temporada.md). */
+  readonly stats: Readonly<Record<Side, MatchStats>>;
+  readonly motm?: PlayerId;
+  readonly attendance: number;
 }

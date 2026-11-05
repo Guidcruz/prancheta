@@ -810,10 +810,12 @@ export function simulateMatch(
   const ratingById: Record<PlayerId, number | null> = {};
   const minutes: Record<PlayerId, number> = {};
   const finalEnergy: Record<PlayerId, number> = {};
+  const conceded: Record<PlayerId, number> = {};
   for (const [app, value] of ratings) {
     ratingById[app.player.id] = value;
     minutes[app.player.id] = app.minutes;
     finalEnergy[app.player.id] = app.energy;
+    conceded[app.player.id] = app.conceded;
   }
 
   return {
@@ -825,6 +827,7 @@ export function simulateMatch(
     ...(motm === undefined ? {} : { motm: motm.player.id }),
     minutes,
     finalEnergy,
+    conceded,
     newInjuries,
     newSuspensions: cards.newSuspensions,
     yellowCounts: cards.yellowCounts,

@@ -4,7 +4,7 @@ import { BENCH_SIZE } from '../lineup.ts';
 import { clamp } from '../math.ts';
 import type { MatchParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
-import { bestForSlot, correctedCondition, winsTie } from '../selection.ts';
+import { correctedCondition, kickoffBench, replaceUnavailable, winsTie } from '../selection.ts';
 import {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
@@ -199,11 +199,6 @@ function appearance(
   };
 }
 
-/** Injured or suspended: cannot play this match (jogadores.md, "Estados que mudam"). */
-function unavailable(player: Player): boolean {
-  return player.injuryRounds > 0 || player.suspendedGames > 0;
-}
-
 /** Puts `app` in `slot` (or empties it) and refreshes the cached part of its rating. */
 export function occupy(slot: Slot, app: Appearance | undefined): void {
   slot.app = app;
@@ -297,17 +292,8 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
   if (lineup.bench.length > BENCH_SIZE) {
     warnings.push({ code: 'lineup-bench-too-long', detail: { side, count: lineup.bench.length } });
   }
-  const bench: Player[] = [];
-  for (const id of lineup.bench.slice(0, BENCH_SIZE)) {
-    const player = byId.get(id);
-    if (player === undefined || used.has(id) || unavailable(player)) continue;
-    if (bench.some((p) => p.id === id)) continue;
-    bench.push(player);
-  }
-  for (let i = 0; i < occupants.length; i++) {
-    const player = occupants[i];
-    if (player === undefined || !unavailable(player)) continue;
-    const reserve = bestForSlot(bench, positions[i]!);
+  const bench = kickoffBench(lineup.bench, byId, used);
+  replaceUnavailable(occupants, positions, bench, (player, reserve) => {
     warnings.push({
       code: 'lineup-unavailable-player',
       detail: {
@@ -316,9 +302,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
         ...(reserve === undefined ? {} : { replacement: reserve.id }),
       },
     });
-    occupants[i] = reserve;
-    if (reserve !== undefined) bench.splice(bench.indexOf(reserve), 1);
-  }
+  });
   const filled = fillEmptyGoal(occupants);
   if (filled.vacated !== undefined) {
     const keeper = filled.slots[GOALKEEPER_SLOT]!;
