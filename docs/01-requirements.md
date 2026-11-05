@@ -2692,8 +2692,8 @@ Cenário: sem transmissão no "só resultado"
 **Como** técnico, **quero** ver a classificação como estaria se a rodada terminasse agora, com setas de quem sobe e quem desce, com um toque durante o jogo, sozinha no intervalo e "como ficou" no fim, **para** acompanhar o efeito dos placares sem parar a partida.
 
 **Prioridade:** Should
-**Depende de:** US-012, US-022, US-023, US-070
-**Notas:** Pedido do CEO (2026-11-05). "Se terminasse agora" é a tabela oficial de antes da rodada mais os 10 jogos com o placar do minuto atual contado como final, inclusive o jogo do técnico. O desempate é o da tabela oficial (US-012, P1; [temporada.md › Pontos e tabela](design/temporada.md#pontos-e-tabela)): os cartões até o minuto atual contam nos critérios 6 e 7, o confronto direto conta o jogo em andamento quando os dois empatados se enfrentam nesta rodada, e o sorteio do critério 8 usa a mesma semente. A ordem tem de ser a que o motor daria; onde fica o cálculo é decisão do `architect`. As setas comparam com a tabela oficial do início da rodada, não com o minuto anterior. A tabela usa os rótulos de zona e o "seu clube" da tela da tabela (US-023), com um título que deixa claro que é parcial. Três momentos: durante o jogo, abre por cima da partida com um toque e a partida continua correndo; no intervalo, aparece sozinha junto da conversa do intervalo (US-022), sem tomar o lugar dela; no apito final da partida assistida, a tela mostra "como ficou" no mesmo formato (antes ou dentro do resumo da rodada, US-019; o lugar é do `ux-designer`). A versão resumida, usada pelo plantão grande (US-073), tem 5 linhas: o clube do técnico e os 2 vizinhos de cada lado (nas pontas, as 5 primeiras ou as 5 últimas). Online e "Tempo real": mesma dependência da US-070.
+**Depende de:** US-012, US-019, US-022, US-023, US-070
+**Notas:** Pedido do CEO (2026-11-05). "Se terminasse agora" é a tabela oficial de antes da rodada mais os 10 jogos com o placar do minuto atual contado como final, inclusive o jogo do técnico. O desempate é o da tabela oficial (US-012, P1; [temporada.md › Pontos e tabela](design/temporada.md#pontos-e-tabela)): os cartões até o minuto atual contam nos critérios 6 e 7, o confronto direto conta o jogo em andamento quando os dois empatados se enfrentam nesta rodada, e o sorteio do critério 8 usa a mesma semente. A ordem tem de ser a que o motor daria; onde fica o cálculo é decisão do `architect`. As setas comparam com a tabela oficial do início da rodada, não com o minuto anterior. A tabela usa os rótulos de zona e o "seu clube" da tela da tabela (US-023), com um título que deixa claro que é parcial. Três momentos: durante o jogo, abre por cima da partida com um toque e a partida continua correndo; no intervalo, aparece sozinha junto da conversa do intervalo (US-022), sem tomar o lugar dela; no apito final da partida assistida, a tela mostra "como ficou" no mesmo formato (antes ou dentro do resumo da rodada, US-019; o lugar é do `ux-designer`). No modo "só resultado", que não tem transmissão, o "como ficou" aparece no resumo da rodada (US-019), no mesmo formato (decisão D10 do CEO, 2026-11-05). A versão resumida, usada pelo plantão grande (US-073), tem 5 linhas: o clube do técnico e os 2 vizinhos de cada lado (nas pontas, as 5 primeiras ou as 5 últimas). Online e "Tempo real": mesma dependência da US-070.
 
 ### Critérios de aceite
 
@@ -2725,6 +2725,11 @@ Cenário: como ficou no fim
   Dado o apito final da partida assistida
   Então a tela mostra "como ficou", no mesmo formato, igual à tabela oficial depois da rodada, com as setas em relação ao início da rodada
 
+Cenário: como ficou no "só resultado" (D10)
+  Dado o tipo de partida "só resultado"
+  Quando o jogador joga a rodada
+  Então o resumo da rodada (US-019) mostra "como ficou", no mesmo formato, igual à tabela oficial depois da rodada, com as setas em relação ao início da rodada e o clube do técnico destacado
+
 Cenário: resultado e tabela oficial intocados
   Dado o mesmo save e a mesma semente
   Quando a rodada é jogada uma vez abrindo a tabela ao vivo e outra sem abrir
@@ -2736,7 +2741,6 @@ Cenário: resultado e tabela oficial intocados
 
 - Simular cenários ("e se eu empatar?") ou projetar o fim do campeonato.
 - Artilharia ao vivo.
-- "Como ficou" no resumo do modo "só resultado" (pergunta aberta 10).
 
 ---
 
@@ -2748,21 +2752,21 @@ Cenário: resultado e tabela oficial intocados
 **Depende de:** US-071; confirmação do critério e do valor de N pelo `game-designer` (em `docs/design/`) antes de a tarefa começar
 **Notas:** Pedido do CEO (2026-11-05); exemplos dele: o rival direto empatou, o líder está perdendo, um concorrente contra o rebaixamento virou o jogo. É a regra que o plantão (US-073) usa para escolher o tamanho e a ordem da fila. Critério proposto, **a confirmar com o `game-designer`**: tudo é medido na tabela ao vivo (US-071) logo antes e logo depois do gol, e o gol de um dos outros 9 jogos recebe o nível mais alto entre as regras que valem ("você" é o clube do técnico).
 
-| Nível | Nome   | Quando                                                                                                   | Motivo (indicativo)        | Plantão                |
-| ----- | ------ | -------------------------------------------------------------------------------------------------------- | -------------------------- | ---------------------- |
-| 3     | Título | você está na briga pelo título e o gol mexe nela                                                         | `titleRace`                | grande, passa à frente |
-| 2     | Zona   | você está na briga do G4 ou na da queda e o gol mexe nela                                                | `relegationRace`, `g4Race` | grande                 |
-| 1     | Você   | a sua posição mudou, ou o gol mudou os pontos do clube logo acima ou logo abaixo de você, a até N pontos | `position`, `directRival`  | grande                 |
-| 0     | Comum  | nenhuma das anteriores                                                                                   | `none`                     | curto                  |
+| Nível | Nome   | Quando                                                                                                   | Motivo (indicativo)                  | Plantão                |
+| ----- | ------ | -------------------------------------------------------------------------------------------------------- | ------------------------------------ | ---------------------- |
+| 3     | Título | você está na briga pelo título e o gol mexe nela                                                         | `titleRace`                          | grande, passa à frente |
+| 2     | Zona   | você está na briga da Libertadores ou na da queda e o gol mexe nela                                      | `relegationRace`, `libertadoresRace` | grande                 |
+| 1     | Você   | a sua posição mudou, ou o gol mudou os pontos do clube logo acima ou logo abaixo de você, a até N pontos | `position`, `directRival`            | grande                 |
+| 0     | Comum  | nenhuma das anteriores                                                                                   | `none`                               | curto                  |
 
-- **Briga de uma fronteira** entre as posições k e k+1: quem está até a posição k e tem no máximo `P(k+1) + N` pontos, mais quem está depois da posição k e tem pelo menos `P(k) − N` pontos, em que `P(i)` é a pontuação do i-ésimo colocado. Fica vazia quando os dois lados estão a mais de N pontos. Fronteiras: título, k = 1; G4, k = 4 (pergunta aberta 9); queda, k = 16.
+- **Briga de uma fronteira** entre as posições k e k+1: quem está até a posição k e tem no máximo `P(k+1) + N` pontos, mais quem está depois da posição k e tem pelo menos `P(k) − N` pontos, em que `P(i)` é a pontuação do i-ésimo colocado. Fica vazia quando os dois lados estão a mais de N pontos. Fronteiras: título, k = 1; Libertadores, k = 6 (a última posição da "Zona da Libertadores" da tabela; D9); queda, k = 16.
 - **O gol mexe na briga** quando muda os pontos ao vivo de um clube da briga ou muda quem está de cada lado da fronteira.
 - **Mudar os pontos** é mudar o resultado ao vivo daquele jogo (vitória, empate ou derrota). O gol que só amplia a vantagem (de 2 x 0 para 3 x 0) não muda pontos, mas pode mudar a posição pelo saldo.
-- **Motivo:** sai junto do nível e escolhe a linha "o que mudou para você" do plantão grande (por exemplo, "O líder está perdendo", "Seu rival direto empatou", "Você entrou no Z4"); o texto é do `content-writer`. Se mais de uma regra vale, vence a de nível mais alto; no nível 2, `relegationRace` antes de `g4Race`; no nível 1, `position` antes de `directRival`. Os nomes dos códigos são do `architect`.
+- **Motivo:** sai junto do nível e escolhe a linha "o que mudou para você" do plantão grande (por exemplo, "O líder está perdendo", "Seu rival direto empatou", "Você entrou no Z4"); o texto é do `content-writer`. Se mais de uma regra vale, vence a de nível mais alto; no nível 2, `relegationRace` antes de `libertadoresRace`; no nível 1, `position` antes de `directRival`. Os nomes dos códigos são do `architect`.
 - **N** é parâmetro novo em `app/src/params/` (o nome é do `architect`); sugestão de valor: 3, uma vitória.
 - **Sem nível acima de 0:** na rodada 1 (a tabela parte do zero e quase todo gol mexe em posição; a mesma razão dos fatos `enteredZ4` em `temporada.md`). Gol do jogo do técnico não passa por esta regra: já aparece na partida.
 - **Volume:** o `game-designer` mede com a ferramenta de balanceamento a média de gols de cada nível por rodada, por faixa da tabela, e ajusta N. No começo da temporada, com poucos pontos, as brigas são largas e o nível 3 pode ficar frequente; o ajuste (N menor nas primeiras rodadas, por exemplo) é dele.
-- **Zonas:** a Sul-Americana não entra. O G4 é o pedido do CEO; a tabela da 1a mostra a zona da Libertadores do 2º ao 6º (`temporada.md`), e as copas ainda não valem.
+- **Zonas:** a Sul-Americana não entra. A briga da Libertadores usa a mesma fronteira da tabela da 1a, a "Zona da Libertadores" do 2º ao 6º (`temporada.md`), no lugar do G4 citado no pedido (decisão D9 do CEO, 2026-11-05), mesmo com as copas ainda sem valer; se a zona mudar na tabela, k muda junto.
 
 ### Critérios de aceite
 
@@ -2774,16 +2778,16 @@ Esquema do Cenário: nível e motivo do gol (a confirmar com o game-designer)
   Então o nível do gol é <nível> e o motivo é <motivo>
 
   Exemplos:
-    | rodada | situação                                                                                                                             | nível | motivo         |
-    | 10     | o 1º tem 20 pontos e você é 2º com 18; o líder empatava e sofre o gol que o deixa perdendo                                           | 3     | titleRace      |
-    | 10     | o 1º tem 20, o 2º 12 e você é 3º com 11, fora da briga do G4 e da queda; o líder empatava e sofre o gol que o deixa perdendo         | 0     | none           |
-    | 10     | você é 16º com 15 pontos e o 17º tem 13; o 18º, com 12 e perdendo, vira o jogo                                                       | 2     | relegationRace |
-    | 10     | você é 4º com 30, longe do líder, e o 5º tem 29 perdendo; o 5º empata                                                                | 2     | g4Race         |
-    | 10     | você é 10º com 25, fora das três brigas; o 11º, com 24 e perdendo, empata e você continua 10º                                        | 1     | directRival    |
-    | 10     | você é 10º, fora das três brigas; o 11º, com os mesmos pontos e já vencendo por 1 x 0, faz o 2º gol e passa à sua frente pelo saldo  | 1     | position       |
-    | 10     | você é 10º, fora das três brigas; o 9º, 2 pontos à frente e vencendo por 2 x 0, faz o 3º gol e nenhuma posição muda                  | 0     | none           |
-    | 10     | você é 10º, fora das três brigas; o 18º vira o jogo e a sua posição não muda                                                         | 0     | none           |
-    | 1      | qualquer gol num dos outros 9 jogos                                                                                                  | 0     | none           |
+    | rodada | situação                                                                                                                             | nível | motivo           |
+    | 10     | o 1º tem 20 pontos e você é 2º com 18; o líder empatava e sofre o gol que o deixa perdendo                                           | 3     | titleRace        |
+    | 10     | o 1º tem 20, o 2º 12 e você é 3º com 11, fora da briga da Libertadores e da queda; o líder empatava e sofre o gol que o deixa perdendo | 0     | none             |
+    | 10     | você é 16º com 15 pontos e o 17º tem 13; o 18º, com 12 e perdendo, vira o jogo                                                       | 2     | relegationRace   |
+    | 10     | você é 6º com 30, longe do líder, e o 7º tem 29 perdendo; o 7º empata                                                                | 2     | libertadoresRace |
+    | 10     | você é 10º com 25, fora das três brigas; o 11º, com 24 e perdendo, empata e você continua 10º                                        | 1     | directRival      |
+    | 10     | você é 10º, fora das três brigas; o 11º, com os mesmos pontos e já vencendo por 1 x 0, faz o 2º gol e passa à sua frente pelo saldo  | 1     | position         |
+    | 10     | você é 10º, fora das três brigas; o 9º, 2 pontos à frente e vencendo por 2 x 0, faz o 3º gol e nenhuma posição muda                  | 0     | none             |
+    | 10     | você é 10º, fora das três brigas; o 18º vira o jogo e a sua posição não muda                                                         | 0     | none             |
+    | 1      | qualquer gol num dos outros 9 jogos                                                                                                  | 0     | none             |
 
 Cenário: regra determinística e sem efeito no motor
   Dado a mesma tabela ao vivo antes e depois de um gol e o mesmo N
@@ -2963,18 +2967,20 @@ O CEO aceitou as recomendações das perguntas abertas 4 a 8 desta revisão. A n
 7. **D7. Onde aparece o total de títulos.** Na 1a, só para o clube do jogador (tela do clube), além da cerimônia de título e das notícias; a ficha de outros clubes fica para a Etapa 4, com "Histórico e recordes". (US-068)
 8. **D8. Colocação dentro da carreira.** Não mexe na força da temporada seguinte da carreira; a força na carreira vem do elenco e da curva de idade (US-025). (US-069)
 
+### Decisões do CEO sobre o placar e a tabela ao vivo (2026-11-05)
+
+O CEO aceitou as recomendações das perguntas abertas 9 e 10 do pedido de 2026-11-05 (US-070 a US-074). A numeração segue a das perguntas (D9 e D10).
+
+9. **D9. Fronteira da Libertadores no plantão.** O plantão usa a mesma fronteira da tabela da 1a: a "Zona da Libertadores", do 2º ao 6º (`docs/design/temporada.md`), no lugar do G4. Na US-072, k = 6 e o motivo `libertadoresRace`. (US-072, US-073)
+10. **D10. "Como ficou" no "só resultado".** Aparece também no resumo do modo "só resultado" (US-019), no mesmo formato da partida assistida. (US-071, US-019)
+
 ### Perguntas que seguem abertas
 
 1. **P7 (resto). Quem trata as denúncias e em quanto tempo?** Recomendo que, na 1b, o próprio CEO trate, com prazo de até 72 horas para renomear à força ou remover um apelido ou nome de liga ofensivo, e que o `architect` defina como o CEO fica sabendo de uma denúncia nova (sem painel). Um prazo semanal seria mais leve, mas deixa um apelido ofensivo visível para menores por dias. Trava a US-065.
 2. **P13 (resto). Discussions do GitHub ou formulário no devlog?** Recomendo as Discussions do repositório público: custo zero, nada para construir nem guardar do nosso lado, moderação pronta e exigência de conta no GitHub (que só aceita maiores de 13 anos). O formulário no devlog pediria um lugar para guardar as respostas, ou seja, dado pessoal novo com ADR e `security-auditor`. Não trava nenhuma história: a tela Sobre lê o link da configuração.
 3. **Tipo de partida por carreira ou para o aparelho?** As decisões não dizem se trocar o tipo de partida vale só para a carreira aberta ou para todas as carreiras do aparelho. Recomendo por carreira, porque ele é escolhido no novo jogo (US-014). Os critérios de US-019 e US-044 foram escritos para valer nos dois casos, então não trava nada; a resposta orienta o `ux-designer` e o `architect`.
 
-As perguntas 4 a 8 foram respondidas (ver D4 a D8 acima).
-
-Perguntas do pedido de 2026-11-05 (US-070 a US-074):
-
-9. **G4 ou a zona da Libertadores da tabela?** O CEO falou em G4, mas a tabela da 1a mostra "Zona da Libertadores" do 2º ao 6º (`docs/design/temporada.md`). Recomendo usar no plantão a mesma fronteira da tabela, para a linha "Você entrou na zona da Libertadores" nunca contradizer a tela ao lado; a US-072 está escrita com G4 (k = 4) até a resposta. Não trava a história: muda só o valor de k.
-10. **"Como ficou" também no modo "só resultado"?** Recomendo que sim: é o mesmo componente da US-071 e fecha o ciclo para quem joga com pressa. Por ora está fora do escopo da US-071 e a US-019 não muda.
+As perguntas 4 a 10 foram respondidas (ver D4 a D8 e D9 e D10 acima).
 
 Insumos pendentes que travam histórias (não são perguntas novas):
 
