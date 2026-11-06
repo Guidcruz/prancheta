@@ -109,144 +109,108 @@ const ell = (cx, cy, rx, ry) =>
   `M${cx - rx} ${cy}a${rx} ${ry} 0 1 0 ${2 * rx} 0a${rx} ${ry} 0 1 0 ${-2 * rx} 0Z`;
 const n = (v) => String(+v.toFixed(2));
 
-// hair: [back, front] as arrays of [d, extra attrs]; mirrored = draw twice (second with transform)
-const M = 'transform="translate(48 0) scale(-1 1)"';
+// Hair is three layers, so it can never leave a gap against the skull:
+//  sil     silhouette drawn BEHIND ears and face (fill + ink stroke): it always contains the skull top,
+//          so the head sits on the hair and no backdrop shows between them;
+//  hl      hairline, an open path from A (left temple) to B (right temple);
+//  fringe  fill-only cap in front of the face: hl + CLOSE, closed through the inside of `sil`, so it
+//          hides the skull outline under the hair without drawing a second contour. The hairline gets
+//          its own ink stroke.
+// Invariants (tested in the sheet check): sil spans x 12..36 at y 21, top <= 6.2; fringe closure stays
+// >= 0.8 inside sil; hl starts/ends on the skull side at y 21.5.
+const CLOSE = 'C35.400 12 31 7.400 24 7.400S12.600 12 12.800 21.500Z';
+const CLOSE_BUZZ = 'C34 12 31 9.200 24 9.200S14 12 14.200 21.500Z';
+const CAP = 'M12.200 23C11.200 12 16.500 6.200 24 6.200S36.800 12 35.800 23Z';
+const BUMPY =
+  'M12 23Q9.500 17 13 13.500 12 9 17.500 8.500 19.500 4.500 24 6 28.500 4.500 30.500 8.500 36 9 35 13.500 38.500 17 36 23Z';
+const HL_CAP =
+  'M12.800 21.500Q13 15.500 18.500 14.500Q24 12.800 29.500 14.500Q35 15.500 35.200 21.500';
+const HL_SIDE =
+  'M12.800 21.500Q12.800 16 17 14.800Q22 14 26 12.500 28 14.500 32 14.800 35.200 15.800 35.200 21.500';
+const HL_BUMPY =
+  'M12.800 21.500Q12.500 16 15.500 14.500 18 15.800 20.500 14 22 15 24 14.200 26 15 27.500 14 30 15.800 32.500 14.500 35.500 16 35.200 21.500';
+const STRANDS = 'M13.200 22 12.600 38M16 24 15.800 39M34.800 22 35.400 38M32 24 32.200 39';
+const LOCS = 'M13.200 22 12.400 41M16 24 15.600 42M34.800 22 35.600 41M32 24 32.400 42';
 const HAIRS = {
   0: null,
   1: {
-    front: [
-      [
-        'M14.200 19.500Q13.500 9.500 24 8.800T33.800 19.500Q32.500 13.500 24 13.200T14.200 19.500Z',
-        'o',
-      ],
-    ],
+    buzz: true,
+    hl: 'M14.200 21.500Q14.500 16.500 18.500 14.800Q24 13.500 29.500 14.800 33.500 16.500 33.800 21.500',
   },
-  2: {
-    front: [
-      [
-        'M13.500 20Q12 8 24 7.300T34.500 20Q33.500 14.500 29 13Q24 14.500 19 13 14.500 14.500 13.500 20Z',
-      ],
-    ],
-  },
-  3: {
-    front: [
-      [
-        'M13.300 21Q11.500 8 24 7Q36.500 8 34.700 21 34 15 31 13.500 25 12.200 19 13.500 15 14.800 13.300 21Z',
-      ],
-    ],
-  },
+  2: { sil: [[CAP]], hl: HL_CAP },
+  3: { sil: [[CAP]], hl: HL_SIDE },
   4: {
-    front: [
-      ['M12.500 26Q10.500 8 24 6.800T35.500 26Q35 18 33 14.500 24 11 15 14.500 13 18 12.500 26Z'],
-    ],
+    sil: [['M11 30C8.500 12 15 5.800 24 5.800S39.500 12 37 30L34 30 34 23 14 23 14 30Z']],
+    hl: HL_CAP,
   },
-  5: {
-    front: [
-      [
-        'M13.500 20Q11 15 14 12.500 14 8.500 18.500 8.500 21 5.800 24 7 27 5.800 29.500 8.500 34 8.500 34 12.500 37 15 34.500 20 33.500 15 31 13.500 24 11.500 17 13.500 14.500 15 13.500 20Z',
-      ],
-    ],
-  },
+  5: { sil: [[BUMPY]], hl: HL_BUMPY },
   6: {
-    front: [
-      [
-        'M10.500 22Q7.500 11 14 7 18 3 24 3.500T34 7Q40.500 11 37.500 22 36.500 15 33.500 12.800 24 10.500 14.500 12.800 11.500 15 10.500 22Z',
-      ],
-    ],
+    sil: [['M10.500 26Q6.500 12 13.500 6.500 18 2.200 24 2.800T34.500 6.500Q41.500 12 37.500 26Z']],
+    hl: 'M12.800 21.500Q12 15.500 16 13.800Q24 11 32 13.800 36 15.500 35.200 21.500',
   },
   7: {
-    back: [
+    sil: [
       [
-        'M12 24Q9.500 8 24 6.500T36 24Q37 34 35.500 41 33 41 33 35L33 24H15V35Q15 41 12.500 41 11 34 12 24Z',
+        'M11.500 24Q9 6.500 24 5.800T36.500 24Q38 35 36.500 42L32.500 42 33 24H15L15.500 42 11.500 42Q10.500 34 11.500 24Z',
       ],
     ],
-    front: [
-      [
-        'M13.300 21Q11.500 8 24 7Q36.500 8 34.700 21 34 15 31 13.500 25 12.200 19 13.500 15 14.800 13.300 21Z',
-      ],
-    ],
+    hl: HL_SIDE,
   },
-  8: {
-    back: [[circ(24, 6, 4)]],
-    front: [
-      [
-        'M13.500 20Q12 8 24 7.300T34.500 20Q33.500 14.500 29 13Q24 14.500 19 13 14.500 14.500 13.500 20Z',
-      ],
-    ],
-  },
-  9: {
-    back: [
-      ['M12.800 22 12.200 38M15.800 24 15.600 39M35.200 22 35.800 38M32.200 24 32.400 39', 's'],
-    ],
-    front: [
-      [
-        'M13.500 20Q12 8 24 7.300T34.500 20Q33.500 14.500 29 13Q24 14.500 19 13 14.500 14.500 13.500 20Z',
-      ],
-    ],
-  },
+  8: { sil: [[CAP], [circ(24, 5.2, 3.8)]], hl: HL_CAP },
+  9: { sil: [[CAP], [STRANDS, 's']], hl: HL_CAP },
   10: {
-    front: [
-      [
-        'M14.200 19.500Q13.500 9.500 24 8.800T33.800 19.500Q32.500 13.500 24 13.200T14.200 19.500Z',
-        'o',
-      ],
-      ['M19.500 12Q19 3 24 2.500T28.500 12Q26 10.500 24 10.500T19.500 12Z'],
-    ],
+    buzz: true,
+    hl: 'M14.200 21.500Q14.500 16.500 18.500 14.800Q24 13.500 29.500 14.800 33.500 16.500 33.800 21.500',
+    crest: 'M19.500 13Q18.500 3 24 2.500T28.500 13Q26 11.500 24 11.500T19.500 13Z',
   },
   11: {
-    front: [
-      [
-        'M13.500 21Q12 9 24 7.500T34.500 21Q33.800 16.800 31.500 14.500L29.500 10.800 26.500 13.500Q24 14.500 21.500 13.500L18.500 10.800 16.500 14.500Q14.200 16.800 13.500 21Z',
-      ],
-    ],
+    sil: [[CAP]],
+    hl: 'M12.800 21.500Q13 17.500 16.500 16L18.500 12.500Q20 14 22 14.800Q24 15.500 26 14.800 28 14 29.500 12.500L31.500 16Q35 17.500 35.200 21.500',
   },
   12: {
-    front: [
-      ['M13.200 23Q12.200 16 16 13.800 15.200 18 16 23Z'],
-      ['M13.200 23Q12.200 16 16 13.800 15.200 18 16 23Z', 'm'],
+    sil: [
+      ['M14.800 13.800Q11.800 16.500 12.200 20.500Q13.600 21 14.800 20Z'],
+      ['M33.200 13.800Q36.200 16.500 35.800 20.500Q34.400 21 33.200 20Z'],
     ],
   },
   13: {
-    front: [
-      [
-        'M13.700 19Q11.500 6 24 4.800T34.300 19Q33.800 13 31 11.500 24 8.500 17 11.500 14.200 13 13.700 19Z',
-      ],
-    ],
+    sil: [['M12 23Q10 5.500 24 4.200T36 23Z']],
+    hl: 'M12.800 21.500Q13 15.500 17 13Q24 10.500 31 13 35 15.500 35.200 21.500',
   },
   14: {
-    back: [
+    sil: [
       [
-        'M11 28Q7.500 10 24 5.500T37 28Q37.500 32 35 33 34 27 33 22H15Q14 27 13 33 10.500 32 11 28Z',
+        'M11 30Q7.500 17 13 13.500 12 9 17.500 8.500 19.500 4.500 24 6 28.500 4.500 30.500 8.500 36 9 35 13.500 40.500 17 37 30L34 30 34 23 14 23 14 30Z',
       ],
     ],
-    front: [
-      [
-        'M13.500 20Q11 15 14 12.500 14 8.500 18.500 8.500 21 5.800 24 7 27 5.800 29.500 8.500 34 8.500 34 12.500 37 15 34.500 20 33.500 15 31 13.500 24 11.500 17 13.500 14.500 15 13.500 20Z',
-      ],
-    ],
+    hl: HL_BUMPY,
   },
-  15: {
-    back: [['M12.800 22 12 41M15.800 24 15.400 42M35.200 22 36 41M32.200 24 32.600 42', 's6']],
-    front: [
-      [
-        'M13.500 20Q11 15 14 12.500 14 8.500 18.500 8.500 21 5.800 24 7 27 5.800 29.500 8.500 34 8.500 34 12.500 37 15 34.500 20 33.500 15 31 13.500 24 11.500 17 13.500 14.500 15 13.500 20Z',
-      ],
-    ],
-  },
+  15: { sil: [[BUMPY], [LOCS, 's6']], hl: HL_BUMPY },
 };
 
-function hairPaths(list, hc, sw) {
-  return (list ?? [])
+/** Back layer: silhouettes (behind ears and face). */
+function hairBack(h, hc, sw) {
+  return (h?.sil ?? [])
     .map(([d, k]) => {
       if (k === 's' || k === 's6') {
         const w = k === 's' ? 2.6 : 3.4;
         return `<path d="${d}" fill="none" stroke="${hc}" stroke-width="${w}" stroke-linecap="round"/>`;
       }
-      const op = k === 'o' ? ' fill-opacity=".6"' : '';
-      const t = k === 'm' ? ` ${M}` : '';
-      return `<path d="${d}" fill="${hc}"${op} stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"${t}/>`;
+      return `<path d="${d}" fill="${hc}" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/>`;
     })
     .join('');
+}
+
+/** Front layer: fill-only fringe, ink hairline, optional crest (mohawk). */
+function hairFront(h, hc, sw) {
+  if (!h?.hl) return '';
+  const op = h.buzz ? ' fill-opacity=".6"' : '';
+  let o = `<path d="${h.hl}${h.buzz ? CLOSE_BUZZ : CLOSE}" fill="${hc}"${op}/>`;
+  if (!h.buzz)
+    o += `<path d="${h.hl}" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  if (h.crest)
+    o += `<path d="${h.crest}" fill="${hc}" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/>`;
+  return o;
 }
 
 // brows: left brow as [dx-from-centre, y] points; right brow is mirrored by the same function
@@ -323,9 +287,9 @@ const FACIAL = {
   3: (c) =>
     `<path d="M20 28.200q2-1.200 4 0 2-1.200 4 0-.5 1.600-4 .9-3.500.700-4-.9Z" fill="${c}"/><path d="M21.500 32.500q2.500 1.200 5 0l-.5 2.600q-2 1-4 0Z" fill="${c}"/>`,
   4: (c) =>
-    `<path d="M14.200 23Q14 33 24 35.800T33.800 23Q33 28 31 29.500 28 27.500 24 27.800T17 29.500Q15 28 14.200 23Z" fill="${c}"/>`,
+    `<path d="M14.200 23Q14 33 24 35.800T33.800 23Q33 28 31 29.500 28 27.500 24 27.800T17 29.500Q15 28 14.200 23Z" fill="${c}" stroke="${INK}" stroke-width=".8" stroke-linejoin="round"/>`,
   5: (c) =>
-    `<path d="M13.500 21Q13 35 24 38T34.500 21Q33 27 30.500 27.500 28 26.800 24 27T17.500 27.500Q15 27 13.500 21Z" fill="${c}"/>`,
+    `<path d="M13.500 21Q13 35 24 38T34.500 21Q33 27 30.500 27.500 28 26.800 24 27T17.500 27.500Q15 27 13.500 21Z" fill="${c}" stroke="${INK}" stroke-width=".8" stroke-linejoin="round"/>`,
   6: (c) =>
     `<path d="M14.600 24Q15 33 24 35.400T33.400 24" fill="none" stroke="${c}" stroke-width="1.500" stroke-linecap="round"/>`,
   7: (c) =>
@@ -346,7 +310,7 @@ export function renderFace(spec, size = 96, opts = {}) {
   let o = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="${size}" height="${size}" aria-hidden="true" focusable="false">`;
   o += `<circle cx="24" cy="24" r="24" fill="${BACKDROP}"/>`;
   o += `<path d="M4.500 38Q6 33 14 31.500H34Q42 33 43.500 38A24 24 0 0 1 4.500 38Z" fill="${shirt}" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/>`;
-  o += hairPaths(hair?.back, hc, sw);
+  o += hairBack(hair, hc, sw);
   o += `<path d="M20.500 29V34L24 39 27.500 34V29Z" fill="${shade}" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/>`;
   if (!small) {
     const r = EAR_R[sp.ears];
@@ -370,7 +334,7 @@ export function renderFace(spec, size = 96, opts = {}) {
     SKIN_LIP[sp.skin],
     small,
   );
-  o += hairPaths(hair?.front, hc, sw);
+  o += hairFront(hair, hc, sw);
   switch (sp.accessory) {
     case 1:
       if (!small)
@@ -378,7 +342,7 @@ export function renderFace(spec, size = 96, opts = {}) {
       break;
     case 2:
       if (!small)
-        o += `<circle cx="13.300" cy="25.500" r="1" fill="#d9dee2" stroke="${INK}" stroke-width=".5"/>`;
+        o += `<circle cx="13.200" cy="${n(22.5 + EAR_R[sp.ears] - 0.2)}" r="1" fill="#d9dee2" stroke="${INK}" stroke-width=".5"/>`;
       break;
     case 3:
       o += `<path d="${circ(19.5, 21.5, 3.4)}${circ(28.5, 21.5, 3.4)}M22.900 21.300q1.100-.8 2.200 0" fill="none" stroke="${INK}" stroke-width="${small ? 1.4 : 0.9}"/>`;
