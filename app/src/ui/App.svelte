@@ -1,107 +1,99 @@
 <script lang="ts">
-  import { config } from '@lib/config';
+  import { onMount } from 'svelte';
+  import type { OpenError } from '@lib/career';
   import { detectLang, t } from '@lib/i18n';
-  import { shieldSpecFor, shieldSvg } from '@lib/generators/shield';
+  import { careers, errors } from './app-context';
+  import CareerFrame from './CareerFrame.svelte';
+  import ErrorBoundary from './components/ErrorBoundary.svelte';
+  import { HOME_DESTINATION, hrefOf } from './router';
+  import FatalScreen from './screens/FatalScreen.svelte';
+  import Home from './screens/Home.svelte';
 
+  /**
+   * The game's root: the home screen, the frame of an open career, or a full-screen save error
+   * (conflict, app-outdated...). State comes only from the CareerService (lib/career).
+   */
   const lang = detectLang();
-  // The app's own crest (not a club): fixed crest data, brand colours from the config.
-  const shield = shieldSvg(
-    shieldSpecFor({
-      id: 'prancheta',
-      colors: [config.colors.primary, config.colors.accent],
-      size: 'big',
-      titles: { league: 0 },
-      crestShape: 'french',
-      crestPattern: 'chevron',
-      crestBase: 0,
-      crestSymbol: 'sol',
-    }),
-    96,
-  );
-  let pressed = $state(false);
+  const career = careers.state;
+
+  let openError: OpenError | undefined = $state();
+  let lastOpened: string | undefined;
+  /** Remounts the home screen (and its list) after going back to it. */
+  let homeVisit = $state(0);
+
+  const boundaryCopy = {
+    title: t('error.unexpected.title', lang),
+    message: t('error.unexpected.body', lang),
+    retry: t('action.retry', lang),
+    home: t('action.home', lang),
+  };
+
+  async function open(careerId: string): Promise<void> {
+    lastOpened = careerId;
+    openError = undefined;
+    // Every career opens on the Clube tab.
+    history.replaceState(null, '', hrefOf(HOME_DESTINATION));
+    const opened = await careers.open(careerId);
+    if (!opened.ok && opened.error !== 'busy') openError = opened.error;
+  }
+
+  function goHome(): void {
+    careers.close();
+    openError = undefined;
+    history.replaceState(null, '', location.pathname + location.search);
+    homeVisit++;
+  }
+
+  function retryOpen(): void {
+    if (lastOpened !== undefined) void open(lastOpened);
+  }
+
+  onMount(() => {
+    // Errors outside any boundary (event handlers, promises): logged, never sent anywhere.
+    const onError = (event: ErrorEvent) =>
+      void errors.record({
+        kind: 'programming',
+        code: 'uncaught',
+        screen: 'window',
+        error: event.error,
+      });
+    const onRejection = (event: PromiseRejectionEvent) =>
+      void errors.record({
+        kind: 'programming',
+        code: 'unhandled-rejection',
+        screen: 'window',
+        error: event.reason,
+      });
+    window.addEventListener('error', onError);
+    window.addEventListener('unhandledrejection', onRejection);
+    return () => {
+      window.removeEventListener('error', onError);
+      window.removeEventListener('unhandledrejection', onRejection);
+    };
+  });
 </script>
 
-<main>
-  <header>
-    {#if config.logo.hasBrand}
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -- SVG from config/prancheta.config.ts, never user input -->
-      <div class="logo">{@html config.logo.mark}</div>
-    {/if}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- SVG from our own generator with constant inputs, never user input -->
-    <div class="shield">{@html shield}</div>
-    <h1 class="titulo">{config.name}</h1>
-    <p class="body subtitle">{t('home.subtitle', lang)}</p>
-  </header>
-
-  <section class="actions">
-    <button class="primary botao" onclick={() => (pressed = true)}>{t('home.play', lang)}</button>
-    {#if pressed}
-      <p class="body soon" role="status">{t('home.soon', lang)}</p>
-    {/if}
-    <a class="link" href={config.paths.site + 'devlog/'}>{t('home.devlog', lang)}</a>
-  </section>
-
-  <footer class="caption">{t('home.version', lang, { version: config.version })}</footer>
-</main>
-
-<style>
-  main {
-    min-height: 100dvh;
-    display: grid;
-    grid-template-rows: 1fr auto auto;
-    padding: var(--space-8) var(--space-4) var(--space-6);
-    max-width: 480px;
-    margin: 0 auto;
-  }
-  header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    gap: var(--space-3);
-  }
-  .logo {
-    width: 64px;
-    height: 64px;
-  }
-  .subtitle {
-    color: var(--ink-muted);
-    max-width: 32ch;
-    margin: 0;
-  }
-  h1 {
-    margin: 0;
-  }
-  .actions {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-4);
-    padding: var(--space-6) 0;
-  }
-  .primary {
-    min-height: var(--touch);
-    padding: 0 var(--space-6);
-    border: 0;
-    border-radius: var(--radius-pill);
-    background: var(--grass);
-    color: var(--on-grass);
-    cursor: pointer;
-  }
-  .soon {
-    margin: 0;
-    color: var(--ink-muted);
-    text-align: center;
-  }
-  .link {
-    color: var(--info);
-    min-height: var(--touch);
-    display: inline-flex;
-    align-items: center;
-  }
-  footer {
-    text-align: center;
-    color: var(--ink-muted);
-  }
-</style>
+{#if $career.status === 'fatal' && $career.fatal}
+  <FatalScreen
+    code={$career.fatal.code}
+    unsaved={$career.fatal.unsaved}
+    {lang}
+    onretry={retryOpen}
+    onhome={goHome}
+  />
+{:else if $career.status === 'open' && $career.save}
+  <CareerFrame career={$career} service={careers} log={errors} {lang} onhome={goHome} />
+{:else}
+  {#key homeVisit}
+    <ErrorBoundary
+      layout="screen"
+      copy={boundaryCopy}
+      code={t('error.code', lang, { code: 'unexpected' })}
+      onerror={(error) =>
+        void errors.record({ kind: 'programming', code: 'unexpected', screen: 'home', error })}
+      onhome={goHome}
+    >
+      <Home service={careers} {lang} {openError} onopen={(id) => void open(id)} />
+    </ErrorBoundary>
+  {/key}
+{/if}

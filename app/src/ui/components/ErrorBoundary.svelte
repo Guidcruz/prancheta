@@ -13,11 +13,13 @@
     copy: { title: string; message: string; retry: string; home: string };
     /** `area` inside the career frame, `screen` on full-screen screens. */
     layout?: 'screen' | 'area';
+    /** Already labelled, e.g. "Código: unexpected" (only the code, never the stack). */
+    code?: string;
     onerror?: (error: unknown) => void;
     onhome: () => void;
     children: Snippet;
   }
-  const { copy, layout = 'area', onerror, onhome, children }: Props = $props();
+  const { copy, layout = 'area', code, onerror, onhome, children }: Props = $props();
 </script>
 
 <svelte:boundary onerror={(error) => onerror?.(error)}>
@@ -29,6 +31,7 @@
       {layout}
       title={copy.title}
       message={copy.message}
+      {code}
       primary={{ label: copy.retry, onclick: reset, icon: 'retry' }}
       secondary={[{ label: copy.home, onclick: onhome }]}
     />
