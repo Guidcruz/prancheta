@@ -17,6 +17,7 @@ CLAUDE.local.md
 .astro/
 dev-dist/
 app/dist/
+app/dist-e2e/
 site/dist/
 dist/
 *.log

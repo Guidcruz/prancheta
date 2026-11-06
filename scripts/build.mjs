@@ -7,6 +7,15 @@ import { fileURLToPath } from 'node:url';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const run = (cmd) => execSync(cmd, { cwd: root, stdio: 'inherit' });
 
+// The published build is never the test one (database prancheta-test): with PRANCHETA_ENV=test the
+// game goes to app/dist-e2e/ (app/vite.config.ts), and this script refuses to assemble dist/.
+if (process.env.PRANCHETA_ENV === 'test') {
+  console.error(
+    'npm run build monta o dist/ publicado e não roda com PRANCHETA_ENV=test; o build de teste é `PRANCHETA_ENV=test npm run build -w app` (sai em app/dist-e2e/).',
+  );
+  process.exit(2);
+}
+
 rmSync(resolve(root, 'dist'), { recursive: true, force: true });
 run('node scripts/tokens-to-css.mjs');
 run('node scripts/icons.mjs');
