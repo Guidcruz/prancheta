@@ -76,7 +76,10 @@
                   "half": "one of 1 | 2",
                   "importance": "one of 1 | 2 | 3",
                   "minute": "number",
-                  "score": ["number", "number"],
+                  "score": [
+                    "number",
+                    "number"
+                  ],
                   "type": "literal \"fulltime\""
                 },
                 "literal \"goal\"": {
@@ -86,7 +89,10 @@
                   "importance": "one of 1 | 2 | 3",
                   "kind": "one of \"freeKick\" | \"open\" | \"penalty\"",
                   "minute": "number",
-                  "score": ["number", "number"],
+                  "score": [
+                    "number",
+                    "number"
+                  ],
                   "scorer": "string",
                   "side": "one of \"away\" | \"home\"",
                   "type": "literal \"goal\""
@@ -96,7 +102,10 @@
                   "half": "one of 1 | 2",
                   "importance": "one of 1 | 2 | 3",
                   "minute": "number",
-                  "score": ["number", "number"],
+                  "score": [
+                    "number",
+                    "number"
+                  ],
                   "type": "literal \"halftime\""
                 },
                 "literal \"halftimeTalk\"": {
@@ -232,7 +241,10 @@
           },
           "motm?": "string",
           "motmRating?": "number",
-          "score": ["number", "number"],
+          "score": [
+            "number",
+            "number"
+          ],
           "stats": {
             "away": {
               "onTarget": "number",
@@ -267,7 +279,10 @@
                 "importance": "one of 1 | 2 | 3",
                 "kind": "one of \"freeKick\" | \"open\" | \"penalty\"",
                 "minute": "number",
-                "score": ["number", "number"],
+                "score": [
+                  "number",
+                  "number"
+                ],
                 "scorer": "string",
                 "side": "one of \"away\" | \"home\"",
                 "type": "literal \"goal\""
@@ -337,7 +352,10 @@
         "variantId": "string",
         "vars": {
           "{}": {
-            "any of": ["string", "number"]
+            "any of": [
+              "string",
+              "number"
+            ]
           }
         }
       }
@@ -353,7 +371,10 @@
         "variantId": "string",
         "vars": {
           "{}": {
-            "any of": ["string", "number"]
+            "any of": [
+              "string",
+              "number"
+            ]
           }
         }
       }
@@ -428,7 +449,10 @@
             }
           },
           "motm?": "string",
-          "score": ["number", "number"],
+          "score": [
+            "number",
+            "number"
+          ],
           "stats": {
             "away": {
               "onTarget": "number",

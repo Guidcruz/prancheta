@@ -6,6 +6,9 @@
  * itself (`validatePlayer` for players, `validateClubs` for the club definitions): there the
  * schema is opaque, and the shape is read from the sample values, merged. Players and club
  * definitions have the same keys in every career, so the result is stable under any tuning.
+ * The limit: at those nodes a key that is optional but present in every sample (as
+ * `ClubDef.aiProfile` in the 2026 data) is shown as required, so a sample without it changes the
+ * shape without a change of format (see fixtures.test.ts).
  *
  * Test-only (fixtures.test.ts): the frozen `__fixtures__/shape-vN.json` is this function's output
  * for the format N, and a save made now must give the same.

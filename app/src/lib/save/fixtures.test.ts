@@ -16,6 +16,13 @@ import { careerSaveSchema, parseCareerSave } from './validate.ts';
  *   value added to a closed list, fails here until `SAVE_SCHEMA_VERSION` goes up with a migration
  *   (migrations/), the new fixture and the new shape.
  *
+ * Limit of the shape test: the players and the club definitions are opaque in the schema (the
+ * engine's `validatePlayer` and `validateClubs` check them), so their shape is read from the
+ * sample save, merged. A field that is optional there and present in every sample counts as
+ * required: `ClubDef.aiProfile` is optional, and a set of club data with a club without it would
+ * change the shape (`aiProfile?`) without a change of format. Then the shape is frozen again
+ * with the new version, or the sample gets such a club.
+ *
  * To freeze a new version, after raising `SAVE_SCHEMA_VERSION` and writing the step:
  * `npm run save:fixtures -w app` writes `vN.json` and `shape-vN.json` of the new version only. It
  * never overwrites a file: the fixtures of the versions already released stay as they were.
@@ -90,6 +97,16 @@ describe('the frozen save format (US-033, T-019)', () => {
       freshShape,
       'the save format changed: raise SAVE_SCHEMA_VERSION, write the migration and freeze the new fixture (npm run save:fixtures -w app)',
     ).toEqual(frozen);
+  });
+
+  it('the fixtures are stored exactly as the generator writes them (compact JSON, 2-space shape)', () => {
+    const text = (name: string) => readFileSync(file(name), 'utf8');
+    for (const version of versions) {
+      const raw = text(`v${version}.json`);
+      expect(raw === `${JSON.stringify(JSON.parse(raw))}\n`, `v${version}.json`).toBe(true);
+    }
+    const shape = text(`shape-v${SAVE_SCHEMA_VERSION}.json`);
+    expect(shape).toBe(`${JSON.stringify(JSON.parse(shape), null, 2)}\n`);
   });
 
   it('the fixture of the current version has the frozen shape too', () => {
