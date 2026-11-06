@@ -547,3 +547,43 @@ describe('the targets of the ladder with the higher bottom', () => {
     expect(small(0.041).status).toBe('fora');
   });
 });
+
+describe('targets judged only where they were defined', () => {
+  const m = matches({ '1x1': 1 });
+  const clubs = [
+    { id: 'coritibom', shortName: 'Cori', strength: 65 },
+    { id: 'alfa', shortName: 'Alfa', strength: 64 },
+  ] as unknown as ClubDef[];
+  const build = (seed: number, robot: string) =>
+    buildReport(
+      {
+        seasons: Array.from({ length: 1000 }, (_, i) =>
+          season(i, m, { champion: 'coritibom' }, { coritibom: 70, alfa: 60 }),
+        ),
+        robotSeasons: Array.from({ length: 1000 }, (_, i) =>
+          season(i, m, {}, { coritibom: 70, alfa: 60 }, [50], robot),
+        ),
+        calibrated: new Map(),
+        tactical: new Map(),
+      },
+      { robotClub: robot, clubs, seed },
+    );
+
+  it('judges "every club champion" on seed 1 only', () => {
+    expect(byId(build(1, 'alfa').rows, 'everyChampion')).toMatchObject({
+      status: 'fora',
+      required: true,
+    });
+    expect(byId(build(2, 'alfa').rows, 'everyChampion')).toMatchObject({
+      status: 'fora',
+      required: false,
+    });
+  });
+
+  it('keeps the gain and title targets required only for the reference robot club', () => {
+    for (const id of ['robotGain', 'robotTitles']) {
+      expect(byId(build(1, 'coritibom').rows, id).required).toBe(true);
+      expect(byId(build(1, 'alfa').rows, id).required).toBe(false);
+    }
+  });
+});

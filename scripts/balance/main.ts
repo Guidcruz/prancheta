@@ -96,7 +96,7 @@ async function run(
     // A seed with no jobs (no league and no duels) is still a run, with every row "n/a".
     const part = parts.find((p) => p.seed === seed);
     const collected = collect(part?.jobs ?? [], part?.results ?? []);
-    const report = buildReport(collected, { robotClub: options.robot, clubs });
+    const report = buildReport(collected, { robotClub: options.robot, clubs, seed });
     const info: RunInfo = {
       seasons: options.seasons,
       matches: collected.seasons.reduce((n, s) => n + s.matches.matches, 0),

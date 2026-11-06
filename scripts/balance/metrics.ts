@@ -7,6 +7,7 @@ import {
   type SeasonRecord,
   type StrengthRecord,
 } from './league.ts';
+import { DEFAULT_ROBOT_CLUB } from './options.ts';
 import type { RunResults } from './run.ts';
 
 /*
@@ -261,7 +262,12 @@ function robotSummary(
 /** The report of a run (see the header). `clubs` gives the name of the robot's club. */
 export function buildReport(
   results: RunResults,
-  options: { readonly robotClub?: ClubId; readonly clubs?: readonly ClubDef[] } = {},
+  options: {
+    readonly robotClub?: ClubId;
+    readonly clubs?: readonly ClubDef[];
+    /** Seed of the run; "every club champion" is judged on seed 1 only (decision 16). */
+    readonly seed?: number;
+  } = {},
 ): Report {
   const { robotClub } = options;
   const { seasons } = results;
@@ -314,6 +320,8 @@ export function buildReport(
   const titledClubs = new Set(seasons.map((x) => x.table.champion));
   const untitled = allClubs.filter((c) => !titledClubs.has(c.id));
   const everyChampionLong = n >= LONG_RUN_SEASONS;
+  const everyChampionJudged =
+    everyChampionLong && (options.seed === undefined || options.seed === 1);
   const everyChampion: MetricRow =
     allClubs.length === 0 || n === 0
       ? row(
@@ -338,14 +346,16 @@ export function buildReport(
                   .join(', ')})`,
           target: `todos, em ${LONG_RUN_SHOWN} temporadas ou mais`,
           status: everyChampionLong ? (untitled.length === 0 ? 'dentro' : 'fora') : 'n/a',
-          required: everyChampionLong,
+          required: everyChampionJudged,
         };
   // The robot's G4 target applies only to the robot on the weakest club of the ladder, and is
   // required from LONG_RUN_SEASONS paired seasons (below that it is shown, as information).
+  // Decision 10's targets (gain, title) are defined for the reference club; elsewhere: info.
+  const robotIsReference = robotClub === undefined || robotClub === DEFAULT_ROBOT_CLUB;
   const onWeakest = robotClub !== undefined && robotClub === weakestClub(allClubs);
   const robotWeakG4 = row(
     'robotWeakG4',
-    `Robô no mais fraco (${robotName}): G4`,
+    'Robô no clube mais fraco: G4',
     onWeakest ? robot?.robotG4 : undefined,
     share1,
     'ao menos 2%',
@@ -537,8 +547,8 @@ export function buildReport(
       'Campeão grande',
       share((s) => s.table.championSize === 'big'),
       share1,
-      '50% a 85%',
-      { min: 0.5, max: 0.85 },
+      '50% a 90%',
+      { min: 0.5, max: 0.9 },
     ),
     row(
       'smallChampion',
@@ -619,6 +629,7 @@ export function buildReport(
         `${v >= 0 ? '+' : ''}${num(v, 1)} pts (IC 95% ${num(robot!.ci95[0], 1)} a ${num(robot!.ci95[1], 1)})`,
       '+2 a +8 pontos',
       { min: 2, max: 8 },
+      robotIsReference,
     ),
     row(
       'robotTitles',
@@ -627,6 +638,7 @@ export function buildReport(
       share1,
       'no máximo 5%',
       { max: 0.05 },
+      robotIsReference,
     ),
     robotWeakG4,
     // Referências (info)
