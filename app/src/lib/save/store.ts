@@ -567,6 +567,11 @@ export class SaveStore {
         if (!sheets.ok) return sheets;
         const whole = withSheets(decoded.value, sheets.value.entries);
         const fromVersion = schemaVersionOf(decoded.value) ?? record.schemaVersion;
+        // Newer than this build (the JSON may say so even when the record does not): never fall
+        // back past it, before any other check.
+        if (fromVersion > SAVE_SCHEMA_VERSION) {
+          return fail('save-too-new', { version: fromVersion });
+        }
         const current = fromVersion === SAVE_SCHEMA_VERSION;
         // An older save is read in full; its prototype keys are refused before the steps run
         // (they copy with spread, but a key never reaches them; security review L4).

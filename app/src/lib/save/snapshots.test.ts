@@ -550,6 +550,21 @@ describe('open with fallback (US-032)', () => {
     });
   });
 
+  it('stops at save-too-new before any other check, never falling back past it', async () => {
+    const s = store();
+    await s.writeSnapshot(variant(4));
+    await s.writeSnapshot(variant(5));
+    // The newest says (only in the JSON) it is of a newer format, with a key that an older
+    // format would refuse: still save-too-new, never the version before it.
+    const newer = await mustEncode({ ...variant(6), schemaVersion: 2, toString: 'x' });
+    await tamper(2, (r) => ({ ...r, blob: newer.gzip, sha256: newer.sha256, bytes: newer.bytes }));
+    expect(await s.openCareer(SAMPLE_CAREER_ID)).toEqual({
+      ok: false,
+      error: 'save-too-new',
+      detail: { version: 2 },
+    });
+  });
+
   it('answers not-found for a career that is not on the device', async () => {
     expect(await store().openCareer('nope')).toEqual({ ok: false, error: 'not-found' });
   });

@@ -13,8 +13,11 @@ import { careerSaveSchema, parseCareerSave } from './validate.ts';
  *   up the migration chain and must pass the strict schema of the current format.
  * - `__fixtures__/shape-vN.json`: the shape (testing/shape.ts) of the current format. A save made
  *   now must have it: a field added, removed or retyped in `GameState` or in the envelope, or a
- *   value added to a closed list, fails here until `SAVE_SCHEMA_VERSION` goes up with a migration
- *   (migrations/), the new fixture and the new shape.
+ *   value added to a closed list of the schema, fails here until `SAVE_SCHEMA_VERSION` goes up
+ *   with a migration (migrations/), the new fixture and the new shape. Not caught here: a value
+ *   added to a closed list inside `Player` or `ClubDef` (positions, traits, crest shapes...,
+ *   checked by the engine's validators, opaque in the shape) and a change of `SAVE_LIMITS` (the
+ *   shape has no bounds); those go through review, and a tighter one needs a migration.
  *
  * Limit of the shape test: the players and the club definitions are opaque in the schema (the
  * engine's `validatePlayer` and `validateClubs` check them), so their shape is read from the

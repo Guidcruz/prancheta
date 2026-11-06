@@ -527,7 +527,8 @@ class Issues {
     } else if (value.trim() === '') {
       this.add({ field, problem: 'empty', value });
     } else if (maxLength !== undefined && value.length > maxLength) {
-      this.add({ field, problem: 'too-long', value, range: { min: 1, max: maxLength } });
+      // Not the value itself: it may be huge.
+      this.add({ field, problem: 'too-long', range: { min: 1, max: maxLength } });
     } else {
       return value;
     }
