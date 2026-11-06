@@ -84,14 +84,14 @@ export const CHAIN_STRENGTH_DRIFT = 1;
 export const CHAIN_GAP_DRIFT = 0.5;
 
 /**
- * Targets required in season 1 that are informative in the turned seasons of a chain (decision
- * 15): their rates are too noisy in 200 seasons to find a drift; the drift lock measures it.
+ * Targets required in season 1 that are informative in the turned seasons of a chain (decisions
+ * 15 and 17): their rates are too noisy in 200 seasons to find a drift; the drift lock measures it.
  */
 export const CHAIN_INFO_TARGETS: readonly string[] = ['bigChampion', 'smallChampion', 'weakInG4'];
 
 /** Why CHAIN_INFO_TARGETS do not count in seasons 2 and 3 of a chain. */
 export const CHAIN_INFO_NOTE =
-  'informativa nas temporadas 2 e 3 da cadeia, obrigatória na temporada 1; a trava de deriva mede a virada (decisão 15 do CEO, 2026-11-05)';
+  'informativa nas temporadas 2 e 3 da cadeia, obrigatória na temporada 1; a trava de deriva mede a virada (decisões 15 e 17 do CEO, 2026-11-05 e 2026-11-06)';
 
 /** Half-width of the points per game reference of the tactical duels (balance-log.md). */
 export const PPG_TOLERANCE = 0.04;

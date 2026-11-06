@@ -56,7 +56,7 @@ export const USAGE = `Uso: npm run balance -- [opções]
                    da liga vira uma carreira com evolução e virada do motor; as temporadas 1 a
                    ${CHAIN_REQUIRED} contam como metas obrigatórias, as seguintes são informativas,
                    exceto campeão grande, campeão pequeno e clube fraco no G4 nas temporadas 2 e 3, informativas
-                   (decisão 15); trava de deriva de ±0,5 obrigatória nas temporadas 2 e 3
+                   (decisões 15 e 17); trava de deriva de ±0,5 obrigatória nas temporadas 2 e 3
   --duels <n>      jogos de cada duelo calibrado e tático (padrão 20000; 0 pula os duelos)
   --params <arq>   JSON com parâmetros que sobrescrevem os de app/src/params/ (qualquer parte)
   --robot <clube>  clube do técnico-robô (padrão ${DEFAULT_ROBOT_CLUB}; "none" pula o robô;

@@ -207,11 +207,12 @@ describe('chainRows', () => {
         expect(get(`chain-s${k}-${id}`).required, `${k} ${id}`).toBe(true);
       }
     }
-    expect(CHAIN_INFO_NOTE).toContain('decisão 15 do CEO, 2026-11-05');
+    expect(CHAIN_INFO_NOTE).toContain('decisões 15 e 17 do CEO');
+    expect(CHAIN_INFO_NOTE).toContain('2026-11-06');
     // From the 4th season on everything is informative, without the note.
     expect(get('chain-s4-bigChampion').required).toBe(false);
     expect(get('chain-s4-bigChampion').note).toBeUndefined();
-    // Season 1 (the main block) keeps both required.
+    // Season 1 (the main block) keeps all three required.
     const main = buildReport({
       seasons: [base],
       chain,
@@ -226,7 +227,7 @@ describe('chainRows', () => {
       ).toMatchObject({ required: true });
       expect(main.find((r) => r.id === id)!.note).toBeUndefined();
     }
-    // In the total of the seeds the weak club in the G4 of seasons 2 and 3 does not count either.
+    // In the total of the seeds the weak club in the G4 of seasons 2 and 3 does not count either (nor the small champion).
     const run = {
       seasons: [base],
       chain,
@@ -241,7 +242,7 @@ describe('chainRows', () => {
       expect(pooled.find((r) => r.id === `chain-s${k}-weakInG4`)!.required).toBe(false);
       expect(pooled.find((r) => r.id === `chain-s${k}-smallChampion`)!.required).toBe(false);
     }
-    // In each seed they read as informative, not "veredito no total"; the other rare ones do.
+    // In each seed they read as informative, not "veredito no total"; the other rare ones still do.
     const seed = withPooledVerdict({ ...buildReport(run), rows: [...main] });
     for (const k of [2, 3]) {
       const weak = seed.rows.find((r) => r.id === `chain-s${k}-weakInG4`)!;
@@ -250,6 +251,12 @@ describe('chainRows', () => {
       expect(seed.rows.find((r) => r.id === `chain-s${k}-smallChampion`)!.verdict).toBeUndefined();
     }
     expect(seed.rows.find((r) => r.id === 'weakInG4')!.verdict).toBe('pooled');
+    for (const k of [2, 3]) {
+      expect(seed.rows.find((r) => r.id === `chain-s${k}-z4EscapeGap`)).toMatchObject({
+        required: false,
+        verdict: 'pooled',
+      });
+    }
   });
 
   it('pools the rare targets of every season of the chain over the seeds', () => {
