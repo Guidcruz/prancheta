@@ -120,11 +120,15 @@ export interface SnapshotRecord {
    * with sheets. Outside the hashed JSON on purpose: a row counts only when its hash is this one.
    */
   readonly sheets: Readonly<Record<number, string>>;
-  /** SHA-256, lowercase hex, of the UTF-8 JSON of the save (before compression). */
+  /** SHA-256, lowercase hex, of the UTF-8 JSON of the save. */
   readonly sha256: string;
-  /** Length in bytes of that JSON: decompression must give exactly this many. */
+  /** Length in bytes of that JSON: `blob` must have exactly this many. */
   readonly bytes: number;
-  /** The gzip of the JSON. Bytes, not a `Blob`: the same in every browser's IndexedDB. */
+  /**
+   * The UTF-8 JSON itself, without gzip (ADR-0006, note of T-072: its gzip was more than half of
+   * the write; the exported file keeps the gzip). Bytes, not a `Blob`: the same in every browser's
+   * IndexedDB.
+   */
   readonly blob: Uint8Array<ArrayBuffer>;
 }
 

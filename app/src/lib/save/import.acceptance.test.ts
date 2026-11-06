@@ -5,7 +5,7 @@ import { SAVE_LIMITS, parseCareerSave } from './validate.ts';
 import {
   atRound,
   base,
-  mustEncode,
+  mustEncodeSnapshot,
   raw,
   snapshotSeqs,
   store,
@@ -167,13 +167,13 @@ describe('US-033: a hostile save is refused and changes nothing', () => {
       await s.writeSnapshot(variant(1));
       await s.writeSnapshot(variant(2), undefined, { expectedHeadSeq: 1 });
       // What a tampered file would leave: a snapshot whose hash is right but whose content is not.
-      const bad = await mustEncode(edit(variant(3), change));
-      await tamper(2, (r) => ({ ...r, blob: bad.gzip, sha256: bad.sha256, bytes: bad.bytes }));
+      const bad = await mustEncodeSnapshot(edit(variant(3), change));
+      await tamper(2, (r) => ({ ...r, blob: bad.json, sha256: bad.sha256, bytes: bad.bytes }));
       const before = await allRows();
       const opened = await s.openCareer(SAMPLE_CAREER_ID);
       if (!opened.ok) throw new Error(opened.error);
       expect(opened.value.seq).toBe(1);
-      expect(opened.value.skipped.map((x) => x.seq)).toEqual([2]);
+      expect(opened.value.skipped).toEqual([{ seq: 2, problem: 'invalid-save' }]);
       expect(await allRows()).toEqual(before);
     },
   );
@@ -206,7 +206,7 @@ describe('US-033: a save of the previous format (the v1 fixture, stored as an ol
     const fixture = JSON.parse(
       readFileSync(new URL('./__fixtures__/v1.json', import.meta.url), 'utf8'),
     ) as CareerSave;
-    const encoded = await mustEncode({
+    const encoded = await mustEncodeSnapshot({
       ...fixture,
       career: { ...fixture.career, matchSheets: {} },
     });
@@ -221,7 +221,7 @@ describe('US-033: a save of the previous format (the v1 fixture, stored as an ol
       sheets: {},
       sha256: encoded.sha256,
       bytes: encoded.bytes,
-      blob: encoded.gzip,
+      blob: encoded.json,
     });
     await db.put('careers', {
       id: fixture.careerId,
@@ -241,6 +241,8 @@ describe('US-033: a save of the previous format (the v1 fixture, stored as an ol
     expect(save.career.clubId).toBe(fixture.career.clubId);
     expect(save.game.fixtures).toEqual(fixture.game.fixtures);
     expect(save.game.clubs).toEqual(fixture.game.clubs);
+    // The whole save, field by field (its sheets were not stored here).
+    expect(save).toEqual({ ...fixture, career: { ...fixture.career, matchSheets: {} } });
     expect(opened.value.skipped).toEqual([]);
     expect(await allRows()).toEqual(before);
   });

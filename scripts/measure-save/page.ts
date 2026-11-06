@@ -1,6 +1,7 @@
 import { openDB } from 'idb';
 import {
   SaveStore,
+  encodeJson,
   encodeSave,
   type CareerSave,
   type SheetIndex,
@@ -98,10 +99,12 @@ export interface Measurement {
   readonly seasonTurn: [number[], number[], number[]];
   /** The stages of each write of `seasonTurn`, in the same order. */
   readonly seasonTurnStages: [Stages, Stages, Stages];
-  /** Serialise + hash + gzip of the snapshot (sheets apart). */
+  /** Serialise + UTF-8 + hash of the snapshot (sheets apart), as it is stored (no gzip). */
   readonly encode: number[];
   readonly stringify: number[];
   readonly snapshotJsonBytes: number;
+  /** Bytes the snapshot takes in IndexedDB (its JSON, no gzip) and in gzip (the exported file). */
+  readonly snapshotStoredBytes: number;
   readonly snapshotGzipBytes: number;
   /** JSON and gzip bytes of the 38 rows of sheets together. */
   readonly sheetsJsonBytes: number;
@@ -227,9 +230,12 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const stringify: number[] = [];
   for (let i = 0; i < total; i++) {
     const next = stamp(snapshot, i);
-    keep(encode, i, await time(() => encodeSave(next)));
+    keep(encode, i, await time(() => encodeJson(next)));
     keep(stringify, i, await time(() => JSON.stringify(next)));
   }
+  // Stored without gzip (T-072); its gzip is the size it takes in the exported file.
+  const stored = await encodeJson(snapshot);
+  if (!stored.ok) throw new Error(`encodeJson: ${stored.error}`);
   const encoded = await encodeSave(snapshot);
   if (!encoded.ok) throw new Error(`encodeSave: ${encoded.error}`);
   let sheetsJsonBytes = 0;
@@ -259,6 +265,7 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
     encode,
     stringify,
     snapshotJsonBytes: encoded.value.bytes,
+    snapshotStoredBytes: stored.value.json.byteLength,
     snapshotGzipBytes: encoded.value.gzip.byteLength,
     sheetsJsonBytes,
     sheetsGzipBytes,

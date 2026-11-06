@@ -25,19 +25,15 @@ describe('write probe (T-072)', () => {
 
     const ofStore = seen.filter(([, , bytes]) => bytes === undefined).map(([stage]) => stage);
     expect(ofStore).toEqual(['schema', 'encode', 'transaction', 'verify', 'prune']);
-    // The snapshot and the row of round 2: four stages each.
+    // The snapshot (stored without gzip, T-072) and the row of round 2 (in gzip).
     const codec = seen.filter(([, , bytes]) => bytes !== undefined);
+    const stagesOf = (size: number | undefined) =>
+      codec.filter(([, , bytes]) => bytes === size).map(([stage]) => stage);
     const sizes = [...new Set(codec.map(([, , bytes]) => bytes))];
     expect(sizes).toHaveLength(2);
-    expect(sizes).toContain(written.value.bytes);
-    for (const size of sizes) {
-      expect(codec.filter(([, , bytes]) => bytes === size).map(([stage]) => stage)).toEqual([
-        'stringify',
-        'utf8',
-        'sha256',
-        'gzip',
-      ]);
-    }
+    expect(stagesOf(written.value.bytes)).toEqual(['stringify', 'utf8', 'sha256']);
+    const row = sizes.find((size) => size !== written.value.bytes);
+    expect(stagesOf(row)).toEqual(['stringify', 'utf8', 'sha256', 'gzip']);
     expect(seen.every(([, ms]) => ms >= 0)).toBe(true);
   });
 

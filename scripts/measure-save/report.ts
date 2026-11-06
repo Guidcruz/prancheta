@@ -55,6 +55,8 @@ export interface MeasurementLike {
   readonly encode: readonly number[];
   readonly stringify: readonly number[];
   readonly snapshotJsonBytes: number;
+  /** Bytes of the snapshot in IndexedDB: its JSON, without gzip (T-072). */
+  readonly snapshotStoredBytes: number;
   readonly snapshotGzipBytes: number;
   readonly sheetsJsonBytes: number;
   readonly sheetsGzipBytes: number;
@@ -102,8 +104,7 @@ const STAGE_NAMES: readonly (readonly [WriteStage, string])[] = [
   ['schema', 'esquema write + linha nova inteira'],
   ['stringify', 'serializar (JSON.stringify)'],
   ['utf8', 'UTF-8'],
-  ['sha256', 'SHA-256 (em paralelo com o gzip)'],
-  ['gzip', 'gzip (CompressionStream)'],
+  ['sha256', 'SHA-256'],
   ['encode', 'codificação inteira (de parede)'],
   ['transaction', 'transação IndexedDB'],
   ['verify', 'releitura e comparação por bytes'],
@@ -163,7 +164,7 @@ export function formatReport(
   return [
     `Save do fim da temporada no Chromium, CPU ${cpu}× mais lenta, banco ${m.dbName}`,
     `${m.incremental.length} medições por caso`,
-    `Snapshot sem súmulas: ${kb(m.snapshotJsonBytes)} de JSON, ${kb(m.snapshotGzipBytes)} em gzip`,
+    `Snapshot sem súmulas: ${kb(m.snapshotJsonBytes)} de JSON, ${kb(m.snapshotStoredBytes)} guardados sem gzip (${kb(m.snapshotGzipBytes)} em gzip no arquivo exportado)`,
     `Súmulas (38 linhas): ${kb(m.sheetsJsonBytes)} de JSON, ${kb(m.sheetsGzipBytes)} em gzip`,
     '',
     row('gravação após a rodada 38 (base 1–37, só a 38)', m.incremental),
@@ -171,10 +172,10 @@ export function formatReport(
     row('gravação sem base (as 38 linhas)', m.allRounds),
     ...m.seasonTurn.map((values, i) => row(TURN_NAMES[i]!, values)),
     row('abrir a carreira (38 linhas remontadas)', m.open),
-    row('snapshot: serializar + hash + gzip', m.encode),
+    row('snapshot: serializar + UTF-8 + hash (sem gzip)', m.encode),
     row('snapshot: só JSON.stringify', m.stringify),
     '',
-    'Etapas da gravação após a rodada 38 (por gravação; as do codec são as do snapshot, codificado ao lado da linha da 38):',
+    'Etapas da gravação após a rodada 38 (por gravação; as do codec são as do snapshot, guardado sem gzip e codificado ao lado da linha da 38, em gzip):',
     ...STAGE_NAMES.map(([stage, name]) => row(`  ${name}`, m.incrementalStages[stage])),
     row('  resto (conexão, fila, registro)', restOfWrite(m.incremental, m.incrementalStages)),
     ...m.seasonTurn.flatMap((values, i) => {

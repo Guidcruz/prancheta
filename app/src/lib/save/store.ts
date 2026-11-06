@@ -2,7 +2,9 @@ import type { IDBPTransaction } from 'idb';
 import { SEASON_ROUNDS, type Fixture } from '../../engine/index.ts';
 import {
   codecSupported,
+  decodeJson,
   decodeSave,
+  encodeJson,
   encodeSave,
   equalBytes,
   type Bytes,
@@ -40,12 +42,13 @@ import {
 /*
  * Careers on the device (docs/02-architecture.md, 4.2; ADR-0006, ADR-0019; US-032, US-034).
  *
- * Safe write: (1) before any transaction, serialise, hash and gzip the save with
- * `career.matchSheets: {}`, and each round of match sheets that the `base` index does not have
- * (normally only the round just played); (2) in one transaction over `careers`, `snapshots` and
- * `matchSheets`, store `seq = headSeq + 1`, the new rows of sheets, and move `headSeq` (atomic: if
- * the app closes halfway, nothing changes); (3) read the snapshot and the new rows back and compare
- * `sha256`, `bytes` and the gzip byte by byte with what was in memory, without decompressing. Only
+ * Safe write: (1) before any transaction, serialise and hash the save with `career.matchSheets:
+ * {}` (stored as its UTF-8 JSON, without gzip: ADR-0006, note of T-072), and serialise, hash and
+ * gzip each round of match sheets that the `base` index does not have (normally only the round
+ * just played); (2) in one transaction over `careers`, `snapshots` and `matchSheets`, store
+ * `seq = headSeq + 1`, the new rows of sheets, and move `headSeq` (atomic: if the app closes
+ * halfway, nothing changes); (3) read the snapshot and the new rows back and compare `sha256`,
+ * `bytes` and the stored bytes one by one with what was in memory, without decompressing. Only
  * then the snapshots past the 3 newest go, and after them the rows of the seasons that no kept
  * snapshot uses; if the check fails, the new snapshot goes instead, `headSeq` returns and every
  * row this write replaced with other content gets its old one back (T-019). A row is keyed
@@ -133,7 +136,7 @@ export interface WriteGuard {
 export interface WrittenSnapshot {
   readonly seq: number;
   readonly sha256: string;
-  /** JSON bytes and stored (gzip) bytes of the snapshot, sheets apart. */
+  /** JSON bytes and stored bytes of the snapshot, sheets apart (the same: no gzip, T-072). */
   readonly bytes: number;
   readonly storedBytes: number;
   /** The index of this snapshot: the `base` of the next write. */
@@ -213,7 +216,7 @@ function isSheetIndex(value: unknown): value is Readonly<Record<number, string>>
   );
 }
 
-/** The fields a stored gzip needs before it is decoded. */
+/** The fields stored bytes (a snapshot's JSON, a row's gzip) need before they are decoded. */
 function isStoredBlob(
   value: unknown,
 ): value is Record<string, unknown> & { sha256: string; bytes: number; blob: Bytes } {
@@ -425,7 +428,7 @@ export class SaveStore {
       // their changed rounds lose the sheets (see the top of this file; 4.2, T-019, T-020).
       start = stageStart();
       const [encoded, ...encodedRows] = await Promise.all([
-        encodeSave({ ...save, career: { ...save.career, matchSheets: {} } }),
+        encodeJson({ ...save, career: { ...save.career, matchSheets: {} } }),
         ...missing.map((round) => encodeSave(Object.fromEntries(byRound.get(round)!))),
       ]);
       stageEnd('encode', start);
@@ -482,7 +485,7 @@ export class SaveStore {
             sheets: index,
             sha256: encoded.value.sha256,
             bytes: encoded.value.bytes,
-            blob: encoded.value.gzip,
+            blob: encoded.value.json,
           };
           const snapshots = tx.objectStore('snapshots');
           const sheets = tx.objectStore('matchSheets');
@@ -531,7 +534,7 @@ export class SaveStore {
         seq,
         sha256: encoded.value.sha256,
         bytes: encoded.value.bytes,
-        storedBytes: encoded.value.gzip.byteLength,
+        storedBytes: encoded.value.json.byteLength,
         sheets: { season, rounds: index },
         writtenRounds: rows.map((row) => row.round),
       });
@@ -567,7 +570,7 @@ export class SaveStore {
         if (record.schemaVersion > SAVE_SCHEMA_VERSION) {
           return fail('save-too-new', { version: record.schemaVersion });
         }
-        const decoded = await decodeSave(record.blob, record.sha256, record.bytes);
+        const decoded = await decodeJson(record.blob, record.sha256, record.bytes);
         if (!decoded.ok) {
           if (decoded.error === 'unsupported-browser') return fail(decoded.error);
           skipped.push({ seq: at, problem: decoded.error });

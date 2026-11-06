@@ -3,7 +3,9 @@ import { gunzipSync, gzipSync } from 'node:zlib';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   codecSupported,
+  decodeJson,
   decodeSave,
+  encodeJson,
   encodeSave,
   equalBytes,
   gunzip,
@@ -106,6 +108,46 @@ describe('save codec', () => {
     });
   });
 
+  it('encodes a snapshot as its UTF-8 JSON, in a buffer of its own length, and decodes it checked', async () => {
+    const save = { careerId: 'x', text: 'Pressão alta, 3×1 ⚽ 😀', list: [1, 2, 3] };
+    const result = await encodeJson(save);
+    if (!result.ok) throw new Error(result.error);
+    const json = utf8(JSON.stringify(save));
+    expect(equalBytes(result.value.json, json)).toBe(true);
+    expect(result.value.bytes).toBe(json.byteLength);
+    expect(result.value.json.buffer.byteLength).toBe(json.byteLength);
+    expect(result.value.sha256).toBe(await sha256Hex(json));
+    const { sha256, bytes } = result.value;
+    expect(await decodeJson(result.value.json, sha256, bytes)).toEqual({ ok: true, value: save });
+    // The same bytes and hash as the gzip of the rows and of the exported file.
+    const gzipped = await encode(save);
+    expect([gzipped.sha256, gzipped.bytes]).toEqual([sha256, bytes]);
+  });
+
+  it('decodes a stored JSON only with its size, its hash and valid UTF-8 JSON', async () => {
+    const result = await encodeJson({ a: 'b'.repeat(100) });
+    if (!result.ok) throw new Error(result.error);
+    const { json, sha256, bytes } = result.value;
+    const short = await decodeJson(json.slice(0, bytes - 1), sha256, bytes);
+    expect(short).toEqual({ ok: false, error: 'size-mismatch', detail: { bytes, got: bytes - 1 } });
+    expect((await decodeJson(json, sha256, bytes + 1)).ok).toBe(false);
+    const flipped = json.slice();
+    flipped[10] = flipped[10]! ^ 0xff;
+    expect(await decodeJson(flipped, sha256, bytes)).toEqual({ ok: false, error: 'hash-mismatch' });
+    // A gzip of the right JSON is not the JSON (no reading of two forms).
+    const gzipped = await gzip(json);
+    expect((await decodeJson(gzipped, sha256, bytes)).ok).toBe(false);
+    const text = utf8('{"a":');
+    const broken = await decodeJson(text, await sha256Hex(text), text.byteLength);
+    expect(broken).toEqual({ ok: false, error: 'corrupt-json' });
+    // The bound is on the bytes stored.
+    expect(await encodeJson({ a: 'ã'.repeat(10) }, 25)).toEqual({
+      ok: false,
+      error: 'too-large',
+      detail: { bytes: 28, maxBytes: 25 },
+    });
+  });
+
   it('refuses what is not a gzip, and a truncated gzip', async () => {
     const encoded = await encode({ a: 'b'.repeat(5000) });
     expect(await decodeSave(utf8('not a gzip'), encoded.sha256, encoded.bytes)).toEqual({
@@ -169,6 +211,11 @@ describe('save codec', () => {
     vi.stubGlobal(name, value);
     expect(codecSupported()).toBe(false);
     expect(await encodeSave({ a: 1 })).toEqual({ ok: false, error: 'unsupported-browser' });
+    expect(await encodeJson({ a: 1 })).toEqual({ ok: false, error: 'unsupported-browser' });
+    expect(await decodeJson(utf8('{}'), encoded.sha256, 2)).toEqual({
+      ok: false,
+      error: 'unsupported-browser',
+    });
     expect(await decodeSave(encoded.gzip, encoded.sha256, encoded.bytes)).toEqual({
       ok: false,
       error: 'unsupported-browser',

@@ -46,6 +46,7 @@ const measurement = (
   encode: incremental.map((n) => n / 2),
   stringify: incremental.map((n) => n / 4),
   snapshotJsonBytes: 700_000,
+  snapshotStoredBytes: 700_000,
   snapshotGzipBytes: 100_000,
   sheetsJsonBytes: 840_000,
   sheetsGzipBytes: 80_000,
@@ -109,7 +110,9 @@ describe('measure-save report', () => {
   it('prints every case and both verdicts', () => {
     const within = formatReport(measurement([90, 100, 110]), 4);
     expect(within).toContain('CPU 4× mais lenta, banco prancheta-test');
-    expect(within).toContain('Snapshot sem súmulas: 684 KB de JSON, 98 KB em gzip');
+    expect(within).toContain(
+      'Snapshot sem súmulas: 684 KB de JSON, 684 KB guardados sem gzip (98 KB em gzip no arquivo exportado)',
+    );
     expect(within).toContain('Súmulas (38 linhas): 820 KB de JSON, 78 KB em gzip');
     expect(within).toContain('gravação após a rodada 38 (base 1–37, só a 38)');
     expect(within).toContain('gravação sem rodada nova (base 1–38)');
@@ -144,8 +147,7 @@ describe('measure-save stages of the write', () => {
       'esquema write + linha nova inteira',
       'serializar (JSON.stringify)',
       'UTF-8',
-      'SHA-256 (em paralelo com o gzip)',
-      'gzip (CompressionStream)',
+      'SHA-256',
       'codificação inteira (de parede)',
       'transação IndexedDB',
       'releitura e comparação por bytes',
@@ -154,7 +156,8 @@ describe('measure-save stages of the write', () => {
     ]) {
       expect(report).toContain(name);
     }
-    expect(report).toMatch(/gzip \(CompressionStream\) +mediana +45\.0 ms +p90 +60\.0 ms/);
+    expect(report).toMatch(/UTF-8 +mediana +7\.5 ms +p90 +10\.0 ms/);
+    expect(report).not.toContain('gzip (CompressionStream)');
     // The three writes of the season turn, with the stages that follow one another.
     for (const name of [
       'Etapas da virada: 1ª gravação da temporada 2 (sem linha):',

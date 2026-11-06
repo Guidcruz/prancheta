@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MatchSheet } from '../../engine/index.ts';
-import { decodeSave } from './codec.ts';
+import { decodeJson, decodeSave } from './codec.ts';
 import { MAX_SAVE_BYTES, type CareerSave, type MatchSheetRecord } from './schema.ts';
 import type { WrittenSnapshot } from './store.ts';
 import {
@@ -42,7 +42,7 @@ async function storedSnapshot(seq: number): Promise<CareerSave> {
   const db = await raw();
   const record = await db.get('snapshots', [SAMPLE_CAREER_ID, seq]);
   db.close();
-  const decoded = await decodeSave(record!.blob, record!.sha256, record!.bytes);
+  const decoded = await decodeJson(record!.blob, record!.sha256, record!.bytes);
   if (!decoded.ok) throw new Error(decoded.error);
   return decoded.value as CareerSave;
 }

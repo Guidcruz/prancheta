@@ -20,12 +20,15 @@ export {
 export type { SaveResult } from './result.ts';
 export {
   codecSupported,
+  decodeJson,
   decodeSave,
+  encodeJson,
   encodeSave,
   equalBytes,
   gunzip,
   gzip,
   sha256Hex,
+  type EncodedJson,
   type EncodedSave,
 } from './codec.ts';
 export { SAVE_DB_NAME, SAVE_DB_VERSION } from './db.ts';
