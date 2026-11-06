@@ -504,7 +504,9 @@ describe('the targets of the ladder with the higher bottom', () => {
       { id: 'b', shortName: 'B', strength: 69 },
     ] as unknown as ClubDef[];
     expect(weakestClub(noStrength)).toBe('b');
-    expect(weakestClub([{ id: 'z', shortName: 'Z', strength: 71 }, ...noStrength])).toBe('b');
+    expect(
+      weakestClub([{ id: 'z', shortName: 'Z', strength: 71 } as unknown as ClubDef, ...noStrength]),
+    ).toBe('b');
   });
 
   it('judges "every club champion" only from 1000 seasons', () => {
