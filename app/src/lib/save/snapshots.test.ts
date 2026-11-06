@@ -598,7 +598,7 @@ describe('a whole season (T-018 with T-044: ADR-0012 conformance)', () => {
     expect(opened.value.save.game.retiredNamesRev).toBe(season.game.retiredNamesRev);
   });
 
-  it('fits the end-of-season snapshot in the 100 to 300 KB of gzip of 4.2', async () => {
+  it('keeps the end-of-season snapshot, sheets apart, within the 300 KB of gzip of 4.2', async () => {
     const encoded = await encodeSave({ ...season, career: { ...season.career, matchSheets: {} } });
     if (!encoded.ok) throw new Error(encoded.error);
     const kb = (n: number) => Math.round(n / 1024);
