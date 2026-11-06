@@ -1215,6 +1215,18 @@ No Passo 1 todas as entradas são `kind: "synth"`; a segunda linha acima só mos
 
     Cerca de 95 ms vinham da conferência completa (reler, descomprimir, recalcular o hash). Só tirar as súmulas deixava o p90 em 160 ms, acima da meta; por isso a decisão junta as duas mudanças do §4.2 (súmulas em store próprio, gravadas só da rodada nova, e conferência por bytes). Estimativa com o desenho decidido: de 100 a 120 ms de mediana (95 ms do snapshot sem súmulas, cerca de 3 ms da rodada de súmulas, o resto em transação, releitura e poda). A T-018 mede o desenho novo no mesmo script, registra o número aqui, e o script passa a decidir pelo p90. **p90 acima de 150 ms volta ao `architect` antes da T-019.**
 
+    **Medido na T-018 com o desenho decidido** (2026-11-06, Chromium headless 1243 do container, CPU 4×, `PRANCHETA_ENV=test npm run measure:save`, 40 medições e 5 de aquecimento por caso; os casos "após a rodada 38" e "sem rodada nova" se alternam na mesma sequência, para enfrentarem as mesmas coletas de lixo). Snapshot sem súmulas: 683 KB de JSON e 98 KB em gzip; as 38 linhas de súmulas: 735 KB de JSON e 77 KB em gzip. Três execuções seguidas, em ms (mediana / p90 / máx.):
+
+    | Caso                                                                 | Execução 1          | Execução 2          | Execução 3          |
+    | -------------------------------------------------------------------- | ------------------- | ------------------- | ------------------- |
+    | Gravação após a rodada 38 (`base` das rodadas 1–37, só a 38 gravada) | 117 / **137** / 191 | 121 / **147** / 186 | 121 / **139** / 187 |
+    | Gravação sem rodada nova (`base` das 38 rodadas, nenhuma linha)      | 107 / 123 / 151     | 108 / 132 / 186     | 111 / 128 / 181     |
+    | Gravação sem `base` (as 38 linhas: carreira importada ou migrada)    | 370 / 425 / 487     | 366 / 416 / 512     | 383 / 453 / 532     |
+    | Abrir a carreira (38 linhas remontadas)                              | 219 / 258 / 271     | 238 / 278 / 286     | 270 / 328 / 358     |
+    | Snapshot: serializar, hash e gzip                                    | 87 / 96 / 118       | 96 / 113 / 128      | 98 / 119 / 167      |
+
+    A gravação do fim da temporada ficou **dentro da meta** (p90 de 137 a 147 ms), mas com pouca folga, e o container é ruidoso: antes de alternar os casos, com o caso "após a rodada 38" num bloco próprio logo depois de montar a temporada, três de oito execuções de 40 medições passaram de 150 ms no p90 (de 128 a 199 ms), e com 15 medições o p90 (a 14ª de 15, quase o máximo) oscilava de 120 a 156 ms. Por isso o script passou a 40 medições por padrão e alterna os dois casos. Cerca de 90 ms de cada gravação continuam sendo serializar, calcular o hash e comprimir o snapshot sem súmulas; transação, releitura com comparação de bytes e poda somam de 20 a 30 ms. A abertura ficou dentro da meta de 400 ms (p90 de 258 a 328 ms). A gravação sem `base` (de 370 a 450 ms) só acontece ao importar ou migrar, atrás de uma tela de espera.
+
   - **Abrir a carreira (T-018):** o snapshot do fim da temporada com as 38 linhas de súmulas, na mesma condição: meta de 400 ms (abrir acontece uma vez por sessão, atrás da tela de carregamento). Medido no mesmo script e registrado aqui; não bloqueia o PR, mas acima da meta volta ao `architect`.
   - `simulateMatch` abaixo de 0,3 ms no Node do CI (teste de bancada não bloqueante que registra o tempo; 0,219 ms na revisão da T-013).
   - `playRound` com bancada não bloqueante própria (`round.bench.ts`): cerca de 6,7 a 7,8 ms por rodada da Série A no Node puro na T-014 (5,8 ms na revisão da T-013). As bancadas valem pelo número do Node puro; o de dentro do Vitest sai mais alto pela transformação de módulos e só mostra a tendência.
