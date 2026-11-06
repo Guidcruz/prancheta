@@ -709,9 +709,10 @@ export interface AcademyRequest {
  * shirt, the lowest free from 30 in `squad` and the youth before him; id
  * {@link turnPlayerId}`(clubId, season + 1, k)`.
  *
- * Names and faces come from `identities` with ``${seed}-s${season}-academy-names-${clubId}-${nationality}``
- * and the names of `squad` as `existing`, once each (ADR-0012). Never throws for a game situation;
- * an IdentitySource that breaks its contract is a programming error and throws.
+ * Names and faces come from `identities`, once each (ADR-0012), with the seed
+ * ``${seed}-s${season}-academy-names-${clubId}-${nationality}`` and the names of `squad` as
+ * `existing`. Never throws for a game situation; an IdentitySource that breaks its contract is a
+ * programming error and throws.
  */
 export function generateAcademy(
   request: AcademyRequest,
