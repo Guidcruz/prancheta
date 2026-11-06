@@ -46,7 +46,22 @@ const mix = (hex, to, t) => {
 const BLACK = [0, 0, 0];
 const SKIN_SHADE = SKIN.map((c) => mix(c, BLACK, 0.2));
 const SKIN_LIP = SKIN.map((c) => mix(c, [150, 50, 60], 0.4));
-const BROW = HAIR.map((c) => mix(c, [11, 17, 24], 0.3));
+// Eyebrows are natural-looking and never take a blond/bleached hue (that turns olive on skin).
+const BROW = [
+  '#15110f',
+  '#2a1a12',
+  '#4b2f1e',
+  '#5e3f26',
+  '#5a3d22',
+  '#62432a',
+  '#6e2f18',
+  '#6f777d',
+  '#9aa1a6',
+  '#5a3d22',
+];
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+/** Shaved hair: a tone between scalp and hair colour (opaque, so no "cap" edge). */
+const buzzColor = (skin, hair) => mix(skin, rgb(hair), 0.5);
 const SHIRT = '#e6ebf0';
 const BACKDROP = '#5f7f98';
 const LIGHT_LIP = '#e3a6a0';
@@ -168,9 +183,10 @@ const HAIRS = {
     hl: 'M12.800 21.500Q13 17.500 16.500 16L18.500 12.500Q20 14 22 14.800Q24 15.500 26 14.800 28 14 29.500 12.500L31.500 16Q35 17.500 35.200 21.500',
   },
   12: {
+    thin: true,
     sil: [
-      ['M14.800 13.800Q11.800 16.500 12.200 20.500Q13.600 21 14.800 20Z'],
-      ['M33.200 13.800Q36.200 16.500 35.800 20.500Q34.400 21 33.200 20Z'],
+      ['M15.800 12.400Q10.800 15 11.400 21.500Q11.800 24.500 14 27Q12.800 21 15.600 12.400Z'],
+      ['M32.200 12.400Q37.200 15 36.600 21.500Q36.200 24.500 34 27Q35.200 21 32.400 12.400Z'],
     ],
   },
   13: {
@@ -189,7 +205,8 @@ const HAIRS = {
 };
 
 /** Back layer: silhouettes (behind ears and face). */
-function hairBack(h, hc, sw) {
+function hairBack(h, hc, sw0) {
+  const sw = h?.thin ? sw0 * 0.7 : sw0;
   return (h?.sil ?? [])
     .map(([d, k]) => {
       if (k === 's' || k === 's6') {
@@ -202,10 +219,9 @@ function hairBack(h, hc, sw) {
 }
 
 /** Front layer: fill-only fringe, ink hairline, optional crest (mohawk). */
-function hairFront(h, hc, sw) {
+function hairFront(h, hc, sw, buzzFill) {
   if (!h?.hl) return '';
-  const op = h.buzz ? ' fill-opacity=".6"' : '';
-  let o = `<path d="${h.hl}${h.buzz ? CLOSE_BUZZ : CLOSE}" fill="${hc}"${op}/>`;
+  let o = `<path d="${h.hl}${h.buzz ? CLOSE_BUZZ : CLOSE}" fill="${h.buzz ? buzzFill : hc}"/>`;
   if (!h.buzz)
     o += `<path d="${h.hl}" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linecap="round" stroke-linejoin="round"/>`;
   if (h.crest)
@@ -334,7 +350,7 @@ export function renderFace(spec, size = 96, opts = {}) {
     SKIN_LIP[sp.skin],
     small,
   );
-  o += hairFront(hair, hc, sw);
+  o += hairFront(hair, hc, sw, buzzColor(skin, hc));
   switch (sp.accessory) {
     case 1:
       if (!small)
