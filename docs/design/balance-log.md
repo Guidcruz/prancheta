@@ -2,6 +2,43 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-06: todos podem ser campeões (escada, variação; T-070)
+
+**Como foi medido.** `/balance` do motor do commit `ca5092a` (T-069), em cópias do repositório no scratchpad com a lista de clubes trocada; `app/` e `scripts/` do repositório não foram tocados. Cópias: `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-base` (escada anterior, ordem atual), `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-A` (escada anterior, ordem 3/2/1), `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-L` (fundo mais alto, ordem atual; a lista é a mesma que a T-070 grava) e `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-LA` (fundo mais alto, ordem 3/2/1). A variação entra por `--params` (`/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/sd/params-<sd>.json`, só `generation.clubStrengthSd`). Duas rodadas por combinação: `--seasons 1000 --seed 1 --robot <mais fraco>` (Chapecão na ordem atual, Remador na 3/2/1) e `--seasons 200 --seed 1` (robô no Coritibom; no Tufão na ordem 3/2/1 com o fundo mais alto). Depois da decisão, `--seasons 200 --seed 2,3 --duels 0` no `repo-L`.
+
+**Arquivos:** as 8 combinações de variação em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/sd/` (`k-<escada>-<sd>.txt` para 1.000 temporadas, `m-<escada>-<sd>.txt` para 200; `base` é a ordem atual e `A` a 3/2/1; roteiro em `run.sh`); as escadas com o fundo mais alto em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/lad/` (`k-L.txt`, `m-L.txt`, `k-LA.txt`, `m-LA.txt`, `m-L-s23.txt`; roteiro em `run.sh` e `apply.py`).
+
+### As 8 combinações de variação (escada anterior, 62 a 78)
+
+| Ordem | sd  | Metas (200 / 1.000) | Grande (1.000) | Pequeno (1.000) | Fraco no G4 (1.000) | Clubes sem título (1.000) | Robô no mais fraco: título, G4 |
+| ----- | --- | ------------------- | -------------- | --------------- | ------------------- | ------------------------- | ------------------------------ |
+| atual | 1,5 | 39 / 39             | 79,8%          | 2,9%            | 5,5%                | 2                         | 0,0%, 1,3%                     |
+| atual | 2,0 | 39 / 37             | 81,0%          | 3,3%            | 4,6%                | 1                         | 0,1%, 1,7%                     |
+| atual | 2,5 | 38 / 37             | 80,5%          | 3,6%            | 4,3%                | 2                         | 0,1%, 1,1%                     |
+| atual | 3,0 | 38 / 37             | 82,0%          | 3,4%            | 4,2%                | 1                         | 0,1%, 2,1%                     |
+| 3/2/1 | 1,5 | 37 / 38             | 84,3%          | 3,5%            | 5,3%                | 1                         | 0,0%, 1,5%                     |
+| 3/2/1 | 2,0 | 37 / 36             | 86,9%          | 3,2%            | 3,8%                | 1                         | 0,2%, 2,0%                     |
+| 3/2/1 | 2,5 | 37 / 37             | 87,5%          | 2,9%            | 4,8%                | 1                         | 0,0%, 1,7%                     |
+| 3/2/1 | 3,0 | 37 / 36             | 85,4%          | 4,3%            | 3,4%                | 1                         | 0,0%, 2,3%                     |
+
+Leitura: nenhuma combinação deixa todo clube campeão; o `sd` não muda a distância de 16 pontos do 1º ao 20º. Tabela completa em `balance-targets.md`, "Medido: variação por carreira nas duas escadas".
+
+### As 3 escadas (sd 1,5)
+
+| Métrica                                  | Anterior, ordem atual | Fundo mais alto, ordem atual | Fundo mais alto, ordem 3/2/1 |
+| ---------------------------------------- | --------------------- | ---------------------------- | ---------------------------- |
+| Clubes sem título (1.000, s1)            | 2 (Remador, Chapecão) | 0 (mínimo 1)                 | 0 (mínimo 1)                 |
+| Metas obrigatórias (1.000 / 200, s1)     | 39 / 39               | 38 / 38                      | 38 / 38                      |
+| Campeão grande (1.000; 200 s1)           | 79,8%; 83,0%          | 80,0%; 86,0%                 | 84,3%; 89,0%                 |
+| Campeão grande (200: s2 / s3; total 3)   | 80,5 / 82,5; 82,0%    | 85,5 / 78,0; 83,2%           | n/m                          |
+| Campeão pequeno (1.000; total 3 × 200)   | 2,9%; 1,5%            | 3,3%; 2,2%                   | 3,2%; n/m                    |
+| Fraco no G4 (1.000)                      | 5,5%                  | 7,1%                         | 6,1%                         |
+| Campeão / 17º (1.000)                    | 75,3 / 40,3           | 75,0 / 40,6                  | 74,9 / 40,5                  |
+| Robô no mais fraco: pontos (IA), G4 (IA) | 42,0 (39,7), 1,3%     | 44,6 (42,3), 3,0% (1,7%)     | 45,0 (41,5), 2,7% (1,4%)     |
+| Robô de referência: ganho, título (200)  | Coritibom +4,1, 4,5%  | Coritibom +4,4, 4,5%         | Tufão +2,3, 3,0%             |
+
+**Decisão do CEO (2026-11-06, "ok recomendado"):** fundo mais alto na ordem atual, `sd` 1,5, teto do pequeno a 4%, metas "Todo clube campeão" e "Técnico-robô no clube mais fraco" na medição longa de release, média 3/2/1 para dezembro (`balance-targets.md`, decisão 16). Com o teto de 4%, a rodada de 1.000 passa em todas as metas; a de 200 na semente 1 ficava fora no campeão grande (86,0%, teto de 85%, calibrado para a escada anterior). **Decisão do CEO (2026-11-06, "ok pode subir o teto para 90%"):** o teto do campeão grande passa a 90%, e o CI continua com `--seasons 200 --seed 1` (`balance-targets.md`, decisão 16, item 6). Com 90%, as rodadas de 1.000 e de 200 (sementes 1 a 3; nas 2 e 3 sem os duelos, que não dependem da escada) da escada nova passam em todas as metas obrigatórias.
+
 ## 2026-11-05: T-017, metas da cadeia (motor real)
 
 **Como foi medido.** `npm run balance -- --chain 3 --seasons 200 --seed 1,2,3 --duels 0 --robot none` com o motor da T-017 (commit `06d9a82`), numa cópia do repositório no scratchpad. Só na cópia, três chaves trocadas por variável de ambiente: a constante `MORALE_OFFSEASON_PULL` (0,5 ou 1, que é a moral zerada para 60), a evolução ligada ou desligada (desligada: o jogador passa igual pela virada, sem evolução nem aniversário) e o recorte do clube fraco e dos 6 mais fortes (pela força de cada temporada ou pela da temporada 1). `app/` e `scripts/` do repositório não foram tocados. A linha "virada da T-017, recorte atual" é a saída do code reviewer (`scratchpad/chain3-200.txt`), e a cópia a repete.
