@@ -1,5 +1,4 @@
 import type { ClubDef, ClubId } from '../../app/src/engine/index.ts';
-import { DEFAULT_STRENGTH } from '../../app/src/engine/clubs.ts';
 import { REFERENCE_VARIANT, TACTIC_VARIANTS, type AllOutTally, type DuelTally } from './duels.ts';
 import {
   emptyMatchTally,
@@ -122,6 +121,9 @@ const LONG_RUN_SHOWN = '1.000';
  * The weakest club of the ladder: the lowest `strength`, ties by the smaller id. `--robot weakest`
  * plays it, and the robot's G4 target (balance-targets.md, "Recomendação final") applies to it only.
  */
+/** The engine's default strength (`DEFAULT_STRENGTH`, not exported by the engine index). */
+const DEFAULT_STRENGTH = 70;
+
 /** A club without `strength` plays at the engine's default. */
 const strengthOf = (c: ClubDef) => c.strength ?? DEFAULT_STRENGTH;
 
