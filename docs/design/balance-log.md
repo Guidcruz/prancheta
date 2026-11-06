@@ -55,6 +55,29 @@ Candidatos à revelação: jogadores de até 21 anos com ao menos 19 jogos com n
 - **A força média sobe com a onda de jovens** (até +4,0 da 15ª à 21ª) e volta (+1,5 na 27ª). É de todos os clubes, então a tabela não sente: campeão de 74 a 77 pontos e 17º de 40 a 41, dentro das metas da temporada única; campeão grande de 73% a 90%. A distância entre fortes e fracos encolhe cerca de 1 ponto, e os gols ficam de 2,39 a 2,43 da 10ª em diante.
 - **Veredito: aceitável para a 1a, sem mudança antes do merge.** Carreira longa está fora do escopo da Etapa 1, a renovação é a mínima que o CEO aprovou, e todas as metas obrigatórias passam. O ciclo e os gols ficam para a base da Etapa 4 (idade de saída com variação), e a força média alta importa para o acesso da Série B (Etapa 2). Ponto de checagem em `temporada.md`, "Carreira longa na 1a". Nenhuma proposta de ajuste.
 
+## 2026-11-06: aposentadoria variável de 33 a 40 (decisão do CEO; T-048)
+
+**Como foi medido.** O motor da T-048 (`ENGINE_VERSION` 15) copiado para fora do repositório, com uma única mudança no `renewClub`: a regra de `temporada.md`, "Carreira longa na 1a" (sorteio `rng.chance(p)` no fluxo `${seed}-s${season}-retirement-${playerId}`, de 33 a 39 anos; aos 40, sai). O código de produção não mudou. `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` na cópia, com a regra fixa (controle, reproduz a entrada de 30 temporadas acima) e com duas tabelas: **A** (linha 5/10/25/35/45/55/70%, goleiro 0/2/5/10/15/20/30%) e **B** (linha 8/15/30/40/50/60/75%, goleiro 2/4/8/12/18/25/35%). Saídas em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/ret/` (`chain30-fixed.txt`, `chain30-A.txt`, `chain30-B.txt`, `chain30-Ag3.txt`; idades de saída em `run-*.log`).
+
+| Métrica (temporadas 1 a 30)                | Fixa aos 35        | A (aprovada)       | B                  |
+| ------------------------------------------ | ------------------ | ------------------ | ------------------ |
+| Idade média de saída: linha / goleiro      | 35 / 35            | 36,1 / 38,3        | 35,7 / 37,8        |
+| Linha que sai de 35 a 40                   | 100%               | 84%                | 77%                |
+| Goleiro que chega aos 40                   | 0                  | 36%                | 27%                |
+| Idade média dos elencos                    | 23,6 a 27,3        | 24,6 a 28,4        | 24,5 a 28,0        |
+| Aposentadorias por clube na virada (média) | 0,43 a 2,45 (1,51) | 0,23 a 2,21 (1,30) | 0,32 a 2,20 (1,35) |
+| Força média da liga (maior Δ da 1ª)        | +4,03              | +3,81              | +3,84              |
+| 4 mais fortes − 4 mais fracos (pior Δ)     | −1,45              | −1,44              | −1,49              |
+| Gols por partida (temporadas 10 a 30)      | 2,38 a 2,43        | 2,36 a 2,47        | 2,36 a 2,46        |
+| Metas obrigatórias (temporadas 1 a 3)      | 75 de 75           | 75 de 75           | 74 de 75           |
+
+**Leitura.**
+
+- **A cumpre o que o CEO pediu** (maioria de 35 a 40, teto de 40, goleiro chegando aos 40 com frequência) e passa todas as metas obrigatórias. B tira o goleiro dos 40 com mais frequência e põe quase um quarto das saídas de linha antes dos 35; a meta que B perde (fuga do Z4 de 6 a 8 pontos, temporada 3) é amostra (as 3 primeiras temporadas quase não sentem a aposentadoria), mas não há motivo para preferir B.
+- **A onda amortece pouco.** O ciclo passa de 18 para cerca de 19 a 20 temporadas e as aposentadorias oscilam menos (da 10ª virada em diante, 0,70 a 2,15 por clube, contra 0,43 a 2,45), mas a amplitude da idade cai cerca de 13% por ciclo (3,8 para 3,3 anos entre pico e vale), como a conta prevê para um desvio de cerca de 1,5 ano na saída. Não é motivo para alargar a tabela: a janela de 35 a 40 é do CEO, e o ciclo fica para a Etapa 4.
+- **Goleiro veterano é reserva:** overall médio 54,5 aos 38, 51,4 aos 39, 48,4 aos 40 (a curva de declínio é a mesma para todas as posições). Controle "Ag3" (A com o goleiro declinando 3 anos mais tarde): 62,6 aos 38, 57,3 aos 40, gols 2,33 a 2,43 da 10ª em diante; não recomendo, fica para o CEO.
+- **Para o `developer`:** com o mesmo fluxo e o mesmo sorteio, a implementação deve reproduzir a coluna A exatamente na mesma cadeia.
+
 ## 2026-11-06: cadeia com a escada nova (decisão 17; T-071)
 
 **Como foi medido.** `npm run balance -- --seasons 200 --seed 1 --chain 3`, com a escada da decisão 16 (fundo mais alto, `sd` 1,5) e o robô no Coritibom. Saída em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/dl2/chain3.txt`.

@@ -167,7 +167,7 @@ Os 4 últimos aparecem como "zona de rebaixamento", sem efeito: ninguém sai, ni
 2. **Prêmios** (tabela abaixo), do `seasonStats`.
 3. **Campanha** de cada clube humano: posição, pontos, meta da diretoria cumprida ou não, maior vitória, maior derrota, artilheiro do clube.
 4. **Evolução e idade** de todos os jogadores dos 20 clubes (`jogadores.md`, "Evolução"): lê os minutos do `seasonStats` e a moral depois da rodada 38, e guarda o overall de antes para o "quem evoluiu" da campanha.
-5. **Renovação mínima** ("Carreira longa na 1a", abaixo): quem tem 35 anos depois do aniversário sai do elenco, um jovem de 17 da base entra no lugar, e o clube que perdeu o ídolo escolhe outro. O aposentado sai de `squads` aqui e só sai de `players` no `startNextSeason`, para a tela de resumo ter o nome e o rosto dele mesmo se o app fechar na fase `seasonEnd`.
+5. **Renovação mínima** ("Carreira longa na 1a", abaixo): depois do aniversário, quem tem 40 anos sai do elenco e quem tem de 33 a 39 sorteia pela tabela da idade (a do goleiro é mais baixa); cada aposentado sai, um jovem de 17 da base entra no lugar, e o clube que perdeu o ídolo escolhe outro. O aposentado sai de `squads` aqui e só sai de `players` no `startNextSeason`, para a tela de resumo ter o nome e o rosto dele mesmo se o app fechar na fase `seasonEnd`.
 6. Grava o resumo em `pastSeasons` e passa a `phase: 'seasonEnd'`. O título já conta a partir daqui (a estrela nova aparece na própria cerimônia).
 
 A ordem importa: prêmios e campanha leem o `seasonStats` e as idades da temporada jogada (a revelação tem até 21 anos **nesta** temporada), e a evolução lê os minutos antes de eles serem zerados. A tela de resumo, na fase `seasonEnd`, já mostra o elenco evoluído ("como o elenco chega à pré-temporada").
@@ -276,30 +276,52 @@ Fica fora: a tabela inteira, as estatísticas de todos, as partidas e os fatos. 
 
 ### Carreira longa na 1a (decisão 14 de `balance-targets.md`; T-048)
 
-**Regra em uma frase:** quem completa 35 anos na virada se aposenta, e o clube promove da base um jovem de 17 anos da mesma posição.
+**Regra em uma frase:** da virada dos 33 anos em diante, cada jogador tem uma chance de se aposentar que cresce com a idade (menor para goleiros), aos 40 ele sai com certeza, e o clube promove da base um jovem de 17 anos da mesma posição.
 
-É a renovação **mínima**: a base de verdade (categorias, investimento, peneira) e a aposentadoria com festa são da Etapa 4, e a régua aqui é só não deixar o elenco envelhecer até parar. Não lê mercado, finanças nem desempenho.
+É a renovação **mínima**: a base de verdade (categorias, investimento, peneira) e a aposentadoria com festa são da Etapa 4, e a régua aqui é só não deixar o elenco envelhecer até parar. Não lê mercado, finanças, overall nem desempenho. Revisada pelo CEO em 2026-11-06 ("um jogador pode ir até 40 anos no máx"; "gosto do variável mas a maioria entre 35 e 40"; "goleiro pode ir até 40 mais fácil"); a versão anterior aposentava todos aos 35.
 
+**Chance de aposentadoria por idade** (a idade depois do aniversário da virada, a mesma que o jogador terá na temporada seguinte se ficar):
+
+| Idade            | 32 ou menos | 33  | 34  | 35  | 36  | 37  | 38  | 39  | 40 ou mais |
+| ---------------- | ----------- | --- | --- | --- | --- | --- | --- | --- | ---------- |
+| Jogador de linha | 0           | 5%  | 10% | 25% | 35% | 45% | 55% | 70% | 100%       |
+| Goleiro          | 0           | 0   | 2%  | 5%  | 10% | 15% | 20% | 30% | 100%       |
+
+O que a tabela dá (medido, 60 carreiras de 30 temporadas, semente 1; abaixo): **jogador de linha** sai em média aos 36,1, com 84% das saídas de 35 a 40 e 16% aos 33 ou 34 (a cauda); **goleiro** sai em média aos 38,3, e 36% chegam aos 40 (a idade de saída mais comum dele). "Goleiro" é a posição natural (`position: 'GK'`).
+
+- **Sorteio:** um por jogador e virada, só de 33 a 39 anos com chance acima de 0, no fluxo próprio `${seed}-s${season}-retirement-${playerId}` (`season` é a temporada jogada, a do `endSeason`, como na evolução), com `rng.chance(p)`. Aos 40 ou mais sai sem sorteio; abaixo de 33, nunca. O fluxo é do jogador, então a ordem dos clubes e do elenco não muda nada, e o mesmo save sempre aposenta os mesmos.
 - **O jovem** nasce como os "Jovens" da geração (`jogadores.md`, "Geração de elencos"): overall `def.strength − 12 + Normal(0, 4)`, arredondado e cortado em 35 a 92; atributos, traço sorteado, curva de idade, nacionalidade e moral inicial como na geração; potencial pela regra de até 23 anos (teto 95, sem o piso da joia). Idade 17, condição 100, `clubAppearances` 0, camisa: a menor livre a partir de 30. A âncora é a força da lista (`def.strength`), não a atual, para que um clube em queda não gere jovens piores e caia mais.
-- **O ídolo** que se aposenta é substituído na mesma virada (`jogadores.md`, "Traço de personalidade").
-- **Constantes, não parâmetros:** `RETIREMENT_AGE = 35` e a idade de 17 da base. São o botão da decisão 14, mas nenhuma meta obrigatória da 1a os lê (a temporada 1 não passa pela virada, e até a 3ª quase só se aposentam reservas), então não vão para `app/src/params/`.
+- **O ídolo** segue a mesma tabela e, quando se aposenta, é substituído na mesma virada (`jogadores.md`, "Traço de personalidade").
+- **Constantes, não parâmetros:** a idade máxima (`RETIREMENT_MAX_AGE = 40`, decisão do CEO), a idade mínima do sorteio (33), as duas linhas da tabela e a idade de 17 da base. São o botão da decisão 14, mas nenhuma meta obrigatória da 1a os lê (a temporada 1 não passa pela virada, e até a 3ª quase só se aposentam reservas). Se um dia forem para `app/src/params/` (para o `/balance` mexer sem tocar o motor), é decisão do `architect`: pede validador (chances de 0 a 1, crescentes com a idade, 40 sempre 100%) e diz o que acontece com uma carreira em andamento quando o número muda.
 
-**Medido** (`balance-log.md`, 2026-11-06): metas obrigatórias das temporadas 1 a 3 todas dentro nas 3 sementes. Em 30 temporadas (60 carreiras, semente 1): idade média de 23,6 a 27,3; candidatos à revelação nunca abaixo de 7 numa carreira; pontos do campeão de 74 a 77 e do 17º de 40 a 41 (dentro das metas da temporada única); campeão grande de 73% a 90%. Fora das metas, como a decisão 14 previu: gols por partida abaixo de 2,50 da temporada 8 em diante (2,39 a 2,49).
+**Medido** (`balance-log.md`, 2026-11-06, "aposentadoria variável"), com a regra acima aplicada a uma cópia do motor fora do repositório, os mesmos sorteios que o `developer` vai implementar: metas obrigatórias das temporadas 1 a 3 todas dentro (75 de 75). Em 30 temporadas (60 carreiras, semente 1), contra a aposentadoria fixa aos 35:
+
+| Métrica (temporadas 1 a 30)                  | Fixa aos 35               | Variável (esta regra)     |
+| -------------------------------------------- | ------------------------- | ------------------------- |
+| Idade média dos elencos                      | 23,6 a 27,3               | 24,6 a 28,4               |
+| Aposentadorias por clube na virada           | 0,43 a 2,45 (1,51)        | 0,23 a 2,21 (1,30)        |
+| Candidatos à revelação (menor numa carreira) | 9                         | 9                         |
+| Força média da liga (maior Δ da 1ª)          | +4,03                     | +3,81                     |
+| 4 mais fortes − 4 mais fracos (pior Δ)       | −1,45                     | −1,44                     |
+| Gols por partida (temporadas 10 a 30)        | 2,38 a 2,43               | 2,36 a 2,47               |
+| Pontos do campeão / do 17º                   | 73,7 a 77,2 / 39,8 a 41,1 | 73,6 a 76,9 / 39,9 a 41,3 |
+
+Entre parênteses, a média de todas as viradas. Na 1ª virada se aposentam 0,23 por clube (contra 0,43), porque os reservas gerados com 34 anos agora sorteiam.
 
 **O que a medição longa mostrou** (informativo; carreira longa é da Etapa 4):
 
-- **Ciclo de 18 temporadas, que não amortece.** Como todo mundo entra com 17 e sai com 35, a idade de entrada e de saída é fixa, e a onda de aposentadorias da geração inicial se repete a cada 35 − 17 = 18 temporadas: aposentadorias por clube 0,43 na 1ª virada e na 19ª; idade média 27,3 na 4ª e na 22ª, 24,2 na 10ª e na 28ª. A queda de idade da temporada 10 (−0,7 por temporada) é o vale da primeira onda, não uma deriva sem fim: a idade volta a subir da 13ª em diante. Os candidatos à revelação seguem a mesma onda (de 15 na 1ª a 101 na 10ª, 32 na 18ª e 110 na 29ª).
-- **A força média da liga sobe com a onda de jovens:** +1,4 na temporada 10, +4,0 da 15ª à 21ª, e volta a +1,5 na 27ª. É de todos os clubes ao mesmo tempo (a tabela não muda), mas a distância entre os 4 mais fortes e os 4 mais fracos da temporada 1 encolhe de 12,4 para 11,0 a 11,5 (−1,0 a −1,45, contra a trava de ±0,5 que só vale nas temporadas 2 e 3). Grandes contra não grandes ficam em ±0,25.
-- **Os gols caem devagar** (2,43 na 10ª, 2,39 na 30ª): os atacantes do melhor XI envelhecem mais que os defensores (decisão 14).
+- **A onda continua, um pouco mais lenta e um pouco mais baixa.** A carreira média fica mais longa (de 18 para cerca de 19 temporadas no jogador de linha), então o ciclo da geração inicial passa de 18 para cerca de 19 a 20 temporadas: idade no pico 28,4 (temporadas 5 e 6) e 27,9 (25), no vale 24,6 (14). As aposentadorias por clube oscilam menos (da 10ª virada em diante, de 0,70 a 2,15 por clube, contra 0,43 a 2,45), mas a amplitude da idade cai só cerca de 13% em um ciclo (de 3,8 para 3,3 anos entre pico e vale). É o que a conta prevê: um desvio de cerca de 1,5 ano na idade de saída contra um ciclo de 19 temporadas amortece pouco a onda principal. Apagar a onda pede variação na entrada (jovens de idades diferentes) ou mercado, da Etapa 4.
+- **Elencos um ano mais velhos no pico** (28,4 contra 27,3), e os gols, que já ficavam abaixo de 2,50 da 8ª temporada em diante, ficam iguais (2,36 a 2,47): a mudança não piora nem resolve o que a decisão 14 já previa.
+- **O goleiro de 38 a 40 anos é quase sempre reserva:** overall médio 54,5 aos 38, 51,4 aos 39 e 48,4 aos 40, pela curva de declínio da evolução (−3 por temporada depois do `ageEff` 34), que é igual para todas as posições. "Ir até 40" acontece, mas como o veterano do banco. Medido também, sem recomendar: o goleiro declinar 3 anos mais tarde levaria o de 38 a 62,6 e o de 40 a 57,3, ainda abaixo da média do melhor XI da liga (cerca de 70), e baixaria os gols (2,33 a 2,43 da 10ª em diante). Fica como decisão do CEO, se quiser o goleiro veterano titular.
 
-**Ponto de checagem (sem meta nova; as metas da carreira longa são do CEO na Etapa 4).** Rodar de novo `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` (cerca de 3 minutos com 4 threads) e comparar com os números acima quando:
+**Ponto de checagem (sem meta nova; as metas da carreira longa são do CEO na Etapa 4).** Rodar de novo `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` (cerca de 2,5 minutos com 4 threads) e comparar com a coluna "Variável" acima quando:
 
-1. mudar a idade de aposentadoria, a idade ou a fórmula do jovem da base, a evolução (`players.growthMin`, `players.growthMax`, curva de idade) ou as idades da geração;
-2. **antes de fechar o desenho do acesso da Série B (Etapa 2):** o clube que sobe nasce pela força da lista (61 a 66), e uma Série A que já subiu até +4,0 de força média o receberia mais fraco do que a escada prevê. Ler a força média da liga na temporada em que o acesso entra e decidir a âncora com essa medição;
-3. **antes de desenhar a base e a aposentadoria da Etapa 4:** a idade de saída deve ter variação (por exemplo, 33 a 37) para o ciclo de 18 temporadas amortecer; gols abaixo de 2,50 da 8ª temporada em diante e a distância entre fortes e fracos encolhendo mais de 1,0 entram ali como problema a resolver, junto com as metas da carreira longa ("Estabilidade da liga", "Elenco que se renova");
+1. mudar a tabela de aposentadoria, a idade ou a fórmula do jovem da base, a evolução (`players.growthMin`, `players.growthMax`, curva de idade) ou as idades da geração;
+2. **antes de fechar o desenho do acesso da Série B (Etapa 2):** o clube que sobe nasce pela força da lista (61 a 66), e uma Série A que já subiu até +3,8 de força média o receberia mais fraco do que a escada prevê. Ler a força média da liga na temporada em que o acesso entra e decidir a âncora com essa medição;
+3. **antes de desenhar a base e a aposentadoria da Etapa 4:** a onda de cerca de 19 temporadas que a variação de 33 a 40 não apaga, os gols abaixo de 2,50 da 8ª temporada em diante e a distância entre fortes e fracos encolhendo mais de 1,0 entram ali como problema a resolver, junto com as metas da carreira longa ("Estabilidade da liga", "Elenco que se renova");
 4. o `/balance` de release (antes de cada versão pública), só para registrar.
 
-Leitura (não bloqueia): idade média fora de 23,5 a 27,5, alguma carreira sem candidato à revelação, força média da liga mais de 4,5 acima da temporada 1, ou gols abaixo de 2,35 pedem leitura do `game-designer` antes do merge, porque saem do que foi medido aqui.
+Leitura (não bloqueia): idade média fora de 24 a 29, alguma carreira sem candidato à revelação, força média da liga mais de 4,5 acima da temporada 1, ou gols abaixo de 2,30 pedem leitura do `game-designer` antes do merge, porque saem do que foi medido aqui.
 
 ### Acesso da Série B (futuro)
 
@@ -350,7 +372,7 @@ Na 1a todos jogam só a Série A, e o favorito nunca divide o elenco: com 1.000 
 | `startNextSeason` fora da fase `seasonEnd`      | devolve o erro e não muda o estado                                                                                                                                                                     |
 | App fechado entre `endSeason` e a virada        | o save fica na fase `seasonEnd`; ao abrir, volta ao resumo e o "Próxima temporada" faz a virada (as duas funções são deterministas)                                                                    |
 | Lesão longa no fim da temporada                 | termina na virada, como as suspensões (decisão 13 de `balance-targets.md`)                                                                                                                             |
-| Ídolo envelhecido ou em queda                   | continua ídolo até se aposentar aos 35; a regra do banco vale igual, e uma entrada nos acréscimos zera o contador (`jogadores.md`)                                                                     |
+| Ídolo envelhecido ou em queda                   | continua ídolo até se aposentar (de 33 a 40, pela tabela); a regra do banco vale igual, e uma entrada nos acréscimos zera o contador (`jogadores.md`)                                                  |
 | Ídolo se aposenta                               | o clube escolhe um novo no mesmo `endSeason` (`jogadores.md`, "Traço de personalidade") e o `idolBenchStreak` volta a 0                                                                                |
 | Vários aposentados na mesma posição             | um jovem por aposentado, cada um com a posição do seu; o elenco segue com 25 e 3/5/4/4/4/5                                                                                                             |
 | Clube sem vitória ou sem gol na temporada       | a campanha fica sem "maior vitória" ou sem "artilheiro do clube"                                                                                                                                       |
