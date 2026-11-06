@@ -1,4 +1,5 @@
 import { decodeFace, encodeFace, type FaceSpec } from './face.ts';
+import { SMALL_SIZE, escapeText, safeColor } from './shield.ts';
 
 /*
  * Player avatar renderer (docs/art/avatares.md, US-005): a bust in a medallion, flat colours,
@@ -9,7 +10,7 @@ import { decodeFace, encodeFace, type FaceSpec } from './face.ts';
  */
 
 /** Width in px up to which the simple version is drawn (the same rule as the shield). */
-export const AVATAR_SMALL_SIZE = 32;
+export const AVATAR_SMALL_SIZE = SMALL_SIZE;
 const MIN_SIZE = 16;
 const MAX_SIZE = 512;
 const FALLBACK_SIZE = 48;
@@ -388,14 +389,9 @@ function accessory(type: number, ears: number, small: boolean): string {
 
 // ------------------------------------------------------------------ render
 
-const HEX = /^#[0-9a-f]{6}$/i;
-const escapeText = (text: string) =>
-  text.replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
-  );
 /** A club colour for the shirt when it is `#rrggbb`, else the neutral shirt. */
-const safeShirt = (c: unknown) => (typeof c === 'string' && HEX.test(c) ? c.toLowerCase() : SHIRT);
+const safeShirt = (c: unknown) =>
+  typeof c === 'string' ? safeColor(c, SHIRT).toLowerCase() : SHIRT;
 const safeSize = (size: number) =>
   Number.isFinite(size) && size >= MIN_SIZE && size <= MAX_SIZE ? size : FALLBACK_SIZE;
 
