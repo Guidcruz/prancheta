@@ -242,6 +242,13 @@ export const RECENT_RATINGS_MAX = 5;
 export const YELLOWS_FOR_SUSPENSION = 3;
 /** Longest encoded face (ADR-0012). */
 export const FACE_MAX_LENGTH = 32;
+/**
+ * Most characters of each part of a player's name (`display`, `full`, `family`): the generated
+ * names reach 21, 34 and 11 (the longest given name, compound given name and surnames of
+ * content/names/br.json make about 40), so this is a bound against a hostile save (T-019), not
+ * a style rule; the display rule of 22 is the name generator's.
+ */
+const NAME_MAX_LENGTH = 60;
 
 // ---------------------------------------------------------------------------------------------
 // Rules
@@ -555,9 +562,9 @@ function checkName(issues: Issues, value: unknown): PlayerNameText | undefined {
     return undefined;
   }
   issues.keys('name.', value, NAME_KEYS);
-  const display = issues.text('name.display', value.display);
-  const full = issues.text('name.full', value.full);
-  const family = issues.text('name.family', value.family);
+  const display = issues.text('name.display', value.display, NAME_MAX_LENGTH);
+  const full = issues.text('name.full', value.full, NAME_MAX_LENGTH);
+  const family = issues.text('name.family', value.family, NAME_MAX_LENGTH);
   return display !== undefined && full !== undefined && family !== undefined
     ? { display, full, family }
     : undefined;

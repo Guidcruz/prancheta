@@ -516,6 +516,14 @@ describe('validatePlayer', () => {
     ]);
   });
 
+  it('refuses a name part past 60 characters (a 1 MB name too)', () => {
+    const raw = testPlayer({
+      name: { display: 'x'.repeat(1 << 20), full: 'y'.repeat(61), family: 'z'.repeat(60) },
+    });
+    const fields = issuesOf(validatePlayer(raw)).map((i) => `${i.field}:${i.problem}`);
+    expect(fields).toEqual(['name.display:too-long', 'name.full:too-long']);
+  });
+
   it('still accepts the South American nationalities of older saves (T-069)', () => {
     // Etapa 1 generates only BR, but saves from before kept a few AR, UY and other CONMEBOL
     // players; they must stay valid with no migration.
