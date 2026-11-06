@@ -3,7 +3,10 @@
   "name": "match-derby",
   "data": {
     "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
-    "score": [3, 0],
+    "score": [
+      3,
+      0
+    ],
     "events": [
       {
         "minute": 0,
@@ -126,7 +129,10 @@
         "scorer": "clube-teste-01#7",
         "assist": "clube-teste-01#11",
         "kind": "open",
-        "score": [1, 0]
+        "score": [
+          1,
+          0
+        ]
       },
       {
         "minute": 42,
@@ -150,7 +156,10 @@
         "half": 1,
         "importance": 2,
         "type": "halftime",
-        "score": [1, 0]
+        "score": [
+          1,
+          0
+        ]
       },
       {
         "minute": 45,
@@ -188,7 +197,10 @@
         "scorer": "clube-teste-01#8",
         "assist": "clube-teste-01#4",
         "kind": "open",
-        "score": [2, 0]
+        "score": [
+          2,
+          0
+        ]
       },
       {
         "minute": 54,
@@ -256,7 +268,10 @@
         "side": "home",
         "scorer": "clube-teste-01#8",
         "kind": "open",
-        "score": [3, 0]
+        "score": [
+          3,
+          0
+        ]
       },
       {
         "minute": 90,
@@ -264,7 +279,10 @@
         "half": 2,
         "importance": 3,
         "type": "fulltime",
-        "score": [3, 0],
+        "score": [
+          3,
+          0
+        ],
         "abandoned": false
       }
     ],

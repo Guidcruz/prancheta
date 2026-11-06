@@ -56,7 +56,10 @@ describe('US-025: relegation zone has no effect (same 20 clubs in season 2)', ()
       const left = finished.squads[id]!.filter((pid) => !next.squads[id]!.includes(pid));
       const staying = next.squads[id]!.slice(0, 25 - left.length);
       expect(staying).toEqual(finished.squads[id]!.filter((pid) => !left.includes(pid)));
-      for (const pid of left) expect(closed.state.players[pid]!.age).toBe(35);
+      for (const pid of left) {
+        expect(closed.state.players[pid]!.age).toBeGreaterThanOrEqual(33);
+        expect(closed.state.players[pid]!.age).toBeLessThanOrEqual(40);
+      }
       expect(next.squads[id]).toHaveLength(25);
     }
   });

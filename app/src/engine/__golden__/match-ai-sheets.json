@@ -4,7 +4,10 @@
   "data": {
     "derby": {
       "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
-      "score": [3, 0],
+      "score": [
+        3,
+        0
+      ],
       "events": [
         {
           "minute": 0,
@@ -127,7 +130,10 @@
           "scorer": "clube-teste-01#7",
           "assist": "clube-teste-01#11",
           "kind": "open",
-          "score": [1, 0]
+          "score": [
+            1,
+            0
+          ]
         },
         {
           "minute": 42,
@@ -151,7 +157,10 @@
           "half": 1,
           "importance": 2,
           "type": "halftime",
-          "score": [1, 0]
+          "score": [
+            1,
+            0
+          ]
         },
         {
           "minute": 45,
@@ -189,7 +198,10 @@
           "scorer": "clube-teste-01#8",
           "assist": "clube-teste-01#4",
           "kind": "open",
-          "score": [2, 0]
+          "score": [
+            2,
+            0
+          ]
         },
         {
           "minute": 54,
@@ -327,7 +339,10 @@
           "side": "home",
           "scorer": "clube-teste-01#21",
           "kind": "open",
-          "score": [3, 0]
+          "score": [
+            3,
+            0
+          ]
         },
         {
           "minute": 90,
@@ -335,7 +350,10 @@
           "half": 2,
           "importance": 3,
           "type": "fulltime",
-          "score": [3, 0],
+          "score": [
+            3,
+            0
+          ],
           "abandoned": false
         }
       ],
@@ -542,121 +560,181 @@
     "rounds": [
       {
         "id": "s1-r1-clube-teste-20-clube-teste-06",
-        "score": [2, 0],
+        "score": [
+          2,
+          0
+        ],
         "subs": 7,
         "events": "51010088"
       },
       {
         "id": "s1-r1-clube-teste-02-clube-teste-03",
-        "score": [0, 1],
+        "score": [
+          0,
+          1
+        ],
         "subs": 7,
         "events": "32304a03"
       },
       {
         "id": "s1-r1-clube-teste-19-clube-teste-13",
-        "score": [3, 3],
+        "score": [
+          3,
+          3
+        ],
         "subs": 7,
         "events": "7e0fd742"
       },
       {
         "id": "s1-r1-clube-teste-15-clube-teste-10",
-        "score": [1, 1],
+        "score": [
+          1,
+          1
+        ],
         "subs": 7,
         "events": "fad3483d"
       },
       {
         "id": "s1-r1-clube-teste-04-clube-teste-05",
-        "score": [4, 1],
+        "score": [
+          4,
+          1
+        ],
         "subs": 7,
         "events": "dd1f1701"
       },
       {
         "id": "s1-r1-clube-teste-07-clube-teste-12",
-        "score": [1, 2],
+        "score": [
+          1,
+          2
+        ],
         "subs": 7,
         "events": "baa61247"
       },
       {
         "id": "s1-r1-clube-teste-16-clube-teste-09",
-        "score": [0, 1],
+        "score": [
+          0,
+          1
+        ],
         "subs": 7,
         "events": "662ec27"
       },
       {
         "id": "s1-r1-clube-teste-08-clube-teste-01",
-        "score": [3, 4],
+        "score": [
+          3,
+          4
+        ],
         "subs": 7,
         "events": "79a2e9f0"
       },
       {
         "id": "s1-r1-clube-teste-14-clube-teste-18",
-        "score": [5, 0],
+        "score": [
+          5,
+          0
+        ],
         "subs": 6,
         "events": "d7d510f9"
       },
       {
         "id": "s1-r1-clube-teste-17-clube-teste-11",
-        "score": [0, 1],
+        "score": [
+          0,
+          1
+        ],
         "subs": 7,
         "events": "b2f7cf47"
       },
       {
         "id": "s1-r2-clube-teste-03-clube-teste-20",
-        "score": [1, 2],
+        "score": [
+          1,
+          2
+        ],
         "subs": 7,
         "events": "db8f1508"
       },
       {
         "id": "s1-r2-clube-teste-06-clube-teste-19",
-        "score": [2, 0],
+        "score": [
+          2,
+          0
+        ],
         "subs": 7,
         "events": "3af647c0"
       },
       {
         "id": "s1-r2-clube-teste-10-clube-teste-02",
-        "score": [5, 2],
+        "score": [
+          5,
+          2
+        ],
         "subs": 8,
         "events": "9b32d1e3"
       },
       {
         "id": "s1-r2-clube-teste-13-clube-teste-04",
-        "score": [3, 3],
+        "score": [
+          3,
+          3
+        ],
         "subs": 7,
         "events": "92f398c8"
       },
       {
         "id": "s1-r2-clube-teste-12-clube-teste-15",
-        "score": [0, 2],
+        "score": [
+          0,
+          2
+        ],
         "subs": 7,
         "events": "6c66f8c2"
       },
       {
         "id": "s1-r2-clube-teste-05-clube-teste-16",
-        "score": [2, 3],
+        "score": [
+          2,
+          3
+        ],
         "subs": 8,
         "events": "39a454f5"
       },
       {
         "id": "s1-r2-clube-teste-01-clube-teste-07",
-        "score": [2, 0],
+        "score": [
+          2,
+          0
+        ],
         "subs": 7,
         "events": "7a264f48"
       },
       {
         "id": "s1-r2-clube-teste-09-clube-teste-14",
-        "score": [1, 0],
+        "score": [
+          1,
+          0
+        ],
         "subs": 7,
         "events": "44a45182"
       },
       {
         "id": "s1-r2-clube-teste-11-clube-teste-08",
-        "score": [0, 2],
+        "score": [
+          0,
+          2
+        ],
         "subs": 7,
         "events": "1aceb33a"
       },
       {
         "id": "s1-r2-clube-teste-18-clube-teste-17",
-        "score": [2, 0],
+        "score": [
+          2,
+          0
+        ],
         "subs": 8,
         "events": "63763e81"
       }

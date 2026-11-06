@@ -3,7 +3,10 @@
   "name": "match-short-handed",
   "data": {
     "fixtureId": "s1-r4-clube-teste-01-clube-teste-02",
-    "score": [3, 1],
+    "score": [
+      3,
+      1
+    ],
     "events": [
       {
         "minute": 0,
@@ -95,7 +98,10 @@
         "scorer": "clube-teste-02#11",
         "assist": "clube-teste-02#9",
         "kind": "open",
-        "score": [0, 1]
+        "score": [
+          0,
+          1
+        ]
       },
       {
         "minute": 20,
@@ -106,7 +112,10 @@
         "scorer": "clube-teste-01#8",
         "assist": "clube-teste-01#6",
         "kind": "open",
-        "score": [1, 1]
+        "score": [
+          1,
+          1
+        ]
       },
       {
         "minute": 20,
@@ -126,7 +135,10 @@
         "scorer": "clube-teste-01#5",
         "assist": "clube-teste-01#10",
         "kind": "open",
-        "score": [2, 1]
+        "score": [
+          2,
+          1
+        ]
       },
       {
         "minute": 41,
@@ -173,7 +185,10 @@
         "half": 1,
         "importance": 2,
         "type": "halftime",
-        "score": [2, 1]
+        "score": [
+          2,
+          1
+        ]
       },
       {
         "minute": 45,
@@ -263,7 +278,10 @@
         "scorer": "clube-teste-01#8",
         "assist": "clube-teste-01#4",
         "kind": "open",
-        "score": [3, 1]
+        "score": [
+          3,
+          1
+        ]
       },
       {
         "minute": 82,
@@ -347,7 +365,10 @@
         "half": 2,
         "importance": 3,
         "type": "fulltime",
-        "score": [3, 1],
+        "score": [
+          3,
+          1
+        ],
         "abandoned": false
       }
     ],

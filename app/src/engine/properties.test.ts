@@ -41,8 +41,10 @@ import {
 import {
   MORALE_OFFSEASON_PULL,
   MORALE_TURN_SCALE,
-  RETIREMENT_AGE,
+  RETIREMENT_MAX_AGE,
+  RETIREMENT_MIN_AGE,
   endSeason,
+  retires,
   startNextSeason,
   type SeasonSummary,
 } from './season.ts';
@@ -1120,8 +1122,9 @@ function evolutionProblems(before: GameState, after: GameState): string[] {
 
 /**
  * The invariants of the renewal in `endSeason` (T-048; docs/02-architecture.md, 4.1, "Renovação
- * mínima dos elencos"), from the state at round 39 to the closed one: who is RETIREMENT_AGE after
- * the birthday leaves the squad and stays in `players`; the rest keep their order; one youth of 17
+ * mínima dos elencos"), from the state at round 39 to the closed one: who retires after the
+ * birthday (`retires`: 40 always, 33 to 39 by his draw, below 33 never) leaves the squad and stays
+ * in `players`; the rest keep their order; one youth of 17
  * per retired player, of his position, at the end, with the turn's ids, 0 appearances and a valid
  * player; 25 per squad, 3/5/4/4/4/5 and one idol (the same one unless he retired); and the
  * campaigns list the farewells and the academy.
@@ -1130,7 +1133,12 @@ function renewalProblems(before: GameState, closed: GameState, summary: SeasonSu
   const out: string[] = [];
   for (const [clubId, old] of Object.entries(before.squads)) {
     const now = closed.squads[clubId] ?? [];
-    const gone = old.filter((id) => closed.players[id]!.age >= RETIREMENT_AGE);
+    const gone = old.filter((id) => retires(before, closed.players[id]!));
+    for (const id of gone) {
+      const age = closed.players[id]!.age;
+      if (age < RETIREMENT_MIN_AGE || age > RETIREMENT_MAX_AGE)
+        out.push(`${id}: retired at ${age}`);
+    }
     const staying = old.filter((id) => !gone.includes(id));
     const youth = now.slice(staying.length);
     if (now.slice(0, staying.length).join() !== staying.join()) out.push(`${clubId}: order`);
@@ -1227,7 +1235,7 @@ class IdLedger {
 }
 
 /**
- * The state of a long career in the `season` phase (T-048): nobody older than RETIREMENT_AGE − 1,
+ * The state of a long career in the `season` phase (T-048): nobody of RETIREMENT_MAX_AGE or more,
  * every player in exactly one squad, and every squad of 25 in 3/5/4/4/4/5 with one idol.
  */
 function seasonPhaseProblems(state: GameState, label: string): string[] {
@@ -1236,7 +1244,7 @@ function seasonPhaseProblems(state: GameState, label: string): string[] {
   if (new Set(inSquad).size !== inSquad.length) out.push(`${label}: a player in two squads`);
   if (inSquad.length !== Object.keys(state.players).length) out.push(`${label}: outside squads`);
   for (const p of Object.values(state.players)) {
-    if (p.age >= RETIREMENT_AGE) out.push(`${label}: ${p.id} is ${p.age}`);
+    if (p.age >= RETIREMENT_MAX_AGE) out.push(`${label}: ${p.id} is ${p.age}`);
   }
   for (const clubId of Object.keys(state.clubs)) {
     for (const p of squadProblems(state, clubId)) out.push(`${label}: ${p}`);
@@ -1420,9 +1428,11 @@ function longCareerProblems(
   const out: string[] = [];
   let state = created.value;
   let retired = 0;
+  let oldest = 0;
   for (let season = 1; season <= LONG_SEASONS; season++) {
     const at = `${label} ${n}, season ${season}`;
     out.push(...seasonPhaseProblems(state, at), ...ledger.check(state, at));
+    for (const p of Object.values(state.players)) oldest = Math.max(oldest, p.age);
     const finished = play(state);
     const closed = endSeason(finished, params, [human], fixedIdentitySource());
     if (!closed.ok) throw new Error(`${at}: endSeason ${closed.error}`);
@@ -1437,14 +1447,16 @@ function longCareerProblems(
   }
   out.push(...seasonPhaseProblems(state, `${label} ${n}, season ${LONG_SEASONS + 1}`));
   out.push(...ledger.check(state, `${label} ${n}, season ${LONG_SEASONS + 1}`));
-  // The renewal did happen: about 1.7 retirements per club and season (decision 14).
+  // The renewal did happen: about 1.3 retirements per club and season (decision 14), and the draw
+  // lets some play on past 35.
   if (retired < LONG_SEASONS * 20) out.push(`${label} ${n}: only ${retired} retirements`);
+  if (oldest < 37) out.push(`${label} ${n}: nobody played a season past 36`);
   return out;
 }
 
 describe(`long careers of ${LONG_SEASONS} seasons (T-048, the minimal renewal)`, () => {
   it.each(Array.from({ length: LONG_PLAYED_CAREERS }, (_, i) => i + 1))(
-    'played career %i: under 35, 25 per squad in 3/5/4/4/4/5, one idol, ids never repeat',
+    'played career %i: under 40, 25 per squad in 3/5/4/4/4/5, one idol, ids never repeat',
     { timeout: 600_000 },
     (n) => {
       const problems = longCareerProblems(n, 'played', (start) => {
