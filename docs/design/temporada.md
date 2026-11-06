@@ -167,7 +167,8 @@ Os 4 últimos aparecem como "zona de rebaixamento", sem efeito: ninguém sai, ni
 2. **Prêmios** (tabela abaixo), do `seasonStats`.
 3. **Campanha** de cada clube humano: posição, pontos, meta da diretoria cumprida ou não, maior vitória, maior derrota, artilheiro do clube.
 4. **Evolução e idade** de todos os jogadores dos 20 clubes (`jogadores.md`, "Evolução"): lê os minutos do `seasonStats` e a moral depois da rodada 38, e guarda o overall de antes para o "quem evoluiu" da campanha.
-5. Grava o resumo em `pastSeasons` e passa a `phase: 'seasonEnd'`. O título já conta a partir daqui (a estrela nova aparece na própria cerimônia).
+5. **Renovação mínima** ("Carreira longa na 1a", abaixo): quem tem 35 anos depois do aniversário sai do elenco, um jovem de 17 da base entra no lugar, e o clube que perdeu o ídolo escolhe outro. O aposentado sai de `squads` aqui e só sai de `players` no `startNextSeason`, para a tela de resumo ter o nome e o rosto dele mesmo se o app fechar na fase `seasonEnd`.
+6. Grava o resumo em `pastSeasons` e passa a `phase: 'seasonEnd'`. O título já conta a partir daqui (a estrela nova aparece na própria cerimônia).
 
 A ordem importa: prêmios e campanha leem o `seasonStats` e as idades da temporada jogada (a revelação tem até 21 anos **nesta** temporada), e a evolução lê os minutos antes de eles serem zerados. A tela de resumo, na fase `seasonEnd`, já mostra o elenco evoluído ("como o elenco chega à pré-temporada").
 
@@ -195,7 +196,7 @@ A virada não sorteia nada (o único sorteio é o calendário, pela semente da t
 | `morale`                                                                             | `round2(morale + 0.5 × (fans.start − morale))` | metade do caminho até a esperança de início de temporada (60): o campeão chega animado (cerca de 70), o lanterna chega abatido (cerca de 40), sem a espiral de uma temporada para a outra (decisão 13) Arredondada para centésimos (`round2`), para o save não crescer em dígitos a cada virada (BUG-A da T-017). |
 | `clubAppearances`                                                                    | mantém                                         | conta a carreira (marcador `estreia`)                                                                                                                                                                                                                                                                             |
 | `age`, `overall`, `attributes`                                                       | já mudaram no `endSeason`                      | evolução e idade                                                                                                                                                                                                                                                                                                  |
-| `trait` (o ídolo inclusive), `potential`, `peakAge`, `growth`, `shirt`, nome e rosto | mantém                                         | o ídolo é o mesmo jogador a carreira toda na 1a (`jogadores.md`, "Traço de personalidade")                                                                                                                                                                                                                        |
+| `trait` (o ídolo inclusive), `potential`, `peakAge`, `growth`, `shirt`, nome e rosto | mantém                                         | o ídolo só muda quando se aposenta, e aí o novo já foi escolhido no `endSeason` (`jogadores.md`, "Traço de personalidade")                                                                                                                                                                                        |
 
 `0.5` é constante (`MORALE_OFFSEASON_PULL`), não parâmetro. A moral continua sem arredondamento e cortada em 0 a 100.
 
@@ -238,21 +239,22 @@ strength(temporada nova) = elevenStrength(bestEleven(elenco inteiro, preferredFo
 
 - **19 é constante** (`AWARD_MIN_GAMES`, metade das 38 rodadas), não parâmetro. "Jogos com nota" são os de 15 minutos ou mais (a nota só existe neles); o goleiro conta `games`, porque `conceded` soma por partida em que ele entrou.
 - **"Menor id"** só desempata o que já empatou em média, jogos e minutos (números reais, praticamente nunca): o clube pelo id, depois o número do jogador no clube (a mesma comparação numérica do `bestEleven`).
-- **Ninguém atinge o mínimo:** não há o prêmio, e a tela mostra "sem vencedor nesta temporada"; na seleção, a vaga fica vazia. Sem segunda régua (a regra antiga, "metade dos jogos do clube", dava os mesmos 19). Medido (`balance-log.md`): por temporada, cerca de 282 jogadores com 19 jogos com nota, 20 goleiros com 19 jogos e de 15 a 25 jogadores de até 21 anos com 19 jogos com nota (de 13 a 24 no Realismo simplificado), nunca zero em 750 temporadas. A exceção conhecida é a carreira longa sem renovação dos elencos: da temporada 6 em diante não há mais jogador de até 21 anos, e a revelação fica sem vencedor (decisão 14 de `balance-targets.md`).
+- **Ninguém atinge o mínimo:** não há o prêmio, e a tela mostra "sem vencedor nesta temporada"; na seleção, a vaga fica vazia. Sem segunda régua (a regra antiga, "metade dos jogos do clube", dava os mesmos 19). Medido (`balance-log.md`): por temporada, cerca de 282 jogadores com 19 jogos com nota, 20 goleiros com 19 jogos e de 15 a 25 jogadores de até 21 anos com 19 jogos com nota (de 13 a 24 no Realismo simplificado), nunca zero em 750 temporadas. Na carreira longa, com a renovação mínima (T-048), sempre há candidatos: nunca menos de 7 numa carreira, e a média vai de 15 a 110 por temporada ("Carreira longa na 1a"); sem ela, da temporada 6 em diante não havia jogador de até 21 anos.
 - O clube do jogador premiado é o dele na temporada (na 1a ninguém troca de clube; o resumo guarda o `clubId` para quando houver mercado).
 
 ### Campanha do clube do técnico
 
 Para cada clube humano (o da carreira; na liga online, cada clube com dono). Quem chama o `endSeason` passa a lista; sem ela, o resumo não tem campanha.
 
-| Item                | Regra                                                                                                                                                                      |
-| ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Posição e pontos    | da tabela final                                                                                                                                                            |
-| Meta da diretoria   | `targetPosition` pela `strength` da temporada que acabou ("Expectativa da diretoria"); cumprida se `posição ≤ targetPosition`                                              |
-| Maior vitória       | maior saldo; empate: mais gols marcados, depois a rodada mais cedo; partida encerrada conta pelo placar definido; sem vitória, não há o item                               |
-| Maior derrota       | o mesmo, pelo lado da derrota                                                                                                                                              |
-| Artilheiro do clube | quem fez mais gols pelo clube; empatados dividem; sem gols, não há o item                                                                                                  |
-| Quem evoluiu        | os jogadores do clube cujo overall mudou na evolução, do maior Δ para o menor (empate: maior overall novo, depois a ordem do elenco), com o overall de antes e o de depois |
+| Item                          | Regra                                                                                                                                                                                                                                |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Posição e pontos              | da tabela final                                                                                                                                                                                                                      |
+| Meta da diretoria             | `targetPosition` pela `strength` da temporada que acabou ("Expectativa da diretoria"); cumprida se `posição ≤ targetPosition`                                                                                                        |
+| Maior vitória                 | maior saldo; empate: mais gols marcados, depois a rodada mais cedo; partida encerrada conta pelo placar definido; sem vitória, não há o item                                                                                         |
+| Maior derrota                 | o mesmo, pelo lado da derrota                                                                                                                                                                                                        |
+| Artilheiro do clube           | quem fez mais gols pelo clube; empatados dividem; sem gols, não há o item                                                                                                                                                            |
+| Quem evoluiu                  | os jogadores do clube cujo overall mudou na evolução, do maior Δ para o menor (empate: maior overall novo, depois a ordem do elenco), com o overall de antes e o de depois                                                           |
+| Despedidas e chegadas da base | quem se aposentou (`farewells`, na ordem do elenco da temporada jogada) e quem subiu da base (`academy`, na ordem de entrada); o aposentado aparece também em "Quem evoluiu", com o último overall; sem aposentadoria, não há o item |
 
 ### O que vai para `pastSeasons` (resumo enxuto)
 
@@ -272,9 +274,32 @@ Fica fora: a tabela inteira, as estatísticas de todos, as partidas e os fatos. 
 
 **Gols sofridos na temporada (`PlayerSeasonStats.conceded`):** a soma, partida a partida, dos gols reais sofridos pelo time com o jogador em campo no gol ou na defesa, o mesmo contador que a nota da partida já usa (`Appearance.conceded`). Entra na T-013, junto com o resto do `seasonStats`: o campo é novo nesta versão do save, e acrescentá-lo depois pediria migração. O prêmio lê só quem é goleiro de posição; o número dos defensores fica disponível, sem uso na 1a.
 
-### Carreira longa na 1a (decisão 14 de `balance-targets.md`)
+### Carreira longa na 1a (decisão 14 de `balance-targets.md`; T-048)
 
-A 1a não tem base, aposentadoria nem mercado (Etapas 3 e 4), e a P2 não põe fim na carreira. Sem renovação, os elencos só envelhecem. Medido em cadeias de 10 temporadas (`balance-log.md`): até a temporada 3 tudo fica dentro das metas; a idade média vai de 26 para 30 na temporada 5 e 35 na 10; a força média da liga sobe até +1,1 na temporada 4 e cai a −2,5 na 9; os gols por partida saem da meta (abaixo de 2,50) da temporada 8 em diante; e a revelação fica sem candidatos da temporada 6 em diante. A proposta de renovação mínima (aposentadoria aos 35 com um jovem da base no lugar) espera o CEO; a T-017 não depende dela.
+**Regra em uma frase:** quem completa 35 anos na virada se aposenta, e o clube promove da base um jovem de 17 anos da mesma posição.
+
+É a renovação **mínima**: a base de verdade (categorias, investimento, peneira) e a aposentadoria com festa são da Etapa 4, e a régua aqui é só não deixar o elenco envelhecer até parar. Não lê mercado, finanças nem desempenho.
+
+- **O jovem** nasce como os "Jovens" da geração (`jogadores.md`, "Geração de elencos"): overall `def.strength − 12 + Normal(0, 4)`, arredondado e cortado em 35 a 92; atributos, traço sorteado, curva de idade, nacionalidade e moral inicial como na geração; potencial pela regra de até 23 anos (teto 95, sem o piso da joia). Idade 17, condição 100, `clubAppearances` 0, camisa: a menor livre a partir de 30. A âncora é a força da lista (`def.strength`), não a atual, para que um clube em queda não gere jovens piores e caia mais.
+- **O ídolo** que se aposenta é substituído na mesma virada (`jogadores.md`, "Traço de personalidade").
+- **Constantes, não parâmetros:** `RETIREMENT_AGE = 35` e a idade de 17 da base. São o botão da decisão 14, mas nenhuma meta obrigatória da 1a os lê (a temporada 1 não passa pela virada, e até a 3ª quase só se aposentam reservas), então não vão para `app/src/params/`.
+
+**Medido** (`balance-log.md`, 2026-11-06): metas obrigatórias das temporadas 1 a 3 todas dentro nas 3 sementes. Em 30 temporadas (60 carreiras, semente 1): idade média de 23,6 a 27,3; candidatos à revelação nunca abaixo de 7 numa carreira; pontos do campeão de 74 a 77 e do 17º de 40 a 41 (dentro das metas da temporada única); campeão grande de 73% a 90%. Fora das metas, como a decisão 14 previu: gols por partida abaixo de 2,50 da temporada 8 em diante (2,39 a 2,49).
+
+**O que a medição longa mostrou** (informativo; carreira longa é da Etapa 4):
+
+- **Ciclo de 18 temporadas, que não amortece.** Como todo mundo entra com 17 e sai com 35, a idade de entrada e de saída é fixa, e a onda de aposentadorias da geração inicial se repete a cada 35 − 17 = 18 temporadas: aposentadorias por clube 0,43 na 1ª virada e na 19ª; idade média 27,3 na 4ª e na 22ª, 24,2 na 10ª e na 28ª. A queda de idade da temporada 10 (−0,7 por temporada) é o vale da primeira onda, não uma deriva sem fim: a idade volta a subir da 13ª em diante. Os candidatos à revelação seguem a mesma onda (de 15 na 1ª a 101 na 10ª, 32 na 18ª e 110 na 29ª).
+- **A força média da liga sobe com a onda de jovens:** +1,4 na temporada 10, +4,0 da 15ª à 21ª, e volta a +1,5 na 27ª. É de todos os clubes ao mesmo tempo (a tabela não muda), mas a distância entre os 4 mais fortes e os 4 mais fracos da temporada 1 encolhe de 12,4 para 11,0 a 11,5 (−1,0 a −1,45, contra a trava de ±0,5 que só vale nas temporadas 2 e 3). Grandes contra não grandes ficam em ±0,25.
+- **Os gols caem devagar** (2,43 na 10ª, 2,39 na 30ª): os atacantes do melhor XI envelhecem mais que os defensores (decisão 14).
+
+**Ponto de checagem (sem meta nova; as metas da carreira longa são do CEO na Etapa 4).** Rodar de novo `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` (cerca de 3 minutos com 4 threads) e comparar com os números acima quando:
+
+1. mudar a idade de aposentadoria, a idade ou a fórmula do jovem da base, a evolução (`players.growthMin`, `players.growthMax`, curva de idade) ou as idades da geração;
+2. **antes de fechar o desenho do acesso da Série B (Etapa 2):** o clube que sobe nasce pela força da lista (61 a 66), e uma Série A que já subiu até +4,0 de força média o receberia mais fraco do que a escada prevê. Ler a força média da liga na temporada em que o acesso entra e decidir a âncora com essa medição;
+3. **antes de desenhar a base e a aposentadoria da Etapa 4:** a idade de saída deve ter variação (por exemplo, 33 a 37) para o ciclo de 18 temporadas amortecer; gols abaixo de 2,50 da 8ª temporada em diante e a distância entre fortes e fracos encolhendo mais de 1,0 entram ali como problema a resolver, junto com as metas da carreira longa ("Estabilidade da liga", "Elenco que se renova");
+4. o `/balance` de release (antes de cada versão pública), só para registrar.
+
+Leitura (não bloqueia): idade média fora de 23,5 a 27,5, alguma carreira sem candidato à revelação, força média da liga mais de 4,5 acima da temporada 1, ou gols abaixo de 2,35 pedem leitura do `game-designer` antes do merge, porque saem do que foi medido aqui.
 
 ### Acesso da Série B (futuro)
 
@@ -325,7 +350,9 @@ Na 1a todos jogam só a Série A, e o favorito nunca divide o elenco: com 1.000 
 | `startNextSeason` fora da fase `seasonEnd`      | devolve o erro e não muda o estado                                                                                                                                                                     |
 | App fechado entre `endSeason` e a virada        | o save fica na fase `seasonEnd`; ao abrir, volta ao resumo e o "Próxima temporada" faz a virada (as duas funções são deterministas)                                                                    |
 | Lesão longa no fim da temporada                 | termina na virada, como as suspensões (decisão 13 de `balance-targets.md`)                                                                                                                             |
-| Ídolo envelhecido ou em queda                   | continua ídolo; a regra do banco vale igual, e uma entrada nos acréscimos zera o contador (`jogadores.md`)                                                                                             |
+| Ídolo envelhecido ou em queda                   | continua ídolo até se aposentar aos 35; a regra do banco vale igual, e uma entrada nos acréscimos zera o contador (`jogadores.md`)                                                                     |
+| Ídolo se aposenta                               | o clube escolhe um novo no mesmo `endSeason` (`jogadores.md`, "Traço de personalidade") e o `idolBenchStreak` volta a 0                                                                                |
+| Vários aposentados na mesma posição             | um jovem por aposentado, cada um com a posição do seu; o elenco segue com 25 e 3/5/4/4/4/5                                                                                                             |
 | Clube sem vitória ou sem gol na temporada       | a campanha fica sem "maior vitória" ou sem "artilheiro do clube"                                                                                                                                       |
 | Ano da temporada nova fora do calendário aceito | `startNextSeason` devolve `invalid-calendar` e não muda o estado                                                                                                                                       |
 | Ano escolhido no novo jogo ausente              | a interface passa o ano corrente do aparelho; o motor só recebe o número                                                                                                                               |

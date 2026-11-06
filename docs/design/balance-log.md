@@ -35,6 +35,26 @@ Candidatos à revelação: jogadores de até 21 anos com ao menos 19 jogos com n
 - **Informativo, como a decisão 14 previu:** os gols ficam abaixo de 2,50 da temporada 8 em diante (2,43 a 2,49), pelos atacantes do melhor XI, que envelhecem mais que os defensores; fica para a base da Etapa 4. A força média passa de +1,0 da temporada 1 nas temporadas 4, 5, 9 e 10 (até +1,36 na 10); a meta de ±1,0 só é obrigatória até a 3ª.
 - **Para o `game-designer` olhar (sem pedido de ajuste):** na temporada 10 a idade média ainda cai (24,2, −0,7 por temporada desde a 7ª) e os candidatos à revelação já são cerca de 5 por clube, contra menos de 1 na temporada 1. A carreira ainda não chegou a um equilíbrio em 10 temporadas; os testes de propriedade cobrem 30 temporadas só nos invariantes (idade abaixo de 35, 25 por elenco, 3/5/4/4/4/5, um ídolo, ids sem repetir), não nessas métricas. A idade de aposentadoria é o botão que a decisão 14 deixa para calibrar.
 
+## 2026-11-06: renovação mínima em 30 temporadas (leitura do `game-designer`; T-048)
+
+**Como foi medido.** Mesmo motor da entrada acima (`ENGINE_VERSION` 15), nenhum parâmetro mudou: `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` (60 carreiras de 30 temporadas, cerca de 3 minutos com 4 threads; código de saída 0). Saída em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/t048gd/chain30.txt`. Pergunta: a idade caindo e a revelação crescendo na temporada 10 são deriva sem fim ou uma onda?
+
+| Temporada                          | 1     | 4     | 10          | 13          | 15          | 19    | 22    | 25          | 28          | 30          |
+| ---------------------------------- | ----- | ----- | ----------- | ----------- | ----------- | ----- | ----- | ----------- | ----------- | ----------- |
+| Idade média dos elencos            | 26,1  | 27,3  | 24,2        | 23,7        | 24,9        | 26,1  | 27,3  | 26,4        | 24,2        | 23,6        |
+| Aposentadorias por clube na virada | 0,43  | 1,46  | 2,03        | 0,60        | 1,23        | 0,43  | 1,46  | 2,32        | 2,03        | –           |
+| Candidatos à revelação (média)     | 15,1  | 27,6  | 100,5       | 92,4        | 58,7        | 35,9  | 32,3  | 65,5        | 105,5       | 105,0       |
+| Força média da liga (Δ da 1ª)      | 70,14 | +1,08 | +1,37       | +3,06       | +4,03       | +3,89 | +3,51 | +2,09       | +1,55       | +2,38       |
+| 4 mais fortes − 4 mais fracos (Δ)  | 12,42 | −0,06 | −0,83       | −1,12       | −1,19       | −1,10 | −1,24 | −1,02       | −1,11       | −1,45       |
+| Gols por partida                   | 2,65  | –     | 2,43        | 2,43        | 2,43        | –     | –     | 2,41        | 2,41        | 2,39        |
+| Pontos do campeão / do 17º         | –     | –     | 74,5 / 40,1 | 74,8 / 40,1 | 74,9 / 40,9 | –     | –     | 75,9 / 40,3 | 75,4 / 40,0 | 74,1 / 41,1 |
+
+**Leitura.**
+
+- **É uma onda de 18 temporadas, não uma deriva.** Entrada aos 17 e saída aos 35 são fixas, então a geração inicial se aposenta em ondas que se repetem a cada 35 − 17 = 18 temporadas, sem amortecer (0,43 aposentadoria por clube na 1ª e na 19ª virada; idade 27,3 na 4ª e na 22ª; 24,2 na 10ª e na 28ª). A idade fica de 23,6 a 27,3; a revelação nunca fica sem candidatos.
+- **A força média sobe com a onda de jovens** (até +4,0 da 15ª à 21ª) e volta (+1,5 na 27ª). É de todos os clubes, então a tabela não sente: campeão de 74 a 77 pontos e 17º de 40 a 41, dentro das metas da temporada única; campeão grande de 73% a 90%. A distância entre fortes e fracos encolhe cerca de 1 ponto, e os gols ficam de 2,39 a 2,43 da 10ª em diante.
+- **Veredito: aceitável para a 1a, sem mudança antes do merge.** Carreira longa está fora do escopo da Etapa 1, a renovação é a mínima que o CEO aprovou, e todas as metas obrigatórias passam. O ciclo e os gols ficam para a base da Etapa 4 (idade de saída com variação), e a força média alta importa para o acesso da Série B (Etapa 2). Ponto de checagem em `temporada.md`, "Carreira longa na 1a". Nenhuma proposta de ajuste.
+
 ## 2026-11-06: cadeia com a escada nova (decisão 17; T-071)
 
 **Como foi medido.** `npm run balance -- --seasons 200 --seed 1 --chain 3`, com a escada da decisão 16 (fundo mais alto, `sd` 1,5) e o robô no Coritibom. Saída em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/dl2/chain3.txt`.
