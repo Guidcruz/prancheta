@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Renovação mínima dos elencos (T-048, US-025 no motor; decisão 14 do `balance-targets.md`, com a regra variável decidida pelo CEO em 2026-11-06):
+  - Aposentadoria variável de 33 a 40 anos na virada da temporada: cada jogador sorteia uma chance que cresce com a idade (jogador de linha de 5% aos 33 a 70% aos 39), a do goleiro é mais baixa (de 0 a 30%), e aos 40 todos saem. Sorteio por jogador no fluxo `${seed}-s${season}-retirement-${playerId}`, então o mesmo save aposenta os mesmos.
+  - Para cada aposentado entra um jovem de 17 anos da base, na mesma posição, com nome e rosto gerados; o elenco segue com 25 jogadores (3/5/4/4/4/5). Quando o ídolo se aposenta, o clube escolhe um novo ídolo na mesma virada.
+  - As despedidas e as chegadas ficam na campanha do clube (`farewells` e `academy`), para a tela de resumo. O aposentado sai do elenco no `endSeason` e de `players` só no `startNextSeason`.
+  - `ENGINE_VERSION` 15 e golden `season-turn` regravado. O formato do save não muda (sem migração).
+  - `npm run balance -- --chain` ganha as linhas de idade média, candidatos à revelação e aposentadorias por clube. Nas 30 temporadas medidas: idade média de 24,6 a 28,4, cerca de 1,3 aposentadoria por clube por virada, 75 de 75 metas obrigatórias das temporadas 1 a 3 dentro.
+  - Nota: a geração inicial ainda se aposenta em ondas de cerca de 19 a 20 temporadas (a variação as amortece pouco); registrado como ponto de checagem para a base da Etapa 4.
+
 - Gravação do save cerca de 2× mais rápida e abertura da carreira cerca de 2× mais rápida (T-072; só a camada de dados em `app/src/lib/save/` e o `measure:save`):
   - O snapshot passa a ser guardado sem compressão no aparelho (UTF-8 com SHA-256, conferido por bytes como antes), aprovado pelo CEO. O custo é espaço: até cerca de 2,2 MB por carreira e cerca de 22 MB com as 10 carreiras, contra 4,6 MB. As súmulas seguem em gzip e o arquivo exportado continua comprimido (compressão feita na hora de exportar).
   - Novo índice `bySeason` no store `snapshots`: a poda da virada de temporada acha a menor temporada mantida sem ler o valor dos snapshots (poda de 3 a 6 ms, contra 13 a 20 ms sem o índice). A estrutura do banco continua na versão 1; quem testou antes disso deve apagar o IndexedDB `prancheta`.

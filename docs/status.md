@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-019 feita, aguardando merge).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-048 feita, aguardando merge).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
@@ -78,6 +78,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-015  | feita (PR #29 mergeado): `properties.test.ts` com as invariantes em 1.000 partidas e 30 temporadas (`PROPERTY_FULL=1`: 10.000 e 1.000) e golden novo `season-human-simplified`; `ENGINE_VERSION` segue 11                                                                                                                                                                                                                                                                                                                |
 | T-017  | feita (PR #31 mergeado): `endSeason` e `startNextSeason` (prêmios, evolução e idade, títulos somados ao escudo, `strength` recalculada, temporada nova zerada), `npm run balance -- --chain N` com trava de deriva, `ENGINE_VERSION` 12                                                                                                                                                                                                                                                                                  |
 | T-049  | feita, aguardando merge (decisões 12 e 13 da auditoria; ADR-0019): `lastRound` fora do `GameState` (`roundRecap`, `matchSheet`), `index.ts` de 347 para 174 símbolos (contrato de 152 e API de ferramentas de 22), lint `engineEntryOnly`, estado cerca de 16% menor, simulação igual (balance 200 temporadas idêntico à `main`), `ENGINE_VERSION` 13; QA PASS (1222 testes no app; `PROPERTY_FULL` 1319)                                                                                                                |
+| T-048  | feita, aguardando merge (decisão 14; regra variável do CEO de 2026-11-06): aposentadoria de 33 a 40 anos por tabela de chances (goleiro mais baixa; aos 40 sai sempre), jovem de 17 da base na mesma posição com nome e rosto gerados, novo ídolo, `farewells` e `academy`, formato do save inalterado, `ENGINE_VERSION` 15; balance de 30 temporadas: idade média de 24,6 a 28,4, 75 de 75 metas; onda de cerca de 19 a 20 temporadas fica como ponto de checagem da Etapa 4                                            |
 | T-069  | feita, aguardando merge (decisão 9 da auditoria): todo jogador gerado é brasileiro (`HOME_NATIONALITY_SHARE` 1, sorteio ainda consumido); goldens mudaram só nacionalidade, nome, rosto e `digest` (o `new-game` tinha 2 estrangeiros; 34 jogadores com nome e rosto novos); balance de 200 temporadas idêntico à `main` (39/39 metas); saves com `AR`/`UY` seguem válidos; `ENGINE_VERSION` 14                                                                                                                          |
 | T-070  | feita, aguardando merge (decisão 16, "todos podem ser campeões"): escada com o fundo mais alto (Inter-Regional 64 → 65, Remador 63 → 64, Chapecão 62 → 64; soma 1.404), `clubStrengthSd` 1,5; metas de release novas no `/balance` ("todo clube campeão" em 1.000 temporadas e G4 do robô no mais fraco de pelo menos 2%, com `--robot weakest`); 200 temporadas, semente 1: 39/39 metas, campeão grande 86,0%; 1.000 temporadas: os 20 clubes com título, robô no Chapecão com G4 de 3,0%; nenhum golden do motor mudou |
 | T-071  | feita, aguardando merge (decisão 17): na cadeia do `/balance` (`--chain`), o campeão pequeno vira informativo nas temporadas 2 e 3, como o grande e o fraco no G4 (decisão 15); a trava de deriva segue obrigatória; sem `--chain`, nada muda; a cadeia de 3 temporadas passa de 92 de 93 metas para 91 de 91                                                                                                                                                                                                            |
@@ -421,7 +422,7 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 ## Próximo
 
 1. T-073 (conferência de conteúdo da importação), antes da T-020 (exportar e importar).
-2. T-048 (renovação mínima do elenco).
+2. T-048 (renovação mínima do elenco): feita, aguardando merge.
 3. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
 4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
 5. Placar e tabela ao vivo da rodada (US-070 a US-074).
