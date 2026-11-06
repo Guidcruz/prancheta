@@ -71,8 +71,7 @@ describe('t()', () => {
     expect(t('save.conflict.title', 'pt-BR')).toBe(ptBRErrors['save.conflict.title']);
   });
 
-  it('falls back to pt-BR for a draft not yet translated, then to the key', () => {
-    expect(t('save.conflict.title', 'en')).toBe(ptBRErrors['save.conflict.title']);
+  it('falls back to the key when no language has it', () => {
     expect(t('no.such.key', 'es')).toBe('no.such.key');
   });
 

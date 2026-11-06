@@ -25,7 +25,7 @@
   "save.career-limit.title": "Você já tem 10 carreiras.",
   "save.career-limit.body": "Apague uma para começar outra.",
   "save.not-found.title": "Esta carreira não existe mais neste aparelho.",
-  "save.not-found.body": "Volte ao início para ver as carreiras salvas.",
+  "save.not-found.body": "Volte ao início para ver as suas carreiras salvas.",
   "save.roundsLost.title": "Recuperamos a sua carreira.",
   "save.roundsLost.body.one": "A última cópia salva estava danificada, então voltamos para a anterior. {count} rodada foi perdida.",
   "save.roundsLost.body.other": "A última cópia salva estava danificada, então voltamos para a anterior. {count} rodadas foram perdidas.",
