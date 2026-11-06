@@ -8,6 +8,10 @@ const base = config.paths.game.endsWith('/') ? config.paths.game : `${config.pat
 
 export default defineConfig({
   base,
+  // Only PRANCHETA_ENV reaches the bundle (app/src/env.d.ts): `test` picks the separate save
+  // database `prancheta-test` (docs/03-test-plan.md, 3). In any other build the comparison folds
+  // to a constant and the test name is not in the output.
+  define: { __PRANCHETA_ENV__: JSON.stringify(process.env.PRANCHETA_ENV ?? '') },
   resolve: {
     alias: {
       '@config': fileURLToPath(new URL('../config/prancheta.config.ts', import.meta.url)),
