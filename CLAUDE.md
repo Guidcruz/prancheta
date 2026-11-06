@@ -47,6 +47,7 @@
 | Conferir dados e conteúdo (clubes, lista bloqueada)                                   | `npm run content:check`                                                                                       |
 | Gerar hashes da lista bloqueada (arquivo de nomes fora do repo)                       | `npm run blocklist:hash -- <arquivo>`                                                                         |
 | Medir a gravação do save (Chromium sem janela, CPU 4×)                                | `PRANCHETA_ENV=test npm run measure:save` (com `PRANCHETA_CHROMIUM=<caminho>`, usa um navegador já instalado) |
+| Gerar fixtures de uma versão nova do save (nunca sobrescreve)                         | `npm run save:fixtures -w app`                                                                                |
 | Recalcular as exclusões do gerador de nomes                                           | `npm run names:exclusions`                                                                                    |
 | Teste completo dos nomes (antes de release e quando as listas mudarem)                | `NAMES_FULL_CHECK=1 npm test -w app`                                                                          |
 | Testes de propriedade completos (10.000 partidas, 1.000 temporadas; antes de release) | `PROPERTY_FULL=1 npm test -w app`                                                                             |
