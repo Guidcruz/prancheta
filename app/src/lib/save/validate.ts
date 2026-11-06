@@ -553,6 +553,7 @@ const writeSchema = v.strictObject({
     matchSheets: dict(plainObject, MAX_FIXTURES),
   }),
   game: v.looseObject({
+    year: positive,
     season: positive,
     round: int(1, SEASON_ROUNDS + 1),
     clubs: dict(v.looseObject({ def: plainObject }), SAVE_LIMITS.clubs),
@@ -647,9 +648,8 @@ function incoherence(save: CareerSave): SaveIssue | undefined {
   for (const [key, club] of Object.entries(game.clubs)) {
     if (club.def.id !== key) return { path: `game.clubs.${key}.def.id`, problem: 'key-mismatch' };
   }
-  if (!Object.hasOwn(game.clubs, career.clubId)) {
-    return { path: 'career.clubId', problem: 'unknown-club' };
-  }
+  const own = writeIncoherence(save);
+  if (own?.problem === 'unknown-club') return own;
   for (const [key, p] of Object.entries(game.players)) {
     if (p.id !== key) return { path: `game.players.${key}.id`, problem: 'key-mismatch' };
   }
@@ -691,7 +691,15 @@ function incoherence(save: CareerSave): SaveIssue | undefined {
     }
   }
   // D4 (US-066): season 1 is played in the base season's year, and each turn adds one.
-  if (game.year !== career.baseSeason + game.season - 1) {
+  return own;
+}
+
+/** The part of {@link incoherence} that the application layer builds (the `write` check). */
+function writeIncoherence(save: CareerSave): SaveIssue | undefined {
+  if (!Object.hasOwn(save.game.clubs, save.career.clubId)) {
+    return { path: 'career.clubId', problem: 'unknown-club' };
+  }
+  if (save.game.year !== save.career.baseSeason + save.game.season - 1) {
     return { path: 'game.year', problem: 'base-season-mismatch' };
   }
   return undefined;
@@ -721,10 +729,11 @@ export function parseCareerSave(
       } satisfies SaveIssue);
     }
     if (check === 'write') {
-      // The store groups the sheets by the calendar itself; here only the coach's club.
-      return Object.hasOwn(save.game.clubs, save.career.clubId)
-        ? ok(save)
-        : fail('invalid-save', { path: 'career.clubId', problem: 'unknown-club' });
+      // What the open's coherence reads of the application layer's part (what the write accepts,
+      // the opening accepts): the coach's club and the base season. The store checks the sheets
+      // against the calendar itself; the rest of the coherence is the engine's, tested.
+      const issue = writeIncoherence(save);
+      return issue === undefined ? ok(save) : fail('invalid-save', issue);
     }
     const incoherent = incoherence(save);
     return incoherent === undefined ? ok(save) : fail('invalid-save', incoherent);

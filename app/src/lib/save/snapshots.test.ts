@@ -488,7 +488,7 @@ describe('open with fallback (US-032)', () => {
     const s = store();
     const v = (season: number, round: number) => ({
       ...variant(round),
-      game: { ...base.game, season, round },
+      game: { ...base.game, season, round, year: base.game.year + season - 1 },
     });
     await s.writeSnapshot(v(1, 38));
     await s.writeSnapshot(v(1, 39));

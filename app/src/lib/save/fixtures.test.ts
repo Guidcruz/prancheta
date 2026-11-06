@@ -1,7 +1,5 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { endSeason, type GameState } from '../../engine/index.ts';
-import { loadGameParams } from '../params.ts';
 import { migrateSave } from './migrations/index.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
 import { sampleCareerSave } from './testing/sample.ts';
@@ -134,29 +132,5 @@ describe('the frozen save format (US-033, T-019)', () => {
     const players = Object.values(v1.game.players);
     expect(players.length).toBeGreaterThanOrEqual(500);
     expect(players.every((p) => p.name.display !== '' && p.face !== '')).toBe(true);
-  });
-});
-
-describe("the engine's output passes the strict schema at every phase of a career", () => {
-  // What makes the light check of the write enough (validate.ts, `write`): the state, the recap
-  // and the sheets the game stores are the engine's, and these saves are checked in full.
-  const params = loadGameParams();
-  const atEnd = sampleCareerSave({ rounds: 38 });
-  const ended = endSeason(atEnd.game, params, [atEnd.career.clubId]);
-  if (!ended.ok) throw new Error(ended.error);
-  const seasonEnd: CareerSave = { ...atEnd, game: ended.value.state as GameState };
-
-  it.each([
-    ['a new career', sampleCareerSave({ rounds: 0 })],
-    ['after round 1', sampleCareerSave({ rounds: 1 })],
-    ['after the last round', atEnd],
-    ['at the end of the season', seasonEnd],
-    ['in the second season', fresh],
-    ['in the first round of the second season', sampleCareerSave({ season: 2, rounds: 0 })],
-  ])('%s', (_label, save) => {
-    const parsed = parseCareerSave(JSON.parse(JSON.stringify(save)));
-    expect(parsed.ok || parsed).toBe(true);
-    expect(parseCareerSave(save, { check: 'open' }).ok).toBe(true);
-    expect(parseCareerSave(save, { check: 'write' }).ok).toBe(true);
   });
 });

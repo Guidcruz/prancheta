@@ -298,6 +298,11 @@ describe('the lighter checks', () => {
       path: 'career.clubId',
       problem: 'unknown-club',
     });
+    // The base season is the application layer's: the write checks it as the opening does.
+    expect(refused(set('career.baseSeason', 2030), { check: 'write' })).toEqual({
+      path: 'game.year',
+      problem: 'base-season-mismatch',
+    });
   });
 
   it('opening trusts the content of the sheets (checked when written), not their place', () => {

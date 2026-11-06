@@ -139,6 +139,99 @@ export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
   };
 }
 
+/** One save of {@link playedCareer}: after a round, or at the end of the season. */
+export interface CareerPoint {
+  /** `s1-r10`, `s1-end`, `s2-r1`. */
+  readonly label: string;
+  readonly save: CareerSave;
+}
+
+/**
+ * A career played round by round the way the game plays it (the same steps as
+ * {@link sampleCareerSave}), with any realism: season 1 whole, its end, the season turn and
+ * `secondSeasonRounds` rounds of season 2. Yields the save where `at` says, after the round
+ * (with that round's recap and every sheet of the season so far) or at the end of the season.
+ * For the property test of the engine's output in the strict schema.
+ */
+export function* playedCareer(
+  options: {
+    readonly seed: number;
+    readonly realism: 'full' | 'simplified';
+    readonly club?: number;
+    readonly secondSeasonRounds?: number;
+  },
+  at: (season: number, round: number | 'end') => boolean,
+): Generator<CareerPoint> {
+  const { seed, realism, club = 0, secondSeasonRounds = 1 } = options;
+  const params = loadGameParams();
+  const identities = gameIdentitySource();
+  const created = newCareerGame({ seed, realism }, params, identities);
+  if (!created.ok) throw new Error(`newCareerGame: ${created.error}`);
+  const { baseSeason } = created.value;
+  let state: GameState = created.value.game;
+  const clubId = Object.keys(state.clubs)[club]!;
+  let matchSheets: Record<FixtureId, MatchSheet> = {};
+  const news: NewsRef[] = [];
+  const social: NewsRef[] = [];
+  let lastRound: RoundRecap | undefined;
+  const saveOf = (): CareerSave => ({
+    schemaVersion: SAVE_SCHEMA_VERSION,
+    careerId: careerIdOf(`played-${seed}-${realism}`),
+    createdAt: SAMPLE_CLOCK,
+    updatedAt: SAMPLE_CLOCK,
+    appVersion: '0.0.1',
+    engineVersion: state.engineVersion,
+    paramsHash: SAMPLE_PARAMS_HASH,
+    career: {
+      coachName: 'Treinador',
+      clubId,
+      matchMode: 'result',
+      news: [...news],
+      social: [...social],
+      phraseMemory: Array.from({ length: 200 }, (_, i) => `variant-${i}`),
+      pendingFanDecision: 0,
+      exportReminder: true,
+      baseSeason,
+      ...(lastRound === undefined ? {} : { lastRound }),
+      matchSheets: { ...matchSheets },
+    },
+    game: state,
+  });
+  function* play(count: number): Generator<CareerPoint> {
+    for (let round = 1; round <= count; round++) {
+      const played = playRound(state, params, {
+        round,
+        sheets: {},
+        commands: {},
+        fanDecisions: {},
+        coaches: { [clubId]: 'result' },
+      });
+      if (!played.ok) throw new Error(`playRound ${round}: ${played.error}`);
+      state = played.value.state;
+      lastRound = roundRecap(played.value.report);
+      for (const result of played.value.report.results) {
+        matchSheets[result.fixtureId] = matchSheet(result);
+      }
+      const n = (state.season - 1) * 38 + round;
+      news.push(...refs('news', n));
+      social.push(...refs('social', n));
+      if (at(state.season, round)) yield { label: `s${state.season}-r${round}`, save: saveOf() };
+    }
+  }
+  yield* play(38);
+  const ended = endSeason(state, params, [clubId]);
+  if (!ended.ok) throw new Error(`endSeason: ${ended.error}`);
+  state = ended.value.state;
+  if (at(1, 'end')) yield { label: 's1-end', save: saveOf() };
+  const next = startNextSeason(state, params, identities);
+  if (!next.ok) throw new Error(`startNextSeason: ${next.error}`);
+  // The CareerService clears the sheets and the recap at the turn (ADR-0019).
+  state = next.value;
+  matchSheets = {};
+  lastRound = undefined;
+  yield* play(secondSeasonRounds);
+}
+
 function withoutResult(fixture: Fixture): Fixture {
   return Object.fromEntries(Object.entries(fixture).filter(([key]) => key !== 'result')) as Fixture;
 }
