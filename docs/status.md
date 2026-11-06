@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-071 feita, aguardando merge).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-018 feita, aguardando merge).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
@@ -81,6 +81,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-069  | feita, aguardando merge (decisão 9 da auditoria): todo jogador gerado é brasileiro (`HOME_NATIONALITY_SHARE` 1, sorteio ainda consumido); goldens mudaram só nacionalidade, nome, rosto e `digest` (o `new-game` tinha 2 estrangeiros; 34 jogadores com nome e rosto novos); balance de 200 temporadas idêntico à `main` (39/39 metas); saves com `AR`/`UY` seguem válidos; `ENGINE_VERSION` 14                                                                                                                          |
 | T-070  | feita, aguardando merge (decisão 16, "todos podem ser campeões"): escada com o fundo mais alto (Inter-Regional 64 → 65, Remador 63 → 64, Chapecão 62 → 64; soma 1.404), `clubStrengthSd` 1,5; metas de release novas no `/balance` ("todo clube campeão" em 1.000 temporadas e G4 do robô no mais fraco de pelo menos 2%, com `--robot weakest`); 200 temporadas, semente 1: 39/39 metas, campeão grande 86,0%; 1.000 temporadas: os 20 clubes com título, robô no Chapecão com G4 de 3,0%; nenhum golden do motor mudou |
 | T-071  | feita, aguardando merge (decisão 17): na cadeia do `/balance` (`--chain`), o campeão pequeno vira informativo nas temporadas 2 e 3, como o grande e o fraco no G4 (decisão 15); a trava de deriva segue obrigatória; sem `--chain`, nada muda; a cadeia de 3 temporadas passa de 92 de 93 metas para 91 de 91                                                                                                                                                                                                            |
+| T-018  | feita, aguardando merge (review, segurança e QA aprovados): save em IndexedDB em `app/src/lib/save/` (snapshots gzip com SHA-256, 3 versões, gravação segura conferida por bytes, abrir com volta à versão anterior, limite de 10 carreiras, súmulas fora do snapshot); gravação do fim da temporada no p90 de 158,0 ms na 1ª de 3 execuções, folga curta (ver `docs/02-architecture.md` §5)                                                                                                                             |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
 
@@ -412,7 +413,7 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-018, T-027 e T-019 (save).
+1. T-027 e T-019 (save; a T-018 está feita, aguardando merge).
 2. T-048 (renovação mínima do elenco).
 3. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
 4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
