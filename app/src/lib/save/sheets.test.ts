@@ -143,7 +143,7 @@ describe('writing the sheets by round', () => {
       expect(await s.writeSnapshot(wrong)).toEqual({
         ok: false,
         error: 'invalid-save',
-        detail: { fixtureId },
+        detail: { path: `career.matchSheets.${fixtureId}`, problem: 'unknown-fixture' },
       });
     }
     expect(await snapshotSeqs()).toEqual([]);

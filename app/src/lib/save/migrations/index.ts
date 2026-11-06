@@ -15,7 +15,13 @@ import { fail, ok, type SaveResult } from '../result.ts';
  * (migrated.test.ts).
  */
 
-/** A step of the chain: the save in version `from`, as parsed, to version `from + 1`. */
+/**
+ * A step of the chain: the save in version `from`, as parsed, to version `from + 1`. A step
+ * builds its output only with spread and copies (`{ ...save, career: { ...career, x } }`,
+ * `Object.fromEntries`), never by assigning a key read from the save into an object: the save is
+ * untrusted until the strict schema after the chain. The store (and the import of T-020) refuses
+ * prototype keys before the chain runs (validate.ts, `hasForbiddenKey`).
+ */
 export interface Migration {
   readonly from: number;
   readonly migrate: (save: Record<string, unknown>) => Record<string, unknown>;

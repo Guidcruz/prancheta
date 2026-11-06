@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { CareerSave } from './schema.ts';
 import { sampleCareerSave } from './testing/sample.ts';
-import { SAVE_LIMITS, parseCareerSave, parseRoundSheets, type SaveIssue } from './validate.ts';
+import {
+  SAVE_LIMITS,
+  errorPath,
+  parseCareerSave,
+  parseRoundSheets,
+  type SaveIssue,
+} from './validate.ts';
 
 /*
  * The strict schema (validate.ts; ADR-0006, "Importar nunca usa dado antes de passar pela
@@ -171,6 +177,48 @@ describe('a hostile or broken save is refused, never thrown', () => {
       'check',
     ],
     [
+      'a player name of 1 MB',
+      () => set(`${player}.name.display`, 'x'.repeat(1 << 20)),
+      player,
+      'custom',
+    ],
+    [
+      'a club name of 1 MB',
+      () => set(`game.clubs.${clubId}.def.name`, 'x'.repeat(1 << 20)),
+      'game.clubs',
+      'check',
+    ],
+    [
+      'a nickname with a right-to-left override',
+      () => set('career.coachName', 'Treinador\u202Eodanierb'),
+      'career.coachName',
+      'check',
+    ],
+    [
+      'a control character in a news variable',
+      () => set('career.news.0.vars.club', 'Flamingo\u0007'),
+      'career.news.0.vars.club',
+      'check',
+    ],
+    [
+      'zalgo in a player name',
+      () => set(`${player}.name.full`, 'Jo\u0301\u0302\u0303ao Silva'),
+      player,
+      'custom',
+    ],
+    [
+      'a zero-width space in a stadium',
+      () => set(`game.clubs.${clubId}.def.stadium.name`, 'Est\u200Bádio'),
+      'game.clubs',
+      'check',
+    ],
+    [
+      'a club city not in NFC',
+      () => set(`game.clubs.${clubId}.def.city`, 'Sa\u0303o Paulo'),
+      'game.clubs',
+      'check',
+    ],
+    [
       'too many sheets for a season',
       () =>
         edit('career.matchSheets', (old) => {
@@ -193,9 +241,29 @@ describe('a hostile or broken save is refused, never thrown', () => {
       text.replace('"career":{', '"career":{"__proto__":{"admin":true},'),
       text.replace(`"${playerId}":{`, `"constructor":{"x":1},"${playerId}":{`),
       text.replace('"vars":{', '"vars":{"prototype":1,'),
+      // Names of Object.prototype members pass valibot's strict object as known keys.
+      text.replace('"career":{', '"career":{"toString":"x",'),
+      text.replace(`"${playerId}":{`, `"valueOf":{"x":1},"${playerId}":{`),
+      text.replace('"vars":{', '"vars":{"hasOwnProperty":1,'),
     ]) {
       expect(hostile).not.toBe(text);
       expect(refused(JSON.parse(hostile))).toEqual({ path: '', problem: 'forbidden-key' });
+    }
+  });
+
+  it('refuses a prototype key in what the application layer builds, also when writing', () => {
+    for (const path of [
+      'career.news.0.vars.constructor',
+      'career.social.0.toString',
+      'career.valueOf',
+      '__defineGetter__',
+    ]) {
+      const hostile = set(path, 1);
+      expect(refused(hostile, { check: 'write' }), path).toEqual({
+        path: '',
+        problem: 'forbidden-key',
+      });
+      expect(refused(hostile, { check: 'full' }).problem, path).toBe('forbidden-key');
     }
   });
 
@@ -233,6 +301,26 @@ describe('a hostile or broken save is refused, never thrown', () => {
       problem: 'max_length',
     });
     expect(performance.now() - started).toBeLessThan(2_000);
+  });
+});
+
+describe('the path of an error (security review L1)', () => {
+  it('cuts each segment to 40 and the path to 200, and hides an unsafe key', () => {
+    expect(errorPath(['game', 'players', 'x'.repeat(100), 'age'])).toBe(
+      `game.players.${'x'.repeat(40)}.age`,
+    );
+    expect(errorPath(['a\u202Eb', 'c\u0000', 'd.e', '', 3, null])).toBe(
+      '<key>.<key>.<key>.<key>.3.<key>',
+    );
+    expect([...errorPath(Array.from({ length: 20 }, () => 'y'.repeat(40)))]).toHaveLength(200);
+  });
+
+  it('a hostile key reaches the error only in that form', () => {
+    expect(refused(set('\u202Eevil', 1))).toEqual({ path: '<key>', problem: 'strict_object' });
+    expect(refused(set('k'.repeat(300), 1))).toEqual({
+      path: 'k'.repeat(40),
+      problem: 'strict_object',
+    });
   });
 });
 

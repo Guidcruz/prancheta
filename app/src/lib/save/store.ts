@@ -28,7 +28,13 @@ import {
   type SheetIndex,
   type SnapshotRecord,
 } from './schema.ts';
-import { parseCareerSave, parseRoundSheets } from './validate.ts';
+import {
+  errorPath,
+  hasForbiddenKey,
+  parseCareerSave,
+  parseRoundSheets,
+  type SaveIssue,
+} from './validate.ts';
 
 /*
  * Careers on the device (docs/02-architecture.md, 4.2; ADR-0006, ADR-0019; US-032, US-034).
@@ -266,15 +272,15 @@ function summaryOf(save: CareerSave, headSeq: number): CareerSummary {
  * The match sheets of `save` by round, through `game.fixtures`; the offending fixture id when a
  * sheet is not of a played match of this season's calendar (a bug of the caller).
  */
-function sheetsByRound(
-  save: CareerSave,
-): Map<number, [string, unknown][]> | { readonly fixtureId: string } {
+function sheetsByRound(save: CareerSave): Map<number, [string, unknown][]> | SaveIssue {
   const fixtures = new Map<string, Fixture>();
   for (const fixture of save.game.fixtures) fixtures.set(fixture.id, fixture);
   const rounds = new Map<number, [string, unknown][]>();
   for (const [id, sheet] of Object.entries(save.career.matchSheets)) {
     const fixture = fixtures.get(id);
-    if (fixture?.result === undefined) return { fixtureId: id };
+    if (fixture?.result === undefined) {
+      return { path: errorPath(['career', 'matchSheets', id]), problem: 'unknown-fixture' };
+    }
     const round = rounds.get(fixture.round) ?? [];
     round.push([id, sheet]);
     rounds.set(fixture.round, round);
@@ -475,13 +481,18 @@ export class SaveStore {
           const snapshots = tx.objectStore('snapshots');
           const sheets = tx.objectStore('matchSheets');
           const stored = record;
-          const existing = await requests(
-            rows.map((row) => () => sheets.get([row.careerId, row.season, row.round])),
-          );
-          replaced = existing.filter(
-            (old, i): old is MatchSheetRecord =>
-              isStoredBlob(old) && old.sha256 !== rows[i]!.sha256,
-          );
+          // Only a write that inherits nothing (no `base`, an empty one as after a migration, or
+          // one of another season) rewrites rows that older snapshots may list; otherwise the
+          // rows written are rounds the previous snapshot does not have.
+          if (Object.keys(inherited).length === 0) {
+            const existing = await requests(
+              rows.map((row) => () => sheets.get([row.careerId, row.season, row.round])),
+            );
+            replaced = existing.filter(
+              (old, i): old is MatchSheetRecord =>
+                isStoredBlob(old) && old.sha256 !== rows[i]!.sha256,
+            );
+          }
           await requests([
             () => snapshots.put(stored),
             ...rows.map((row) => () => sheets.put(row)),
@@ -554,10 +565,16 @@ export class SaveStore {
         // The sheets go back in before the migration: migrations see the whole save.
         const sheets = await this.readSheets(db.value, careerId, record);
         if (!sheets.ok) return sheets;
-        const migrated = migrateSave(
-          withSheets(decoded.value, sheets.value.entries),
-          this.migrations,
-        );
+        const whole = withSheets(decoded.value, sheets.value.entries);
+        const fromVersion = schemaVersionOf(decoded.value) ?? record.schemaVersion;
+        const current = fromVersion === SAVE_SCHEMA_VERSION;
+        // An older save is read in full; its prototype keys are refused before the steps run
+        // (they copy with spread, but a key never reaches them; security review L4).
+        if (!current && hasForbiddenKey(whole)) {
+          skipped.push({ seq: at, problem: 'invalid-save' });
+          continue;
+        }
+        const migrated = migrateSave(whole, this.migrations);
         if (!migrated.ok) {
           if (migrated.error === 'save-too-new') return fail('save-too-new', migrated.detail);
           skipped.push({ seq: at, problem: migrated.error });
@@ -566,8 +583,6 @@ export class SaveStore {
         // (T-044 renames the retired names here, between the migration and the validation.)
         // A save of the current format trusts its rows of sheets by their hashes (they were
         // checked when written); a migrated one is checked in full.
-        const fromVersion = schemaVersionOf(decoded.value) ?? record.schemaVersion;
-        const current = fromVersion === SAVE_SCHEMA_VERSION;
         const valid = parseCareerSave(migrated.value, {
           careerId,
           check: current ? 'open' : 'full',

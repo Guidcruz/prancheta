@@ -75,7 +75,11 @@ async function encoded(value: unknown) {
  * Stores a career as an older build would have: the v0 forms of `saves` as snapshots 1..n (each
  * with the index of its rows) and the rows of match sheets by round.
  */
-async function storeV0(saves: readonly CareerSave[], changesSheets: boolean): Promise<void> {
+async function storeV0(
+  saves: readonly CareerSave[],
+  changesSheets: boolean,
+  hostileKey?: string,
+): Promise<void> {
   const last = saves.at(-1)!;
   const fixtures = new Map(last.game.fixtures.map((f) => [f.id, f.round]));
   const byRound = new Map<number, [string, unknown][]>();
@@ -100,7 +104,10 @@ async function storeV0(saves: readonly CareerSave[], changesSheets: boolean): Pr
   for (const row of rows) await db.put('matchSheets', row);
   for (const [i, save] of saves.entries()) {
     const old = toV0(save, changesSheets);
-    const snapshot = await encoded({ ...old, career: { ...(old.career as Raw), matchSheets: {} } });
+    const career = { ...(old.career as Raw), matchSheets: {} };
+    if (hostileKey !== undefined)
+      Object.defineProperty(career, hostileKey, { value: 'x', enumerable: true });
+    const snapshot = await encoded({ ...old, career });
     const played = new Set(save.game.fixtures.filter((f) => f.result).map((f) => f.round));
     const record: SnapshotRecord = {
       careerId: save.careerId,
@@ -270,6 +277,21 @@ describe('opening a save of an older format (US-033)', () => {
       sheets: await after.getAll('matchSheets'),
     }).toEqual(before);
     after.close();
+  });
+
+  it('refuses a prototype key of an older save before any step runs (security review L4)', async () => {
+    for (const key of ['__proto__', 'toString']) {
+      await storeV0(saves, false, key);
+      const run = vi.fn();
+      const opened = await store(undefined, { migrations: [stepFrom0(false, run)] }).openCareer(
+        SAMPLE_CAREER_ID,
+      );
+      expect(opened, key).toMatchObject({ ok: false, error: 'all-corrupt' });
+      expect(opened.ok === false && opened.detail).toMatchObject({
+        skipped: [3, 2, 1].map((seq) => ({ seq, problem: 'invalid-save' })),
+      });
+      expect(run).not.toHaveBeenCalled();
+    }
   });
 
   it('without the step (the real chain) a version 0 is not opened either, and nothing changes', async () => {

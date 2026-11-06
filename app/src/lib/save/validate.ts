@@ -27,6 +27,7 @@ import {
   type Side,
   type TacticPreset,
 } from '../../engine/index.ts';
+import { isSafeDisplayText } from '../safe-text.ts';
 import { fail, ok, type SaveResult } from './result.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
 
@@ -35,10 +36,15 @@ import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
  * what a snapshot passes after the migration when it opens, what a save passes before it is
  * written, and what an imported file will pass (T-020), so it reads untrusted input:
  *
- * - every object is strict (an unknown key fails), every text and list has a length bound, and,
- *   in the `full` check of untrusted input and in every row of sheets, a key `__proto__`,
- *   `constructor` or `prototype` anywhere fails (valibot drops those keys from its output
- *   silently, which keeps them harmless but would hide them);
+ * - every object is strict (an unknown key fails), every text and list has a length bound, and
+ *   every text that reaches the screen (the nickname, the variables of news and posts, club and
+ *   player names) passes `isSafeDisplayText` (no controls, invisible or direction marks, zalgo;
+ *   NFC);
+ * - a key named `prototype` or after a member of `Object.prototype` (`__proto__`, `constructor`,
+ *   `toString`, `valueOf`, `hasOwnProperty`...) fails: valibot 1.4's strict object tests a key
+ *   with `key in entries`, so those names pass as known keys and are dropped from its output
+ *   silently. The search runs in the `full` check (anywhere), in the `write` check (the envelope
+ *   and the career the application layer builds) and in every row of sheets written;
  * - the player is checked by the engine's own `validatePlayer` and the club definitions by
  *   `validateClubs`, never by ranges typed again here (docs/02-architecture.md, 4.1). The closed
  *   lists and ranges the engine exports (formations, positions, ratings...) are read from it;
@@ -62,6 +68,8 @@ export const SAVE_LIMITS = {
   textLength: 200,
   /** The coach's nickname; the new-game screen (US-014) has its own, smaller limit. */
   coachNameLength: 100,
+  /** `appVersion` of the envelope. */
+  appVersionLength: 32,
   /** News and social posts kept by the career. */
   refs: 20_000,
   /** Variables of one news item. */
@@ -116,13 +124,17 @@ const positive = int(1, Number.MAX_SAFE_INTEGER);
 const finite = v.pipe(v.number(), v.finite());
 const unit = v.pipe(v.number(), v.minValue(0), v.maxValue(1));
 const rating = v.pipe(v.number(), v.minValue(RATING_RANGE.min), v.maxValue(RATING_RANGE.max));
-const text = (max: number = SAVE_LIMITS.textLength) => v.pipe(v.string(), v.maxLength(max));
+/** A text shown on the screen: bounded, and safe to show (`isSafeDisplayText`). */
+const text = (max: number = SAVE_LIMITS.textLength) =>
+  v.pipe(v.string(), v.maxLength(max), v.check(isSafeDisplayText, 'unsafe-text'));
 const id = v.pipe(v.string(), v.minLength(1), v.maxLength(SAVE_LIMITS.idLength));
 const sha256 = v.pipe(v.string(), v.regex(/^[0-9a-f]{64}$/));
 const isoDate = v.pipe(v.string(), v.regex(/^\d{4}-\d{2}-\d{2}$/));
 const round = int(1, SEASON_ROUNDS);
 /** Matches of a season: 20 clubs, each against each other twice (SEASON_ROUNDS = 2 × 19). */
 const MAX_FIXTURES = (SEASON_ROUNDS * (SEASON_ROUNDS + 2)) / 4;
+/** Matches of a round: 20 clubs, two by two. */
+const MATCHES_PER_ROUND = (SEASON_ROUNDS + 2) / 4;
 const score = v.strictTuple([count, count]);
 const side = v.picklist(SIDES);
 const formation = v.picklist(FORMATIONS);
@@ -320,7 +332,7 @@ const matchRecap = v.strictObject({
 const roundRecap = v.strictObject({
   season: positive,
   round,
-  results: list(matchRecap, SEASON_ROUNDS),
+  results: list(matchRecap, MATCHES_PER_ROUND),
   facts: list(fact, SAVE_LIMITS.facts),
 });
 
@@ -434,7 +446,12 @@ const isPlainObject = (value: unknown): value is Record<string, unknown> =>
 const clubDef = v.custom<ClubDef>(isPlainObject);
 
 /** A player, checked by the engine's own validator (never by ranges typed again here). */
-const player = v.custom<Player>((value) => validatePlayer(value).ok);
+const player = v.custom<Player>((value) => {
+  const checked = validatePlayer(value);
+  if (!checked.ok) return false;
+  const { display, full, family } = checked.value.name;
+  return isSafeDisplayText(display) && isSafeDisplayText(full) && isSafeDisplayText(family);
+});
 
 const clubState = v.strictObject({
   def: clubDef,
@@ -449,7 +466,16 @@ const clubState = v.strictObject({
 function clubsAreValid(clubs: Readonly<Record<string, { readonly def: ClubDef }>>): boolean {
   const defs = Object.values(clubs).map((club) => club.def);
   const checked = validateClubs(defs);
-  return checked.ok && defs.every((def) => typeof def.strength === 'number');
+  return (
+    checked.ok &&
+    defs.every(
+      (def) =>
+        typeof def.strength === 'number' &&
+        [def.name, def.shortName, def.nickname, def.city, def.stadium.name].every(
+          isSafeDisplayText,
+        ),
+    )
+  );
 }
 
 const gameState = v.strictObject({
@@ -488,6 +514,7 @@ const careerEntries = {
     v.string(),
     v.maxLength(SAVE_LIMITS.coachNameLength),
     v.check((name) => name.trim() !== '', 'empty'),
+    v.check(isSafeDisplayText, 'unsafe-text'),
   ),
   clubId: id,
   matchMode: v.picklist(MATCH_MODES),
@@ -506,7 +533,7 @@ const envelopeEntries = {
   careerId: v.pipe(v.string(), v.uuid()),
   createdAt: v.pipe(v.string(), v.isoTimestamp()),
   updatedAt: v.pipe(v.string(), v.isoTimestamp()),
-  appVersion: v.pipe(v.string(), v.minLength(1), v.maxLength(32)),
+  appVersion: v.pipe(v.string(), v.minLength(1), v.maxLength(SAVE_LIMITS.appVersionLength)),
   engineVersion: positive,
   paramsHash: sha256,
 };
@@ -522,7 +549,7 @@ export const careerSaveSchema = v.strictObject({
 });
 
 /** The match sheets of one round, as a row of the `matchSheets` store keeps them. */
-export const roundSheetsSchema = dict(matchSheet, MAX_FIXTURES);
+export const roundSheetsSchema = dict(matchSheet, MATCHES_PER_ROUND);
 
 const plainObject = v.custom<Record<string, unknown>>(isPlainObject);
 
@@ -594,8 +621,9 @@ export interface SaveIssue {
 /**
  * How much of a save is read: `full` (an imported file, a migrated save), `open` (a snapshot of
  * the current format, with its rows of sheets) or `write` (a save the game is about to store).
- * `open` and `write` read data this game made and the SHA-256 protects, so they skip the search
- * for prototype keys, which costs a third of the `open` check (valibot's output never has them).
+ * `open` reads data this game made and the SHA-256 protects, so it skips the search for
+ * prototype keys, which costs a third of it (valibot's output never has them); `write` searches
+ * only the part the application layer builds (docs/02-architecture.md, 4.2).
  */
 export type SaveCheck = 'full' | 'open' | 'write';
 
@@ -605,11 +633,19 @@ const SCHEMAS: Readonly<Record<SaveCheck, v.GenericSchema>> = {
   write: writeSchema,
 };
 
-const isForbidden = (key: string) =>
-  key === '__proto__' || key === 'constructor' || key === 'prototype';
+/**
+ * A key that could reach a prototype or that valibot's strict object takes for a known key:
+ * `prototype`, or the name of any member of `Object.prototype` (`__proto__`, `constructor`,
+ * `toString`, `valueOf`, `hasOwnProperty`, `__defineGetter__`...).
+ */
+const isForbidden = (key: string) => key === 'prototype' || key in Object.prototype;
 
-/** `true` when some key of `value`, at any depth, could reach a prototype. */
-function hasForbiddenKey(value: unknown): boolean {
+/**
+ * `true` when some key of `value`, at any depth, is forbidden (see {@link isForbidden}). Also run
+ * on an older save before its migration (store.ts, and the import of T-020): the steps copy with
+ * spread, so such a key never reaches a prototype on the way.
+ */
+export function hasForbiddenKey(value: unknown): boolean {
   const stack: unknown[] = [value];
   while (stack.length > 0) {
     const node = stack.pop();
@@ -631,10 +667,58 @@ function hasForbiddenKey(value: unknown): boolean {
   return false;
 }
 
+/**
+ * The search of the `write` check: the envelope and the career, the part the application layer
+ * builds, without the state, the round's recap and the sheets (the engine's; each new row of
+ * sheets is searched by {@link parseRoundSheets}).
+ */
+function writeSurfaceHasForbiddenKey(raw: unknown): boolean {
+  if (!isPlainObject(raw)) return false;
+  for (const key of Object.keys(raw)) {
+    if (isForbidden(key)) return true;
+    const value = raw[key];
+    if (key === 'game') continue;
+    if (key !== 'career' || !isPlainObject(value)) {
+      if (hasForbiddenKey(value)) return true;
+      continue;
+    }
+    for (const field of Object.keys(value)) {
+      if (isForbidden(field)) return true;
+      if (field !== 'matchSheets' && field !== 'lastRound' && hasForbiddenKey(value[field])) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
+
+/** Longest segment and whole path of an error (security review L1). */
+const PATH_SEGMENT_MAX = 40;
+const PATH_MAX = 200;
+
+/**
+ * The dotted path of an error from its segments: each one cut to 40 characters, one that is not
+ * safe to show (or empty, or with a dot) as `<key>`, the whole cut to 200. A key of a hostile
+ * file never reaches the error log as it is.
+ */
+export function errorPath(segments: readonly unknown[]): string {
+  const parts = segments.map((segment) => {
+    const text = typeof segment === 'number' ? String(segment) : segment;
+    if (typeof text !== 'string' || text === '' || text.includes('.')) return '<key>';
+    if (!isSafeDisplayText(text)) return '<key>';
+    const chars = [...text];
+    return chars.length > PATH_SEGMENT_MAX ? chars.slice(0, PATH_SEGMENT_MAX).join('') : text;
+  });
+  const path = [...parts.join('.')];
+  return path.length > PATH_MAX ? path.slice(0, PATH_MAX).join('') : path.join('');
+}
+
+const at = (...segments: readonly unknown[]) => errorPath(segments);
+
 function issueOf(issues: readonly v.BaseIssue<unknown>[]): SaveIssue {
   const issue = issues[0];
   return {
-    path: (issue && v.getDotPath(issue)) ?? '',
+    path: errorPath(issue?.path?.map((item) => item.key) ?? []),
     problem: issue?.type ?? 'unknown',
   };
 }
@@ -646,12 +730,13 @@ function issueOf(issues: readonly v.BaseIssue<unknown>[]): SaveIssue {
 function incoherence(save: CareerSave): SaveIssue | undefined {
   const { game, career } = save;
   for (const [key, club] of Object.entries(game.clubs)) {
-    if (club.def.id !== key) return { path: `game.clubs.${key}.def.id`, problem: 'key-mismatch' };
+    if (club.def.id !== key)
+      return { path: at('game', 'clubs', key, 'def', 'id'), problem: 'key-mismatch' };
   }
   const own = writeIncoherence(save);
   if (own?.problem === 'unknown-club') return own;
   for (const [key, p] of Object.entries(game.players)) {
-    if (p.id !== key) return { path: `game.players.${key}.id`, problem: 'key-mismatch' };
+    if (p.id !== key) return { path: at('game', 'players', key, 'id'), problem: 'key-mismatch' };
   }
   const squadIds = Object.keys(game.squads);
   if (
@@ -664,33 +749,32 @@ function incoherence(save: CareerSave): SaveIssue | undefined {
     for (const [i, playerId] of squad.entries()) {
       const member = Object.hasOwn(game.players, playerId) ? game.players[playerId] : undefined;
       if (member?.clubId !== clubId) {
-        return { path: `game.squads.${clubId}.${i}`, problem: 'unknown-player' };
+        return { path: at('game', 'squads', clubId, i), problem: 'unknown-player' };
       }
     }
   }
   for (const clubId of Object.keys(game.lastSheets)) {
     if (!Object.hasOwn(game.clubs, clubId)) {
-      return { path: `game.lastSheets.${clubId}`, problem: 'unknown-club' };
+      return { path: at('game', 'lastSheets', clubId), problem: 'unknown-club' };
     }
   }
   for (const playerId of Object.keys(game.seasonStats)) {
     if (!Object.hasOwn(game.players, playerId)) {
-      return { path: `game.seasonStats.${playerId}`, problem: 'unknown-player' };
+      return { path: at('game', 'seasonStats', playerId), problem: 'unknown-player' };
     }
   }
   const played = new Set<string>();
   for (const [i, f] of game.fixtures.entries()) {
     if (!Object.hasOwn(game.clubs, f.homeId) || !Object.hasOwn(game.clubs, f.awayId)) {
-      return { path: `game.fixtures.${i}`, problem: 'unknown-club' };
+      return { path: at('game', 'fixtures', i), problem: 'unknown-club' };
     }
     if (f.result !== undefined) played.add(f.id);
   }
   for (const [key, sheet] of Object.entries(career.matchSheets)) {
     if ((sheet as { fixtureId?: unknown }).fixtureId !== key || !played.has(key)) {
-      return { path: `career.matchSheets.${key}`, problem: 'unknown-fixture' };
+      return { path: at('career', 'matchSheets', key), problem: 'unknown-fixture' };
     }
   }
-  // D4 (US-066): season 1 is played in the base season's year, and each turn adds one.
   return own;
 }
 
@@ -699,6 +783,7 @@ function writeIncoherence(save: CareerSave): SaveIssue | undefined {
   if (!Object.hasOwn(save.game.clubs, save.career.clubId)) {
     return { path: 'career.clubId', problem: 'unknown-club' };
   }
+  // D4 (US-066): season 1 is played in the base season's year, and each turn adds one.
   if (save.game.year !== save.career.baseSeason + save.game.season - 1) {
     return { path: 'game.year', problem: 'base-season-mismatch' };
   }
@@ -716,7 +801,11 @@ export function parseCareerSave(
 ): SaveResult<CareerSave, 'invalid-save'> {
   const check = options.check ?? 'full';
   try {
-    if (check === 'full' && hasForbiddenKey(raw)) {
+    if (
+      check === 'full'
+        ? hasForbiddenKey(raw)
+        : check === 'write' && writeSurfaceHasForbiddenKey(raw)
+    ) {
       return fail('invalid-save', { path: '', problem: 'forbidden-key' } satisfies SaveIssue);
     }
     const parsed = v.safeParse(SCHEMAS[check], raw, { abortEarly: true });
@@ -752,7 +841,7 @@ export function parseRoundSheets(
     if (!parsed.success) return fail('invalid-save', issueOf(parsed.issues));
     for (const [key, sheet] of Object.entries(parsed.output)) {
       if (sheet.fixtureId !== key)
-        return fail('invalid-save', { path: key, problem: 'key-mismatch' });
+        return fail('invalid-save', { path: at(key), problem: 'key-mismatch' });
     }
     return ok(parsed.output);
   } catch {
