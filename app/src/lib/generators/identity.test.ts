@@ -163,11 +163,21 @@ describe('game identity source (ADR-0012)', () => {
     expect(faces).toBe(5000);
   });
 
-  it('weighs the skin of an unknown nationality by the Brazilian table', () => {
+  it('weighs the skin of a nationality without a table by the Brazilian one', () => {
+    // 'XX' never gets a table. That the nationality reaches faceSpecFromSeed can only be proved
+    // once there is a second table (a country whose faces differ from the Brazilian ones).
     const source = gameIdentitySource();
     const req = { seed: 4, count: 25, ages: ages(25), existing: [] };
     const br = source.squad({ ...req, nationality: 'BR' }).map((i) => i.face);
-    expect(source.squad({ ...req, nationality: 'AR' }).map((i) => i.face)).toEqual(br);
+    expect(source.squad({ ...req, nationality: 'XX' }).map((i) => i.face)).toEqual(br);
+  });
+
+  it('throws when the ages do not match the count (a programming error)', () => {
+    const source = gameIdentitySource();
+    const req = { seed: 4, nationality: 'BR', count: 5, existing: [] };
+    expect(() => source.squad({ ...req, ages: ages(4) })).toThrow(/4 ages, expected 5/);
+    expect(() => source.squad({ ...req, ages: ages(6) })).toThrow(/6 ages, expected 5/);
+    expect(source.squad({ ...req, ages: ages(5) })).toHaveLength(5);
   });
 });
 

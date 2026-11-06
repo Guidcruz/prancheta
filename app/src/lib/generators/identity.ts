@@ -51,13 +51,16 @@ export function createIdentitySource(
   return {
     retiredRev,
     squad({ seed, nationality, count, ages, existing }): PlayerIdentity[] {
+      // One age per identity is the contract with the engine; a mismatch is a programming error.
+      if (ages.length !== count) {
+        throw new Error(`IdentitySource got ${ages.length} ages, expected ${count}`);
+      }
       const names = namesForSquad(seed, count, lists, exclusions, existing);
       // Faces come from a stream of their own, so changing the name lists never moves a face.
       const faces = new Rng(seedFromString(`${seed >>> 0}-faces`));
       return names.map((name, k) => {
         const faceSeed = faces.int(0, 0xffffffff);
-        // ages.length === count by contract; a missing age falls back inside faceSpecFromSeed.
-        const spec = faceSpecFromSeed(faceSeed, { age: ages[k] ?? Number.NaN, nationality });
+        const spec = faceSpecFromSeed(faceSeed, { age: ages[k]!, nationality });
         return {
           display: name.display,
           full: name.full,
