@@ -8,8 +8,10 @@
 // Chromium: the one of Playwright (once: npx playwright install chromium), or a local Chromium
 // given by PRANCHETA_CHROMIUM=<path> or --chromium <path> (the flag wins).
 // Exit codes: 0 every deciding write (after round 38, the three of the season turn) with p90
-// within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test); 3 failure, or a request that
-// tried to leave 127.0.0.1 (blocked and counted).
+// within the 130 ms of the acceptance (the target is 150 ms; one run does not close the
+// acceptance, three in a row do); 1 over it; 2 usage error (or no PRANCHETA_ENV=test); 3 failure
+// (also when Chromium does not expose gc), or a request that tried to leave 127.0.0.1 (blocked and
+// counted).
 import { createServer, type Server } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';

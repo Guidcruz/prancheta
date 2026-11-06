@@ -2,14 +2,29 @@ import { describe, expect, it, vi } from 'vitest';
 import { finish, main, parseArgs } from './main.ts';
 import {
   OPEN_TARGET_MS,
-  WRITE_LIMIT_MS,
+  WRITE_ACCEPT_MS,
+  WRITE_TARGET_MS,
   formatReport,
   openWithinTarget,
   restOfWrite,
   stats,
   withinLimit,
+  writeVerdict,
   type MeasurementLike,
+  type StageTimes,
 } from './report.ts';
+
+const stagesOf = (totals: readonly number[]): StageTimes => ({
+  schema: totals.map((n) => n * 0.1),
+  stringify: totals.map((n) => n * 0.15),
+  utf8: totals.map((n) => n * 0.05),
+  sha256: totals.map((n) => n * 0.05),
+  gzip: totals.map((n) => n * 0.3),
+  encode: totals.map((n) => n * 0.5),
+  transaction: totals.map((n) => n * 0.2),
+  verify: totals.map((n) => n * 0.1),
+  prune: totals.map((n) => n * 0.05),
+});
 
 const measurement = (
   incremental: number[],
@@ -22,21 +37,12 @@ const measurement = (
 ): MeasurementLike => ({
   dbName: 'prancheta-test',
   incremental,
-  incrementalStages: {
-    schema: incremental.map((n) => n * 0.1),
-    stringify: incremental.map((n) => n * 0.15),
-    utf8: incremental.map((n) => n * 0.05),
-    sha256: incremental.map((n) => n * 0.05),
-    gzip: incremental.map((n) => n * 0.3),
-    encode: incremental.map((n) => n * 0.5),
-    transaction: incremental.map((n) => n * 0.2),
-    verify: incremental.map((n) => n * 0.1),
-    prune: incremental.map((n) => n * 0.05),
-  },
+  incrementalStages: stagesOf(incremental),
   noNewRound: incremental.map((n) => n - 5),
   allRounds: incremental.map((n) => n * 2),
   open,
   seasonTurn,
+  seasonTurnStages: [stagesOf(seasonTurn[0]), stagesOf(seasonTurn[1]), stagesOf(seasonTurn[2])],
   encode: incremental.map((n) => n / 2),
   stringify: incremental.map((n) => n / 4),
   snapshotJsonBytes: 700_000,
@@ -54,31 +60,44 @@ describe('measure-save report', () => {
     expect(() => stats([])).toThrow();
   });
 
-  it('decides by the p90 of the write after round 38 against 150 ms', () => {
-    expect(WRITE_LIMIT_MS).toBe(150);
-    const ten = (last: number) => [90, 95, 100, 100, 105, 110, 115, 120, 150, last];
+  it('decides by the p90 of the write after round 38 against the 130 ms of the acceptance', () => {
+    expect(WRITE_TARGET_MS).toBe(150);
+    expect(WRITE_ACCEPT_MS).toBe(130);
+    const ten = (last: number) => [90, 95, 100, 100, 105, 110, 115, 120, 130, last];
     // The p90 of 10 values is the 9th: one slow write does not fail it, two do.
     expect(withinLimit(measurement(ten(400)))).toBe(true);
-    expect(withinLimit(measurement([...ten(400).slice(0, 8), 151, 400]))).toBe(false);
+    expect(withinLimit(measurement([...ten(400).slice(0, 8), 131, 400]))).toBe(false);
     // A low median does not save a high p90.
-    expect(withinLimit(measurement([100, 100, 100, 100, 100, 100, 100, 100, 160, 170]))).toBe(
+    expect(withinLimit(measurement([100, 100, 100, 100, 100, 100, 100, 100, 140, 170]))).toBe(
       false,
     );
   });
 
   it('also decides by each of the three writes of the season turn', () => {
     const fast = [90, 100, 110];
-    const slow = [140, 150, 151];
+    const slow = [120, 125, 131];
     expect(withinLimit(measurement(fast, undefined, [fast, fast, fast]))).toBe(true);
     for (const k of [0, 1, 2]) {
       const turn = [fast, fast, fast] as [number[], number[], number[]];
       turn[k] = slow;
       expect(withinLimit(measurement(fast, undefined, turn)), `write ${k + 1}`).toBe(false);
     }
-    const over = formatReport(measurement(fast, undefined, [fast, fast, slow]), 4);
-    expect(over).toContain(
-      'Gravação ACIMA do limite: p90 de 151.0 ms > 150 ms (virada: 3ª gravação (rodada 2, poda as 38 linhas))',
+  });
+
+  it('gives the verdict in three levels: within the margin, over it, over the target', () => {
+    const fast = [90, 100, 110];
+    expect(writeVerdict(measurement([90, 100, 130]))).toBe(
+      'Gravação DENTRO da folga: maior p90 de 130.0 ms (após a rodada 38) ≤ 130 ms em todas as gravações que decidem.',
     );
+    expect(writeVerdict(measurement(fast, undefined, [fast, [100, 140, 150], fast]))).toBe(
+      'Gravação ACIMA da folga de 130 ms, meta de 150 ms atendida: maior p90 de 150.0 ms (virada: 2ª gravação (rodada 1, uma linha)). Volta ao architect.',
+    );
+    expect(writeVerdict(measurement(fast, undefined, [fast, fast, [100, 140, 151]]))).toBe(
+      'Gravação ACIMA da meta de 150 ms: maior p90 de 151.0 ms (virada: 3ª gravação (rodada 2, poda as 38 linhas)). Volta ao architect.',
+    );
+    const report = formatReport(measurement(fast, undefined, [fast, fast, [100, 140, 151]]), 4);
+    expect(report).toContain('Gravação ACIMA da meta de 150 ms');
+    expect(report).not.toContain('T-019');
   });
 
   it('reports the opening against its 400 ms target', () => {
@@ -100,12 +119,16 @@ describe('measure-save report', () => {
     expect(within).toContain('virada: 3ª gravação (rodada 2, poda as 38 linhas)');
     expect(within).toContain('abrir a carreira');
     expect(within).toContain(
-      'Gravação DENTRO do limite: maior p90 de 110.0 ms ≤ 150 ms (após a rodada 38)',
+      'Gravação DENTRO da folga: maior p90 de 110.0 ms (após a rodada 38) ≤ 130 ms',
+    );
+    expect(within).toContain(
+      'Uma execução não fecha o aceite: valem três execuções seguidas, cada uma com o p90 de todas as gravações que decidem ≤ 130 ms.',
     );
     expect(within).toContain('Abertura dentro da meta: p90 de 220.0 ms');
     const over = formatReport(measurement([200, 210, 220], [500]), 4);
-    expect(over).toContain('Gravação ACIMA do limite');
+    expect(over).toContain('Gravação ACIMA da meta de 150 ms');
     expect(over).toContain('Abertura ACIMA da meta');
+    expect(over).toContain('Não decide o código de saída');
   });
 });
 
@@ -113,7 +136,8 @@ describe('measure-save stages of the write', () => {
   it('prints each stage of the write after round 38 and what is left outside them', () => {
     const m = measurement([100, 200]);
     // 100 − (10 + 50 + 20 + 10 + 5) and 200 − (20 + 100 + 40 + 20 + 10).
-    expect(restOfWrite(m).map((n) => Math.round(n * 1000) / 1000)).toEqual([5, 10]);
+    const rest = restOfWrite(m.incremental, m.incrementalStages);
+    expect(rest.map((n) => Math.round(n * 1000) / 1000)).toEqual([5, 10]);
     const report = formatReport(m, 4);
     expect(report).toContain('Etapas da gravação após a rodada 38');
     for (const name of [
@@ -131,6 +155,14 @@ describe('measure-save stages of the write', () => {
       expect(report).toContain(name);
     }
     expect(report).toMatch(/gzip \(CompressionStream\) +mediana +45\.0 ms +p90 +60\.0 ms/);
+    // The three writes of the season turn, with the stages that follow one another.
+    for (const name of [
+      'Etapas da virada: 1ª gravação da temporada 2 (sem linha):',
+      'Etapas da virada: 2ª gravação (rodada 1, uma linha):',
+      'Etapas da virada: 3ª gravação (rodada 2, poda as 38 linhas):',
+    ]) {
+      expect(report).toContain(name);
+    }
   });
 });
 
@@ -185,6 +217,9 @@ describe('measure-save exit code', () => {
     const { out, err } = quiet();
     expect(finish({ measurement: measurement([90, 100, 110]), blocked: 0 }, 4)).toBe(0);
     expect(finish({ measurement: measurement([200, 210, 220]), blocked: 0 }, 4)).toBe(1);
+    // Over the margin of 130 ms fails the run, even within the target of 150 ms.
+    expect(finish({ measurement: measurement([90, 100, 130]), blocked: 0 }, 4)).toBe(0);
+    expect(finish({ measurement: measurement([90, 100, 131]), blocked: 0 }, 4)).toBe(1);
     expect(err).not.toHaveBeenCalled();
     out.mockRestore();
     err.mockRestore();
