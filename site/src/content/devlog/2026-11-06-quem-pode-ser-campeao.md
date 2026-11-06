@@ -85,6 +85,8 @@ Para quem joga, isso quer dizer que numa carreira de 10 temporadas a sorte ainda
 
 Entre 2006 e 2025, o campeonato brasileiro de pontos corridos teve 8 campeões diferentes em 20 temporadas, e os dois maiores ganharam 4 vezes cada, 20% dos títulos. No jogo, o clube mais forte leva 26,0% dos títulos, e os 20 clubes ganham ao menos um. É mais concentrado no topo do que o real, e ainda não decidimos se isso é um defeito: na temporada única a escada de forças é fixa, e uma diferença de 14 pontos entre o primeiro e o último é o que a lista de clubes de 2026 dá, com o fundo mais alto. Na carreira longa, a meta aprovada é de no máximo 30% dos títulos com um só clube em 30 temporadas, com 7 a 12 campeões diferentes. Isso só vai poder ser medido quando a carreira longa existir.
 
+Há ainda uma diferença de calendário. No campeonato real, os clubes do topo disputam mais de uma competição ao mesmo tempo (copas nacionais e torneio continental), dividem o elenco e as datas entre elas, e esse desgaste tira pontos deles na liga. No jogo, por enquanto, só existe a Série A, então o clube mais forte não sofre esse desgaste e tende a ficar ainda mais concentrado no topo. As copas entram em etapas futuras, e o efeito do calendário só será medido quando elas existirem; hoje não há meta numérica para ele.
+
 ## Por que o mais forte nem sempre ganha
 
 Uma temporada tem 38 rodadas, e cada jogo é decidido por sorteio, com a probabilidade pesada pela diferença de força. Três números mostram o tamanho da aleatoriedade por jogo:
@@ -180,7 +182,7 @@ Hoje, o que o técnico controla é o conjunto de decisões de jogo, que vale cer
 
 ## O que vem a seguir
 
-A renovação dos elencos (T-048) é a próxima tarefa do motor. Depois vêm as telas para jogar. A medição de como os clubes sobem e descem ao longo de 30 anos só começa quando existirem mercado, base e finanças, e não temos data para isso.
+A renovação dos elencos é a próxima tarefa do motor. Depois vêm as telas para jogar. A medição de como os clubes sobem e descem ao longo de 30 anos só começa quando existirem mercado, base e finanças, e não temos data para isso.
 
 ## Pergunta da semana
 
