@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { main, parseArgs } from './main.ts';
+import { finish, main, parseArgs } from './main.ts';
 import {
   OPEN_TARGET_MS,
   WRITE_LIMIT_MS,
@@ -10,12 +10,21 @@ import {
   type MeasurementLike,
 } from './report.ts';
 
-const measurement = (incremental: number[], open = [200, 210, 220]): MeasurementLike => ({
+const measurement = (
+  incremental: number[],
+  open = [200, 210, 220],
+  seasonTurn: MeasurementLike['seasonTurn'] = [
+    incremental.map((n) => n - 10),
+    incremental.map((n) => n - 5),
+    incremental,
+  ],
+): MeasurementLike => ({
   dbName: 'prancheta-test',
   incremental,
   noNewRound: incremental.map((n) => n - 5),
   allRounds: incremental.map((n) => n * 2),
   open,
+  seasonTurn,
   encode: incremental.map((n) => n / 2),
   stringify: incremental.map((n) => n / 4),
   snapshotJsonBytes: 700_000,
@@ -45,6 +54,21 @@ describe('measure-save report', () => {
     );
   });
 
+  it('also decides by each of the three writes of the season turn', () => {
+    const fast = [90, 100, 110];
+    const slow = [140, 150, 151];
+    expect(withinLimit(measurement(fast, undefined, [fast, fast, fast]))).toBe(true);
+    for (const k of [0, 1, 2]) {
+      const turn = [fast, fast, fast] as [number[], number[], number[]];
+      turn[k] = slow;
+      expect(withinLimit(measurement(fast, undefined, turn)), `write ${k + 1}`).toBe(false);
+    }
+    const over = formatReport(measurement(fast, undefined, [fast, fast, slow]), 4);
+    expect(over).toContain(
+      'Gravação ACIMA do limite: p90 de 151.0 ms > 150 ms (virada: 3ª gravação (rodada 2, poda as 38 linhas))',
+    );
+  });
+
   it('reports the opening against its 400 ms target', () => {
     expect(OPEN_TARGET_MS).toBe(400);
     expect(openWithinTarget(measurement([100], [300, 390, 400]))).toBe(true);
@@ -59,8 +83,13 @@ describe('measure-save report', () => {
     expect(within).toContain('gravação após a rodada 38 (base 1–37, só a 38)');
     expect(within).toContain('gravação sem rodada nova (base 1–38)');
     expect(within).toContain('gravação sem base (as 38 linhas)');
+    expect(within).toContain('virada: 1ª gravação da temporada 2 (sem linha)');
+    expect(within).toContain('virada: 2ª gravação (rodada 1, uma linha)');
+    expect(within).toContain('virada: 3ª gravação (rodada 2, poda as 38 linhas)');
     expect(within).toContain('abrir a carreira');
-    expect(within).toContain('Gravação DENTRO do limite: p90 de 110.0 ms');
+    expect(within).toContain(
+      'Gravação DENTRO do limite: maior p90 de 110.0 ms ≤ 150 ms (após a rodada 38)',
+    );
     expect(within).toContain('Abertura dentro da meta: p90 de 220.0 ms');
     const over = formatReport(measurement([200, 210, 220], [500]), 4);
     expect(over).toContain('Gravação ACIMA do limite');
@@ -106,5 +135,39 @@ describe('measure-save options', () => {
     expect(await main(['--runs', '0'], { PRANCHETA_ENV: 'test' })).toBe(2);
     expect(await main(['--chromium'], { PRANCHETA_ENV: 'test' })).toBe(2);
     stderr.mockRestore();
+  });
+});
+
+describe('measure-save exit code', () => {
+  const quiet = () => ({
+    out: vi.spyOn(process.stdout, 'write').mockReturnValue(true),
+    err: vi.spyOn(process.stderr, 'write').mockReturnValue(true),
+  });
+
+  it('gives the verdict when the page stayed on 127.0.0.1 and on the test database', () => {
+    const { out, err } = quiet();
+    expect(finish({ measurement: measurement([90, 100, 110]), blocked: 0 }, 4)).toBe(0);
+    expect(finish({ measurement: measurement([200, 210, 220]), blocked: 0 }, 4)).toBe(1);
+    expect(err).not.toHaveBeenCalled();
+    out.mockRestore();
+    err.mockRestore();
+  });
+
+  it('fails with 3 when a request tried to leave 127.0.0.1, even within the limit', () => {
+    const { out, err } = quiet();
+    expect(finish({ measurement: measurement([90, 100, 110]), blocked: 2 }, 4)).toBe(3);
+    expect(String(err.mock.calls[0]?.[0])).toContain('2 requisição(ões) bloqueada(s)');
+    out.mockRestore();
+    err.mockRestore();
+  });
+
+  it('fails with 3 when the page used another database, printing no numbers', () => {
+    const { out, err } = quiet();
+    const other = { ...measurement([90, 100, 110]), dbName: 'prancheta' };
+    expect(finish({ measurement: other, blocked: 0 }, 4)).toBe(3);
+    expect(out).not.toHaveBeenCalled();
+    expect(String(err.mock.calls[0]?.[0])).toContain('banco errado na página: prancheta');
+    out.mockRestore();
+    err.mockRestore();
   });
 });

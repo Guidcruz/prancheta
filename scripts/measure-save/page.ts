@@ -1,3 +1,4 @@
+import { openDB } from 'idb';
 import {
   SaveStore,
   encodeSave,
@@ -18,6 +19,10 @@ import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/
  * - `noNewRound`: the same save with the `base` of the 38 rounds, no row written;
  * - `allRounds`: no `base`, the 38 rows written (new career, import, migration);
  * - `open`: opening that career (3 snapshots, 38 rows), sheets reassembled;
+ * - `seasonTurn`: the first three writes of season 2 after the one of round 38 of season 1, each
+ *   with the `base` of the write before: the turn (sheets zeroed, no row), round 1 (one row) and
+ *   round 2 (one row; the oldest kept snapshot is then of season 2, so it reads the 3 snapshots and
+ *   prunes the 38 rows of season 1). Normal writes of a round: they decide with `incremental`;
  *
  * and the parts the store cannot see from outside (stringify, encode of the snapshot).
  */
@@ -33,6 +38,8 @@ export interface Measurement {
   readonly noNewRound: number[];
   readonly allRounds: number[];
   readonly open: number[];
+  /** The 1st, 2nd and 3rd writes of season 2, in this order. */
+  readonly seasonTurn: [number[], number[], number[]];
   /** Serialise + hash + gzip of the snapshot (sheets apart). */
   readonly encode: number[];
   readonly stringify: number[];
@@ -44,6 +51,23 @@ export interface Measurement {
 }
 
 let full: CareerSave | undefined;
+
+/**
+ * After the third write of season 2 no row of season 1 is left: the case did measure the prune.
+ * Read with plain IndexedDB, outside the timing.
+ */
+async function checkTurnPruned(dbName: string, careerId: string): Promise<void> {
+  const db = await openDB(dbName);
+  try {
+    const left = await db.count(
+      'matchSheets',
+      IDBKeyRange.bound([careerId], [careerId, 2], false, true),
+    );
+    if (left !== 0) throw new Error(`season turn: ${left} rows of season 1 left`);
+  } finally {
+    db.close();
+  }
+}
 
 async function time(run: () => unknown): Promise<number> {
   const start = performance.now();
@@ -109,6 +133,24 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
     keep(open, i, ms);
   }
 
+  // Each run starts the same: a clean career with season 1 written up to round 38 (untimed).
+  const seasonTurn: [number[], number[], number[]] = [[], [], []];
+  const turn = [0, 1, 2].map((played) => sampleAtRound(save, played, 2));
+  for (let i = 0; i < total; i++) {
+    const cleared = await store.deleteCareer(save.careerId);
+    if (!cleared.ok) throw new Error(`deleteCareer: ${cleared.error}`);
+    const at37 = await write(sampleAtRound(save, 37), undefined, 37);
+    let previous = await write(stamp(save, 4 * total + i), at37.sheets, 1);
+    for (const [k, next] of turn.entries()) {
+      keep(
+        seasonTurn[k]!,
+        i,
+        await time(async () => (previous = await write(next, previous.sheets, k === 0 ? 0 : 1))),
+      );
+    }
+    if (i === 0) await checkTurnPruned(store.dbName, save.careerId);
+  }
+
   const snapshot: CareerSave = { ...save, career: { ...save.career, matchSheets: {} } };
   const encode: number[] = [];
   const stringify: number[] = [];
@@ -140,6 +182,7 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
     noNewRound,
     allRounds,
     open,
+    seasonTurn,
     encode,
     stringify,
     snapshotJsonBytes: encoded.value.bytes,

@@ -1,13 +1,15 @@
 // Save measurement of the end of the season (T-018; docs/02-architecture.md, 5): bundles page.ts
 // with Vite (PRANCHETA_ENV=test, so the store uses the database prancheta-test), serves it on
 // 127.0.0.1, opens it in headless Chromium (Playwright), builds the save of a whole season, turns
-// on the CPU slowdown and times the safe write (match sheets out of the snapshot) and the opening.
+// on the CPU slowdown and times the safe write (match sheets out of the snapshot), the season turn
+// and the opening.
 // Usage: PRANCHETA_ENV=test npm run measure:save -- [--runs 40] [--warmup 5] [--cpu 4]
 //        [--chromium <path>]
 // Chromium: the one of Playwright (once: npx playwright install chromium), or a local Chromium
 // given by PRANCHETA_CHROMIUM=<path> or --chromium <path> (the flag wins).
-// Exit codes: 0 write p90 within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test);
-// 3 failure, or a request that tried to leave 127.0.0.1 (blocked and counted).
+// Exit codes: 0 every deciding write (after round 38, the three of the season turn) with p90
+// within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test); 3 failure, or a request that
+// tried to leave 127.0.0.1 (blocked and counted).
 import { createServer, type Server } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -162,6 +164,25 @@ async function measureInChromium(url: string, args: MeasureArgs): Promise<Chromi
   }
 }
 
+/**
+ * Prints the report of a run and gives the exit code: 3 when the page used another database or
+ * tried to leave 127.0.0.1 (the numbers are printed, but they do not count), else the verdict.
+ */
+export function finish({ measurement, blocked }: ChromiumRun, cpu: number): number {
+  if (measurement.dbName !== 'prancheta-test') {
+    process.stderr.write(`banco errado na página: ${measurement.dbName}\n`);
+    return 3;
+  }
+  process.stdout.write(formatReport(measurement, cpu));
+  if (blocked > 0) {
+    process.stderr.write(
+      `a página tentou sair de 127.0.0.1: ${blocked} requisição(ões) bloqueada(s); medição inválida\n`,
+    );
+    return 3;
+  }
+  return withinLimit(measurement) ? 0 : 1;
+}
+
 export async function main(
   argv: readonly string[],
   env: Readonly<Record<string, string | undefined>> = process.env,
@@ -183,19 +204,7 @@ export async function main(
     await bundle(dir);
     const served = await serve(dir);
     server = served.server;
-    const { measurement, blocked } = await measureInChromium(served.url, args);
-    if (measurement.dbName !== 'prancheta-test') {
-      process.stderr.write(`banco errado na página: ${measurement.dbName}\n`);
-      return 3;
-    }
-    process.stdout.write(formatReport(measurement, args.cpu));
-    if (blocked > 0) {
-      process.stderr.write(
-        `a página tentou sair de 127.0.0.1: ${blocked} requisição(ões) bloqueada(s); medição inválida\n`,
-      );
-      return 3;
-    }
-    return withinLimit(measurement) ? 0 : 1;
+    return finish(await measureInChromium(served.url, args), args.cpu);
   } catch (error) {
     process.stderr.write(
       `falha na medição: ${error instanceof Error ? error.stack : String(error)}\n`,
