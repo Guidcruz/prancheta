@@ -20,7 +20,10 @@ export interface KvRecord {
   readonly value: unknown;
 }
 
-/** A row of the `errors` store (the ring of 50 of US-045 is kept by lib/errors, T-023). */
+/**
+ * A row of the `errors` store: lib/errors builds it without personal data and
+ * `SaveStore.appendError` keeps the ring of 50 of US-045 (T-023).
+ */
 export interface ErrorRecord {
   readonly id?: number;
   readonly [field: string]: unknown;

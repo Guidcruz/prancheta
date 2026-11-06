@@ -173,7 +173,16 @@ describe('US-033: a hostile save is refused and changes nothing', () => {
       const opened = await s.openCareer(SAMPLE_CAREER_ID);
       if (!opened.ok) throw new Error(opened.error);
       expect(opened.value.seq).toBe(1);
-      expect(opened.value.skipped).toEqual([{ seq: 2, problem: 'invalid-save' }]);
+      expect(opened.value.skipped).toEqual([
+        {
+          seq: 2,
+          problem: 'invalid-save',
+          fromVersion: 1,
+          issue: { path: expect.any(String), problem: expect.any(String) },
+        },
+      ]);
+      // The issue the caller logs has the path and the kind, never the content (US-045).
+      expect(JSON.stringify(opened.value.skipped)).not.toContain('Treinador');
       expect(await allRows()).toEqual(before);
     },
   );

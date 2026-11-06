@@ -31,7 +31,7 @@ export {
   type EncodedJson,
   type EncodedSave,
 } from './codec.ts';
-export { SAVE_DB_NAME, SAVE_DB_VERSION } from './db.ts';
+export { SAVE_DB_NAME, SAVE_DB_VERSION, type ErrorRecord } from './db.ts';
 export { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './migrations/index.ts';
 export {
   SAVE_LIMITS,
@@ -48,6 +48,7 @@ export {
   type OpenError,
   type OpenedCareer,
   type SaveStoreOptions,
+  type SkippedSnapshot,
   type SnapshotProblem,
   type StorageError,
   type WriteError,
