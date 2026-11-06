@@ -409,11 +409,14 @@ export function runCareer(ctx: BalanceContext, index: number, seasons: number): 
       ageMean,
       revelationCandidates: revelationCandidates(played.state),
     };
-    records.push({ ...played.record, season, strength, squads });
-    if (season === seasons) break;
+    if (season === seasons) {
+      records.push({ ...played.record, season, strength, squads });
+      break;
+    }
     const closed = endSeason(played.state, ctx.params, [], balanceIdentitySource());
     if (!closed.ok) throw new Error(`endSeason refused career ${index}: ${closed.error}`);
-    squads.retired = retiredAtTurn(played.state, closed.value.state);
+    const retired = retiredAtTurn(played.state, closed.value.state);
+    records.push({ ...played.record, season, strength, squads: { ...squads, retired } });
     const next = startNextSeason(closed.value.state, ctx.params, balanceIdentitySource());
     if (!next.ok) throw new Error(`startNextSeason refused career ${index}: ${next.error}`);
     state = next.value;

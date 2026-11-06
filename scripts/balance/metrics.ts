@@ -885,10 +885,10 @@ const LEAGUE_CLUBS = 20;
 /**
  * The informative rows of the squads in a `--chain` run (decision 14; the minimal renewal of
  * T-048), never required and never judged but for the revelation: the mean age at the start of
- * the season (the design measured about 24 to 27 over 10 seasons); the revelation's pool (mean
- * per career, and its minimum, which must stay above 0: "a revelação sempre tem candidatos"); and
- * the retirements per club in the turn that closed the season (about 1.7). No row when the
- * records have no squads (not a chain run).
+ * the season (the design measured 24.6 to 28.4 over 30 seasons); the revelation's pool (mean per
+ * career, and its minimum, which must stay above 0: "a revelação sempre tem candidatos"); and the
+ * retirements per club in the turn that closed the season (about 1.3 over 30 seasons). No row
+ * when the records have no squads (not a chain run).
  */
 function squadRows(records: readonly SeasonRecord[], season: number): MetricRow[] {
   const squads = records.flatMap((r) => (r.squads === undefined ? [] : [r.squads]));
@@ -908,7 +908,7 @@ function squadRows(records: readonly SeasonRecord[], season: number): MetricRow[
       label('Idade média dos elencos'),
       mean((s) => s.ageMean),
       (v) => num(v, 1),
-      'medida no desenho: cerca de 24 a 27 (decisão 14)',
+      'medida no desenho: 24,6 a 28,4 (decisão 14)',
       () => true,
       false,
     ),
@@ -930,7 +930,7 @@ function squadRows(records: readonly SeasonRecord[], season: number): MetricRow[
         label('Aposentadorias por clube na virada'),
         retired,
         (v) => num(v, 2),
-        'cerca de 1,7 (decisão 14)',
+        'cerca de 1,3 em 30 temporadas (decisão 14)',
         () => true,
         false,
       ),

@@ -87,7 +87,7 @@ describe('runCareer', { timeout: 120_000 }, () => {
     expect(second!.ageMean).toBeGreaterThan(first!.ageMean);
     expect(second!.ageMean).toBeLessThan(first!.ageMean + 1);
     for (const s of [first!, second!, third!]) expect(s.revelationCandidates).toBeGreaterThan(0);
-    // The generation has reserves of 34: someone retires already at the first turn.
+    // The generation has players of 33 and 34: someone retires already at the first turn.
     expect(first!.retired).toBeGreaterThan(0);
     expect(second!.retired).toBeGreaterThan(0);
     expect(third!.retired).toBeUndefined();
@@ -98,8 +98,10 @@ describe('runCareer', { timeout: 120_000 }, () => {
       balanceIdentitySource(),
     );
     if (!closed.ok) throw new Error(closed.error);
+    // The retired are the players left in `players` but in no squad until the turn.
+    const inSquad = new Set(Object.values(closed.value.state.squads).flat());
     expect(first!.retired).toBe(
-      Object.values(closed.value.state.players).filter((p) => p.age >= 35).length,
+      Object.keys(closed.value.state.players).filter((id) => !inSquad.has(id)).length,
     );
   });
 
