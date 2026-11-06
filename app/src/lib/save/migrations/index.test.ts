@@ -3,7 +3,7 @@ import { SAVE_SCHEMA_VERSION } from '../schema.ts';
 import { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './index.ts';
 
 describe('migration entry point (ADR-0006)', () => {
-  it('starts at format 1 with an empty chain', () => {
+  it('is frozen at format 1 with an empty chain (T-019)', () => {
     expect(SAVE_SCHEMA_VERSION).toBe(1);
     expect(MIGRATIONS).toEqual([]);
   });
@@ -20,10 +20,35 @@ describe('migration entry point (ADR-0006)', () => {
       error: 'save-too-new',
       detail: { version: 2, supported: 1 },
     });
-    for (const raw of [null, [], 'x', {}, { schemaVersion: 0 }, { schemaVersion: 1.5 }]) {
+    for (const raw of [null, [], 'x', {}, { schemaVersion: -1 }, { schemaVersion: 1.5 }]) {
       expect(migrateSave(raw)).toEqual({ ok: false, error: 'unknown-version' });
       expect(schemaVersionOf(raw)).toBeUndefined();
     }
+  });
+
+  it('has no step from version 0, which no build ever wrote (only the synthetic tests use it)', () => {
+    expect(schemaVersionOf({ schemaVersion: 0 })).toBe(0);
+    expect(migrateSave({ schemaVersion: 0 })).toEqual({
+      ok: false,
+      error: 'migration-failed',
+      detail: { from: 0 },
+    });
+    const v0: Migration[] = [{ from: 0, migrate: (s) => ({ ...s, added: true }) }];
+    expect(migrateSave({ schemaVersion: 0 }, v0)).toEqual({
+      ok: true,
+      value: { schemaVersion: 1, added: true },
+    });
+  });
+
+  it('finds each step by its version, whatever the order of the chain', () => {
+    const chain: Migration[] = [
+      { from: 2, migrate: (s) => ({ ...s, order: `${String(s.order)},2` }) },
+      { from: 1, migrate: (s) => ({ ...s, order: '1' }) },
+    ];
+    expect(migrateSave({ schemaVersion: 1 }, chain, 3)).toEqual({
+      ok: true,
+      value: { schemaVersion: 3, order: '1,2' },
+    });
   });
 
   it('runs a chain in order, step by step, without changing the input', () => {

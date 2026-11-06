@@ -137,6 +137,8 @@ export type ClubProblem =
   | 'unknown-key'
   | 'not-a-string'
   | 'empty'
+  /** Past {@link CLUB_TEXT_MAX_LENGTH}. */
+  | 'too-long'
   | 'invalid-id'
   | 'duplicate-id'
   | 'invalid-abbreviation'
@@ -180,6 +182,13 @@ export interface ValidateClubsOptions {
   /** Exact number of clubs expected; default {@link SERIE_A_CLUBS}. */
   count?: number;
 }
+
+/**
+ * Most characters of a text field of a club (name, short name, nickname, city, stadium): about
+ * twice the longest of the approved data (31, a full name), a bound against a hostile save
+ * (T-019), not a style rule.
+ */
+const CLUB_TEXT_MAX_LENGTH = 60;
 
 const ID = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 const STATE = /^[A-Z]{2}$/;
@@ -242,6 +251,11 @@ function checkText(scope: ClubScope, field: string, value: unknown): string | un
   }
   if (value.trim() === '') {
     scope.add({ field, problem: 'empty', value });
+    return undefined;
+  }
+  if (value.length > CLUB_TEXT_MAX_LENGTH) {
+    // Not the value itself: it may be huge.
+    scope.add({ field, problem: 'too-long', range: { min: 1, max: CLUB_TEXT_MAX_LENGTH } });
     return undefined;
   }
   return value;

@@ -10,12 +10,13 @@ import type {
 
 /*
  * The envelope of a career save (docs/02-architecture.md, 4.2; ADR-0006, ADR-0019). This file has
- * the TypeScript shape only: the format freezes in T-019, with the v1 fixture, the shape test, the
- * migration chain and the strict valibot schema. Until then a change here needs no migration,
- * because no save exists outside the tests yet.
+ * the TypeScript shape; the strict schema of the same format is validate.ts, and a drift between
+ * the two fails to compile. The format v1 is frozen (T-019): the fixture `__fixtures__/v1.json`
+ * and the shape test (fixtures.test.ts). Any change to this shape or to `GameState` raises
+ * `SAVE_SCHEMA_VERSION`, with a migration (migrations/) and the new fixture.
  */
 
-/** The current format of `CareerSave` (ADR-0006); every change after T-019 raises it. */
+/** The current format of `CareerSave` (ADR-0006); every change of the format raises it. */
 export const SAVE_SCHEMA_VERSION = 1;
 
 /** Careers kept on the device at the same time (docs/02-architecture.md, 4.2). */

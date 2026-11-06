@@ -9,7 +9,7 @@ import {
   useFreshDatabase,
   variant,
 } from './testing/idb.ts';
-import { SAMPLE_CAREER_ID } from './testing/sample.ts';
+import { SAMPLE_CAREER_ID, careerIdOf as cid } from './testing/sample.ts';
 
 /*
  * US-034 with fake-indexeddb (docs/03-test-plan.md, 2 and 6): the list of careers, independent
@@ -21,16 +21,16 @@ useFreshDatabase();
 describe('several careers (US-034)', () => {
   it('lists the careers with club, season and round, the most recent first', async () => {
     const s = store();
-    await s.writeSnapshot(variant(3, 'a', '2026-11-01T10:00:00.000Z'));
-    await s.writeSnapshot(variant(9, 'b', '2026-11-05T10:00:00.000Z'));
-    await s.writeSnapshot(variant(1, 'c', '2026-11-03T10:00:00.000Z'));
+    await s.writeSnapshot(variant(3, cid('a'), '2026-11-01T10:00:00.000Z'));
+    await s.writeSnapshot(variant(9, cid('b'), '2026-11-05T10:00:00.000Z'));
+    await s.writeSnapshot(variant(1, cid('c'), '2026-11-03T10:00:00.000Z'));
     const listed = await s.listCareers();
     expect(listed.ok).toBe(true);
     if (!listed.ok) return;
-    expect(listed.value.map((c) => c.id)).toEqual(['b', 'c', 'a']);
+    expect(listed.value.map((c) => c.id)).toEqual([cid('b'), cid('c'), cid('a')]);
     const club = base.game.clubs[base.career.clubId]!.def;
     expect(listed.value[0]).toEqual({
-      id: 'b',
+      id: cid('b'),
       club,
       season: 1,
       round: 9,
@@ -42,15 +42,15 @@ describe('several careers (US-034)', () => {
 
   it('keeps careers independent', async () => {
     const s = store();
-    await s.writeSnapshot(atRound(3, 1, 'a'));
-    await s.writeSnapshot(atRound(3, 1, 'b'));
-    const before = await s.openCareer('b');
-    await s.writeSnapshot(atRound(4, 1, 'a'));
-    await s.writeSnapshot(atRound(5, 1, 'a'));
-    expect(await s.openCareer('b')).toEqual(before);
-    const a = await s.openCareer('a');
+    await s.writeSnapshot(atRound(3, 1, cid('a')));
+    await s.writeSnapshot(atRound(3, 1, cid('b')));
+    const before = await s.openCareer(cid('b'));
+    await s.writeSnapshot(atRound(4, 1, cid('a')));
+    await s.writeSnapshot(atRound(5, 1, cid('a')));
+    expect(await s.openCareer(cid('b'))).toEqual(before);
+    const a = await s.openCareer(cid('a'));
     expect(a.ok && a.value.save.game.round).toBe(6);
-    expect(await sheetKeys('b')).toEqual([
+    expect(await sheetKeys(cid('b'))).toEqual([
       [1, 1],
       [1, 2],
       [1, 3],
@@ -60,16 +60,16 @@ describe('several careers (US-034)', () => {
   it('deletes a career, its versions and its sheets, and nothing else', async () => {
     const s = store();
     for (const round of [1, 2, 3, 4]) await s.writeSnapshot(atRound(round));
-    await s.writeSnapshot(atRound(2, 1, 'other'));
+    await s.writeSnapshot(atRound(2, 1, cid('other')));
     expect((await sheetKeys()).length).toBe(4);
     expect(await s.deleteCareer(SAMPLE_CAREER_ID)).toEqual({ ok: true, value: undefined });
     expect(await snapshotSeqs()).toEqual([]);
     expect(await sheetKeys()).toEqual([]);
     expect(await s.openCareer(SAMPLE_CAREER_ID)).toEqual({ ok: false, error: 'not-found' });
     const listed = await s.listCareers();
-    expect(listed.ok && listed.value.map((c) => c.id)).toEqual(['other']);
-    expect(await snapshotSeqs('other')).toEqual([1]);
-    expect(await sheetKeys('other')).toEqual([
+    expect(listed.ok && listed.value.map((c) => c.id)).toEqual([cid('other')]);
+    expect(await snapshotSeqs(cid('other'))).toEqual([1]);
+    expect(await sheetKeys(cid('other'))).toEqual([
       [1, 1],
       [1, 2],
     ]);
@@ -78,19 +78,19 @@ describe('several careers (US-034)', () => {
   it('holds 10 careers, refuses the 11th and makes room after a delete', async () => {
     const s = store();
     for (let i = 0; i < MAX_CAREERS; i++) {
-      expect((await s.writeSnapshot(variant(1, `career-${i}`))).ok).toBe(true);
+      expect((await s.writeSnapshot(variant(1, cid(`career-${i}`)))).ok).toBe(true);
     }
-    expect(await s.writeSnapshot(variant(1, 'career-10'))).toEqual({
+    expect(await s.writeSnapshot(variant(1, cid('career-10')))).toEqual({
       ok: false,
       error: 'career-limit',
       detail: { max: 10 },
     });
     // The careers already there keep saving.
-    expect((await s.writeSnapshot(variant(2, 'career-3'))).ok).toBe(true);
+    expect((await s.writeSnapshot(variant(2, cid('career-3')))).ok).toBe(true);
     const listed = await s.listCareers();
     expect(listed.ok && listed.value).toHaveLength(MAX_CAREERS);
-    await s.deleteCareer('career-0');
-    expect((await s.writeSnapshot(variant(1, 'career-10'))).ok).toBe(true);
+    await s.deleteCareer(cid('career-0'));
+    expect((await s.writeSnapshot(variant(1, cid('career-10')))).ok).toBe(true);
   });
 });
 

@@ -169,6 +169,19 @@ describe('validateClubs', () => {
     ]);
   });
 
+  it('refuses a text field past 60 characters (a 1 MB name too), without echoing it', () => {
+    const raw = syntheticClubs();
+    raw[0]!.name = 'x'.repeat(1 << 20);
+    raw[1]!.city = 'y'.repeat(61);
+    raw[2]!.stadium.name = 'z'.repeat(60);
+    const issues = issuesOf(validateClubs(raw));
+    const range = { min: 1, max: 60 };
+    expect(issues).toEqual([
+      { index: 0, clubId: 'clube-teste-01', field: 'name', problem: 'too-long', range },
+      { index: 1, clubId: 'clube-teste-02', field: 'city', problem: 'too-long', range },
+    ]);
+  });
+
   it('refuses unknown keys, so a typo is never silently ignored', () => {
     const raw = syntheticClubs();
     (raw[0] as Record<string, unknown>).nickName = 'x';

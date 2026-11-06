@@ -4,7 +4,7 @@ import { afterEach, beforeEach, vi } from 'vitest';
 import { encodeSave, type EncodedSave } from '../codec.ts';
 import { openSaveDb } from '../db.ts';
 import type { CareerSave, MatchSheetRecord, SnapshotRecord } from '../schema.ts';
-import { SaveStore } from '../store.ts';
+import { SaveStore, type SaveStoreOptions } from '../store.ts';
 import { SAMPLE_CAREER_ID, sampleAtRound, sampleCareerSave } from './sample.ts';
 
 /*
@@ -30,8 +30,15 @@ export function useFreshDatabase(): void {
 }
 
 /** A store on the test database with a fixed clock; closed after the test. */
-export function store(dbName = DB): SaveStore {
-  const created = new SaveStore({ dbName, now: () => new Date('2026-11-06T12:00:00.000Z') });
+export function store(
+  dbName = DB,
+  options: Omit<SaveStoreOptions, 'dbName' | 'now'> = {},
+): SaveStore {
+  const created = new SaveStore({
+    ...options,
+    dbName,
+    now: () => new Date('2026-11-06T12:00:00.000Z'),
+  });
   stores.push(created);
   return created;
 }

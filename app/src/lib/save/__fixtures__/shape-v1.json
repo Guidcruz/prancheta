@@ -1,0 +1,669 @@
+{
+  "appVersion": "string",
+  "career": {
+    "baseSeason": "number",
+    "clubId": "string",
+    "coachName": "string",
+    "exportReminder": "boolean",
+    "lastRound?": {
+      "facts": {
+        "[]": {
+          "variant by kind": {
+            "literal \"decisiveLastRound\"": {
+              "kind": "literal \"decisiveLastRound\"",
+              "stakes": "one of \"relegation\" | \"title\""
+            },
+            "literal \"leadership\"": {
+              "change": "one of \"kept\" | \"lost\" | \"took\"",
+              "clubId": "string",
+              "kind": "literal \"leadership\"",
+              "rounds": "number"
+            },
+            "literal \"topScorerOfRound\"": {
+              "goals": "number",
+              "kind": "literal \"topScorerOfRound\"",
+              "playerId": "string"
+            },
+            "one of \"championClinched\" | \"relegatedClinched\"": {
+              "clubId": "string",
+              "kind": "one of \"championClinched\" | \"relegatedClinched\""
+            },
+            "one of \"enteredZ4\" | \"leftZ4\"": {
+              "clubId": "string",
+              "kind": "one of \"enteredZ4\" | \"leftZ4\""
+            },
+            "one of \"injured\" | \"suspended\"": {
+              "games": "number",
+              "kind": "one of \"injured\" | \"suspended\"",
+              "playerId": "string"
+            },
+            "one of \"unbeaten\" | \"winless\"": {
+              "clubId": "string",
+              "games": "number",
+              "kind": "one of \"unbeaten\" | \"winless\""
+            },
+            "one of \"unbeatenEnded\" | \"winlessEnded\"": {
+              "clubId": "string",
+              "games": "number",
+              "kind": "one of \"unbeatenEnded\" | \"winlessEnded\"",
+              "opponentId": "string",
+              "round": "number"
+            }
+          }
+        }
+      },
+      "results": {
+        "[]": {
+          "attendance": "number",
+          "events": {
+            "[]": {
+              "variant by type": {
+                "literal \"chance\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "kind": "one of \"freeKick\" | \"open\"",
+                  "minute": "number",
+                  "outcome": "one of \"post\" | \"saved\" | \"wide\"",
+                  "pGoal": "number",
+                  "shooter": "string",
+                  "side": "one of \"away\" | \"home\"",
+                  "type": "literal \"chance\""
+                },
+                "literal \"fulltime\"": {
+                  "abandoned": "boolean",
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "score": [
+                    "number",
+                    "number"
+                  ],
+                  "type": "literal \"fulltime\""
+                },
+                "literal \"goal\"": {
+                  "added?": "number",
+                  "assist?": "string",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "kind": "one of \"freeKick\" | \"open\" | \"penalty\"",
+                  "minute": "number",
+                  "score": [
+                    "number",
+                    "number"
+                  ],
+                  "scorer": "string",
+                  "side": "one of \"away\" | \"home\"",
+                  "type": "literal \"goal\""
+                },
+                "literal \"halftime\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "score": [
+                    "number",
+                    "number"
+                  ],
+                  "type": "literal \"halftime\""
+                },
+                "literal \"halftimeTalk\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "side": "one of \"away\" | \"home\"",
+                  "talk": "one of \"calm\" | \"demand\" | \"motivate\" | \"skip\"",
+                  "type": "literal \"halftimeTalk\""
+                },
+                "literal \"injury\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "player": "string",
+                  "severity": "one of \"light\" | \"medium\" | \"serious\" | \"severe\"",
+                  "side": "one of \"away\" | \"home\"",
+                  "type": "literal \"injury\""
+                },
+                "literal \"kickoff\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "type": "literal \"kickoff\""
+                },
+                "literal \"penaltyAwarded\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "side": "one of \"away\" | \"home\"",
+                  "taker": "string",
+                  "type": "literal \"penaltyAwarded\""
+                },
+                "literal \"penaltyMissed\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "outcome": "one of \"post\" | \"saved\" | \"wide\"",
+                  "side": "one of \"away\" | \"home\"",
+                  "taker": "string",
+                  "type": "literal \"penaltyMissed\""
+                },
+                "literal \"red\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "player": "string",
+                  "reason": "one of \"direct\" | \"secondYellow\"",
+                  "side": "one of \"away\" | \"home\"",
+                  "type": "literal \"red\""
+                },
+                "literal \"stoppage\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "minutes": "number",
+                  "type": "literal \"stoppage\""
+                },
+                "literal \"substitution\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "in": "string",
+                  "minute": "number",
+                  "out": "string",
+                  "reason": "one of \"fatigue\" | \"injury\" | \"tactical\"",
+                  "side": "one of \"away\" | \"home\"",
+                  "type": "literal \"substitution\""
+                },
+                "literal \"tacticChange\"": {
+                  "added?": "number",
+                  "formation": "one of \"3-4-3\" | \"3-5-2\" | \"4-2-3-1\" | \"4-3-3\" | \"4-4-2\" | \"5-3-2\"",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "posture": "one of \"allOut\" | \"attacking\" | \"balanced\" | \"defensive\"",
+                  "preset?": "one of \"allOut\" | \"holdResult\" | \"press\"",
+                  "pressure": "one of \"high\" | \"low\" | \"medium\"",
+                  "side": "one of \"away\" | \"home\"",
+                  "type": "literal \"tacticChange\""
+                },
+                "literal \"yellow\"": {
+                  "added?": "number",
+                  "half": "one of 1 | 2",
+                  "importance": "one of 1 | 2 | 3",
+                  "minute": "number",
+                  "player": "string",
+                  "side": "one of \"away\" | \"home\"",
+                  "triggersSuspension": "boolean",
+                  "type": "literal \"yellow\""
+                }
+              }
+            }
+          },
+          "fixtureId": "string",
+          "markers": {
+            "[]": {
+              "variant by kind": {
+                "literal \"classico\"": {
+                  "kind": "literal \"classico\""
+                },
+                "literal \"estreia\"": {
+                  "kind": "literal \"estreia\"",
+                  "player": "string",
+                  "side": "one of \"away\" | \"home\""
+                },
+                "literal \"golNoFim\"": {
+                  "added?": "number",
+                  "kind": "literal \"golNoFim\"",
+                  "minute": "number",
+                  "player": "string",
+                  "side": "one of \"away\" | \"home\""
+                },
+                "literal \"hatTrick\"": {
+                  "goals": "number",
+                  "kind": "literal \"hatTrick\"",
+                  "player": "string",
+                  "side": "one of \"away\" | \"home\""
+                },
+                "one of \"goleada\" | \"semSofrerGols\" | \"virada\" | \"zebra\"": {
+                  "kind": "one of \"goleada\" | \"semSofrerGols\" | \"virada\" | \"zebra\"",
+                  "side": "one of \"away\" | \"home\""
+                }
+              }
+            }
+          },
+          "motm?": "string",
+          "motmRating?": "number",
+          "score": [
+            "number",
+            "number"
+          ],
+          "stats": {
+            "away": {
+              "onTarget": "number",
+              "possession": "number",
+              "reds": "number",
+              "shots": "number",
+              "yellows": "number"
+            },
+            "home": {
+              "onTarget": "number",
+              "possession": "number",
+              "reds": "number",
+              "shots": "number",
+              "yellows": "number"
+            }
+          }
+        }
+      },
+      "round": "number",
+      "season": "number"
+    },
+    "matchMode": "one of \"full\" | \"highlights\" | \"result\"",
+    "matchSheets": {
+      "{}": {
+        "events": {
+          "[]": {
+            "variant by type": {
+              "literal \"goal\"": {
+                "added?": "number",
+                "assist?": "string",
+                "half": "one of 1 | 2",
+                "importance": "one of 1 | 2 | 3",
+                "kind": "one of \"freeKick\" | \"open\" | \"penalty\"",
+                "minute": "number",
+                "score": [
+                  "number",
+                  "number"
+                ],
+                "scorer": "string",
+                "side": "one of \"away\" | \"home\"",
+                "type": "literal \"goal\""
+              },
+              "literal \"injury\"": {
+                "added?": "number",
+                "half": "one of 1 | 2",
+                "importance": "one of 1 | 2 | 3",
+                "minute": "number",
+                "player": "string",
+                "severity": "one of \"light\" | \"medium\" | \"serious\" | \"severe\"",
+                "side": "one of \"away\" | \"home\"",
+                "type": "literal \"injury\""
+              },
+              "literal \"penaltyMissed\"": {
+                "added?": "number",
+                "half": "one of 1 | 2",
+                "importance": "one of 1 | 2 | 3",
+                "minute": "number",
+                "outcome": "one of \"post\" | \"saved\" | \"wide\"",
+                "side": "one of \"away\" | \"home\"",
+                "taker": "string",
+                "type": "literal \"penaltyMissed\""
+              },
+              "literal \"red\"": {
+                "added?": "number",
+                "half": "one of 1 | 2",
+                "importance": "one of 1 | 2 | 3",
+                "minute": "number",
+                "player": "string",
+                "reason": "one of \"direct\" | \"secondYellow\"",
+                "side": "one of \"away\" | \"home\"",
+                "type": "literal \"red\""
+              },
+              "literal \"substitution\"": {
+                "added?": "number",
+                "half": "one of 1 | 2",
+                "importance": "one of 1 | 2 | 3",
+                "in": "string",
+                "minute": "number",
+                "out": "string",
+                "reason": "one of \"fatigue\" | \"injury\" | \"tactical\"",
+                "side": "one of \"away\" | \"home\"",
+                "type": "literal \"substitution\""
+              },
+              "literal \"yellow\"": {
+                "added?": "number",
+                "half": "one of 1 | 2",
+                "importance": "one of 1 | 2 | 3",
+                "minute": "number",
+                "player": "string",
+                "side": "one of \"away\" | \"home\"",
+                "triggersSuspension": "boolean",
+                "type": "literal \"yellow\""
+              }
+            }
+          }
+        },
+        "fixtureId": "string",
+        "motmRating?": "number"
+      }
+    },
+    "news": {
+      "[]": {
+        "factId": "string",
+        "templateId": "string",
+        "variantId": "string",
+        "vars": {
+          "{}": {
+            "any of": [
+              "string",
+              "number"
+            ]
+          }
+        }
+      }
+    },
+    "pendingFanDecision": "number",
+    "phraseMemory": {
+      "[]": "string"
+    },
+    "social": {
+      "[]": {
+        "factId": "string",
+        "templateId": "string",
+        "variantId": "string",
+        "vars": {
+          "{}": {
+            "any of": [
+              "string",
+              "number"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "careerId": "string",
+  "createdAt": "string",
+  "engineVersion": "number",
+  "game": {
+    "clubs": {
+      "{}": {
+        "def": {
+          "abbreviation": "string",
+          "aiProfile": "string",
+          "city": "string",
+          "colors": {
+            "[]": "string"
+          },
+          "crestBase": "number",
+          "crestPattern": "string",
+          "crestShape": "string",
+          "crestSymbol": "string",
+          "id": "string",
+          "name": "string",
+          "nickname": "string",
+          "rivals": {
+            "[]": "string"
+          },
+          "shortName": "string",
+          "size": "string",
+          "stadium": {
+            "capacity": "number",
+            "name": "string"
+          },
+          "state": "string",
+          "strength": "number",
+          "titles": {
+            "cup": "number",
+            "league": "number",
+            "libertadores": "number",
+            "sudamericana": "number"
+          }
+        },
+        "fans": "number",
+        "idolBenchStreak": "number",
+        "preferredFormations": [
+          "one of \"3-4-3\" | \"3-5-2\" | \"4-2-3-1\" | \"4-3-3\" | \"4-4-2\" | \"5-3-2\"",
+          "one of \"3-4-3\" | \"3-5-2\" | \"4-2-3-1\" | \"4-3-3\" | \"4-4-2\" | \"5-3-2\""
+        ],
+        "profile": "one of \"academy\" | \"ambitious\" | \"chaotic\" | \"seller\" | \"traditional\"",
+        "strength": "number"
+      }
+    },
+    "engineVersion": "number",
+    "fixtures": {
+      "[]": {
+        "awayId": "string",
+        "date": "string",
+        "homeId": "string",
+        "id": "string",
+        "result?": {
+          "abandoned": "boolean",
+          "attendance": "number",
+          "goals": {
+            "[]": {
+              "added?": "number",
+              "assist?": "string",
+              "kind": "one of \"freeKick\" | \"open\" | \"penalty\"",
+              "minute": "number",
+              "scorer": "string",
+              "side": "one of \"away\" | \"home\""
+            }
+          },
+          "motm?": "string",
+          "score": [
+            "number",
+            "number"
+          ],
+          "stats": {
+            "away": {
+              "onTarget": "number",
+              "possession": "number",
+              "reds": "number",
+              "shots": "number",
+              "yellows": "number"
+            },
+            "home": {
+              "onTarget": "number",
+              "possession": "number",
+              "reds": "number",
+              "shots": "number",
+              "yellows": "number"
+            }
+          }
+        },
+        "round": "number"
+      }
+    },
+    "lastSheets": {
+      "{}": {
+        "lineup": {
+          "bench": {
+            "[]": "string"
+          },
+          "captains": {
+            "[]": "string"
+          },
+          "formation": "one of \"3-4-3\" | \"3-5-2\" | \"4-2-3-1\" | \"4-3-3\" | \"4-4-2\" | \"5-3-2\"",
+          "freeKickTakers": {
+            "[]": "string"
+          },
+          "penaltyTakers": {
+            "[]": "string"
+          },
+          "starters": {
+            "[]": "string"
+          }
+        },
+        "tactic": {
+          "posture": "one of \"attacking\" | \"balanced\" | \"defensive\"",
+          "pressure": "one of \"high\" | \"low\" | \"medium\""
+        }
+      }
+    },
+    "pastSeasons": {
+      "[]": {
+        "awards": {
+          "bestGoalkeeper?": {
+            "clubId": "string",
+            "concededPerGame": "number",
+            "playerId": "string"
+          },
+          "bestPlayer?": {
+            "clubId": "string",
+            "playerId": "string",
+            "rating": "number"
+          },
+          "revelation?": {
+            "clubId": "string",
+            "playerId": "string",
+            "rating": "number"
+          },
+          "teamOfSeason": {
+            "[]": {
+              "clubId?": "string",
+              "playerId?": "string",
+              "slot": "one of \"AM\" | \"CB\" | \"DM\" | \"FB\" | \"GK\" | \"ST\""
+            }
+          },
+          "topAssists": {
+            "[]": {
+              "assists": "number",
+              "clubId": "string",
+              "playerId": "string"
+            }
+          },
+          "topScorers": {
+            "[]": {
+              "clubId": "string",
+              "goals": "number",
+              "playerId": "string"
+            }
+          }
+        },
+        "campaigns": {
+          "{}": {
+            "academy": {
+              "[]": "string"
+            },
+            "biggestDefeat?": {
+              "conceded": "number",
+              "home": "boolean",
+              "opponentId": "string",
+              "round": "number",
+              "scored": "number"
+            },
+            "biggestWin?": {
+              "conceded": "number",
+              "home": "boolean",
+              "opponentId": "string",
+              "round": "number",
+              "scored": "number"
+            },
+            "evolved": {
+              "[]": {
+                "after": "number",
+                "before": "number",
+                "playerId": "string"
+              }
+            },
+            "farewells": {
+              "[]": "string"
+            },
+            "points": "number",
+            "position": "number",
+            "target": "number",
+            "targetMet": "boolean",
+            "topScorers": {
+              "[]": {
+                "goals": "number",
+                "playerId": "string"
+              }
+            }
+          }
+        },
+        "championId": "string",
+        "championPoints": "number",
+        "relegationZone": {
+          "[]": "string"
+        },
+        "season": "number",
+        "year": "number"
+      }
+    },
+    "phase": "one of \"season\" | \"seasonEnd\"",
+    "players": {
+      "{}": {
+        "age": "number",
+        "attributes": {
+          "aerial?": "number",
+          "distribution?": "number",
+          "finishing?": "number",
+          "marking?": "number",
+          "passing?": "number",
+          "physical": "number",
+          "positioning?": "number",
+          "reflexes?": "number",
+          "rushing?": "number",
+          "speed?": "number",
+          "technique?": "number"
+        },
+        "benchStreak": "number",
+        "clubAppearances": "number",
+        "clubId": "string",
+        "condition": "number",
+        "face": "string",
+        "faceSeed": "number",
+        "growth": "number",
+        "id": "string",
+        "injuryRounds": "number",
+        "morale": "number",
+        "name": {
+          "display": "string",
+          "family": "string",
+          "full": "string"
+        },
+        "nameSeed": "number",
+        "nationality": "string",
+        "overall": "number",
+        "peakAge": "number",
+        "position": "string",
+        "potential": "number",
+        "recentRatings": {
+          "[]": "number"
+        },
+        "shirt": "number",
+        "suspendedGames": "number",
+        "trait": "string",
+        "yellowCount": "number"
+      }
+    },
+    "retiredNamesRev": "number",
+    "round": "number",
+    "rules": {
+      "realism": "one of \"full\" | \"simplified\""
+    },
+    "season": "number",
+    "seasonStats": {
+      "{}": {
+        "assists": "number",
+        "conceded": "number",
+        "games": "number",
+        "goals": "number",
+        "minutes": "number",
+        "ratedGames": "number",
+        "ratingSum": "number",
+        "reds": "number",
+        "yellows": "number"
+      }
+    },
+    "seed": "number",
+    "squads": {
+      "{}": {
+        "[]": "string"
+      }
+    },
+    "year": "number"
+  },
+  "paramsHash": "string",
+  "schemaVersion": "literal 1",
+  "updatedAt": "string"
+}

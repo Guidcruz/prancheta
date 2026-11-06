@@ -6,6 +6,16 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Formato do save congelado na versão 1 (T-019, US-033 e US-066; é a camada de dados, sem tela):
+  - Esquema estrito com `valibot` 1.4.2 e três níveis de conferência (`full`, `open`, `write`), escolhidos pela origem do dado para a gravação não pagar a conferência inteira. Recusa chaves de protótipo e impõe limites de texto e de listas.
+  - `isSafeDisplayText` (`app/src/lib/safe-text.ts`) filtra caracteres invisíveis, de direção de texto (bidi) e de controle nos textos mostrados na tela.
+  - O formato v1 fica congelado por uma fixture e por um teste de forma, que quebra o CI se o formato mudar sem subir a versão. `npm run save:fixtures -w app` gera as fixtures de uma versão nova e nunca sobrescreve as existentes.
+  - Cadeia de migrações (vazia na v1), aplicada na memória. Se a conferência da versão migrada falha, o desfazer devolve as súmulas antigas e o original continua intacto. Save de versão mais nova não é aberto nem alterado.
+  - Temporada base por conjunto de clubes (`app/src/data/club-sets.ts`): cada conjunto declara a sua, e o novo jogo usa o mais recente e começa no ano da base.
+  - Os textos de clube e de jogador passam a ter no máximo 60 caracteres.
+  - O motor não muda de simulação: `ENGINE_VERSION` segue 14.
+  - Pendências: a gravação do fim da temporada ainda passa da meta de 150 ms no p90 (T-072); a importação de arquivo (T-020) depende da T-073, pela decisão do CEO de que a importação só aceita os clubes do jogo.
+
 - Avatares dos jogadores gerados por código (T-027, US-005; ainda sem tela, ela entra na T-028):
   - `face.ts` tem o catálogo de traços e sorteia o rosto por idade e nacionalidade. O rosto vira um código de 13 caracteres em `Player.face` e nunca é regenerado.
   - `avatar.ts` desenha um SVG seguro (sem script, link nem evento) em 3 tamanhos, igual à folha de exemplo aprovada pelo CEO (`docs/art/avatares-exemplo.svg`).
