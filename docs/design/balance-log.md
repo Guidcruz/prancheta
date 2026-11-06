@@ -2,6 +2,23 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-06: cadeia com a escada nova (decisão 17; T-071)
+
+**Como foi medido.** `npm run balance -- --seasons 200 --seed 1 --chain 3`, com a escada da decisão 16 (fundo mais alto, `sd` 1,5) e o robô no Coritibom. Saída em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/dl2/chain3.txt`.
+
+**Resultado:** 92 de 93 metas obrigatórias; fora só "Campeão pequeno, temporada 2".
+
+| Métrica (semente 1, 200 carreiras)                  | Temporada 1 | Temporada 2 | Temporada 3 | Meta                |
+| --------------------------------------------------- | ----------- | ----------- | ----------- | ------------------- |
+| Campeão pequeno                                     | 3,0%        | 4,5% (fora) | 2,0%        | 0,5% a 4%           |
+| Campeão grande (info nas temporadas 2 e 3)          | 86,0%       | 82,5%       | 86,0%       | 50% a 90%           |
+| Clube fraco no G4 (info nas temporadas 2 e 3)       | 7,0%        | 6,0%        | 7,0%        | 5% a 15%            |
+| Deriva: grandes − não grandes                       | 2,43        | +0,02       | +0,01       | ±0,5 da temporada 1 |
+| Deriva: 4 mais fortes − 4 mais fracos (temporada 1) | 12,39       | −0,01       | +0,01       | ±0,5 da temporada 1 |
+| Força média da liga                                 | 70,20       | +0,60       | +0,93       | ±1,0 da temporada 1 |
+
+**Leitura.** Os 4,5% são 9 títulos em 200 carreiras; o erro com taxa perto de 4% é de cerca de 1,5 ponto, e a temporada 3 da mesma cadeia cai para 2,0%. A trava de deriva fica perto de zero, então não é a virada que favorece os pequenos: é amostra, como o campeão grande e o clube fraco no G4 da decisão 15. **Decisão do CEO (2026-11-06, "ok recomendado"):** o campeão pequeno fica informativo nas temporadas 2 e 3 da cadeia, obrigatório na 1; trava de deriva obrigatória (`balance-targets.md`, decisão 17). Código na T-071 (`scripts/balance/`); nenhum parâmetro mudou.
+
 ## 2026-11-06: todos podem ser campeões (escada, variação; T-070)
 
 **Como foi medido.** `/balance` do motor do commit `ca5092a` (T-069), em cópias do repositório no scratchpad com a lista de clubes trocada; `app/` e `scripts/` do repositório não foram tocados. Cópias: `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-base` (escada anterior, ordem atual), `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-A` (escada anterior, ordem 3/2/1), `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-L` (fundo mais alto, ordem atual; a lista é a mesma que a T-070 grava) e `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/repo-LA` (fundo mais alto, ordem 3/2/1). A variação entra por `--params` (`/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/sd/params-<sd>.json`, só `generation.clubStrengthSd`). Duas rodadas por combinação: `--seasons 1000 --seed 1 --robot <mais fraco>` (Chapecão na ordem atual, Remador na 3/2/1) e `--seasons 200 --seed 1` (robô no Coritibom; no Tufão na ordem 3/2/1 com o fundo mais alto). Depois da decisão, `--seasons 200 --seed 2,3 --duels 0` no `repo-L`.
