@@ -94,6 +94,7 @@ const SECTIONS: readonly { readonly title: string; readonly ids: (id: string) =>
       [
         'bigChampion',
         'smallChampion',
+        'everyChampion',
         'bigRelegated',
         'strongChampion',
         'strongRelegated',

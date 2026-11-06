@@ -112,6 +112,27 @@ export const FUTURE_TARGETS: readonly {
   },
 ];
 
+/** Seasons from which the targets "todo clube campeão" and "robô no mais fraco" are required. */
+export const LONG_RUN_SEASONS = 1000;
+const LONG_RUN_SHOWN = '1.000';
+
+/**
+ * The weakest club of the ladder: the lowest `strength`, ties by the smaller id. `--robot weakest`
+ * plays it, and the robot's G4 target (balance-targets.md, "Recomendação final") applies to it only.
+ */
+export function weakestClub(clubs: readonly ClubDef[]): ClubId | undefined {
+  let weakest: ClubDef | undefined;
+  for (const c of clubs) {
+    if (
+      weakest === undefined ||
+      c.strength < weakest.strength ||
+      (c.strength === weakest.strength && c.id < weakest.id)
+    )
+      weakest = c;
+  }
+  return weakest?.id;
+}
+
 export interface RobotSummary {
   readonly club: ClubId;
   readonly seasons: number;
@@ -286,6 +307,51 @@ export function buildReport(
   const robot =
     robotClub === undefined ? undefined : robotSummary(robotClub, seasons, results.robotSeasons);
   const robotName = robotClub === undefined ? 'clube' : clubName(options.clubs ?? [], robotClub);
+
+  // "Todo clube campeão": only meaningful over a long run (LONG_RUN_SEASONS); shorter runs show the
+  // count as information, never failing the CI.
+  const allClubs = options.clubs ?? [];
+  const titledClubs = new Set(seasons.map((x) => x.table.champion));
+  const untitled = allClubs.filter((c) => !titledClubs.has(c.id));
+  const everyChampionLong = n >= LONG_RUN_SEASONS;
+  const everyChampion: MetricRow =
+    allClubs.length === 0 || n === 0
+      ? row(
+          'everyChampion',
+          'Todo clube campeão ao menos 1 vez',
+          undefined,
+          share1,
+          '',
+          () => true,
+          false,
+        )
+      : {
+          id: 'everyChampion',
+          label: 'Todo clube campeão ao menos 1 vez',
+          value: untitled.length,
+          shown: !everyChampionLong
+            ? `n/a abaixo de ${LONG_RUN_SHOWN} temporadas`
+            : untitled.length === 0
+              ? `todos os ${allClubs.length}`
+              : `${allClubs.length - untitled.length} de ${allClubs.length} (sem título: ${untitled
+                  .map((c) => c.shortName)
+                  .join(', ')})`,
+          target: `todos, em ${LONG_RUN_SHOWN} temporadas ou mais`,
+          status: everyChampionLong ? (untitled.length === 0 ? 'dentro' : 'fora') : 'n/a',
+          required: everyChampionLong,
+        };
+  // The robot's G4 target applies only to the robot on the weakest club of the ladder, and is
+  // required from LONG_RUN_SEASONS paired seasons (below that it is shown, as information).
+  const onWeakest = robotClub !== undefined && robotClub === weakestClub(allClubs);
+  const robotWeakG4 = row(
+    'robotWeakG4',
+    `Robô no mais fraco (${robotName}): G4`,
+    onWeakest ? robot?.robotG4 : undefined,
+    share1,
+    'ao menos 2%',
+    { min: 0.02 },
+    onWeakest && robot !== undefined && robot.seasons >= LONG_RUN_SEASONS,
+  );
 
   const rows: MetricRow[] = [
     // Partida e resultados
@@ -479,9 +545,10 @@ export function buildReport(
       'Campeão pequeno',
       share((s) => s.table.championSize === 'small'),
       share1,
-      '0,5% a 3%',
-      { min: 0.005, max: 0.03 },
+      '0,5% a 4%',
+      { min: 0.005, max: 0.04 },
     ),
+    everyChampion,
     // Informative in the single season (BIG_RELEGATED_NOTE).
     {
       ...row(
@@ -561,6 +628,7 @@ export function buildReport(
       'no máximo 5%',
       { max: 0.05 },
     ),
+    robotWeakG4,
     // Referências (info)
     row(
       'strong10',

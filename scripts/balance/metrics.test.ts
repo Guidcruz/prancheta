@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { ClubSize, MatchResult, StandingRow } from '../../app/src/engine/index.ts';
+import type { ClubDef, ClubSize, MatchResult, StandingRow } from '../../app/src/engine/index.ts';
 import type { AllOutTally, CalibratedGap, DuelTally } from './duels.ts';
 import {
   addFans,
@@ -22,6 +22,7 @@ import {
   meanCi,
   notMeasured,
   pooledRows,
+  weakestClub,
   withPooledVerdict,
   type MetricRow,
 } from './metrics.ts';
@@ -469,5 +470,80 @@ describe('exitCode', () => {
   it('is 1 only when a required metric is out', () => {
     expect(exitCode({ rows: [r(true, 'dentro'), r(false, 'fora'), r(true, 'n/a')] })).toBe(0);
     expect(exitCode({ rows: [r(true, 'dentro'), r(true, 'fora')] })).toBe(1);
+  });
+});
+
+describe('the targets of the ladder with the higher bottom', () => {
+  const m = matches({ '1x1': 1 });
+  const clubs = [
+    { id: 'big1', shortName: 'Big', strength: 78 },
+    { id: 'zeta', shortName: 'Zeta', strength: 64 },
+    { id: 'alfa', shortName: 'Alfa', strength: 64 },
+  ] as unknown as ClubDef[];
+  const run = (n: number, champions: string[], robotG4Every = 0, robot = 'alfa') => {
+    const seasons = Array.from({ length: n }, (_, i) =>
+      season(i, m, { champion: champions[i % champions.length]! }, { big1: 70 }, [50]),
+    );
+    const robotSeasons = Array.from({ length: n }, (_, i) => ({
+      ...season(i, m, {}, { big1: 70 }, [50], robot),
+      points: { [robot]: 50 },
+      positions: { [robot]: robotG4Every > 0 && i % robotG4Every === 0 ? 3 : 10 },
+    }));
+    return buildReport(
+      { seasons, robotSeasons, calibrated: new Map(), tactical: new Map() },
+      { robotClub: robot, clubs },
+    );
+  };
+
+  it('picks the weakest club by strength, then by id', () => {
+    expect(weakestClub(clubs)).toBe('alfa');
+    expect(weakestClub([])).toBeUndefined();
+  });
+
+  it('judges "every club champion" only from 1000 seasons', () => {
+    expect(byId(run(200, ['big1']).rows, 'everyChampion')).toMatchObject({
+      status: 'n/a',
+      required: false,
+    });
+    expect(byId(run(1000, ['big1', 'zeta']).rows, 'everyChampion')).toMatchObject({
+      status: 'fora',
+      required: true,
+      shown: '2 de 3 (sem título: Alfa)',
+    });
+    expect(byId(run(1000, ['big1', 'zeta', 'alfa']).rows, 'everyChampion')).toMatchObject({
+      status: 'dentro',
+      shown: 'todos os 3',
+    });
+  });
+
+  it('judges the robot G4 only on the weakest club, required from 1000 seasons', () => {
+    expect(byId(run(1000, ['big1'], 25).rows, 'robotWeakG4')).toMatchObject({
+      value: 0.04,
+      status: 'dentro',
+      required: true,
+    });
+    expect(byId(run(1000, ['big1'], 100).rows, 'robotWeakG4')).toMatchObject({ status: 'fora' });
+    expect(byId(run(200, ['big1'], 25).rows, 'robotWeakG4')).toMatchObject({
+      status: 'dentro',
+      required: false,
+    });
+    expect(byId(run(1000, ['big1'], 25, 'zeta').rows, 'robotWeakG4')).toMatchObject({
+      status: 'n/a',
+      required: false,
+    });
+  });
+
+  it('allows a small champion up to 4%', () => {
+    const small = (share: number) =>
+      buildReport({
+        seasons: Array.from({ length: 1000 }, (_, i) =>
+          season(i, m, { championSize: i < share * 1000 ? 'small' : 'big' }, { big1: 70 }),
+        ),
+        robotSeasons: [],
+        calibrated: new Map(),
+        tactical: new Map(),
+      }).rows.find((r) => r.id === 'smallChampion')!;
+    expect(small(0.04).status).toBe('dentro');
+    expect(small(0.041).status).toBe('fora');
   });
 });

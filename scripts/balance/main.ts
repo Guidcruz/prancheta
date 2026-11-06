@@ -1,4 +1,4 @@
-import { buildReport, exitCode, pooledRows, withPooledVerdict } from './metrics.ts';
+import { buildReport, exitCode, pooledRows, weakestClub, withPooledVerdict } from './metrics.ts';
 import { formatIssues, loadParams, parseArgs, serieAClubs, USAGE } from './options.ts';
 import {
   formatJson,
@@ -65,7 +65,7 @@ async function run(
     io.stderr(`${parsed.error}\n\n${USAGE}\n`);
     return 2;
   }
-  const options = parsed.options;
+  let options = parsed.options;
   if (options.help) {
     io.stdout(`${USAGE}\n`);
     return 0;
@@ -79,6 +79,7 @@ async function run(
   }
   for (const warning of loaded.warnings) io.stderr(`${warning}\n`);
   const clubs = serieAClubs();
+  if (options.robot === 'weakest') options = { ...options, robot: weakestClub(clubs) };
   if (options.robot !== undefined && !clubs.some((c) => c.id === options.robot)) {
     io.stderr(
       `--robot: clube desconhecido "${options.robot}" (ids: ${clubs.map((c) => c.id).join(', ')})\n`,
