@@ -6,6 +6,11 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Avatares dos jogadores gerados por código (T-027, US-005; ainda sem tela, ela entra na T-028):
+  - `face.ts` tem o catálogo de traços e sorteia o rosto por idade e nacionalidade. O rosto vira um código de 13 caracteres em `Player.face` e nunca é regenerado.
+  - `avatar.ts` desenha um SVG seguro (sem script, link nem evento) em 3 tamanhos, igual à folha de exemplo aprovada pelo CEO (`docs/art/avatares-exemplo.svg`).
+  - O motor passa a idade do jogador à fonte de identidade, sem sorteio novo: placares e goldens não mudam e `ENGINE_VERSION` segue 14.
+
 - Save da carreira no aparelho (T-018, US-032 e US-034; é a camada de dados, as telas são da T-025 e da T-030):
   - Cada carreira é guardada em IndexedDB com as 3 últimas versões. Cada versão é comprimida (gzip) e leva um SHA-256 para detectar corrupção; a gravação é conferida byte a byte antes de valer.
   - Ao abrir, se a versão mais recente estiver corrompida ou incompleta, o jogo volta para a anterior. Se as 3 estiverem estragadas, devolve um erro tipado e a carreira continua na lista, sem tela em branco.
