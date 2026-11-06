@@ -81,3 +81,18 @@ A fronteira não muda nenhum resultado e, sozinha, não subiria a `ENGINE_VERSIO
 - Importar arquivo interno do motor fora de `app/src/engine/` falha no lint (`npm run lint`), e um teste prova que a regra pega `@engine/rng` em `lib/`. Desligar a regra num arquivo é BLOCKER na revisão. A exceção dos testes de `app/src/data/` é a única (ajuste da T-049, acima); outra exceção exige ADR.
 - Símbolo novo no `index.ts` precisa estar assinado no §4.1 (contrato) ou na lista da API de ferramentas; o revisor confere. Símbolo da API de ferramentas usado em `lib/`, `ui/`, `server/` ou `site/` é BLOCKER.
 - `matchSheets` com súmula de temporada passada, ou leitura de estado sem `pastSeasons` dentro do motor, é BLOCKER; a tolerância a formatos antigos mora em `lib/save/migrations/`.
+
+## Nota (architect, 2026-11-06): o gatilho do store próprio disparou
+
+A T-018 mediu a gravação segura do snapshot do fim da temporada no Chromium com 4× de lentidão de CPU (`code-reviewer`, Chromium headless 1243, 10 gravações e 2 de aquecimento): **264 ms de mediana** (p90 293, máximo 348) com o `matchSheets` dentro, contra o gatilho de 150 ms. Sem as súmulas, 145 ms de mediana e 160 de p90; cerca de 95 ms do total vinham da conferência pós-gravação. Os números estão no §5 da arquitetura.
+
+Pela regra desta decisão, o `matchSheets` sai do snapshot antes de a T-019 congelar o formato. O desenho está em `docs/02-architecture.md`, §4.2, "Súmulas fora do snapshot", e segue o que foi decidido aqui (store próprio, mesma transação do snapshot). Os detalhes que esta decisão não fixava:
+
+- **A forma lógica fica como está.** `CareerSaveV1.career.matchSheets` continua no envelope, na fixture v1, no teste de forma, no `valibot` e no arquivo exportado. Só o armazenamento de `lib/save/` muda: o snapshot leva `career.matchSheets: {}` e o store `matchSheets` guarda uma linha por rodada (`[careerId, season, round]`), que abrir remonta.
+- **Gravação incremental:** cada gravação grava só as rodadas que o snapshot de origem não tinha (no caso normal, a rodada que acabou de ser jogada), na mesma transação do snapshot. O registro do snapshot leva o índice das linhas que usa (rodada → SHA-256). As 3 versões convivem porque cada uma só aceita as linhas do próprio índice, conferidas pelo hash.
+- **Virada:** o `CareerService` zera `career.matchSheets` no `startNextSeason`, como decidido. As linhas da temporada anterior continuam no banco enquanto algum dos 3 snapshots for daquela temporada, e a poda as apaga depois. A regra de conformidade "`matchSheets` com súmula de temporada passada é BLOCKER" vale para o `CareerSave` (a forma lógica), não para essas linhas, que nenhum snapshot da temporada nova enxerga.
+- Linha de súmula ausente ou corrompida não descarta o snapshot: a rodada fica sem súmula (só o `Fixture.result`).
+
+A conferência pós-gravação também mudou (nota no ADR-0006).
+
+**Resultado (architect, 2026-11-06).** Com as súmulas fora do snapshot e a conferência por bytes, a gravação do fim da temporada ficou em p90 de 137 a 147 ms em três execuções (40 medições, §5): o gatilho de 150 ms está atendido e a T-019 congela o formato sem outra mudança. O custo que sobra é quase todo serializar, calcular o hash e comprimir o snapshot (cerca de 90 ms); a próxima revisão disso tem gatilho no §5 e risco no §9 (Séries B a D, Etapa 2).

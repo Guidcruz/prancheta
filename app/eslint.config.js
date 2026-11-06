@@ -168,7 +168,7 @@ const appBuildOnlyImports = {
 };
 
 export default [
-  { ignores: ['dist/**', 'dev-dist/**', 'node_modules/**'] },
+  { ignores: ['dist/**', 'dist-e2e/**', 'dev-dist/**', 'node_modules/**'] },
   ...tseslint.configs.recommended,
   ...svelte.configs['flat/recommended'],
   { files: ['**/*.svelte'], languageOptions: { parserOptions: { parser: tseslint.parser } } },
