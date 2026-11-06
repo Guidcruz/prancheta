@@ -120,6 +120,15 @@ describe('the catalogue only grows (docs/art/avatares.md, 6.3)', () => {
     }
   });
 
+  it('lists the current catalogue exactly: growing it updates the fixture in the same PR', () => {
+    // Without this, a field or value added without touching the fixture would leave a later
+    // removal of it passing the check above.
+    expect(fixture.map(([field]) => field)).toEqual([...FACE_FIELDS]);
+    expect(Object.fromEntries(fixture.map(([field, count]) => [field, Number(count)]))).toEqual(
+      Object.fromEntries(FACE_FIELDS.map((field) => [field, FACE_COUNTS[field]])),
+    );
+  });
+
   it('has room in the code: one base-36 character per field, 32 characters in all', () => {
     expect(1 + FACE_FIELDS.length).toBeLessThanOrEqual(FACE_MAX_LENGTH);
     for (const field of FACE_FIELDS) expect(FACE_COUNTS[field]).toBeLessThanOrEqual(36);
