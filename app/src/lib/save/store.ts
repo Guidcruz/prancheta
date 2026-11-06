@@ -16,6 +16,7 @@ import {
   type Migration,
   type MigrationError,
 } from './migrations/index.ts';
+import { stageEnd, stageStart } from './probe.ts';
 import { fail, ok, type SaveResult } from './result.ts';
 import {
   KEPT_SNAPSHOTS,
@@ -394,6 +395,7 @@ export class SaveStore {
     guard?: WriteGuard,
   ): Promise<SaveResult<WrittenSnapshot, WriteError>> {
     return this.serial(async () => {
+      let start = stageStart();
       const checked = parseCareerSave(save, { check: 'write' });
       if (!checked.ok) return checked;
       const byRound = sheetsByRound(save);
@@ -417,13 +419,16 @@ export class SaveStore {
         const sheets = parseRoundSheets(Object.fromEntries(byRound.get(round)!));
         if (!sheets.ok) return fail('invalid-save', { round, ...(sheets.detail as object) });
       }
+      stageEnd('schema', start);
       // The rounds to write (every round played without a base) and the snapshot, encoded side by
       // side. Without a base on a stored career the rows of the older snapshots are overwritten:
       // their changed rounds lose the sheets (see the top of this file; 4.2, T-019, T-020).
+      start = stageStart();
       const [encoded, ...encodedRows] = await Promise.all([
         encodeSave({ ...save, career: { ...save.career, matchSheets: {} } }),
         ...missing.map((round) => encodeSave(Object.fromEntries(byRound.get(round)!))),
       ]);
+      stageEnd('encode', start);
       if (!encoded.ok) return fail(encoded.error, encoded.detail);
       const rows: MatchSheetRecord[] = [];
       for (const [i, round] of missing.entries()) {
@@ -444,6 +449,7 @@ export class SaveStore {
       if (!db.ok) return db;
 
       // (2) The snapshot, the new rows and the pointer in one transaction.
+      start = stageStart();
       const tx = begin(db.value);
       if (typeof tx === 'string') return fail('write-failed', { name: tx });
       const done = tx.done;
@@ -505,17 +511,22 @@ export class SaveStore {
         return refused ?? fail(writeErrorOf(error), { name: errorName(error) });
       }
       if (record === undefined) return refused ?? fail('write-failed');
+      stageEnd('transaction', start);
       const seq = record.seq;
 
       // (3) Read back and compare with what was meant to be written.
+      start = stageStart();
       const problem = await this.verify(db.value, record, rows);
+      stageEnd('verify', start);
       if (problem !== undefined) {
         const rolledBack = await this.rollback(db.value, id, seq, previous, rows, replaced);
         return fail('verify-failed', { problem, rolledBack });
       }
 
       // Only now the older versions go.
+      start = stageStart();
       await this.prune(db.value, id, seq, season);
+      stageEnd('prune', start);
       return ok({
         seq,
         sha256: encoded.value.sha256,

@@ -1,4 +1,5 @@
 import { fail, ok, type SaveResult } from './result.ts';
+import { reportStage, stageStart, stageTime } from './probe.ts';
 import { MAX_SAVE_BYTES } from './schema.ts';
 
 /*
@@ -126,9 +127,24 @@ export async function encodeSave(
   maxBytes: number = MAX_SAVE_BYTES,
 ): Promise<SaveResult<EncodedSave, UnsupportedError | TooLargeError>> {
   if (!codecSupported()) return fail('unsupported-browser');
-  const json = encoder.encode(JSON.stringify(save));
+  let start = stageStart();
+  const text = JSON.stringify(save);
+  const stringified = stageTime(start);
+  start = stageStart();
+  const json = encoder.encode(text);
+  const encoded = stageTime(start);
   if (json.byteLength > maxBytes) return fail('too-large', { bytes: json.byteLength, maxBytes });
-  const [sha256, compressed] = await Promise.all([sha256Hex(json), gzip(json)]);
+  start = stageStart();
+  let hashed = 0;
+  let compressedIn = 0;
+  const [sha256, compressed] = await Promise.all([
+    sha256Hex(json).finally(() => (hashed = stageTime(start))),
+    gzip(json).finally(() => (compressedIn = stageTime(start))),
+  ]);
+  reportStage('stringify', stringified, json.byteLength);
+  reportStage('utf8', encoded, json.byteLength);
+  reportStage('sha256', hashed, json.byteLength);
+  reportStage('gzip', compressedIn, json.byteLength);
   return ok({ sha256, bytes: json.byteLength, gzip: compressed });
 }
 

@@ -5,6 +5,7 @@ import {
   type CareerSave,
   type SheetIndex,
 } from '../../app/src/lib/save/index.ts';
+import { setWriteProbe, type WriteStage } from '../../app/src/lib/save/probe.ts';
 import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/sample.ts';
 
 /*
@@ -24,8 +25,22 @@ import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/
  *   round 2 (one row; the oldest kept snapshot is then of season 2, so it reads the 3 snapshots and
  *   prunes the 38 rows of season 1). Normal writes of a round: they decide with `incremental`;
  *
- * and the parts the store cannot see from outside (stringify, encode of the snapshot).
+ * and the parts the store cannot see from outside (stringify, encode of the snapshot). Each write
+ * after round 38 also reports the time of its stages (probe.ts, T-072): the store's, and the
+ * codec's for the snapshot (the row of round 38 is encoded beside it, inside `encode`).
  */
+
+const WRITE_STAGES: readonly WriteStage[] = [
+  'schema',
+  'stringify',
+  'utf8',
+  'sha256',
+  'gzip',
+  'encode',
+  'transaction',
+  'verify',
+  'prune',
+];
 
 export interface MeasureOptions {
   readonly runs: number;
@@ -35,6 +50,8 @@ export interface MeasureOptions {
 export interface Measurement {
   readonly dbName: string;
   readonly incremental: number[];
+  /** The stages of each write of `incremental`, in the same order (ms per write). */
+  readonly incrementalStages: Record<WriteStage, number[]>;
   readonly noNewRound: number[];
   readonly allRounds: number[];
   readonly open: number[];
@@ -108,10 +125,29 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const before = await write(sampleAtRound(save, 37), undefined, 37);
   let last = await write(stamp(save, 0), before.sheets, 1);
   const incremental: number[] = [];
+  const incrementalStages = Object.fromEntries(
+    WRITE_STAGES.map((stage) => [stage, [] as number[]]),
+  ) as Record<WriteStage, number[]>;
   const noNewRound: number[] = [];
   for (let i = 0; i < total; i++) {
     const after38 = stamp(save, 2 * i + 1);
-    keep(incremental, i, await time(async () => (last = await write(after38, before.sheets, 1))));
+    // The stages of the store, and those of the codec for the snapshot only (the biggest value
+    // encoded; the row of round 38 is encoded beside it).
+    const spent = new Map<WriteStage, number>();
+    let snapshotBytes = 0;
+    const codec: [WriteStage, number, number][] = [];
+    setWriteProbe((stage, ms, bytes) => {
+      if (bytes === undefined) spent.set(stage, ms);
+      else {
+        codec.push([stage, ms, bytes]);
+        snapshotBytes = Math.max(snapshotBytes, bytes);
+      }
+    });
+    const ms = await time(async () => (last = await write(after38, before.sheets, 1)));
+    setWriteProbe(undefined);
+    for (const [stage, took, bytes] of codec) if (bytes === snapshotBytes) spent.set(stage, took);
+    keep(incremental, i, ms);
+    for (const stage of WRITE_STAGES) keep(incrementalStages[stage], i, spent.get(stage) ?? 0);
     const again = stamp(save, 2 * i + 2);
     keep(noNewRound, i, await time(() => write(again, last.sheets, 0)));
   }
@@ -179,6 +215,7 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   return {
     dbName,
     incremental,
+    incrementalStages,
     noNewRound,
     allRounds,
     open,

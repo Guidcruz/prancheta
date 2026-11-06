@@ -9,6 +9,8 @@
  * reported (it does not decide the exit code).
  */
 
+import type { WriteStage } from '../../app/src/lib/save/probe.ts';
+
 /** About a third of the 500 ms of the round (docs/02-architecture.md, 5). */
 export const WRITE_LIMIT_MS = 150;
 
@@ -34,6 +36,8 @@ export function stats(values: readonly number[]): Stats {
 export interface MeasurementLike {
   readonly dbName: string;
   readonly incremental: readonly number[];
+  /** The stages of each write of `incremental` (ms per write, same order). */
+  readonly incrementalStages: Readonly<Record<WriteStage, readonly number[]>>;
   readonly noNewRound: readonly number[];
   readonly allRounds: readonly number[];
   readonly open: readonly number[];
@@ -84,6 +88,33 @@ export function openWithinTarget(m: MeasurementLike, target = OPEN_TARGET_MS): b
   return stats(m.open).p90 <= target;
 }
 
+/** The stages in the order of a write, with the name printed in the report. */
+const STAGE_NAMES: readonly (readonly [WriteStage, string])[] = [
+  ['schema', 'esquema write + linha nova inteira'],
+  ['stringify', 'serializar (JSON.stringify)'],
+  ['utf8', 'UTF-8'],
+  ['sha256', 'SHA-256 (em paralelo com o gzip)'],
+  ['gzip', 'gzip (CompressionStream)'],
+  ['encode', 'codificação inteira (de parede)'],
+  ['transaction', 'transação IndexedDB'],
+  ['verify', 'releitura e comparação por bytes'],
+  ['prune', 'poda'],
+];
+
+/** The stages that follow one another; the rest of a write is outside them. */
+const SEQUENTIAL: readonly WriteStage[] = ['schema', 'encode', 'transaction', 'verify', 'prune'];
+
+/**
+ * What a write after round 38 spent outside its sequential stages (opening the connection, the
+ * queue, building the record), per write.
+ */
+export function restOfWrite(m: MeasurementLike): number[] {
+  return m.incremental.map(
+    (total, i) =>
+      total - SEQUENTIAL.reduce((sum, stage) => sum + m.incrementalStages[stage][i]!, 0),
+  );
+}
+
 const ms = (n: number) => `${n.toFixed(1)} ms`;
 const kb = (n: number) => `${Math.round(n / 1024)} KB`;
 
@@ -120,6 +151,10 @@ export function formatReport(
     row('abrir a carreira (38 linhas remontadas)', m.open),
     row('snapshot: serializar + hash + gzip', m.encode),
     row('snapshot: só JSON.stringify', m.stringify),
+    '',
+    'Etapas da gravação após a rodada 38 (por gravação; as do codec são as do snapshot, codificado ao lado da linha da 38):',
+    ...STAGE_NAMES.map(([stage, name]) => row(`  ${name}`, m.incrementalStages[stage])),
+    row('  resto (conexão, fila, registro)', restOfWrite(m)),
     '',
     verdict,
     openVerdict,

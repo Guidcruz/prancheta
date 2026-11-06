@@ -5,6 +5,7 @@ import {
   WRITE_LIMIT_MS,
   formatReport,
   openWithinTarget,
+  restOfWrite,
   stats,
   withinLimit,
   type MeasurementLike,
@@ -21,6 +22,17 @@ const measurement = (
 ): MeasurementLike => ({
   dbName: 'prancheta-test',
   incremental,
+  incrementalStages: {
+    schema: incremental.map((n) => n * 0.1),
+    stringify: incremental.map((n) => n * 0.15),
+    utf8: incremental.map((n) => n * 0.05),
+    sha256: incremental.map((n) => n * 0.05),
+    gzip: incremental.map((n) => n * 0.3),
+    encode: incremental.map((n) => n * 0.5),
+    transaction: incremental.map((n) => n * 0.2),
+    verify: incremental.map((n) => n * 0.1),
+    prune: incremental.map((n) => n * 0.05),
+  },
   noNewRound: incremental.map((n) => n - 5),
   allRounds: incremental.map((n) => n * 2),
   open,
@@ -94,6 +106,31 @@ describe('measure-save report', () => {
     const over = formatReport(measurement([200, 210, 220], [500]), 4);
     expect(over).toContain('Gravação ACIMA do limite');
     expect(over).toContain('Abertura ACIMA da meta');
+  });
+});
+
+describe('measure-save stages of the write', () => {
+  it('prints each stage of the write after round 38 and what is left outside them', () => {
+    const m = measurement([100, 200]);
+    // 100 − (10 + 50 + 20 + 10 + 5) and 200 − (20 + 100 + 40 + 20 + 10).
+    expect(restOfWrite(m).map((n) => Math.round(n * 1000) / 1000)).toEqual([5, 10]);
+    const report = formatReport(m, 4);
+    expect(report).toContain('Etapas da gravação após a rodada 38');
+    for (const name of [
+      'esquema write + linha nova inteira',
+      'serializar (JSON.stringify)',
+      'UTF-8',
+      'SHA-256 (em paralelo com o gzip)',
+      'gzip (CompressionStream)',
+      'codificação inteira (de parede)',
+      'transação IndexedDB',
+      'releitura e comparação por bytes',
+      'poda',
+      'resto (conexão, fila, registro)',
+    ]) {
+      expect(report).toContain(name);
+    }
+    expect(report).toMatch(/gzip \(CompressionStream\) +mediana +45\.0 ms +p90 +60\.0 ms/);
   });
 });
 
