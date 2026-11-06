@@ -17,25 +17,14 @@ import {
 import { FACE_COUNTS, FACE_FIELDS, NEUTRAL_FACE, decodeFace, encodeFace } from './face.ts';
 import { gameIdentitySource } from './identity.ts';
 import { contrastRatio } from './shield.ts';
+import sheetCodes from './__fixtures__/avatar.sheet.json';
 
-/** The 16 faces of the approved sheet (docs/art/avatares-exemplo.svg) and four more. */
+/**
+ * The 16 faces of the approved sheet (docs/art/avatares-exemplo.svg; the list is shared with
+ * scripts/avatar-sheet.mjs) and four more.
+ */
 const FIXED_CODES = [
-  '1916221221000',
-  '1453023021000',
-  '1945005321000',
-  '1411303501410',
-  '140f051420030',
-  '1601910311000',
-  '1705020222000',
-  '1512055321300',
-  '1502110110500',
-  '111f241410000',
-  '1312330330400',
-  '1202121212340',
-  '101c232331300',
-  '160c013410000',
-  '1022123512400',
-  '1355015430001',
+  ...(sheetCodes as string[]),
   '1b39853452512',
   '1a0e911551621',
   '105a704530752',

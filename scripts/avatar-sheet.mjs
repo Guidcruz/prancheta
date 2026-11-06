@@ -21,25 +21,13 @@ import { contrastRatio } from '../app/src/lib/generators/shield.ts';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const args = process.argv.slice(2);
 
-/** The faces of the approved sheet (prototype of 2026-11-06), by code. */
-export const SHEET_CODES = [
-  '1916221221000',
-  '1453023021000',
-  '1945005321000',
-  '1411303501410',
-  '140f051420030',
-  '1601910311000',
-  '1705020222000',
-  '1512055321300',
-  '1502110110500',
-  '111f241410000',
-  '1312330330400',
-  '1202121212340',
-  '101c232331300',
-  '160c013410000',
-  '1022123512400',
-  '1355015430001',
-];
+/**
+ * The faces of the approved sheet (prototype of 2026-11-06), by code. Shared with the avatar
+ * tests (app/src/lib/generators/avatar.test.ts), which pin their rendering.
+ */
+export const SHEET_CODES = JSON.parse(
+  readFileSync(resolve(root, 'app/src/lib/generators/__fixtures__/avatar.sheet.json'), 'utf8'),
+);
 
 /** surface-0 and surface-1 of each theme, from the design tokens. */
 function themeBackgrounds() {
