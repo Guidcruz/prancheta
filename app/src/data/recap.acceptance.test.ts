@@ -60,7 +60,7 @@ describe.each([
       expect(JSON.stringify(state)).not.toContain('"lastRound"');
     }
     const humans = [clubs[0]!.id];
-    const closed = endSeason(played.final, params, humans);
+    const closed = endSeason(played.final, params, humans, fixedIdentitySource());
     if (!closed.ok) throw new Error(`endSeason: ${closed.error}`);
     expect('lastRound' in closed.value.state).toBe(false);
     const next = startNextSeason(closed.value.state, params, fixedIdentitySource());

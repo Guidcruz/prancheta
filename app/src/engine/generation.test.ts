@@ -10,12 +10,14 @@ import {
   SQUAD_GROUP_SIZES,
   START_MORALE,
   STRENGTH_TOLERANCE,
+  TURN_ID_STRIDE,
   bestEleven,
   checkGeneratedSquad,
   drawClubProfile,
   drawPreferredFormations,
   elevenStrength,
   generateSquad,
+  turnPlayerId,
 } from './generation.ts';
 import {
   POSITIONS,
@@ -511,5 +513,39 @@ describe('generateSquad', () => {
     expect(checkGeneratedSquad(squad.slice(1), 'clube-teste-02', 99)).toEqual(
       expect.arrayContaining(['size', 'wrong-club', 'no-jewel']),
     );
+  });
+});
+
+describe('generateSquad with the season (T-048; docs/02-architecture.md, 4.1)', () => {
+  const request = { clubId: 'clube-teste-01', seed: 42, strength: 70, formation: '4-3-3' as const };
+
+  it('gives the squad of the new game with season 1 (labels and ids unchanged)', () => {
+    const plain = generateSquad(request, params, identities);
+    expect(generateSquad({ ...request, season: 1 }, params, identities)).toEqual(plain);
+    expect(plain.players.map((p) => p.id)).toEqual(
+      Array.from({ length: SQUAD_SIZE }, (_, i) => `clube-teste-01#${i + 1}`),
+    );
+  });
+
+  it('gives another squad from season 2, with ids that never meet those of season 1', () => {
+    const first = generateSquad(request, params, identities).players;
+    const second = generateSquad({ ...request, season: 2 }, params, identities).players;
+    expect(TURN_ID_STRIDE).toBe(100);
+    expect(second.map((p) => p.id)).toEqual(
+      Array.from({ length: SQUAD_SIZE }, (_, i) => `clube-teste-01#${201 + i}`),
+    );
+    expect(second.map((p) => p.id)).toEqual(
+      Array.from({ length: SQUAD_SIZE }, (_, i) => turnPlayerId('clube-teste-01', 2, i + 1)),
+    );
+    const ids = new Set(first.map((p) => p.id));
+    expect(second.some((p) => ids.has(p.id))).toBe(false);
+    // Another draw: the overalls, ages and identity seeds of the squad are not the same.
+    expect(second.map((p) => [p.overall, p.age])).not.toEqual(first.map((p) => [p.overall, p.age]));
+    expect(second.map((p) => p.nameSeed)).not.toEqual(first.map((p) => p.nameSeed));
+    expect(checkGeneratedSquad(second, 'clube-teste-01', 70)).toEqual([]);
+    // Season 3 is another squad again.
+    const third = generateSquad({ ...request, season: 3 }, params, identities).players;
+    expect(third[0]!.id).toBe('clube-teste-01#301');
+    expect(third.map((p) => p.overall)).not.toEqual(second.map((p) => p.overall));
   });
 });

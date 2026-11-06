@@ -2,6 +2,82 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-06: renovação mínima dos elencos (decisão 14; T-048)
+
+**Como foi medido.** Motor da T-048 (commit `52618ee`, `ENGINE_VERSION` 15): na virada, quem completa 35 anos se aposenta e o clube promove da base um jovem de 17 da mesma posição, ancorado em `def.strength`. Quatro rodadas, IA nos 20 clubes, parâmetros do repositório, nenhum parâmetro mudou:
+
+- `npm run balance -- --seasons 200` (o CI): 39 de 39 metas obrigatórias. A temporada 1 não passa pela virada, então é a mesma de antes.
+- `npm run balance -- --seasons 200 --seed 1 --chain 3`: 91 de 91 metas obrigatórias.
+- `npm run balance -- --seasons 200 --seed 2,3 --chain 3 --duels 0 --robot none`: 70 de 70 em cada semente; metas raras no total, 5 de 5.
+- `npm run balance -- --seasons 200 --seed 1,2,3 --chain 10 --duels 0 --robot none` (aceite da T-048): 70 de 70 metas obrigatórias (temporadas 1 a 3) em cada semente; metas raras no total das 600 carreiras, 5 de 5. Cerca de 8 minutos com 4 threads.
+
+Saídas em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/t048/` (`ci-200.txt`, `chain3-s1.txt`, `chain3-s23.txt`, `chain10.txt`). As linhas novas da "Virada de temporada" (idade média, candidatos à revelação e aposentadorias por clube) são informativas e entram no `--chain` desta tarefa.
+
+**Carreira longa com a renovação (`--chain 10`, 200 carreiras por semente; sementes 1 / 2 / 3 quando diferem).**
+
+| Temporada                                  | 1     | 2     | 3     | 4     | 5     | 6     | 7     | 8           | 9           | 10          |
+| ------------------------------------------ | ----- | ----- | ----- | ----- | ----- | ----- | ----- | ----------- | ----------- | ----------- |
+| Força média da liga (semente 1)            | 70,20 | 70,78 | 71,11 | 71,26 | 71,29 | 71,22 | 71,13 | 71,14       | 71,32       | 71,54       |
+| Força média da liga (sementes 2 e 3)       | 70,16 | 70,75 | 71,07 | 71,22 | 71,26 | 71,18 | 71,12 | 71,11       | 71,27       | 71,54       |
+| Idade média dos elencos (as 3 sementes)    | 26,1  | 26,8  | 27,2  | 27,3  | 27,2  | 26,9  | 26,4  | 25,7        | 24,9        | 24,2        |
+| Candidatos à revelação, média por carreira | 15,7  | 25,2  | 29,2  | 27,6  | 33,3  | 42,4  | 59,8  | 75,3        | 89,4        | 101,1       |
+| Candidatos à revelação, mínimo             | 7     | 14    | 16    | 15    | 16    | 26    | 40    | 51          | 64          | 75          |
+| Aposentadorias por clube na virada         | 0,44  | 0,94  | 1,23  | 1,49  | 1,80  | 2,09  | 2,33  | 2,55        | 2,31        | –           |
+| Gols por partida (semente 1)               | 2,64  | 2,63  | 2,62  | 2,61  | 2,57  | 2,55  | 2,53  | 2,48        | 2,47        | 2,45        |
+| Gols por partida (sementes 2 / 3, t8–10)   |       |       |       |       |       |       |       | 2,49 / 2,49 | 2,47 / 2,47 | 2,43 / 2,45 |
+
+Candidatos à revelação: jogadores de até 21 anos com ao menos 19 jogos com nota na temporada (o mínimo da revelação). Na média e no mínimo, a média das 3 sementes e o menor das 600 carreiras. Aposentadorias: média das 3 sementes, na virada que fecha a temporada.
+
+**Leitura.**
+
+- **Bate com a medição de desenho da decisão 14** (tabela "Carreira longa sem renovação" abaixo, linhas "Com aposentadoria aos 35"): força de 70,7 a 71,5 (desenho: 70,9 a 71,3), idade de 27,3 caindo a 24,2 (desenho: 27,2 a 24,2), cerca de 1,7 aposentadoria por clube e temporada na média das 9 viradas (1,69), e a revelação sempre com candidatos (nunca menos de 7 numa carreira).
+- **Metas obrigatórias:** todas dentro nas temporadas 1 a 3, nas três sementes, e a trava de deriva perto de zero nas temporadas 2 e 3 (grandes − não grandes +0,01 a +0,04; 4 mais fortes − 4 mais fracos −0,01 a +0,06; limite ±0,5). Na 1ª virada só se aposentam os reservas gerados com 34 anos (0,44 por clube), e a renovação quase não toca o que a cadeia de 3 temporadas mede.
+- **Informativo, como a decisão 14 previu:** os gols ficam abaixo de 2,50 da temporada 8 em diante (2,43 a 2,49), pelos atacantes do melhor XI, que envelhecem mais que os defensores; fica para a base da Etapa 4. A força média passa de +1,0 da temporada 1 nas temporadas 4, 5, 9 e 10 (até +1,36 na 10); a meta de ±1,0 só é obrigatória até a 3ª.
+- **Para o `game-designer` olhar (sem pedido de ajuste):** na temporada 10 a idade média ainda cai (24,2, −0,7 por temporada desde a 7ª) e os candidatos à revelação já são cerca de 5 por clube, contra menos de 1 na temporada 1. A carreira ainda não chegou a um equilíbrio em 10 temporadas; os testes de propriedade cobrem 30 temporadas só nos invariantes (idade abaixo de 35, 25 por elenco, 3/5/4/4/4/5, um ídolo, ids sem repetir), não nessas métricas. A idade de aposentadoria é o botão que a decisão 14 deixa para calibrar.
+
+## 2026-11-06: renovação mínima em 30 temporadas (leitura do `game-designer`; T-048)
+
+**Como foi medido.** Mesmo motor da entrada acima (`ENGINE_VERSION` 15), nenhum parâmetro mudou: `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` (60 carreiras de 30 temporadas, cerca de 3 minutos com 4 threads; código de saída 0). Saída em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/t048gd/chain30.txt`. Pergunta: a idade caindo e a revelação crescendo na temporada 10 são deriva sem fim ou uma onda?
+
+| Temporada                          | 1     | 4     | 10          | 13          | 15          | 19    | 22    | 25          | 28          | 30          |
+| ---------------------------------- | ----- | ----- | ----------- | ----------- | ----------- | ----- | ----- | ----------- | ----------- | ----------- |
+| Idade média dos elencos            | 26,1  | 27,3  | 24,2        | 23,7        | 24,9        | 26,1  | 27,3  | 26,4        | 24,2        | 23,6        |
+| Aposentadorias por clube na virada | 0,43  | 1,46  | 2,03        | 0,60        | 1,23        | 0,43  | 1,46  | 2,32        | 2,03        | –           |
+| Candidatos à revelação (média)     | 15,1  | 27,6  | 100,5       | 92,4        | 58,7        | 35,9  | 32,3  | 65,5        | 105,5       | 105,0       |
+| Força média da liga (Δ da 1ª)      | 70,14 | +1,08 | +1,37       | +3,06       | +4,03       | +3,89 | +3,51 | +2,09       | +1,55       | +2,38       |
+| 4 mais fortes − 4 mais fracos (Δ)  | 12,42 | −0,06 | −0,83       | −1,12       | −1,19       | −1,10 | −1,24 | −1,02       | −1,11       | −1,45       |
+| Gols por partida                   | 2,65  | –     | 2,43        | 2,43        | 2,43        | –     | –     | 2,41        | 2,41        | 2,39        |
+| Pontos do campeão / do 17º         | –     | –     | 74,5 / 40,1 | 74,8 / 40,1 | 74,9 / 40,9 | –     | –     | 75,9 / 40,3 | 75,4 / 40,0 | 74,1 / 41,1 |
+
+**Leitura.**
+
+- **É uma onda de 18 temporadas, não uma deriva.** Entrada aos 17 e saída aos 35 são fixas, então a geração inicial se aposenta em ondas que se repetem a cada 35 − 17 = 18 temporadas, sem amortecer (0,43 aposentadoria por clube na 1ª e na 19ª virada; idade 27,3 na 4ª e na 22ª; 24,2 na 10ª e na 28ª). A idade fica de 23,6 a 27,3; a revelação nunca fica sem candidatos.
+- **A força média sobe com a onda de jovens** (até +4,0 da 15ª à 21ª) e volta (+1,5 na 27ª). É de todos os clubes, então a tabela não sente: campeão de 74 a 77 pontos e 17º de 40 a 41, dentro das metas da temporada única; campeão grande de 73% a 90%. A distância entre fortes e fracos encolhe cerca de 1 ponto, e os gols ficam de 2,39 a 2,43 da 10ª em diante.
+- **Veredito: aceitável para a 1a, sem mudança antes do merge.** Carreira longa está fora do escopo da Etapa 1, a renovação é a mínima que o CEO aprovou, e todas as metas obrigatórias passam. O ciclo e os gols ficam para a base da Etapa 4 (idade de saída com variação), e a força média alta importa para o acesso da Série B (Etapa 2). Ponto de checagem em `temporada.md`, "Carreira longa na 1a". Nenhuma proposta de ajuste.
+
+## 2026-11-06: aposentadoria variável de 33 a 40 (decisão do CEO; T-048)
+
+**Como foi medido.** O motor da T-048 (`ENGINE_VERSION` 15) copiado para fora do repositório, com uma única mudança no `renewClub`: a regra de `temporada.md`, "Carreira longa na 1a" (sorteio `rng.chance(p)` no fluxo `${seed}-s${season}-retirement-${playerId}`, de 33 a 39 anos; aos 40, sai). O código de produção não mudou. `npm run balance -- --seasons 60 --seed 1 --chain 30 --duels 0 --robot none` na cópia, com a regra fixa (controle, reproduz a entrada de 30 temporadas acima) e com duas tabelas: **A** (linha 5/10/25/35/45/55/70%, goleiro 0/2/5/10/15/20/30%) e **B** (linha 8/15/30/40/50/60/75%, goleiro 2/4/8/12/18/25/35%). Saídas em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/ret/` (`chain30-fixed.txt`, `chain30-A.txt`, `chain30-B.txt`, `chain30-Ag3.txt`; idades de saída em `run-*.log`).
+
+| Métrica (temporadas 1 a 30)                | Fixa aos 35        | A (aprovada)       | B                  |
+| ------------------------------------------ | ------------------ | ------------------ | ------------------ |
+| Idade média de saída: linha / goleiro      | 35 / 35            | 36,1 / 38,3        | 35,7 / 37,8        |
+| Linha que sai de 35 a 40                   | 100%               | 84%                | 77%                |
+| Goleiro que chega aos 40                   | 0                  | 36%                | 27%                |
+| Idade média dos elencos                    | 23,6 a 27,3        | 24,6 a 28,4        | 24,5 a 28,0        |
+| Aposentadorias por clube na virada (média) | 0,43 a 2,45 (1,51) | 0,23 a 2,21 (1,30) | 0,32 a 2,20 (1,35) |
+| Força média da liga (maior Δ da 1ª)        | +4,03              | +3,81              | +3,84              |
+| 4 mais fortes − 4 mais fracos (pior Δ)     | −1,45              | −1,44              | −1,49              |
+| Gols por partida (temporadas 10 a 30)      | 2,38 a 2,43        | 2,36 a 2,47        | 2,36 a 2,46        |
+| Metas obrigatórias (temporadas 1 a 3)      | 75 de 75           | 75 de 75           | 74 de 75           |
+
+**Leitura.**
+
+- **A cumpre o que o CEO pediu** (maioria de 35 a 40, teto de 40, goleiro chegando aos 40 com frequência) e passa todas as metas obrigatórias. B tira o goleiro dos 40 com mais frequência e põe quase um quarto das saídas de linha antes dos 35; a meta que B perde (fuga do Z4 de 6 a 8 pontos, temporada 3) é amostra (as 3 primeiras temporadas quase não sentem a aposentadoria), mas não há motivo para preferir B.
+- **A onda amortece pouco.** O ciclo passa de 18 para cerca de 19 a 20 temporadas e as aposentadorias oscilam menos (da 10ª virada em diante, 0,70 a 2,15 por clube, contra 0,43 a 2,45), mas a amplitude da idade cai cerca de 13% por ciclo (3,8 para 3,3 anos entre pico e vale), como a conta prevê para um desvio de cerca de 1,5 ano na saída. Não é motivo para alargar a tabela: a janela de 35 a 40 é do CEO, e o ciclo fica para a Etapa 4.
+- **Goleiro veterano é reserva:** overall médio 54,5 aos 38, 51,4 aos 39, 48,4 aos 40 (a curva de declínio é a mesma para todas as posições). Controle "Ag3" (A com o goleiro declinando 3 anos mais tarde): 62,6 aos 38, 57,3 aos 40, gols 2,33 a 2,43 da 10ª em diante; não recomendo, fica para o CEO.
+- **Para o `developer`:** com o mesmo fluxo e o mesmo sorteio, a implementação deve reproduzir a coluna A exatamente na mesma cadeia.
+
 ## 2026-11-06: cadeia com a escada nova (decisão 17; T-071)
 
 **Como foi medido.** `npm run balance -- --seasons 200 --seed 1 --chain 3`, com a escada da decisão 16 (fundo mais alto, `sd` 1,5) e o robô no Coritibom. Saída em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/dl2/chain3.txt`.

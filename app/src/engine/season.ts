@@ -1,8 +1,15 @@
-import type { ClubDef } from './clubs.ts';
+import { DEFAULT_STRENGTH, type ClubDef } from './clubs.ts';
 import { generateFixtures } from './fixtures.ts';
 import { FORMATION_SLOTS } from './formations.ts';
 import type { ClubState, GameState } from './game.ts';
-import { START_CONDITION, bestEleven, elevenStrength, idNumber } from './generation.ts';
+import {
+  IDOL_MIN_AGE,
+  START_CONDITION,
+  bestEleven,
+  elevenStrength,
+  generateAcademy,
+  idNumber,
+} from './generation.ts';
 import { clamp, normal } from './math.ts';
 import { SEASON_ROUNDS, type GameParams } from './params.ts';
 import {
@@ -30,14 +37,18 @@ import { ENGINE_VERSION } from './version.ts';
  *    defeat, the club's top scorer);
  * 4. the evolution and the birthday of every player of the 20 clubs (it reads the minutes and the
  *    morale after round 38, and the campaign keeps the overall before and after);
- * 5. the summary goes to `pastSeasons` and the phase becomes `seasonEnd` (the title counts from
+ * 5. the minimal renewal (T-048; temporada.md, "Carreira longa na 1a"): who retires after the
+ *    birthday (a draw by age from 33 to 39, always at RETIREMENT_MAX_AGE) leaves the squad (he
+ *    stays in `players` until the turn, so the summary screen still has his name and face), a
+ *    youth of the academy comes in his place, and a club whose idol retired picks a new one;
+ * 6. the summary goes to `pastSeasons` and the phase becomes `seasonEnd` (the title counts from
  *    here, `careerLeagueTitles`).
  *
  * `startNextSeason` (only with `phase: 'seasonEnd'`): season + 1, year + 1, round 1, the new
  * calendar (the only draw, by the new season's stream), `seasonStats` cleared (`lastSheets`
- * stays), the players rested and fit with half of the way of their morale to
- * `fans.start`, the thermometers back to `fans.start` and the strength recalculated from the
- * evolved squads (temporada.md, "Força dos clubes na virada").
+ * stays), the retired players out of `players`, the others rested and fit with half of the way
+ * of their morale to `fans.start`, the thermometers back to `fans.start` and the strength
+ * recalculated from the evolved squads (temporada.md, "Força dos clubes na virada").
  *
  * Every number is a rule constant of the design documents, not a /balance knob. Pure and
  * deterministic: the same state always gives the same result, the input is never changed, and a
@@ -65,6 +76,56 @@ export function moraleAtTurn(morale: number, fansStart: number): number {
   const pulled = morale + MORALE_OFFSEASON_PULL * (fansStart - morale);
   const rounded = Math.round(pulled * MORALE_TURN_SCALE) / MORALE_TURN_SCALE;
   return clamp(rounded, MORALE_RANGE.min, MORALE_RANGE.max);
+}
+
+/**
+ * The retirement of the minimal renewal (decision 14 of balance-targets.md, revised by the CEO on
+ * 2026-11-06; temporada.md, "Carreira longa na 1a"), by the age after the birthday of the turn:
+ * from RETIREMENT_MIN_AGE to RETIREMENT_MAX_AGE − 1 a chance by age (lower for goalkeepers), at
+ * RETIREMENT_MAX_AGE or more always, below RETIREMENT_MIN_AGE never. So nobody plays a season at
+ * 40. Rule constants, the "botão a calibrar" of the decision, not /balance parameters.
+ */
+export const RETIREMENT_MIN_AGE = 33;
+export const RETIREMENT_MAX_AGE = 40;
+/** Chance of retiring at 33, 34, …, 39: outfield players, then goalkeepers (natural GK). */
+export const RETIREMENT_CHANCE: {
+  readonly outfield: readonly number[];
+  readonly goalkeeper: readonly number[];
+} = {
+  outfield: [0.05, 0.1, 0.25, 0.35, 0.45, 0.55, 0.7],
+  goalkeeper: [0, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3],
+};
+
+/** The chance of retiring at the turn for a player of `age` (after the birthday) and position. */
+export function retirementChance(age: number, position: Position): number {
+  if (age >= RETIREMENT_MAX_AGE) return 1;
+  if (age < RETIREMENT_MIN_AGE) return 0;
+  const table = position === 'GK' ? RETIREMENT_CHANCE.goalkeeper : RETIREMENT_CHANCE.outfield;
+  return table[age - RETIREMENT_MIN_AGE] ?? 0;
+}
+
+/** The retirement stream of a player: ``${seed}-s${season}-retirement-${playerId}``. */
+export function retirementSeed(
+  state: Pick<GameState, 'seed' | 'season'>,
+  playerId: PlayerId,
+): number {
+  return seedFromString(`${state.seed}-s${state.season}-retirement-${playerId}`);
+}
+
+/**
+ * Whether a player retires at the turn (`player` already a year older): at RETIREMENT_MAX_AGE or
+ * more without a draw; below RETIREMENT_MIN_AGE (or at a chance of 0) never, without a draw;
+ * otherwise one draw, `rng.chance(p)`, of his own stream ({@link retirementSeed}, `season` = the
+ * season played), so the order of the clubs and of the squad never matters.
+ */
+export function retires(
+  state: Pick<GameState, 'seed' | 'season'>,
+  player: Pick<Player, 'id' | 'age' | 'position'>,
+): boolean {
+  const p = retirementChance(player.age, player.position);
+  if (p >= 1) return true;
+  if (p <= 0) return false;
+  return new Rng(retirementSeed(state, player.id)).chance(p);
 }
 
 /** The board's target never asks for worse than this position ("não cair"). */
@@ -189,8 +250,9 @@ export interface ClubCampaign {
   /** From the biggest Δ down; ties by the higher new overall, then squad order. */
   readonly evolved: readonly PlayerEvolution[];
   /**
-   * Who retired at the turn and who came up from the academy, in squad order (the minimal
-   * renewal, T-048). Always empty in T-017: the fields come now so T-048 keeps the state's shape.
+   * Who retired at the turn (in the order of the squad of the season played) and who came up
+   * from the academy (in the order they joined the squad, the k of their ids): the minimal
+   * renewal (T-048), for the "Despedidas e chegadas da base" of the summary (T-037).
    */
   readonly farewells: readonly PlayerId[];
   readonly academy: readonly PlayerId[];
@@ -544,6 +606,87 @@ function evolvedOf(
 }
 
 // ---------------------------------------------------------------------------------------------
+// The minimal renewal (T-048; temporada.md, "Carreira longa na 1a"; decision 14)
+
+/** What the renewal of one club did: who left, who came, and the new idol if one was picked. */
+interface ClubRenewal {
+  readonly squad: readonly PlayerId[];
+  readonly farewells: readonly PlayerId[];
+  readonly academy: readonly PlayerId[];
+  readonly youth: readonly Player[];
+  readonly newIdol?: PlayerId;
+}
+
+/**
+ * The idol picked when the club's one leaves (jogadores.md, "Traço de personalidade"): the rule
+ * of the generation applied to the best XI of the moment (`bestEleven` of the squad in its first
+ * preferred formation, everyone fit and fresh): the starter of IDOL_MIN_AGE or more with the
+ * highest overall; without one, the starter with the highest overall. Ties: the first in the XI's
+ * slot order, as the generation's "XI por vaga". Undefined only for an empty squad.
+ */
+export function pickIdol(squad: readonly Player[], formation: Formation): PlayerId | undefined {
+  const eleven = bestEleven(squad, formation).map(({ player }) => player);
+  const veterans = eleven.filter((p) => p.age >= IDOL_MIN_AGE);
+  const pool = veterans.length > 0 ? veterans : eleven;
+  let best: Player | undefined;
+  for (const p of pool) if (best === undefined || p.overall > best.overall) best = p;
+  return best?.id;
+}
+
+/**
+ * The renewal of one club after the evolution (`players` already a year older): who
+ * {@link retires} leaves the squad, the academy (`generateAcademy`) promotes a youth of the same
+ * position for each, at the end of the squad, and, if no idol is left, {@link pickIdol} picks one.
+ * Undefined when nobody retires (nothing changes). An id of the squad missing from `players` (a
+ * broken state) is never read: it stays where it is, with or without a retirement.
+ */
+function renewClub(
+  state: Pick<GameState, 'seed' | 'season'>,
+  clubId: ClubId,
+  club: ClubState,
+  squadIds: readonly PlayerId[],
+  players: Readonly<Record<PlayerId, Player>>,
+  params: GameParams,
+  identities: IdentitySource,
+): ClubRenewal | undefined {
+  const farewells = squadIds.filter((id) => {
+    const p = players[id];
+    return p !== undefined && retires(state, p);
+  });
+  if (farewells.length === 0) return undefined;
+  const leaving = new Set(farewells);
+  const stayingIds = squadIds.filter((id) => !leaving.has(id));
+  const staying: Player[] = [];
+  for (const id of stayingIds) {
+    const p = players[id];
+    if (p !== undefined) staying.push(p);
+  }
+  const youth = generateAcademy(
+    {
+      clubId,
+      seed: state.seed,
+      season: state.season,
+      strength: club.def.strength ?? DEFAULT_STRENGTH,
+      positions: farewells.map((id) => players[id]!.position),
+      squad: staying,
+    },
+    params,
+    identities,
+  );
+  const squad = [...staying, ...youth];
+  const newIdol = squad.some((p) => p.trait === 'idol')
+    ? undefined
+    : pickIdol(squad, club.preferredFormations[0]);
+  return {
+    squad: [...stayingIds, ...youth.map((p) => p.id)],
+    farewells,
+    academy: youth.map((p) => p.id),
+    youth,
+    ...(newIdol === undefined ? {} : { newIdol }),
+  };
+}
+
+// ---------------------------------------------------------------------------------------------
 // The two functions
 
 /** The season is played to the end and not yet closed: round 39 with `phase: 'season'`. */
@@ -552,14 +695,26 @@ function seasonFinished(state: Pick<GameState, 'phase' | 'round'>): boolean {
 }
 
 /**
- * Closes the season (temporada.md, "Fim de temporada"; see the header for the 5 steps): the
+ * Closes the season (temporada.md, "Fim de temporada"; see the header for the 6 steps): the
  * summary (champion, relegation zone, awards and the campaign of each club of `humans`) goes to
- * `pastSeasons`, every player evolves and gets a year older, and the phase becomes `seasonEnd`.
- * `humans` are the clubs with a human coach (the career's club; in an online league every club
- * with an owner); without them the summary has no campaign.
+ * `pastSeasons`, every player evolves and gets a year older, the squads renew (T-048), and the
+ * phase becomes `seasonEnd`. `humans` are the clubs with a human coach (the career's club; in an
+ * online league every club with an owner; `[]` in the /balance); without them the summary has no
+ * campaign. `identities` names the youth of the academy (ADR-0012).
  *
- * `params` is reserved (part of the contract, docs/02-architecture.md, 4.1) and not read yet: the
- * end of the season has no parameter in 1a.
+ * The renewal (docs/02-architecture.md, 4.1, "Renovação mínima dos elencos"): a player who
+ * {@link retires} after the birthday leaves `squads` here and stays in `players` until
+ * `startNextSeason` (the summary screen shows his name and face even if the app closes in the
+ * `seasonEnd` phase); in his place comes a youth of 17 of the same position (`generateAcademy`),
+ * at the end of the squad, so the composition 3/5/4/4/4/5 holds. A club left without its idol
+ * picks a new one ({@link pickIdol}), whose trait becomes `idol`, and its `idolBenchStreak` goes
+ * back to 0. The campaign lists them in `farewells` and `academy`.
+ *
+ * The end of the season has no parameter of its own in 1a: of `params`, only `players` (the age
+ * curve of the youth, `growthMin` and `growthMax`) is read, by the academy.
+ *
+ * `evolved` in the campaign lists the squad of the season played, so a player who retired after
+ * his last evolution is in it too (the summary shows his last overall).
  *
  * `season-not-finished` in any other state (before round 39, or already closed): nothing changes,
  * so the evolution and the title never count twice. Warning: `season-unknown-club` for a club of
@@ -568,7 +723,8 @@ function seasonFinished(state: Pick<GameState, 'phase' | 'round'>): boolean {
 export function endSeason(
   state: GameState,
   params: GameParams,
-  humans: readonly ClubId[] = [],
+  humans: readonly ClubId[],
+  identities: IdentitySource,
 ): Result<{ state: GameState; summary: SeasonSummary }, 'season-not-finished'> {
   if (!seasonFinished(state)) {
     return fail('season-not-finished', {
@@ -617,17 +773,48 @@ export function endSeason(
   for (const [id, player] of Object.entries(state.players)) {
     players[id] = evolvePlayer(state, player, state.seasonStats[id]?.minutes ?? 0);
   }
+
+  // 5. The renewal of the squads, club by club (each from its own streams).
+  const squads: Record<ClubId, readonly PlayerId[]> = { ...state.squads };
+  const renewals = new Map<ClubId, ClubRenewal>();
+  const newIdolClubs: [ClubId, ClubState][] = [];
+  for (const [clubId, club] of Object.entries(state.clubs)) {
+    const renewal = renewClub(
+      state,
+      clubId,
+      club,
+      state.squads[clubId] ?? [],
+      players,
+      params,
+      identities,
+    );
+    if (renewal === undefined) continue;
+    renewals.set(clubId, renewal);
+    squads[clubId] = renewal.squad;
+    for (const youth of renewal.youth) players[youth.id] = youth;
+    if (renewal.newIdol !== undefined) {
+      players[renewal.newIdol] = { ...players[renewal.newIdol]!, trait: 'idol' };
+      newIdolClubs.push([clubId, { ...club, idolBenchStreak: 0 }]);
+    }
+  }
+  // The clubs only change when one picked a new idol (its streak back to 0).
+  const clubs =
+    newIdolClubs.length === 0
+      ? state.clubs
+      : { ...state.clubs, ...Object.fromEntries(newIdolClubs) };
+
   const campaigns: Record<ClubId, ClubCampaign> = {};
   for (const clubId of campaignClubs) {
+    const renewal = renewals.get(clubId);
     campaigns[clubId] = {
       ...partial.get(clubId)!,
       evolved: evolvedOf(state.squads[clubId] ?? [], state.players, players),
-      farewells: [],
-      academy: [],
+      farewells: renewal?.farewells ?? [],
+      academy: renewal?.academy ?? [],
     };
   }
 
-  // 5. The summary and the phase.
+  // 6. The summary and the phase.
   const summary: SeasonSummary = {
     season: state.season,
     year: state.year,
@@ -643,7 +830,9 @@ export function endSeason(
         ...state,
         engineVersion: ENGINE_VERSION,
         phase: 'seasonEnd',
+        clubs,
         players,
+        squads,
         pastSeasons: [...state.pastSeasons, summary],
       },
       summary,
@@ -695,6 +884,8 @@ function playerAtTurn(player: Player, fansStart: number): Player {
  * - season + 1, year + 1, round 1, `phase: 'season'`, the calendar of the new season (its own
  *   stream `${seed}-fixtures-${season}`, dates by the new year), `seasonStats` cleared and
  *   `lastSheets` kept;
+ * - the players retired by `endSeason` (in no squad) leave `players`, so in the `season` phase
+ *   every player is in exactly one squad (T-048);
  * - every player with condition 100, no injury, suspension, yellow card nor bench streak, no form
  *   ("sem jogos") and the morale half of the way to `fans.start` (MORALE_OFFSEASON_PULL), rounded
  *   to hundredths ({@link moraleAtTurn}); age,
@@ -703,7 +894,8 @@ function playerAtTurn(player: Player, fansStart: number): Player {
  *   evolved squad ({@link squadStrength}); profile and formations kept.
  * Nothing else is drawn: the same state always gives the same new season (US-025).
  *
- * `identities` names the players a turn creates; in 1a it creates none. `opts.incoming` (clubs
+ * `identities` names the players a turn creates; in 1a it creates none here (the academy youth
+ * come in `endSeason`), and stays for the clubs of `opts.incoming`. `opts.incoming` (clubs
  * coming up from the Série B) has no game rule until the CEO approves that list (temporada.md,
  * "Acesso da Série B (futuro)"): a non-empty list is refused with `invalid-clubs`.
  *
@@ -735,8 +927,10 @@ export function startNextSeason(
       : fail('invalid-clubs', { reason: fixtures.error, detail: fixtures.detail });
   }
 
+  const inSquad = new Set(Object.values(state.squads).flat());
   const players: Record<PlayerId, Player> = {};
   for (const [id, player] of Object.entries(state.players)) {
+    if (!inSquad.has(id)) continue;
     players[id] = playerAtTurn(player, params.fans.start);
   }
   const turned = { clubs: state.clubs, players, squads: state.squads };

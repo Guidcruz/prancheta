@@ -1,5 +1,5 @@
 {
-  "engineVersion": 14,
+  "engineVersion": 15,
   "name": "season-turn",
   "data": {
     "summary": {
@@ -217,6 +217,84 @@
         "mean": -1.2105
       }
     },
+    "renewal": {
+      "clube-teste-08": {
+        "farewells": [
+          [
+            "clube-teste-08#15",
+            "DM"
+          ]
+        ],
+        "academy": [
+          [
+            "clube-teste-08#201",
+            "DM",
+            58,
+            67,
+            33,
+            "Teste26"
+          ]
+        ],
+        "idol": "clube-teste-08#9"
+      },
+      "clube-teste-10": {
+        "farewells": [
+          [
+            "clube-teste-10#18",
+            "ST"
+          ]
+        ],
+        "academy": [
+          [
+            "clube-teste-10#201",
+            "ST",
+            57,
+            68,
+            33,
+            "Teste26"
+          ]
+        ],
+        "idol": "clube-teste-10#4"
+      },
+      "clube-teste-14": {
+        "farewells": [
+          [
+            "clube-teste-14#13",
+            "CB"
+          ]
+        ],
+        "academy": [
+          [
+            "clube-teste-14#201",
+            "CB",
+            55,
+            71,
+            33,
+            "Teste26"
+          ]
+        ],
+        "idol": "clube-teste-14#3"
+      },
+      "clube-teste-20": {
+        "farewells": [
+          [
+            "clube-teste-20#2",
+            "CB"
+          ]
+        ],
+        "academy": [
+          [
+            "clube-teste-20#201",
+            "CB",
+            50,
+            53,
+            33,
+            "Teste26"
+          ]
+        ],
+        "idol": "clube-teste-20#10"
+      }
+    },
     "strength": {
       "clube-teste-01": [
         76.8274,
@@ -248,7 +326,7 @@
       ],
       "clube-teste-08": [
         69.5683,
-        68.5455
+        68.4545
       ],
       "clube-teste-09": [
         70.1389,
@@ -296,7 +374,7 @@
       ],
       "clube-teste-20": [
         63.9999,
-        63.8182
+        63.3636
       ]
     },
     "header": {
@@ -318,6 +396,6 @@
         "s2-r1-clube-teste-09-clube-teste-15"
       ]
     },
-    "digest": "61037322"
+    "digest": "6a62be0"
   }
 }

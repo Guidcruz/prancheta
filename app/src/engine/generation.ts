@@ -43,6 +43,9 @@ import type {
  *   and the formations;
  * - `${seed}-squad-${clubId}`:    positions, then every player, then the potentials;
  * - `${seed}-names-${clubId}-${nationality}`: the seed handed to the IdentitySource.
+ * A squad generated for season 2 or later (`SquadRequest.season`, T-048) puts the season in the
+ * last two labels (`${seed}-s${season}-squad-${clubId}`, `${seed}-s${season}-names-…`), so the
+ * same club and seed give another squad, with ids that never meet those of season 1.
  *
  * Order of the draws in the squad stream (part of the determinism contract):
  * 1. the pool of non-starter positions is shuffled (Fisher-Yates);
@@ -421,6 +424,20 @@ function shiftSquad(
   return { diff: bestDiff, shift: best, fineSteps };
 }
 
+/**
+ * Ids of the players created for season 2 or later (docs/02-architecture.md, 4.1, "Ids sem
+ * colisão"; T-048): the k-th player a club creates for season `t` is `${clubId}#${100 × t + k}`.
+ * The 25 of the new game are `#1` to `#25`, and a club creates fewer than 100 players per turn,
+ * so no id ever repeats in a career, not even one kept in `pastSeasons`, and the numeric "lower
+ * id" of {@link bestEleven} still holds.
+ */
+export const TURN_ID_STRIDE = 100;
+
+/** The id of the `k`-th player (1, 2, …) created by a club for season `season` (≥ 2). */
+export function turnPlayerId(clubId: ClubId, season: number, k: number): PlayerId {
+  return `${clubId}#${TURN_ID_STRIDE * season + k}`;
+}
+
 /** N of `${clubId}#N`, for the "lower id" tie-break; the list position when there is no id. */
 export function idNumber(player: { readonly id?: PlayerId }, index: number): number {
   const hash = player.id?.lastIndexOf('#') ?? -1;
@@ -554,6 +571,11 @@ export interface SquadRequest {
   strength: number;
   /** Preferred formation: the XI is generated for its slots and measured in it. */
   formation: Formation;
+  /**
+   * Season the squad is generated for (default 1, the new game). From 2 on the streams carry the
+   * season and the ids follow {@link turnPlayerId} (T-048; the base of the Série B access).
+   */
+  season?: number;
 }
 
 export interface GeneratedSquad {
@@ -571,8 +593,9 @@ export interface GeneratedSquad {
  * 3/5/4/4/4/5, the four groups with their overall and age ranges, the squad shift to the target
  * strength, potentials, the joia, the idol, initial morale, unique shirts (starters 1..11 by
  * position, reserve goalkeeper 12, others from 13, youth from 30)
- * and ids `${clubId}#1`..`#25`. Names and faces come from `identities`, one call per
- * nationality (in code order), each told the names already given in the club.
+ * and ids `${clubId}#1`..`#25` (season 1; see {@link SquadRequest.season} for the others). Names
+ * and faces come from `identities`, one call per nationality (in code order), each told the
+ * names already given in the club.
  *
  * Never throws for a game situation. An IdentitySource that breaks its contract (wrong count, a
  * face over 32 characters) is a programming error and throws.
@@ -583,7 +606,12 @@ export function generateSquad(
   identities: IdentitySource,
 ): GeneratedSquad {
   const { clubId, seed, strength, formation } = request;
-  const rng = new Rng(seedFromString(`${seed}-squad-${clubId}`));
+  const season = request.season ?? 1;
+  // Season 1 keeps the labels and ids of the new game, so its golden does not move.
+  const label = season > 1 ? `${seed}-s${season}` : `${seed}`;
+  const idOf = (index: number) =>
+    season > 1 ? turnPlayerId(clubId, season, index + 1) : `${clubId}#${index + 1}`;
+  const rng = new Rng(seedFromString(`${label}-squad-${clubId}`));
   const positions = squadPositions(rng, formation);
   const shirts = assignShirts(positions);
   const drafts: DraftBase[] = positions.map((position, index) => {
@@ -597,7 +625,7 @@ export function generateSquad(
     const nationality = drawNationality(rng);
     const morale = rng.int(START_MORALE.min, START_MORALE.max);
     return {
-      id: `${clubId}#${index + 1}`,
+      id: idOf(index),
       clubId,
       nationality,
       position,
@@ -636,7 +664,11 @@ export function generateSquad(
   jewel.potential = Math.max(jewel.potential, floor, jewel.overall);
   drafts[idolIndex(drafts)]!.trait = 'idol';
 
-  const players = withIdentities(drafts, seed, clubId, identities);
+  const players = withIdentities(
+    drafts,
+    (nationality) => seedFromString(`${label}-names-${clubId}-${nationality}`),
+    identities,
+  );
   const problems = checkGeneratedSquad(players, clubId, strength);
   // Every rule holds by construction: a problem here is a bug of this generator.
   if (problems.length > 0) throw new Error(`squad of ${clubId} broke ${problems.join(', ')}`);
@@ -648,21 +680,115 @@ export function generateSquad(
   };
 }
 
+/** Age of the youth the academy promotes at the turn (temporada.md, "Carreira longa na 1a"). */
+export const ACADEMY_AGE = GROUP_AGE.youth.min;
+
+export interface AcademyRequest {
+  clubId: ClubId;
+  /** Seed of the career or league (`GameState.seed`). */
+  seed: number;
+  /** The season that ended (the streams carry it; the ids carry the next one). */
+  season: number;
+  /** The club's strength of the list (`def.strength`), never the current one (decision 14). */
+  strength: number;
+  /** The position of each retired player, in squad order: the k-th youth takes the k-th. */
+  positions: readonly Position[];
+  /** The squad that stays (without the retired players): its shirts and names. */
+  squad: readonly Player[];
+}
+
+/**
+ * The youth the academy promotes at the turn, one per retired player (docs/02-architecture.md,
+ * 4.1, "Renovação mínima dos elencos"; jogadores.md, "Geração de elencos", the "Jovens" group;
+ * decision 14 of balance-targets.md; T-048). The k-th (k = 1, 2, …) plays the k-th position of
+ * `positions` and draws from its own stream ``${seed}-s${season}-academy-${clubId}-${k}``, in this
+ * order (part of the determinism contract): overall `strength − 12 + Normal(0, 4)` rounded and cut
+ * to 35..92, the six attributes as in the generation, trait (`drawTrait`), age curve (peakAge,
+ * growth), nationality, initial morale and the potential by the rule up to 23 (cap 95, no joia
+ * floor). Age ACADEMY_AGE, `clubAppearances` 0 (he has not debuted), condition 100, no form;
+ * shirt, the lowest free from 30 in `squad` and the youth before him; id
+ * {@link turnPlayerId}`(clubId, season + 1, k)`.
+ *
+ * Names and faces come from `identities`, once each (ADR-0012), with the seed
+ * ``${seed}-s${season}-academy-names-${clubId}-${nationality}`` and the names of `squad` as
+ * `existing`. Never throws for a game situation; an IdentitySource that breaks its contract is a
+ * programming error and throws.
+ */
+export function generateAcademy(
+  request: AcademyRequest,
+  params: GameParams,
+  identities: IdentitySource,
+): Player[] {
+  const { clubId, seed, season, strength, positions, squad } = request;
+  if (positions.length === 0) return [];
+  const used = new Set(squad.map((p) => p.shirt));
+  const { offset, sd } = GROUP_OVERALL.youth;
+  const drafts: DraftBase[] = positions.map((position, i) => {
+    const k = i + 1;
+    const rng = new Rng(seedFromString(`${seed}-s${season}-academy-${clubId}-${k}`));
+    const drawn = clampGenerated(Math.round(normal(rng, strength + offset, sd)));
+    const attributes = drawAttributes(rng, position, drawn);
+    const overall = computeOverall(position, attributes);
+    const trait: Trait = drawTrait(rng);
+    const { peakAge, growth } = drawGrowthCurve(rng, params.players);
+    const nationality = drawNationality(rng);
+    const morale = rng.int(START_MORALE.min, START_MORALE.max);
+    const potential = drawPotential(rng, overall, ACADEMY_AGE);
+    let shirt = YOUTH_SHIRTS_FROM;
+    while (used.has(shirt)) shirt++;
+    used.add(shirt);
+    return {
+      id: turnPlayerId(clubId, season + 1, k),
+      clubId,
+      nationality,
+      position,
+      attributes,
+      overall,
+      potential,
+      age: ACADEMY_AGE,
+      peakAge,
+      growth,
+      trait,
+      shirt,
+      condition: START_CONDITION,
+      morale,
+      injuryRounds: 0,
+      suspendedGames: 0,
+      yellowCount: 0,
+      recentRatings: [],
+      benchStreak: 0,
+      clubAppearances: 0,
+    };
+  });
+  return withIdentities(
+    drafts,
+    (nationality) => seedFromString(`${seed}-s${season}-academy-names-${clubId}-${nationality}`),
+    identities,
+    squad.map((p) => p.name),
+  );
+}
+
+/**
+ * Names and faces of new players (ADR-0012): one IdentitySource call per nationality, in code
+ * order, with the seed `nameSeed(nationality)`, the ages of the new players and, as `existing`,
+ * the names already in the club (`existing`, then those given by the earlier calls). Each player
+ * is checked by `validatePlayer`; a broken contract of the source is a programming error.
+ */
 function withIdentities(
   drafts: readonly DraftBase[],
-  seed: number,
-  clubId: ClubId,
+  nameSeed: (nationality: string) => number,
   identities: IdentitySource,
+  inClub: readonly PlayerNameText[] = [],
 ): Player[] {
   const nationalities = [...new Set(drafts.map((d) => d.nationality))].sort((a, b) =>
     a < b ? -1 : a > b ? 1 : 0,
   );
   const named: (Player | undefined)[] = drafts.map(() => undefined);
-  const existing: PlayerNameText[] = [];
+  const existing: PlayerNameText[] = [...inClub];
   for (const nationality of nationalities) {
     const indices = drafts.flatMap((d, i) => (d.nationality === nationality ? [i] : []));
     const ids = identities.squad({
-      seed: seedFromString(`${seed}-names-${clubId}-${nationality}`),
+      seed: nameSeed(nationality),
       nationality,
       count: indices.length,
       ages: indices.map((index) => drafts[index]!.age),

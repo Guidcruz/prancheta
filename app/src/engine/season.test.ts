@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
 import type { GameState } from './game.ts';
-import { bestEleven, elevenStrength } from './generation.ts';
+import { FORMATION_SLOTS } from './formations.ts';
+import { ACADEMY_AGE, bestEleven, elevenStrength, generateAcademy } from './generation.ts';
+import { normal } from './math.ts';
 import {
   AGE_RANGE,
+  POSITIONS,
+  SQUAD_COMPOSITION,
+  SQUAD_SIZE,
   computeOverall,
   fitAttributesToOverall,
   validatePlayer,
+  type IdentitySource,
   type Player,
 } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
@@ -14,6 +20,8 @@ import {
   AWARD_MIN_GAMES,
   MORALE_OFFSEASON_PULL,
   MORALE_TURN_SCALE,
+  RETIREMENT_MAX_AGE,
+  RETIREMENT_MIN_AGE,
   REVELATION_MAX_AGE,
   TARGET_POSITION_MAX,
   ageCurve,
@@ -22,6 +30,10 @@ import {
   evolutionTarget,
   evolvePlayer,
   moraleAtTurn,
+  pickIdol,
+  retirementChance,
+  retirementSeed,
+  retires,
   seasonAwards,
   squadStrength,
   startNextSeason,
@@ -29,6 +41,7 @@ import {
   targetPosition,
 } from './season.ts';
 import { getStandings } from './standings.ts';
+import { shownEleven, teamStrength } from './strength.ts';
 import { fixedIdentitySource } from './testing/identity.ts';
 import { testGame } from './testing/match.ts';
 import { testParams } from './testing/params.ts';
@@ -46,7 +59,7 @@ const identities = fixedIdentitySource();
 const SEED = 20261104;
 
 function ended(state: GameState, humans: readonly ClubId[] = []) {
-  const r = endSeason(state, params, humans);
+  const r = endSeason(state, params, humans, identities);
   if (!r.ok) throw new Error(`endSeason: ${r.error}`);
   return r.value;
 }
@@ -354,7 +367,7 @@ describe('endSeason', () => {
 
   it('only closes a season at round 39 in the phase season', () => {
     const before = JSON.stringify(testGame());
-    const early = endSeason(testGame(), params, [human]);
+    const early = endSeason(testGame(), params, [human], identities);
     expect(early).toEqual({
       ok: false,
       error: 'season-not-finished',
@@ -366,7 +379,7 @@ describe('endSeason', () => {
   it('refuses a second call and leaves the state as it was (the evolution never runs twice)', () => {
     const first = ended(finished, [human]);
     const copy = structuredClone(first.state);
-    const again = endSeason(first.state, params, [human]);
+    const again = endSeason(first.state, params, [human], identities);
     expect(again.ok).toBe(false);
     if (!again.ok) {
       expect(again.error).toBe('season-not-finished');
@@ -377,7 +390,7 @@ describe('endSeason', () => {
 
   it('refuses a state without clubs with the phase in the detail', () => {
     const empty = { ...finished, clubs: {}, squads: {}, players: {} };
-    expect(endSeason(empty, params)).toEqual({
+    expect(endSeason(empty, params, [], identities)).toEqual({
       ok: false,
       error: 'season-not-finished',
       detail: { season: 1, round: 39, phase: 'season', reason: 'no-clubs' },
@@ -411,7 +424,7 @@ describe('endSeason', () => {
 
   it('has no campaign without humans, warns about an unknown club and counts a repeat once', () => {
     expect(ended(finished).summary.campaigns).toEqual({});
-    const r = endSeason(finished, params, [human, 'nao-existe', human]);
+    const r = endSeason(finished, params, [human, 'nao-existe', human], identities);
     expect(r.ok).toBe(true);
     if (!r.ok) return;
     expect(Object.keys(r.value.summary.campaigns)).toEqual([human]);
@@ -646,8 +659,8 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
   it('turns every player as the table says', () => {
     expect(MORALE_OFFSEASON_PULL).toBe(0.5);
     expect(Object.keys(next.players)).toHaveLength(500);
-    for (const [id, before] of Object.entries(closed.players)) {
-      const after = next.players[id]!;
+    for (const [id, after] of Object.entries(next.players)) {
+      const before = closed.players[id]!;
       expect(after.condition).toBe(100);
       expect(after.injuryRounds).toBe(0);
       expect(after.suspendedGames).toBe(0);
@@ -670,6 +683,11 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
       ] as const;
       expect(omit(after, turnedKeys), id).toEqual(omit(before, turnedKeys));
     }
+    // The players retired in endSeason (in no squad) are gone; everyone else is in one squad.
+    const inSquad = Object.values(next.squads).flat();
+    expect(new Set(inSquad).size).toBe(inSquad.length);
+    expect(Object.keys(next.players).sort()).toEqual([...inSquad].sort());
+    expect(Object.keys(closed.players).length).toBeGreaterThan(500);
     // The season ended with someone injured, suspended or booked, so the turn did clear them.
     const vals = Object.values(closed.players);
     expect(vals.some((p) => p.injuryRounds > 0 || p.suspendedGames > 0)).toBe(true);
@@ -721,6 +739,369 @@ describe('startNextSeason (temporada.md, "A virada")', () => {
     expect(growth).toBeLessThanOrEqual(4 * 1024);
   });
 });
+
+describe('the minimal renewal (T-048; temporada.md, "Carreira longa na 1a")', () => {
+  const finished = playedSeason(SEED);
+  const clubId = Object.keys(finished.clubs)[2]!;
+  const club = finished.clubs[clubId]!;
+  const squad = finished.squads[clubId]!;
+  const idol = squad.find((id) => finished.players[id]!.trait === 'idol')!;
+  // The idol, a reserve and a youth of this club reach 40 at the birthday of the turn (so they
+  // retire without a draw), and the idol had been on the bench, so the club's streak was running.
+  const chosen = [idol, squad[12]!, squad[23]!];
+  const aged = withAges(
+    { ...finished, clubs: { ...finished.clubs, [clubId]: { ...club, idolBenchStreak: 3 } } },
+    chosen,
+    RETIREMENT_MAX_AGE - 1,
+  );
+  // Who retires by the rule, one year older (the stream of each player).
+  const retiring = (state: GameState, id: ClubId) =>
+    state.squads[id]!.filter((pid) => {
+      const p = state.players[pid]!;
+      return retires(state, { ...p, age: p.age + 1 });
+    });
+  const farewells = retiring(aged, clubId);
+  const { state: closed, summary } = ended(aged, [clubId]);
+  const next = turned(closed);
+  const newSquad = closed.squads[clubId]!;
+  const academy = newSquad.slice(SQUAD_SIZE - farewells.length);
+
+  it('uses the documented table: 33 to 39 by chance, 40 always, the academy at 17', () => {
+    expect(RETIREMENT_MIN_AGE).toBe(33);
+    expect(RETIREMENT_MAX_AGE).toBe(40);
+    expect(ACADEMY_AGE).toBe(17);
+    const ages = [32, 33, 34, 35, 36, 37, 38, 39, 40, 41];
+    expect(ages.map((a) => retirementChance(a, 'ST'))).toEqual([
+      0, 0.05, 0.1, 0.25, 0.35, 0.45, 0.55, 0.7, 1, 1,
+    ]);
+    expect(ages.map((a) => retirementChance(a, 'GK'))).toEqual([
+      0, 0, 0.02, 0.05, 0.1, 0.15, 0.2, 0.3, 1, 1,
+    ]);
+    for (const pos of POSITIONS.filter((x) => x !== 'GK')) {
+      expect(retirementChance(36, pos)).toBe(0.35);
+    }
+    expect(retirementChance(17, 'ST')).toBe(0);
+    expect(farewells.length).toBeGreaterThanOrEqual(chosen.length);
+    expect(farewells).toEqual(expect.arrayContaining(chosen));
+  });
+
+  it('draws once per player from his own stream: rng.chance(p) of the retirement seed', () => {
+    const at = { seed: SEED, season: 4 };
+    for (let n = 1; n <= 200; n++) {
+      for (const position of ['ST', 'GK'] as const) {
+        for (let age = 33; age <= 39; age++) {
+          const player = { id: `c#${n}`, age, position };
+          const rng = new Rng(seedFromString(`${SEED}-s4-retirement-c#${n}`));
+          expect(retires(at, player)).toBe(rng.chance(retirementChance(age, position)));
+        }
+      }
+    }
+    expect(retirementSeed(at, 'c#1')).toBe(seedFromString(`${SEED}-s4-retirement-c#1`));
+  });
+
+  it('never retires below 33 and always at 40 or more', () => {
+    for (let n = 1; n <= 500; n++) {
+      const at = { seed: n, season: 1 + (n % 7) };
+      for (const position of ['ST', 'GK', 'CB'] as const) {
+        for (const age of [17, 25, 32])
+          expect(retires(at, { id: `x#${n}`, age, position })).toBe(false);
+        for (const age of [40, 41, 60])
+          expect(retires(at, { id: `x#${n}`, age, position })).toBe(true);
+      }
+    }
+  });
+
+  it('retires about the table share at each age, the goalkeeper by his own row', () => {
+    const share = (age: number, position: 'ST' | 'GK') => {
+      let n = 0;
+      for (let k = 1; k <= 4_000; k++)
+        if (retires({ seed: k, season: 1 }, { id: 'c#1', age, position })) n++;
+      return n / 4_000;
+    };
+    expect(share(33, 'GK')).toBe(0);
+    for (const [age, of, gk] of [
+      [34, 0.1, 0.02],
+      [36, 0.35, 0.1],
+      [39, 0.7, 0.3],
+    ] as const) {
+      expect(Math.abs(share(age, 'ST') - of), `ST ${age}`).toBeLessThan(0.025);
+      expect(Math.abs(share(age, 'GK') - gk), `GK ${age}`).toBeLessThan(0.025);
+    }
+  });
+
+  it('retires the same players in any order of the clubs and of the players', () => {
+    const rng = new Rng(seedFromString('retirement-order'));
+    const players: Record<PlayerId, Player> = {};
+    for (const id of rng.shuffle(Object.keys(aged.players))) players[id] = aged.players[id]!;
+    const clubs: Record<ClubId, GameState['clubs'][string]> = {};
+    for (const id of rng.shuffle(Object.keys(aged.clubs))) clubs[id] = aged.clubs[id]!;
+    const shuffled = ended({ ...aged, players, clubs }).state;
+    for (const id of Object.keys(aged.clubs)) {
+      expect(shuffled.squads[id], id).toEqual(closed.squads[id]);
+    }
+  });
+
+  it('retires by the rule: out of the squad at seasonEnd, in players until the turn', () => {
+    for (const [id, ids] of Object.entries(closed.squads)) {
+      for (const pid of ids) expect(closed.players[pid]!.age, `${id} ${pid}`).toBeLessThan(40);
+      const gone = aged.squads[id]!.filter((pid) => !ids.includes(pid));
+      expect(gone, id).toEqual(retiring(aged, id));
+      for (const pid of gone) {
+        expect(closed.players[pid]!.age).toBeGreaterThanOrEqual(33);
+        expect(closed.players[pid]!.age).toBeLessThanOrEqual(40);
+      }
+    }
+    // Over the 20 clubs, some 33-to-39s retired and some stayed: the draw does both.
+    const old = Object.values(closed.squads)
+      .flat()
+      .filter((pid) => closed.players[pid]!.age >= 33);
+    expect(old.length).toBeGreaterThan(0);
+    for (const pid of farewells) expect(next.players[pid]).toBeUndefined();
+    // In the season phase every player is in exactly one squad.
+    const inSquad = Object.values(next.squads).flat();
+    expect(new Set(inSquad).size).toBe(inSquad.length);
+    expect(Object.keys(next.players).sort()).toEqual([...inSquad].sort());
+    expect(Object.values(next.players).every((p) => p.age < RETIREMENT_MAX_AGE)).toBe(true);
+  });
+
+  it('promotes a youth of the same position for each, at the end of the squad', () => {
+    expect(newSquad).toHaveLength(SQUAD_SIZE);
+    expect(newSquad.slice(0, SQUAD_SIZE - farewells.length)).toEqual(
+      squad.filter((pid) => !farewells.includes(pid)),
+    );
+    expect(academy.map((pid) => closed.players[pid]!.position)).toEqual(
+      farewells.map((pid) => aged.players[pid]!.position),
+    );
+    for (const [id, ids] of Object.entries(closed.squads)) {
+      const count = (pos: Position) => ids.filter((pid) => closed.players[pid]!.position === pos);
+      for (const pos of POSITIONS)
+        expect(count(pos), `${id} ${pos}`).toHaveLength(SQUAD_COMPOSITION[pos]);
+    }
+  });
+
+  it('generates the youth as the "Jovens" of the generation, anchored on def.strength', () => {
+    const shirts = new Set(
+      newSquad.slice(0, SQUAD_SIZE - farewells.length).map((pid) => closed.players[pid]!.shirt),
+    );
+    academy.forEach((pid, i) => {
+      const k = i + 1;
+      const youth = closed.players[pid]!;
+      expect(pid).toBe(`${clubId}#${200 + k}`);
+      expect(validatePlayer(youth).ok).toBe(true);
+      expect(youth.clubId).toBe(clubId);
+      expect(youth.age).toBe(17);
+      expect(youth.clubAppearances).toBe(0);
+      expect(youth.condition).toBe(100);
+      expect([youth.injuryRounds, youth.suspendedGames, youth.yellowCount]).toEqual([0, 0, 0]);
+      expect([youth.benchStreak, youth.recentRatings.length]).toEqual([0, 0]);
+      expect(Number.isInteger(youth.morale) && youth.morale >= 50 && youth.morale <= 70).toBe(true);
+      expect(youth.nationality).toBe('BR');
+      expect(youth.overall).toBeGreaterThanOrEqual(35);
+      expect(youth.overall).toBeLessThanOrEqual(92);
+      expect(youth.potential).toBeGreaterThanOrEqual(youth.overall);
+      expect(youth.potential).toBeLessThanOrEqual(95);
+      // The first draw of his own stream is the overall, `def.strength − 12 + Normal(0, 4)`.
+      const rng = new Rng(seedFromString(`${SEED}-s1-academy-${clubId}-${k}`));
+      const drawn = Math.round(normal(rng, club.def.strength! - 12, 4));
+      expect(youth.overall).toBe(Math.min(92, Math.max(35, drawn)));
+      // The shirt: the lowest free from 30.
+      let shirt = 30;
+      while (shirts.has(shirt)) shirt++;
+      expect(youth.shirt).toBe(shirt);
+      shirts.add(shirt);
+    });
+    // The current strength does not move the youth; the list's does.
+    const weaker = ended({
+      ...aged,
+      clubs: { ...aged.clubs, [clubId]: { ...aged.clubs[clubId]!, strength: 50 } },
+    }).state;
+    for (const pid of academy) expect(weaker.players[pid]).toEqual(closed.players[pid]);
+    const listed = ended({
+      ...aged,
+      clubs: {
+        ...aged.clubs,
+        [clubId]: {
+          ...aged.clubs[clubId]!,
+          def: { ...club.def, strength: club.def.strength! + 10 },
+        },
+      },
+    }).state;
+    for (const pid of academy) {
+      expect(listed.players[pid]!.overall).toBeGreaterThan(closed.players[pid]!.overall);
+    }
+  });
+
+  it('draws the overall of the youth around def.strength − 12 (2,000 youths)', () => {
+    let sum = 0;
+    let n = 0;
+    for (let k = 1; n < 2_000; k++) {
+      const youth = generateAcademy(
+        {
+          clubId: 'clube-teste-01',
+          seed: k,
+          season: 1,
+          strength: 70,
+          positions: POSITIONS,
+          squad: [],
+        },
+        params,
+        identities,
+      );
+      for (const p of youth) {
+        sum += p.overall;
+        n++;
+      }
+    }
+    expect(Math.abs(sum / n - 58)).toBeLessThan(0.4);
+  });
+
+  it('names the youth by the identity source, once, with the squad that stays as existing', () => {
+    const calls: Parameters<IdentitySource['squad']>[0][] = [];
+    const spy: IdentitySource = {
+      retiredRev: identities.retiredRev,
+      squad: (req) => {
+        calls.push(req);
+        return identities.squad(req);
+      },
+    };
+    const r = endSeason(aged, params, [clubId], spy);
+    if (!r.ok) throw new Error(r.error);
+    const mine = calls.filter(
+      (c) => c.seed === seedFromString(`${SEED}-s1-academy-names-${clubId}-BR`),
+    );
+    expect(mine).toHaveLength(1);
+    expect(mine[0]!.count).toBe(farewells.length);
+    expect(mine[0]!.ages).toEqual(farewells.map(() => 17));
+    expect(mine[0]!.existing).toEqual(
+      squad.filter((pid) => !farewells.includes(pid)).map((pid) => aged.players[pid]!.name),
+    );
+    // One call per club with a retirement, and nothing else is asked.
+    const clubsRetiring = Object.keys(aged.clubs).filter((id) => retiring(aged, id).length > 0);
+    expect(calls).toHaveLength(clubsRetiring.length);
+    const names = newSquad.map((pid) => closed.players[pid]!.name.display);
+    expect(new Set(names).size).toBe(names.length);
+  });
+
+  it('picks a new idol when the idol retires, and the club streak goes back to 0', () => {
+    const idols = newSquad.filter((pid) => closed.players[pid]!.trait === 'idol');
+    expect(idols).toHaveLength(1);
+    const players = newSquad.map((pid) => ({
+      ...closed.players[pid]!,
+      ...(pid === idols[0] ? { trait: aged.players[pid]?.trait ?? 'quiet' } : {}),
+    }));
+    expect(idols[0]).toBe(pickIdol(players, club.preferredFormations[0]));
+    const eleven = bestEleven(players, club.preferredFormations[0]).map((e) => e.player);
+    const veterans = eleven.filter((p) => p.age >= 29);
+    const pool = veterans.length > 0 ? veterans : eleven;
+    expect(closed.players[idols[0]!]!.overall).toBe(Math.max(...pool.map((p) => p.overall)));
+    expect(closed.clubs[clubId]!.idolBenchStreak).toBe(0);
+    // Only the trait of the new idol changed.
+    const before = aged.players[idols[0]!]!;
+    expect({ ...closed.players[idols[0]!]!, trait: before.trait }).toEqual(
+      evolvePlayer(aged, before, aged.seasonStats[idols[0]!]?.minutes ?? 0),
+    );
+    // Every other club whose idol stayed keeps him, and the club as it was.
+    for (const [id, ids] of Object.entries(closed.squads)) {
+      if (id === clubId) continue;
+      const before = aged.squads[id]!.filter((p) => aged.players[p]!.trait === 'idol');
+      if (!ids.includes(before[0]!)) continue;
+      const own = ids.filter((pid) => closed.players[pid]!.trait === 'idol');
+      expect(own, id).toEqual(before);
+      expect(closed.clubs[id]).toBe(aged.clubs[id]);
+    }
+  });
+
+  it('lists the farewells and the academy in the campaign, in squad order', () => {
+    const campaign = summary.campaigns[clubId]!;
+    expect(campaign.farewells).toEqual(farewells);
+    expect(campaign.academy).toEqual(academy);
+    expect(farewells.length).toBeGreaterThan(0);
+  });
+
+  it('gives the same youth, ids and names for the same state, in any order of the records', () => {
+    expect(JSON.stringify(ended(aged, [clubId]).state)).toBe(JSON.stringify(closed));
+    const rng = new Rng(seedFromString('renewal-shuffle'));
+    const players: Record<PlayerId, Player> = {};
+    for (const id of rng.shuffle(Object.keys(aged.players))) players[id] = aged.players[id]!;
+    const clubs: Record<ClubId, GameState['clubs'][string]> = {};
+    for (const id of rng.shuffle(Object.keys(aged.clubs))) clubs[id] = aged.clubs[id]!;
+    const shuffled = ended({ ...aged, players, clubs }).state;
+    for (const [id, ids] of Object.entries(closed.squads)) {
+      expect(shuffled.squads[id]).toEqual(ids);
+      for (const pid of ids) expect(shuffled.players[pid]).toEqual(closed.players[pid]);
+    }
+  });
+
+  it('keeps a club where nobody retires as it was', () => {
+    const calm = Object.keys(aged.clubs).find((id) => retiring(aged, id).length === 0);
+    expect(calm).toBeDefined();
+    expect(closed.squads[calm!]).toBe(aged.squads[calm!]);
+  });
+
+  it('keeps an id missing from players where it is, with or without a retirement', () => {
+    const calm = Object.keys(aged.clubs).find((id) => retiring(aged, id).length === 0)!;
+    const ghost = (id: ClubId) => [
+      ...aged.squads[id]!.slice(0, 5),
+      `${id}#999`,
+      ...aged.squads[id]!.slice(5),
+    ];
+    const broken = {
+      ...aged,
+      squads: { ...aged.squads, [clubId]: ghost(clubId), [calm]: ghost(calm) },
+    };
+    const r = ended(broken).state;
+    expect(r.squads[calm]).toEqual(ghost(calm));
+    expect(r.squads[clubId]!.indexOf(`${clubId}#999`)).toBe(
+      ghost(clubId)
+        .filter((pid) => !farewells.includes(pid))
+        .indexOf(`${clubId}#999`),
+    );
+    expect(r.squads[clubId]).toHaveLength(SQUAD_SIZE + 1);
+    expect(r.squads[clubId]!.filter((pid) => pid !== `${clubId}#999`)).toEqual(newSquad);
+  });
+
+  it('turns a club whose retired player started its last sheet to the strength of the new squad', () => {
+    const id = Object.keys(finished.clubs)[5]!;
+    const sheet = finished.lastSheets[id]!;
+    const starters = sheet.lineup.starters.slice(0, 2);
+    const state = ended(withAges(finished, starters, RETIREMENT_MAX_AGE - 1)).state;
+    for (const pid of starters) expect(state.squads[id]).not.toContain(pid);
+    const after = turned(state);
+    // The last sheet stays, naming players who left: the displayed strength falls back to the
+    // best XI of the renewed squad, like the club's strength of the new season.
+    expect(after.lastSheets[id]!.lineup.starters).toEqual(sheet.lineup.starters);
+    const squadPlayers = after.squads[id]!.map((pid) => after.players[pid]!);
+    const best = elevenStrength(bestEleven(squadPlayers, after.clubs[id]!.preferredFormations[0]));
+    expect(after.clubs[id]!.strength).toBeCloseTo(best, 12);
+    expect(teamStrength(after, id)).toBeCloseTo(best, 12);
+    const shown = shownEleven(after, id)!.map((e) => e.player.id);
+    for (const pid of starters) expect(shown).not.toContain(pid);
+  });
+
+  it('pickIdol: the starter of 29 or more with the highest overall, else the highest overall', () => {
+    const at = (id: string, position: Position, overall: number, age: number) =>
+      testPlayer({ id, position, overall, age });
+    const keeper = at('c#1', 'GK', 80, 30);
+    const fieldOf = (age: number, top: number) =>
+      FORMATION_SLOTS['4-4-2']
+        .slice(1)
+        .map((pos, i) => at(`c#${i + 2}`, pos, i === 4 ? top : 60, age));
+    // A veteran keeper of 80 beats a young field player of 90.
+    expect(pickIdol([keeper, ...fieldOf(24, 90)], '4-4-2')).toBe('c#1');
+    // Without any starter of 29, the highest overall.
+    expect(pickIdol([{ ...keeper, age: 25 }, ...fieldOf(24, 90)], '4-4-2')).toBe('c#6');
+    // Level overalls: the first in the XI's slot order.
+    expect(pickIdol([{ ...keeper, overall: 60 }, ...fieldOf(30, 60)], '4-4-2')).toBe('c#1');
+    expect(pickIdol([], '4-4-2')).toBeUndefined();
+  });
+});
+
+/** A copy of `state` with the age of `ids` set to `age`. */
+function withAges(state: GameState, ids: readonly PlayerId[], age: number): GameState {
+  const players: Record<PlayerId, Player> = { ...state.players };
+  for (const id of ids) players[id] = { ...players[id]!, age };
+  return { ...state, players };
+}
 
 describe('board target (temporada.md, "Expectativa da diretoria")', () => {
   it('asks the strength rank + 2, never worse than 16', () => {
