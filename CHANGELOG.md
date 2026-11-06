@@ -6,6 +6,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Gravação do save cerca de 2× mais rápida e abertura da carreira cerca de 2× mais rápida (T-072; só a camada de dados em `app/src/lib/save/` e o `measure:save`):
+  - O snapshot passa a ser guardado sem compressão no aparelho (UTF-8 com SHA-256, conferido por bytes como antes), aprovado pelo CEO. O custo é espaço: até cerca de 2,2 MB por carreira e cerca de 22 MB com as 10 carreiras, contra 4,6 MB. As súmulas seguem em gzip e o arquivo exportado continua comprimido (compressão feita na hora de exportar).
+  - Novo índice `bySeason` no store `snapshots`: a poda da virada de temporada acha a menor temporada mantida sem ler o valor dos snapshots (poda de 3 a 6 ms, contra 13 a 20 ms sem o índice). A estrutura do banco continua na versão 1; quem testou antes disso deve apagar o IndexedDB `prancheta`.
+  - Medido no Chromium com CPU 4×, em três execuções: p90 de 78,0 a 88,4 ms após a rodada 38 (antes, 113,6 a 130,9 ms só com o ajuste do codec) e de no máximo 68,1 ms nas três gravações da virada; abrir a carreira com p90 de 136,5 a 153,2 ms, dentro dos 400 ms.
+  - `npm run measure:save` mostra o tempo de cada etapa e decide pelo limite de 130 ms no p90 de cada gravação que decide, saindo com código 1 se passar; a meta continua 150 ms.
+  - `CareerSave`, `schemaVersion`, a fixture, a API do `SaveStore` e o motor não mudam.
+
 - Formato do save congelado na versão 1 (T-019, US-033 e US-066; é a camada de dados, sem tela):
   - Esquema estrito com `valibot` 1.4.2 e três níveis de conferência (`full`, `open`, `write`), escolhidos pela origem do dado para a gravação não pagar a conferência inteira. Recusa chaves de protótipo e impõe limites de texto e de listas.
   - `isSafeDisplayText` (`app/src/lib/safe-text.ts`) filtra caracteres invisíveis, de direção de texto (bidi) e de controle nos textos mostrados na tela.
@@ -14,7 +21,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - Temporada base por conjunto de clubes (`app/src/data/club-sets.ts`): cada conjunto declara a sua, e o novo jogo usa o mais recente e começa no ano da base.
   - Os textos de clube e de jogador passam a ter no máximo 60 caracteres.
   - O motor não muda de simulação: `ENGINE_VERSION` segue 14.
-  - Pendências: a gravação do fim da temporada ainda passa da meta de 150 ms no p90 (T-072); a importação de arquivo (T-020) depende da T-073, pela decisão do CEO de que a importação só aceita os clubes do jogo.
+  - Pendências: a gravação do fim da temporada passava da meta de 150 ms no p90 (resolvido na T-072, acima); a importação de arquivo (T-020) depende da T-073, pela decisão do CEO de que a importação só aceita os clubes do jogo.
 
 - Avatares dos jogadores gerados por código (T-027, US-005; ainda sem tela, ela entra na T-028):
   - `face.ts` tem o catálogo de traços e sorteia o rosto por idade e nacionalidade. O rosto vira um código de 13 caracteres em `Player.face` e nunca é regenerado.
