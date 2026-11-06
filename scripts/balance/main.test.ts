@@ -68,6 +68,17 @@ describe('main', () => {
     expect(bad.err).toContain('Códigos de saída');
   });
 
+  it('resolves --robot weakest to the weakest club of the ladder', async () => {
+    const json = capture();
+    const args = ['--seasons', '0', '--duels', '0', '--workers', '1', '--robot', 'weakest'];
+    expect(await main([...args, '--json'], json)).toBe(0);
+    expect(json.err).not.toContain('clube desconhecido');
+    expect((JSON.parse(json.out) as { run: { robot: string } }).run.robot).toBe('chapecao');
+    const text = capture();
+    expect(await main(args, text)).toBe(0);
+    expect(text.out).toContain('robô no Chapecão');
+  });
+
   it('warns on stderr about a "__proto__" key of the --params file', async () => {
     const file = join(dir, 'proto.json');
     writeFileSync(file, '{"__proto__": {"baseChance": 0.2}}');

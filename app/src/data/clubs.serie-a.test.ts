@@ -137,11 +137,11 @@ describe('app/src/data/clubs.serie-a.json', () => {
   });
 
   // docs/design/clubes-serie-a.md, "Pedido ao developer": one 20-step ladder, by placement.
-  const LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62];
-  it('uses exactly the strength ladder, sum 1400 with the three planned ties', () => {
+  const LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 65, 64, 64];
+  it('uses exactly the strength ladder, sum 1404 with the five planned ties', () => {
     const strengths = clubs().map((c) => c.strength!);
     expect([...strengths].sort((a, b) => b - a)).toEqual(LADDER);
-    expect(strengths.reduce((a, b) => a + b, 0)).toBe(1400);
+    expect(strengths.reduce((a, b) => a + b, 0)).toBe(1404);
   });
   it.each(designRows.map((row) => [row.Clube!, n(row['Ref. 2026']!)]))(
     '%s (Ref. 2026 = %i) has strength LADDER[ref − 1]',

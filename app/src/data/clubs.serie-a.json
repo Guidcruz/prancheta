@@ -318,7 +318,7 @@
     "colors": ["#E5050F", "#FFFFFF"],
     "size": "big",
     "aiProfile": "academy",
-    "strength": 64,
+    "strength": 65,
     "stadium": {
       "name": "Estádio Beira-Riacho",
       "capacity": 50800
@@ -514,7 +514,7 @@
     "colors": ["#00A650", "#FFFFFF"],
     "size": "small",
     "aiProfile": "traditional",
-    "strength": 62,
+    "strength": 64,
     "stadium": {
       "name": "Arena Condão",
       "capacity": 21600
@@ -542,7 +542,7 @@
     "colors": ["#003A8C", "#FFFFFF"],
     "size": "medium",
     "aiProfile": "academy",
-    "strength": 63,
+    "strength": 64,
     "stadium": {
       "name": "Estádio Batelão",
       "capacity": 53600

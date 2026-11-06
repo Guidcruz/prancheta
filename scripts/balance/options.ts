@@ -59,7 +59,9 @@ export const USAGE = `Uso: npm run balance -- [opções]
                    (decisão 15); trava de deriva de ±0,5 obrigatória nas temporadas 2 e 3
   --duels <n>      jogos de cada duelo calibrado e tático (padrão 20000; 0 pula os duelos)
   --params <arq>   JSON com parâmetros que sobrescrevem os de app/src/params/ (qualquer parte)
-  --robot <clube>  clube do técnico-robô (padrão ${DEFAULT_ROBOT_CLUB}; "none" pula o robô)
+  --robot <clube>  clube do técnico-robô (padrão ${DEFAULT_ROBOT_CLUB}; "none" pula o robô;
+                   "weakest" é o clube mais fraco da escada: menor força, empate pelo id, e só
+                   nele vale a meta do robô no G4, obrigatória com 1.000 temporadas ou mais)
   --json           saída em JSON
   --workers <n>    threads de trabalho (padrão: até 4); o resultado não muda com elas
   --help           esta ajuda

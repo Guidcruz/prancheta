@@ -34,7 +34,7 @@ import type { AiProfile, ClubSize } from './types.ts';
 import { ENGINE_VERSION } from './version.ts';
 
 /** The single strength ladder of the Série A (jogadores.md, clubes-serie-a.md). */
-const LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 64, 63, 62];
+const LADDER = [78, 77, 76, 75, 74, 73, 72, 72, 71, 70, 70, 69, 68, 68, 67, 66, 65, 65, 64, 64];
 
 /** 20 synthetic clubs on the ladder, with mixed profiles (one chaotic). */
 function ladderClubs(): MutableClubDef[] {
