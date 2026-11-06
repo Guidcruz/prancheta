@@ -16,6 +16,7 @@
     "test:watch": "vitest",
     "bench": "vitest bench --run --silent=false",
     "golden:update": "vitest run --mode golden src/engine",
+    "save:fixtures": "SAVE_FIXTURES_WRITE=1 vitest run src/lib/save/fixtures.test.ts",
     "predev": "node ../scripts/icons.mjs"
   },
   "dependencies": {
