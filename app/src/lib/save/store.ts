@@ -1,7 +1,8 @@
 import { SEASON_ROUNDS } from '../../engine/index.ts';
 import { isCareerSave } from './check.ts';
 import { decodeSave, encodeSave, type DecodeError } from './codec.ts';
-import { SAVE_DB_NAME, openSaveDb, type SaveDb } from './db.ts';
+import type { IDBPTransaction } from 'idb';
+import { SAVE_DB_NAME, openSaveDb, type SaveDb, type SaveDbSchema } from './db.ts';
 import { migrateSave, type MigrationError } from './migrations/index.ts';
 import { fail, ok, type SaveResult } from './result.ts';
 import {
@@ -129,6 +130,22 @@ function summaryOf(save: CareerSave, headSeq: number): CareerSummary {
   };
 }
 
+type WriteTx = IDBPTransaction<SaveDbSchema, ('careers' | 'snapshots')[], 'readwrite'>;
+
+/**
+ * A read-write transaction over `careers` and `snapshots`, or the error name when the connection
+ * cannot start one (closing because another tab upgrades it). Its `done` is always observed.
+ */
+function begin(db: SaveDb): WriteTx | string {
+  try {
+    const tx = db.transaction(['careers', 'snapshots'], 'readwrite');
+    tx.done.catch(() => undefined);
+    return tx;
+  } catch (error) {
+    return errorName(error);
+  }
+}
+
 /** All the snapshots of a career, `[careerId, 0]` to `[careerId, +∞]`. */
 function careerRange(careerId: string, upTo = Number.POSITIVE_INFINITY): IDBKeyRange {
   return IDBKeyRange.bound([careerId, 0], [careerId, upTo]);
@@ -179,9 +196,9 @@ export class SaveStore {
       const encoded = await encodeSave(save);
 
       // (2) The snapshot and the pointer in one transaction.
-      const tx = db.value.transaction(['careers', 'snapshots'], 'readwrite');
+      const tx = begin(db.value);
+      if (typeof tx === 'string') return fail('write-failed', { name: tx });
       const done = tx.done;
-      done.catch(() => undefined);
       let previous: CareerSummary | undefined;
       let seq = 0;
       let refused: 'career-limit' | 'save-too-new' | undefined;
@@ -317,9 +334,9 @@ export class SaveStore {
     return this.serial(async () => {
       const db = await this.open();
       if (!db.ok) return db;
-      const tx = db.value.transaction(['careers', 'snapshots'], 'readwrite');
+      const tx = begin(db.value);
+      if (typeof tx === 'string') return fail('write-failed', { name: tx });
       const done = tx.done;
-      done.catch(() => undefined);
       try {
         await tx.objectStore('careers').delete(careerId);
         await tx.objectStore('snapshots').delete(careerRange(careerId));
@@ -379,9 +396,9 @@ export class SaveStore {
     seq: number,
     previous: CareerSummary | undefined,
   ): Promise<void> {
-    const tx = db.transaction(['careers', 'snapshots'], 'readwrite');
+    const tx = begin(db);
+    if (typeof tx === 'string') return;
     const done = tx.done;
-    done.catch(() => undefined);
     try {
       await tx.objectStore('snapshots').delete([id, seq]);
       const careers = tx.objectStore('careers');
