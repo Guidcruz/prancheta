@@ -318,7 +318,8 @@ describe('newGame (US-004)', () => {
   });
 
   it('passes the names already given to the identity source, one call per nationality', () => {
-    const calls: { nationality: string; count: number; existing: number }[] = [];
+    const calls: { nationality: string; count: number; existing: number; ages: number[] }[] = [];
+    const faceAges = new Map<string, number>();
     const spy: IdentitySource = {
       retiredRev: 3,
       squad(req) {
@@ -326,12 +327,25 @@ describe('newGame (US-004)', () => {
           nationality: req.nationality,
           count: req.count,
           existing: req.existing.length,
+          ages: [...req.ages],
         });
-        return identities.squad(req);
+        const ids = identities.squad(req);
+        // Tag each face with the age asked for it, to check the order against the players.
+        return ids.map((id, k) => {
+          const face = `age-${k}-${id.faceSeed}`;
+          faceAges.set(face, req.ages[k]!);
+          return { ...id, face };
+        });
       },
     };
     const result = newGame({ seed: 11, year: 2026, realism: 'full' }, ladderClubs(), params, spy);
     expect(result.ok && result.value.retiredNamesRev).toBe(3);
+    // One age per identity, in order: each player got the face asked with its own age (T-027).
+    for (const call of calls) expect(call.ages).toHaveLength(call.count);
+    if (!result.ok) throw new Error('newGame failed');
+    const players = Object.values(result.value.players);
+    expect(faceAges.size).toBe(players.length);
+    for (const player of players) expect(faceAges.get(player.face), player.id).toBe(player.age);
     // Per club the calls add up to 25 and each sees the names of the calls before it.
     let seen = 0;
     for (const call of calls) {

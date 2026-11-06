@@ -5,6 +5,7 @@
  * Names are obviously synthetic ("Jogador Teste7", shown as "Teste7"), never a real person.
  * Deterministic: the seeds come from `req.seed`, and the numbering continues after `existing`,
  * skipping any display already in the squad, so a name or surname of the squad never repeats.
+ * `req.ages` (T-027) is accepted and ignored: the fake face does not depend on the age.
  *
  * Test-only code: never imported by `index.ts`.
  */
