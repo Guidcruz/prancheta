@@ -127,6 +127,20 @@ run('built site (site/dist)', () => {
     expect(bad).toEqual([]);
   });
 
+  it('keeps internal task, story and bug codes (T-048, US-075, BUG-SITE-001) out of the public pages', () => {
+    const code = /\b(?:T|US)-\d{3}\b|\bBUG-[A-Z]+-\d{3}\b/g;
+    const offenders: string[] = [];
+    for (const f of pages) {
+      const h = readFileSync(f, 'utf8');
+      for (const m of h.matchAll(code)) {
+        const at = m.index ?? 0;
+        const snippet = h.slice(Math.max(0, at - 30), at + m[0].length + 30).replace(/\s+/g, ' ');
+        offenders.push(`${f}: ${m[0]} in "...${snippet}..."`);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
   it('has one h1, a skip link, a main, lang and canonical per page', () => {
     for (const f of pages) {
       const h = readFileSync(f, 'utf8');
