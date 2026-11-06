@@ -188,7 +188,11 @@ describe('save codec', () => {
 
   it('refuses a JSON past the size bound before hashing it', async () => {
     const result = await encodeSave({ a: 'x'.repeat(100) }, 50);
-    expect(result).toEqual({ ok: false, error: 'too-large', detail: { bytes: 108, maxBytes: 50 } });
+    expect(result).toEqual({
+      ok: false,
+      error: 'too-large',
+      detail: { atLeast: 108, maxBytes: 50 },
+    });
     expect((await encodeSave({ a: 'x' }, 50)).ok).toBe(true);
     // Within the bound in code units, past it in bytes: 8 + 10 × 2 bytes of "ã".
     const accents = await encodeSave({ a: 'ã'.repeat(10) }, 25);

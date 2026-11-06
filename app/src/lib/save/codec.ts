@@ -182,10 +182,8 @@ function jsonBytes(
   const text = JSON.stringify(value);
   const stringified = stageTime(start);
   // Every UTF-16 code unit takes at least one byte: a text this long is refused before the
-  // buffer of `toUtf8` is sized for it.
-  if (text.length > maxBytes) {
-    return fail('too-large', { bytes: encoder.encode(text).byteLength, maxBytes });
-  }
+  // buffer of `toUtf8` is sized for it, and without encoding it (`atLeast`, not `bytes`).
+  if (text.length > maxBytes) return fail('too-large', { atLeast: text.length, maxBytes });
   start = stageStart();
   const json = toUtf8(text);
   const encoded = stageTime(start);

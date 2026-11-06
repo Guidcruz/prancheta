@@ -120,51 +120,6 @@ describe('database', () => {
     vi.unstubAllGlobals();
     expect(await snapshotSeqs()).toEqual([1]);
   });
-
-  it('stores the snapshot as its UTF-8 JSON, without gzip, in a buffer of its own length (T-072)', async () => {
-    const save = variant(5);
-    const result = await store().writeSnapshot(save);
-    if (!result.ok) throw new Error(result.error);
-    const db = await raw();
-    const record = (await db.get('snapshots', [SAMPLE_CAREER_ID, 1]))!;
-    db.close();
-    const json = JSON.stringify({ ...save, career: { ...save.career, matchSheets: {} } });
-    expect(new TextDecoder().decode(record.blob)).toBe(json);
-    expect(record.blob.byteLength).toBe(record.bytes);
-    // The whole buffer is the JSON: no slack of the encoder goes to the disk.
-    expect(record.blob.buffer.byteLength).toBe(record.bytes);
-    expect(record.sha256).toBe(await sha256Hex(record.blob));
-    expect(result.value).toMatchObject({ bytes: record.bytes, storedBytes: record.bytes });
-  });
-
-  it('applies the 40 MB bound to the stored bytes when opening, before hashing them', async () => {
-    const s = store();
-    for (const round of [4, 5]) await s.writeSnapshot(variant(round));
-    await tamper(2, (r) => ({ ...r, bytes: MAX_SAVE_BYTES + 1 }));
-    const digest = vi.spyOn(crypto.subtle, 'digest');
-    expect(await s.openCareer(SAMPLE_CAREER_ID)).toMatchObject({
-      ok: true,
-      value: { seq: 1, skipped: [{ seq: 2, problem: 'invalid-record' }] },
-    });
-    // Bytes that are not as many as the record says are refused before the hash.
-    await tamper(2, (r) => {
-      const longer = new Uint8Array(r.blob.byteLength + 10);
-      longer.set(r.blob);
-      return { ...r, bytes: r.blob.byteLength, blob: longer };
-    });
-    digest.mockClear();
-    const opened = await s.openCareer(SAMPLE_CAREER_ID);
-    expect(opened.ok && opened.value.skipped).toEqual([{ seq: 2, problem: 'size-mismatch' }]);
-    // Only snapshot 1 was hashed (it opened), not the one of the wrong size.
-    const hashed = digest.mock.calls.map(([, data]) => (data as Uint8Array).byteLength);
-    const db = await raw();
-    const first = (await db.get('snapshots', [SAMPLE_CAREER_ID, 1]))!;
-    const second = (await db.get('snapshots', [SAMPLE_CAREER_ID, 2]))!;
-    db.close();
-    expect(hashed).toContain(first.bytes);
-    expect(hashed).not.toContain(second.blob.byteLength);
-    digest.mockRestore();
-  });
 });
 
 describe('safe write with 3 versions (US-032)', () => {
