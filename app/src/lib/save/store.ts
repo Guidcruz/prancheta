@@ -348,6 +348,41 @@ function sheetRange(careerId: string, below?: number): IDBKeyRange {
     : IDBKeyRange.bound([careerId], [careerId, below], false, true);
 }
 
+/** The `bySeason` keys of a career's snapshots with a numeric season. */
+function seasonKeys(careerId: string): IDBKeyRange {
+  return IDBKeyRange.bound([careerId, -Infinity], [careerId, Infinity]);
+}
+
+/**
+ * The lowest season among the kept snapshots of a career, when it has rows of sheets of a season
+ * older than `season` (the new snapshot's) to prune; `undefined` when there is nothing to prune
+ * now. Read from keys only, in one read-only transaction: no snapshot value is read (T-072; 4.2,
+ * "Virada e poda"). The lowest, not the season of the lowest `seq`: after a fallback a newer `seq`
+ * may be of an older season. When a kept record is not in the index (no valid `season`) or its
+ * season is not whole, the prune of the rows waits for a later write; an invalid record with a
+ * valid season counts, which only prunes less.
+ */
+async function lowestKeptSeason(
+  db: SaveDb,
+  careerId: string,
+  season: number,
+): Promise<number | undefined> {
+  const tx = db.transaction(['snapshots', 'matchSheets']);
+  tx.done.catch(() => undefined);
+  // Mid-season there is nothing older: a key count, and the prune ends here.
+  if ((await tx.objectStore('matchSheets').count(sheetRange(careerId, season))) === 0) return;
+  const snapshots = tx.objectStore('snapshots');
+  const bySeason = snapshots.index('bySeason');
+  const [inStore, inIndex, first] = (await requests([
+    () => snapshots.count(careerRange(careerId)),
+    () => bySeason.count(seasonKeys(careerId)),
+    () => bySeason.openKeyCursor(seasonKeys(careerId)),
+  ])) as [number, number, { key: [string, number] } | null];
+  if (inStore !== inIndex || first === null) return;
+  const lowest = first.key[1];
+  return Number.isInteger(lowest) ? Math.min(lowest, season) : undefined;
+}
+
 /** The rows of sheets of one season of a career. */
 function seasonRange(careerId: string, season: number): IDBKeyRange {
   return IDBKeyRange.bound([careerId, season], [careerId, season, Infinity]);
@@ -780,16 +815,8 @@ export class SaveStore {
       }
     }
     try {
-      // Mid-season there is nothing older: a key count, and no snapshot is read.
-      if ((await db.count('matchSheets', sheetRange(id, season))) === 0) return;
-      // The lowest season among the kept snapshots (after a fallback, a newer `seq` may be of an
-      // older season than the oldest kept one).
-      let lowest = season;
-      for (const kept of await db.getAll('snapshots', careerRange(id))) {
-        if (!isRecord(kept)) return;
-        lowest = Math.min(lowest, kept.season);
-      }
-      await db.delete('matchSheets', sheetRange(id, lowest));
+      const lowest = await lowestKeptSeason(db, id, season);
+      if (lowest !== undefined) await db.delete('matchSheets', sheetRange(id, lowest));
     } catch {
       // Kept for the next write.
     }
