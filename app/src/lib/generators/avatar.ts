@@ -405,14 +405,17 @@ export interface RenderFaceOptions {
 /**
  * Renders a face as SVG (viewBox 48x48, `size` px square, 16 to 512, else 48). `face` is
  * `Player.face` or a spec; either way it is decoded, so an invalid or retired index is drawn as
- * its replacement. Decorative (`aria-hidden`) unless `opts.label` is given.
+ * its replacement, and anything else as the neutral face. Decorative (`aria-hidden`) unless
+ * `opts.label` is given.
  */
 export function renderFace(
   face: string | FaceSpec,
   size: number,
   opts: RenderFaceOptions = {},
 ): string {
-  const sp = decodeFace(typeof face === 'string' ? face : encodeFace(face));
+  // Anything that is neither a code nor a spec (null, a number, from a damaged save) is
+  // decoded as is, so it is drawn as the neutral face instead of throwing.
+  const sp = decodeFace(typeof face === 'object' && face !== null ? encodeFace(face) : face);
   const px = safeSize(size);
   const small = px <= AVATAR_SMALL_SIZE;
   const sw = small ? 1.7 : 1.1;

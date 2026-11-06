@@ -251,6 +251,15 @@ describe('renderFace: options', () => {
     expect(renderFace(bad, 96)).toBe(renderFace(NEUTRAL_FACE, 96));
     expect(renderFace('<svg onload=x>', 96)).toBe(renderFace(NEUTRAL_FACE, 96));
   });
+
+  it('draws anything that is neither a code nor a spec as the neutral face, never throwing', () => {
+    const neutral = renderFace(NEUTRAL_FACE, 48);
+    // Values a damaged save could hold in `Player.face`.
+    for (const bad of [null, undefined, 42, true, Number.NaN] as unknown[]) {
+      expect(renderFace(bad as string, 48), String(bad)).toBe(neutral);
+    }
+    expect(renderFace({} as unknown as string, 48)).toBe(neutral);
+  });
 });
 
 describe('avatar colours', () => {
