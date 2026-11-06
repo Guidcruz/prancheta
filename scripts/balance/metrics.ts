@@ -5,6 +5,7 @@ import {
   mergeMatchTally,
   type MatchTally,
   type SeasonRecord,
+  type SquadsRecord,
   type StrengthRecord,
 } from './league.ts';
 import { DEFAULT_ROBOT_CLUB } from './options.ts';
@@ -848,6 +849,7 @@ export function chainRows(results: Pick<RunResults, 'chain'>): MetricRow[] {
           required,
         );
       }),
+      ...squadRows(records, season),
     );
   });
   chain.forEach((records, i) => {
@@ -874,6 +876,66 @@ export function chainRows(results: Pick<RunResults, 'chain'>): MetricRow[] {
       });
     }
   });
+  return rows;
+}
+
+/** Clubs of the Série A, for the retirements per club. */
+const LEAGUE_CLUBS = 20;
+
+/**
+ * The informative rows of the squads in a `--chain` run (decision 14; the minimal renewal of
+ * T-048), never required and never judged but for the revelation: the mean age at the start of
+ * the season (the design measured about 24 to 27 over 10 seasons); the revelation's pool (mean
+ * per career, and its minimum, which must stay above 0: "a revelação sempre tem candidatos"); and
+ * the retirements per club in the turn that closed the season (about 1.7). No row when the
+ * records have no squads (not a chain run).
+ */
+function squadRows(records: readonly SeasonRecord[], season: number): MetricRow[] {
+  const squads = records.flatMap((r) => (r.squads === undefined ? [] : [r.squads]));
+  if (squads.length === 0) return [];
+  const label = (text: string) => `${text}, temporada ${season}`;
+  const mean = (f: (s: SquadsRecord) => number | undefined) => {
+    const values = squads.flatMap((s) => {
+      const v = f(s);
+      return v === undefined ? [] : [v];
+    });
+    return values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : undefined;
+  };
+  const fewest = Math.min(...squads.map((s) => s.revelationCandidates));
+  const rows = [
+    row(
+      `${turnPrefix(season)}ageMean`,
+      label('Idade média dos elencos'),
+      mean((s) => s.ageMean),
+      (v) => num(v, 1),
+      'medida no desenho: cerca de 24 a 27 (decisão 14)',
+      () => true,
+      false,
+    ),
+    row(
+      `${turnPrefix(season)}revelationCandidates`,
+      label('Candidatos à revelação (até 21 anos, 19 jogos com nota)'),
+      mean((s) => s.revelationCandidates),
+      (v) => `${num(v, 1)} (mín. ${num(fewest, 0)})`,
+      'sempre algum (decisão 14)',
+      () => fewest > 0,
+      false,
+    ),
+  ];
+  const retired = mean((s) => (s.retired === undefined ? undefined : s.retired / LEAGUE_CLUBS));
+  if (retired !== undefined) {
+    rows.push(
+      row(
+        `${turnPrefix(season)}retired`,
+        label('Aposentadorias por clube na virada'),
+        retired,
+        (v) => num(v, 2),
+        'cerca de 1,7 (decisão 14)',
+        () => true,
+        false,
+      ),
+    );
+  }
   return rows;
 }
 

@@ -1,4 +1,5 @@
 import {
+  SEASON_ROUNDS,
   endSeason,
   getStandings,
   newGame,
@@ -59,6 +60,13 @@ export const DRIFT_LADDER_CLUBS = 4;
 export const Z4_GAP = { min: 6, max: 8 } as const;
 /** A starter below this condition marks a tired sheet (ia-clubes.md, "Pedido ao developer" 3). */
 export const TIRED_STARTER_CONDITION = 75;
+/**
+ * The revelation's pool in a `--chain` run (temporada.md, "Prêmios"; decision 14 of
+ * balance-targets.md): players of at most this age in the season played...
+ */
+export const REVELATION_MAX_AGE = 21;
+/** ...with at least half of the rounds rated (the awards' minimum, 19 games). */
+export const AWARD_MIN_GAMES = SEASON_ROUNDS / 2;
 
 /** Sums over the matches of a season (or of many). */
 export interface MatchTally {
@@ -150,12 +158,26 @@ export interface LadderCut {
   driftStrongest: readonly ClubId[];
 }
 
+/**
+ * The squads of a season of a `--chain` run (decision 14, the minimal renewal of T-048): the
+ * mean age of the players of the 20 squads at the start, the revelation's pool at the end (players
+ * of up to REVELATION_MAX_AGE with AWARD_MIN_GAMES rated games), and how many players retired in
+ * the turn that closed it (absent for the last season of the chain, which is not turned).
+ */
+export interface SquadsRecord {
+  ageMean: number;
+  revelationCandidates: number;
+  retired?: number;
+}
+
 export interface SeasonRecord {
   index: number;
   /** Season of the career (`--chain`); absent in a single-season run (season 1). */
   season?: number;
   /** The clubs' strength at the start of the season; only in a `--chain` run. */
   strength?: StrengthRecord;
+  /** Ages, the revelation's pool and the retirements; only in a `--chain` run. */
+  squads?: SquadsRecord;
   /** Club played by the robot coach in this season, if any. */
   robot?: ClubId;
   matches: MatchTally;
@@ -381,16 +403,60 @@ export function runCareer(ctx: BalanceContext, index: number, seasons: number): 
   const cut = ladderCut(state);
   for (let season = 1; season <= seasons; season++) {
     const strength = strengthRecord(state, cut);
+    const ageMean = squadAgeMean(state);
     const played = playSeason(ctx, state, index, undefined, cut);
-    records.push({ ...played.record, season, strength });
+    const squads: SquadsRecord = {
+      ageMean,
+      revelationCandidates: revelationCandidates(played.state),
+    };
+    records.push({ ...played.record, season, strength, squads });
     if (season === seasons) break;
     const closed = endSeason(played.state, ctx.params, [], balanceIdentitySource());
     if (!closed.ok) throw new Error(`endSeason refused career ${index}: ${closed.error}`);
+    squads.retired = retiredAtTurn(played.state, closed.value.state);
     const next = startNextSeason(closed.value.state, ctx.params, balanceIdentitySource());
     if (!next.ok) throw new Error(`startNextSeason refused career ${index}: ${next.error}`);
     state = next.value;
   }
   return { index, seasons: records };
+}
+
+/** The mean age of the players of the 20 squads. */
+export function squadAgeMean(state: Pick<GameState, 'players' | 'squads'>): number {
+  const ages = Object.values(state.squads).flatMap((ids) =>
+    ids.map((id) => state.players[id]!.age),
+  );
+  return ages.reduce((s, x) => s + x, 0) / ages.length;
+}
+
+/**
+ * The revelation's pool at the end of a season: players of the squads of at most
+ * REVELATION_MAX_AGE (the age of the season played) with AWARD_MIN_GAMES rated games.
+ */
+export function revelationCandidates(
+  state: Pick<GameState, 'players' | 'squads' | 'seasonStats'>,
+): number {
+  let n = 0;
+  for (const ids of Object.values(state.squads)) {
+    for (const id of ids) {
+      const rated = state.seasonStats[id]?.ratedGames ?? 0;
+      if (state.players[id]!.age <= REVELATION_MAX_AGE && rated >= AWARD_MIN_GAMES) n++;
+    }
+  }
+  return n;
+}
+
+/** Players of the squads at round 39 that `endSeason` took out of them (the retirements). */
+export function retiredAtTurn(
+  before: Pick<GameState, 'squads'>,
+  after: Pick<GameState, 'squads'>,
+): number {
+  let n = 0;
+  for (const [clubId, ids] of Object.entries(before.squads)) {
+    const now = new Set(after.squads[clubId] ?? []);
+    n += ids.filter((id) => !now.has(id)).length;
+  }
+  return n;
 }
 
 /**

@@ -67,6 +67,7 @@ describe('runCareer', { timeout: 120_000 }, () => {
     const first: Partial<SeasonRecord> = { ...career.seasons[0]! };
     delete first.season;
     delete first.strength;
+    delete first.squads;
     expect(first).toEqual(runSeason(ctx, 1));
     expect(career.seasons[0]!.strength).toEqual(strengthRecord(seasonStart(ctx, 1)));
     // The turn recalculates the strength from the evolved squads: it moves.
@@ -75,6 +76,31 @@ describe('runCareer', { timeout: 120_000 }, () => {
       expect(s.matches.matches).toBe(380);
       expect(s.strength!.sd).toBeGreaterThan(0);
     }
+  });
+
+  it('records the squads of each season: the mean age, the revelation pool, the retirements', () => {
+    const start = seasonStart(ctx, 1);
+    const ages = Object.values(start.players).map((p) => p.age);
+    const [first, second, third] = career.seasons.map((s) => s.squads!);
+    expect(first!.ageMean).toBeCloseTo(ages.reduce((a, b) => a + b, 0) / ages.length, 10);
+    // A year older but for the youth of the academy that came in for those who retired.
+    expect(second!.ageMean).toBeGreaterThan(first!.ageMean);
+    expect(second!.ageMean).toBeLessThan(first!.ageMean + 1);
+    for (const s of [first!, second!, third!]) expect(s.revelationCandidates).toBeGreaterThan(0);
+    // The generation has reserves of 34: someone retires already at the first turn.
+    expect(first!.retired).toBeGreaterThan(0);
+    expect(second!.retired).toBeGreaterThan(0);
+    expect(third!.retired).toBeUndefined();
+    const closed = endSeason(
+      playSeason(ctx, start, 1).state,
+      ctx.params,
+      [],
+      balanceIdentitySource(),
+    );
+    if (!closed.ok) throw new Error(closed.error);
+    expect(first!.retired).toBe(
+      Object.values(closed.value.state.players).filter((p) => p.age >= 35).length,
+    );
   });
 
   it('cuts every season by the weakest and strongest clubs of season 1 (decision 15)', () => {
@@ -115,11 +141,25 @@ describe('runCareer', { timeout: 120_000 }, () => {
     const rows = buildReport(results).rows;
     expect(rows.filter((r) => r.id.startsWith('turn-')).map((r) => r.id)).toEqual(
       [1, 2, 3].flatMap((k) =>
-        ['strengthMean', 'strengthSd', 'strengthRange', 'sizeGap', 'ladderGap'].map(
-          (m) => `turn-s${k}-${m}`,
-        ),
+        [
+          'strengthMean',
+          'strengthSd',
+          'strengthRange',
+          'sizeGap',
+          'ladderGap',
+          'ageMean',
+          'revelationCandidates',
+          // The last season of the chain is not turned: no retirements to count.
+          ...(k < 3 ? ['retired'] : []),
+        ].map((m) => `turn-s${k}-${m}`),
       ),
     );
+    // The squads' rows are informative (decision 14), never the exit code.
+    for (const r of rows.filter((x) =>
+      /^turn-s\d+-(ageMean|revelationCandidates|retired)$/.test(x.id),
+    )) {
+      expect(r.required, r.id).toBe(false);
+    }
     for (const id of ['goals', 'draws', 'champion', 'seventeenth', 'fansMean']) {
       expect(rows.find((r) => r.id === `chain-s2-${id}`)?.required, id).toBe(true);
       expect(rows.find((r) => r.id === `chain-s3-${id}`)?.status, id).toMatch(/dentro|fora/);
