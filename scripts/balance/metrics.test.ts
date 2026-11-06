@@ -498,6 +498,13 @@ describe('the targets of the ladder with the higher bottom', () => {
   it('picks the weakest club by strength, then by id', () => {
     expect(weakestClub(clubs)).toBe('alfa');
     expect(weakestClub([])).toBeUndefined();
+    // A club without strength counts as the engine default (70).
+    const noStrength = [
+      { id: 'a', shortName: 'A' },
+      { id: 'b', shortName: 'B', strength: 69 },
+    ] as unknown as ClubDef[];
+    expect(weakestClub(noStrength)).toBe('b');
+    expect(weakestClub([{ id: 'z', shortName: 'Z', strength: 71 }, ...noStrength])).toBe('b');
   });
 
   it('judges "every club champion" only from 1000 seasons', () => {
@@ -578,6 +585,21 @@ describe('targets judged only where they were defined', () => {
       status: 'fora',
       required: false,
     });
+  });
+
+  it('judges the robot G4 on seed 1 only, and drops the value of an n/a "every champion"', () => {
+    expect(byId(build(1, 'alfa').rows, 'robotWeakG4').required).toBe(true);
+    expect(byId(build(2, 'alfa').rows, 'robotWeakG4').required).toBe(false);
+    const short = buildReport(
+      {
+        seasons: [season(0, m, { champion: 'coritibom' }, { coritibom: 70 })],
+        robotSeasons: [],
+        calibrated: new Map(),
+        tactical: new Map(),
+      },
+      { clubs },
+    );
+    expect(byId(short.rows, 'everyChampion').value).toBeUndefined();
   });
 
   it('keeps the gain and title targets required only for the reference robot club', () => {

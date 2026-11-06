@@ -1,4 +1,5 @@
 import type { ClubDef, ClubId } from '../../app/src/engine/index.ts';
+import { DEFAULT_STRENGTH } from '../../app/src/engine/clubs.ts';
 import { REFERENCE_VARIANT, TACTIC_VARIANTS, type AllOutTally, type DuelTally } from './duels.ts';
 import {
   emptyMatchTally,
@@ -121,13 +122,16 @@ const LONG_RUN_SHOWN = '1.000';
  * The weakest club of the ladder: the lowest `strength`, ties by the smaller id. `--robot weakest`
  * plays it, and the robot's G4 target (balance-targets.md, "Recomendação final") applies to it only.
  */
+/** A club without `strength` plays at the engine's default. */
+const strengthOf = (c: ClubDef) => c.strength ?? DEFAULT_STRENGTH;
+
 export function weakestClub(clubs: readonly ClubDef[]): ClubId | undefined {
   let weakest: ClubDef | undefined;
   for (const c of clubs) {
     if (
       weakest === undefined ||
-      (c.strength ?? 0) < (weakest.strength ?? 0) ||
-      ((c.strength ?? 0) === (weakest.strength ?? 0) && c.id < weakest.id)
+      strengthOf(c) < strengthOf(weakest) ||
+      (strengthOf(c) === strengthOf(weakest) && c.id < weakest.id)
     )
       weakest = c;
   }
@@ -320,8 +324,8 @@ export function buildReport(
   const titledClubs = new Set(seasons.map((x) => x.table.champion));
   const untitled = allClubs.filter((c) => !titledClubs.has(c.id));
   const everyChampionLong = n >= LONG_RUN_SEASONS;
-  const everyChampionJudged =
-    everyChampionLong && (options.seed === undefined || options.seed === 1);
+  const seedJudged = options.seed === undefined || options.seed === 1;
+  const everyChampionJudged = everyChampionLong && seedJudged;
   const everyChampion: MetricRow =
     allClubs.length === 0 || n === 0
       ? row(
@@ -336,7 +340,7 @@ export function buildReport(
       : {
           id: 'everyChampion',
           label: 'Todo clube campeão ao menos 1 vez',
-          value: untitled.length,
+          ...(everyChampionLong ? { value: untitled.length } : {}),
           shown: !everyChampionLong
             ? `n/a abaixo de ${LONG_RUN_SHOWN} temporadas`
             : untitled.length === 0
@@ -360,7 +364,7 @@ export function buildReport(
     share1,
     'ao menos 2%',
     { min: 0.02 },
-    onWeakest && robot !== undefined && robot.seasons >= LONG_RUN_SEASONS,
+    onWeakest && robot !== undefined && robot.seasons >= LONG_RUN_SEASONS && seedJudged,
   );
 
   const rows: MetricRow[] = [
