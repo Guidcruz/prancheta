@@ -590,17 +590,27 @@ describe('fixed identity source of the engine tests', () => {
   const source = fixedIdentitySource();
 
   it('is deterministic for the same request', () => {
-    const req = { seed: 42, nationality: 'BR', count: 25, existing: [] };
+    const ages = Array.from({ length: 25 }, (_, i) => 17 + (i % 18));
+    const req = { seed: 42, nationality: 'BR', count: 25, ages, existing: [] };
     expect(source.squad(req)).toEqual(source.squad(req));
     expect(source.squad({ ...req, seed: 43 })).not.toEqual(source.squad(req));
+    // The ages only matter to the game's face generator; this source ignores them.
+    expect(source.squad({ ...req, ages: ages.map(() => 30) })).toEqual(source.squad(req));
   });
 
   it('never repeats a name of the squad, including existing ones', () => {
-    const first = source.squad({ seed: 1, nationality: 'BR', count: 3, existing: [] });
+    const first = source.squad({
+      seed: 1,
+      nationality: 'BR',
+      count: 3,
+      ages: [20, 21, 22],
+      existing: [],
+    });
     const more = source.squad({
       seed: 2,
       nationality: 'UY',
       count: 3,
+      ages: [25, 26, 27],
       existing: [...first, { display: 'Teste5', full: 'Jogador Teste5', family: 'Teste5' }],
     });
     const displays = [...first, ...more].map((p) => p.display);
@@ -610,7 +620,13 @@ describe('fixed identity source of the engine tests', () => {
 
   it('gives identities that make valid players', () => {
     expect(source.retiredRev).toBe(0);
-    const ids = source.squad({ seed: 9, nationality: 'AR', count: 25, existing: [] });
+    const ids = source.squad({
+      seed: 9,
+      nationality: 'AR',
+      count: 25,
+      ages: Array.from({ length: 25 }, () => 24),
+      existing: [],
+    });
     expect(ids).toHaveLength(25);
     ids.forEach((identity, i) => {
       const { nameSeed, faceSeed, face, display, full, family } = identity;

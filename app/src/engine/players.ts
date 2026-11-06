@@ -62,6 +62,12 @@ export interface IdentitySource {
     /** ISO 3166-1 alpha-2. */
     nationality: string;
     count: number;
+    /**
+     * Age of each new player at creation, in order; `ages.length === count`. The engine has
+     * already drawn them, so this adds no draw; the face generator weighs hair, beard and marks
+     * by it (T-027). A source may ignore it (the engine tests' source does).
+     */
+    ages: readonly number[];
     /** Current squad, for the rules on repeated names and surnames. */
     existing: readonly PlayerNameText[];
   }): PlayerIdentity[];

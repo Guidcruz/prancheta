@@ -82,6 +82,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-070  | feita, aguardando merge (decisão 16, "todos podem ser campeões"): escada com o fundo mais alto (Inter-Regional 64 → 65, Remador 63 → 64, Chapecão 62 → 64; soma 1.404), `clubStrengthSd` 1,5; metas de release novas no `/balance` ("todo clube campeão" em 1.000 temporadas e G4 do robô no mais fraco de pelo menos 2%, com `--robot weakest`); 200 temporadas, semente 1: 39/39 metas, campeão grande 86,0%; 1.000 temporadas: os 20 clubes com título, robô no Chapecão com G4 de 3,0%; nenhum golden do motor mudou |
 | T-071  | feita, aguardando merge (decisão 17): na cadeia do `/balance` (`--chain`), o campeão pequeno vira informativo nas temporadas 2 e 3, como o grande e o fraco no G4 (decisão 15); a trava de deriva segue obrigatória; sem `--chain`, nada muda; a cadeia de 3 temporadas passa de 92 de 93 metas para 91 de 91                                                                                                                                                                                                            |
 | T-018  | feita, aguardando merge (review, segurança e QA aprovados): save em IndexedDB em `app/src/lib/save/` (snapshots gzip com SHA-256, 3 versões, gravação segura conferida por bytes, abrir com volta à versão anterior, limite de 10 carreiras, súmulas fora do snapshot); gravação do fim da temporada no p90 de 158,0 ms na 1ª de 3 execuções, folga curta (ver `docs/02-architecture.md` §5)                                                                                                                             |
+| T-027  | feita, aguardando merge (review de código, revisão de arte e QA aprovados): rosto gerado por código em `app/src/lib/generators/face.ts` (catálogo, sorteio por idade e nacionalidade, código de 13 caracteres em `Player.face`, nunca regenerado) e `avatar.ts` (SVG seguro em 3 tamanhos, igual à folha `docs/art/avatares-exemplo.svg` aprovada pelo CEO); o motor passa a idade à fonte de identidade sem sorteio novo; `ENGINE_VERSION` segue 14; ainda sem tela (entra na T-028)                                    |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
 
@@ -413,7 +414,7 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-027 e T-019 (save; a T-018 está feita, aguardando merge).
+1. T-019 (formato do save; a T-018 e a T-027 estão feitas, aguardando merge).
 2. T-048 (renovação mínima do elenco).
 3. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
 4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).

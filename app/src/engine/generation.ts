@@ -665,6 +665,7 @@ function withIdentities(
       seed: seedFromString(`${seed}-names-${clubId}-${nationality}`),
       nationality,
       count: indices.length,
+      ages: indices.map((index) => drafts[index]!.age),
       existing: [...existing],
     });
     if (ids.length !== indices.length) {

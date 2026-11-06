@@ -42,7 +42,8 @@ export interface ShieldSpec {
   symbol: CrestSymbol;
 }
 
-const HEX = /^#[0-9a-f]{6}$/i;
+/** A `#rrggbb` colour, any case. */
+export const HEX = /^#[0-9a-f]{6}$/i;
 const FALLBACK = '#777777';
 const INK = '#0b1118';
 const NEUTRAL_DARK = '#111417';
@@ -50,12 +51,14 @@ const NEUTRAL_LIGHT = '#ffffff';
 /** Width in px up to which the simple version is drawn. */
 export const SMALL_SIZE = 32;
 
-const escapeText = (text: string) =>
+/** Escapes text for an SVG attribute or text node. */
+export const escapeText = (text: string) =>
   text.replace(
     /[&<>"']/g,
     (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] ?? c,
   );
-const safeColor = (c: string) => (HEX.test(c) ? c : FALLBACK);
+/** `c` when it is `#rrggbb`, else `fallback` (grey by default). */
+export const safeColor = (c: string, fallback = FALLBACK) => (HEX.test(c) ? c : fallback);
 
 // ------------------------------------------------------------------ colour maths
 

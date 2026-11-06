@@ -37,6 +37,7 @@ describe('golden: player model', () => {
       seed: seedFromString('1-identities-clube-teste-01'),
       nationality: 'BR',
       count: 3,
+      ages: [20, 25, 30],
       existing: [],
     });
     expectGolden('players', { overalls, traits, potentials, curves, identities });
