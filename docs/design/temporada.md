@@ -307,6 +307,10 @@ Na 1a, tudo zera na virada: amarelos acumulados e suspensões, inclusive a de qu
 - **Penas do STJD** (julgamento por agressão, por exemplo): contadas em jogos ou em dias, se atravessam a pausa e em quais competições valem.
 - **Amarelos:** quando zeram (fim da competição, fase ou turno), conforme o regulamento de cada competição.
 
+### Calendário com copas: prioridade e rodízio (Etapa 2; ideia do CEO, 2026-11-06)
+
+Na 1a todos jogam só a Série A, e o favorito nunca divide o elenco: com 1.000 temporadas, o clube mais forte ganha 26,0% dos títulos, contra cerca de 20% para cada um dos dois maiores campeões no real. Na Etapa 2, com Copa do Brasil e estaduais (e na Etapa 5, com Libertadores e Sul-Americana), o calendário cheio deve criar **escolha de prioridade e rodízio** para os clubes do topo: mais jogos, mais desgaste e lesões, titulares poupados numa competição para render na outra. É isso, e não um ajuste na partida, que deve aproximar a concentração de títulos da liga do real. A medida e a meta estão na decisão 18 de `balance-targets.md`; as regras de prioridade da IA e do técnico se desenham com as copas.
+
 ## Casos de borda
 
 | Caso                                            | Regra                                                                                                                                                                                                  |

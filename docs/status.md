@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-070 feita, aguardando merge).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-071 feita, aguardando merge).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
@@ -80,6 +80,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-049  | feita, aguardando merge (decisões 12 e 13 da auditoria; ADR-0019): `lastRound` fora do `GameState` (`roundRecap`, `matchSheet`), `index.ts` de 347 para 174 símbolos (contrato de 152 e API de ferramentas de 22), lint `engineEntryOnly`, estado cerca de 16% menor, simulação igual (balance 200 temporadas idêntico à `main`), `ENGINE_VERSION` 13; QA PASS (1222 testes no app; `PROPERTY_FULL` 1319)                                                                                                                |
 | T-069  | feita, aguardando merge (decisão 9 da auditoria): todo jogador gerado é brasileiro (`HOME_NATIONALITY_SHARE` 1, sorteio ainda consumido); goldens mudaram só nacionalidade, nome, rosto e `digest` (o `new-game` tinha 2 estrangeiros; 34 jogadores com nome e rosto novos); balance de 200 temporadas idêntico à `main` (39/39 metas); saves com `AR`/`UY` seguem válidos; `ENGINE_VERSION` 14                                                                                                                          |
 | T-070  | feita, aguardando merge (decisão 16, "todos podem ser campeões"): escada com o fundo mais alto (Inter-Regional 64 → 65, Remador 63 → 64, Chapecão 62 → 64; soma 1.404), `clubStrengthSd` 1,5; metas de release novas no `/balance` ("todo clube campeão" em 1.000 temporadas e G4 do robô no mais fraco de pelo menos 2%, com `--robot weakest`); 200 temporadas, semente 1: 39/39 metas, campeão grande 86,0%; 1.000 temporadas: os 20 clubes com título, robô no Chapecão com G4 de 3,0%; nenhum golden do motor mudou |
+| T-071  | feita, aguardando merge (decisão 17): na cadeia do `/balance` (`--chain`), o campeão pequeno vira informativo nas temporadas 2 e 3, como o grande e o fraco no G4 (decisão 15); a trava de deriva segue obrigatória; sem `--chain`, nada muda; a cadeia de 3 temporadas passa de 92 de 93 metas para 91 de 91                                                                                                                                                                                                            |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
 
@@ -111,19 +112,20 @@ Relatórios em [`docs/reports/auditoria-2026-11-05/`](reports/auditoria-2026-11-
 
 Este PR de docs aplica as decisões 1 a 4, 6, 7, 9, 10 e 11 e a limpeza dos documentos; o PR de CI (5 e 6) é do `devops-engineer`; 8, 12 e 13 ficam com o `architect` e o `game-designer`.
 
-## Decisões do CEO em 2026-11-06 (T-070)
+## Decisões do CEO em 2026-11-06 (T-070 e T-071)
 
 16. Decisão 16: todos podem ser campeões (aprovada com "ok recomendado", as cinco recomendações; `docs/design/balance-targets.md`, decisão 16, e `docs/design/clubes-serie-a.md`, "Força").
     - Escada com o fundo mais alto: Inter-Regional 64 → 65, Remador 63 → 64, Chapecão 62 → 64 (soma 1.404); `clubStrengthSd` continua em 1,5.
     - Teto do campeão pequeno: 4%. Teto do grande: 90%.
     - Metas de release novas: "todo clube campeão" em 1.000 temporadas (semente 1) e G4 do técnico-robô no clube mais fraco de pelo menos 2% (`--robot weakest`). Comando: `npm run balance -- --seasons 1000 --seed 1 --robot weakest`.
     - A média ponderada 3/2/1 foi estudada e adiada para o lote de dezembro.
+17. Decisão 17: na cadeia do `/balance`, o campeão pequeno passa a ser informativo nas temporadas 2 e 3, como o grande e o fraco no G4 (decisão 15); a trava de deriva continua obrigatória; sem `--chain`, nada muda (`docs/design/balance-targets.md`, decisão 17).
 
 ## Decisões do CEO em 2026-11-05 (T-017)
 
 1. Decisão 13: lesões e suspensões terminam na virada; a moral leva metade do humor para o ano seguinte.
 2. Decisão 14: a renovação mínima do elenco vira a T-048.
-3. Decisão 15: metas da cadeia. Campeão grande e clube fraco no G4 são informativos nas temporadas 2 e 3; a trava de deriva é obrigatória.
+3. Decisão 15: metas da cadeia. Campeão grande e clube fraco no G4 são informativos nas temporadas 2 e 3; a trava de deriva é obrigatória. A decisão 17 (2026-11-06) inclui o campeão pequeno.
 4. ADR-0017 aceito: efeito suspensivo fiel ao real.
 5. Notas para a Etapa 2: rever lesões graves (que atravessam o ano) e suspensões entre temporadas, junto do STJD.
 6. Auditoria geral feita logo depois do merge da T-017 (ver acima).
@@ -409,11 +411,10 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. Post da semana 2 do devlog refeito: "Quem pode ser campeão?" (com os números da T-070).
-2. T-018, T-027 e T-019 (save).
-3. T-048 (renovação mínima do elenco).
-4. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
-5. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
-6. Placar e tabela ao vivo da rodada (US-070 a US-074).
-7. Lote de clubes de dezembro, com a tabela final de 2026.
-8. Áudio essencial (T-047, depois da T-033; ver a decisão de 2026-11-05).
+1. T-018, T-027 e T-019 (save).
+2. T-048 (renovação mínima do elenco).
+3. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
+4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
+5. Placar e tabela ao vivo da rodada (US-070 a US-074).
+6. Lote de clubes de dezembro, com a tabela final de 2026.
+7. Áudio essencial (T-047, depois da T-033; ver a decisão de 2026-11-05).
