@@ -1,13 +1,17 @@
-import { gzipSync } from 'node:zlib';
+import { readFileSync } from 'node:fs';
+import { gunzipSync, gzipSync } from 'node:zlib';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   codecSupported,
+  decodeJson,
   decodeSave,
+  encodeJson,
   encodeSave,
   equalBytes,
   gunzip,
   gzip,
   sha256Hex,
+  toUtf8,
   type Bytes,
   type EncodedSave,
 } from './codec.ts';
@@ -42,6 +46,106 @@ describe('save codec', () => {
     expect(encoded.gzip[1]).toBe(0x8b);
     const decoded = await decodeSave(encoded.gzip, encoded.sha256, encoded.bytes);
     expect(decoded).toEqual({ ok: true, value: save });
+  });
+
+  it('encodes the UTF-8 that TextEncoder.encode gives, also past ASCII', async () => {
+    // Accents and "×" (2 bytes), "⚽" (3), an emoji outside the BMP (4 bytes for 2 code units) and
+    // a lone surrogate (JSON.stringify writes it as an escape).
+    const loneSurrogate = String.fromCharCode(0xd83d);
+    for (const text of ['', 'abc', 'Pressão 3×1 ⚽', 'Gol 😀 do João', `a${loneSurrogate}b`]) {
+      const encoded = await encode({ text });
+      const json = utf8(JSON.stringify({ text }));
+      expect(encoded.bytes, text).toBe(json.byteLength);
+      expect(encoded.sha256, text).toBe(await sha256Hex(json));
+      expect(equalBytes(new Uint8Array(gunzipSync(encoded.gzip)), json), text).toBe(true);
+    }
+  });
+
+  it('writes the UTF-8 once, also when the text does not fit the first buffer', () => {
+    // From all ASCII to all past it: the slack of an eighth, its edge, and the second buffer.
+    const texts = [
+      'x'.repeat(1000),
+      `${'x'.repeat(900)}${'ã'.repeat(100)}`,
+      `${'x'.repeat(800)}${'ã'.repeat(200)}`,
+      'ã'.repeat(1000),
+      '⚽'.repeat(1000),
+      `${'a'.repeat(1130)}😀`,
+      '😀'.repeat(500),
+    ];
+    for (const text of texts) {
+      const bytes = toUtf8(text);
+      expect(equalBytes(bytes, utf8(text)), text.slice(-4)).toBe(true);
+      expect(new TextDecoder().decode(bytes)).toBe(text);
+    }
+  });
+
+  it('keeps the stored format: the v1 fixture inflates to the same JSON, and an older gzip still opens (T-072)', async () => {
+    const fixture: unknown = JSON.parse(
+      readFileSync(new URL('./__fixtures__/v1.json', import.meta.url), 'utf8'),
+    );
+    const json = utf8(JSON.stringify(fixture));
+    const encoded = await encode(fixture);
+    expect(encoded.bytes).toBe(json.byteLength);
+    expect(encoded.sha256).toBe(await sha256Hex(json));
+    // Another compressor reads the gzip back to the very same bytes.
+    expect(equalBytes(new Uint8Array(gunzipSync(encoded.gzip)), json)).toBe(true);
+    // A gzip made otherwise (zlib, or the Blob.stream() path of the codec before T-072) opens the
+    // same: only the compressed bytes may differ, never what they hold.
+    const before = new Uint8Array(
+      await new Response(
+        new Blob([json]).stream().pipeThrough(new CompressionStream('gzip')),
+      ).arrayBuffer(),
+    );
+    for (const other of [new Uint8Array(gzipSync(json)), before]) {
+      expect(await decodeSave(other, encoded.sha256, encoded.bytes)).toEqual({
+        ok: true,
+        value: fixture,
+      });
+    }
+    expect(await decodeSave(encoded.gzip, encoded.sha256, encoded.bytes)).toEqual({
+      ok: true,
+      value: fixture,
+    });
+  });
+
+  it('encodes a snapshot as its UTF-8 JSON, in a buffer of its own length, and decodes it checked', async () => {
+    const save = { careerId: 'x', text: 'Pressão alta, 3×1 ⚽ 😀', list: [1, 2, 3] };
+    const result = await encodeJson(save);
+    if (!result.ok) throw new Error(result.error);
+    const json = utf8(JSON.stringify(save));
+    expect(equalBytes(result.value.json, json)).toBe(true);
+    expect(result.value.bytes).toBe(json.byteLength);
+    expect(result.value.json.buffer.byteLength).toBe(json.byteLength);
+    expect(result.value.sha256).toBe(await sha256Hex(json));
+    const { sha256, bytes } = result.value;
+    expect(await decodeJson(result.value.json, sha256, bytes)).toEqual({ ok: true, value: save });
+    // The same bytes and hash as the gzip of the rows and of the exported file.
+    const gzipped = await encode(save);
+    expect([gzipped.sha256, gzipped.bytes]).toEqual([sha256, bytes]);
+  });
+
+  it('decodes a stored JSON only with its size, its hash and valid UTF-8 JSON', async () => {
+    const result = await encodeJson({ a: 'b'.repeat(100) });
+    if (!result.ok) throw new Error(result.error);
+    const { json, sha256, bytes } = result.value;
+    const short = await decodeJson(json.slice(0, bytes - 1), sha256, bytes);
+    expect(short).toEqual({ ok: false, error: 'size-mismatch', detail: { bytes, got: bytes - 1 } });
+    expect((await decodeJson(json, sha256, bytes + 1)).ok).toBe(false);
+    const flipped = json.slice();
+    flipped[10] = flipped[10]! ^ 0xff;
+    expect(await decodeJson(flipped, sha256, bytes)).toEqual({ ok: false, error: 'hash-mismatch' });
+    // A gzip of the right JSON is not the JSON (no reading of two forms).
+    const gzipped = await gzip(json);
+    expect((await decodeJson(gzipped, sha256, bytes)).ok).toBe(false);
+    const text = utf8('{"a":');
+    const broken = await decodeJson(text, await sha256Hex(text), text.byteLength);
+    expect(broken).toEqual({ ok: false, error: 'corrupt-json' });
+    // The bound is on the bytes stored.
+    expect(await encodeJson({ a: 'ã'.repeat(10) }, 25)).toEqual({
+      ok: false,
+      error: 'too-large',
+      detail: { bytes: 28, maxBytes: 25 },
+    });
   });
 
   it('refuses what is not a gzip, and a truncated gzip', async () => {
@@ -84,8 +188,15 @@ describe('save codec', () => {
 
   it('refuses a JSON past the size bound before hashing it', async () => {
     const result = await encodeSave({ a: 'x'.repeat(100) }, 50);
-    expect(result).toEqual({ ok: false, error: 'too-large', detail: { bytes: 108, maxBytes: 50 } });
+    expect(result).toEqual({
+      ok: false,
+      error: 'too-large',
+      detail: { atLeast: 108, maxBytes: 50 },
+    });
     expect((await encodeSave({ a: 'x' }, 50)).ok).toBe(true);
+    // Within the bound in code units, past it in bytes: 8 + 10 × 2 bytes of "ã".
+    const accents = await encodeSave({ a: 'ã'.repeat(10) }, 25);
+    expect(accents).toEqual({ ok: false, error: 'too-large', detail: { bytes: 28, maxBytes: 25 } });
   });
 
   it('compares bytes one by one', () => {
@@ -104,6 +215,11 @@ describe('save codec', () => {
     vi.stubGlobal(name, value);
     expect(codecSupported()).toBe(false);
     expect(await encodeSave({ a: 1 })).toEqual({ ok: false, error: 'unsupported-browser' });
+    expect(await encodeJson({ a: 1 })).toEqual({ ok: false, error: 'unsupported-browser' });
+    expect(await decodeJson(utf8('{}'), encoded.sha256, 2)).toEqual({
+      ok: false,
+      error: 'unsupported-browser',
+    });
     expect(await decodeSave(encoded.gzip, encoded.sha256, encoded.bytes)).toEqual({
       ok: false,
       error: 'unsupported-browser',

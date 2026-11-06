@@ -6,7 +6,7 @@ import { newGame, type ClubDef, type GameState } from '../../engine/index.ts';
 import { createIdentitySource } from '../generators/identity.ts';
 import type { NameLists } from '../generators/names.ts';
 import { loadGameParams } from '../params.ts';
-import { encodeSave, gzip, sha256Hex } from './codec.ts';
+import { encodeJson, encodeSave, gzip, sha256Hex } from './codec.ts';
 import { SAVE_DB_NAME, saveDbNameFor } from './db.ts';
 import { KEPT_SNAPSHOTS, MAX_SAVE_BYTES, type CareerSave, type SnapshotRecord } from './schema.ts';
 import { SaveStore } from './store.ts';
@@ -14,7 +14,7 @@ import {
   DB,
   base,
   flipByte,
-  mustEncode,
+  mustEncodeSnapshot,
   onPut,
   raw,
   season,
@@ -341,6 +341,51 @@ describe('safe write with 3 versions (US-032)', () => {
     expect(result.ok === false && result.detail).toMatchObject({ maxBytes: MAX_SAVE_BYTES });
     expect(await snapshotSeqs()).toEqual([1]);
   });
+
+  it('stores the snapshot as its UTF-8 JSON, without gzip, in a buffer of its own length (T-072)', async () => {
+    const save = variant(5);
+    const result = await store().writeSnapshot(save);
+    if (!result.ok) throw new Error(result.error);
+    const db = await raw();
+    const record = (await db.get('snapshots', [SAMPLE_CAREER_ID, 1]))!;
+    db.close();
+    const json = JSON.stringify({ ...save, career: { ...save.career, matchSheets: {} } });
+    expect(new TextDecoder().decode(record.blob)).toBe(json);
+    expect(record.blob.byteLength).toBe(record.bytes);
+    // The whole buffer is the JSON: no slack of the encoder goes to the disk.
+    expect(record.blob.buffer.byteLength).toBe(record.bytes);
+    expect(record.sha256).toBe(await sha256Hex(record.blob));
+    expect(result.value).toMatchObject({ bytes: record.bytes, storedBytes: record.bytes });
+  });
+
+  it('applies the 40 MB bound to the stored bytes when opening, before hashing them', async () => {
+    const s = store();
+    for (const round of [4, 5]) await s.writeSnapshot(variant(round));
+    await tamper(2, (r) => ({ ...r, bytes: MAX_SAVE_BYTES + 1 }));
+    const digest = vi.spyOn(crypto.subtle, 'digest');
+    expect(await s.openCareer(SAMPLE_CAREER_ID)).toMatchObject({
+      ok: true,
+      value: { seq: 1, skipped: [{ seq: 2, problem: 'invalid-record' }] },
+    });
+    // Bytes that are not as many as the record says are refused before the hash.
+    await tamper(2, (r) => {
+      const longer = new Uint8Array(r.blob.byteLength + 10);
+      longer.set(r.blob);
+      return { ...r, bytes: r.blob.byteLength, blob: longer };
+    });
+    digest.mockClear();
+    const opened = await s.openCareer(SAMPLE_CAREER_ID);
+    expect(opened.ok && opened.value.skipped).toEqual([{ seq: 2, problem: 'size-mismatch' }]);
+    // Only snapshot 1 was hashed (it opened), not the one of the wrong size.
+    const hashed = digest.mock.calls.map(([, data]) => (data as Uint8Array).byteLength);
+    const db = await raw();
+    const first = (await db.get('snapshots', [SAMPLE_CAREER_ID, 1]))!;
+    const second = (await db.get('snapshots', [SAMPLE_CAREER_ID, 2]))!;
+    db.close();
+    expect(hashed).toContain(first.bytes);
+    expect(hashed).not.toContain(second.blob.byteLength);
+    digest.mockRestore();
+  });
 });
 
 describe('another tab on the same database (two stores)', () => {
@@ -408,11 +453,16 @@ describe('open with fallback (US-032)', () => {
   }
 
   it.each([
-    ['a flipped byte', flipByte, 'corrupt-gzip'],
+    ['a flipped byte', flipByte, 'hash-mismatch'],
     [
-      'a truncated gzip',
+      'truncated bytes',
       (r: SnapshotRecord) => ({ ...r, blob: r.blob.slice(0, r.blob.length - 40) }),
-      undefined,
+      'size-mismatch',
+    ],
+    [
+      'a gzip of the right JSON (the snapshot is stored without gzip)',
+      async (r: SnapshotRecord) => ({ ...r, blob: await gzip(r.blob) }),
+      'size-mismatch',
     ],
     ['a wrong hash', (r: SnapshotRecord) => ({ ...r, sha256: '0'.repeat(64) }), 'hash-mismatch'],
     ['a wrong size', (r: SnapshotRecord) => ({ ...r, bytes: r.bytes + 1 }), 'size-mismatch'],
@@ -467,10 +517,9 @@ describe('open with fallback (US-032)', () => {
   it('skips a snapshot whose JSON was truncated before hashing (hash right, JSON broken)', async () => {
     const s = store();
     await threeRounds(s);
-    const text = new TextEncoder().encode(JSON.stringify(variant(6)).slice(0, 5000));
-    const blob = await gzip(text);
-    const sha256 = await sha256Hex(text);
-    await tamper(3, (r) => ({ ...r, blob, sha256, bytes: text.byteLength }));
+    const blob = new TextEncoder().encode(JSON.stringify(variant(6)).slice(0, 5000));
+    const sha256 = await sha256Hex(blob);
+    await tamper(3, (r) => ({ ...r, blob, sha256, bytes: blob.byteLength }));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     expect(opened.ok && opened.value.skipped).toEqual([{ seq: 3, problem: 'corrupt-json' }]);
   });
@@ -478,8 +527,8 @@ describe('open with fallback (US-032)', () => {
   it('skips a snapshot that decodes but is not this career', async () => {
     const s = store();
     await threeRounds(s);
-    const other = await mustEncode(variant(6, careerIdOf('another-career')));
-    await tamper(3, (r) => ({ ...r, blob: other.gzip, sha256: other.sha256, bytes: other.bytes }));
+    const other = await mustEncodeSnapshot(variant(6, careerIdOf('another-career')));
+    await tamper(3, (r) => ({ ...r, blob: other.json, sha256: other.sha256, bytes: other.bytes }));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     expect(opened.ok && opened.value.skipped).toEqual([{ seq: 3, problem: 'invalid-save' }]);
   });
@@ -542,8 +591,8 @@ describe('open with fallback (US-032)', () => {
   it('refuses a newer save also when only the JSON says so', async () => {
     const s = store();
     await s.writeSnapshot(variant(4));
-    const newer = await mustEncode({ ...variant(5), schemaVersion: 2 });
-    await tamper(1, (r) => ({ ...r, blob: newer.gzip, sha256: newer.sha256, bytes: newer.bytes }));
+    const newer = await mustEncodeSnapshot({ ...variant(5), schemaVersion: 2 });
+    await tamper(1, (r) => ({ ...r, blob: newer.json, sha256: newer.sha256, bytes: newer.bytes }));
     expect(await s.openCareer(SAMPLE_CAREER_ID)).toMatchObject({
       ok: false,
       error: 'save-too-new',
@@ -556,8 +605,8 @@ describe('open with fallback (US-032)', () => {
     await s.writeSnapshot(variant(5));
     // The newest says (only in the JSON) it is of a newer format, with a key that an older
     // format would refuse: still save-too-new, never the version before it.
-    const newer = await mustEncode({ ...variant(6), schemaVersion: 2, toString: 'x' });
-    await tamper(2, (r) => ({ ...r, blob: newer.gzip, sha256: newer.sha256, bytes: newer.bytes }));
+    const newer = await mustEncodeSnapshot({ ...variant(6), schemaVersion: 2, toString: 'x' });
+    await tamper(2, (r) => ({ ...r, blob: newer.json, sha256: newer.sha256, bytes: newer.bytes }));
     expect(await s.openCareer(SAMPLE_CAREER_ID)).toEqual({
       ok: false,
       error: 'save-too-new',
@@ -621,15 +670,19 @@ describe('a whole season (T-018 with T-044: ADR-0012 conformance)', () => {
     expect(opened.value.save.game.retiredNamesRev).toBe(season.game.retiredNamesRev);
   });
 
-  it('keeps the end-of-season snapshot, sheets apart, within the 300 KB of gzip of 4.2', async () => {
-    const encoded = await encodeSave({ ...season, career: { ...season.career, matchSheets: {} } });
-    if (!encoded.ok) throw new Error(encoded.error);
+  it('keeps the end-of-season snapshot, sheets apart, within 800 KB stored and 300 KB in gzip', async () => {
+    const snapshot = { ...season, career: { ...season.career, matchSheets: {} } };
+    const stored = await encodeJson(snapshot);
+    const exported = await encodeSave(snapshot);
+    if (!stored.ok || !exported.ok) throw new Error('encode');
     const kb = (n: number) => Math.round(n / 1024);
     console.info(
-      `end-of-season snapshot without sheets: ${kb(encoded.value.bytes)} KB JSON, ` +
-        `${kb(encoded.value.gzip.byteLength)} KB gzip ` +
+      `end-of-season snapshot without sheets: ${kb(stored.value.bytes)} KB JSON stored, ` +
+        `${kb(exported.value.gzip.byteLength)} KB gzip in the exported file ` +
         `(matchSheets ${kb(JSON.stringify(season.career.matchSheets).length)} KB JSON, apart)`,
     );
-    expect(encoded.value.gzip.byteLength).toBeLessThanOrEqual(300 * 1024);
+    // The trigger of docs/02-architecture.md, 5 (800 KB of JSON), now also the bytes stored.
+    expect(stored.value.json.byteLength).toBeLessThanOrEqual(800 * 1024);
+    expect(exported.value.gzip.byteLength).toBeLessThanOrEqual(300 * 1024);
   });
 });

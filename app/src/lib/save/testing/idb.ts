@@ -1,7 +1,7 @@
 import 'fake-indexeddb/auto';
 import { IDBFactory } from 'fake-indexeddb';
 import { afterEach, beforeEach, vi } from 'vitest';
-import { encodeSave, type EncodedSave } from '../codec.ts';
+import { encodeJson, encodeSave, type EncodedJson, type EncodedSave } from '../codec.ts';
 import { openSaveDb } from '../db.ts';
 import type { CareerSave, MatchSheetRecord, SnapshotRecord } from '../schema.ts';
 import { SaveStore, type SaveStoreOptions } from '../store.ts';
@@ -70,8 +70,16 @@ export function fixturesOf(round: number): string[] {
   return season.game.fixtures.filter((f) => f.round === round).map((f) => f.id);
 }
 
+/** A gzip as the store keeps a row of match sheets (and as the exported file carries a save). */
 export async function mustEncode(value: unknown): Promise<EncodedSave> {
   const encoded = await encodeSave(value);
+  if (!encoded.ok) throw new Error(encoded.error);
+  return encoded.value;
+}
+
+/** The UTF-8 JSON as the store keeps a snapshot (no gzip, T-072). */
+export async function mustEncodeSnapshot(value: unknown): Promise<EncodedJson> {
+  const encoded = await encodeJson(value);
   if (!encoded.ok) throw new Error(encoded.error);
   return encoded.value;
 }
@@ -104,12 +112,13 @@ export async function sheetKeys(careerId = SAMPLE_CAREER_ID): Promise<[number, n
 
 export async function tamper(
   seq: number,
-  change: (r: SnapshotRecord) => SnapshotRecord,
+  change: (r: SnapshotRecord) => SnapshotRecord | Promise<SnapshotRecord>,
   careerId = SAMPLE_CAREER_ID,
 ) {
   const db = await raw();
   const record = await db.get('snapshots', [careerId, seq]);
-  await db.put('snapshots', change(record!));
+  const changed = await change(record!);
+  await db.put('snapshots', changed);
   db.close();
 }
 

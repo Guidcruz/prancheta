@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MatchSheet } from '../../engine/index.ts';
-import { decodeSave } from './codec.ts';
-import { MAX_SAVE_BYTES, type CareerSave, type MatchSheetRecord } from './schema.ts';
+import { decodeJson, decodeSave } from './codec.ts';
+import {
+  MAX_SAVE_BYTES,
+  type CareerSave,
+  type MatchSheetRecord,
+  type SnapshotRecord,
+} from './schema.ts';
 import type { WrittenSnapshot } from './store.ts';
 import {
   atRound,
@@ -42,7 +47,7 @@ async function storedSnapshot(seq: number): Promise<CareerSave> {
   const db = await raw();
   const record = await db.get('snapshots', [SAMPLE_CAREER_ID, seq]);
   db.close();
-  const decoded = await decodeSave(record!.blob, record!.sha256, record!.bytes);
+  const decoded = await decodeJson(record!.blob, record!.sha256, record!.bytes);
   if (!decoded.ok) throw new Error(decoded.error);
   return decoded.value as CareerSave;
 }
@@ -333,6 +338,75 @@ describe('opening with the sheets', () => {
       [2, 1],
       [2, 2],
     ]);
+  });
+
+  /**
+   * Rows of seasons 1 and 2 with snapshots 2 (season 2) and 3 (season 3) kept: the next write of
+   * season 3 drops snapshot 1, and the rows below the lowest kept season go.
+   */
+  async function threeSeasons(s: ReturnType<typeof store>) {
+    written(await s.writeSnapshot(atRound(38))); // seq 1, rows of season 1
+    written(await s.writeSnapshot(atRound(1, 2))); // seq 2, row 1 of season 2
+    const w = written(await s.writeSnapshot(atRound(1, 3))); // seq 3, row 1 of season 3
+    return w;
+  }
+  const rowsBySeason = async () => {
+    const counts: Record<number, number> = {};
+    for (const [sn] of await sheetKeys()) counts[sn] = (counts[sn] ?? 0) + 1;
+    return counts;
+  };
+
+  it.each([
+    ['no season', undefined],
+    ['a season that is not whole', 1.5],
+    ['a season that is not a number', 'x'],
+  ])('waits to prune the rows while a kept snapshot has %s (T-072)', async (_label, bad) => {
+    const s = store();
+    let w = await threeSeasons(s);
+    await tamper(2, (r) => ({ ...r, season: bad }) as unknown as SnapshotRecord);
+    w = written(await s.writeSnapshot(atRound(2, 3), w.sheets)); // seq 4; seq 1 goes
+    expect(await snapshotSeqs()).toEqual([2, 3, 4]);
+    expect(await rowsBySeason()).toEqual({ 1: 38, 2: 1, 3: 2 });
+    // Once that record is gone, the next write prunes what waited.
+    written(await s.writeSnapshot(atRound(3, 3), w.sheets)); // seq 5; seq 2 goes
+    expect(await snapshotSeqs()).toEqual([3, 4, 5]);
+    expect(await rowsBySeason()).toEqual({ 3: 3 });
+  });
+
+  it('counts an invalid kept record with a valid season in the lowest season (T-072)', async () => {
+    const s = store();
+    const w = await threeSeasons(s);
+    // Not a record that opens (its index is a list), but its season is a key of the index.
+    await tamper(2, (r) => ({ ...r, sheets: ['a'] }) as unknown as SnapshotRecord);
+    written(await s.writeSnapshot(atRound(2, 3), w.sheets));
+    expect(await snapshotSeqs()).toEqual([2, 3, 4]);
+    // The lowest kept season is 2: the rows of season 1 go, those of season 2 stay.
+    expect(await rowsBySeason()).toEqual({ 2: 1, 3: 2 });
+  });
+
+  it('prunes without reading the value of any snapshot (T-072)', async () => {
+    const s = store();
+    const w = await threeSeasons(s);
+    const reads: string[] = [];
+    const spy = (proto: object, method: string, storeOf: (self: never) => string) => {
+      const original = (proto as Record<string, (...args: unknown[]) => unknown>)[method]!;
+      vi.spyOn(proto as Record<string, () => unknown>, method).mockImplementation(function (
+        this: never,
+        ...args: unknown[]
+      ) {
+        reads.push(`${storeOf(this)}.${method}`);
+        return original.apply(this, args);
+      });
+    };
+    for (const method of ['get', 'getAll', 'openCursor']) {
+      spy(IDBObjectStore.prototype, method, (self: IDBObjectStore) => self.name);
+      spy(IDBIndex.prototype, method, (self: IDBIndex) => `${self.objectStore.name}[index]`);
+    }
+    written(await s.writeSnapshot(atRound(2, 3), w.sheets));
+    vi.restoreAllMocks();
+    expect(await rowsBySeason()).toEqual({ 2: 1, 3: 2 });
+    // The only snapshot read is the check after the write (the snapshot just written).
+    expect(reads.filter((r) => r.startsWith('snapshots'))).toEqual(['snapshots.get']);
   });
 
   it('keeps the rows of a season that a newer snapshot uses after a fallback', async () => {

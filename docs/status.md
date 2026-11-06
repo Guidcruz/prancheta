@@ -83,6 +83,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-071  | feita, aguardando merge (decisão 17): na cadeia do `/balance` (`--chain`), o campeão pequeno vira informativo nas temporadas 2 e 3, como o grande e o fraco no G4 (decisão 15); a trava de deriva segue obrigatória; sem `--chain`, nada muda; a cadeia de 3 temporadas passa de 92 de 93 metas para 91 de 91                                                                                                                                                                                                            |
 | T-018  | feita, aguardando merge (review, segurança e QA aprovados): save em IndexedDB em `app/src/lib/save/` (snapshots gzip com SHA-256, 3 versões, gravação segura conferida por bytes, abrir com volta à versão anterior, limite de 10 carreiras, súmulas fora do snapshot); gravação do fim da temporada no p90 de 158,0 ms na 1ª de 3 execuções, folga curta (ver `docs/02-architecture.md` §5)                                                                                                                             |
 | T-019  | feita, aguardando merge (review em duas rodadas e delta, segurança e QA aprovados): formato v1 do save congelado com fixture e teste de forma, esquema estrito `valibot` com três níveis de conferência, cadeia de migrações (vazia na v1) com rollback das súmulas, temporada base por conjunto de clubes; gravação acima da meta de 150 ms no p90, tratada na T-072                                                                                                                                                    |
+| T-072  | feita, aguardando merge (review em duas rodadas aprovado; QA em andamento): snapshot sem gzip no aparelho (aprovado pelo CEO; até cerca de 22 MB com 10 carreiras), codec com uma só codificação, poda pelo índice `bySeason`; Chromium com CPU 4×, três execuções: p90 após a rodada 38 de 78,0 a 88,4 ms e da virada até 68,1 ms (limite 130 ms), abrir até 153,2 ms (limite 400 ms); `measure:save` mostra as etapas e decide pelos 130 ms                                                                            |
 | T-027  | feita, aguardando merge (review de código, revisão de arte e QA aprovados): rosto gerado por código em `app/src/lib/generators/face.ts` (catálogo, sorteio por idade e nacionalidade, código de 13 caracteres em `Player.face`, nunca regenerado) e `avatar.ts` (SVG seguro em 3 tamanhos, igual à folha `docs/art/avatares-exemplo.svg` aprovada pelo CEO); o motor passa a idade à fonte de identidade sem sorteio novo; `ENGINE_VERSION` segue 14; ainda sem tela (entra na T-028)                                    |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
@@ -419,11 +420,10 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 
 ## Próximo
 
-1. T-072 (acelerar a gravação do save), antes da T-030 e de qualquer build público: a gravação do fim da temporada está acima da meta de 150 ms no p90.
-2. T-073 (conferência de conteúdo da importação), antes da T-020 (exportar e importar).
-3. T-048 (renovação mínima do elenco).
-4. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
-5. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
-6. Placar e tabela ao vivo da rodada (US-070 a US-074).
-7. Lote de clubes de dezembro, com a tabela final de 2026.
-8. Áudio essencial (T-047, depois da T-033; ver a decisão de 2026-11-05).
+1. T-073 (conferência de conteúdo da importação), antes da T-020 (exportar e importar).
+2. T-048 (renovação mínima do elenco).
+3. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
+4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
+5. Placar e tabela ao vivo da rodada (US-070 a US-074).
+6. Lote de clubes de dezembro, com a tabela final de 2026.
+7. Áudio essencial (T-047, depois da T-033; ver a decisão de 2026-11-05).

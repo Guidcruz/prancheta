@@ -8,9 +8,9 @@ import type { CareerSummary, MatchSheetRecord, SnapshotRecord } from './schema.t
  */
 
 /**
- * Structure version: 1 has `careers`, `snapshots`, `matchSheets`, `kv` and `errors` (the
- * `matchSheets` store came with T-018, still in version 1: no database existed outside the tests
- * before it). Etapa 1b adds `leagueCache` in version 2.
+ * Structure version: 1 has `careers`, `snapshots` (with the index `bySeason`), `matchSheets`, `kv`
+ * and `errors` (the `matchSheets` store came with T-018 and the index with T-072, still in version
+ * 1: no database existed outside the tests before them). Etapa 1b adds `leagueCache` in version 2.
  */
 export const SAVE_DB_VERSION = 1;
 
@@ -28,7 +28,16 @@ export interface ErrorRecord {
 
 export interface SaveDbSchema extends DBSchema {
   careers: { key: string; value: CareerSummary };
-  snapshots: { key: [string, number]; value: SnapshotRecord };
+  snapshots: {
+    key: [string, number];
+    value: SnapshotRecord;
+    /**
+     * `[careerId, season]` of each snapshot (not unique): the prune finds the lowest season kept
+     * by the keys alone, never reading a snapshot (T-072). A record without a valid key there
+     * (no `season`, say) is not in the index.
+     */
+    indexes: { bySeason: [string, number] };
+  };
   matchSheets: { key: [string, number, number]; value: MatchSheetRecord };
   kv: { key: string; value: KvRecord };
   errors: { key: number; value: ErrorRecord };
@@ -73,7 +82,10 @@ export function openSaveDb(
     upgrade(upgrading, oldVersion) {
       if (oldVersion < 1) {
         upgrading.createObjectStore('careers', { keyPath: 'id' });
-        upgrading.createObjectStore('snapshots', { keyPath: ['careerId', 'seq'] });
+        const snapshots = upgrading.createObjectStore('snapshots', {
+          keyPath: ['careerId', 'seq'],
+        });
+        snapshots.createIndex('bySeason', ['careerId', 'season'], { unique: false });
         upgrading.createObjectStore('matchSheets', { keyPath: ['careerId', 'season', 'round'] });
         upgrading.createObjectStore('kv', { keyPath: 'key' });
         upgrading.createObjectStore('errors', { keyPath: 'id', autoIncrement: true });

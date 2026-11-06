@@ -2,7 +2,9 @@ import type { IDBPTransaction } from 'idb';
 import { SEASON_ROUNDS, type Fixture } from '../../engine/index.ts';
 import {
   codecSupported,
+  decodeJson,
   decodeSave,
+  encodeJson,
   encodeSave,
   equalBytes,
   type Bytes,
@@ -16,6 +18,7 @@ import {
   type Migration,
   type MigrationError,
 } from './migrations/index.ts';
+import { stageEnd, stageStart } from './probe.ts';
 import { fail, ok, type SaveResult } from './result.ts';
 import {
   KEPT_SNAPSHOTS,
@@ -39,12 +42,13 @@ import {
 /*
  * Careers on the device (docs/02-architecture.md, 4.2; ADR-0006, ADR-0019; US-032, US-034).
  *
- * Safe write: (1) before any transaction, serialise, hash and gzip the save with
- * `career.matchSheets: {}`, and each round of match sheets that the `base` index does not have
- * (normally only the round just played); (2) in one transaction over `careers`, `snapshots` and
- * `matchSheets`, store `seq = headSeq + 1`, the new rows of sheets, and move `headSeq` (atomic: if
- * the app closes halfway, nothing changes); (3) read the snapshot and the new rows back and compare
- * `sha256`, `bytes` and the gzip byte by byte with what was in memory, without decompressing. Only
+ * Safe write: (1) before any transaction, serialise and hash the save with `career.matchSheets:
+ * {}` (stored as its UTF-8 JSON, without gzip: ADR-0006, note of T-072), and serialise, hash and
+ * gzip each round of match sheets that the `base` index does not have (normally only the round
+ * just played); (2) in one transaction over `careers`, `snapshots` and `matchSheets`, store
+ * `seq = headSeq + 1`, the new rows of sheets, and move `headSeq` (atomic: if the app closes
+ * halfway, nothing changes); (3) read the snapshot and the new rows back and compare `sha256`,
+ * `bytes` and the stored bytes one by one with what was in memory, without decompressing. Only
  * then the snapshots past the 3 newest go, and after them the rows of the seasons that no kept
  * snapshot uses; if the check fails, the new snapshot goes instead, `headSeq` returns and every
  * row this write replaced with other content gets its old one back (T-019). A row is keyed
@@ -132,7 +136,7 @@ export interface WriteGuard {
 export interface WrittenSnapshot {
   readonly seq: number;
   readonly sha256: string;
-  /** JSON bytes and stored (gzip) bytes of the snapshot, sheets apart. */
+  /** JSON bytes and stored bytes of the snapshot, sheets apart (the same: no gzip, T-072). */
   readonly bytes: number;
   readonly storedBytes: number;
   /** The index of this snapshot: the `base` of the next write. */
@@ -212,7 +216,7 @@ function isSheetIndex(value: unknown): value is Readonly<Record<number, string>>
   );
 }
 
-/** The fields a stored gzip needs before it is decoded. */
+/** The fields stored bytes (a snapshot's JSON, a row's gzip) need before they are decoded. */
 function isStoredBlob(
   value: unknown,
 ): value is Record<string, unknown> & { sha256: string; bytes: number; blob: Bytes } {
@@ -344,6 +348,41 @@ function sheetRange(careerId: string, below?: number): IDBKeyRange {
     : IDBKeyRange.bound([careerId], [careerId, below], false, true);
 }
 
+/** The `bySeason` keys of a career's snapshots with a numeric season. */
+function seasonKeys(careerId: string): IDBKeyRange {
+  return IDBKeyRange.bound([careerId, -Infinity], [careerId, Infinity]);
+}
+
+/**
+ * The lowest season among the kept snapshots of a career, when it has rows of sheets of a season
+ * older than `season` (the new snapshot's) to prune; `undefined` when there is nothing to prune
+ * now. Read from keys only, in one read-only transaction: no snapshot value is read (T-072; 4.2,
+ * "Virada e poda"). The lowest, not the season of the lowest `seq`: after a fallback a newer `seq`
+ * may be of an older season. When a kept record is not in the index (no valid `season`) or its
+ * season is not whole, the prune of the rows waits for a later write; an invalid record with a
+ * valid season counts, which only prunes less.
+ */
+async function lowestKeptSeason(
+  db: SaveDb,
+  careerId: string,
+  season: number,
+): Promise<number | undefined> {
+  const tx = db.transaction(['snapshots', 'matchSheets']);
+  tx.done.catch(() => undefined);
+  // Mid-season there is nothing older: a key count, and the prune ends here.
+  if ((await tx.objectStore('matchSheets').count(sheetRange(careerId, season))) === 0) return;
+  const snapshots = tx.objectStore('snapshots');
+  const bySeason = snapshots.index('bySeason');
+  const [inStore, inIndex, first] = (await requests([
+    () => snapshots.count(careerRange(careerId)),
+    () => bySeason.count(seasonKeys(careerId)),
+    () => bySeason.openKeyCursor(seasonKeys(careerId)),
+  ])) as [number, number, { key: [string, number] } | null];
+  if (inStore !== inIndex || first === null) return;
+  const lowest = first.key[1];
+  return Number.isInteger(lowest) ? Math.min(lowest, season) : undefined;
+}
+
 /** The rows of sheets of one season of a career. */
 function seasonRange(careerId: string, season: number): IDBKeyRange {
   return IDBKeyRange.bound([careerId, season], [careerId, season, Infinity]);
@@ -394,6 +433,7 @@ export class SaveStore {
     guard?: WriteGuard,
   ): Promise<SaveResult<WrittenSnapshot, WriteError>> {
     return this.serial(async () => {
+      let start = stageStart();
       const checked = parseCareerSave(save, { check: 'write' });
       if (!checked.ok) return checked;
       const byRound = sheetsByRound(save);
@@ -417,13 +457,16 @@ export class SaveStore {
         const sheets = parseRoundSheets(Object.fromEntries(byRound.get(round)!));
         if (!sheets.ok) return fail('invalid-save', { round, ...(sheets.detail as object) });
       }
+      stageEnd('schema', start);
       // The rounds to write (every round played without a base) and the snapshot, encoded side by
       // side. Without a base on a stored career the rows of the older snapshots are overwritten:
       // their changed rounds lose the sheets (see the top of this file; 4.2, T-019, T-020).
+      start = stageStart();
       const [encoded, ...encodedRows] = await Promise.all([
-        encodeSave({ ...save, career: { ...save.career, matchSheets: {} } }),
+        encodeJson({ ...save, career: { ...save.career, matchSheets: {} } }),
         ...missing.map((round) => encodeSave(Object.fromEntries(byRound.get(round)!))),
       ]);
+      stageEnd('encode', start);
       if (!encoded.ok) return fail(encoded.error, encoded.detail);
       const rows: MatchSheetRecord[] = [];
       for (const [i, round] of missing.entries()) {
@@ -444,6 +487,7 @@ export class SaveStore {
       if (!db.ok) return db;
 
       // (2) The snapshot, the new rows and the pointer in one transaction.
+      start = stageStart();
       const tx = begin(db.value);
       if (typeof tx === 'string') return fail('write-failed', { name: tx });
       const done = tx.done;
@@ -476,7 +520,7 @@ export class SaveStore {
             sheets: index,
             sha256: encoded.value.sha256,
             bytes: encoded.value.bytes,
-            blob: encoded.value.gzip,
+            blob: encoded.value.json,
           };
           const snapshots = tx.objectStore('snapshots');
           const sheets = tx.objectStore('matchSheets');
@@ -505,22 +549,27 @@ export class SaveStore {
         return refused ?? fail(writeErrorOf(error), { name: errorName(error) });
       }
       if (record === undefined) return refused ?? fail('write-failed');
+      stageEnd('transaction', start);
       const seq = record.seq;
 
       // (3) Read back and compare with what was meant to be written.
+      start = stageStart();
       const problem = await this.verify(db.value, record, rows);
+      stageEnd('verify', start);
       if (problem !== undefined) {
         const rolledBack = await this.rollback(db.value, id, seq, previous, rows, replaced);
         return fail('verify-failed', { problem, rolledBack });
       }
 
       // Only now the older versions go.
+      start = stageStart();
       await this.prune(db.value, id, seq, season);
+      stageEnd('prune', start);
       return ok({
         seq,
         sha256: encoded.value.sha256,
         bytes: encoded.value.bytes,
-        storedBytes: encoded.value.gzip.byteLength,
+        storedBytes: encoded.value.json.byteLength,
         sheets: { season, rounds: index },
         writtenRounds: rows.map((row) => row.round),
       });
@@ -556,7 +605,7 @@ export class SaveStore {
         if (record.schemaVersion > SAVE_SCHEMA_VERSION) {
           return fail('save-too-new', { version: record.schemaVersion });
         }
-        const decoded = await decodeSave(record.blob, record.sha256, record.bytes);
+        const decoded = await decodeJson(record.blob, record.sha256, record.bytes);
         if (!decoded.ok) {
           if (decoded.error === 'unsupported-browser') return fail(decoded.error);
           skipped.push({ seq: at, problem: decoded.error });
@@ -766,16 +815,8 @@ export class SaveStore {
       }
     }
     try {
-      // Mid-season there is nothing older: a key count, and no snapshot is read.
-      if ((await db.count('matchSheets', sheetRange(id, season))) === 0) return;
-      // The lowest season among the kept snapshots (after a fallback, a newer `seq` may be of an
-      // older season than the oldest kept one).
-      let lowest = season;
-      for (const kept of await db.getAll('snapshots', careerRange(id))) {
-        if (!isRecord(kept)) return;
-        lowest = Math.min(lowest, kept.season);
-      }
-      await db.delete('matchSheets', sheetRange(id, lowest));
+      const lowest = await lowestKeptSeason(db, id, season);
+      if (lowest !== undefined) await db.delete('matchSheets', sheetRange(id, lowest));
     } catch {
       // Kept for the next write.
     }

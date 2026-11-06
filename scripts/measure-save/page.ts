@@ -1,10 +1,12 @@
 import { openDB } from 'idb';
 import {
   SaveStore,
+  encodeJson,
   encodeSave,
   type CareerSave,
   type SheetIndex,
 } from '../../app/src/lib/save/index.ts';
+import { setWriteProbe, type WriteStage } from '../../app/src/lib/save/probe.ts';
 import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/sample.ts';
 
 /*
@@ -24,8 +26,61 @@ import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/
  *   round 2 (one row; the oldest kept snapshot is then of season 2, so it reads the 3 snapshots and
  *   prunes the 38 rows of season 1). Normal writes of a round: they decide with `incremental`;
  *
- * and the parts the store cannot see from outside (stringify, encode of the snapshot).
+ * and the parts the store cannot see from outside (stringify, encode of the snapshot). Each write
+ * after round 38 and of the season turn also reports the time of its stages (probe.ts, T-072): the
+ * store's, and the codec's for the snapshot (a new row is encoded beside it, inside `encode`).
+ *
+ * `gc()` is required (main.ts launches Chromium with --expose-gc): without it the garbage of the
+ * untimed preparation would fall on the timed writes and the numbers would change meaning.
  */
+
+const WRITE_STAGES: readonly WriteStage[] = [
+  'schema',
+  'stringify',
+  'utf8',
+  'sha256',
+  'gzip',
+  'encode',
+  'transaction',
+  'verify',
+  'prune',
+];
+
+type Stages = Record<WriteStage, number[]>;
+
+const noStages = (): Stages =>
+  Object.fromEntries(WRITE_STAGES.map((stage) => [stage, [] as number[]])) as Stages;
+
+/** Collects the garbage now; refuses to measure when Chromium does not expose `gc`. */
+function collectGarbage(): void {
+  const gc = (globalThis as { gc?: unknown }).gc;
+  if (typeof gc !== 'function') throw new Error('gc() not exposed: launch with --expose-gc');
+  (gc as () => void)();
+}
+
+/**
+ * Times a write with the probe on: its total, the stages of the store, and those of the codec for
+ * the snapshot only (the biggest value encoded; a new row is encoded beside it).
+ */
+async function timedWrite(run: () => Promise<unknown>): Promise<[number, Map<WriteStage, number>]> {
+  const spent = new Map<WriteStage, number>();
+  let snapshotBytes = 0;
+  const codec: [WriteStage, number, number][] = [];
+  setWriteProbe((stage, ms, bytes) => {
+    if (bytes === undefined) spent.set(stage, ms);
+    else {
+      codec.push([stage, ms, bytes]);
+      snapshotBytes = Math.max(snapshotBytes, bytes);
+    }
+  });
+  try {
+    const ms = await time(run);
+    for (const [stage, took, bytes] of codec) if (bytes === snapshotBytes) spent.set(stage, took);
+    return [ms, spent];
+  } finally {
+    setWriteProbe(undefined);
+  }
+}
 
 export interface MeasureOptions {
   readonly runs: number;
@@ -35,15 +90,21 @@ export interface MeasureOptions {
 export interface Measurement {
   readonly dbName: string;
   readonly incremental: number[];
+  /** The stages of each write of `incremental`, in the same order (ms per write). */
+  readonly incrementalStages: Stages;
   readonly noNewRound: number[];
   readonly allRounds: number[];
   readonly open: number[];
   /** The 1st, 2nd and 3rd writes of season 2, in this order. */
   readonly seasonTurn: [number[], number[], number[]];
-  /** Serialise + hash + gzip of the snapshot (sheets apart). */
+  /** The stages of each write of `seasonTurn`, in the same order. */
+  readonly seasonTurnStages: [Stages, Stages, Stages];
+  /** Serialise + UTF-8 + hash of the snapshot (sheets apart), as it is stored (no gzip). */
   readonly encode: number[];
   readonly stringify: number[];
   readonly snapshotJsonBytes: number;
+  /** Bytes the snapshot takes in IndexedDB (its JSON, no gzip) and in gzip (the exported file). */
+  readonly snapshotStoredBytes: number;
   readonly snapshotGzipBytes: number;
   /** JSON and gzip bytes of the 38 rows of sheets together. */
   readonly sheetsJsonBytes: number;
@@ -82,8 +143,8 @@ function stamp(save: CareerSave, i: number): CareerSave {
 async function prepare(): Promise<void> {
   full = sampleCareerSave({ rounds: 38 });
   // The garbage of building a whole season at once is not the write's: collected here, before
-  // the slowdown, when Chromium exposes `gc` (main.ts launches it with --expose-gc).
-  (globalThis as { gc?: () => void }).gc?.();
+  // the slowdown.
+  collectGarbage();
 }
 
 async function measure(options: MeasureOptions): Promise<Measurement> {
@@ -93,6 +154,9 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const total = options.warmup + options.runs;
   const keep = (list: number[], i: number, ms: number) => {
     if (i >= options.warmup) list.push(ms);
+  };
+  const keepStages = (into: Stages, i: number, spent: Map<WriteStage, number>) => {
+    for (const stage of WRITE_STAGES) keep(into[stage], i, spent.get(stage) ?? 0);
   };
   const write = async (next: CareerSave, base: SheetIndex | undefined, rounds: number) => {
     const result = await store.writeSnapshot(next, base);
@@ -108,10 +172,15 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const before = await write(sampleAtRound(save, 37), undefined, 37);
   let last = await write(stamp(save, 0), before.sheets, 1);
   const incremental: number[] = [];
+  const incrementalStages = noStages();
   const noNewRound: number[] = [];
   for (let i = 0; i < total; i++) {
     const after38 = stamp(save, 2 * i + 1);
-    keep(incremental, i, await time(async () => (last = await write(after38, before.sheets, 1))));
+    const [ms, spent] = await timedWrite(
+      async () => (last = await write(after38, before.sheets, 1)),
+    );
+    keep(incremental, i, ms);
+    keepStages(incrementalStages, i, spent);
     const again = stamp(save, 2 * i + 2);
     keep(noNewRound, i, await time(() => write(again, last.sheets, 0)));
   }
@@ -135,18 +204,23 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
 
   // Each run starts the same: a clean career with season 1 written up to round 38 (untimed).
   const seasonTurn: [number[], number[], number[]] = [[], [], []];
+  const seasonTurnStages: [Stages, Stages, Stages] = [noStages(), noStages(), noStages()];
   const turn = [0, 1, 2].map((played) => sampleAtRound(save, played, 2));
   for (let i = 0; i < total; i++) {
     const cleared = await store.deleteCareer(save.careerId);
     if (!cleared.ok) throw new Error(`deleteCareer: ${cleared.error}`);
     const at37 = await write(sampleAtRound(save, 37), undefined, 37);
+    // The garbage of the preparation (deleting the career, writing 37 rows at once) is not the
+    // turn's: on the device the write before the turn is a normal write of a round. Collected here;
+    // the write of round 38 below is a normal write, and its garbage stays in the measurement.
+    collectGarbage();
     let previous = await write(stamp(save, 4 * total + i), at37.sheets, 1);
     for (const [k, next] of turn.entries()) {
-      keep(
-        seasonTurn[k]!,
-        i,
-        await time(async () => (previous = await write(next, previous.sheets, k === 0 ? 0 : 1))),
+      const [ms, spent] = await timedWrite(
+        async () => (previous = await write(next, previous.sheets, k === 0 ? 0 : 1)),
       );
+      keep(seasonTurn[k]!, i, ms);
+      keepStages(seasonTurnStages[k]!, i, spent);
     }
     if (i === 0) await checkTurnPruned(store.dbName, save.careerId);
   }
@@ -156,9 +230,12 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const stringify: number[] = [];
   for (let i = 0; i < total; i++) {
     const next = stamp(snapshot, i);
-    keep(encode, i, await time(() => encodeSave(next)));
+    keep(encode, i, await time(() => encodeJson(next)));
     keep(stringify, i, await time(() => JSON.stringify(next)));
   }
+  // Stored without gzip (T-072); its gzip is the size it takes in the exported file.
+  const stored = await encodeJson(snapshot);
+  if (!stored.ok) throw new Error(`encodeJson: ${stored.error}`);
   const encoded = await encodeSave(snapshot);
   if (!encoded.ok) throw new Error(`encodeSave: ${encoded.error}`);
   let sheetsJsonBytes = 0;
@@ -179,13 +256,16 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   return {
     dbName,
     incremental,
+    incrementalStages,
     noNewRound,
     allRounds,
     open,
     seasonTurn,
+    seasonTurnStages,
     encode,
     stringify,
     snapshotJsonBytes: encoded.value.bytes,
+    snapshotStoredBytes: stored.value.json.byteLength,
     snapshotGzipBytes: encoded.value.gzip.byteLength,
     sheetsJsonBytes,
     sheetsGzipBytes,

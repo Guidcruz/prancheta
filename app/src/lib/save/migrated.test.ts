@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MatchSheet } from '../../engine/index.ts';
-import { encodeSave } from './codec.ts';
+import { encodeJson, encodeSave } from './codec.ts';
 import type { Migration } from './migrations/index.ts';
 import type { CareerSave, MatchSheetRecord, SnapshotRecord } from './schema.ts';
 import {
@@ -107,7 +107,8 @@ async function storeV0(
     const career = { ...(old.career as Raw), matchSheets: {} };
     if (hostileKey !== undefined)
       Object.defineProperty(career, hostileKey, { value: 'x', enumerable: true });
-    const snapshot = await encoded({ ...old, career });
+    const snapshot = await encodeJson({ ...old, career });
+    if (!snapshot.ok) throw new Error(snapshot.error);
     const played = new Set(save.game.fixtures.filter((f) => f.result).map((f) => f.round));
     const record: SnapshotRecord = {
       careerId: save.careerId,
@@ -119,9 +120,9 @@ async function storeV0(
       sheets: Object.fromEntries(
         rows.filter((r) => played.has(r.round)).map((r) => [r.round, r.sha256]),
       ),
-      sha256: snapshot.sha256,
-      bytes: snapshot.bytes,
-      blob: snapshot.gzip,
+      sha256: snapshot.value.sha256,
+      bytes: snapshot.value.bytes,
+      blob: snapshot.value.json,
     };
     await db.put('snapshots', record);
   }

@@ -400,6 +400,21 @@ Regressão do site: BUG-SITE-001 ("Brasileirão" no site) corrigido; o teste `ne
 
 Observação de QA: a gravação (`write`) não confere o conteúdo do `game` (ex.: nome gigante de jogador, elenco com id inexistente, chave `valueOf` no estado); isso é do `full` (importação, T-020) e do teste de propriedade do motor, por decisão do `architect`. O teste de importação deve garantir que nenhum caminho de importação grave sem passar pelo `full`.
 
+### QA da T-072 (gravação do save mais rápida: snapshot sem gzip, índice por temporada, poda sem ler snapshots)
+
+| Critério                                                                       | Teste                                                                                                                                                                                                 |
+| ------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Temporada inteira rodada a rodada, virada, fechar e reabrir igual (súmulas)    | `app/src/lib/save/t072.acceptance.test.ts::reopens equal (sheets reassembled) after 38 rounds and after the turn, with the prune applied` (loja nova a cada rodada)                                   |
+| 3 versões, volta à anterior, `all-corrupt`, limite de 10, apagar               | já em `acceptance.test.ts` e `careers.test.ts`; `t072...::with all three tampered, answers all-corrupt...` repete com o tamanho adulterado                                                            |
+| Arquivo exportado continua em gzip e reimportável                              | `t072...::encodeSave gives a real gzip (1f 8b) that inflates and decodes back...` (passa no `full`); `t072...::the snapshot of the device is not a gzip, while the same save exported is`             |
+| Snapshot adulterado (bytes trocados, tamanho errado) é pulado sem gravar       | `t072...::skips a newest snapshot with %s...` (4 formas, linhas idênticas antes e depois da abertura); `snapshots.test.ts::opens the previous version when the newest has %s`                         |
+| Hash recalculado com conteúdo inválido é pulado sem gravar                     | `t072...::skips a snapshot whose hash and size were recomputed over %s` (`{}` e `[1,2,3]` dão `unknown-version`; texto e UTF-8 inválido dão `corrupt-json`); `snapshots.test.ts` (JSON truncado)      |
+| Poda: 3 gravações da temporada 2 tiram as súmulas da 1; registro inválido adia | `sheets.test.ts::keeps the rows of the old season while one of its snapshots is kept`, `::waits to prune the rows while a kept snapshot has %s`, `::prunes without reading the value of any snapshot` |
+| Volta pela virada não apaga súmula indevida                                    | `sheets.test.ts::keeps the rows of a season that a newer snapshot uses after a fallback`; `t072...::going back over the turn deletes no sheet that a kept snapshot needs`                             |
+| Acento e emoji gravam e abrem iguais (UTF-8)                                   | `t072...::the snapshot bytes are the UTF-8 of the JSON and decode back` (4 textos, emoji e ZWJ); `::a name with accents is stored by the store...`; `codec.test.ts` (UTF-8 em um só buffer)           |
+
+Observação de QA: o emoji é testado no codec (snapshot e arquivo exportado), não pelo `writeSnapshot`, porque a validação de texto seguro recusa emoji em nomes por desenho (ADR-0012).
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.
