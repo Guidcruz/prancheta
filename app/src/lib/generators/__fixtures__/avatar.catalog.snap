@@ -1,0 +1,15 @@
+# Catalogue of face traits (docs/art/avatares.md, 2 and 6.3): field and number of values, in codec
+# order. The catalogue only grows: face.test.ts fails if a field disappears, moves or shrinks.
+# After adding values or a field (at the end), update the counts here in the same PR.
+skin 12
+shape 6
+hairStyle 16
+hairColor 10
+brows 6
+eyes 6
+nose 6
+mouth 6
+ears 3
+facial 8
+accessory 6
+marks 3

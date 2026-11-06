@@ -13,6 +13,7 @@ import {
   type NameExclusionsFile,
   type NameLists,
 } from './names.ts';
+import { encodeFace, faceSpecFromSeed } from './face.ts';
 
 /*
  * The identity source of the game (ADR-0012): names and faces of new players, resolved once at
@@ -23,9 +24,12 @@ import {
  * squad rules applied against `existing` too. Etapa 1 has only Brazilian lists, so players of the
  * other South American countries get names from the same lists for now (see NameLists).
  *
- * Faces: the encoding of `FaceSpec` is T-027. Until then `face` is a deterministic placeholder,
- * `p0-<faceSeed in base 36>` (at most 10 characters, under FACE_MAX_LENGTH), and `faceSeed`
- * is drawn here so that T-027 can derive the real spec from it.
+ * Faces (T-027, ADR-0012 note of 2026-11-06): `faceSeed` comes from a stream of its own
+ * (`${seed}-faces`), so changing the name lists never moves a face, and the face is drawn once,
+ * here, with the age the engine has just drawn (`ages`) and the nationality of the request:
+ * `encodeFace(faceSpecFromSeed(faceSeed, { age, nationality }))`. This is the only caller of
+ * `faceSpecFromSeed`; a face that exists is never drawn again (`renameRetired`, T-044, changes
+ * only the name and keeps `face` and `faceSeed`).
  */
 
 /**
@@ -33,13 +37,6 @@ import {
  * `renameRetired` are T-044; until then nothing is retired, so the revision is 0.
  */
 export const RETIRED_NAMES_REV = 0;
-
-/** Prefix of the placeholder face (T-027 replaces it with the encoded FaceSpec). */
-export const PLACEHOLDER_FACE_PREFIX = 'p0-';
-
-export function placeholderFace(faceSeed: number): string {
-  return `${PLACEHOLDER_FACE_PREFIX}${(faceSeed >>> 0).toString(36)}`;
-}
 
 /**
  * Builds an identity source over some name lists (the game uses {@link gameIdentitySource};
@@ -53,19 +50,21 @@ export function createIdentitySource(
 ): IdentitySource {
   return {
     retiredRev,
-    squad({ seed, count, existing }): PlayerIdentity[] {
+    squad({ seed, nationality, count, ages, existing }): PlayerIdentity[] {
       const names = namesForSquad(seed, count, lists, exclusions, existing);
       // Faces come from a stream of their own, so changing the name lists never moves a face.
       const faces = new Rng(seedFromString(`${seed >>> 0}-faces`));
-      return names.map((name) => {
+      return names.map((name, k) => {
         const faceSeed = faces.int(0, 0xffffffff);
+        // ages.length === count by contract; a missing age falls back inside faceSpecFromSeed.
+        const spec = faceSpecFromSeed(faceSeed, { age: ages[k] ?? Number.NaN, nationality });
         return {
           display: name.display,
           full: name.full,
           family: name.family,
           nameSeed: name.nameSeed,
           faceSeed,
-          face: placeholderFace(faceSeed),
+          face: encodeFace(spec),
         };
       });
     },
