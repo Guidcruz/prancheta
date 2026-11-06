@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-05 (Semana 1). Última atualização: 2026-11-06 (T-070 feita, aguardando merge).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-06 (Quem pode ser campeão?, aguardando merge; o anterior foi 2026-11-05, Semana 1). Última atualização: 2026-11-06 (T-070 feita, aguardando merge).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
