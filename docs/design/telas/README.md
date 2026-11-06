@@ -41,7 +41,7 @@ Prioridade herdada das histórias (Must, Should, Could). A ordem é a sugerida p
 | 19    | [Preferências](preferencias.md)             | US-044, US-040, US-037         | Should     | Toggle, SegmentedControl, LinkRow                                  |
 | 20    | [Sobre](sobre.md)                           | US-043, US-039, US-045         | Must       | LinkRow, Banner, ConfirmSheet                                      |
 | 21    | [Tutorial](tutorial.md)                     | US-042                         | Should     | Coachmark, BottomSheet                                             |
-| 22    | [Erros e avisos globais](erros-e-avisos.md) | US-045, US-039, US-037, US-038 | Must       | ErrorState, Banner, BottomSheet                                    |
+| 22    | [Erros e avisos globais](erros-e-avisos.md) | US-045, US-039, US-037, US-038 | Must       | ErrorState, ErrorBoundary, Banner, BottomSheet                     |
 
 US-046 (estatísticas de uso, Could) não tem tela: se entrar, aparece só como uma linha informativa em Sobre. As histórias de motor, conteúdo e ferramentas (US-001 a US-013, US-027, US-031 a US-033) não têm tela própria; os geradores de US-002 e US-005 aparecem pelos componentes Crest e Avatar.
 
