@@ -94,3 +94,5 @@ Pela regra desta decisão, o `matchSheets` sai do snapshot antes de a T-019 cong
 - Linha de súmula ausente ou corrompida não descarta o snapshot: a rodada fica sem súmula (só o `Fixture.result`).
 
 A conferência pós-gravação também mudou (nota no ADR-0006).
+
+**Resultado (architect, 2026-11-06).** Com as súmulas fora do snapshot e a conferência por bytes, a gravação do fim da temporada ficou em p90 de 137 a 147 ms em três execuções (40 medições, §5): o gatilho de 150 ms está atendido e a T-019 congela o formato sem outra mudança. O custo que sobra é quase todo serializar, calcular o hash e comprimir o snapshot (cerca de 90 ms); a próxima revisão disso tem gatilho no §5 e risco no §9 (Séries B a D, Etapa 2).
