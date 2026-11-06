@@ -395,6 +395,7 @@ Notas:
 - Advogado: espelhamento anual de dados reais (tabela e títulos) e os 5 escudos de risco médio da ADR-0014.
 - Domínio definitivo (bloqueia a US-047).
 - Quem trata as denúncias e em quanto tempo (bloqueia a US-065).
+- Comentários nos posts do devlog: estudo parado em 2026-11-06, nada decidido; rascunhos e decisões pendentes em `docs/research/comentarios-devlog/`.
 
 ## Ideias registradas para etapas futuras
 
