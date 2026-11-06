@@ -87,7 +87,7 @@ export const CHAIN_GAP_DRIFT = 0.5;
  * Targets required in season 1 that are informative in the turned seasons of a chain (decision
  * 15): their rates are too noisy in 200 seasons to find a drift; the drift lock measures it.
  */
-export const CHAIN_INFO_TARGETS: readonly string[] = ['bigChampion', 'weakInG4'];
+export const CHAIN_INFO_TARGETS: readonly string[] = ['bigChampion', 'smallChampion', 'weakInG4'];
 
 /** Why CHAIN_INFO_TARGETS do not count in seasons 2 and 3 of a chain. */
 export const CHAIN_INFO_NOTE =

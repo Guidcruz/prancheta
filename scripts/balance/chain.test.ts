@@ -190,11 +190,11 @@ describe('chainRows', () => {
     expect(get('turn-s4-sizeGap')).toMatchObject({ status: 'fora', required: false });
   });
 
-  it('makes the big champion and the weak club in the G4 informative in seasons 2 and 3', () => {
+  it('makes the big and small champions and the weak club in the G4 informative in seasons 2 and 3', () => {
     const chain = [1, 2, 3, 4].map((k) => [withStrength(base, k, 70, 4.8)]);
     const rows = chainRows({ chain });
     const get = (id: string) => rows.find((r) => r.id === id)!;
-    expect(CHAIN_INFO_TARGETS).toEqual(['bigChampion', 'weakInG4']);
+    expect(CHAIN_INFO_TARGETS).toEqual(['bigChampion', 'smallChampion', 'weakInG4']);
     for (const k of [2, 3]) {
       for (const id of CHAIN_INFO_TARGETS) {
         expect(get(`chain-s${k}-${id}`), `${k} ${id}`).toMatchObject({
@@ -203,7 +203,7 @@ describe('chainRows', () => {
         });
       }
       // The other targets of the same season still count.
-      for (const id of ['champion', 'smallChampion', 'z4Escape']) {
+      for (const id of ['champion', 'z4Escape']) {
         expect(get(`chain-s${k}-${id}`).required, `${k} ${id}`).toBe(true);
       }
     }
@@ -236,8 +236,10 @@ describe('chainRows', () => {
     };
     const pooled = pooledRows([run, run]);
     expect(pooled.find((r) => r.id === 'weakInG4')!.required).toBe(true);
+    expect(pooled.find((r) => r.id === 'smallChampion')!.required).toBe(true);
     for (const k of [2, 3]) {
       expect(pooled.find((r) => r.id === `chain-s${k}-weakInG4`)!.required).toBe(false);
+      expect(pooled.find((r) => r.id === `chain-s${k}-smallChampion`)!.required).toBe(false);
     }
     // In each seed they read as informative, not "veredito no total"; the other rare ones do.
     const seed = withPooledVerdict({ ...buildReport(run), rows: [...main] });
@@ -245,10 +247,7 @@ describe('chainRows', () => {
       const weak = seed.rows.find((r) => r.id === `chain-s${k}-weakInG4`)!;
       expect(weak.required).toBe(false);
       expect(weak.verdict).toBeUndefined();
-      expect(seed.rows.find((r) => r.id === `chain-s${k}-smallChampion`)).toMatchObject({
-        required: false,
-        verdict: 'pooled',
-      });
+      expect(seed.rows.find((r) => r.id === `chain-s${k}-smallChampion`)!.verdict).toBeUndefined();
     }
     expect(seed.rows.find((r) => r.id === 'weakInG4')!.verdict).toBe('pooled');
   });
