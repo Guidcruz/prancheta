@@ -84,19 +84,52 @@ async function readAll(
   return out;
 }
 
-/** The bytes as a stream that the (de)compression streams accept. */
-function streamOf(data: Bytes): ReadableStream<BufferSource> {
-  return new Blob([data]).stream();
+/**
+ * The bytes written straight into a (de)compression stream while its output is read (T-072: no
+ * `Blob.stream()` in between, which cost about 9 ms per snapshot with 4× CPU slowdown). Throws
+ * when the stream refuses the input (not a gzip, or truncated).
+ */
+async function transform(
+  stream: CompressionStream | DecompressionStream,
+  data: Bytes,
+  maxBytes: number,
+): Promise<Bytes | 'too-large'> {
+  const writer = stream.writable.getWriter();
+  // Read while writing: the stream holds back the writer until its output is taken. A failure of
+  // the input also errors the output, which `readAll` rethrows; past `maxBytes` the reader is
+  // cancelled and the writer fails, on purpose.
+  const written = writer.write(data).then(() => writer.close());
+  written.catch(() => undefined);
+  const out = await readAll(stream.readable, maxBytes);
+  if (out !== 'too-large') await written;
+  return out;
 }
 
 export async function gzip(data: Bytes): Promise<Bytes> {
-  const out = await readAll(
-    streamOf(data).pipeThrough(new CompressionStream('gzip')),
-    Number.POSITIVE_INFINITY,
-  );
+  const out = await transform(new CompressionStream('gzip'), data, Number.POSITIVE_INFINITY);
   // Unreachable with an infinite bound; keeps the type narrow.
   if (out === 'too-large') throw new Error('gzip: unbounded read refused');
   return out;
+}
+
+/**
+ * The JSON as UTF-8, encoded once (T-072): straight into a buffer, without the copy and the garbage
+ * of `TextEncoder.encode`. A save is almost all ASCII (one byte per UTF-16 code unit; accents take
+ * two), so the buffer has an eighth of slack; a text that does not fit goes on in a buffer big
+ * enough for the rest (at most 3 bytes per code unit; a surrogate pair takes 4 for its 2, and is
+ * never split). The bytes are a view of that buffer: hashed, compressed and counted as they are.
+ */
+export function toUtf8(text: string): Bytes {
+  let out = new Uint8Array(text.length + (text.length >> 3) + 16);
+  const first = encoder.encodeInto(text, out);
+  let written = first.written;
+  if (first.read < text.length) {
+    const head = out.subarray(0, written);
+    out = new Uint8Array(written + (text.length - first.read) * 3);
+    out.set(head);
+    written += encoder.encodeInto(text.slice(first.read), out.subarray(written)).written;
+  }
+  return out.subarray(0, written);
 }
 
 /**
@@ -108,10 +141,7 @@ export async function gunzip(
   maxBytes: number,
 ): Promise<SaveResult<Bytes, 'corrupt-gzip' | 'too-large'>> {
   try {
-    const out = await readAll(
-      streamOf(data).pipeThrough(new DecompressionStream('gzip')),
-      maxBytes,
-    );
+    const out = await transform(new DecompressionStream('gzip'), data, maxBytes);
     return out === 'too-large' ? fail('too-large', { maxBytes }) : ok(out);
   } catch {
     return fail('corrupt-gzip');
@@ -119,7 +149,8 @@ export async function gunzip(
 }
 
 /**
- * Serialises, hashes and compresses a save (or a round of match sheets). A JSON past `maxBytes` is
+ * Serialises, hashes and compresses a save (or a round of match sheets). The JSON becomes bytes
+ * once, and the same bytes are hashed, compressed and counted (T-072). A JSON past `maxBytes` is
  * refused before hashing: it could never be opened again (the bound of {@link decodeSave}).
  */
 export async function encodeSave(
@@ -130,8 +161,13 @@ export async function encodeSave(
   let start = stageStart();
   const text = JSON.stringify(save);
   const stringified = stageTime(start);
+  // Every UTF-16 code unit takes at least one byte: a text this long is refused before the
+  // buffer of `utf8` is sized for it.
+  if (text.length > maxBytes) {
+    return fail('too-large', { bytes: encoder.encode(text).byteLength, maxBytes });
+  }
   start = stageStart();
-  const json = encoder.encode(text);
+  const json = toUtf8(text);
   const encoded = stageTime(start);
   if (json.byteLength > maxBytes) return fail('too-large', { bytes: json.byteLength, maxBytes });
   start = stageStart();
