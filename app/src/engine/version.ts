@@ -50,4 +50,10 @@
 //    still consumed, so the squad's Rng sequence, the strengths, the matches and the tables are
 //    the same. Only the players' nationality and identity (the names and faces are asked per
 //    nationality, and the BR group is bigger) changed in new-game, and the digests of the states.
-export const ENGINE_VERSION = 14;
+// 15: the minimal renewal of the squads (T-048; decision 14 of balance-targets.md, option b):
+//    in endSeason, who turns 35 retires (out of the squad, out of `players` at the turn), a youth
+//    of 17 of the same position comes up from the academy (`generateAcademy`, ids
+//    `${clubId}#${100 × t + k}`), a club whose idol retired picks a new one, and the campaign
+//    lists `farewells` and `academy`. Only the season-turn golden changed (the renewal, the
+//    campaign, the strengths of season 2 and the digest); new game, matches and rounds did not.
+export const ENGINE_VERSION = 15;

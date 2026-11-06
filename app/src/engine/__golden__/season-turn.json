@@ -1,5 +1,5 @@
 {
-  "engineVersion": 14,
+  "engineVersion": 15,
   "name": "season-turn",
   "data": {
     "summary": {
@@ -7,12 +7,7 @@
       "year": 2026,
       "championId": "clube-teste-04",
       "championPoints": 75,
-      "relegationZone": [
-        "clube-teste-08",
-        "clube-teste-14",
-        "clube-teste-19",
-        "clube-teste-18"
-      ],
+      "relegationZone": ["clube-teste-08", "clube-teste-14", "clube-teste-19", "clube-teste-18"],
       "awards": {
         "topScorers": [
           {
@@ -217,87 +212,69 @@
         "mean": -1.2105
       }
     },
+    "renewal": {
+      "clube-teste-02": {
+        "farewells": [["clube-teste-02#16", "AM"]],
+        "academy": [["clube-teste-02#201", "AM", 65, 74, 33, "Teste26"]],
+        "idol": "clube-teste-02#3"
+      },
+      "clube-teste-05": {
+        "farewells": [["clube-teste-05#17", "ST"]],
+        "academy": [["clube-teste-05#201", "ST", 65, 67, 33, "Teste26"]],
+        "idol": "clube-teste-05#10"
+      },
+      "clube-teste-08": {
+        "farewells": [["clube-teste-08#15", "DM"]],
+        "academy": [["clube-teste-08#201", "DM", 58, 67, 33, "Teste26"]],
+        "idol": "clube-teste-08#9"
+      },
+      "clube-teste-09": {
+        "farewells": [["clube-teste-09#18", "ST"]],
+        "academy": [["clube-teste-09#201", "ST", 59, 66, 33, "Teste26"]],
+        "idol": "clube-teste-09#1"
+      },
+      "clube-teste-10": {
+        "farewells": [["clube-teste-10#18", "ST"]],
+        "academy": [["clube-teste-10#201", "ST", 57, 68, 33, "Teste26"]],
+        "idol": "clube-teste-10#4"
+      },
+      "clube-teste-11": {
+        "farewells": [["clube-teste-11#17", "ST"]],
+        "academy": [["clube-teste-11#201", "ST", 56, 76, 33, "Teste26"]],
+        "idol": "clube-teste-11#9"
+      },
+      "clube-teste-14": {
+        "farewells": [["clube-teste-14#13", "CB"]],
+        "academy": [["clube-teste-14#201", "CB", 55, 71, 33, "Teste26"]],
+        "idol": "clube-teste-14#3"
+      },
+      "clube-teste-16": {
+        "farewells": [["clube-teste-16#18", "FB"]],
+        "academy": [["clube-teste-16#201", "FB", 48, 73, 33, "Teste26"]],
+        "idol": "clube-teste-16#3"
+      }
+    },
     "strength": {
-      "clube-teste-01": [
-        76.8274,
-        77.2727
-      ],
-      "clube-teste-02": [
-        74.0386,
-        75
-      ],
-      "clube-teste-03": [
-        72.988,
-        73.7455
-      ],
-      "clube-teste-04": [
-        73.4491,
-        74.5455
-      ],
-      "clube-teste-05": [
-        77.0549,
-        77.9091
-      ],
-      "clube-teste-06": [
-        76.4068,
-        75.6818
-      ],
-      "clube-teste-07": [
-        70.0918,
-        69.7727
-      ],
-      "clube-teste-08": [
-        69.5683,
-        68.5455
-      ],
-      "clube-teste-09": [
-        70.1389,
-        70.3909
-      ],
-      "clube-teste-10": [
-        69.5473,
-        70.7273
-      ],
-      "clube-teste-11": [
-        71.0301,
-        70.9818
-      ],
-      "clube-teste-12": [
-        70.4844,
-        71.3
-      ],
-      "clube-teste-13": [
-        71.3829,
-        72.4545
-      ],
-      "clube-teste-14": [
-        67.3324,
-        67.0909
-      ],
-      "clube-teste-15": [
-        66.2673,
-        67
-      ],
-      "clube-teste-16": [
-        65.6894,
-        66.9091
-      ],
-      "clube-teste-17": [
-        66.4983,
-        66.6
-      ],
-      "clube-teste-18": [
-        64.4164,
-        63.5909
-      ],
-      "clube-teste-19": [
-        64.7599,
-        64.9091
-      ],
-      "clube-teste-20": [
-        63.9999,
-        63.8182
-      ]
+      "clube-teste-01": [76.8274, 77.2727],
+      "clube-teste-02": [74.0386, 75],
+      "clube-teste-03": [72.988, 73.7455],
+      "clube-teste-04": [73.4491, 74.5455],
+      "clube-teste-05": [77.0549, 77.9091],
+      "clube-teste-06": [76.4068, 75.6818],
+      "clube-teste-07": [70.0918, 69.7727],
+      "clube-teste-08": [69.5683, 68.4545],
+      "clube-teste-09": [70.1389, 70.3909],
+      "clube-teste-10": [69.5473, 70.7273],
+      "clube-teste-11": [71.0301, 70.9818],
+      "clube-teste-12": [70.4844, 71.3],
+      "clube-teste-13": [71.3829, 72.4545],
+      "clube-teste-14": [67.3324, 67.0909],
+      "clube-teste-15": [66.2673, 67],
+      "clube-teste-16": [65.6894, 66.9091],
+      "clube-teste-17": [66.4983, 66.6],
+      "clube-teste-18": [64.4164, 63.5909],
+      "clube-teste-19": [64.7599, 64.9091],
+      "clube-teste-20": [63.9999, 63.8182]
     },
     "header": {
       "season": 2,
@@ -318,6 +295,6 @@
         "s2-r1-clube-teste-09-clube-teste-15"
       ]
     },
-    "digest": "61037322"
+    "digest": "d1f482b6"
   }
 }

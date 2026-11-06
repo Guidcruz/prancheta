@@ -81,7 +81,12 @@ describe('runCareer', { timeout: 120_000 }, () => {
     const start = seasonStart(ctx, 1);
     const cut = ladderCut(start);
     // Season 2 of this career, turned by the engine, has another ladder than season 1.
-    const closed = endSeason(playSeason(ctx, start, 1).state, ctx.params, []);
+    const closed = endSeason(
+      playSeason(ctx, start, 1).state,
+      ctx.params,
+      [],
+      balanceIdentitySource(),
+    );
     if (!closed.ok) throw new Error(closed.error);
     const next = startNextSeason(closed.value.state, ctx.params, balanceIdentitySource());
     if (!next.ok) throw new Error(next.error);

@@ -384,7 +384,7 @@ export function runCareer(ctx: BalanceContext, index: number, seasons: number): 
     const played = playSeason(ctx, state, index, undefined, cut);
     records.push({ ...played.record, season, strength });
     if (season === seasons) break;
-    const closed = endSeason(played.state, ctx.params, []);
+    const closed = endSeason(played.state, ctx.params, [], balanceIdentitySource());
     if (!closed.ok) throw new Error(`endSeason refused career ${index}: ${closed.error}`);
     const next = startNextSeason(closed.value.state, ctx.params, balanceIdentitySource());
     if (!next.ok) throw new Error(`startNextSeason refused career ${index}: ${next.error}`);

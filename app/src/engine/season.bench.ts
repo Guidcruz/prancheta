@@ -26,7 +26,7 @@ function plainNodeMs(turns: number): number {
     `const { fixedIdentitySource } = await import(${url('./testing/identity.ts')});`,
     'const params = testParams(); const ids = fixedIdentitySource();',
     'const states = [1, 2].map((seed) => playedSeason(seed));',
-    'const turn = (s) => startNextSeason(endSeason(s, params, [Object.keys(s.clubs)[0]]).value.state, params, ids);',
+    'const turn = (s) => startNextSeason(endSeason(s, params, [Object.keys(s.clubs)[0]], ids).value.state, params, ids);',
     'for (let i = 0; i < 5; i++) turn(states[i % 2]);',
     'const start = process.hrtime.bigint();',
     `for (let i = 0; i < ${turns}; i++) turn(states[i % 2]);`,
@@ -46,7 +46,7 @@ test('season turn: time per turn (not blocking)', { timeout: 120_000 }, async ({
   let next = 0;
   const result = await bench('endSeason + startNextSeason', () => {
     const s = states[next]!;
-    const closed = endSeason(s, params, [Object.keys(s.clubs)[0]!]);
+    const closed = endSeason(s, params, [Object.keys(s.clubs)[0]!], identities);
     if (!closed.ok) throw new Error(closed.error);
     const turned = startNextSeason(closed.value.state, params, identities);
     if (!turned.ok) throw new Error(turned.error);

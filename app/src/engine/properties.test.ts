@@ -18,12 +18,16 @@ import type {
   TeamInput,
 } from './match/types.ts';
 import type { GameParams } from './params.ts';
-import { bestEleven, elevenStrength } from './generation.ts';
+import { ACADEMY_AGE, bestEleven, elevenStrength, turnPlayerId } from './generation.ts';
 import {
   AGE_RANGE,
+  POSITIONS,
   RATING_RANGE,
   RECENT_RATINGS_MAX,
+  SQUAD_COMPOSITION,
+  SQUAD_SIZE,
   computeOverall,
+  validatePlayer,
   type Player,
 } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
@@ -34,7 +38,14 @@ import {
   type PlayerSeasonStats,
   type RoundInput,
 } from './round.ts';
-import { MORALE_OFFSEASON_PULL, MORALE_TURN_SCALE, endSeason, startNextSeason } from './season.ts';
+import {
+  MORALE_OFFSEASON_PULL,
+  MORALE_TURN_SCALE,
+  RETIREMENT_AGE,
+  endSeason,
+  startNextSeason,
+  type SeasonSummary,
+} from './season.ts';
 import { isUnavailable } from './selection.ts';
 import { POINTS, getStandings, type StandingRow } from './standings.ts';
 import { syntheticClubs } from './testing/clubs.ts';
@@ -1064,12 +1075,27 @@ const CAREERS_PER_TEST = 100;
 const jsonBytes = (value: unknown) => new TextEncoder().encode(JSON.stringify(value)).length;
 
 /**
+ * The players whose trait became `idol` in a renewal (T-048): the new idol of a club whose idol
+ * left the squad.
+ */
+function newIdols(before: GameState, after: GameState): Set<PlayerId> {
+  const out = new Set<PlayerId>();
+  for (const ids of Object.values(after.squads)) {
+    for (const id of ids) {
+      if (after.players[id]?.trait === 'idol' && before.players[id]?.trait !== 'idol') out.add(id);
+    }
+  }
+  return out;
+}
+
+/**
  * The invariants of one evolution (jogadores.md, "Evolução"): age exactly + 1, the overall by the
  * formula and never above the potential, inside 1..99, and potential, peakAge, growth, position,
- * trait and shirt untouched.
+ * trait and shirt untouched (but the trait of a new idol of the renewal, T-048).
  */
 function evolutionProblems(before: GameState, after: GameState): string[] {
   const out: string[] = [];
+  const idols = newIdols(before, after);
   for (const [id, b] of Object.entries(before.players)) {
     const a = after.players[id];
     if (a === undefined) {
@@ -1084,9 +1110,136 @@ function evolutionProblems(before: GameState, after: GameState): string[] {
       out.push(`${id}: passed the potential`);
     }
     for (const key of ['potential', 'peakAge', 'growth', 'position', 'trait', 'shirt'] as const) {
+      if (key === 'trait' && idols.has(id)) continue;
       if (a[key] !== b[key]) out.push(`${id}: ${key} changed`);
     }
     if (a.age < AGE_RANGE.min || a.age > AGE_RANGE.max) out.push(`${id}: age ${a.age}`);
+  }
+  return out;
+}
+
+/**
+ * The invariants of the renewal in `endSeason` (T-048; docs/02-architecture.md, 4.1, "Renovação
+ * mínima dos elencos"), from the state at round 39 to the closed one: who is RETIREMENT_AGE after
+ * the birthday leaves the squad and stays in `players`; the rest keep their order; one youth of 17
+ * per retired player, of his position, at the end, with the turn's ids, 0 appearances and a valid
+ * player; 25 per squad, 3/5/4/4/4/5 and one idol (the same one unless he retired); and the
+ * campaigns list the farewells and the academy.
+ */
+function renewalProblems(before: GameState, closed: GameState, summary: SeasonSummary): string[] {
+  const out: string[] = [];
+  for (const [clubId, old] of Object.entries(before.squads)) {
+    const now = closed.squads[clubId] ?? [];
+    const gone = old.filter((id) => closed.players[id]!.age >= RETIREMENT_AGE);
+    const staying = old.filter((id) => !gone.includes(id));
+    const youth = now.slice(staying.length);
+    if (now.slice(0, staying.length).join() !== staying.join()) out.push(`${clubId}: order`);
+    if (youth.length !== gone.length) out.push(`${clubId}: ${youth.length} youth, ${gone.length}`);
+    for (const id of gone) if (closed.players[id] === undefined) out.push(`${id}: gone too soon`);
+    youth.forEach((id, i) => {
+      const p = closed.players[id];
+      const k = i + 1;
+      if (p === undefined) return void out.push(`${id}: no player`);
+      if (id !== turnPlayerId(clubId, before.season + 1, k)) out.push(`${id}: id`);
+      if (p.age !== ACADEMY_AGE || p.clubAppearances !== 0) out.push(`${id}: age or apps`);
+      if (p.position !== before.players[gone[i]!]?.position) out.push(`${id}: position`);
+      if (!validatePlayer(p).ok) out.push(`${id}: invalid`);
+    });
+    out.push(...squadProblems(closed, clubId));
+    const idolOf = (s: GameState, ids: readonly PlayerId[]) =>
+      ids.filter((id) => s.players[id]!.trait === 'idol');
+    const oldIdol = idolOf(before, old)[0];
+    if (oldIdol !== undefined && !gone.includes(oldIdol) && idolOf(closed, now)[0] !== oldIdol) {
+      out.push(`${clubId}: the idol changed without retiring`);
+    }
+    const campaign = summary.campaigns[clubId];
+    if (campaign !== undefined) {
+      if (campaign.farewells.join() !== gone.join()) out.push(`${clubId}: farewells`);
+      if (campaign.academy.join() !== youth.join()) out.push(`${clubId}: academy`);
+    }
+  }
+  return out;
+}
+
+/** 25 players, 3/5/4/4/4/5, exactly one idol, unique shirts, everyone of the club. */
+function squadProblems(state: GameState, clubId: ClubId): string[] {
+  const out: string[] = [];
+  const squad = (state.squads[clubId] ?? []).map((id) => state.players[id]);
+  if (squad.some((p) => p === undefined)) return [`${clubId}: an unknown player`];
+  const players = squad as Player[];
+  if (players.length !== SQUAD_SIZE) out.push(`${clubId}: ${players.length} players`);
+  for (const position of POSITIONS) {
+    const n = players.filter((p) => p.position === position).length;
+    if (n !== SQUAD_COMPOSITION[position]) out.push(`${clubId}: ${n} ${position}`);
+  }
+  if (players.filter((p) => p.trait === 'idol').length !== 1) out.push(`${clubId}: idols`);
+  if (new Set(players.map((p) => p.shirt)).size !== players.length) out.push(`${clubId}: shirts`);
+  if (players.some((p) => p.clubId !== clubId)) out.push(`${clubId}: another club's player`);
+  return out;
+}
+
+/** Every player id a summary of `pastSeasons` refers to. */
+function summaryIds(summary: SeasonSummary): PlayerId[] {
+  const { awards } = summary;
+  const ids: PlayerId[] = [
+    ...awards.topScorers.map((a) => a.playerId),
+    ...awards.topAssists.map((a) => a.playerId),
+    ...awards.teamOfSeason.flatMap((s) => (s.playerId === undefined ? [] : [s.playerId])),
+  ];
+  for (const award of [awards.bestPlayer, awards.revelation, awards.bestGoalkeeper]) {
+    if (award !== undefined) ids.push(award.playerId);
+  }
+  for (const c of Object.values(summary.campaigns)) {
+    ids.push(...c.topScorers.map((t) => t.playerId), ...c.evolved.map((e) => e.playerId));
+    ids.push(...c.farewells, ...c.academy);
+  }
+  return ids;
+}
+
+/**
+ * The ids of a long career (T-048, "Ids sem colisão"): each id names one player for the whole
+ * career (the same identity seeds and curve), an id that left `players` never comes back, and
+ * every id of `pastSeasons` is one the career created.
+ */
+class IdLedger {
+  private readonly seen = new Map<PlayerId, string>();
+  private readonly gone = new Set<PlayerId>();
+
+  check(state: GameState, label: string): string[] {
+    const out: string[] = [];
+    for (const [id, p] of Object.entries(state.players)) {
+      const print = `${p.nameSeed}:${p.faceSeed}:${p.position}:${p.peakAge}:${p.growth}`;
+      const known = this.seen.get(id);
+      if (this.gone.has(id)) out.push(`${label}: ${id} came back`);
+      else if (known !== undefined && known !== print) out.push(`${label}: ${id} is another`);
+      this.seen.set(id, print);
+    }
+    for (const id of this.seen.keys()) {
+      if (state.players[id] === undefined) this.gone.add(id);
+    }
+    for (const summary of state.pastSeasons) {
+      for (const id of summaryIds(summary)) {
+        if (!this.seen.has(id)) out.push(`${label}: ${id} of season ${summary.season} unknown`);
+      }
+    }
+    return out;
+  }
+}
+
+/**
+ * The state of a long career in the `season` phase (T-048): nobody older than RETIREMENT_AGE − 1,
+ * every player in exactly one squad, and every squad of 25 in 3/5/4/4/4/5 with one idol.
+ */
+function seasonPhaseProblems(state: GameState, label: string): string[] {
+  const out: string[] = [];
+  const inSquad = Object.values(state.squads).flat();
+  if (new Set(inSquad).size !== inSquad.length) out.push(`${label}: a player in two squads`);
+  if (inSquad.length !== Object.keys(state.players).length) out.push(`${label}: outside squads`);
+  for (const p of Object.values(state.players)) {
+    if (p.age >= RETIREMENT_AGE) out.push(`${label}: ${p.id} is ${p.age}`);
+  }
+  for (const clubId of Object.keys(state.clubs)) {
+    for (const p of squadProblems(state, clubId)) out.push(`${label}: ${p}`);
   }
   return out;
 }
@@ -1101,11 +1254,12 @@ function evolutionProblems(before: GameState, after: GameState): string[] {
 function turnOf(season: Season, state: GameState): { next: GameState; problems: string[] } {
   const out: string[] = [];
   const humans = [...season.humans.keys()];
-  const closed = endSeason(state, params, humans);
+  const closed = endSeason(state, params, humans, fixedIdentitySource());
   if (!closed.ok) throw new Error(`endSeason: ${closed.error}`);
-  const again = endSeason(closed.value.state, params, humans);
+  const again = endSeason(closed.value.state, params, humans, fixedIdentitySource());
   if (again.ok) out.push('endSeason accepted a second call');
   out.push(...evolutionProblems(state, closed.value.state));
+  out.push(...renewalProblems(state, closed.value.state, closed.value.summary));
   if (Object.keys(closed.value.summary.campaigns).join() !== humans.join()) {
     out.push(`campaigns ${Object.keys(closed.value.summary.campaigns).join()}`);
   }
@@ -1144,6 +1298,7 @@ function turnOf(season: Season, state: GameState): { next: GameState; problems: 
     if (squad.filter((p) => p.trait === 'idol').length !== 1) out.push(`${clubId}: idols`);
   }
   if (next.pastSeasons.length !== state.season) out.push(`${next.pastSeasons.length} summaries`);
+  out.push(...seasonPhaseProblems(next, 'next season'));
   return { next, problems: out };
 }
 
@@ -1193,11 +1348,131 @@ describe(`evolution properties over ${EVOLUTION_CAREERS} careers (jogadores.md; 
           }
         }
         const finished: GameState = { ...created.value, round: 39, players, seasonStats };
-        const closed = endSeason(finished, params, []);
+        const closed = endSeason(finished, params, [], fixedIdentitySource());
         if (!closed.ok) throw new Error(`endSeason ${n}: ${closed.error}`);
         for (const p of evolutionProblems(finished, closed.value.state)) {
           found.push(`career ${n}: ${p}`);
         }
+      }
+      expect(found.slice(0, 20)).toEqual([]);
+    },
+  );
+});
+
+// ---------------------------------------------------------------------------------------------
+// 4. Long careers and the minimal renewal (T-048; docs/02-architecture.md, 4.1, "Aceite")
+// ---------------------------------------------------------------------------------------------
+
+/** Seasons of a long career (the acceptance asks for chains of 30). */
+const LONG_SEASONS = 30;
+/** Careers of 30 seasons with every match played by the AI (about 30 s each). */
+const LONG_PLAYED_CAREERS = FULL ? 4 : 1;
+/** Careers of 30 seasons with made-up season stats instead of the matches (fast). */
+const LONG_QUICK_CAREERS = FULL ? 200 : 20;
+
+/**
+ * Made-up stats of a season for the players of the squads (any minutes, games, goals and
+ * ratings, so the evolution and the awards see every branch), with a random morale: the state at
+ * round 39 as if the season had been played.
+ */
+function madeUpSeason(state: GameState, rng: Rng): GameState {
+  const players: Record<PlayerId, Player> = {};
+  const seasonStats: Record<PlayerId, PlayerSeasonStats> = {};
+  for (const [id, p] of Object.entries(state.players)) {
+    players[id] = { ...p, morale: rng.next() * 100 };
+    if (rng.int(0, 3) === 0) continue;
+    const games = rng.int(1, 38);
+    const rated = rng.int(0, games);
+    seasonStats[id] = {
+      games,
+      minutes: rng.int(1, games * 90),
+      goals: rng.int(0, 3) === 0 ? rng.int(0, 20) : 0,
+      assists: rng.int(0, 3) === 0 ? rng.int(0, 12) : 0,
+      yellows: 0,
+      reds: 0,
+      ratingSum: rated * (5 + rng.next() * 4),
+      ratedGames: rated,
+      conceded: p.position === 'GK' ? rng.int(0, 60) : 0,
+    };
+  }
+  return { ...state, round: 39, players, seasonStats };
+}
+
+/**
+ * A career of LONG_SEASONS seasons, every one closed with one human club and turned, checked in
+ * the `season` phase of each season and at each `seasonEnd`; `play` makes the state at round 39
+ * from the start of a season.
+ */
+function longCareerProblems(
+  n: number,
+  label: string,
+  play: (state: GameState) => GameState,
+): string[] {
+  const created = newGame(
+    { seed: seedFromString(`properties-long-${label}-${n}`), year: 2026, realism: 'full' },
+    syntheticClubs(20),
+    params,
+    fixedIdentitySource(),
+  );
+  if (!created.ok) throw new Error(`newGame ${n}: ${created.error}`);
+  const human = Object.keys(created.value.clubs)[n % 20]!;
+  const ledger = new IdLedger();
+  const out: string[] = [];
+  let state = created.value;
+  let retired = 0;
+  for (let season = 1; season <= LONG_SEASONS; season++) {
+    const at = `${label} ${n}, season ${season}`;
+    out.push(...seasonPhaseProblems(state, at), ...ledger.check(state, at));
+    const finished = play(state);
+    const closed = endSeason(finished, params, [human], fixedIdentitySource());
+    if (!closed.ok) throw new Error(`${at}: endSeason ${closed.error}`);
+    out.push(...renewalProblems(finished, closed.value.state, closed.value.summary));
+    out.push(...ledger.check(closed.value.state, `${at} (seasonEnd)`));
+    for (const ids of Object.values(closed.value.state.squads)) {
+      retired += SQUAD_SIZE - ids.filter((id) => finished.players[id] !== undefined).length;
+    }
+    const next = startNextSeason(closed.value.state, params, fixedIdentitySource());
+    if (!next.ok) throw new Error(`${at}: startNextSeason ${next.error}`);
+    state = next.value;
+  }
+  out.push(...seasonPhaseProblems(state, `${label} ${n}, season ${LONG_SEASONS + 1}`));
+  out.push(...ledger.check(state, `${label} ${n}, season ${LONG_SEASONS + 1}`));
+  // The renewal did happen: about 1.7 retirements per club and season (decision 14).
+  if (retired < LONG_SEASONS * 20) out.push(`${label} ${n}: only ${retired} retirements`);
+  return out;
+}
+
+describe(`long careers of ${LONG_SEASONS} seasons (T-048, the minimal renewal)`, () => {
+  it.each(Array.from({ length: LONG_PLAYED_CAREERS }, (_, i) => i + 1))(
+    'played career %i: under 35, 25 per squad in 3/5/4/4/4/5, one idol, ids never repeat',
+    { timeout: 600_000 },
+    (n) => {
+      const problems = longCareerProblems(n, 'played', (start) => {
+        let state = start;
+        while (state.round <= 38) {
+          const r = playRound(state, params, {
+            round: state.round,
+            sheets: {},
+            commands: {},
+            fanDecisions: {},
+          });
+          if (!r.ok) throw new Error(`round ${state.round}: ${r.error}`);
+          state = r.value.state;
+        }
+        return state;
+      });
+      expect(problems.slice(0, 20)).toEqual([]);
+    },
+  );
+
+  it(
+    `${LONG_QUICK_CAREERS} careers with made-up seasons: the same invariants`,
+    { timeout: 600_000 },
+    () => {
+      const found: string[] = [];
+      for (let n = 1; n <= LONG_QUICK_CAREERS; n++) {
+        const rng = new Rng(seedFromString(`properties-long-stats-${n}`));
+        found.push(...longCareerProblems(n, 'quick', (state) => madeUpSeason(state, rng)));
       }
       expect(found.slice(0, 20)).toEqual([]);
     },

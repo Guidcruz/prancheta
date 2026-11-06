@@ -104,7 +104,7 @@ export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
   };
   if (season === 2) {
     play(38);
-    const ended = endSeason(state, params, [clubId]);
+    const ended = endSeason(state, params, [clubId], identities);
     if (!ended.ok) throw new Error(`endSeason: ${ended.error}`);
     const next = startNextSeason(ended.value.state, params, identities);
     if (!next.ok) throw new Error(`startNextSeason: ${next.error}`);
@@ -219,7 +219,7 @@ export function* playedCareer(
     }
   }
   yield* play(38);
-  const ended = endSeason(state, params, [clubId]);
+  const ended = endSeason(state, params, [clubId], identities);
   if (!ended.ok) throw new Error(`endSeason: ${ended.error}`);
   state = ended.value.state;
   if (at(1, 'end')) yield { label: 's1-end', save: saveOf() };
