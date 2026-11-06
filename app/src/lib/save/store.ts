@@ -34,8 +34,15 @@ import {
  * the app closes halfway, nothing changes); (3) read the snapshot and the new rows back and compare
  * `sha256`, `bytes` and the gzip byte by byte with what was in memory, without decompressing. Only
  * then the snapshots past the 3 newest go, and after them the rows of the seasons that no kept
- * snapshot uses; if the check fails, the new snapshot goes instead and `headSeq` returns (the rows
- * stay: each snapshot only accepts the rows its index lists, by hash).
+ * snapshot uses; if the check fails, the new snapshot goes instead and `headSeq` returns, but the
+ * rows it wrote stay. A row is keyed `[careerId, season, round]` and each snapshot only accepts the
+ * rows its index lists, by hash, so a wrong sheet never opens. With `base` nothing is lost: only
+ * rounds the previous snapshot does not list get a row. Without `base` on a career already stored
+ * (an import over it, the migrated save of T-019), every round's row is rewritten, also the ones
+ * the older snapshots list: where the content changed, those snapshots no longer accept the row,
+ * and the sheets of those rounds become unavailable in them (`missingSheetRounds` if they ever
+ * open), on success and after a rollback alike; the rollback does not bring the old rows back.
+ * This limit is in docs/02-architecture.md, 4.2, and is an input of T-019 and T-020.
  *
  * Open with fallback: the snapshots from the newest to the oldest; the first that passes size,
  * hash and parse has its rows of sheets put back in `career.matchSheets`, then goes through the
@@ -386,7 +393,9 @@ export class SaveStore {
         if (typeof hash === 'string' && HEX64.test(hash)) index[round] = hash;
         else missing.push(round);
       }
-      // The rounds to write (all 38 without a base) and the snapshot, encoded side by side.
+      // The rounds to write (every round played without a base) and the snapshot, encoded side by
+      // side. Without a base on a stored career the rows of the older snapshots are overwritten:
+      // their changed rounds lose the sheets (see the top of this file; 4.2, T-019, T-020).
       const [encoded, ...encodedRows] = await Promise.all([
         encodeSave({ ...save, career: { ...save.career, matchSheets: {} } }),
         ...missing.map((round) => encodeSave(Object.fromEntries(byRound.get(round)!))),
