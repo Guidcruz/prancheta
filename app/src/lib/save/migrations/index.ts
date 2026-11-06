@@ -7,8 +7,12 @@ import { fail, ok, type SaveResult } from '../result.ts';
  * original snapshot is replaced only after the migrated one is stored and checked (the store does
  * that, by writing a new snapshot). A save newer than this build is never opened nor changed.
  *
- * The chain is empty while the format is v1. T-019 freezes v1 (fixture, shape test, valibot) and
- * every format change after it adds one step here, with its fixture and test.
+ * The format is frozen at v1 (T-019): the fixture `__fixtures__/v1.json`, the shape test and the
+ * strict schema (validate.ts). The chain is empty while the format is v1; every format change
+ * after it raises `SAVE_SCHEMA_VERSION` and adds here one step, in its own file
+ * (`0001-<slug>.ts` for v1 → v2), with the fixture of the new version (fixtures.test.ts) and a
+ * test of the step. The infrastructure is tested with synthetic steps, also through the store
+ * (migrated.test.ts).
  */
 
 /** A step of the chain: the save in version `from`, as parsed, to version `from + 1`. */
@@ -17,25 +21,29 @@ export interface Migration {
   readonly migrate: (save: Record<string, unknown>) => Record<string, unknown>;
 }
 
-/** The chain, in order: `MIGRATIONS[i].from === i + 1`. */
+/** The chain, one step per version: the step `from: N` takes a save of version N to N + 1. */
 export const MIGRATIONS: readonly Migration[] = [];
 
 export type MigrationError = 'save-too-new' | 'unknown-version' | 'migration-failed';
 
-/** The `schemaVersion` of a parsed save, or `undefined` when it has none that is valid. */
+/**
+ * The `schemaVersion` of a parsed save (a whole number, 0 or more), or `undefined` when it has none
+ * that is valid. No build ever wrote a version 0: it only exists for the synthetic step of the
+ * tests, and with the real chain it has no step (`migration-failed`).
+ */
 export function schemaVersionOf(raw: unknown): number | undefined {
   if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
   const version = (raw as { schemaVersion?: unknown }).schemaVersion;
-  return typeof version === 'number' && Number.isInteger(version) && version >= 1
+  return typeof version === 'number' && Number.isSafeInteger(version) && version >= 0
     ? version
     : undefined;
 }
 
 /**
- * Brings a parsed save to {@link SAVE_SCHEMA_VERSION}. The result still needs validation (the
- * schema of T-019); the input is not changed. `save-too-new`: written by a newer build;
- * `unknown-version`: no valid `schemaVersion`; `migration-failed`: a step threw (a bug in the
- * step or a save that is not what its version says).
+ * Brings a parsed save to {@link SAVE_SCHEMA_VERSION}, step by step. The result still needs the
+ * strict schema (validate.ts, `full`); the input is not changed. `save-too-new`: written by a
+ * newer build; `unknown-version`: no valid `schemaVersion`; `migration-failed`: a step is missing
+ * or threw (a bug in the step, or a save that is not what its version says), with `detail.from`.
  */
 export function migrateSave(
   raw: unknown,
@@ -47,8 +55,8 @@ export function migrateSave(
   if (version > target) return fail('save-too-new', { version, supported: target });
   let save = raw as Record<string, unknown>;
   for (let from = version; from < target; from++) {
-    const step = chain[from - 1];
-    if (step === undefined || step.from !== from) return fail('migration-failed', { from });
+    const step = chain.find((s) => s.from === from);
+    if (step === undefined) return fail('migration-failed', { from });
     try {
       save = { ...step.migrate(save), schemaVersion: from + 1 };
     } catch {

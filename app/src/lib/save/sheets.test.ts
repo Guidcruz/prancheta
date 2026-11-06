@@ -54,7 +54,7 @@ function replayed(played: number, round: number): CareerSave {
   const matchSheets = Object.fromEntries(
     Object.entries(save.career.matchSheets).map(([id, sheet]) => [
       id,
-      ids.has(id) ? ({ ...sheet, replayed: true } as unknown as MatchSheet) : sheet,
+      ids.has(id) ? { ...sheet, motmRating: sheet.motmRating === 10 ? 9.5 : 10 } : sheet,
     ]),
   );
   return { ...save, career: { ...save.career, matchSheets } };
@@ -102,7 +102,9 @@ describe('writing the sheets by round', () => {
       expect(next.sheets.rounds[round]).toBe(first.sheets.rounds[round]);
     }
     // With nothing new (the snapshot after the last round), nothing is written.
-    const after = written(await s.writeSnapshot({ ...atRound(38), updatedAt: 'x' }, next.sheets));
+    const after = written(
+      await s.writeSnapshot({ ...atRound(38), updatedAt: '2026-11-06T13:00:00.000Z' }, next.sheets),
+    );
     expect(after.writtenRounds).toEqual([]);
     expect(after.sheets).toEqual(next.sheets);
   });
@@ -148,18 +150,31 @@ describe('writing the sheets by round', () => {
     expect(await sheetKeys()).toEqual([]);
   });
 
-  it('refuses a round of sheets past the size bound, before touching the database', async () => {
+  it('checks every new row of sheets in full, before touching the database', async () => {
     const s = store();
     const save = atRound(2);
     const id = fixturesOf(2)[0]!;
-    const huge = { pad: 'x'.repeat(MAX_SAVE_BYTES) } as unknown as MatchSheet;
-    const result = await s.writeSnapshot({
-      ...save,
-      career: { ...save.career, matchSheets: { ...save.career.matchSheets, [id]: huge } },
-    });
-    expect(result.ok === false && result.error).toBe('too-large');
-    expect(result.ok === false && result.detail).toMatchObject({ round: 2 });
+    const sheet = save.career.matchSheets[id]!;
+    // A key the format does not have, then a text past its bound (T-019, validate.ts).
+    for (const [wrong, path] of [
+      [{ ...sheet, pad: 'x' }, `${id}.pad`],
+      [{ ...sheet, fixtureId: 'x'.repeat(MAX_SAVE_BYTES >> 10) }, `${id}.fixtureId`],
+    ] as const) {
+      const result = await s.writeSnapshot({
+        ...save,
+        career: {
+          ...save.career,
+          matchSheets: { ...save.career.matchSheets, [id]: wrong as unknown as MatchSheet },
+        },
+      });
+      expect(result).toMatchObject({
+        ok: false,
+        error: 'invalid-save',
+        detail: { round: 2, path },
+      });
+    }
     expect(await snapshotSeqs()).toEqual([]);
+    expect(await sheetKeys()).toEqual([]);
   });
 });
 

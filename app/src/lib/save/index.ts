@@ -31,6 +31,16 @@ export {
 export { SAVE_DB_NAME, SAVE_DB_VERSION } from './db.ts';
 export { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './migrations/index.ts';
 export {
+  SAVE_LIMITS,
+  careerSaveSchema,
+  parseCareerSave,
+  parseRoundSheets,
+  roundSheetsSchema,
+  type SaveCheck,
+  type SaveIssue,
+} from './validate.ts';
+export { newCareerGame, type NewCareerError, type NewCareerGame } from './new-career.ts';
+export {
   SaveStore,
   type OpenError,
   type OpenedCareer,

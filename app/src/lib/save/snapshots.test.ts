@@ -24,7 +24,7 @@ import {
   useFreshDatabase,
   variant,
 } from './testing/idb.ts';
-import { SAMPLE_CAREER_ID } from './testing/sample.ts';
+import { SAMPLE_CAREER_ID, careerIdOf } from './testing/sample.ts';
 
 /*
  * US-032 with fake-indexeddb (docs/03-test-plan.md, 2 and 6): the database and the test database,
@@ -316,18 +316,26 @@ describe('safe write with 3 versions (US-032)', () => {
       { ...base, career: { ...base.career, clubId: 'no-such-club' } },
       { ...base, career: { ...base.career, clubId: '__proto__' } },
     ] as unknown as CareerSave[];
-    for (const save of wrong)
-      expect(await s.writeSnapshot(save)).toEqual({ ok: false, error: 'invalid-save' });
+    for (const save of wrong) {
+      expect(await s.writeSnapshot(save)).toMatchObject({ ok: false, error: 'invalid-save' });
+    }
     expect(await s.listCareers()).toEqual({ ok: true, value: [] });
   });
 
   it('refuses a snapshot past the size bound, before touching the database', async () => {
     const s = store();
     await s.writeSnapshot(variant(5));
-    const huge = {
-      ...variant(6),
-      career: { ...base.career, coachName: 'x'.repeat(MAX_SAVE_BYTES) },
-    };
+    // Valid in every field (the schema's bounds are per field), over 40 MB in all.
+    const vars = Object.fromEntries(
+      Array.from({ length: 32 }, (_, i) => [`v${i}`, 'x'.repeat(200)]),
+    );
+    const news = Array.from({ length: 6_500 }, (_, i) => ({
+      factId: `f${i}`,
+      templateId: 't',
+      variantId: 'v',
+      vars,
+    }));
+    const huge = { ...variant(6), career: { ...base.career, news } };
     const result = await s.writeSnapshot(huge);
     expect(result.ok === false && result.error).toBe('too-large');
     expect(result.ok === false && result.detail).toMatchObject({ maxBytes: MAX_SAVE_BYTES });
@@ -470,10 +478,10 @@ describe('open with fallback (US-032)', () => {
   it('skips a snapshot that decodes but is not this career', async () => {
     const s = store();
     await threeRounds(s);
-    const other = await mustEncode(variant(6, 'another-career'));
+    const other = await mustEncode(variant(6, careerIdOf('another-career')));
     await tamper(3, (r) => ({ ...r, blob: other.gzip, sha256: other.sha256, bytes: other.bytes }));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
-    expect(opened.ok && opened.value.skipped).toEqual([{ seq: 3, problem: 'incoherent' }]);
+    expect(opened.ok && opened.value.skipped).toEqual([{ seq: 3, problem: 'invalid-save' }]);
   });
 
   it('falls back two versions and counts the rounds across a season turn', async () => {

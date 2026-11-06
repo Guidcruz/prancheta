@@ -16,7 +16,7 @@ import {
   useFreshDatabase,
   variant,
 } from './testing/idb.ts';
-import { SAMPLE_CAREER_ID } from './testing/sample.ts';
+import { SAMPLE_CAREER_ID, careerIdOf as cid } from './testing/sample.ts';
 
 /*
  * Acceptance journeys of US-032 and US-034 at the level of the library (T-018, QA gate 2). The
@@ -107,21 +107,21 @@ describe('US-032 journey: a career saved round by round', () => {
   it('with the 3 versions corrupted, does not open, keeps the career listed and lets it be deleted', async () => {
     const s = store();
     for (const played of [3, 4, 5]) await s.writeSnapshot(atRound(played));
-    await s.writeSnapshot(atRound(2, 1, 'healthy'));
+    await s.writeSnapshot(atRound(2, 1, cid('healthy')));
     for (const seq of [1, 2, 3]) await tamper(seq, flipByte);
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     expect(opened).toMatchObject({ ok: false, error: 'all-corrupt' });
     const listed = await s.listCareers();
     expect(listed.ok && listed.value.map((c) => c.id).sort()).toEqual(
-      ['healthy', SAMPLE_CAREER_ID].sort(),
+      [cid('healthy'), SAMPLE_CAREER_ID].sort(),
     );
     // The healthy career is untouched by the other one's failure.
-    const healthy = await s.openCareer('healthy');
-    expect(healthy.ok && healthy.value.save).toEqual(atRound(2, 1, 'healthy'));
+    const healthy = await s.openCareer(cid('healthy'));
+    expect(healthy.ok && healthy.value.save).toEqual(atRound(2, 1, cid('healthy')));
     // The player can get rid of the broken career (US-034), and only of it.
     expect((await s.deleteCareer(SAMPLE_CAREER_ID)).ok).toBe(true);
     const after = await s.listCareers();
-    expect(after.ok && after.value.map((c) => c.id)).toEqual(['healthy']);
+    expect(after.ok && after.value.map((c) => c.id)).toEqual([cid('healthy')]);
     expect(await snapshotSeqs()).toEqual([]);
     expect(await sheetKeys()).toEqual([]);
   });
@@ -150,18 +150,18 @@ describe('US-034 journey: several careers', () => {
     const s = store();
     let a: WrittenSnapshot | undefined;
     for (const played of [2, 3]) {
-      a = written(await s.writeSnapshot(atRound(played, 1, 'a'), a?.sheets));
+      a = written(await s.writeSnapshot(atRound(played, 1, cid('a')), a?.sheets));
     }
-    await s.writeSnapshot(atRound(4, 1, 'b'));
-    const beforeB = await rowsOf('b');
-    await s.writeSnapshot(atRound(4, 1, 'a'), a?.sheets, { expectedHeadSeq: a!.seq });
-    expect(await rowsOf('b')).toEqual(beforeB);
+    await s.writeSnapshot(atRound(4, 1, cid('b')));
+    const beforeB = await rowsOf(cid('b'));
+    await s.writeSnapshot(atRound(4, 1, cid('a')), a?.sheets, { expectedHeadSeq: a!.seq });
+    expect(await rowsOf(cid('b'))).toEqual(beforeB);
     // The list reflects both, newest save first.
     const listed = await s.listCareers();
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.value.map((c) => [c.id, c.season, c.round])).toEqual([
-      ['a', 1, 5],
-      ['b', 1, 5],
+      [cid('a'), 1, 5],
+      [cid('b'), 1, 5],
     ]);
   });
 
@@ -184,10 +184,10 @@ describe('US-034 journey: several careers', () => {
   it('two tabs creating the last free career: exactly one is accepted', async () => {
     const a = store();
     const b = store();
-    for (let i = 0; i < MAX_CAREERS - 1; i++) await a.writeSnapshot(variant(1, `c-${i}`));
+    for (let i = 0; i < MAX_CAREERS - 1; i++) await a.writeSnapshot(variant(1, cid(`c-${i}`)));
     const [ra, rb] = await Promise.all([
-      a.writeSnapshot(variant(1, 'new-a')),
-      b.writeSnapshot(variant(1, 'new-b')),
+      a.writeSnapshot(variant(1, cid('new-a'))),
+      b.writeSnapshot(variant(1, cid('new-b'))),
     ]);
     expect([ra.ok, rb.ok].sort()).toEqual([false, true]);
     const refused = ra.ok ? rb : ra;

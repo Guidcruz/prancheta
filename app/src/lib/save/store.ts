@@ -1,6 +1,5 @@
 import type { IDBPTransaction } from 'idb';
 import { SEASON_ROUNDS, type Fixture } from '../../engine/index.ts';
-import { isCareerSave } from './check.ts';
 import {
   codecSupported,
   decodeSave,
@@ -10,7 +9,13 @@ import {
   type DecodeError,
 } from './codec.ts';
 import { SAVE_DB_NAME, openSaveDb, type SaveDb, type SaveDbSchema } from './db.ts';
-import { migrateSave, type MigrationError } from './migrations/index.ts';
+import {
+  MIGRATIONS,
+  migrateSave,
+  schemaVersionOf,
+  type Migration,
+  type MigrationError,
+} from './migrations/index.ts';
 import { fail, ok, type SaveResult } from './result.ts';
 import {
   KEPT_SNAPSHOTS,
@@ -23,6 +28,7 @@ import {
   type SheetIndex,
   type SnapshotRecord,
 } from './schema.ts';
+import { parseCareerSave, parseRoundSheets } from './validate.ts';
 
 /*
  * Careers on the device (docs/02-architecture.md, 4.2; ADR-0006, ADR-0019; US-032, US-034).
@@ -34,22 +40,23 @@ import {
  * the app closes halfway, nothing changes); (3) read the snapshot and the new rows back and compare
  * `sha256`, `bytes` and the gzip byte by byte with what was in memory, without decompressing. Only
  * then the snapshots past the 3 newest go, and after them the rows of the seasons that no kept
- * snapshot uses; if the check fails, the new snapshot goes instead and `headSeq` returns, but the
- * rows it wrote stay. A row is keyed `[careerId, season, round]` and each snapshot only accepts the
- * rows its index lists, by hash, so a wrong sheet never opens. With `base` nothing is lost: only
- * rounds the previous snapshot does not list get a row. Without `base` on a career already stored
- * (an import over it, the migrated save of T-019), every round's row is rewritten, also the ones
- * the older snapshots list: where the content changed, those snapshots no longer accept the row,
- * and the sheets of those rounds become unavailable in them (`missingSheetRounds` if they ever
- * open), on success and after a rollback alike; the rollback does not bring the old rows back.
- * This limit is in docs/02-architecture.md, 4.2, and is an input of T-019 and T-020.
+ * snapshot uses; if the check fails, the new snapshot goes instead, `headSeq` returns and every
+ * row this write replaced with other content gets its old one back (T-019). A row is keyed
+ * `[careerId, season, round]` and each snapshot only accepts the rows its index lists, by hash, so
+ * a wrong sheet never opens. With `base` nothing is lost: only rounds the previous snapshot does
+ * not list get a row. Without `base` on a career already stored (the migrated save of T-019),
+ * every round's row is rewritten, also the ones the older snapshots list: where the content
+ * changed and the write is checked, those snapshots no longer accept the row, and the sheets of
+ * those rounds become unavailable in them (`missingSheetRounds` if they ever open). This accepted
+ * limit is in docs/02-architecture.md, 4.2, "Gravação sem `base` numa carreira que já existe".
  *
  * Open with fallback: the snapshots from the newest to the oldest; the first that passes size,
  * hash and parse has its rows of sheets put back in `career.matchSheets`, then goes through the
- * migration and the coherence check. A bad or missing row never skips the snapshot: the round is
- * reported in `missingSheetRounds`. The result says how many rounds were lost. A save written by a
- * newer build is never opened nor changed. When every snapshot fails the career stays listed and
- * the error says so (the game offers to import, US-036).
+ * migration and the strict schema (validate.ts: `open` for the current format, whose rows were
+ * checked when written; `full` for a migrated save). A bad or missing row never skips the
+ * snapshot: the round is reported in `missingSheetRounds`. The result says how many rounds were
+ * lost. A save written by a newer build is never opened nor changed. When every snapshot fails
+ * the career stays listed and the error says so (the game offers to import, US-036).
  *
  * Every operation of one store runs in order, one at a time, so a double tap never interleaves two
  * writes of the same career; another tab (another store on the same database) is caught by the
@@ -88,7 +95,11 @@ export type WriteError =
   | 'too-large'
   /** No `crypto.subtle` (not a secure context) or no compression streams (Safari < 16.4). */
   | 'unsupported-browser'
-  /** Not a save of the current format, or a sheet of a match not played (caller's bug). */
+  /**
+   * Not a save of the current format (validate.ts, `write` check, and every new row of sheets in
+   * full), or a sheet of a match not played: a bug of the caller. `detail` has the path, never
+   * the value.
+   */
   | 'invalid-save';
 
 export type OpenError =
@@ -101,7 +112,7 @@ export type OpenError =
   | 'all-corrupt';
 
 /** Why one snapshot was skipped when opening (diagnostics, no content). */
-export type SnapshotProblem = DecodeError | MigrationError | 'invalid-record' | 'incoherent';
+export type SnapshotProblem = DecodeError | MigrationError | 'invalid-record' | 'invalid-save';
 
 /** Optional guard of a write against another tab. */
 export interface WriteGuard {
@@ -136,11 +147,14 @@ export interface OpenedCareer {
   readonly roundsLost: number;
   /**
    * The `schemaVersion` the snapshot had before migration. When it is older than the current one,
-   * the caller writes the migrated save as a new snapshot (T-019), which keeps the original until
-   * the new one is checked.
+   * the caller writes the migrated save as a new snapshot (`writeSnapshot` with `sheets` below as
+   * `base` and the `headSeq` guard), which keeps the original until the new one is checked.
    */
   readonly fromVersion: number;
-  /** The rows of sheets put back in `career.matchSheets`: the `base` of the next write. */
+  /**
+   * The rows of sheets put back in `career.matchSheets`: the `base` of the next write. Empty after
+   * a migration, so that write stores every round again in the current format (4.2, "Migração").
+   */
   readonly sheets: SheetIndex;
   /**
    * Rounds in the snapshot's index whose row was missing or failed its checks: their matches show
@@ -154,6 +168,8 @@ export interface SaveStoreOptions {
   readonly dbName?: string;
   /** Clock of `savedAt` (the engine has none; this layer may read one). */
   readonly now?: () => Date;
+  /** The migration chain; tests replace it with a synthetic one (T-019). */
+  readonly migrations?: readonly Migration[];
 }
 
 const HEX64 = /^[0-9a-f]{64}$/;
@@ -330,12 +346,14 @@ function seasonRange(careerId: string, season: number): IDBKeyRange {
 export class SaveStore {
   readonly dbName: string;
   private readonly now: () => Date;
+  private readonly migrations: readonly Migration[];
   private db: Promise<SaveDb> | undefined;
   private queue: Promise<unknown> = Promise.resolve();
 
   constructor(options: SaveStoreOptions = {}) {
     this.dbName = options.dbName ?? SAVE_DB_NAME;
     this.now = options.now ?? (() => new Date());
+    this.migrations = options.migrations ?? MIGRATIONS;
   }
 
   /** The careers on the device, the most recently played first (US-034). */
@@ -362,6 +380,7 @@ export class SaveStore {
    * `WrittenSnapshot.sheets`): its rounds of the same season are inherited, not written again.
    * Without it (a new career, an import, a migrated save) every round is written. Contract: the
    * sheets of a round already played never change; whoever replaces them writes without `base`.
+   * A row replaced with other content is kept in memory and put back if the check fails.
    */
   writeSnapshot(
     save: CareerSave,
@@ -369,14 +388,8 @@ export class SaveStore {
     guard?: WriteGuard,
   ): Promise<SaveResult<WrittenSnapshot, WriteError>> {
     return this.serial(async () => {
-      if (
-        typeof save.careerId !== 'string' ||
-        save.careerId === '' ||
-        save.schemaVersion !== SAVE_SCHEMA_VERSION ||
-        !isCareerSave(save, save.careerId)
-      ) {
-        return fail('invalid-save');
-      }
+      const checked = parseCareerSave(save, { check: 'write' });
+      if (!checked.ok) return checked;
       const byRound = sheetsByRound(save);
       if (!(byRound instanceof Map)) return fail('invalid-save', byRound);
       if (!codecSupported()) return fail('unsupported-browser');
@@ -392,6 +405,11 @@ export class SaveStore {
         const hash = Object.hasOwn(inherited, round) ? inherited[round] : undefined;
         if (typeof hash === 'string' && HEX64.test(hash)) index[round] = hash;
         else missing.push(round);
+      }
+      // Every row written is checked in full: opening trusts a row by its hash (validate.ts).
+      for (const round of missing) {
+        const sheets = parseRoundSheets(Object.fromEntries(byRound.get(round)!));
+        if (!sheets.ok) return fail('invalid-save', { round, ...(sheets.detail as object) });
       }
       // The rounds to write (every round played without a base) and the snapshot, encoded side by
       // side. Without a base on a stored career the rows of the older snapshots are overwritten:
@@ -425,6 +443,8 @@ export class SaveStore {
       const done = tx.done;
       let previous: CareerSummary | undefined;
       let record: SnapshotRecord | undefined;
+      // The rows this write replaces with other content, to put back if the check fails.
+      let replaced: MatchSheetRecord[] = [];
       let refused: SaveResult<never, WriteError> | undefined;
       try {
         const careers = tx.objectStore('careers');
@@ -455,6 +475,13 @@ export class SaveStore {
           const snapshots = tx.objectStore('snapshots');
           const sheets = tx.objectStore('matchSheets');
           const stored = record;
+          const existing = await requests(
+            rows.map((row) => () => sheets.get([row.careerId, row.season, row.round])),
+          );
+          replaced = existing.filter(
+            (old, i): old is MatchSheetRecord =>
+              isStoredBlob(old) && old.sha256 !== rows[i]!.sha256,
+          );
           await requests([
             () => snapshots.put(stored),
             ...rows.map((row) => () => sheets.put(row)),
@@ -472,7 +499,7 @@ export class SaveStore {
       // (3) Read back and compare with what was meant to be written.
       const problem = await this.verify(db.value, record, rows);
       if (problem !== undefined) {
-        const rolledBack = await this.rollback(db.value, id, seq, previous);
+        const rolledBack = await this.rollback(db.value, id, seq, previous, rows, replaced);
         return fail('verify-failed', { problem, rolledBack });
       }
 
@@ -527,28 +554,39 @@ export class SaveStore {
         // The sheets go back in before the migration: migrations see the whole save.
         const sheets = await this.readSheets(db.value, careerId, record);
         if (!sheets.ok) return sheets;
-        const migrated = migrateSave(withSheets(decoded.value, sheets.value.entries));
+        const migrated = migrateSave(
+          withSheets(decoded.value, sheets.value.entries),
+          this.migrations,
+        );
         if (!migrated.ok) {
           if (migrated.error === 'save-too-new') return fail('save-too-new', migrated.detail);
           skipped.push({ seq: at, problem: migrated.error });
           continue;
         }
         // (T-044 renames the retired names here, between the migration and the validation.)
-        if (!isCareerSave(migrated.value, careerId)) {
-          skipped.push({ seq: at, problem: 'incoherent' });
+        // A save of the current format trusts its rows of sheets by their hashes (they were
+        // checked when written); a migrated one is checked in full.
+        const fromVersion = schemaVersionOf(decoded.value) ?? record.schemaVersion;
+        const current = fromVersion === SAVE_SCHEMA_VERSION;
+        const valid = parseCareerSave(migrated.value, {
+          careerId,
+          check: current ? 'open' : 'full',
+        });
+        if (!valid.ok) {
+          skipped.push({ seq: at, problem: 'invalid-save' });
           continue;
         }
-        const game = migrated.value.game;
+        const game = valid.value.game;
         const lost =
           roundIndex(summary.season, summary.round) - roundIndex(game.season, game.round);
         return ok({
-          save: migrated.value,
+          save: valid.value,
           seq: at,
           headSeq: summary.headSeq,
           skipped,
           roundsLost: Math.max(0, lost),
-          fromVersion: record.schemaVersion,
-          sheets: { season: record.season, rounds: sheets.value.rounds },
+          fromVersion,
+          sheets: { season: record.season, rounds: current ? sheets.value.rounds : {} },
           missingSheetRounds: sheets.value.missing,
         });
       }
@@ -652,26 +690,40 @@ export class SaveStore {
   }
 
   /**
-   * Undoes a write whose check failed: the new snapshot goes and, if it is still the head (no other
-   * tab wrote after it), the pointer returns. `false` when the removal itself failed.
+   * Undoes a write whose check failed, in one transaction: the new snapshot goes; if it is still
+   * the head (no other tab wrote after it), the pointer returns; and each row it replaced with
+   * other content gets the old one back, if the key still holds the new row (by its SHA-256:
+   * another tab may have written after). `false` when the undo itself failed.
    */
   private async rollback(
     db: SaveDb,
     id: string,
     seq: number,
     previous: CareerSummary | undefined,
+    rows: readonly MatchSheetRecord[],
+    replaced: readonly MatchSheetRecord[],
   ): Promise<boolean> {
     const tx = begin(db);
     if (typeof tx === 'string') return false;
     const done = tx.done;
     try {
       const careers = tx.objectStore('careers');
+      const sheets = tx.objectStore('matchSheets');
       await tx.objectStore('snapshots').delete([id, seq]);
       const current = await careers.get(id);
       if (current?.headSeq === seq) {
         if (previous === undefined) await careers.delete(id);
         else await careers.put(previous);
       }
+      const written = new Map(rows.map((row) => [row.round, row.sha256]));
+      const now = await requests(
+        replaced.map((old) => () => sheets.get([old.careerId, old.season, old.round])),
+      );
+      await requests(
+        replaced
+          .filter((old, i) => isStoredBlob(now[i]) && now[i].sha256 === written.get(old.round))
+          .map((old) => () => sheets.put(old)),
+      );
       await done;
       return true;
     } catch {

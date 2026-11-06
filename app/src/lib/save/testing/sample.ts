@@ -1,10 +1,9 @@
-import clubsData from '../../../data/clubs.serie-a.json';
 import {
+  endSeason,
   matchSheet,
-  newGame,
   playRound,
   roundRecap,
-  type ClubDef,
+  startNextSeason,
   type Fixture,
   type FixtureId,
   type GameState,
@@ -13,29 +12,52 @@ import {
 } from '../../../engine/index.ts';
 import { gameIdentitySource } from '../../generators/identity.ts';
 import { loadGameParams } from '../../params.ts';
+import { newCareerGame } from '../new-career.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave, type NewsRef } from '../schema.ts';
 
 /*
  * A career save made the way the game will make it (T-023 owns the real `CareerService`): the 20
- * clubs of the Série A, the game's identity source (real generated names, ADR-0012), the bundled
- * parameters and `rounds` rounds played, with the lean report of the last one and the sheets of
- * every match played this season (ADR-0019). For the save tests and the write measurement of the
- * end-of-season snapshot (scripts/measure-save/); never imported by the game.
+ * clubs of the latest set of club data (its base season is the year of season 1, US-066), the
+ * game's identity source (real generated names, ADR-0012), the bundled parameters and `rounds`
+ * rounds played, with the lean report of the last one and the sheets of every match played this
+ * season (ADR-0019). With `season: 2` the whole first season is played and closed first
+ * (`pastSeasons`, the season turn). For the save tests, the v1 fixture and the write measurement
+ * of the end-of-season snapshot (scripts/measure-save/); never imported by the game.
  *
  * News and social posts are synthetic references (the templates come with the content tasks):
  * 4 of each per round, as an estimate of what the career keeps.
  */
 
 export const SAMPLE_CAREER_ID = '00000000-0000-4000-8000-000000000018';
+
+/**
+ * A UUID v4 for a test label: the tests name their careers ("a", "healthy"), and the save's
+ * `careerId` is a UUID (validate.ts). Two FNV-1a hashes of the label make the last 12 digits.
+ */
+export function careerIdOf(label: string): string {
+  const fnv = (basis: number) => {
+    let h = basis;
+    for (const byte of new TextEncoder().encode(label)) h = Math.imul(h ^ byte, 0x01000193) >>> 0;
+    return h;
+  };
+  const tail = (fnv(0x811c9dc5).toString(16).padStart(8, '0') + fnv(0x050c5d1f).toString(16))
+    .padEnd(12, '0')
+    .slice(0, 12);
+  return `00000000-0000-4000-8000-${tail}`;
+}
 const SAMPLE_CLOCK = '2026-11-06T12:00:00.000Z';
+/** A SHA-256 in the form of `paramsHash` (the real one is of the canonical params JSON). */
+export const SAMPLE_PARAMS_HASH = 'f'.repeat(64);
 
 export interface SampleOptions {
   readonly seed?: number;
-  /** Rounds played, 0..38. */
+  /** Rounds played in the current season, 0..38. */
   readonly rounds?: number;
   readonly careerId?: string;
   /** Index of the coach's club in the data (0..19). */
   readonly club?: number;
+  /** 2: the first season played whole and turned, then `rounds` rounds of the second. */
+  readonly season?: 1 | 2;
 }
 
 function refs(kind: string, round: number): NewsRef[] {
@@ -48,39 +70,50 @@ function refs(kind: string, round: number): NewsRef[] {
 }
 
 export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
-  const { seed = 2026, rounds = 38, careerId = SAMPLE_CAREER_ID, club = 0 } = options;
-  const clubs = clubsData as unknown as ClubDef[];
+  const { seed = 2026, rounds = 38, careerId = SAMPLE_CAREER_ID, club = 0, season = 1 } = options;
   const params = loadGameParams();
-  const created = newGame(
-    { seed, year: 2026, realism: 'full' },
-    clubs,
-    params,
-    gameIdentitySource(),
-  );
-  if (!created.ok) throw new Error(`newGame: ${created.error}`);
-  let state: GameState = created.value;
-  const clubId = clubs[club]!.id;
-  const matchSheets: Record<FixtureId, MatchSheet> = {};
+  const identities = gameIdentitySource();
+  const created = newCareerGame({ seed, realism: 'full' }, params, identities);
+  if (!created.ok) throw new Error(`newCareerGame: ${created.error}`);
+  const { baseSeason } = created.value;
+  let state: GameState = created.value.game;
+  const clubId = Object.keys(state.clubs)[club]!;
+  let matchSheets: Record<FixtureId, MatchSheet> = {};
   const news: NewsRef[] = [];
   const social: NewsRef[] = [];
   let lastRound: RoundRecap | undefined;
-  for (let round = 1; round <= rounds; round++) {
-    const played = playRound(state, params, {
-      round,
-      sheets: {},
-      commands: {},
-      fanDecisions: {},
-      coaches: { [clubId]: 'result' },
-    });
-    if (!played.ok) throw new Error(`playRound ${round}: ${played.error}`);
-    state = played.value.state;
-    lastRound = roundRecap(played.value.report);
-    for (const result of played.value.report.results) {
-      matchSheets[result.fixtureId] = matchSheet(result);
+  const play = (count: number) => {
+    for (let round = 1; round <= count; round++) {
+      const played = playRound(state, params, {
+        round,
+        sheets: {},
+        commands: {},
+        fanDecisions: {},
+        coaches: { [clubId]: 'result' },
+      });
+      if (!played.ok) throw new Error(`playRound ${round}: ${played.error}`);
+      state = played.value.state;
+      lastRound = roundRecap(played.value.report);
+      for (const result of played.value.report.results) {
+        matchSheets[result.fixtureId] = matchSheet(result);
+      }
+      const at = (state.season - 1) * 38 + round;
+      news.push(...refs('news', at));
+      social.push(...refs('social', at));
     }
-    news.push(...refs('news', round));
-    social.push(...refs('social', round));
+  };
+  if (season === 2) {
+    play(38);
+    const ended = endSeason(state, params, [clubId]);
+    if (!ended.ok) throw new Error(`endSeason: ${ended.error}`);
+    const next = startNextSeason(ended.value.state, params, identities);
+    if (!next.ok) throw new Error(`startNextSeason: ${next.error}`);
+    // The CareerService clears the sheets and the recap at the turn (ADR-0019).
+    state = next.value;
+    matchSheets = {};
+    lastRound = undefined;
   }
+  play(rounds);
   return {
     schemaVersion: SAVE_SCHEMA_VERSION,
     careerId,
@@ -88,7 +121,7 @@ export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
     updatedAt: SAMPLE_CLOCK,
     appVersion: '0.0.1',
     engineVersion: state.engineVersion,
-    paramsHash: 'sample',
+    paramsHash: SAMPLE_PARAMS_HASH,
     career: {
       coachName: 'Treinador',
       clubId,
@@ -98,7 +131,7 @@ export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
       phraseMemory: Array.from({ length: 200 }, (_, i) => `variant-${i}`),
       pendingFanDecision: 0,
       exportReminder: true,
-      baseSeason: 2026,
+      baseSeason,
       ...(lastRound === undefined ? {} : { lastRound }),
       matchSheets,
     },
@@ -113,7 +146,7 @@ function withoutResult(fixture: Fixture): Fixture {
 /**
  * A season save as it was after `played` rounds: results and sheets of the later rounds removed,
  * `game.round = played + 1`. The rest of the state stays the one of `save`, which the store does
- * not read. `inSeason` relabels it as another season (for the season turn).
+ * not read. `inSeason` relabels it as another season (for the season turn), with its year.
  */
 export function sampleAtRound(
   save: CareerSave,
@@ -132,6 +165,12 @@ export function sampleAtRound(
     careerId,
     updatedAt: `2026-11-06T${hour}:${String(played).padStart(2, '0')}:00.000Z`,
     career: { ...save.career, matchSheets },
-    game: { ...save.game, season: inSeason, round: played + 1, fixtures },
+    game: {
+      ...save.game,
+      season: inSeason,
+      year: save.game.year + inSeason - save.game.season,
+      round: played + 1,
+      fixtures,
+    },
   };
 }
