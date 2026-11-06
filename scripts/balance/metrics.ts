@@ -126,8 +126,8 @@ export function weakestClub(clubs: readonly ClubDef[]): ClubId | undefined {
   for (const c of clubs) {
     if (
       weakest === undefined ||
-      c.strength < weakest.strength ||
-      (c.strength === weakest.strength && c.id < weakest.id)
+      (c.strength ?? 0) < (weakest.strength ?? 0) ||
+      ((c.strength ?? 0) === (weakest.strength ?? 0) && c.id < weakest.id)
     )
       weakest = c;
   }
