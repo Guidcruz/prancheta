@@ -509,6 +509,12 @@ describe('the targets of the ladder with the higher bottom', () => {
     ).toBe('b');
   });
 
+  it('resolves a strength tie by id whatever the input order (Chapecao before Remador)', () => {
+    const tied = (id: string) => ({ id, shortName: id, strength: 64 }) as unknown as ClubDef;
+    expect(weakestClub([tied('remador'), tied('chapecao')])).toBe('chapecao');
+    expect(weakestClub([tied('chapecao'), tied('remador')])).toBe('chapecao');
+  });
+
   it('judges "every club champion" only from 1000 seasons', () => {
     expect(byId(run(200, ['big1']).rows, 'everyChampion')).toMatchObject({
       status: 'n/a',
