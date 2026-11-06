@@ -1,6 +1,6 @@
 # Avatares dos jogadores (T-027)
 
-> Direção de arte e limites para o `developer` implementar `app/src/lib/generators/avatar.ts` (US-005, ADR-0012). Folha de exemplo: [`avatares-exemplo.svg`](avatares-exemplo.svg), gerada por `node scripts/avatar-sheet.mjs --sheet` (protótipo descartável; `--check` imprime as medidas citadas aqui). O protótipo tem o catálogo, o codec, o sorteador e o desenho funcionando e serve de referência de formas, não de código de produção.
+> Direção de arte e limites para o `developer` implementar `app/src/lib/generators/face.ts` (catálogo, pesos, codec, `faceSpecFromSeed`, tabela de retirados; sem SVG) e `app/src/lib/generators/avatar.ts` (só `renderFace`) (US-005, ADR-0012). Folha de exemplo: [`avatares-exemplo.svg`](avatares-exemplo.svg), gerada por `node scripts/avatar-sheet.mjs --sheet` (protótipo descartável; `--check` imprime as medidas citadas aqui). O protótipo tem o catálogo, o codec, o sorteador e o desenho funcionando e serve de referência de formas, não de código de produção.
 
 ## 1. Estilo do rosto
 
@@ -35,7 +35,7 @@ Tudo é combinação de formas simples, 12 campos, o que dá cerca de 1 bilhão 
 
 ### A idade entra na spec? Sim, só como contexto de sorteio, nunca guardada
 
-`faceSpecFromSeed(seed, ctx)` recebe `ctx = { age, nationality }` e usa a idade **na criação** para pesar cabelo e barba. A `FaceSpec` não guarda a idade; o rosto fica fixo no save (ADR-0012, e o envelhecimento visual está fora do escopo da US-005). Efeito honesto: um jogador criado aos 17 anos continua com cara de 17 aos 32 (a base nova nasce com 17 a 19 anos; ver "decisões"). O que a idade faz no sorteio (faixas ≤23, 24 a 29, ≥30):
+`faceSpecFromSeed(seed, ctx)` recebe `ctx = { age, nationality }` e usa a idade **na criação** para pesar cabelo e barba. A `FaceSpec` não guarda a idade; o rosto fica fixo no save (ADR-0012, e o envelhecimento visual está fora do escopo da US-005). Efeito honesto: um jogador criado aos 17 anos continua com cara de 17 aos 32 (a base nova nasce com 17 a 19 anos). **Um rosto existente nunca é gerado de novo**, nem com a idade da criação nem com a atual: `faceSpecFromSeed` só roda quando o jogador é criado, e depois só vale `Player.face`. O que a idade faz no sorteio (faixas ≤23, 24 a 29, ≥30):
 
 - **Cabelo**: careca e entradas só a partir de 24 anos; coroa e mais calvície a partir de 30 (tabelas abaixo).
 - **Cor**: grisalho com probabilidade `min(30%, (idade − 29) × 6%)` e branco `min(8%, (idade − 32) × 2%)` (só 33 ou mais); antes disso, nada. Descolorido (9) vale em qualquer idade, é moda de jogador.
@@ -83,11 +83,11 @@ face = "1" + skin + shape + hairStyle + hairColor + brows + eyes + nose + mouth 
 - **Compatibilidade**: o decodificador lê por posição e trata caractere ausente (rosto gravado antes de um campo existir) como `0`, que é sempre o valor neutro; por isso acrescentar campo no fim **não** exige subir a versão. A versão `1` só mudaria se a ordem dos campos mudasse, o que é proibido; uma versão `2` seria um layout novo e o decodificador de `1` continuaria existindo.
 - **O decodificador nunca lança**: texto que não casa com `^[0-9a-z]{2,32}$`, versão desconhecida ou índice fora do catálogo vira `0` no campo (depois da tabela de retirados abaixo). Isso protege contra save editado à mão sem quebrar a tela.
 - **`encodeFace` e `decodeFace` são inversas** para todo `FaceSpec` válido; `faceSpecFromSeed` é pura (mesmos `seed`, `age` e `nationality`, mesmo resultado) e nunca usa `Math.random` nem data.
-- **Assinatura**: `faceSpecFromSeed(seed: number, ctx: { age: number; nationality: string }): FaceSpec`, com o segundo argumento a mais em relação ao texto do ADR-0012 (ver "decisões"); `renderFace(face: string | FaceSpec, size: number, opts?: { shirt?: string; label?: string }): string`. A tela chama `renderFace(player.face, …)`, nunca `faceSpecFromSeed`.
+- **Assinatura**: `faceSpecFromSeed(seed: number, ctx: { age: number; nationality: string }): FaceSpec`, com o segundo argumento aprovado pelo architect (nota de 2026-11-06 no ADR-0012). O pedido `squad` da `IdentitySource` ganha `ages: readonly number[]`, uma idade por jogador, e é daí que vem `age`; `renderFace(face: string | FaceSpec, size: number, opts?: { shirt?: string; label?: string }): string`. A tela chama `renderFace(player.face, …)`, nunca `faceSpecFromSeed`.
 
 ### Tabela de traços retirados
 
-Em `avatar.ts`, ao lado do catálogo:
+Em `face.ts`, ao lado do catálogo (`avatar.ts` só desenha):
 
 ```ts
 /** Retired trait indices. A retired index is never reused; it maps to a live one. */
