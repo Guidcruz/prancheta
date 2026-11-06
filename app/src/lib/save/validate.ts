@@ -35,9 +35,10 @@ import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
  * what a snapshot passes after the migration when it opens, what a save passes before it is
  * written, and what an imported file will pass (T-020), so it reads untrusted input:
  *
- * - every object is strict (an unknown key fails), every text and list has a length bound, and a
- *   key `__proto__`, `constructor` or `prototype` anywhere fails (valibot drops those keys
- *   silently, which would hide them);
+ * - every object is strict (an unknown key fails), every text and list has a length bound, and,
+ *   in the `full` check of untrusted input and in every row of sheets, a key `__proto__`,
+ *   `constructor` or `prototype` anywhere fails (valibot drops those keys from its output
+ *   silently, which keeps them harmless but would hide them);
  * - the player is checked by the engine's own `validatePlayer` and the club definitions by
  *   `validateClubs`, never by ranges typed again here (docs/02-architecture.md, 4.1). The closed
  *   lists and ranges the engine exports (formations, positions, ratings...) are read from it;
@@ -592,6 +593,8 @@ export interface SaveIssue {
 /**
  * How much of a save is read: `full` (an imported file, a migrated save), `open` (a snapshot of
  * the current format, with its rows of sheets) or `write` (a save the game is about to store).
+ * `open` and `write` read data this game made and the SHA-256 protects, so they skip the search
+ * for prototype keys, which costs a third of the `open` check (valibot's output never has them).
  */
 export type SaveCheck = 'full' | 'open' | 'write';
 
@@ -705,7 +708,7 @@ export function parseCareerSave(
 ): SaveResult<CareerSave, 'invalid-save'> {
   const check = options.check ?? 'full';
   try {
-    if (check !== 'write' && hasForbiddenKey(raw)) {
+    if (check === 'full' && hasForbiddenKey(raw)) {
       return fail('invalid-save', { path: '', problem: 'forbidden-key' } satisfies SaveIssue);
     }
     const parsed = v.safeParse(SCHEMAS[check], raw, { abortEarly: true });

@@ -187,7 +187,7 @@ describe('a hostile or broken save is refused, never thrown', () => {
     expect(refused(change())).toEqual({ path, problem });
   });
 
-  it('refuses a key that could reach a prototype, at any depth', () => {
+  it('refuses a key that could reach a prototype, at any depth (full check)', () => {
     const text = JSON.stringify(good);
     for (const hostile of [
       text.replace('"career":{', '"career":{"__proto__":{"admin":true},'),
@@ -306,6 +306,18 @@ describe('the lighter checks', () => {
     expect(refused(extra, { check: 'full' }).problem).toBe('strict_object');
     const moved = set(`career.matchSheets.${fixtureId}.fixtureId`, 'elsewhere');
     expect(refused(moved, { check: 'open' }).problem).toBe('unknown-fixture');
+  });
+
+  it('opening does not search for prototype keys, and its output never carries one', () => {
+    const hostile = JSON.parse(
+      JSON.stringify(good).replace('"career":{', '"career":{"__proto__":{"admin":true},'),
+    ) as Json;
+    expect(Object.hasOwn(hostile.career as Json, '__proto__')).toBe(true);
+    const opened = parseCareerSave(hostile, { check: 'open' });
+    if (!opened.ok) throw new Error('refused');
+    expect(Object.hasOwn(opened.value.career, '__proto__')).toBe(false);
+    expect(Object.getPrototypeOf(opened.value.career)).toBe(Object.prototype);
+    expect((opened.value.career as unknown as Json).admin).toBeUndefined();
   });
 
   it('a row of sheets is checked in full, with each key its own fixture', () => {
