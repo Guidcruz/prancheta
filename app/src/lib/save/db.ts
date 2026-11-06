@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { CareerSummary, SnapshotRecord } from './schema.ts';
+import type { CareerSummary, MatchSheetRecord, SnapshotRecord } from './schema.ts';
 
 /*
  * The IndexedDB of the saves (docs/02-architecture.md, 4.2; ADR-0006). Only app/src/lib/save/
@@ -8,8 +8,9 @@ import type { CareerSummary, SnapshotRecord } from './schema.ts';
  */
 
 /**
- * Structure version: 1 has `careers`, `snapshots`, `kv` and `errors`. Etapa 1b adds
- * `leagueCache` in version 2.
+ * Structure version: 1 has `careers`, `snapshots`, `matchSheets`, `kv` and `errors` (the
+ * `matchSheets` store came with T-018, still in version 1: no database existed outside the tests
+ * before it). Etapa 1b adds `leagueCache` in version 2.
  */
 export const SAVE_DB_VERSION = 1;
 
@@ -28,6 +29,7 @@ export interface ErrorRecord {
 export interface SaveDbSchema extends DBSchema {
   careers: { key: string; value: CareerSummary };
   snapshots: { key: [string, number]; value: SnapshotRecord };
+  matchSheets: { key: [string, number, number]; value: MatchSheetRecord };
   kv: { key: string; value: KvRecord };
   errors: { key: number; value: ErrorRecord };
 }
@@ -57,12 +59,14 @@ export function saveDbNameFor(env: string | undefined): 'prancheta' | 'prancheta
 /**
  * Opens (creating or upgrading) the database. Throws what IndexedDB throws when it is not
  * available (private mode of some browsers, storage disabled); the store turns it into
- * `storage-unavailable`. `onClosed` runs when this connection closes because another tab opens a
- * newer structure, or because the browser ended it: the caller opens again on its next access.
+ * `storage-unavailable` (or `app-outdated` for a newer structure). `onClosed` runs when this
+ * connection closes because another tab opens a newer structure, or because the browser ended it:
+ * the caller opens again on its next access, and drops only the connection that closed (the
+ * argument), never a newer one opened in the meantime.
  */
 export function openSaveDb(
   name: string = SAVE_DB_NAME,
-  onClosed: () => void = () => undefined,
+  onClosed: (closed: Promise<SaveDb>) => void = () => undefined,
 ): Promise<SaveDb> {
   let db: SaveDb | undefined;
   const opening = openDB<SaveDbSchema>(name, SAVE_DB_VERSION, {
@@ -70,6 +74,7 @@ export function openSaveDb(
       if (oldVersion < 1) {
         upgrading.createObjectStore('careers', { keyPath: 'id' });
         upgrading.createObjectStore('snapshots', { keyPath: ['careerId', 'seq'] });
+        upgrading.createObjectStore('matchSheets', { keyPath: ['careerId', 'season', 'round'] });
         upgrading.createObjectStore('kv', { keyPath: 'key' });
         upgrading.createObjectStore('errors', { keyPath: 'id', autoIncrement: true });
       }
@@ -77,9 +82,10 @@ export function openSaveDb(
     blocking() {
       // Never hold back the upgrade of another tab (a newer build): close and reopen later.
       db?.close();
-      onClosed();
+      onClosed(connection);
     },
-    terminated: onClosed,
+    terminated: () => onClosed(connection),
   });
-  return opening.then((opened) => (db = opened));
+  const connection = opening.then((opened) => (db = opened));
+  return connection;
 }

@@ -1,10 +1,13 @@
-// Write measurement of the end-of-season save (T-018; ADR-0019, "gatilho do store próprio"):
-// bundles page.ts with Vite (PRANCHETA_ENV=test, so the store uses the
-// database prancheta-test), serves it on 127.0.0.1, opens it in headless Chromium (Playwright),
-// builds the save of a whole season, turns on the CPU slowdown and times the safe write.
-// Usage: PRANCHETA_ENV=test npm run measure:save -- [--runs 15] [--warmup 3] [--cpu 4]
-// Needs the Chromium of Playwright once: npx playwright install chromium
-// Exit codes: 0 within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test); 3 failure.
+// Save measurement of the end of the season (T-018; docs/02-architecture.md, 5): bundles page.ts
+// with Vite (PRANCHETA_ENV=test, so the store uses the database prancheta-test), serves it on
+// 127.0.0.1, opens it in headless Chromium (Playwright), builds the save of a whole season, turns
+// on the CPU slowdown and times the safe write (match sheets out of the snapshot) and the opening.
+// Usage: PRANCHETA_ENV=test npm run measure:save -- [--runs 40] [--warmup 5] [--cpu 4]
+//        [--chromium <path>]
+// Chromium: the one of Playwright (once: npx playwright install chromium), or a local Chromium
+// given by PRANCHETA_CHROMIUM=<path> or --chromium <path> (the flag wins).
+// Exit codes: 0 write p90 within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test);
+// 3 failure, or a request that tried to leave 127.0.0.1 (blocked and counted).
 import { createServer, type Server } from 'node:http';
 import { mkdtemp, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -16,13 +19,34 @@ export interface MeasureArgs {
   runs: number;
   warmup: number;
   cpu: number;
+  /** A local Chromium to launch instead of Playwright's (`executablePath`). */
+  chromium?: string;
 }
 
-/** Parses the options; a message (pt-BR) when they are wrong. */
-export function parseArgs(argv: readonly string[]): MeasureArgs | string {
-  const args: MeasureArgs = { runs: 15, warmup: 3, cpu: 4 };
+const USAGE =
+  'Uso: PRANCHETA_ENV=test npm run measure:save -- [--runs 40] [--warmup 5] [--cpu 4] [--chromium <caminho>]';
+
+/**
+ * Parses the options; a message (pt-BR) when they are wrong. `PRANCHETA_CHROMIUM` gives the
+ * Chromium when `--chromium` does not.
+ */
+export function parseArgs(
+  argv: readonly string[],
+  env: Readonly<Record<string, string | undefined>> = {},
+): MeasureArgs | string {
+  const args: MeasureArgs = { runs: 40, warmup: 5, cpu: 4 };
+  const fromEnv = env.PRANCHETA_CHROMIUM;
+  if (fromEnv !== undefined && fromEnv !== '') args.chromium = fromEnv;
   for (let i = 0; i < argv.length; i += 2) {
     const flag = argv[i];
+    if (flag === '--chromium') {
+      const path = argv[i + 1];
+      if (path === undefined || path === '' || path.startsWith('--')) {
+        return `caminho inválido para --chromium: ${String(path)}`;
+      }
+      args.chromium = path;
+      continue;
+    }
     const value = Number(argv[i + 1]);
     const key =
       flag === '--runs'
@@ -97,16 +121,30 @@ interface MeasureWindow {
   };
 }
 
-async function measureInChromium(url: string, args: MeasureArgs): Promise<MeasurementLike> {
+export interface ChromiumRun {
+  readonly measurement: MeasurementLike;
+  /** Requests to anywhere but the page's origin, aborted. */
+  readonly blocked: number;
+}
+
+async function measureInChromium(url: string, args: MeasureArgs): Promise<ChromiumRun> {
   const { chromium } = await import('@playwright/test');
-  const browser = await chromium.launch({ headless: true });
+  const browser = await chromium.launch({
+    headless: true,
+    // `gc()` for the page to collect the garbage of building the season before measuring.
+    args: ['--js-flags=--expose-gc'],
+    ...(args.chromium === undefined ? {} : { executablePath: args.chromium }),
+  });
+  let blocked = 0;
   try {
     const context = await browser.newContext({ serviceWorkers: 'block' });
     const origin = new URL(url).origin;
-    // Nothing leaves the machine (docs/03-test-plan.md, 3, "Rede").
-    await context.route('**/*', (route) =>
-      new URL(route.request().url()).origin === origin ? route.continue() : route.abort(),
-    );
+    // Nothing leaves the machine (docs/03-test-plan.md, 3, "Rede"): blocked, and counted.
+    await context.route('**/*', (route) => {
+      if (new URL(route.request().url()).origin === origin) return route.continue();
+      blocked++;
+      return route.abort();
+    });
     const page = await context.newPage();
     await page.goto(url);
     await page.waitForFunction(() => 'measureSave' in window);
@@ -114,10 +152,11 @@ async function measureInChromium(url: string, args: MeasureArgs): Promise<Measur
     await page.evaluate(() => (window as unknown as MeasureWindow).measureSave.prepare());
     const cdp = await context.newCDPSession(page);
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: args.cpu });
-    return await page.evaluate(
+    const measurement = await page.evaluate(
       (options) => (window as unknown as MeasureWindow).measureSave.measure(options),
       { runs: args.runs, warmup: args.warmup },
     );
+    return { measurement, blocked };
   } finally {
     await browser.close();
   }
@@ -133,11 +172,9 @@ export async function main(
     );
     return 2;
   }
-  const args = parseArgs(argv);
+  const args = parseArgs(argv, env);
   if (typeof args === 'string') {
-    process.stderr.write(
-      `${args}\nUso: PRANCHETA_ENV=test npm run measure:save -- [--runs 15] [--warmup 3] [--cpu 4]\n`,
-    );
+    process.stderr.write(`${args}\n${USAGE}\n`);
     return 2;
   }
   const dir = await mkdtemp(join(tmpdir(), 'prancheta-measure-save-'));
@@ -146,12 +183,18 @@ export async function main(
     await bundle(dir);
     const served = await serve(dir);
     server = served.server;
-    const measurement = await measureInChromium(served.url, args);
+    const { measurement, blocked } = await measureInChromium(served.url, args);
     if (measurement.dbName !== 'prancheta-test') {
       process.stderr.write(`banco errado na página: ${measurement.dbName}\n`);
       return 3;
     }
     process.stdout.write(formatReport(measurement, args.cpu));
+    if (blocked > 0) {
+      process.stderr.write(
+        `a página tentou sair de 127.0.0.1: ${blocked} requisição(ões) bloqueada(s); medição inválida\n`,
+      );
+      return 3;
+    }
     return withinLimit(measurement) ? 0 : 1;
   } catch (error) {
     process.stderr.write(

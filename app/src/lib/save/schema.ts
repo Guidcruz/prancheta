@@ -100,16 +100,53 @@ export interface CareerSummary {
   readonly schemaVersion: number;
 }
 
-/** A row of the `snapshots` store, keyed by `[careerId, seq]`. */
+/**
+ * A row of the `snapshots` store, keyed by `[careerId, seq]`. The `blob` is the save with
+ * `career.matchSheets: {}`: the sheets live in the `matchSheets` store, one row per round, and
+ * `sheets` says which rows this snapshot uses (docs/02-architecture.md, 4.2, "Súmulas fora do
+ * snapshot").
+ */
 export interface SnapshotRecord {
   readonly careerId: string;
   readonly seq: number;
   readonly schemaVersion: number;
   readonly savedAt: string;
+  /** `GameState.season` and `GameState.round` of the save. */
+  readonly season: number;
+  readonly round: number;
+  /**
+   * Round → SHA-256 of the row of match sheets this snapshot uses, for every round of `season`
+   * with sheets. Outside the hashed JSON on purpose: a row counts only when its hash is this one.
+   */
+  readonly sheets: Readonly<Record<number, string>>;
   /** SHA-256, lowercase hex, of the UTF-8 JSON of the save (before compression). */
   readonly sha256: string;
   /** Length in bytes of that JSON: decompression must give exactly this many. */
   readonly bytes: number;
   /** The gzip of the JSON. Bytes, not a `Blob`: the same in every browser's IndexedDB. */
   readonly blob: Uint8Array<ArrayBuffer>;
+}
+
+/**
+ * A row of the `matchSheets` store, keyed by `[careerId, season, round]`: the gzip of the JSON of
+ * `Record<FixtureId, MatchSheet>` with the sheets of the matches of that round.
+ */
+export interface MatchSheetRecord {
+  readonly careerId: string;
+  readonly season: number;
+  readonly round: number;
+  /** SHA-256, lowercase hex, of the JSON (the value in the snapshot's `sheets`). */
+  readonly sha256: string;
+  readonly bytes: number;
+  readonly blob: Uint8Array<ArrayBuffer>;
+}
+
+/**
+ * The index of the rows of match sheets that a snapshot uses (`SnapshotRecord.sheets` with its
+ * season). The store returns it from `openCareer` and `writeSnapshot`, and the caller hands it
+ * back as the `base` of the next write: rounds already in it are inherited, not written again.
+ */
+export interface SheetIndex {
+  readonly season: number;
+  readonly rounds: Readonly<Record<number, string>>;
 }

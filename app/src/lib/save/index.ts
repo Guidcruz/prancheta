@@ -11,12 +11,23 @@ export {
   type CareerSave,
   type CareerSaveV1,
   type CareerSummary,
+  type MatchSheetRecord,
   type NewsRef,
+  type SheetIndex,
   type SnapshotRecord,
   type SocialRef,
 } from './schema.ts';
 export type { SaveResult } from './result.ts';
-export { decodeSave, encodeSave, gunzip, gzip, sha256Hex, type EncodedSave } from './codec.ts';
+export {
+  codecSupported,
+  decodeSave,
+  encodeSave,
+  equalBytes,
+  gunzip,
+  gzip,
+  sha256Hex,
+  type EncodedSave,
+} from './codec.ts';
 export { SAVE_DB_NAME, SAVE_DB_VERSION } from './db.ts';
 export { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './migrations/index.ts';
 export {
@@ -27,5 +38,6 @@ export {
   type SnapshotProblem,
   type StorageError,
   type WriteError,
+  type WriteGuard,
   type WrittenSnapshot,
 } from './store.ts';

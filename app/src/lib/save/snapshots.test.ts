@@ -1,7 +1,5 @@
-import 'fake-indexeddb/auto';
-import { IDBFactory } from 'fake-indexeddb';
 import { openDB } from 'idb';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import clubsData from '../../data/clubs.serie-a.json';
 import brLists from '../../content/names/br.json';
 import { newGame, type ClubDef, type GameState } from '../../engine/index.ts';
@@ -9,73 +7,34 @@ import { createIdentitySource } from '../generators/identity.ts';
 import type { NameLists } from '../generators/names.ts';
 import { loadGameParams } from '../params.ts';
 import { encodeSave, gzip, sha256Hex } from './codec.ts';
-import { SAVE_DB_NAME, SAVE_DB_VERSION, saveDbNameFor, type SaveDbSchema } from './db.ts';
-import { KEPT_SNAPSHOTS, MAX_CAREERS, type CareerSave, type SnapshotRecord } from './schema.ts';
+import { SAVE_DB_NAME, saveDbNameFor } from './db.ts';
+import { KEPT_SNAPSHOTS, MAX_SAVE_BYTES, type CareerSave, type SnapshotRecord } from './schema.ts';
 import { SaveStore } from './store.ts';
-import { SAMPLE_CAREER_ID, sampleCareerSave } from './testing/sample.ts';
+import {
+  DB,
+  base,
+  flipByte,
+  mustEncode,
+  onPut,
+  raw,
+  season,
+  snapshotSeqs,
+  store,
+  tamper,
+  useFreshDatabase,
+  variant,
+} from './testing/idb.ts';
+import { SAMPLE_CAREER_ID } from './testing/sample.ts';
 
 /*
- * Integration of the save layer with fake-indexeddb (docs/03-test-plan.md, 2 and 6): US-032 (3
- * versions, interrupted write, corrupted version, all corrupted), US-034 (list, independent
- * careers, delete, limit of 10), the test database and ADR-0012 (names kept on reopening).
+ * US-032 with fake-indexeddb (docs/03-test-plan.md, 2 and 6): the database and the test database,
+ * the safe write with 3 versions (interrupted write, full disk, check by bytes and rollback,
+ * another tab), open with fallback (corrupted version, all corrupted, newer build) and ADR-0012
+ * (names kept on reopening). The rows of match sheets are in sheets.test.ts; the list of careers
+ * (US-034) in careers.test.ts.
  */
 
-const DB = 'prancheta-unit';
-const stores: SaveStore[] = [];
-
-function store(dbName = DB): SaveStore {
-  const created = new SaveStore({ dbName, now: () => new Date('2026-11-06T12:00:00.000Z') });
-  stores.push(created);
-  return created;
-}
-
-beforeEach(() => {
-  (globalThis as { indexedDB: IDBFactory }).indexedDB = new IDBFactory();
-});
-
-afterEach(async () => {
-  vi.restoreAllMocks();
-  await Promise.all(stores.splice(0).map((s) => s.close()));
-});
-
-/** A new game (round 1), built once; variants copy it with another id, round or date. */
-const base = sampleCareerSave({ rounds: 0 });
-
-function variant(
-  round: number,
-  careerId = SAMPLE_CAREER_ID,
-  updatedAt = `2026-11-06T12:${String(round).padStart(2, '0')}:00.000Z`,
-): CareerSave {
-  return { ...base, careerId, updatedAt, game: { ...base.game, round } };
-}
-
-async function raw() {
-  return openDB<SaveDbSchema>(DB, SAVE_DB_VERSION);
-}
-
-async function snapshotSeqs(careerId = SAMPLE_CAREER_ID): Promise<number[]> {
-  const db = await raw();
-  const keys = await db.getAllKeys(
-    'snapshots',
-    IDBKeyRange.bound([careerId, 0], [careerId, Infinity]),
-  );
-  db.close();
-  return keys.map((k) => k[1]);
-}
-
-async function tamper(seq: number, change: (r: SnapshotRecord) => SnapshotRecord) {
-  const db = await raw();
-  const record = await db.get('snapshots', [SAMPLE_CAREER_ID, seq]);
-  await db.put('snapshots', change(record!));
-  db.close();
-}
-
-const flipByte = (r: SnapshotRecord): SnapshotRecord => {
-  const blob = r.blob.slice();
-  const at = blob.length >> 1;
-  blob[at] = blob[at]! ^ 0xff;
-  return { ...r, blob };
-};
+useFreshDatabase();
 
 describe('database', () => {
   it('uses prancheta, or prancheta-test only with PRANCHETA_ENV=test', () => {
@@ -91,10 +50,17 @@ describe('database', () => {
   it('creates the stores of 4.2 with their keys', async () => {
     await store().listCareers();
     const db = await raw();
-    expect([...db.objectStoreNames].sort()).toEqual(['careers', 'errors', 'kv', 'snapshots']);
-    const tx = db.transaction(['careers', 'snapshots', 'kv', 'errors']);
+    expect([...db.objectStoreNames].sort()).toEqual([
+      'careers',
+      'errors',
+      'kv',
+      'matchSheets',
+      'snapshots',
+    ]);
+    const tx = db.transaction(['careers', 'snapshots', 'matchSheets', 'kv', 'errors']);
     expect(tx.objectStore('careers').keyPath).toBe('id');
     expect(tx.objectStore('snapshots').keyPath).toEqual(['careerId', 'seq']);
+    expect(tx.objectStore('matchSheets').keyPath).toEqual(['careerId', 'season', 'round']);
     expect(tx.objectStore('kv').keyPath).toBe('key');
     expect(tx.objectStore('errors').autoIncrement).toBe(true);
     db.close();
@@ -109,20 +75,20 @@ describe('database', () => {
     expect(listed.ok && listed.value.map((c) => c.id)).toEqual([SAMPLE_CAREER_ID]);
   });
 
-  it('never holds back a newer build opening the database in another tab', async () => {
+  it('never holds back a newer build in another tab, and then says the app is outdated', async () => {
     const s = store();
     await s.writeSnapshot(variant(2));
     // Another tab with a newer structure: it must not stay blocked by this connection.
-    const newer = await openDB(DB, SAVE_DB_VERSION + 1);
-    expect(newer.version).toBe(SAVE_DB_VERSION + 1);
+    const newer = await openDB(DB, 2);
+    expect(newer.version).toBe(2);
     newer.close();
     // This (older) build then reads nothing, and says why.
-    const result = await s.listCareers();
-    expect(result).toEqual({
+    expect(await s.listCareers()).toEqual({
       ok: false,
-      error: 'storage-unavailable',
+      error: 'app-outdated',
       detail: { name: 'VersionError' },
     });
+    expect(await s.writeSnapshot(variant(3))).toMatchObject({ ok: false, error: 'app-outdated' });
   });
 
   it('answers storage-unavailable when IndexedDB cannot open', async () => {
@@ -138,6 +104,22 @@ describe('database', () => {
       detail: { name: 'SecurityError' },
     });
   });
+
+  it.each([
+    ['crypto.subtle', 'crypto', {}],
+    ['CompressionStream', 'CompressionStream', undefined],
+  ])('answers unsupported-browser without %s, writing and opening', async (_label, name, value) => {
+    const s = store();
+    await s.writeSnapshot(variant(2));
+    vi.stubGlobal(name, value);
+    expect(await s.writeSnapshot(variant(3))).toEqual({ ok: false, error: 'unsupported-browser' });
+    expect(await s.openCareer(SAMPLE_CAREER_ID)).toEqual({
+      ok: false,
+      error: 'unsupported-browser',
+    });
+    vi.unstubAllGlobals();
+    expect(await snapshotSeqs()).toEqual([1]);
+  });
 });
 
 describe('safe write with 3 versions (US-032)', () => {
@@ -149,7 +131,15 @@ describe('safe write with 3 versions (US-032)', () => {
     expect(opened.ok).toBe(true);
     if (!opened.ok) return;
     expect(opened.value.save).toEqual(base);
-    expect(opened.value).toMatchObject({ seq: 1, skipped: [], roundsLost: 0, fromVersion: 1 });
+    expect(opened.value).toMatchObject({
+      seq: 1,
+      headSeq: 1,
+      skipped: [],
+      roundsLost: 0,
+      fromVersion: 1,
+      missingSheetRounds: [],
+      sheets: { season: 1, rounds: {} },
+    });
   });
 
   it('saves at the end of each round and keeps at most 3 versions', async () => {
@@ -170,14 +160,9 @@ describe('safe write with 3 versions (US-032)', () => {
     const s = store();
     await s.writeSnapshot(variant(4));
     await s.writeSnapshot(variant(5));
-    const put = IDBObjectStore.prototype.put;
-    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
-      this: IDBObjectStore,
-      ...args: Parameters<IDBObjectStore['put']>
-    ) {
+    onPut('careers', () => {
       // The snapshot is already in the transaction; the app "closes" before the pointer moves.
-      if (this.name === 'careers') throw new DOMException('closed', 'InvalidStateError');
-      return put.apply(this, args);
+      throw new DOMException('closed', 'InvalidStateError');
     });
     const result = await s.writeSnapshot(variant(6));
     expect(result).toEqual({
@@ -195,16 +180,11 @@ describe('safe write with 3 versions (US-032)', () => {
     expect(next.ok && next.value.seq).toBe(3);
   });
 
-  it('answers quota-exceeded with the previous snapshot intact', async () => {
+  it('answers quota-exceeded with the previous snapshot intact (a put refused)', async () => {
     const s = store();
     await s.writeSnapshot(variant(5));
-    const put = IDBObjectStore.prototype.put;
-    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
-      this: IDBObjectStore,
-      ...args: Parameters<IDBObjectStore['put']>
-    ) {
-      if (this.name === 'snapshots') throw new DOMException('full', 'QuotaExceededError');
-      return put.apply(this, args);
+    onPut('snapshots', () => {
+      throw new DOMException('full', 'QuotaExceededError');
     });
     const result = await s.writeSnapshot(variant(6));
     expect(result.ok === false && result.error).toBe('quota-exceeded');
@@ -214,38 +194,107 @@ describe('safe write with 3 versions (US-032)', () => {
     expect(opened.ok && opened.value.save.game.round).toBe(5);
   });
 
-  it('removes a snapshot that does not read back equal and moves the pointer back', async () => {
+  it('answers quota-exceeded when the commit itself fails for lack of room', async () => {
     const s = store();
     await s.writeSnapshot(variant(5));
-    const put = IDBObjectStore.prototype.put;
-    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
-      this: IDBObjectStore,
-      ...args: Parameters<IDBObjectStore['put']>
-    ) {
-      // The disk keeps something else than what was written.
-      const [value] = args;
-      if (this.name === 'snapshots') return put.call(this, flipByte(value as SnapshotRecord));
-      return put.apply(this, args);
+    // Every request succeeds; the transaction then aborts with QuotaExceededError at commit, as
+    // browsers do when the disk fills up while committing.
+    onPut('careers', (put, objectStore, ...args) => {
+      const request = put(...args);
+      const tx = objectStore.transaction as unknown as { _abort(name: string): void };
+      request.addEventListener('success', () => tx._abort('QuotaExceededError'));
+      return request;
     });
     const result = await s.writeSnapshot(variant(6));
-    expect(result.ok === false && result.error).toBe('verify-failed');
+    expect(result).toEqual({
+      ok: false,
+      error: 'quota-exceeded',
+      detail: { name: 'QuotaExceededError' },
+    });
     vi.restoreAllMocks();
     expect(await snapshotSeqs()).toEqual([1]);
     const listed = await s.listCareers();
     expect(listed.ok && listed.value[0]).toMatchObject({ headSeq: 1, round: 5 });
   });
 
+  it('removes a snapshot that does not read back equal and moves the pointer back', async () => {
+    const s = store();
+    await s.writeSnapshot(variant(5));
+    // The disk keeps something else than what was written.
+    onPut('snapshots', (put, _store, value) => put(flipByte(value as SnapshotRecord)));
+    const result = await s.writeSnapshot(variant(6));
+    expect(result).toEqual({
+      ok: false,
+      error: 'verify-failed',
+      detail: { problem: 'mismatch', rolledBack: true },
+    });
+    vi.restoreAllMocks();
+    expect(await snapshotSeqs()).toEqual([1]);
+    const listed = await s.listCareers();
+    expect(listed.ok && listed.value[0]).toMatchObject({ headSeq: 1, round: 5 });
+  });
+
+  it('rolls back too when the snapshot cannot be read back', async () => {
+    const s = store();
+    await s.writeSnapshot(variant(5));
+    const get = IDBObjectStore.prototype.get;
+    vi.spyOn(IDBObjectStore.prototype, 'get').mockImplementation(function (
+      this: IDBObjectStore,
+      ...args: Parameters<IDBObjectStore['get']>
+    ) {
+      if (this.name === 'snapshots') throw new DOMException('gone', 'UnknownError');
+      return get.apply(this, args);
+    });
+    const result = await s.writeSnapshot(variant(6));
+    expect(result).toEqual({
+      ok: false,
+      error: 'verify-failed',
+      detail: { problem: 'read-failed', rolledBack: true },
+    });
+    vi.restoreAllMocks();
+    expect(await snapshotSeqs()).toEqual([1]);
+  });
+
+  it('says when the rollback failed too, and opening then skips the bad snapshot', async () => {
+    const s = store();
+    await s.writeSnapshot(variant(4));
+    await s.writeSnapshot(variant(5));
+    onPut('snapshots', (put, _store, value) => put(flipByte(value as SnapshotRecord)));
+    vi.spyOn(IDBObjectStore.prototype, 'delete').mockImplementation(() => {
+      throw new DOMException('closed', 'InvalidStateError');
+    });
+    const result = await s.writeSnapshot(variant(6));
+    expect(result).toEqual({
+      ok: false,
+      error: 'verify-failed',
+      detail: { problem: 'mismatch', rolledBack: false },
+    });
+    vi.restoreAllMocks();
+    // The bad snapshot stayed the head...
+    expect(await snapshotSeqs()).toEqual([1, 2, 3]);
+    // ...and opening falls back past it.
+    const opened = await store().openCareer(SAMPLE_CAREER_ID);
+    expect(opened.ok && opened.value).toMatchObject({ seq: 2, headSeq: 3, roundsLost: 1 });
+    expect(opened.ok && opened.value.skipped.map((x) => x.seq)).toEqual([3]);
+  });
+
+  it('prunes on the next write the versions a failed prune left', async () => {
+    const s = store();
+    for (const round of [1, 2, 3]) await s.writeSnapshot(variant(round));
+    vi.spyOn(IDBObjectStore.prototype, 'delete').mockImplementation(() => {
+      throw new DOMException('closed', 'InvalidStateError');
+    });
+    expect((await s.writeSnapshot(variant(4))).ok).toBe(true);
+    vi.restoreAllMocks();
+    // One version too many, never one too few.
+    expect(await snapshotSeqs()).toEqual([1, 2, 3, 4]);
+    expect((await s.writeSnapshot(variant(5))).ok).toBe(true);
+    expect(await snapshotSeqs()).toEqual([3, 4, 5]);
+  });
+
   it('leaves no trace of a new career whose first snapshot fails the check', async () => {
     const s = store();
-    const put = IDBObjectStore.prototype.put;
-    vi.spyOn(IDBObjectStore.prototype, 'put').mockImplementation(function (
-      this: IDBObjectStore,
-      ...args: Parameters<IDBObjectStore['put']>
-    ) {
-      const [value] = args;
-      if (this.name === 'snapshots') return put.call(this, flipByte(value as SnapshotRecord));
-      return put.apply(this, args);
-    });
+    onPut('snapshots', (put, _store, value) => put(flipByte(value as SnapshotRecord)));
     expect((await s.writeSnapshot(variant(1))).ok).toBe(false);
     vi.restoreAllMocks();
     expect(await s.listCareers()).toEqual({ ok: true, value: [] });
@@ -271,6 +320,78 @@ describe('safe write with 3 versions (US-032)', () => {
       expect(await s.writeSnapshot(save)).toEqual({ ok: false, error: 'invalid-save' });
     expect(await s.listCareers()).toEqual({ ok: true, value: [] });
   });
+
+  it('refuses a snapshot past the size bound, before touching the database', async () => {
+    const s = store();
+    await s.writeSnapshot(variant(5));
+    const huge = {
+      ...variant(6),
+      career: { ...base.career, coachName: 'x'.repeat(MAX_SAVE_BYTES) },
+    };
+    const result = await s.writeSnapshot(huge);
+    expect(result.ok === false && result.error).toBe('too-large');
+    expect(result.ok === false && result.detail).toMatchObject({ maxBytes: MAX_SAVE_BYTES });
+    expect(await snapshotSeqs()).toEqual([1]);
+  });
+});
+
+describe('another tab on the same database (two stores)', () => {
+  it('refuses with conflict a write whose head moved, inside the transaction', async () => {
+    const a = store();
+    const b = store();
+    expect((await a.writeSnapshot(variant(1), undefined, { expectedHeadSeq: 0 })).ok).toBe(true);
+    const openedA = await a.openCareer(SAMPLE_CAREER_ID);
+    const openedB = await b.openCareer(SAMPLE_CAREER_ID);
+    if (!openedA.ok || !openedB.ok) throw new Error('open');
+    const guardA = { expectedHeadSeq: openedA.value.headSeq };
+    const guardB = { expectedHeadSeq: openedB.value.headSeq };
+    const written = await a.writeSnapshot(variant(2), openedA.value.sheets, guardA);
+    expect(written.ok && written.value.seq).toBe(2);
+    // The other tab plays from the old head: refused, nothing changes.
+    expect(await b.writeSnapshot(variant(9), openedB.value.sheets, guardB)).toEqual({
+      ok: false,
+      error: 'conflict',
+      detail: { expectedHeadSeq: 1, headSeq: 2 },
+    });
+    expect(await snapshotSeqs()).toEqual([1, 2]);
+    const listed = await b.listCareers();
+    expect(listed.ok && listed.value[0]).toMatchObject({ headSeq: 2, round: 2 });
+    // Without a guard the write goes on as before.
+    expect((await b.writeSnapshot(variant(3))).ok).toBe(true);
+  });
+
+  it('a new career expects head 0', async () => {
+    expect(await store().writeSnapshot(variant(1), undefined, { expectedHeadSeq: 2 })).toEqual({
+      ok: false,
+      error: 'conflict',
+      detail: { expectedHeadSeq: 2, headSeq: 0 },
+    });
+    expect(await snapshotSeqs()).toEqual([]);
+  });
+
+  it('a rollback does not move back a pointer that another tab already moved', async () => {
+    const a = store();
+    const b = store();
+    await a.writeSnapshot(variant(4));
+    // Between A's write and A's check, B writes on top of it; then A's check fails.
+    const spied = a as unknown as { verify: (...args: unknown[]) => Promise<unknown> };
+    vi.spyOn(spied, 'verify').mockImplementation(async () => {
+      expect((await b.writeSnapshot(variant(6))).ok).toBe(true);
+      return 'mismatch';
+    });
+    expect(await a.writeSnapshot(variant(5))).toEqual({
+      ok: false,
+      error: 'verify-failed',
+      detail: { problem: 'mismatch', rolledBack: true },
+    });
+    vi.restoreAllMocks();
+    // A's snapshot (2) is gone, B's (3) stays the head.
+    expect(await snapshotSeqs()).toEqual([1, 3]);
+    const listed = await a.listCareers();
+    expect(listed.ok && listed.value[0]).toMatchObject({ headSeq: 3, round: 6 });
+    const opened = await a.openCareer(SAMPLE_CAREER_ID);
+    expect(opened.ok && opened.value).toMatchObject({ seq: 3, skipped: [] });
+  });
 });
 
 describe('open with fallback (US-032)', () => {
@@ -292,6 +413,31 @@ describe('open with fallback (US-032)', () => {
       (r: SnapshotRecord) => ({ ...r, blob: undefined }) as unknown as SnapshotRecord,
       'invalid-record',
     ],
+    [
+      'no season',
+      (r: SnapshotRecord) => ({ ...r, season: undefined }) as unknown as SnapshotRecord,
+      'invalid-record',
+    ],
+    [
+      'an index that is a list',
+      (r: SnapshotRecord) => ({ ...r, sheets: ['a'] }) as unknown as SnapshotRecord,
+      'invalid-record',
+    ],
+    [
+      'an index with round 0',
+      (r: SnapshotRecord) => ({ ...r, sheets: { 0: '0'.repeat(64) } }),
+      'invalid-record',
+    ],
+    [
+      'an index with round 39',
+      (r: SnapshotRecord) => ({ ...r, sheets: { 39: '0'.repeat(64) } }),
+      'invalid-record',
+    ],
+    [
+      'an index whose hash is not hex',
+      (r: SnapshotRecord) => ({ ...r, sheets: { 3: 'not-a-hash' } }),
+      'invalid-record',
+    ],
   ])(
     'opens the previous version when the newest has %s, and says what was lost',
     async (_label, change, problem) => {
@@ -302,6 +448,7 @@ describe('open with fallback (US-032)', () => {
       expect(opened.ok).toBe(true);
       if (!opened.ok) return;
       expect(opened.value.seq).toBe(2);
+      expect(opened.value.headSeq).toBe(3);
       expect(opened.value.save.game.round).toBe(5);
       expect(opened.value.roundsLost).toBe(1);
       expect(opened.value.skipped.map((x) => x.seq)).toEqual([3]);
@@ -323,7 +470,7 @@ describe('open with fallback (US-032)', () => {
   it('skips a snapshot that decodes but is not this career', async () => {
     const s = store();
     await threeRounds(s);
-    const other = await encodeSave(variant(6, 'another-career'));
+    const other = await mustEncode(variant(6, 'another-career'));
     await tamper(3, (r) => ({ ...r, blob: other.gzip, sha256: other.sha256, bytes: other.bytes }));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     expect(opened.ok && opened.value.skipped).toEqual([{ seq: 3, problem: 'incoherent' }]);
@@ -387,7 +534,7 @@ describe('open with fallback (US-032)', () => {
   it('refuses a newer save also when only the JSON says so', async () => {
     const s = store();
     await s.writeSnapshot(variant(4));
-    const newer = await encodeSave({ ...variant(5), schemaVersion: 2 });
+    const newer = await mustEncode({ ...variant(5), schemaVersion: 2 });
     await tamper(1, (r) => ({ ...r, blob: newer.gzip, sha256: newer.sha256, bytes: newer.bytes }));
     expect(await s.openCareer(SAMPLE_CAREER_ID)).toMatchObject({
       ok: false,
@@ -400,88 +547,7 @@ describe('open with fallback (US-032)', () => {
   });
 });
 
-describe('several careers (US-034)', () => {
-  it('lists the careers with club, season and round, the most recent first', async () => {
-    const s = store();
-    await s.writeSnapshot(variant(3, 'a', '2026-11-01T10:00:00.000Z'));
-    await s.writeSnapshot(variant(9, 'b', '2026-11-05T10:00:00.000Z'));
-    await s.writeSnapshot(variant(1, 'c', '2026-11-03T10:00:00.000Z'));
-    const listed = await s.listCareers();
-    expect(listed.ok).toBe(true);
-    if (!listed.ok) return;
-    expect(listed.value.map((c) => c.id)).toEqual(['b', 'c', 'a']);
-    const club = base.game.clubs[base.career.clubId]!.def;
-    expect(listed.value[0]).toEqual({
-      id: 'b',
-      club,
-      season: 1,
-      round: 9,
-      updatedAt: '2026-11-05T10:00:00.000Z',
-      headSeq: 1,
-      schemaVersion: 1,
-    });
-  });
-
-  it('keeps careers independent', async () => {
-    const s = store();
-    await s.writeSnapshot(variant(3, 'a'));
-    await s.writeSnapshot(variant(3, 'b'));
-    const before = await s.openCareer('b');
-    await s.writeSnapshot(variant(4, 'a'));
-    await s.writeSnapshot(variant(5, 'a'));
-    expect(await s.openCareer('b')).toEqual(before);
-    const a = await s.openCareer('a');
-    expect(a.ok && a.value.save.game.round).toBe(5);
-  });
-
-  it('deletes a career and its versions, and nothing else', async () => {
-    const s = store();
-    for (const round of [1, 2, 3, 4]) await s.writeSnapshot(variant(round, SAMPLE_CAREER_ID));
-    await s.writeSnapshot(variant(1, 'other'));
-    expect(await s.deleteCareer(SAMPLE_CAREER_ID)).toEqual({ ok: true, value: undefined });
-    expect(await snapshotSeqs()).toEqual([]);
-    expect(await s.openCareer(SAMPLE_CAREER_ID)).toEqual({ ok: false, error: 'not-found' });
-    const listed = await s.listCareers();
-    expect(listed.ok && listed.value.map((c) => c.id)).toEqual(['other']);
-    expect(await snapshotSeqs('other')).toEqual([1]);
-  });
-
-  it('holds 10 careers, refuses the 11th and makes room after a delete', async () => {
-    const s = store();
-    for (let i = 0; i < MAX_CAREERS; i++) {
-      expect((await s.writeSnapshot(variant(1, `career-${i}`))).ok).toBe(true);
-    }
-    expect(await s.writeSnapshot(variant(1, 'career-10'))).toEqual({
-      ok: false,
-      error: 'career-limit',
-      detail: { max: 10 },
-    });
-    // The careers already there keep saving.
-    expect((await s.writeSnapshot(variant(2, 'career-3'))).ok).toBe(true);
-    const listed = await s.listCareers();
-    expect(listed.ok && listed.value).toHaveLength(MAX_CAREERS);
-    await s.deleteCareer('career-0');
-    expect((await s.writeSnapshot(variant(1, 'career-10'))).ok).toBe(true);
-  });
-});
-
-describe('kv store', () => {
-  it('reads back what was written, and undefined for an unknown key', async () => {
-    const s = store();
-    expect(await s.readKv('lang')).toEqual({ ok: true, value: undefined });
-    await s.writeKv('lang', 'es');
-    await s.writeKv('newGame', { club: 3, realism: 'full' });
-    expect(await s.readKv('lang')).toEqual({ ok: true, value: 'es' });
-    expect(await store().readKv('newGame')).toEqual({
-      ok: true,
-      value: { club: 3, realism: 'full' },
-    });
-  });
-});
-
 describe('a whole season (T-018 with T-044: ADR-0012 conformance)', () => {
-  const season = sampleCareerSave({ rounds: 38 });
-
   it('reopens the end-of-season save identical, names and faces included', async () => {
     const s = store();
     const written = await s.writeSnapshot(season);
@@ -490,6 +556,7 @@ describe('a whole season (T-018 with T-044: ADR-0012 conformance)', () => {
     const opened = await store().openCareer(SAMPLE_CAREER_ID);
     expect(opened.ok).toBe(true);
     if (!opened.ok) return;
+    expect(opened.value.save).toEqual(season);
     expect(JSON.stringify(opened.value.save)).toBe(JSON.stringify(season));
     expect(Object.keys(opened.value.save.career.matchSheets)).toHaveLength(380);
     expect(opened.value.save.career.lastRound?.round).toBe(38);
@@ -532,12 +599,14 @@ describe('a whole season (T-018 with T-044: ADR-0012 conformance)', () => {
   });
 
   it('fits the end-of-season snapshot in the 100 to 300 KB of gzip of 4.2', async () => {
-    const encoded = await encodeSave(season);
+    const encoded = await encodeSave({ ...season, career: { ...season.career, matchSheets: {} } });
+    if (!encoded.ok) throw new Error(encoded.error);
     const kb = (n: number) => Math.round(n / 1024);
     console.info(
-      `end-of-season save: ${kb(encoded.bytes)} KB JSON, ${kb(encoded.gzip.byteLength)} KB gzip ` +
-        `(matchSheets ${kb(JSON.stringify(season.career.matchSheets).length)} KB JSON)`,
+      `end-of-season snapshot without sheets: ${kb(encoded.value.bytes)} KB JSON, ` +
+        `${kb(encoded.value.gzip.byteLength)} KB gzip ` +
+        `(matchSheets ${kb(JSON.stringify(season.career.matchSheets).length)} KB JSON, apart)`,
     );
-    expect(encoded.gzip.byteLength).toBeLessThanOrEqual(300 * 1024);
+    expect(encoded.value.gzip.byteLength).toBeLessThanOrEqual(300 * 1024);
   });
 });

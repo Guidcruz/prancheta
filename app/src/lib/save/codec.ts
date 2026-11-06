@@ -1,9 +1,15 @@
 import { fail, ok, type SaveResult } from './result.ts';
+import { MAX_SAVE_BYTES } from './schema.ts';
 
 /*
  * Bytes of a save (docs/02-architecture.md, 4.2, "Gravação segura"): the UTF-8 JSON, its SHA-256
  * and its gzip, with the platform's `CompressionStream` and `crypto.subtle` (browsers and Node 22,
- * no dependency). The exported file (T-020) reuses the same three steps.
+ * no dependency). The exported file (T-020) reuses the same three steps. The same codec stores the
+ * rows of match sheets (one round each, "Súmulas fora do snapshot").
+ *
+ * `crypto.subtle` exists only in a secure context (HTTPS or localhost) and the compression streams
+ * only from Safari 16.4: without them {@link encodeSave} and {@link decodeSave} answer
+ * `unsupported-browser` instead of throwing.
  */
 
 export type Bytes = Uint8Array<ArrayBuffer>;
@@ -19,7 +25,29 @@ export interface EncodedSave {
 
 export type DecodeError = 'corrupt-gzip' | 'size-mismatch' | 'hash-mismatch' | 'corrupt-json';
 
+/** The platform lacks `crypto.subtle` or the compression streams. */
+export type UnsupportedError = 'unsupported-browser';
+
+/** The JSON passes {@link MAX_SAVE_BYTES} (or the bound given). */
+export type TooLargeError = 'too-large';
+
 const encoder = new TextEncoder();
+
+/** `true` when this platform has everything the codec uses. */
+export function codecSupported(): boolean {
+  return (
+    typeof CompressionStream === 'function' &&
+    typeof DecompressionStream === 'function' &&
+    typeof globalThis.crypto?.subtle?.digest === 'function'
+  );
+}
+
+/** Byte-by-byte equality: the check after a write compares the gzip read back with this one. */
+export function equalBytes(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.byteLength !== b.byteLength) return false;
+  for (let i = 0; i < a.byteLength; i++) if (a[i] !== b[i]) return false;
+  return true;
+}
 
 export async function sha256Hex(data: Bytes): Promise<string> {
   const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', data));
@@ -89,11 +117,19 @@ export async function gunzip(
   }
 }
 
-/** Serialises, hashes and compresses a save. */
-export async function encodeSave(save: unknown): Promise<EncodedSave> {
+/**
+ * Serialises, hashes and compresses a save (or a round of match sheets). A JSON past `maxBytes` is
+ * refused before hashing: it could never be opened again (the bound of {@link decodeSave}).
+ */
+export async function encodeSave(
+  save: unknown,
+  maxBytes: number = MAX_SAVE_BYTES,
+): Promise<SaveResult<EncodedSave, UnsupportedError | TooLargeError>> {
+  if (!codecSupported()) return fail('unsupported-browser');
   const json = encoder.encode(JSON.stringify(save));
+  if (json.byteLength > maxBytes) return fail('too-large', { bytes: json.byteLength, maxBytes });
   const [sha256, compressed] = await Promise.all([sha256Hex(json), gzip(json)]);
-  return { sha256, bytes: json.byteLength, gzip: compressed };
+  return ok({ sha256, bytes: json.byteLength, gzip: compressed });
 }
 
 /**
@@ -105,7 +141,8 @@ export async function decodeSave(
   data: Bytes,
   sha256: string,
   bytes: number,
-): Promise<SaveResult<unknown, DecodeError>> {
+): Promise<SaveResult<unknown, DecodeError | UnsupportedError>> {
+  if (!codecSupported()) return fail('unsupported-browser');
   const raw = await gunzip(data, bytes);
   // Inflating past `bytes` is a wrong size, found without inflating the rest.
   if (!raw.ok) {

@@ -1,7 +1,12 @@
-// Write measurement of the end-of-season save in Chromium with 4× CPU slowdown (T-018; ADR-0019).
-// Usage: PRANCHETA_ENV=test npm run measure:save -- [--runs 15] [--warmup 3] [--cpu 4]
-// Needs the Chromium of Playwright once: npx playwright install chromium
-// Exit codes: 0 within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test); 3 failure.
+// Save measurement of the end of the season in Chromium with 4× CPU slowdown (T-018;
+// docs/02-architecture.md, 5): the write after round 38 and the opening of the career.
+// Usage: PRANCHETA_ENV=test npm run measure:save -- [--runs 40] [--warmup 5] [--cpu 4]
+//        [--chromium <path>]
+// Chromium: the one of Playwright (once: npx playwright install chromium), or a local Chromium
+// given by PRANCHETA_CHROMIUM=<path> or --chromium <path>.
+// 40 runs by default: with 15 the nearest-rank p90 is the 14th value, almost the maximum.
+// Exit codes: 0 write p90 within 150 ms; 1 over it; 2 usage error (or no PRANCHETA_ENV=test);
+// 3 failure, or a blocked request.
 import { main } from './measure-save/main.ts';
 
 process.exitCode = await main(process.argv.slice(2));

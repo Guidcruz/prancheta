@@ -5,6 +5,7 @@ import {
   playRound,
   roundRecap,
   type ClubDef,
+  type Fixture,
   type FixtureId,
   type GameState,
   type MatchSheet,
@@ -102,5 +103,35 @@ export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
       matchSheets,
     },
     game: state,
+  };
+}
+
+function withoutResult(fixture: Fixture): Fixture {
+  return Object.fromEntries(Object.entries(fixture).filter(([key]) => key !== 'result')) as Fixture;
+}
+
+/**
+ * A season save as it was after `played` rounds: results and sheets of the later rounds removed,
+ * `game.round = played + 1`. The rest of the state stays the one of `save`, which the store does
+ * not read. `inSeason` relabels it as another season (for the season turn).
+ */
+export function sampleAtRound(
+  save: CareerSave,
+  played: number,
+  inSeason = save.game.season,
+  careerId = save.careerId,
+): CareerSave {
+  const fixtures = save.game.fixtures.map((f) => (f.round <= played ? f : withoutResult(f)));
+  const kept = new Set(fixtures.filter((f) => f.round <= played).map((f) => f.id));
+  const matchSheets = Object.fromEntries(
+    Object.entries(save.career.matchSheets).filter(([id]) => kept.has(id)),
+  );
+  const hour = String(10 + inSeason).padStart(2, '0');
+  return {
+    ...save,
+    careerId,
+    updatedAt: `2026-11-06T${hour}:${String(played).padStart(2, '0')}:00.000Z`,
+    career: { ...save.career, matchSheets },
+    game: { ...save.game, season: inSeason, round: played + 1, fixtures },
   };
 }

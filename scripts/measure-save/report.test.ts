@@ -1,25 +1,27 @@
 import { describe, expect, it, vi } from 'vitest';
 import { main, parseArgs } from './main.ts';
 import {
+  OPEN_TARGET_MS,
   WRITE_LIMIT_MS,
   formatReport,
+  openWithinTarget,
   stats,
   withinLimit,
   type MeasurementLike,
 } from './report.ts';
 
-const timings = (write: number[]) => ({
-  write,
-  encode: write.map((n) => n / 2),
-  stringify: write.map((n) => n / 4),
-  jsonBytes: 1_450_000,
-  gzipBytes: 155_000,
-});
-
-const measurement = (write: number[]): MeasurementLike => ({
+const measurement = (incremental: number[], open = [200, 210, 220]): MeasurementLike => ({
   dbName: 'prancheta-test',
-  full: timings(write),
-  withoutSheets: timings(write.map((n) => n / 2)),
+  incremental,
+  noNewRound: incremental.map((n) => n - 5),
+  allRounds: incremental.map((n) => n * 2),
+  open,
+  encode: incremental.map((n) => n / 2),
+  stringify: incremental.map((n) => n / 4),
+  snapshotJsonBytes: 700_000,
+  snapshotGzipBytes: 100_000,
+  sheetsJsonBytes: 840_000,
+  sheetsGzipBytes: 80_000,
 });
 
 describe('measure-save report', () => {
@@ -31,27 +33,44 @@ describe('measure-save report', () => {
     expect(() => stats([])).toThrow();
   });
 
-  it('decides by the median against the 150 ms of ADR-0019', () => {
+  it('decides by the p90 of the write after round 38 against 150 ms', () => {
     expect(WRITE_LIMIT_MS).toBe(150);
-    expect(withinLimit(measurement([100, 150, 400]))).toBe(true);
-    expect(withinLimit(measurement([140, 151, 152]))).toBe(false);
+    const ten = (last: number) => [90, 95, 100, 100, 105, 110, 115, 120, 150, last];
+    // The p90 of 10 values is the 9th: one slow write does not fail it, two do.
+    expect(withinLimit(measurement(ten(400)))).toBe(true);
+    expect(withinLimit(measurement([...ten(400).slice(0, 8), 151, 400]))).toBe(false);
+    // A low median does not save a high p90.
+    expect(withinLimit(measurement([100, 100, 100, 100, 100, 100, 100, 100, 160, 170]))).toBe(
+      false,
+    );
   });
 
-  it('prints both snapshots and the verdict', () => {
+  it('reports the opening against its 400 ms target', () => {
+    expect(OPEN_TARGET_MS).toBe(400);
+    expect(openWithinTarget(measurement([100], [300, 390, 400]))).toBe(true);
+    expect(openWithinTarget(measurement([100], [300, 390, 401]))).toBe(false);
+  });
+
+  it('prints every case and both verdicts', () => {
     const within = formatReport(measurement([90, 100, 110]), 4);
     expect(within).toContain('CPU 4× mais lenta, banco prancheta-test');
-    expect(within).toContain(
-      'Snapshot completo (com matchSheets): 1416 KB de JSON, 151 KB em gzip',
-    );
-    expect(within).toContain('Mesmo snapshot sem matchSheets');
-    expect(within).toContain('DENTRO do limite: mediana de 100.0 ms');
-    expect(formatReport(measurement([200, 210, 220]), 4)).toContain('ACIMA do limite');
+    expect(within).toContain('Snapshot sem súmulas: 684 KB de JSON, 98 KB em gzip');
+    expect(within).toContain('Súmulas (38 linhas): 820 KB de JSON, 78 KB em gzip');
+    expect(within).toContain('gravação após a rodada 38 (base 1–37, só a 38)');
+    expect(within).toContain('gravação sem rodada nova (base 1–38)');
+    expect(within).toContain('gravação sem base (as 38 linhas)');
+    expect(within).toContain('abrir a carreira');
+    expect(within).toContain('Gravação DENTRO do limite: p90 de 110.0 ms');
+    expect(within).toContain('Abertura dentro da meta: p90 de 220.0 ms');
+    const over = formatReport(measurement([200, 210, 220], [500]), 4);
+    expect(over).toContain('Gravação ACIMA do limite');
+    expect(over).toContain('Abertura ACIMA da meta');
   });
 });
 
 describe('measure-save options', () => {
   it('has the defaults and reads the flags', () => {
-    expect(parseArgs([])).toEqual({ runs: 15, warmup: 3, cpu: 4 });
+    expect(parseArgs([])).toEqual({ runs: 40, warmup: 5, cpu: 4 });
     expect(parseArgs(['--runs', '5', '--cpu', '6', '--warmup', '0'])).toEqual({
       runs: 5,
       warmup: 0,
@@ -62,12 +81,30 @@ describe('measure-save options', () => {
     expect(typeof parseArgs(['--seed', '1'])).toBe('string');
   });
 
+  it('takes a local Chromium from PRANCHETA_CHROMIUM or --chromium (the flag wins)', () => {
+    const env = { PRANCHETA_CHROMIUM: '/opt/chrome/headless' };
+    expect(parseArgs([], env)).toMatchObject({ chromium: '/opt/chrome/headless' });
+    expect(parseArgs(['--chromium', '/usr/bin/chromium'], env)).toMatchObject({
+      chromium: '/usr/bin/chromium',
+    });
+    expect(parseArgs(['--chromium', '/x', '--runs', '4'])).toEqual({
+      runs: 4,
+      warmup: 5,
+      cpu: 4,
+      chromium: '/x',
+    });
+    expect(parseArgs([], { PRANCHETA_CHROMIUM: '' })).toEqual({ runs: 40, warmup: 5, cpu: 4 });
+    expect(typeof parseArgs(['--chromium'])).toBe('string');
+    expect(typeof parseArgs(['--chromium', '--runs', '4'])).toBe('string');
+  });
+
   it('refuses to run outside PRANCHETA_ENV=test, before building or opening anything', async () => {
     const stderr = vi.spyOn(process.stderr, 'write').mockReturnValue(true);
     expect(await main([], {})).toBe(2);
     expect(await main([], { PRANCHETA_ENV: 'prod' })).toBe(2);
     expect(String(stderr.mock.calls[0]?.[0])).toContain('PRANCHETA_ENV=test');
     expect(await main(['--runs', '0'], { PRANCHETA_ENV: 'test' })).toBe(2);
+    expect(await main(['--chromium'], { PRANCHETA_ENV: 'test' })).toBe(2);
     stderr.mockRestore();
   });
 });
