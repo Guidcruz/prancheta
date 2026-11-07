@@ -22,9 +22,11 @@ const cases: [string, string, string][] = [
   ['Intl', "export const x = new Intl.NumberFormat('pt-BR');", 'no-restricted-globals'],
   ['window', 'export const x = window.innerWidth;', 'no-restricted-globals'],
   ['process', 'export const x = process.env;', 'no-restricted-globals'],
-  ['Math.exp outside math.ts', 'export const x = Math.exp(1);', 'no-restricted-properties'],
-  ['Math.pow outside math.ts', 'export const x = Math.pow(2, 0.5);', 'no-restricted-properties'],
-  ['** outside math.ts', 'export const f = (a: number) => a ** 0.5;', 'no-restricted-syntax'],
+  ['Math.exp', 'export const x = Math.exp(1);', 'no-restricted-properties'],
+  ['Math.pow', 'export const x = Math.pow(2, 0.5);', 'no-restricted-properties'],
+  ['Math.log', 'export const x = Math.log(2);', 'no-restricted-properties'],
+  ['Math.sin', 'export const x = Math.sin(2);', 'no-restricted-properties'],
+  ['**', 'export const f = (a: number) => a ** 0.5;', 'no-restricted-syntax'],
   ['import from ui/', "import '../ui/App.svelte';", 'no-restricted-imports'],
   ['import from lib/', "import '../lib/i18n.ts';", 'no-restricted-imports'],
   ['import from content/', "import '../content/pt-BR/ui.json';", 'no-restricted-imports'],
@@ -98,13 +100,36 @@ describe('engine lint boundary', () => {
     }
   });
 
-  it('allows transcendental functions only in engine/math.ts', async () => {
+  // ADR-0020, test 7: math.ts lost its exception; the engine's exp is arithmetic only.
+  it.each([
+    ['Math.exp', 'export const e = (x: number) => Math.exp(x);', 'no-restricted-properties'],
+    ['Math.pow', 'export const e = (x: number) => Math.pow(x, 2);', 'no-restricted-properties'],
+    ['Math.expm1', 'export const e = (x: number) => Math.expm1(x);', 'no-restricted-properties'],
+    ['Math.log1p', 'export const e = (x: number) => Math.log1p(x);', 'no-restricted-properties'],
+    ['Math.random', 'export const r = Math.random();', 'no-restricted-properties'],
+    ['**', 'export const e = (x: number) => x ** 2;', 'no-restricted-syntax'],
+  ])('refuses %s in engine/math.ts too', async (_label, code, rule) => {
+    expect(await ruleIds(code, 'src/engine/math.ts')).toContain(rule);
+  });
+
+  it('refuses Math.exp in another engine file, and allows the exact Math functions', async () => {
     expect(
-      await ruleIds('export const e = (x: number) => Math.exp(x) ** 2;', 'src/engine/math.ts'),
-    ).toEqual([]);
-    expect(await ruleIds('export const r = Math.random();', 'src/engine/math.ts')).toContain(
-      'no-restricted-properties',
-    );
+      await ruleIds('export const e = (x: number) => Math.exp(x);', 'src/engine/match/rules.ts'),
+    ).toContain('no-restricted-properties');
+    const exact = [
+      'export const f = (x: number) =>',
+      '  Math.sqrt(x) + Math.floor(x) + Math.ceil(x) + Math.round(x) + Math.trunc(x) +',
+      '  Math.abs(x) + Math.sign(x) + Math.min(x, 1) + Math.max(x, 0) + Math.imul(x, 3) +',
+      '  Math.clz32(x) + Math.fround(x) + Math.E + Math.SQRT2 + Math.LN2 + Math.PI;',
+    ].join('\n');
+    expect(await ruleIds(exact, 'src/engine/math.ts')).toEqual([]);
+    expect(await ruleIds(exact, 'src/engine/__fixture__.ts')).toEqual([]);
+  });
+
+  it('keeps transcendental functions free in engine tests and benches (they compare with them)', async () => {
+    const code = 'export const e = (x: number) => Math.exp(x) - Math.log(x) + x ** 2;';
+    expect(await ruleIds(code, 'src/engine/math.property.test.ts')).toEqual([]);
+    expect(await ruleIds(code, 'src/engine/round.bench.ts')).toEqual([]);
   });
 
   it('keeps lib/ out of ui/ and ui/ out of lib/save/', async () => {

@@ -73,7 +73,10 @@ const randomAndClock = [
 ];
 
 // Transcendental functions may differ in the last bit between JavaScript engines (ADR-0007,
-// rule 9), so they are only called from engine/math.ts.
+// rule 9; measured in T-024), so the engine never calls them, engine/math.ts included: the ones it
+// needs are written there with the four operations only (ADR-0020). Exact by the specification,
+// hence allowed: sqrt, floor, ceil, round, trunc, abs, sign, min, max, imul, clz32, fround and the
+// constants of Math.
 const transcendental = [
   'exp',
   'expm1',
@@ -100,12 +103,13 @@ const transcendental = [
 ].map((property) => ({
   object: 'Math',
   property,
-  message: 'Transcendental functions only through engine/math.ts (ADR-0007).',
+  message:
+    'No transcendental Math function in the engine, math.ts included: write it in engine/math.ts with + - * / only (ADR-0020).',
 }));
 
 const exponentOperator = {
   selector: "BinaryExpression[operator='**'], AssignmentExpression[operator='**=']",
-  message: 'Use engine/math.ts instead of ** (ADR-0007).',
+  message: 'No ** in the engine: it is Math.pow; use engine/math.ts (ADR-0007, ADR-0020).',
 };
 
 // Locale-dependent string methods give different output per device, like Intl.
@@ -182,14 +186,6 @@ export default [
       'no-restricted-syntax': ['error', exponentOperator, localeCall],
       'no-restricted-imports': ['error', { patterns: [...engineImportPatterns, testingImports] }],
       'prancheta/relative-ts-imports': 'error',
-    },
-  },
-  {
-    // The single home of transcendental functions.
-    files: ['src/engine/math.ts'],
-    rules: {
-      'no-restricted-properties': ['error', ...randomAndClock],
-      'no-restricted-syntax': ['error', localeCall],
     },
   },
   {
