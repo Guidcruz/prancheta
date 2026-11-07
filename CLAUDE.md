@@ -23,34 +23,35 @@
 - **Site (`site/`):** Astro 7, conteúdo em Markdown (`site/src/content/devlog/`); o roteiro do site é lido de `docs/roadmap.md` no build. O site é só em pt-BR.
 - **Motor (`app/src/engine/`):** TypeScript puro, sem DOM, determinístico (semente explícita), compartilhado com o servidor a partir da Etapa 1b. Parâmetros numéricos ficam fora dele, em `app/src/params/`, e entram como argumento.
 - **Servidor (`server/`, a partir da Etapa 1b):** Hono em Cloudflare Workers, D1 (SQLite), Durable Objects; R2 na Etapa 4.
-- **Testes:** Vitest 5 (unitário e motor). E2E com Playwright entra na Etapa 1a; até lá não existe e o CI não finge que roda.
+- **Testes:** Vitest 5 (unitário e motor). E2E com Playwright (Chromium e WebKit; `tests/e2e/`) no job `e2e` do CI.
 - **Lint/format:** ESLint 10 + svelte-check + astro check + Prettier (`npm run lint` roda tudo e também os testes do hook; `npm run format`).
 - **Gerenciador:** npm com workspaces (`app`, `site`).
 
-| Ação                                                                                  | Comando                                                                                                       |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Instalar                                                                              | `npm install`                                                                                                 |
-| Rodar o jogo (dev)                                                                    | `npm run dev -w app`                                                                                          |
-| Rodar o site (dev)                                                                    | `npm run dev -w site`                                                                                         |
-| Testes unitários e do motor                                                           | `npm test`                                                                                                    |
-| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)                           | `npm run golden:update -w app`                                                                                |
-| Regressão completa (lint + testes + build)                                            | `npm run test:all`                                                                                            |
-| Lint                                                                                  | `npm run lint`                                                                                                |
-| Formatar                                                                              | `npm run format`                                                                                              |
-| Build (site + jogo em `dist/`)                                                        | `npm run build`                                                                                               |
-| Auditoria de dependências                                                             | `npm audit --audit-level=high`                                                                                |
-| Ícones da PWA a partir do SVG                                                         | `npm run icons`                                                                                               |
-| Testes do hook de travas                                                              | `bash scripts/test-hook.sh`                                                                                   |
-| Tokens do design system → CSS                                                         | `npm run tokens`                                                                                              |
-| Balanceamento (simula N temporadas)                                                   | `npm run balance -- --seasons 200`                                                                            |
-| Balanceamento de release (1.000 temporadas, robô no mais fraco)                       | `npm run balance -- --seasons 1000 --seed 1 --robot weakest`                                                  |
-| Conferir dados e conteúdo (clubes, lista bloqueada)                                   | `npm run content:check`                                                                                       |
-| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo)                       | `npm run blocklist:hash -- <arquivo>`                                                                         |
-| Medir a gravação do save (Chromium sem janela, CPU 4×)                                | `PRANCHETA_ENV=test npm run measure:save` (com `PRANCHETA_CHROMIUM=<caminho>`, usa um navegador já instalado) |
-| Gerar fixtures de uma versão nova do save (nunca sobrescreve)                         | `npm run save:fixtures -w app`                                                                                |
-| Recalcular as exclusões do gerador de nomes                                           | `npm run names:exclusions`                                                                                    |
-| Teste completo dos nomes (antes de release e quando as listas mudarem)                | `NAMES_FULL_CHECK=1 npm test -w app`                                                                          |
-| Testes de propriedade completos (10.000 partidas, 1.000 temporadas; antes de release) | `PROPERTY_FULL=1 npm test -w app`                                                                             |
+| Ação                                                                                  | Comando                                                                                                                                   |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Instalar                                                                              | `npm install`                                                                                                                             |
+| Rodar o jogo (dev)                                                                    | `npm run dev -w app`                                                                                                                      |
+| Rodar o site (dev)                                                                    | `npm run dev -w site`                                                                                                                     |
+| Testes unitários e do motor                                                           | `npm test`                                                                                                                                |
+| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)                           | `npm run golden:update -w app`                                                                                                            |
+| Regressão completa (lint + testes + build)                                            | `npm run test:all`                                                                                                                        |
+| E2E (Playwright; WebKit só no CI)                                                     | `PRANCHETA_ENV=test npm run test:e2e` (local: `PRANCHETA_CHROMIUM=<caminho>` e `-- --project=chromium-mobile --project=chromium-desktop`) |
+| Lint                                                                                  | `npm run lint`                                                                                                                            |
+| Formatar                                                                              | `npm run format`                                                                                                                          |
+| Build (site + jogo em `dist/`)                                                        | `npm run build`                                                                                                                           |
+| Auditoria de dependências                                                             | `npm audit --audit-level=high`                                                                                                            |
+| Ícones da PWA a partir do SVG                                                         | `npm run icons`                                                                                                                           |
+| Testes do hook de travas                                                              | `bash scripts/test-hook.sh`                                                                                                               |
+| Tokens do design system → CSS                                                         | `npm run tokens`                                                                                                                          |
+| Balanceamento (simula N temporadas)                                                   | `npm run balance -- --seasons 200`                                                                                                        |
+| Balanceamento de release (1.000 temporadas, robô no mais fraco)                       | `npm run balance -- --seasons 1000 --seed 1 --robot weakest`                                                                              |
+| Conferir dados e conteúdo (clubes, lista bloqueada)                                   | `npm run content:check`                                                                                                                   |
+| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo)                       | `npm run blocklist:hash -- <arquivo>`                                                                                                     |
+| Medir a gravação do save (Chromium sem janela, CPU 4×)                                | `PRANCHETA_ENV=test npm run measure:save` (com `PRANCHETA_CHROMIUM=<caminho>`, usa um navegador já instalado)                             |
+| Gerar fixtures de uma versão nova do save (nunca sobrescreve)                         | `npm run save:fixtures -w app`                                                                                                            |
+| Recalcular as exclusões do gerador de nomes                                           | `npm run names:exclusions`                                                                                                                |
+| Teste completo dos nomes (antes de release e quando as listas mudarem)                | `NAMES_FULL_CHECK=1 npm test -w app`                                                                                                      |
+| Testes de propriedade completos (10.000 partidas, 1.000 temporadas; antes de release) | `PROPERTY_FULL=1 npm test -w app`                                                                                                         |
 
 ## Estrutura
 
@@ -117,7 +118,7 @@ tests/                       e2e/ e regression/ (unitários ficam ao lado do có
 - O Prettier roda antes de cada commit, e o `npm run test:all` é obrigatório em todo PR, também no caminho leve (`/quick`) e no `/devlog`.
 - Perguntar antes de começar cada item; avisar no celular quando algo esperar por ele.
 - "Pode rodar" antes de qualquer coisa que abra janela ou use a GPU; um teste de tela por vez.
-- Ambiente de teste isolado: a definir na Etapa 1a (`PRANCHETA_ENV=test` e um IndexedDB separado); o hook já exige a variável para `playwright test`, `vite preview` e `npm run preview -w app` (o preview do site é livre).
+- Ambiente de teste isolado: `PRANCHETA_ENV=test` liga o IndexedDB `prancheta-test` e o build `app/dist-e2e/` (`docs/04-deploy.md`); o hook já exige a variável para `playwright test`, `vite preview` e `npm run preview -w app` (o preview do site é livre).
 - Toda semana um post no devlog, mesmo curto; toda etapa concluída, um post de marco. O `/kickoff` parte do backlog de `docs/PROJETO.md`, não só de `docs/roadmap.md`.
 - Estilo do devlog (aprovado em 2026-11-05): explica de forma técnica e acessível, definindo os termos e dando mecanismos e números; comparações só para ideias técnicas, sem analogia para o óbvio; pode ser longo e ter imagens em `site/public/devlog/<data>/`, nunca de escudo; pode citar inspirações reais (campeonatos, jogos) como referência, sem marca registrada (nunca "Brasileirão": use "Série A" ou "campeonato brasileiro"), e nomes de clubes, jogadores e pessoas reais continuam proibidos; o site e o devlog nunca citam códigos internos (de tarefa, história, bug ou ADR, como T-048 ou ADR-0019), e há teste automático no build do site para isso.
 - Cada lote de textos do `content-writer` e cada lista de clubes passa pelo CEO antes de entrar no jogo.

@@ -64,7 +64,12 @@ export default defineConfig({
     }),
   ],
   test: {
-    include: ['src/**/*.test.ts', '../site/src/**/*.test.ts', '../scripts/**/*.test.ts'],
+    include: [
+      'src/**/*.test.ts',
+      '../site/src/**/*.test.ts',
+      '../scripts/**/*.test.ts',
+      '../tests/regression/**/*.test.ts',
+    ],
     environment: 'node',
   },
 });

@@ -87,6 +87,7 @@ Telas da 1a (`docs/design/telas/`):
 | T-072  | feita, aguardando merge (review em duas rodadas aprovado; QA em andamento): snapshot sem gzip no aparelho (aprovado pelo CEO; até cerca de 22 MB com 10 carreiras), codec com uma só codificação, poda pelo índice `bySeason`; Chromium com CPU 4×, três execuções: p90 após a rodada 38 de 78,0 a 88,4 ms e da virada até 68,1 ms (limite 130 ms), abrir até 153,2 ms (limite 400 ms); `measure:save` mostra as etapas e decide pelos 130 ms                                                                                                                   |
 | T-027  | feita, aguardando merge (review de código, revisão de arte e QA aprovados): rosto gerado por código em `app/src/lib/generators/face.ts` (catálogo, sorteio por idade e nacionalidade, código de 13 caracteres em `Player.face`, nunca regenerado) e `avatar.ts` (SVG seguro em 3 tamanhos, igual à folha `docs/art/avatares-exemplo.svg` aprovada pelo CEO); o motor passa a idade à fonte de identidade sem sorteio novo; `ENGINE_VERSION` segue 14; ainda sem tela (entra na T-028)                                                                           |
 | T-023  | feita, aguardando merge (review em duas rodadas e segurança aprovados; QA depois): casca da interface com abas no celular e barra lateral a partir de 900px, `CareerService` com `guard` em toda gravação e rodada não salva bloqueando "Jogar rodada", avisos e telas cheias para os códigos do save com o código do erro visível, registro local de até 50 erros sem dados pessoais, textos em pt-BR, es e en (lote aprovado em 2026-11-06); tela inicial e abas provisórias (telas reais na T-025 e na T-028), apelido limitado a 24 caracteres por enquanto |
+| T-024  | feita, aguardando merge (review em duas rodadas aprovado; QA PASS): infraestrutura de E2E com Playwright em Chromium e WebKit (celular 390×844 e desktop 1280×800), `PRANCHETA_ENV=test npm run test:e2e`, build de teste em `app/dist-e2e` com trava de produção, trava de rede, verificações da moldura e job `e2e` no CI; golden no navegador em quarentena até a T-074 (ADR-0020); WebKit só roda no CI                                                                                                                                                     |
 
 ## Métricas da cadeia da T-017 (`--chain 3`, 3 temporadas, 600 carreiras)
 
@@ -425,7 +426,9 @@ Pedidas pelo CEO; não mudam nada agora. O `game-designer` detalha quando a etap
 ## Próximo
 
 1. T-073 (conferência de conteúdo da importação), antes da T-020 (exportar e importar).
-2. T-048 (renovação mínima do elenco) e T-023 (casca da interface): feitas, aguardando merge. Depois da T-023: T-025 (tela inicial e novo jogo), T-028, T-029 e seguintes (§7 de `docs/02-architecture.md`).
+2. T-048 (renovação mínima do elenco), T-023 (casca da interface) e T-024 (infra de E2E): feitas, aguardando merge. T-025 (tela inicial e novo jogo) em revisão; T-074 (exponencial portável, ADR-0020) depois da T-025; depois T-028, T-029 e seguintes (§7 de `docs/02-architecture.md`).
+   - Pendência da T-024: marcar `e2e (chromium)` e `e2e (webkit)` como checks obrigatórios da `main` depois da primeira execução no CI.
+   - Pendência da T-024: a primeira execução do WebKit no CI é a primeira de verdade (ele não roda na máquina de desenvolvimento); pode revelar ajustes.
 3. `PROPERTY_FULL=1`, `NAMES_FULL_CHECK=1` e `npm run balance -- --seasons 1000 --seed 1 --robot weakest` antes de release.
 4. Lista de nomes em espanhol (estrangeiros ainda saem com nome brasileiro; na 1a só brasileiros).
 5. Placar e tabela ao vivo da rodada (US-070 a US-074).
