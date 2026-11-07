@@ -6,6 +6,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Telas de Tática e Funções (T-077; US-018):
+  - A vista Tática da aba Elenco substitui o "Esta tela chega numa próxima versão.": formação em cartas com a miniatura do esquema (6 formações), força do time com seta e sinal depois da troca, avisos "Nesta formação", postura (3 opções, sem "Tudo no ataque") e pressão, cada uma com a frase de efeito.
+  - Trocar a formação mantém os mesmos 11 titulares, redistribuídos pela posição de cada um (regra do motor); o banco e as listas não mudam, e a região viva resume a troca ("Formação 4-3-3. Ataque 67, subiu 3. 1 jogador fora de posição.").
+  - Funções: as linhas Capitão, Pênaltis e Faltas abrem cada uma a sua folha, com entrada própria no histórico. Até 3 titulares por lista, com Subir, Descer e Tirar (44 × 44 px) e "Pôr na lista"; quem sai do time na Escalação sai das listas. Com a lista vazia, a linha mostra "Automático: {nome}", quem a regra do motor escolhe hoje.
+  - As listas começam vazias enquanto o técnico não mexeu na ficha (decisão 5 do CEO). Tudo vale na hora, sem "Salvar", e vai para a ficha do técnico no save.
+  - Na Escalação, a sigla de cada vaga passa a ser a da posição natural do jogador, com a cor do setor (a mesma do Elenco); a vaga livre fica sem sigla.
 - Tela de Escalação (T-029; US-017):
   - A aba Elenco ganha o seletor Elenco | Escalação | Tática. A Tática mostra "Esta tela chega numa próxima versão." até a T-077. Trocar de vista não cria entrada no histórico, e a vista fica lembrada enquanto a carreira está aberta.
   - Escalação: força do time (Força, Defesa, Meio e Ataque arredondados, com seta e sinal depois de cada troca, e "O que conta na Força"), formação com "Mudar na Tática", campo com as 11 vagas, avisos (vaga livre, lesionado, suspenso, fora de posição, improvisado, cansado e ídolo fora do time), "Sugerir escalação", banco e não relacionados.
