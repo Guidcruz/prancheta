@@ -1,4 +1,5 @@
 import { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
+import type { GameState } from './game.ts';
 import type { Formation, PlayerId, Posture, Pressure } from './types.ts';
 
 /*
@@ -68,6 +69,33 @@ export interface DraftSheet {
   /** Only the 3 pre-match postures, as in {@link TeamSheet}. */
   readonly tactic: Tactic;
 }
+
+/**
+ * The sheet of a club the state does not know: nobody, in the first formation, with `tactic`
+ * (balanced and medium by default). The one source of `suggestSheet` (ai.ts) and `completeSheet`
+ * (draft.ts) for that case.
+ */
+export function emptySheet(
+  tactic: Tactic = { posture: 'balanced', pressure: 'medium' },
+): TeamSheet {
+  return {
+    lineup: {
+      formation: FORMATIONS[0]!,
+      starters: [],
+      bench: [],
+      captains: [],
+      penaltyTakers: [],
+      freeKickTakers: [],
+    },
+    tactic: { posture: tactic.posture, pressure: tactic.pressure },
+  };
+}
+
+/**
+ * What `validateLineup` and the readings of a draft (strength.ts `sheetStrength`, draft.ts; T-076)
+ * read from the state: the players and the squads.
+ */
+export type LineupState = Pick<GameState, 'players' | 'squads'>;
 
 /** `list` cut to `size` items and filled with `null` up to it. */
 function slots(list: readonly PlayerId[], size: number): (PlayerId | null)[] {

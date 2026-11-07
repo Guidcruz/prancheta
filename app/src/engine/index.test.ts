@@ -40,6 +40,13 @@ const CONTRACT = [
   'playerForm',
   'fanMood',
   'draftFromSheet',
+  'fitLevel',
+  'isAvailable',
+  'sheetStrength',
+  'reshapeLineup',
+  'completeSheet',
+  'sheetRoles',
+  'sheetProblems',
   // closed lists and field ranges
   'PARAM_RANGES',
   'SEASON_ROUNDS',

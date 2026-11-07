@@ -23,12 +23,12 @@ export type { EngineWarning, Result } from './types.ts';
 
 export { validateParams } from './params.ts';
 export { validateClubs } from './clubs.ts';
-export { attributeKeysFor, isProspect, playerForm, validatePlayer } from './players.ts';
+export { attributeKeysFor, fitLevel, isProspect, playerForm, validatePlayer } from './players.ts';
 export { newGame } from './game.ts';
 export { playRound, prepareRound } from './round.ts';
 export { simulateMatch } from './match/simulate.ts';
 export { suggestSheet, validateLineup } from './ai.ts';
-export { teamStrength } from './strength.ts';
+export { isAvailable, sheetStrength, teamStrength } from './strength.ts';
 export { getStandings, standingsHistory } from './standings.ts';
 export {
   careerLeagueTitles,
@@ -41,6 +41,7 @@ export {
 export { matchSheet, roundRecap } from './recap.ts';
 export { fanMood } from './fans.ts';
 export { draftFromSheet } from './lineup.ts';
+export { completeSheet, reshapeLineup, sheetProblems, sheetRoles } from './draft.ts';
 
 // ---------------------------------------------------------------- contract: closed lists and ranges
 // What the interface and the save schema (valibot, T-019) read instead of retyping them.
@@ -107,6 +108,7 @@ export type {
 } from './clubs.ts';
 export type {
   AttributeKey,
+  FitLevel,
   GoalkeeperAttributeKey,
   IdentitySource,
   OutfieldAttributeKey,
@@ -135,9 +137,10 @@ export type {
 } from './params.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type { Fixture } from './fixtures.ts';
-export type { DraftLineup, DraftSheet, Lineup, Tactic, TeamSheet } from './lineup.ts';
+export type { DraftLineup, DraftSheet, Lineup, LineupState, Tactic, TeamSheet } from './lineup.ts';
+export type { DraftProblem, RoleHolder, SheetCheck, SheetRoles } from './draft.ts';
 export type { SheetProblem, SuggestOptions, SuggestState, ValidateLineupResult } from './ai.ts';
-export type { ShownState } from './strength.ts';
+export type { SheetStrength, ShownState } from './strength.ts';
 export type {
   ChanceKind,
   HalftimeChoice,

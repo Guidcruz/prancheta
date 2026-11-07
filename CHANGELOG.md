@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Leituras do motor para a escalação (T-076, ADR-0021):
+  - O jogador ainda não vê a mudança: a tela de escalação, que usa essas leituras, vem na T-029.
+  - Contrato do motor: `fitLevel`, `isAvailable`, `sheetStrength`, `reshapeLineup`, `completeSheet`, `sheetRoles`, `sheetProblems` e a opção `SuggestOptions.formation`.
+  - `sheetStrength` calcula a força da ficha em edição: usa o valor de seleção de cada jogador, vaga vazia ou inapto vale 0, soma dividida por 11, com os setores multiplicados pela formação.
+  - A troca de formação passou a ser uma regra só (`reshapeSlots`), usada pela partida e pela escalação.
+  - `completeSheet`: a ficha pronta passa igual; a incompleta é completada até 7 no banco, com no máximo um goleiro.
+  - Nenhum golden mudou, o `ENGINE_VERSION` continua 16 e o balanceamento de release (1.000 temporadas) saiu idêntico ao da `main`.
+
 - Ficha do técnico no save, formato v2 (T-075, ADR-0021):
   - O jogador ainda não vê a mudança: a tela de escalação, que usa a ficha, vem na T-029.
   - Motor: tipos `DraftLineup` e `DraftSheet` (vaga livre como `null` no campo e no banco) e `draftFromSheet` no contrato. Nenhuma simulação recebe a ficha em edição, os goldens são os mesmos e o `ENGINE_VERSION` continua 16.
