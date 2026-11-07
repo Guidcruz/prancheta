@@ -11,15 +11,18 @@
 </script>
 
 <script lang="ts">
+  import PositionTag from './PositionTag.svelte';
+  import type { Sector } from './sectors';
   import StatusBadge, { type StatusBadgeItem } from './StatusBadge.svelte';
 
   /**
    * PlayerRow (CardJogador, variant `row`): one athlete in the squad table, inside a ScrollTable.
-   * The fixed first cell is the row header: position code, name and the situation badges
-   * (injured, suspended, "promessa") under the name, icon plus text. The name is the button that
-   * opens the full card; a tap anywhere on the row does the same (a pointer shortcut; the
-   * keyboard and screen readers use the button). At least 44px tall. The potential never
-   * reaches this component: only the "promessa" badge, when the engine says so.
+   * The fixed first cell is the row header: position code (PositionTag, painted by the sector),
+   * name and the situation badges (injured, suspended, "promessa") under the name, icon plus
+   * text. The name is the button that opens the full card; a tap anywhere on the row does the
+   * same (a pointer shortcut; the keyboard and screen readers use the button). At least 44px
+   * tall. The potential never reaches this component: only the "promessa" badge, when the engine
+   * says so.
    */
   interface Props {
     name: string;
@@ -27,13 +30,18 @@
     positionCode: string;
     /** "Atacante" (position.ST), for screen readers. */
     positionLabel: string;
+    /**
+     * `SECTOR_OF[player.position]` (sectors.ts): the tag's background and border. The screens
+     * always pass it; without it the tag is the neutral box.
+     */
+    sector?: Sector;
     badges?: readonly StatusBadgeItem[];
     /** The numbers after the player, in the order of the table's columns. */
     cells: readonly PlayerCell[];
     /** Opens the full card; the screen gives it its own entry in the history. */
     onopen: () => void;
   }
-  const { name, positionCode, positionLabel, badges = [], cells, onopen }: Props = $props();
+  const { name, positionCode, positionLabel, sector, badges = [], cells, onopen }: Props = $props();
   const text = (cell: PlayerCell) => (typeof cell === 'object' ? cell.text : String(cell));
 </script>
 
@@ -41,7 +49,7 @@
 <tr class="row" onclick={onopen}>
   <th scope="row" class="player">
     <span class="cell">
-      <span class="rotulo pos" aria-hidden="true">{positionCode}</span>
+      <PositionTag code={positionCode} {sector} hidden />
       <span class="who">
         <span class="visually-hidden">{positionLabel}</span>
         <button
@@ -113,15 +121,6 @@
      whole. */
   :global(.scroll-table) .cell {
     max-inline-size: calc(50cqi - var(--space-3) - var(--space-2) - 1px);
-  }
-  .pos {
-    flex: none;
-    min-inline-size: calc(var(--space-8) + var(--space-1));
-    padding: calc(var(--space-1) / 2) var(--space-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    color: var(--ink-muted);
-    text-align: center;
   }
   .who {
     display: flex;

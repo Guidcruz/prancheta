@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { levelOf } from './levels';
+import { ATTRIBUTE_MARGIN, attributeLevelOf, levelOf } from './levels';
 
 describe('levelOf', () => {
   it('puts each limit in the band above it', () => {
@@ -27,5 +27,40 @@ describe('levelOf', () => {
   it('has no band without a number (form "—")', () => {
     expect(levelOf('form', undefined)).toBeUndefined();
     expect(levelOf('morale', Number.NaN)).toBeUndefined();
+  });
+});
+
+describe('attributeLevelOf', () => {
+  it('marks a strong point from overall + ATTRIBUTE_MARGIN up', () => {
+    expect(ATTRIBUTE_MARGIN).toBe(5);
+    expect(attributeLevelOf(75, 70)).toBe('good');
+    expect(attributeLevelOf(99, 70)).toBe('good');
+    expect(attributeLevelOf(74, 70)).toBeUndefined();
+  });
+
+  it('marks a weak point from overall - ATTRIBUTE_MARGIN down', () => {
+    expect(attributeLevelOf(65, 70)).toBe('poor');
+    expect(attributeLevelOf(1, 70)).toBe('poor');
+    expect(attributeLevelOf(66, 70)).toBeUndefined();
+  });
+
+  it('leaves the attributes near the overall without colour', () => {
+    expect(attributeLevelOf(70, 70)).toBeUndefined();
+  });
+
+  it('is relative to the player, not a fixed scale', () => {
+    expect(attributeLevelOf(70, 62)).toBe('good');
+    expect(attributeLevelOf(70, 80)).toBe('poor');
+  });
+
+  it('has no colour without a number', () => {
+    expect(attributeLevelOf(Number.NaN, 70)).toBeUndefined();
+    expect(attributeLevelOf(70, Number.NaN)).toBeUndefined();
+  });
+
+  it('never answers "fair": only a strong point, a weak one or nothing', () => {
+    for (let overall = 1; overall <= 99; overall++)
+      for (let value = 1; value <= 99; value++)
+        expect(['good', 'poor', undefined]).toContain(attributeLevelOf(value, overall));
   });
 });

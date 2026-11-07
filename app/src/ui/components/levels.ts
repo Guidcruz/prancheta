@@ -3,7 +3,8 @@
  * 2026-11-07): good, fair and poor, painted `level-good`, `level-fair` and `level-poor` on the
  * number itself. The colour only reinforces the number, which is always shown; screen readers
  * get the band as a word. The one place of the limits: PlayerRow and AttributeBar take the
- * `level` the screen asks of `levelOf`, never a limit of their own.
+ * `level` the screen asks of `levelOf` (states) or of `attributeLevelOf` (attributes, relative
+ * to the player's overall), never a limit of their own.
  */
 
 export type Level = 'good' | 'fair' | 'poor';
@@ -33,4 +34,29 @@ export function levelOf(measure: LevelMeasure, shown: number | undefined): Level
   if (shown >= band.good) return 'good';
   if (shown >= band.fair) return 'fair';
   return 'poor';
+}
+
+/**
+ * How far an attribute must stand from the player's own overall to be a strong or a weak point
+ * (jogador.md, "Pontos fortes e fracos"; approved by the CEO on 2026-11-07). Relative to the
+ * player, not a fixed scale: a 70 is a strong point for a 62 and a weak one for an 80, so the
+ * card shows what the player is good at, whatever the club's level.
+ */
+export const ATTRIBUTE_MARGIN = 5;
+
+/** A strong point (`good`) or a weak one (`poor`); an attribute near the overall has no colour. */
+export type AttributeLevel = Extract<Level, 'good' | 'poor'>;
+
+/**
+ * The colour of an attribute next to the player's overall: `good` at `overall + ATTRIBUTE_MARGIN`
+ * or more, `poor` at `overall - ATTRIBUTE_MARGIN` or less, `undefined` in between and without a
+ * number. Goalkeepers follow the same rule. An attribute of weight 0 in the position (finishing
+ * for a centre-back) is generated about 20 below the overall, so it is almost always `poor`: the
+ * CEO accepted it, it is the truth of the player.
+ */
+export function attributeLevelOf(value: number, overall: number): AttributeLevel | undefined {
+  if (!Number.isFinite(value) || !Number.isFinite(overall)) return undefined;
+  if (value >= overall + ATTRIBUTE_MARGIN) return 'good';
+  if (value <= overall - ATTRIBUTE_MARGIN) return 'poor';
+  return undefined;
 }

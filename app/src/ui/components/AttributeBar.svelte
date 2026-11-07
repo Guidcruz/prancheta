@@ -4,10 +4,12 @@
   /**
    * AttributeBar: label, number and a bar, for the 6 attributes of the player card and for
    * condition, morale and form. The number is the data; the bar only reinforces it
-   * (`aria-hidden`). With `level` (the states only: `levelOf`), the number takes its band's
-   * colour and `srText` is what screen readers read instead of it ("82, boa"), so the colour is
-   * never the only way to read the band. It renders a `dt`/`dd` pair inside a `div`: the caller wraps the list
-   * in a `<dl>`.
+   * (`aria-hidden`). With `level`, the number takes its colour: for the states, the band of
+   * `levelOf` ("82, boa"); for the attributes, a strong or a weak point next to the player's
+   * overall (`attributeLevelOf`: only `good` or `poor`, "78, ponto forte"). `srText` is what
+   * screen readers read instead of the number, so the colour is never the only way to read it.
+   * The bar never takes the colour (design-system.md, "Cores por faixa"). It renders a `dt`/`dd`
+   * pair inside a `div`: the caller wraps the list in a `<dl>`.
    */
   interface Props {
     /** "Finalização", already translated. */
@@ -20,7 +22,10 @@
     emptyText?: string;
     /** Text shown instead of the bare number (form: "7,2"); `value` still fills the bar. */
     valueText?: string;
-    /** The band of the shown value (condition, morale, form); ignored with no value. */
+    /**
+     * The colour of the shown value: the band of a state (`levelOf`) or a strong or weak point of
+     * an attribute (`attributeLevelOf`); ignored with no value.
+     */
     level?: Level;
     /** Read instead of the number when it says more ("82, boa", level.reading), translated. */
     srText?: string;
