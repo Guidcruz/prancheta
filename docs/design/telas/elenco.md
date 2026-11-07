@@ -14,7 +14,7 @@ Lê o elenco, troca a ordem (posição, nota, condição) e toca num atleta para
 
 - Aba **Elenco** da moldura (`#/squad`), título `nav.tab.squad`. Também se chega pela linha de desfalques da tela Clube.
 - Tocar num atleta abre a folha do jogador com entrada própria no histórico (`history.pushState`, como o menu "Mais"): o voltar do celular fecha a folha e fica no Elenco.
-- **Elenco | Escalação | Tática** (o SegmentedControl do topo do rascunho do kickoff) entra com a T-029, quando houver Escalação e Tática. Na T-028 a aba só tem o Elenco e o seletor não aparece (P3: nada de "em breve").
+- **Elenco | Escalação | Tática** (SegmentedControl no topo, legenda escondida `squad.view.legend`) entra com a T-029: ver [escalacao.md](escalacao.md), "Navegação". Trocar de vista não cria entrada no histórico, e a última vista fica lembrada enquanto a carreira está aberta. Na T-028 a aba só tinha o Elenco, sem o seletor.
 - A ordem escolhida fica lembrada enquanto a carreira está aberta (estado da tela, não vai ao save).
 
 ## Conteúdo (de cima para baixo)
@@ -29,7 +29,7 @@ Lê o elenco, troca a ordem (posição, nota, condição) e toca num atleta para
    - Condição e moral são números reais no motor; a tela mostra `Math.round` (`jogadores.md`, "Frações").
    - **Agrupamento:** com a ordem "Posição", uma linha de grupo (GroupRow) antes de cada posição ("Goleiros", "Zagueiros"...). Com "Nota" e "Condição", lista corrida, sem grupos.
    - A coluna ordenada tem `aria-sort` e uma seta no cabeçalho; com "Posição", nenhuma coluna tem `aria-sort` (a posição não é coluna; os grupos dizem a ordem).
-3. **Titular e reserva:** não aparecem na T-028. Quem é titular depende da escalação da T-029, que traz o selo e o agrupamento por titulares e reservas (muda o rascunho do kickoff, que separava os dois grupos aqui).
+3. **Titular e reserva:** não aparecem no Elenco, nem depois da T-029: a Escalação mostra titulares, banco e não relacionados (proposta do `ux-designer` na T-029, decisão 9 de [funcoes.md](funcoes.md#decisões-do-ceo-t-029)).
 
 O número do potencial não aparece em lugar nenhum. O selo "Promessa" (decisão do CEO na US-016) aparece para quem se enquadra na regra de `jogadores.md`, "Potencial", e a tela recebe do motor só o booleano (ver "Pedidos ao motor" em [jogador.md](jogador.md#pedidos-ao-motor)).
 
