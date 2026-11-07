@@ -3,6 +3,7 @@
 - **Status:** aceita (CEO, 2026-11-04)
 - **Data:** 2026-11-04
 - **Decisores:** architect (propôs), CEO (aprova)
+- **Complementada por:** ADR-0020 (regra 9: a troca da `exp` aconteceu, medida na T-024 em 2026-11-07)
 
 ## Contexto
 
@@ -28,7 +29,7 @@ O ADR-0001 já decide o motor em TypeScript puro, sem DOM e com `Rng` semeado. F
 6. **Roda sem compilação.** Só sintaxe apagável do TypeScript (`erasableSyntaxOnly`) e imports relativos com extensão `.ts` dentro do motor. Assim o mesmo código roda no Vite, no Node 22.18+ (`node scripts/balance.ts`) e no esbuild do Wrangler.
 7. **Versão do motor e golden.** `ENGINE_VERSION` (inteiro) em `app/src/engine/version.ts`. Os golden (`engine/__golden__/`: partida, rodada, temporada inteira, virada) gravam a versão que os gerou. Mudar a saída de um golden exige subir `ENGINE_VERSION` no mesmo PR, e o teste confere isso. Saves são snapshots (ADR-0006), então uma versão nova do motor não muda carreiras em andamento: vale da próxima rodada em diante.
 8. **Compatibilidade entre cliente e servidor no online.** Só o servidor simula. O cliente mostra os eventos recebidos e nunca recalcula resultado online. O contrato entre os dois é o protocolo HTTP/WebSocket com `X-Prancheta-Protocol`, não a versão do motor. Cliente abaixo do mínimo recebe `426 client_outdated`. Liga em andamento passa a usar o motor novo na próxima rodada depois do deploy (`leagues.engine_version` registra). O teste "servidor × cliente" (US-056) roda o mesmo `playRound` pelos dois caminhos de carga (bundle do app e bundle do servidor) no Node.
-9. **Ponto flutuante.** Funções transcendentes (`exp`) só por `engine/math.ts`. O golden da partida também roda no WebKit pelo E2E. Se divergir do V8, troca-se a implementação em `math.ts` por uma própria (e sobe `ENGINE_VERSION`).
+9. **Ponto flutuante.** Funções transcendentes (`exp`) só por `engine/math.ts`. O golden da partida também roda no WebKit pelo E2E. Se divergir do V8, troca-se a implementação em `math.ts` por uma própria (e sobe `ENGINE_VERSION`). Divergiu (Chromium 153 contra Node 22, T-024): a implementação própria e as travas estão no ADR-0020.
 
 ## Consequências
 
