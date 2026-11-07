@@ -6,6 +6,8 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  /* No zoom by double tap (and no tap delay); pinch zoom stays (componentes.md, "Zoom no celular"). */
+  touch-action: manipulation;
 }
 body {
   margin: 0;
