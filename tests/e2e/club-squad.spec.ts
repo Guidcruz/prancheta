@@ -602,6 +602,9 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     const title = await dialog(page).getByRole('heading', { level: 2 }).first().innerText();
     await dialog(page).getByRole('button', { name: 'Próximo' }).click();
     await expect(dialog(page).getByRole('heading', { level: 2 }).first()).not.toHaveText(title);
+    // The announcement carries the display name, the same as the new title.
+    const newTitle = await dialog(page).getByRole('heading', { level: 2 }).first().innerText();
+    await expect(dialog(page).locator('[aria-live="polite"]')).toHaveText(newTitle.trim());
     expect(await page.evaluate(() => history.length)).toBe(before + 1);
 
     await page.evaluate(() => history.back());
@@ -679,6 +682,47 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     await dialog(page).getByRole('button', { name: 'Fechar' }).click();
     await expect(dialog(page)).toBeHidden();
     await expect(names.nth(4)).toBeFocused();
+  });
+
+  test('o título do card é o nome da linha; o nome completo, se diferente, vem abaixo', async ({
+    page,
+  }) => {
+    await startCareer(page);
+    await openSquad(page);
+    const save = await readSave(page);
+    const players = save.game.squads[save.career.clubId]!.map(
+      (id) => save.game.players[id] as unknown as { name: { display: string; full: string } },
+    );
+    const buttons = main(page).locator('tbody th[scope="row"] button');
+    const names = (await buttons.allInnerTexts()).map((n) => n.trim());
+    let withFullName = 0;
+    // The whole squad, so at least one nickname is sure to be in the sample.
+    for (let i = 0; i < names.length; i++) {
+      await buttons.nth(i).click();
+      await expect(dialog(page)).toBeVisible();
+      await expect(dialog(page).getByRole('heading', { level: 2 }).first()).toHaveText(names[i]!);
+      const name = players.find((p) => p.name.display === names[i])!.name;
+      const key = (text: string) =>
+        text
+          .normalize('NFD')
+          .replace(/\p{M}/gu, '')
+          .toLowerCase()
+          .replace(/[-\s]+/g, ' ')
+          .trim();
+      if (key(name.full) !== key(name.display)) {
+        withFullName++;
+        await expect(
+          dialog(page).getByRole('paragraph').filter({ hasText: name.full }),
+        ).toHaveCount(1);
+      } else {
+        await expect(
+          dialog(page).getByRole('paragraph').filter({ hasText: name.full }),
+        ).toHaveCount(0);
+      }
+      await dialog(page).getByRole('button', { name: 'Fechar' }).click();
+      await expect(dialog(page)).toBeHidden();
+    }
+    expect(withFullName, 'jogadores com nome completo diferente do da linha').toBeGreaterThan(0);
   });
 
   test('toque duplo no X fecha o card e continua no Elenco', async ({ page }) => {

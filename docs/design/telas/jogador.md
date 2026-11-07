@@ -18,7 +18,7 @@ Lê o card, passa para o atleta anterior ou o próximo da lista sem fechar, e fe
 
 ## Conteúdo (corpo da folha, de cima para baixo)
 
-Título da folha: o nome completo (`Player.name.full`). Depois, o PlayerCard `full`:
+Título da folha: o nome que a linha do Elenco mostra (`Player.name.display`, que pode ser um apelido), para o atleta ser o mesmo que o técnico tocou. Logo abaixo, no corpo, em `caption` e `ink-muted`, o nome completo (`Player.name.full`), só quando ele difere do `display` (comparação sem acento, sem caixa, sem hífen e sem espaços repetidos; iguais, a linha não aparece). O leitor de tela ouve o `display` como nome do diálogo e o nome completo uma vez, no corpo. Decisão do CEO, 2026-11-07 (antes o título era o nome completo e, com apelido, o card parecia de outro jogador). Depois, o PlayerCard `full`:
 
 1. **Cabeçalho:** Avatar `xl` (96px, do gerador da T-027, camisa na 1ª cor do clube); posição com a sigla na caixinha da cor do setor (PositionTag, a mesma do Elenco) e por extenso ("MEI Meia"); idade e camisa ("23 anos · Camisa 9"); nota geral em `titulo` com o rótulo "Nota geral".
 2. **Selos** (se houver): "Lesionado, 3 rodadas", "Suspenso, 1 jogo" (`status.suspended.one/.other`), "Promessa", com ícone e texto.
@@ -132,7 +132,7 @@ A leitura é `level.reading` ("{value}, {level}"), igual nos três: "81, ponto f
 ## Acessibilidade
 
 - **Diálogo modal nativo:** foco preso na folha; Esc fecha; o foco entra no X (o padrão do BottomSheet, aprovado na T-025; muda o rascunho do kickoff, que punha o foco no nome) e o título da folha, que é o nome, é anunciado como nome do diálogo. Ao fechar, o foco volta ao botão do nome da linha de origem, também quando o card foi aberto por um toque em outro ponto da linha (a tela guarda o botão de origem; ver [elenco.md](elenco.md#acessibilidade)).
-- **Ao trocar de atleta** com "Anterior"/"Próximo", o foco fica no botão tocado, e o novo nome é anunciado por um texto escondido com `aria-live="polite"` no pé da folha, junto dos botões (o título do diálogo não é relido ao mudar). Se o botão tocado ficar desabilitado (chegou ao primeiro ou ao último), o foco passa para o outro botão do pé.
+- **Ao trocar de atleta** com "Anterior"/"Próximo", o foco fica no botão tocado, e o novo nome (`display`) é anunciado por um texto escondido com `aria-live="polite"` no pé da folha, junto dos botões (o título do diálogo não é relido ao mudar). Se o botão tocado ficar desabilitado (chegou ao primeiro ou ao último), o foco passa para o outro botão do pé.
 - **Estrutura:** título da folha `h2`; seções em `h3`; estados e atributos em `dl` (rótulo `dt`, número `dd`); as barras são `aria-hidden`.
 - **Nunca só cor:** selos com ícone e texto; as barras não carregam informação que o número não tenha. Nos estados com faixa, o número visível é `aria-hidden` e o texto escondido lê "Condição, 82, boa" (o `dt` e depois `level.reading`); nos atributos com ponto forte ou fraco, "Finalização, 81, ponto forte". A sigla da posição tem o código escrito e é `aria-hidden` no card (a posição por extenso está ao lado); a cor do setor só reforça.
 - **Anel de foco só para o teclado:** aberto por toque, o X recebe o foco sem anel; aberto pelo teclado, com anel ([design-system.md](../design-system.md#foco-anel-só-para-o-teclado-pedido-do-ceo-em-2026-11-07)). O lugar do foco não muda.
@@ -143,7 +143,7 @@ A leitura é `level.reading` ("{value}, {level}"), igual nos três: "81, ponto f
 
 ## Medidas para o E2E
 
-1. **Detalhe (US-016):** tocar num atleta abre um `dialog` com o nome completo no título, 6 linhas de atributo com números de 1 a 99, o nome do traço e os números de Jogos e Gols.
+1. **Detalhe (US-016):** tocar num atleta abre um `dialog` com o mesmo nome da linha no título (`display`) e, quando o nome completo é diferente, ele logo abaixo, 6 linhas de atributo com números de 1 a 99, o nome do traço e os números de Jogos e Gols.
 2. **Histórico:** `history.length` cresce 1 ao abrir; o voltar fecha o diálogo e mantém `#/squad`; "Próximo" não cresce o histórico.
 3. **Foco:** ao abrir, `document.activeElement` é o X; ao fechar com Esc, é o botão do nome da linha de origem, tanto abrindo pelo botão quanto por um toque em outra célula da linha.
 4. **Pé visível:** no celular em pé (390×844), deitado (844×390) e no desktop (1280×800), o X e os dois botões do pé estão inteiros dentro da janela, e o corpo rola (`scrollHeight > clientHeight` no deitado).

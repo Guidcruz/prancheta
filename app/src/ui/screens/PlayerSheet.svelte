@@ -102,6 +102,7 @@
     />
   {:else}
     <PlayerCard
+      fullName={card.fullName}
       face={card.face}
       shirt={card.shirt}
       positionLabel={card.positionLabel}

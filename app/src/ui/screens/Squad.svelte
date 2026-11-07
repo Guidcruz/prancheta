@@ -57,7 +57,7 @@
     if (at < 0 || next === undefined) return;
     history.replaceState({ ...(history.state ?? {}), sheet: SHEET, player: next.id }, '');
     openId = next.id;
-    announce = next.name.full;
+    announce = next.name.display;
     await tick();
     sheet?.keepFocus();
   }
