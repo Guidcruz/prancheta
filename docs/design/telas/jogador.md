@@ -21,7 +21,7 @@ Lê o card, passa para o atleta anterior ou o próximo da lista sem fechar, e fe
 Título da folha: o nome completo (`Player.name.full`). Depois, o PlayerCard `full`:
 
 1. **Cabeçalho:** Avatar `xl` (96px, do gerador da T-027, camisa na 1ª cor do clube); posição por extenso ("Meia"); idade e camisa ("23 anos · Camisa 9"); nota geral em `titulo` com o rótulo "Nota geral".
-2. **Selos** (se houver): "Lesionado, 3 rodadas", "Suspenso", "Promessa", com ícone e texto.
+2. **Selos** (se houver): "Lesionado, 3 rodadas", "Suspenso, 1 jogo" (`status.suspended.one/.other`), "Promessa", com ícone e texto.
 3. **Como está:** Condição (0 a 100; só no Completo), Moral (0 a 100) e Forma (média das últimas 5 notas, uma casa decimal; "Sem jogos ainda" quando não há), cada uma com rótulo, número e barra (AttributeBar).
 4. **Atributos:** os 6 da posição natural, na ordem de `jogadores.md` (linha: velocidade, técnica, passe, finalização, marcação, físico; goleiro: reflexos, posicionamento, jogo aéreo, saída do gol, reposição, físico), cada um com rótulo, número de 1 a 99 e barra.
 5. **Personalidade:** nome do traço e uma frase do que ele faz no jogo (do conteúdo).
@@ -36,14 +36,14 @@ Os botões "Anterior" e "Próximo" ficam no pé da folha, no alcance do polegar,
 
 ## Estados
 
-| Estado                    | O que aparece                                                                                                                                                                                          |
-| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| **Carregando**            | Não há espera: o jogador já está na memória. Se um dia houver, Skeleton dentro do corpo, com `player.loading`.                                                                                         |
-| **Erro**                  | Jogador que não está mais no elenco (id inválido no histórico) ou erro ao montar o card: ErrorState `block` dentro da folha, com `player.error.title` e `player.error.body`; a folha continua com o X. |
-| **Vazio**                 | Temporada sem jogos: Jogos 0, Gols 0; Forma "Sem jogos ainda".                                                                                                                                         |
-| **Realismo completo**     | Como descrito.                                                                                                                                                                                         |
-| **Realismo simplificado** | Sem a linha "Condição" (sempre 100 entre as rodadas) e nunca com selo de lesão ou suspensão. O resto igual.                                                                                            |
-| **Offline**               | Nada muda.                                                                                                                                                                                             |
+| Estado                    | O que aparece                                                                                                                                                                                                                                                                                               |
+| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Carregando**            | Não há espera: o jogador já está na memória. Se um dia houver, Skeleton dentro do corpo, com `player.loading`.                                                                                                                                                                                              |
+| **Erro**                  | Jogador que não está mais no elenco (id inválido no histórico) ou erro ao montar o card: o título da folha vira "Jogador" (`squad.col.player`), o corpo mostra o ErrorState `block` com `player.error.title` e `player.error.body`, "Anterior" e "Próximo" ficam desabilitados, e a folha continua com o X. |
+| **Vazio**                 | Temporada sem jogos: Jogos 0, Gols 0; Forma "Sem jogos ainda".                                                                                                                                                                                                                                              |
+| **Realismo completo**     | Como descrito.                                                                                                                                                                                                                                                                                              |
+| **Realismo simplificado** | Sem a linha "Condição" (sempre 100 entre as rodadas) e nunca com selo de lesão ou suspensão. O resto igual.                                                                                                                                                                                                 |
+| **Offline**               | Nada muda.                                                                                                                                                                                                                                                                                                  |
 
 ## Celular deitado e desktop
 
@@ -103,8 +103,8 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. As frases dos traços resu
 
 ## Acessibilidade
 
-- **Diálogo modal nativo:** foco preso na folha; Esc fecha; o foco entra no X (o padrão do BottomSheet, aprovado na T-025; muda o rascunho do kickoff, que punha o foco no nome) e o título da folha, que é o nome, é anunciado como nome do diálogo. Ao fechar, o foco volta ao botão do nome na lista.
-- **Ao trocar de atleta** com "Anterior"/"Próximo", o foco fica no botão tocado e o novo nome é anunciado pelo título (o `developer` põe o título num `aria-live="polite"` só durante a troca, ou move o foco para o título; escolha dele, conferida na revisão).
+- **Diálogo modal nativo:** foco preso na folha; Esc fecha; o foco entra no X (o padrão do BottomSheet, aprovado na T-025; muda o rascunho do kickoff, que punha o foco no nome) e o título da folha, que é o nome, é anunciado como nome do diálogo. Ao fechar, o foco volta ao botão do nome da linha de origem, também quando o card foi aberto por um toque em outro ponto da linha (a tela guarda o botão de origem; ver [elenco.md](elenco.md#acessibilidade)).
+- **Ao trocar de atleta** com "Anterior"/"Próximo", o foco fica no botão tocado, e o novo nome é anunciado por um texto escondido com `aria-live="polite"` no pé da folha, junto dos botões (o título do diálogo não é relido ao mudar). Se o botão tocado ficar desabilitado (chegou ao primeiro ou ao último), o foco passa para o outro botão do pé.
 - **Estrutura:** título da folha `h2`; seções em `h3`; estados e atributos em `dl` (rótulo `dt`, número `dd`); as barras são `aria-hidden`.
 - **Nunca só cor:** selos com ícone e texto; as barras não carregam informação que o número não tenha.
 - **Avatar** decorativo (o nome está no título); gerado, nunca foto.
@@ -116,7 +116,7 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. As frases dos traços resu
 
 1. **Detalhe (US-016):** tocar num atleta abre um `dialog` com o nome completo no título, 6 linhas de atributo com números de 1 a 99, o nome do traço e os números de Jogos e Gols.
 2. **Histórico:** `history.length` cresce 1 ao abrir; o voltar fecha o diálogo e mantém `#/squad`; "Próximo" não cresce o histórico.
-3. **Foco:** ao abrir, `document.activeElement` é o X; ao fechar com Esc, é o botão do nome da linha de origem.
+3. **Foco:** ao abrir, `document.activeElement` é o X; ao fechar com Esc, é o botão do nome da linha de origem, tanto abrindo pelo botão quanto por um toque em outra célula da linha.
 4. **Pé visível:** no celular em pé (390×844), deitado (844×390) e no desktop (1280×800), o X e os dois botões do pé estão inteiros dentro da janela, e o corpo rola (`scrollHeight > clientHeight` no deitado).
 5. **Primeiro e último:** no primeiro atleta da lista, "Anterior" está desabilitado; no último, "Próximo".
 6. **Simplificado:** sem a linha "Condição".

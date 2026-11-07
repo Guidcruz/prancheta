@@ -108,7 +108,9 @@ Regras da T-028:
 
 - **Selos (StatusBadge):** fundo e texto só em pares conferidos pelo `npm run tokens`: `win` em `on-grass` sobre `grass`; `draw` em `ink` sobre `surface-2` com borda `draw`; `loss`, `injured` e `suspended` em `ink` sobre `danger-soft` com borda `danger` (o ícone em `danger`); `prospect` e `derby` em `on-floodlight` sobre `floodlight`. Texto em `rotulo`.
 - **Termômetro:** o lit da faixa atual usa `danger` (revolta e irritada), `draw` (desconfiada), `grass` (animada) e `floodlight` (em festa); o marcador do valor é um traço em `ink`, que aparece nos dois temas. A palavra diz a mesma coisa que a cor.
-- **Coluna fixa das tabelas:** no máximo `45cqi` da caixa da tabela (cerca de metade, contando o respiro da célula), com uma linha em `line` na borda direita. O meu clube na TableRow tem uma barra de `space-1` em `grass` na borda esquerda, além do fundo e do negrito.
+- **Coluna fixa das tabelas:** a célula inteira (conteúdo, respiro e a linha de 1px em `line` na borda direita) ocupa no máximo 50% da caixa da tabela: o conteúdo tem `max-inline-size: calc(50cqi − respiro da célula − 1px)`. Vale para a `PlayerRow` do Elenco e para a `TableRow` (Clube e, depois, Tabela). Revisão da T-028: o `45cqi` do rascunho, somado ao respiro, dava 51% a 360px.
+- **Células com texto escondido** (o "sem jogos" da coluna Forma) têm `position: relative`, para o texto escondido ficar dentro do recorte da caixa que rola.
+- **Botão do nome na PlayerRow:** pelo menos `var(--touch)` de altura e de largura (`min-inline-size`), também com nome curto. O meu clube na TableRow tem uma barra de `space-1` em `grass` na borda esquerda, além do fundo e do negrito.
 
 ## Zoom no celular
 
