@@ -42,11 +42,14 @@ describe('input modality', () => {
     expect(modalityOfKey({ key: 'Escape' })).toBe('keyboard');
   });
 
-  it('counts only Tab while typing in a field', () => {
+  it('counts only Tab and Esc while typing in a field', () => {
     const field = { tagName: 'INPUT' } as unknown as EventTarget;
     const editor = { tagName: 'DIV', isContentEditable: true } as unknown as EventTarget;
     expect(modalityOfKey({ key: 'a', target: field })).toBeUndefined();
     expect(modalityOfKey({ key: 'Enter', target: editor })).toBeUndefined();
     expect(modalityOfKey({ key: 'Tab', target: field })).toBe('keyboard');
+    // No virtual keyboard sends Esc, so it is a physical keyboard even inside a field.
+    expect(modalityOfKey({ key: 'Escape', target: field })).toBe('keyboard');
+    expect(modalityOfKey({ key: 'Escape', target: editor })).toBe('keyboard');
   });
 });

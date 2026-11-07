@@ -51,8 +51,10 @@ export function modalityOfKey(event: {
   if (event.isComposing || IGNORED_KEYS.has(event.key)) return undefined;
   // Shortcuts (Ctrl+C, Cmd+Tab) are not navigation.
   if (event.altKey || event.ctrlKey || event.metaKey) return undefined;
-  // Typing in a field (the phone's keyboard included) is not moving the focus; Tab out of it is.
-  if (editable(event.target ?? null) && event.key !== 'Tab') return undefined;
+  // Typing in a field (the phone's keyboard included) is not moving the focus; Tab or Esc out of it is
+  // (no virtual keyboard has an Esc key).
+  if (editable(event.target ?? null) && event.key !== 'Tab' && event.key !== 'Escape')
+    return undefined;
   return 'keyboard';
 }
 
