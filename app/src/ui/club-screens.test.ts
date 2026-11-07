@@ -468,6 +468,32 @@ describe('the player card (jogador.md; US-016)', () => {
     expect(body).toContain(`aria-label="${t('nav.close', 'pt-BR')}"`);
   });
 
+  it('a card that fails to build shows the ErrorState inside the sheet (jogador.md, "Erro")', () => {
+    const { finishing, ...rest } = striker.attributes;
+    expect(finishing).toBeDefined();
+    const broken = withPlayer(round5, striker.id, { attributes: rest });
+    const body = sheet(broken, striker.id);
+    expect(body).toContain('error block');
+    expect(body).toContain(shown(t('player.error.title', 'pt-BR')));
+    expect(body).toContain(`aria-label="${t('nav.close', 'pt-BR')}"`);
+    expect(body).not.toContain('class="card');
+    // "Anterior" and "Próximo" have nothing to move from.
+    expect(body.match(/<button[^>]*disabled/g)).toHaveLength(2);
+  });
+
+  it('the potential never reaches the HTML: a sentinel value shows nowhere (US-016)', () => {
+    const SENTINEL = 4242;
+    const game = withPlayer(round5, striker.id, { potential: SENTINEL });
+    expect(game.players[striker.id]!.potential).toBe(SENTINEL);
+    const row = squadView(game);
+    const card = sheet(game, striker.id);
+    // Control: the player is on both.
+    expect(row).toContain(shown(striker.name.display));
+    expect(card).toContain(shown(striker.name.full));
+    expect(row).not.toContain(String(SENTINEL));
+    expect(card).not.toContain(String(SENTINEL));
+  });
+
   it('closed: an empty sheet', () => {
     const body = sheet(round5, undefined);
     expect(body).toContain('<dialog');

@@ -171,13 +171,20 @@ describe('the player card (jogador.md)', () => {
         expect(a.value).toBeGreaterThanOrEqual(1);
         expect(a.value).toBeLessThanOrEqual(99);
       }
-      expect(card.facts.map((f) => f.value)).toEqual([
-        `${player.age} anos`,
-        `Camisa ${player.shirt}`,
+      expect(card.facts).toEqual([
+        { label: 'Idade', value: `${player.age} anos` },
+        { label: 'Camisa', value: `Camisa ${player.shirt}` },
       ]);
       expect(card.overall).toBe(player.overall);
     }
     expect(playerCard(full, TEST_CLUB, keeper.id, 'pt-BR')!.positionLabel).toBe('Goleiro');
+  });
+
+  it('throws for a player without an attribute of his position, never shows a made-up 0', () => {
+    const { finishing, ...rest } = striker.attributes;
+    expect(finishing).toBeDefined();
+    const broken = withPlayer(full, striker.id, { attributes: rest });
+    expect(() => playerCard(broken, TEST_CLUB, striker.id, 'pt-BR')).toThrow(/finishing/);
   });
 
   it('has the trait and the season games and goals, zeros included', () => {

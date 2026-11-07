@@ -131,7 +131,11 @@ export interface PlayerCardView {
   readonly season: readonly CardFact[];
 }
 
-/** The card of a player of the career; `undefined` when the id is no longer in the squad. */
+/**
+ * The card of a player of the career; `undefined` when the id is no longer in the squad. A
+ * player without one of the 6 attributes of his position is a programming error (a validated
+ * save always has them): it throws, and the sheet shows its ErrorState instead of a made-up 0.
+ */
 export function playerCard(
   game: GameState,
   clubId: ClubId,
@@ -170,18 +174,19 @@ export function playerCard(
     face: player.face,
     shirt: game.clubs[clubId]?.def.colors[0],
     positionLabel: t(`position.${player.position}`, lang),
+    // The label names the fact ("Idade", "Camisa"); the card shows only the value.
     facts: [
-      { label: age, value: age },
-      { label: shirtNumber, value: shirtNumber },
+      { label: t('squad.col.age', lang), value: age },
+      { label: t('player.shirt', lang, { number: '' }).trim(), value: shirtNumber },
     ],
     overall: player.overall,
     badges: playerBadges(player, realism, lang),
     states,
-    attributes: attributeKeysFor(player.position).map((key) => ({
-      id: key,
-      label: t(`attr.${key}`, lang),
-      value: player.attributes[key] ?? 0,
-    })),
+    attributes: attributeKeysFor(player.position).map((key) => {
+      const value = player.attributes[key];
+      if (value === undefined) throw new Error(`player without the attribute ${key}`);
+      return { id: key, label: t(`attr.${key}`, lang), value };
+    }),
     trait: {
       name: t(`trait.${player.trait}`, lang),
       description: t(`trait.${player.trait}.body`, lang),

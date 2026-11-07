@@ -6,13 +6,15 @@
   import Button from '../components/Button.svelte';
   import ErrorState from '../components/ErrorState.svelte';
   import PlayerCard from '../components/PlayerCard.svelte';
+  import { readBlock } from '../club';
   import { playerCard } from '../squad';
 
   /**
    * The full player card in a BottomSheet (docs/design/telas/jogador.md; US-016): a dialog on
    * the phone and, from 900px, the floating dialog anchored by its base. "Anterior" and "Próximo"
    * in the fixed foot follow the order of the list that opened it and never wrap. A player no
-   * longer in the squad (a stale id in the history) shows an ErrorState inside the sheet. The
+   * longer in the squad (a stale id in the history) or a card that fails to build shows an
+   * ErrorState `block` inside the sheet, which keeps its close button (jogador.md, "Erro"). The
    * sheet stays mounted, so the native dialog gives the focus back to the name that opened it.
    */
   interface Props {
@@ -28,6 +30,8 @@
     onprev: () => void;
     onnext: () => void;
     onclose: () => void;
+    /** Logs a card that failed to build (lib/errors, without personal data). */
+    onerror?: (error: unknown) => void;
   }
   const {
     lang,
@@ -40,13 +44,20 @@
     onprev,
     onnext,
     onclose,
+    onerror,
   }: Props = $props();
 
   let foot: HTMLElement | undefined = $state();
 
-  const card = $derived(
-    playerId === undefined ? undefined : playerCard(game, clubId, playerId, lang),
+  /** The card, or why there is none: a stale id (`undefined`) or an error building it. */
+  const read = $derived(
+    playerId === undefined ? undefined : readBlock(() => playerCard(game, clubId, playerId, lang)),
   );
+  const card = $derived(read?.ok ? read.value : undefined);
+  // A card that failed to build is a bug: logged, like the boundary of the tab does.
+  $effect(() => {
+    if (read !== undefined && !read.ok) onerror?.(read.error);
+  });
   const title = $derived(
     // A stale id: the sheet is named "Jogador" and the ErrorState inside says what happened.
     playerId === undefined ? '' : (card?.title ?? t('squad.col.player', lang)),

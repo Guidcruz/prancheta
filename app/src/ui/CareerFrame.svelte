@@ -327,6 +327,7 @@
             clubId={save.career.clubId}
             {sort}
             onsort={(next) => (squadSort = { careerId: save.careerId, sort: next })}
+            onerror={onBoundaryError}
           />
         {:else}
           <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
