@@ -175,7 +175,7 @@ A sigla da posição (GOL, ZAG, LAT, VOL, MEI, ATA) ganha a cor do seu setor, pa
 | Meio    | VOL, MEI | `#a78bfa` / `#6d3fd0` | `#2e2658` / `#ebe4fd`   | 12,50 / 13,48                     | 5,71 / 6,42                           | 4,72 / 5,35                           |
 | Ataque  | ATA      | `#e879d6` / `#a0208c` | `#46203f` / `#f7e0f4`   | 12,46 / 13,38                     | 6,02 / 6,82                           | 4,98 / 5,68                           |
 
-Valores na ordem noite / dia. Âmbar, azul, violeta e magenta: matizes próprios, longe do verde, do amarelo e do vermelho das faixas, para a sigla não ser lida como "bom" ou "ruim".
+Valores na ordem noite / dia. Âmbar, azul, violeta e magenta. O azul, o violeta e o magenta ficam longe do verde e do vermelho das faixas. O âmbar do goleiro coincide com o amarelo de "regular" (`level-fair`) no tema noite (`#ffc83d`, o mesmo valor) e fica perto dele no tema dia (`#a87200` contra `#8a5a00`). É aceitável porque essa cor só pinta a borda da sigla, nunca um número, e a cor de faixa só pinta números ("Onde cada cor pinta"): as duas nunca aparecem no mesmo tipo de elemento.
 
 - **Só o fundo e a borda da sigla.** O texto da sigla é sempre `ink`; nenhum número, nome, linha ou ícone leva cor de setor.
 - **Contraste:** `ink` sobre os quatro `sector-*-soft` é conferido pelo `npm run tokens` (≥ 4,5:1 nos dois temas). A borda é reforço, não informação (a sigla está escrita); mesmo assim passa de 3:1 sobre `surface-1` e `surface-2` (conferido à mão, tabela acima).
