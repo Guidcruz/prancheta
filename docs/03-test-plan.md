@@ -568,6 +568,19 @@ Cenários cobertos (todos automatizados):
 
 Pendente: cabeçalho `PRANCHETA-SAVE 2` do arquivo exportado (T-020); E2E da ficha na tela (T-029 e T-077).
 
+### QA da T-076 (leituras do motor para a escalação, ADR-0021)
+
+Cenários cobertos (todos automatizados, em `app/src/engine/`):
+
+- `sheetStrength` (`strength.sheet.test.ts`): (a) igual ao `teamStrength` e ao `sectorStrengths` com 11 aptos e condição 100; régua (Σv/11, setores vezes a formação, goleiro só no `overall`); vaga livre, id fora do elenco e id repetido valem 0; (b) vaga livre nunca aumenta nenhum dos quatro números; (c) inapto igual a vaga livre; (d) pureza; `undefined` só para clube sem elenco; nunca `NaN`.
+- `reshapeLineup` (`draft.test.ts`, `draft.property.test.ts`): exemplo de `partida.md`; inapto só muda de vaga; id fora do elenco vira vaga livre; mesma formação devolve igual; 6 × 6 formações × 0 a 11 vagas (nunca lança, mesmos ids, goleiro no gol, vagas livres conservadas, determinístico); regra compartilhada com a partida provada pelos 5 goldens.
+- `completeSheet`: preenchimento das vagas (banco, depois não relacionados); inaptos e repetidos saem; menos de 11 aptos; clube desconhecido; ficha pronta passa igual (banco de 5 sem goleiro, vagas livres fechadas, banco vazio); ficha incompleta enche até 7 com no máximo um goleiro, preserva dois goleiros do técnico, refaz o banco com reserva lesionado; propriedades (sempre passa no `validateLineup`, pronta passa igual, goleiros do banco limitados, determinismo).
+- `SuggestOptions.formation` (`ai.formation.test.ts`): XI e banco na formação pedida só com `controller: 'human'`; ignorada com `ai`, valor desconhecido e sem opção (saída igual à de hoje); capitão, cobradores e tática intactos.
+- `sheetRoles` e `sheetProblems`: primeiro candidato apto, regra automática da IA, sem titular apto; todos os problemas na ordem do `validateLineup`; `missing` com menos de 11 aptos e com 0 aptos; propriedade `validateLineup.ok` equivale a `ready`, e `ready` implica `completeSheet` válida.
+- Aceite do QA (`t076.acceptance.test.ts`): `ENGINE_VERSION` 16; as sete funções no `index.ts` e `pickEleven` fora dele; `isAvailable` nas bordas; `fitLevel` nos três níveis; `strength.ts` e `draft.ts` sem `Rng`, `Math.random` e `Date.now`; `game.ts`, `round.ts` e `season.ts` não chamam as leituras; ficha vazia sem `NaN`; a sugestão é ficha pronta e passa igual.
+- Contrato: `CONTRACT` de `index.test.ts` com os sete valores novos.
+- Regressão: goldens (inclusive no Chromium) sem mudança e balance de release (1.000 temporadas, semente 1, robô no mais fraco) idêntico ao da `main`, menos a linha do tempo.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.
