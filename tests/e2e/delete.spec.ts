@@ -11,8 +11,6 @@ import { expect, test } from './fixtures.ts';
  */
 
 const GUARD_MS = 500;
-/** A partir daqui as folhas viram diálogo centrado (BottomSheet.svelte). */
-const SIDE_FROM = 900;
 
 const dialog = (page: Page) => page.getByRole('dialog');
 const button = (page: Page, name: string) =>
@@ -115,10 +113,9 @@ test.describe('apagar com confirmação dupla', () => {
     expect(cancel!.y).toBeGreaterThan(destroy!.y);
   });
 
-  test('no celular o destrutivo sobe e o "Cancelar" não sai do lugar entre as folhas', async ({
+  test('o destrutivo do passo 2 sobe e o "Cancelar" não sai do lugar entre as folhas', async ({
     page,
   }) => {
-    test.skip(page.viewportSize()!.width >= SIDE_FROM, 'as folhas sobem de baixo só no celular');
     const club = await homeWithCareer(page);
     await careerActions(page, club).click();
     const cancelActions = await button(page, 'Cancelar').boundingBox();
