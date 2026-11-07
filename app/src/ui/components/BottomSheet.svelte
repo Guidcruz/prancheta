@@ -3,9 +3,13 @@
   import Icon from './Icon.svelte';
 
   /**
-   * Sheet that rises from the bottom on the phone and becomes a centred dialog from 900px up.
-   * Built on the native modal <dialog>: focus stays inside, Esc closes. A tap on the backdrop
-   * closes too. The caller owns `open` and ties it to the history (back gesture closes).
+   * Sheet that rises from the bottom on the phone and becomes a floating dialog from 900px up,
+   * anchored by its base (not centred), so the buttons at the bottom stay at the same height
+   * whatever the text above them: "Cancelar" in the same place in every sheet of a flow, and the
+   * final step of a confirmation measurable at both widths (design-system.md, "Passo final").
+   * Built on the native modal <dialog>: focus stays inside, Esc closes; it scrolls when taller
+   * than its max height. A tap on the backdrop closes too. The caller owns `open` and ties it to
+   * the history (back gesture closes). No motion: it appears in place.
    */
   interface Props {
     open: boolean;
@@ -105,10 +109,15 @@
   /* Same value as the desktop breakpoint in AppShell.svelte (no token yet: componentes.md). */
   @media (min-width: 900px) {
     .sheet {
-      margin: auto;
+      /* Anchored by the base, above the safe area; the top takes what is left. */
+      margin: auto auto calc(var(--space-8) + env(safe-area-inset-bottom));
       /* Dialog width: no token yet: componentes.md, "Propostas ao design system". */
       max-width: calc(var(--layout-content-max) * 0.75);
       border-radius: var(--radius-lg);
+    }
+    /* The safe area is already in the margin below the floating dialog. */
+    .panel {
+      padding-bottom: var(--space-4);
     }
   }
 </style>

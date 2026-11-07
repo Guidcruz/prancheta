@@ -8,13 +8,14 @@
    * ConfirmSheet: a confirmation over the BottomSheet (delete a career in two steps, replace an
    * imported save, external link). The order is fixed: the other ways out (`extra`), the confirm,
    * and cancel always last, at the bottom, in the thumb's reach and in the same place in every
-   * sheet of a flow; the focus starts on the sheet's close button, never on the confirm
-   * (BottomSheet opens with the native `showModal`, which focuses the first control). The steps of a delete are uses of this
-   * component, driven by the screen.
+   * sheet of a flow (BottomSheet keeps its base fixed at both widths); the focus starts on the
+   * sheet's close button, never on the confirm (BottomSheet opens with the native `showModal`,
+   * which focuses the first control). The steps of a delete are uses of this component, driven
+   * by the screen.
    *
    * `finalStep` marks the last step of a multi-step confirmation (the destructive one). Cancel
    * stays last, but it is set apart below a divider, which lifts the confirm by one touch target
-   * plus a gap (61px on the phone): the destructive button never lands where the main button of
+   * plus a gap (61px, on the phone and on the desktop): the destructive button never lands where the main button of
    * the step before was, so a double tap or a reflex tap at the bottom hits empty space or
    * cancel (inicio.md, "Apagar com confirmação dupla"). The screen also ignores taps on the
    * confirm right after a sheet opens.

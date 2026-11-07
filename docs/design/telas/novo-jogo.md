@@ -30,7 +30,7 @@ Ritmo, competições, estilo, início desempregado, técnico livre, áudio e bac
 
 ### Folha "Opções da carreira"
 
-BottomSheet (diálogo centrado no desktop) com:
+BottomSheet (no desktop, diálogo flutuante ancorado pela base) com:
 
 1. **Apelido do técnico** (TextField): rótulo visível, a frase "Fica só neste aparelho e no arquivo de backup.", contador "16/24" à direita e o erro em texto embaixo. Teclado com a primeira letra maiúscula, sem corretor (`autocapitalize="words"`, `spellcheck="false"`, `autocomplete="off"`), tecla de confirmar "Concluído" (`enterkeyhint="done"`) que fecha o teclado.
 2. **Realismo** (OptionGroup, 2 cartas): Completo / Simplificado, cada um com a frase de efeito; nota "Não dá para mudar depois de começar." (decisão do CEO na US-014).
@@ -73,7 +73,7 @@ BottomSheet (diálogo centrado no desktop) com:
 
 ## Desktop (a partir de 900px)
 
-Coluna centrada com largura máxima `layout-wide-max`; os clubes em grade de 3 colunas; a barra deixa de ser fixa na janela e gruda no pé da coluna (`position: sticky`); a folha de opções vira diálogo centrado.
+Coluna centrada com largura máxima `layout-wide-max`; os clubes em grade de 3 colunas; a barra deixa de ser fixa na janela e gruda no pé da coluna (`position: sticky`); a folha de opções vira diálogo flutuante, centrado na horizontal e ancorado pela base (rola por dentro quando a janela é baixa).
 
 ## Componentes
 
