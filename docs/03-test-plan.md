@@ -457,6 +457,30 @@ O E2E com Playwright é da T-024: aqui a cobertura é da biblioteca (Vitest + `f
 
 Observações de QA: (1) a quebra de linha, a rolagem horizontal, o breakpoint de 900px, a gaveta "Mais", o foco no título do erro e o `display: none` da barra que não se aplica ao tamanho são CSS e comportamento de navegador: ficam para o E2E da T-024 e para o teste manual abaixo; (2) em `busy`, o botão aparece duas vezes no HTML (barra lateral e dock) cada um com um `role="status"` oculto; só um é visível por largura (CSS do `AppShell`), e o E2E da T-024 deve conferir que só um é anunciado; (3) com erro de área (`role="alert"`) e aviso de rodadas perdidas ao mesmo tempo há duas regiões com texto, por serem avisos distintos.
 
+### QA da T-025 (tela inicial, novo jogo, apagar em dois passos)
+
+E2E com Playwright (US-034 e US-014), nas telas reais.
+
+| Cenário                                                                                                                   | Teste                                                                                         |
+| ------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| Só o passo 2 apaga; o aviso sai e o estado vazio aparece                                                                  | `tests/e2e/delete.spec.ts::só o passo 2 apaga...`                                             |
+| Cancelar no passo 2 não apaga e devolve o foco ao "Mais ações"                                                            | `delete.spec.ts::cancelar no passo 2 não apaga...`                                            |
+| Voltar do celular fecha o passo 1 sem apagar                                                                              | `delete.spec.ts::o voltar do celular fecha o passo 1...`                                      |
+| Janela de 500 ms: toque duplo e triplo nunca passam de um passo para o outro                                              | `delete.spec.ts::toque duplo e triplo...` (relógio do Playwright)                             |
+| Geometria em pé: "Cancelar" por último e na mesma altura; destrutivo do passo 2 sobe 56 px ou mais                        | `delete.spec.ts::no passo 2 o "Cancelar" fica abaixo...`; `::o destrutivo do passo 2 sobe...` |
+| Geometria deitado (844×390 e 932×430): destrutivo sobe e "Cancelar" fica inteiro na tela                                  | `delete.spec.ts::apagar com o celular deitado`                                                |
+| Geometria no desktop (folha ancorada pela base, a partir de 900px)                                                        | `delete.spec.ts` (casos de geometria no projeto desktop)                                      |
+| Lista: as duas carreiras, a mais recente em destaque, com rodada e data                                                   | `tests/e2e/careers.spec.ts::a lista mostra as duas...`                                        |
+| Carreiras independentes: jogar uma rodada na primeira não muda a segunda                                                  | `careers.spec.ts::jogar uma rodada na primeira...`                                            |
+| Desistir no passo 1 não apaga; apagar remove a carreira e as versões dela (conferido no IndexedDB) e a outra fica intacta | `careers.spec.ts::desistir no passo 1...`; `::apagar uma remove...`                           |
+| Padrões do novo jogo; "Começar" desabilitado sem clube                                                                    | `careers.spec.ts::os padrões...`                                                              |
+| Última configuração volta marcada                                                                                         | `careers.spec.ts::a última configuração volta marcada...`                                     |
+| Apelido vazio, só com espaços ou longo demais: "Começar" desabilitado com a mensagem                                      | `careers.spec.ts::apelido vazio, só com espaços ou longo demais...`                           |
+| Opções de etapas futuras escondidas (nem desabilitadas, nem "em breve")                                                   | `careers.spec.ts::as opções de etapas futuras não aparecem...`                                |
+| Tabulação com a folha rolável: fechar, região rolável, "Apagar carreira", "Cancelar"; Shift+Tab volta                     | `careers.spec.ts::Tab percorre fechar, região rolável...`                                     |
+
+Fica para teste manual no celular (listado em `docs/status.md`): deitado, gesto de voltar, fonte grande e leitor de tela.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.
