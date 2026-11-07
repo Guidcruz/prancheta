@@ -6,7 +6,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
-- Tela de Escalação (T-029; US-017, e o "trocar a formação" da US-018 visto daqui):
+- Tela de Escalação (T-029; US-017):
   - A aba Elenco ganha o seletor Elenco | Escalação | Tática. A Tática mostra "Esta tela chega numa próxima versão." até a T-077. Trocar de vista não cria entrada no histórico, e a vista fica lembrada enquanto a carreira está aberta.
   - Escalação: força do time (Força, Defesa, Meio e Ataque arredondados, com seta e sinal depois de cada troca, e "O que conta na Força"), formação com "Mudar na Tática", campo com as 11 vagas, avisos (vaga livre, lesionado, suspenso, fora de posição, improvisado, cansado e ídolo fora do time), "Sugerir escalação", banco e não relacionados.
   - Três jeitos de trocar dois lugares, com o mesmo resultado: dois toques, Enter e Enter no teclado, ou arrastar (mouse depois de 6 px; toque depois de segurar 300 ms, para o deslizar continuar rolando a página). Lesionado e suspenso não entram no campo nem no banco: a troca é recusada com o motivo.
