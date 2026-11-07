@@ -6,7 +6,17 @@
    * pt-BR, from the content); the others an icon. Every badge has text: the colour only
    * reinforces it. New kinds enter here, never as a loose colour on a screen.
    */
-  export type StatusKind = 'win' | 'draw' | 'loss' | 'injured' | 'suspended' | 'prospect' | 'derby';
+  export type StatusKind =
+    | 'win'
+    | 'draw'
+    | 'loss'
+    | 'injured'
+    | 'suspended'
+    | 'prospect'
+    | 'derby'
+    | 'improvised'
+    | 'outOfPosition'
+    | 'leader';
 
   export const STATUS_ICONS: Readonly<Record<StatusKind, IconName | undefined>> = {
     win: undefined,
@@ -16,6 +26,9 @@
     suspended: 'card',
     prospect: 'star',
     derby: 'derby',
+    improvised: 'improvised',
+    outOfPosition: 'warning',
+    leader: 'captain',
   };
 
   /** A badge as a screen passes it to a row or a card: kind plus its translated text. */
@@ -86,7 +99,8 @@
     font-variant-numeric: tabular-nums;
   }
   /* Pairs checked by `npm run tokens` in both themes: on-grass/grass, ink/surface-2,
-     ink/danger-soft, on-floodlight/floodlight. */
+     ink/danger-soft, on-floodlight/floodlight. T-029: improvised takes the floodlight pair,
+     outOfPosition the danger one (jogadores.md: yellow and red mark), leader ink/surface-2. */
   .win {
     background: var(--grass);
     color: var(--on-grass);
@@ -96,16 +110,23 @@
   }
   .loss,
   .injured,
-  .suspended {
+  .suspended,
+  .outOfPosition {
     background: var(--danger-soft);
     border-color: var(--danger);
   }
   .injured :global(svg),
-  .suspended :global(svg) {
+  .suspended :global(svg),
+  .outOfPosition :global(svg) {
     color: var(--danger);
   }
+  /* Leader (captain sheet): ink on surface-2 like the draw, with the plain line border. */
+  .leader {
+    border-color: var(--line);
+  }
   .prospect,
-  .derby {
+  .derby,
+  .improvised {
     background: var(--floodlight);
     color: var(--on-floodlight);
   }
