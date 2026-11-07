@@ -20,7 +20,7 @@ const tables = {
   es: { ...es, ...esErrors } as Record<string, string>,
   en: { ...en, ...enErrors } as Record<string, string>,
 };
-const pending = new Set(untranslated.keys);
+const pending = new Set<string>(untranslated.keys as readonly string[]);
 
 describe('ui texts', () => {
   it('have the same keys in every language, except the listed drafts still to translate', () => {
