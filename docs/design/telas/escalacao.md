@@ -30,9 +30,19 @@ Reservas e ações ficam abaixo do campo, na metade de baixo. Fluxo em dois toqu
 - **Erro:** ErrorState; escalação anterior preservada.
 - **Offline:** nada muda.
 
+### Cor de setor no LineupChip
+
+Decisão do CEO de 2026-11-07 (regra em [design-system.md](../design-system.md#cor-de-setor-aprovado-pelo-ceo-em-2026-11-07)). O `LineupChip` é da T-029 e está sendo feito em outra branch; esta nota diz como ele recebe a cor, para quem o terminar.
+
+- **O chip mostra a sigla com o `PositionTag`,** nunca uma caixinha própria: `<PositionTag code={positionCode} sector={sector} hidden />`, com `hidden` porque o nome acessível do chip já diz a posição.
+- **O chip ganha a prop `sector`** (tipo `Sector` de `app/src/ui/components/sectors.ts`) e a repassa ao `PositionTag`. A tela calcula `SECTOR_OF[player.position]`: a cor é da **posição natural do jogador**, a mesma sigla do Elenco, não da vaga. Um zagueiro improvisado no meio continua com a sigla ZAG em azul, e o selo "fora de posição" (ícone e texto) diz o resto; o lugar no campo já diz a linha da vaga.
+- **Vaga vazia:** sem jogador, sem sigla e sem cor de setor.
+- **Reservas** abaixo do campo usam a `PlayerRow`, que já recebe `sector`.
+- Só fundo e borda da sigla; o nome, o número e o selo do chip não levam cor de setor.
+
 ## Componentes
 
-SegmentedControl, StrengthBars, LineupPitch, PlayerCard (`row`), StatusBadge, Banner, BottomSheet, Button.
+SegmentedControl, StrengthBars, LineupPitch, LineupChip (com `PositionTag`), PlayerCard (`row`), StatusBadge, Banner, BottomSheet, Button.
 
 ## Acessibilidade
 

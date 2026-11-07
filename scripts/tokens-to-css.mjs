@@ -77,6 +77,11 @@ const pairs = [
   ['level-poor', 'surface-2'],
   ['ink', 'grass-soft'],
   ['ink', 'danger-soft'],
+  // The position tag (PositionTag): the code in ink on its sector's soft background.
+  ['ink', 'sector-gk-soft'],
+  ['ink', 'sector-def-soft'],
+  ['ink', 'sector-mid-soft'],
+  ['ink', 'sector-atk-soft'],
   // Site only (solid pairs; the rgba tokens are checked by hand in docs/design/site.md).
   ['on-sticker', 'sticker'],
   ['sticker-muted', 'sticker'],

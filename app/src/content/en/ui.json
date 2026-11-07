@@ -213,6 +213,8 @@
   "level.fair": "fair",
   "level.poor": "poor",
   "level.reading": "{value}, {level}",
+  "attr.level.strong": "strong point",
+  "attr.level.weak": "weak point",
   "player.attributes.title": "Attributes",
   "attr.speed": "Pace",
   "attr.technique": "Technique",

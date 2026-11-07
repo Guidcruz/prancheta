@@ -13,7 +13,8 @@ import { normalizeNameKey } from '@lib/generators/names';
 import { t, tPlural } from '@lib/i18n';
 import type { CardAttribute, CardFact, CardMeter } from './components/PlayerCard.svelte';
 import type { StatusBadgeItem } from './components/StatusBadge.svelte';
-import { levelOf, type Level, type LevelMeasure } from './components/levels';
+import { SECTOR_OF, type Sector } from './components/sectors';
+import { attributeLevelOf, levelOf, type Level, type LevelMeasure } from './components/levels';
 
 /*
  * What the Elenco screen and the player card read of the career (docs/design/telas/elenco.md and
@@ -142,6 +143,9 @@ export interface PlayerCardView {
   readonly face: string;
   readonly shirt: string | undefined;
   readonly positionLabel: string;
+  /** "ATA", for the PositionTag. */
+  readonly positionCode: string;
+  readonly sector: Sector;
   readonly facts: readonly CardFact[];
   readonly overall: number;
   readonly badges: readonly StatusBadgeItem[];
@@ -213,6 +217,8 @@ export function playerCard(
     face: player.face,
     shirt: game.clubs[clubId]?.def.colors[0],
     positionLabel: t(`position.${player.position}`, lang),
+    positionCode: t(`position.${player.position}.short`, lang),
+    sector: SECTOR_OF[player.position],
     // The label names the fact ("Idade", "Camisa"); the card shows only the value.
     facts: [
       { label: t('squad.col.age', lang), value: age },
@@ -224,7 +230,17 @@ export function playerCard(
     attributes: attributeKeysFor(player.position).map((key) => {
       const value = player.attributes[key];
       if (value === undefined) throw new Error(`player without the attribute ${key}`);
-      return { id: key, label: t(`attr.${key}`, lang), value };
+      const level = attributeLevelOf(value, player.overall);
+      const label = t(`attr.${key}`, lang);
+      if (level === undefined) return { id: key, label, value };
+      const word = t(level === 'good' ? 'attr.level.strong' : 'attr.level.weak', lang);
+      return {
+        id: key,
+        label,
+        value,
+        level,
+        srText: t('level.reading', lang, { value, level: word }),
+      };
     }),
     trait: {
       name: t(`trait.${player.trait}`, lang),

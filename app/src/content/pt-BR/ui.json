@@ -213,6 +213,8 @@
   "level.fair": "regular",
   "level.poor": "ruim",
   "level.reading": "{value}, {level}",
+  "attr.level.strong": "ponto forte",
+  "attr.level.weak": "ponto fraco",
   "player.attributes.title": "Atributos",
   "attr.speed": "Velocidade",
   "attr.technique": "Técnica",
