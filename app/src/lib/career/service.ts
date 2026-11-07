@@ -417,12 +417,16 @@ export class CareerService {
     const blocked = roundBlock(state);
     if (blocked !== undefined) return { ok: false, error: blocked };
     this.set({ busy: true });
+    const headSeq = this.headSeq;
     try {
       return await this.playAndStore(save, input);
     } catch (error) {
-      // A bug: the round is not played and the career in memory stays the one before it.
       this.logException('career.play', error);
-      this.set({ save, busy: false, crash: 'unexpected' });
+      // A bug before the round was stored: the career in memory goes back to the one before it.
+      // After it was stored (the head moved), the stored round stays: going back would make the
+      // next write repeat a round already on the device.
+      if (this.headSeq === headSeq) this.set({ save, busy: false, crash: 'unexpected' });
+      else this.set({ busy: false, crash: 'unexpected' });
       return { ok: false, error: 'unexpected' };
     }
   }

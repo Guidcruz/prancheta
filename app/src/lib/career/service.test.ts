@@ -520,6 +520,41 @@ describe('a bug never leaves the career busy (review SHOULD 1 and 2)', () => {
     expect(await snapshotSeqs()).toEqual([1]);
   });
 
+  it('an exception while opening: unexpected, closed, not busy, logged', async () => {
+    const h = await created();
+    vi.spyOn(h.store, 'openCareer').mockRejectedValueOnce(new TypeError('bug'));
+    expect(await h.service.open(SAMPLE_CAREER_ID)).toEqual({ ok: false, error: 'unexpected' });
+    expect(get(h.service.state)).toMatchObject({ status: 'closed', busy: false });
+    expect((await h.entries()).at(-1)).toMatchObject({
+      kind: 'programming',
+      code: 'unexpected',
+      screen: 'career.open',
+      type: 'TypeError',
+    });
+  });
+
+  it('an exception after the round was stored keeps the stored round in memory', async () => {
+    const h = await created();
+    let thrown = false;
+    // A subscriber that throws once the stored round reaches the state (after the head moved).
+    const stop = h.service.state.subscribe((state) => {
+      if (!thrown && state.save?.game.round === 2 && !state.busy) {
+        thrown = true;
+        throw new Error('subscriber');
+      }
+    });
+    expect(await h.service.playRound()).toEqual({ ok: false, error: 'unexpected' });
+    stop();
+    const state = get(h.service.state);
+    expect(state).toMatchObject({ busy: false, crash: 'unexpected' });
+    expect(state.save?.game.round).toBe(2);
+    expect(await snapshotSeqs()).toEqual([1, 2]);
+    // After "Tentar de novo" the next round is 2 → 3, written on top of the head.
+    h.service.dismissCrash();
+    await playOk(h, 1);
+    expect((await writes(h)).at(-1)!.guard).toEqual({ expectedHeadSeq: 2 });
+  });
+
   it('an exception while creating: logged, not busy, nothing stored', async () => {
     const h = harness();
     const throwing = new Proxy({} as IdentitySource, {
