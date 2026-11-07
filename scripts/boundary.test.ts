@@ -60,3 +60,32 @@ describe('engine front door outside app/', () => {
     expect(await ruleIds(code, file)).toEqual([]);
   });
 });
+
+/*
+ * The one exception of the root config (T-024, T-074; ADR-0020): the browser golden page imports
+ * only the two test modules it shares with the Vitest goldens. Everything else of the engine,
+ * test helpers with node:fs and the engine's own files included, stays refused there.
+ */
+describe('the browser golden page (tests/e2e/golden/page.ts)', () => {
+  const page = 'tests/e2e/golden/page.ts';
+
+  it.each([
+    [
+      'engine/testing/golden.ts (node:fs, vitest)',
+      `import '../../../${ENGINE}/testing/golden.ts';`,
+    ],
+    ['engine/math.ts', `import { exp } from '../../../${ENGINE}/math.ts';`],
+    ['another engine/testing/ module', `import '../../../${ENGINE}/testing/players.ts';`],
+  ])('refuses %s', async (_label, code) => {
+    expect(await ruleIds(code, page)).toContain('no-restricted-imports');
+  });
+
+  it('accepts match-goldens.ts and exp-table.ts', async () => {
+    const code = [
+      `import { expTable } from '../../../${ENGINE}/testing/exp-table.ts';`,
+      `import { matchGoldenCases } from '../../../${ENGINE}/testing/match-goldens.ts';`,
+      'export const cases = { ...matchGoldenCases(), table: expTable };',
+    ].join('\n');
+    expect(await ruleIds(code, page)).toEqual([]);
+  });
+});
