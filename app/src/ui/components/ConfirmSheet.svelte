@@ -6,10 +6,10 @@
 
   /**
    * ConfirmSheet: a confirmation over the BottomSheet (delete a career in two steps, replace an
-   * imported save, external link). The confirm button comes first and the cancel always last, at
-   * the bottom, in the thumb's reach and in the same place in every sheet of a flow; the focus
-   * starts on the sheet's close button, never on the confirm (BottomSheet opens with the native
-   * `showModal`, which focuses the first control). The steps of a delete are uses of this
+   * imported save, external link). The order is fixed: the other ways out (`extra`), the confirm,
+   * and cancel always last, at the bottom, in the thumb's reach and in the same place in every
+   * sheet of a flow; the focus starts on the sheet's close button, never on the confirm
+   * (BottomSheet opens with the native `showModal`, which focuses the first control). The steps of a delete are uses of this
    * component, driven by the screen.
    *
    * `finalStep` marks the last step of a multi-step confirmation (the destructive one). Cancel

@@ -11,6 +11,8 @@ import { expect, test } from './fixtures.ts';
  */
 
 const GUARD_MS = 500;
+/** A partir daqui as folhas viram diálogo centrado (BottomSheet.svelte). */
+const SIDE_FROM = 900;
 
 const dialog = (page: Page) => page.getByRole('dialog');
 const button = (page: Page, name: string) =>
@@ -99,20 +101,43 @@ test.describe('apagar com confirmação dupla', () => {
     await expect(careerActions(page, club)).toBeVisible();
   });
 
-  test('no passo 2 o "Cancelar" fica acima do botão destrutivo', async ({ page }) => {
+  test('em todas as folhas o "Cancelar" fica abaixo do botão do passo, também no passo 2', async ({
+    page,
+  }) => {
     const club = await homeWithCareer(page);
     await careerActions(page, club).click();
     await page.clock.runFor(GUARD_MS);
     await button(page, 'Apagar carreira').click();
-    const step1 = await button(page, 'Quero apagar').boundingBox();
     await page.clock.runFor(GUARD_MS);
     await button(page, 'Quero apagar').click();
     const cancel = await button(page, 'Cancelar').boundingBox();
     const destroy = await button(page, 'Apagar carreira').boundingBox();
-    expect(cancel!.y).toBeLessThan(destroy!.y);
-    // O destrutivo não ocupa o lugar onde estava o "Quero apagar".
+    expect(cancel!.y).toBeGreaterThan(destroy!.y);
+  });
+
+  test('no celular o destrutivo sobe e o "Cancelar" não sai do lugar entre as folhas', async ({
+    page,
+  }) => {
+    test.skip(page.viewportSize()!.width >= SIDE_FROM, 'as folhas sobem de baixo só no celular');
+    const club = await homeWithCareer(page);
+    await careerActions(page, club).click();
+    const cancelActions = await button(page, 'Cancelar').boundingBox();
+    await page.clock.runFor(GUARD_MS);
+    await button(page, 'Apagar carreira').click();
+    const step1 = await button(page, 'Quero apagar').boundingBox();
+    const cancelStep1 = await button(page, 'Cancelar').boundingBox();
+    await page.clock.runFor(GUARD_MS);
+    await button(page, 'Quero apagar').click();
+    await expect(dialog(page)).toHaveAccessibleName(`Apagar de vez a carreira de ${club}?`);
+    const destroy = await button(page, 'Apagar carreira').boundingBox();
+    const cancelStep2 = await button(page, 'Cancelar').boundingBox();
+    // O destrutivo do passo 2 fica pelo menos 56 px acima de onde estava o "Quero apagar".
+    expect(step1!.y - destroy!.y).toBeGreaterThanOrEqual(56);
     const overlap = (a: typeof step1, b: typeof step1) =>
       a!.y < b!.y + b!.height && b!.y < a!.y + a!.height;
     expect(overlap(step1, destroy)).toBe(false);
+    // O "Cancelar" fica no mesmo lugar nas três folhas (até 1 px).
+    expect(Math.abs(cancelStep1!.y - cancelActions!.y)).toBeLessThanOrEqual(1);
+    expect(Math.abs(cancelStep2!.y - cancelActions!.y)).toBeLessThanOrEqual(1);
   });
 });

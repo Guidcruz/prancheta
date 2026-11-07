@@ -309,18 +309,20 @@ describe('the delete sheets (US-034)', () => {
     }
   });
 
-  it('step 2 puts "Cancelar" above the delete, so it is not where "Quero apagar" was (BLOCKER)', () => {
+  it('cancel is always last; only the final step sets it apart, lifting the delete (BLOCKER)', () => {
     const step1 = sheets({ stage: 'step1', career });
     const step2 = sheets({ stage: 'step2', career, busy: false, failed: false });
+    const actions = sheets({ stage: 'actions', career });
     const cancel = shown(t('delete.cancel', 'pt-BR'));
-    // Step 1: the step button, then cancel; step 2: cancel, then the destructive one.
+    // The same order in every sheet of the flow: the step button, then cancel.
     expect(step1.indexOf(shown(t('delete.step1.continue', 'pt-BR')))).toBeLessThan(
       step1.lastIndexOf(cancel),
     );
-    expect(step2.lastIndexOf(cancel)).toBeLessThan(step2.indexOf('btn botao danger'));
-    // The actions sheet keeps its delete above cancel, like step 1.
-    const actions = sheets({ stage: 'actions', career });
+    expect(step2.indexOf('btn botao danger')).toBeLessThan(step2.lastIndexOf(cancel));
     expect(actions.indexOf('btn botao danger')).toBeLessThan(actions.lastIndexOf(cancel));
+    // Only step 2 (the destructive one) has cancel set apart below the divider.
+    expect(step2).toMatch(/class="cancel[^"]*apart/);
+    expect(step1).not.toMatch(/class="cancel[^"]*apart/);
   });
 
   it('the live region of the failure is always in the tree, even empty (SHOULD 3)', () => {
@@ -369,8 +371,8 @@ describe('Carreiras e backup inside the frame (saves.md)', () => {
       );
       expect(badge).toBeGreaterThan(body.indexOf(`data-career="${summary(0).id}"`));
       expect(badge).toBeLessThan(body.indexOf(`data-career="${summary(1).id}"`));
-      // Every row is a disabled button (only "Mais ações" acts), without the chevron.
-      // A row that opens nothing is plain content, not a disabled button (review NIT 12).
+      // A row opens nothing from here: plain content without the chevron, not a disabled button;
+      // only its "Mais ações" acts (review NIT 12).
       expect((body.match(/<div class="hit static/g) ?? []).length).toBe(3);
       expect(body).not.toMatch(/<button[^>]*class="hit/);
       expect(body).not.toMatch(/<button[^>]*disabled/);
