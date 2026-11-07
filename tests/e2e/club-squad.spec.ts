@@ -444,9 +444,17 @@ test.describe('Anel de foco só para o teclado (elenco.md, medida 11)', () => {
     await expect(name).toBeFocused();
     expect(await outline(name), 'nome depois do toque').toBe('none');
 
-    // The keyboard: Tab moves the modality, Enter opens, Esc closes; the ring is back.
+    // The keyboard: Tab after a tap brings the ring back on the element it reaches, before any
+    // Enter; then Enter opens and Esc closes, with the ring.
     await page.keyboard.press('Tab');
-    await name.focus();
+    await expect(name).not.toBeFocused();
+    expect(
+      await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle),
+      'foco movido pelo Tab',
+    ).toBe('solid');
+    await page.keyboard.press('Shift+Tab');
+    await expect(name).toBeFocused();
+    expect(await outline(name), 'nome depois do Shift+Tab').toBe('solid');
     await page.keyboard.press('Enter');
     await expect(close).toBeFocused();
     expect(await outline(close), 'X aberto pelo teclado').toBe('solid');
