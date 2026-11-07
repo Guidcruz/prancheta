@@ -584,6 +584,24 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     await expect(names.nth(4)).toBeFocused();
   });
 
+  test('o título do card é o nome da linha; o nome completo, se diferente, vem abaixo', async ({
+    page,
+  }) => {
+    await startCareer(page);
+    await openSquad(page);
+    const buttons = main(page).locator('tbody th[scope="row"] button');
+    const names = (await buttons.allInnerTexts()).map((n) => n.trim());
+    for (const i of [0, 6, 12, 18, 24]) {
+      await buttons.nth(i).click();
+      await expect(dialog(page)).toBeVisible();
+      await expect(dialog(page).getByRole('heading', { level: 2 }).first()).toHaveText(names[i]!);
+      const full = dialog(page).locator('.card > p.caption').first();
+      if ((await full.count()) > 0) await expect(full).not.toHaveText(names[i]!);
+      await dialog(page).getByRole('button', { name: 'Fechar' }).click();
+      await expect(dialog(page)).toBeHidden();
+    }
+  });
+
   test('toque duplo no X fecha o card e continua no Elenco', async ({ page }) => {
     await startCareer(page);
     await openSquad(page);

@@ -9,6 +9,7 @@ import {
   type PlayerId,
 } from '@engine';
 import type { Lang } from '@lib/config';
+import { normalizeNameKey } from '@lib/generators/names';
 import { t, tPlural } from '@lib/i18n';
 import type { CardAttribute, CardFact, CardMeter } from './components/PlayerCard.svelte';
 import type { StatusBadgeItem } from './components/StatusBadge.svelte';
@@ -134,7 +135,10 @@ export function squadGroups(sorted: readonly Player[], sort: SquadSort, lang: La
 
 /** The sections of the full player card (jogador.md, "Conteúdo"), already translated. */
 export interface PlayerCardView {
+  /** The name the squad row shows (`name.display`): the sheet's title. */
   readonly title: string;
+  /** The full name, only when it differs from the title (accents and case ignored). */
+  readonly fullName: string | undefined;
   readonly face: string;
   readonly shirt: string | undefined;
   readonly positionLabel: string;
@@ -201,7 +205,11 @@ export function playerCard(
   );
   const stats = game.seasonStats[id];
   return {
-    title: player.name.full,
+    title: player.name.display,
+    fullName:
+      normalizeNameKey(player.name.full) === normalizeNameKey(player.name.display)
+        ? undefined
+        : player.name.full,
     face: player.face,
     shirt: game.clubs[clubId]?.def.colors[0],
     positionLabel: t(`position.${player.position}`, lang),

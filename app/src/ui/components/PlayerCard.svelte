@@ -35,12 +35,14 @@
 
   /**
    * PlayerCard (CardJogador, variant `full`): everything the coach reads before picking an
-   * athlete, as the body of the player's BottomSheet (the sheet's title is the name). Avatar,
+   * athlete, as the body of the player's BottomSheet (the sheet's title is the name the squad row shows; `fullName` is the civil name under it). Avatar,
    * position, facts, overall and badges on top; then the states, the 6 attributes of the
    * position, the trait and the season. Two columns when the sheet is wide (a phone lying down,
    * the desktop dialog). Every text comes in translated; the potential has no prop, ever.
    */
   interface Props {
+    /** The full name, when the title is a nickname or a short form; absent when they match. */
+    fullName?: string;
     /** `Player.face`. */
     face: string;
     /** The club's first colour for the avatar's shirt. */
@@ -65,6 +67,7 @@
     season: readonly CardFact[];
   }
   const {
+    fullName,
     face,
     shirt,
     positionLabel,
@@ -84,6 +87,9 @@
 </script>
 
 <div class="card">
+  {#if fullName !== undefined}
+    <p class="caption muted">{fullName}</p>
+  {/if}
   <div class="top">
     <Avatar {face} {shirt} size="xl" />
     <div class="id">
