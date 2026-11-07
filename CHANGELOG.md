@@ -7,6 +7,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 ### Adicionado
 
 - Ficha do técnico no save, formato v2 (T-075, ADR-0021):
+  - O jogador ainda não vê a mudança: a tela de escalação, que usa a ficha, vem na T-029.
   - Motor: tipos `DraftLineup` e `DraftSheet` (vaga livre como `null` no campo e no banco) e `draftFromSheet` no contrato. Nenhuma simulação recebe a ficha em edição, os goldens são os mesmos e o `ENGINE_VERSION` continua 16.
   - Save v2: `career.draft` opcional, com o mesmo esquema estrito e a mesma coerência (todo id no elenco do clube do técnico) no `full`, no `open`, no `write` e no `parseDraft`; o esquema `write` passa a ler `game.squads`. Migração `0001-coach-draft` (v1 → v2, tira um `career.draft` que um v1 não poderia ter). Fixtures `v2.json` e `shape-v2.json`; as da v1 não mudaram.
   - Entre as rodadas, `SaveStore.writeDraft` grava `{ seq, sheet }` no registro da carreira (store `careers`, uma transação só dele, com a trava de outra aba); o `seq` é o do snapshot aberto, e por isso a ficha continua valendo depois de uma volta a uma versão anterior. Ao abrir, a ficha do registro só vale com o snapshot daquele `seq` e se passar no `parseDraft`; senão vale a do snapshot (`draftSkipped`). A gravação de snapshot tira a ficha do registro, e o `listCareers` não a devolve. A estrutura do banco continua na versão 1.
