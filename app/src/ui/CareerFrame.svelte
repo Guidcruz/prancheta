@@ -222,6 +222,7 @@
   <div class="band" role="status" bind:this={noticeBand}>
     {#each notices as notice (notice.key)}
       <Banner
+        announce={false}
         tone={notice.tone}
         title={notice.title}
         message={notice.message}

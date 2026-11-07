@@ -16,8 +16,21 @@
     /** Accessible name of the close button; with `ondismiss`, the banner can be closed. */
     dismissLabel?: string;
     ondismiss?: () => void;
+    /**
+     * `false` inside a live region that already announces it (the notice band of the career
+     * frame is `role="status"`): no role of its own, so the regions are not nested.
+     */
+    announce?: boolean;
   }
-  const { tone = 'info', title, message, actions = [], dismissLabel, ondismiss }: Props = $props();
+  const {
+    tone = 'info',
+    title,
+    message,
+    actions = [],
+    dismissLabel,
+    ondismiss,
+    announce = true,
+  }: Props = $props();
   const icons: Record<NonNullable<Props['tone']>, IconName> = {
     info: 'info',
     warning: 'warning',
@@ -25,7 +38,10 @@
   };
 </script>
 
-<section class="banner {tone}" role={tone === 'danger' ? 'alert' : 'status'}>
+<section
+  class="banner {tone}"
+  role={announce ? (tone === 'danger' ? 'alert' : 'status') : undefined}
+>
   <span class="icon"><Icon name={icons[tone]} /></span>
   <div class="text">
     <p class="body-strong title">{title}</p>

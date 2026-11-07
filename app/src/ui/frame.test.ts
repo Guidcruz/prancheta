@@ -6,6 +6,7 @@ import { t } from '@lib/i18n';
 import { latestClubSet } from '../data/club-sets.ts';
 import CareerFrame from './CareerFrame.svelte';
 import FatalScreen from './screens/FatalScreen.svelte';
+import Banner from './components/Banner.svelte';
 
 /*
  * The frame and the full-screen errors rendered on the server (no DOM in the tests): what the
@@ -59,7 +60,10 @@ describe('the career frame (US-015)', () => {
     const body = frame({ ...OPEN, unsaved: 'quota-exceeded' });
     expect(body).toContain('play float blocked');
     expect(body).toContain(text('play.blocked.unsaved'));
-    expect(body).toContain('role="alert"');
+    // One live region, the band: the banner inside it has no role of its own.
+    expect(body).toMatch(/class="band[^"]*" role="status"/);
+    expect(body).not.toContain('role="alert"');
+    expect(body).toMatch(/<section class="banner danger[^"]*">/);
     expect(body).toContain(escaped(text('save.quota-exceeded.title')));
     expect(body).toContain(text('action.retry'));
   });
@@ -94,6 +98,16 @@ describe('the career frame (US-015)', () => {
     expect(body).toContain(text('error.code', { code: 'unexpected' }));
     expect(body).toContain(text('action.retry'));
     expect(body).toContain(text('action.home'));
+  });
+
+  it('a banner outside the band announces itself, with the same look', () => {
+    const banner = (announce: boolean) =>
+      render(Banner, { props: { tone: 'danger', title: 'T', message: 'M', announce } }).body;
+    expect(banner(true)).toContain('role="alert"');
+    expect(banner(false)).not.toContain('role=');
+    expect(banner(false).replace(/ role="alert"/, '')).toBe(
+      banner(true).replace(/ role="alert"/, ''),
+    );
   });
 
   it('the notice band is a live region mounted even without notices', () => {
