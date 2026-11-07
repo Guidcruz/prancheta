@@ -9,3 +9,5 @@ package-lock.json
 app/src/engine/__golden__/
 app/src/lib/save/__fixtures__/
 site/src/theme-auto.css
+test-results/
+playwright-report/

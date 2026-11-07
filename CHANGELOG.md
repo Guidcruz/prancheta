@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Infraestrutura de testes de tela (T-024; US-038, base):
+  - Playwright em Chromium e WebKit, no celular (390×844) e no desktop (1280×800). Rodar: `PRANCHETA_ENV=test npm run test:e2e`.
+  - Build de teste em `app/dist-e2e`, separado do de produção. Trava de produção: `tests/regression/no-test-hooks-in-prod.test.ts` e a conferência do `dist/` no CI garantem que nenhum gancho de teste vai para o build público.
+  - Trava de rede: o teste falha se algo tentar sair para fora da origem.
+  - Verificações da moldura: um só "Jogar rodada" por largura, breakpoint em 900px, alvos de toque de pelo menos 44px, sem rolagem horizontal em 360px e respeito a `prefers-reduced-motion`.
+  - Job `e2e` no CI, em paralelo ao `ci`.
+  - O golden de partida no navegador fica em quarentena até a T-074 (ADR-0020): o `Math.exp` do Chromium difere do Node em cerca de 10% das entradas. O WebKit só roda no CI.
+
 - Casca da interface (T-023; US-015, US-045):
   - Navegação com abas embaixo no celular e barra lateral no desktop, a partir de 900px de largura.
   - `CareerService` (`app/src/lib/career/`): toda gravação do save passa o `guard` com `expectedHeadSeq`, e uma rodada não salva bloqueia o botão "Jogar rodada" até salvar.

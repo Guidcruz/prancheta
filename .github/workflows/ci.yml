@@ -46,6 +46,8 @@ jobs:
         run: npm run build
       - name: Testes do site sobre o build (dist.test)
         run: REQUIRE_SITE_DIST=1 npm test -w app -- ../site/src/lib/dist.test.ts
+      - name: Trava de teste no build publicado (regressão)
+        run: REQUIRE_DIST=1 npm test -w app -- ../tests/regression/no-test-hooks-in-prod.test.ts
       - name: Conferir a saída
         run: |
           test -f dist/index.html
@@ -55,3 +57,46 @@ jobs:
           test -f dist/jogo/icons/icon-512.png
           test -f dist/devlog/rss.xml
           ! grep -rl "fonts.googleapis.com" dist/ || (echo "chamada a terceiros no build" && exit 1)
+          ! grep -rl -e "prancheta-test" -e "__prancheta_test__" dist/ || (echo "ambiente de teste no build publicado" && exit 1)
+
+  # E2E em Chromium e WebKit (docs/03-test-plan.md, 3 e 4). Roda em paralelo ao `ci`: o build de teste
+  # sai em app/dist-e2e/ e nunca toca o dist/ publicado. PRANCHETA_ENV=test vale só nos passos do
+  # E2E (nunca no nível do job: scripts/build.mjs se recusa a montar dist/ com ela).
+  e2e:
+    name: e2e (${{ matrix.browser }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        browser: [chromium, webkit]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with: { node-version-file: '.nvmrc', cache: 'npm' }
+      - name: Instalar
+        run: npm ci
+      - name: Versão do Playwright (chave do cache dos navegadores)
+        id: pw
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+      - name: Cache dos navegadores do Playwright
+        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ matrix.browser }}
+      - name: Instalar o navegador e as dependências do sistema
+        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: E2E (build de teste em app/dist-e2e)
+        env:
+          PRANCHETA_ENV: test
+        run: npm run test:e2e -- --project='${{ matrix.browser }}-*'
+      - name: Relatório do Playwright (só se falhar)
+        if: failure()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: playwright-report-${{ matrix.browser }}
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
+          if-no-files-found: ignore
