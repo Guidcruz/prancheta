@@ -140,6 +140,24 @@ async function places(page: Page): Promise<string[]> {
     );
 }
 
+/** The short code of each position in pt-BR, as the tags write it. */
+const SHORT: Readonly<Record<Position, string>> = {
+  GK: 'GOL',
+  CB: 'ZAG',
+  FB: 'LAT',
+  DM: 'VOL',
+  AM: 'MEI',
+  ST: 'ATA',
+};
+
+/** The position of each slot of the pitch, in slot order, from its accessible name. */
+async function slotPositions(page: Page): Promise<string[]> {
+  const labels = await pitch(page)
+    .locator('button[data-slot]')
+    .evaluateAll((els) => els.map((el) => el.getAttribute('aria-label') ?? ''));
+  return labels.map((label) => label.split(':')[0]!);
+}
+
 /** The four numbers of the strength strip (Força, Defesa, Meio, Ataque). */
 async function shown(page: Page): Promise<number[]> {
   return (await numbers(page).allInnerTexts()).map(Number);
@@ -212,27 +230,34 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
   test('seletor de 44 px; o campo em 4-4-2 com 11 vagas na ordem do motor; sem entrada no histórico (medida 1)', async ({
     page,
   }) => {
-    await withFixture(page);
+    const fixture = await withFixture(page);
     const options = main(page).locator('fieldset').first().locator('label');
     await expect(options).toHaveCount(3);
     for (const option of await options.all()) {
       expect((await box(option)).height).toBeGreaterThanOrEqual(44);
     }
     await expect(pitch(page)).toHaveAccessibleName('Campo, formação 4-4-2');
-    const codes = await pitch(page).locator('button[data-slot] .code').allInnerTexts();
-    expect(codes.map((c) => c.trim())).toEqual([
-      'GOL',
-      'ZAG',
-      'ZAG',
-      'LAT',
-      'LAT',
-      'VOL',
-      'VOL',
-      'MEI',
-      'MEI',
-      'ATA',
-      'ATA',
+    // The slots in the engine's order, read by the position of each slot (its accessible name).
+    expect(await slotPositions(page)).toEqual([
+      'Goleiro',
+      'Zagueiro',
+      'Zagueiro',
+      'Lateral',
+      'Lateral',
+      'Volante',
+      'Volante',
+      'Meia',
+      'Meia',
+      'Atacante',
+      'Atacante',
     ]);
+    // The tag of each chip is the player's natural position, painted by his sector (escalacao.md,
+    // "Cor de setor no LineupChip"): the centre-back on the striker's slot keeps ZAG, in blue.
+    const codes = await pitch(page).locator('button[data-slot] .code').allInnerTexts();
+    expect(codes.map((c) => c.trim())).toEqual(fixture.starters.map((p) => SHORT[p.position]));
+    const tag = slot(page, 9).locator('.code .tag');
+    await expect(tag).toHaveText('ZAG');
+    await expect(tag).toHaveClass(/\bsector-def\b/);
     // Changing the view adds no entry to the history; the view is kept while the career is open.
     const length = await page.evaluate(() => history.length);
     await main(page).locator('fieldset label', { hasText: 'Tática' }).click();
@@ -277,6 +302,18 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
             }),
           );
         expect(boxes).toHaveLength(11);
+        // The sector tag, the "C" and the overall fit the top line, and the chip its content.
+        const spill = await pitch(page)
+          .locator('button[data-slot]')
+          .evaluateAll((els) =>
+            els.flatMap((el, i) => {
+              const top = el.querySelector('.top')!;
+              const wide = top.scrollWidth > top.clientWidth + 1;
+              const tall = el.scrollHeight > el.clientHeight + 1;
+              return wide || tall ? [`vaga ${i}${wide ? ' larga' : ''}${tall ? ' alta' : ''}`] : [];
+            }),
+          );
+        expect(spill, `${formation} ${size.width}`).toEqual([]);
         for (const [i, b] of boxes.entries()) {
           // escalacao.md, "Ao alcance do polegar": each slot at least 75 × 52px.
           expect(b.w, `${formation} ${size.width}: vaga ${i}`).toBeGreaterThanOrEqual(75);

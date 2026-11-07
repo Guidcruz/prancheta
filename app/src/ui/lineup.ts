@@ -21,6 +21,7 @@ import { t, tPlural } from '@lib/i18n';
 import type { ChipMark } from './components/LineupChip.svelte';
 import type { LineupIssue } from './components/LineupIssues.svelte';
 import type { PitchSlot } from './components/LineupPitch.svelte';
+import { SECTOR_OF } from './components/sectors';
 import type { StatusBadgeItem } from './components/StatusBadge.svelte';
 import type { StrengthItem } from './components/StrengthBars.svelte';
 import { playerBadges, shownCondition, sortPlayers, squadPlayers, type Realism } from './squad';
@@ -399,7 +400,11 @@ function stateOf(place: Place, states: PlaceStates): PitchSlot['state'] {
   return 'idle';
 }
 
-/** The 11 slots of the pitch, in the order of the formation (the engine's). */
+/**
+ * The 11 slots of the pitch, in the order of the formation (the engine's). Each filled slot shows
+ * the player's natural position code painted by his sector (escalacao.md, "Cor de setor no
+ * LineupChip"); the slot's own position is in the accessible name and the mark.
+ */
 export function pitchSlots(
   game: GameState,
   clubId: ClubId,
@@ -413,7 +418,7 @@ export function pitchSlots(
     const id = sheet.lineup.starters[index] ?? null;
     const player = id === null ? undefined : game.players[id];
     const place: Place = { part: 'starters', index };
-    const base = { slotCode: code(slot, lang), state: stateOf(place, states) };
+    const base = { state: stateOf(place, states) };
     if (player === undefined) {
       return {
         ...base,
@@ -440,6 +445,8 @@ export function pitchSlots(
     const mark = slotMark(player, slot, lang);
     return {
       ...base,
+      positionCode: code(player.position, lang),
+      sector: SECTOR_OF[player.position],
       a11yLabel: [label, ...extra].join(', '),
       name: player.name.display,
       overall: player.overall,

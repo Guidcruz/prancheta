@@ -14,7 +14,9 @@ import {
   type GameState,
   type TeamSheet,
 } from '@engine';
+import { t } from '@lib/i18n';
 import { loadGameParams } from '@lib/params';
+import { SECTOR_OF } from './components/sectors';
 import {
   benchLines,
   benchRows,
@@ -381,7 +383,10 @@ describe('the slots and rows read by screen readers (CEO: positions in full)', (
     const slots = pitchSlots(game, TEST_CLUB, sheet, {}, 'pt-BR');
     expect(slots).toHaveLength(11);
     const misplaced = slots[9]!;
-    expect(misplaced.slotCode).toBe('ATA');
+    // The tag is the player's natural position and sector, not the slot's (escalacao.md, "Cor de
+    // setor no LineupChip"): a centre-back on the striker's slot keeps ZAG, in the defence colour.
+    expect(misplaced.positionCode).toBe('ZAG');
+    expect(misplaced.sector).toBe('def');
     expect(misplaced.a11yLabel).toBe(
       `Atacante: ${fx.misplaced.name.full}, nota ${fx.misplaced.overall}, condição 100, fora de posição`,
     );
@@ -389,6 +394,25 @@ describe('the slots and rows read by screen readers (CEO: positions in full)', (
     // The captain by the engine's rule, once.
     expect(slots.filter((s) => s.captain)).toHaveLength(1);
     expect(slots.find((s) => s.captain)!.a11yLabel).toMatch(/, capitão/);
+  });
+
+  it('every filled slot has the code and sector of its player; an empty slot has neither', () => {
+    const slots = pitchSlots(game, TEST_CLUB, sheet, {}, 'pt-BR');
+    slots.forEach((s, i) => {
+      const player = game.players[sheet.lineup.starters[i]!]!;
+      expect(s.positionCode).toBe(t(`position.${player.position}.short`, 'pt-BR'));
+      expect(s.sector).toBe(SECTOR_OF[player.position]);
+    });
+    const empty: DraftSheet = {
+      ...sheet,
+      lineup: {
+        ...sheet.lineup,
+        starters: sheet.lineup.starters.map((id, i) => (i === 1 ? null : id)),
+      },
+    };
+    const free = pitchSlots(game, TEST_CLUB, empty, {}, 'pt-BR')[1]!;
+    expect(free).not.toHaveProperty('positionCode');
+    expect(free).not.toHaveProperty('sector');
   });
 
   it('an injured starter: the mark of the injury wins, and the name says both', () => {

@@ -1,10 +1,16 @@
 <script lang="ts" module>
   import type { ChipMark, ChipState } from './LineupChip.svelte';
+  import type { Sector } from './sectors';
 
   /** One of the 11 slots, in the order of `FORMATION_SLOTS[formation]`, as the screen builds it. */
   export interface PitchSlot {
-    /** "ZAG" (`position.<P>.short` of the slot's position). */
-    slotCode: string;
+    /**
+     * "ZAG": the code of the player's natural position (`position.<P>.short`), not the slot's;
+     * absent for an empty slot (escalacao.md, "Cor de setor no LineupChip").
+     */
+    positionCode?: string;
+    /** `SECTOR_OF[player.position]`; absent for an empty slot. */
+    sector?: Sector;
     /** Built by the screen with `lineup.slot.a11y` or `lineup.slot.emptyA11y`. */
     a11yLabel: string;
     /** Absent: empty slot. */
@@ -72,7 +78,8 @@
         <li style="grid-column: {cell.col} / span 2; grid-row: {cell.row} / span 2">
           <LineupChip
             slot={i}
-            slotCode={slot.slotCode}
+            positionCode={slot.positionCode}
+            sector={slot.sector}
             a11yLabel={slot.a11yLabel}
             name={slot.name}
             overall={slot.overall}
