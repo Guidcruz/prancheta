@@ -430,6 +430,15 @@ export interface SuggestOptions {
    * (ia-clubes.md, "Clube do técnico humano"). Default `'ai'`.
    */
   readonly controller?: 'ai' | 'human';
+  /**
+   * The formation of the sheet, for the coach's "Sugerir escalação" on the lineup screen
+   * (decision 6 of the CEO in T-029; docs/02-architecture.md, 4.1): with `controller: 'human'`
+   * and a known formation, the XI ({@link pickEleven}) and the bench ({@link pickBench}) are
+   * picked in it, without choosing between the club's two preferred ones. Captain, takers and
+   * tactic come out as without it. Ignored, without a warning, with `controller: 'ai'` or an
+   * unknown value.
+   */
+  readonly formation?: Formation;
 }
 
 /** What `suggestSheet` reads from the state (`lastSheets` for the opponent's strength, T-013). */
@@ -452,7 +461,8 @@ export type SuggestState = Pick<
  *   current round (home points: `MARKERS.homePoints`, as the `zebra` marker). Without an
  *   opponent (none given and no fixture this round) `Δ = 0` on neutral ground.
  *
- * - The coach's club (`options.controller = 'human'`) plays as `traditional` (SuggestOptions).
+ * - The coach's club (`options.controller = 'human'`) plays as `traditional` (SuggestOptions);
+ *   with `options.formation` its XI and bench are picked in that formation.
  *
  * Never throws: fewer than 11 available players give a shorter `starters` (the match plays with
  * empty slots, partida.md), and an unknown club gets an empty sheet in the first formation,
@@ -490,12 +500,15 @@ export function suggestSheet(
   if (rng !== undefined) {
     formation = FORMATIONS[rng.int(0, FORMATIONS.length - 1)]!;
     starters = pickEleven(available, formation, params.ai).starters;
+  } else if (options.controller === 'human' && isFormation(options.formation)) {
+    formation = options.formation;
+    starters = pickEleven(available, formation, params.ai).starters;
   } else {
-    const options = preferredFormations(club);
-    formation = options[0]!;
+    const preferred = preferredFormations(club);
+    formation = preferred[0]!;
     starters = pickEleven(available, formation, params.ai).starters;
     let best = effSum(starters, formation);
-    for (const other of options.slice(1)) {
+    for (const other of preferred.slice(1)) {
       const xi = pickEleven(available, other, params.ai).starters;
       const sum = effSum(xi, other);
       if (sum > best) {
