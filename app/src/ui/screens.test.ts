@@ -111,6 +111,11 @@ describe('the home screen (inicio.md, US-034, US-043)', () => {
 
   it('loading: the skeleton with the text for screen readers, no list nor empty state', () => {
     const body = home({});
+    // One status announces the wait; the filler rows are hidden from screen readers (NIT 14).
+    const at = body.indexOf('<div aria-hidden="true">');
+    expect(at).toBeGreaterThan(0);
+    expect((body.slice(0, at).match(/role="status"/g) ?? []).length).toBe(1);
+    expect(body.slice(at)).toContain('role="status"');
     expect(body).toContain('class="skeleton');
     expect(body).toContain(t('home.loading', 'pt-BR'));
     expect(body).not.toContain(t('home.empty.title', 'pt-BR'));
@@ -153,6 +158,18 @@ describe('the home screen (inicio.md, US-034, US-043)', () => {
       `aria-label="${shown(t('home.career.continueA11y', 'pt-BR', { club: list[1]!.club.shortName }))}"`,
     );
     expect(body).toMatch(/<h2[^>]*tabindex="-1"[^>]*data-focus="list"/);
+    // A row's name is the action; its season, round and date describe it (SHOULD 2).
+    const row = body.match(/<button[^>]*class="hit[^"]*"[^>]*>/)?.[0] ?? '';
+    const described = row.match(/aria-describedby="([^"]+)"/)?.[1]?.split(' ') ?? [];
+    expect(described.length).toBeGreaterThanOrEqual(2);
+    const textOf = (id: string) =>
+      body.match(new RegExp(`id="${id}"[^>]*>([^<]*)<`))?.[1] ?? '(missing)';
+    expect(described.map(textOf)).toEqual(
+      expect.arrayContaining([
+        shown(progressLine(list[1]!, 'pt-BR')),
+        shown(lastPlayedLine(list[1]!.updatedAt, NOW, 'pt-BR')),
+      ]),
+    );
     // Round 39: the season is over (career 1).
     expect(body).toContain(shown(t('home.career.seasonOver', 'pt-BR', { season: 2 })));
     expect(body).toContain(t('home.new', 'pt-BR'));
@@ -183,6 +200,17 @@ describe('the home screen (inicio.md, US-034, US-043)', () => {
     expect(body).toContain(shown(t('save.save-too-new.title', 'pt-BR')));
     expect(body).toContain(shown(t('action.update', 'pt-BR')));
     expect(body).toContain('badge rotulo warning');
+    // On a row the badge sits under the text (SHOULD 7) and describes the row.
+    const rows = home({ careers: careers(2), tooNew: [summary(1).id] });
+    const badgeId = rows.match(/<span class="badge rotulo warning[^"]*" id="([^"]+)"/)?.[1];
+    expect(badgeId).toBeTruthy();
+    expect(rows).toMatch(new RegExp(`aria-describedby="[^"]*${badgeId}`));
+    const badgeAt = rows.indexOf(`id="${badgeId}"`);
+    const lastAt = rows.indexOf(`id="${badgeId!.replace(/-badge$/, '-last')}"`);
+    expect(lastAt).toBeGreaterThan(0);
+    expect(badgeAt).toBeGreaterThan(lastAt);
+    // Still inside the text column, before the chevron.
+    expect(badgeAt).toBeLessThan(rows.indexOf('class="chev', lastAt));
   });
 
   it('not-found: the band says the career is gone', () => {
@@ -281,6 +309,25 @@ describe('the delete sheets (US-034)', () => {
     }
   });
 
+  it('step 2 puts "Cancelar" above the delete, so it is not where "Quero apagar" was (BLOCKER)', () => {
+    const step1 = sheets({ stage: 'step1', career });
+    const step2 = sheets({ stage: 'step2', career, busy: false, failed: false });
+    const cancel = shown(t('delete.cancel', 'pt-BR'));
+    // Step 1: the step button, then cancel; step 2: cancel, then the destructive one.
+    expect(step1.indexOf(shown(t('delete.step1.continue', 'pt-BR')))).toBeLessThan(
+      step1.lastIndexOf(cancel),
+    );
+    expect(step2.lastIndexOf(cancel)).toBeLessThan(step2.indexOf('btn botao danger'));
+    // The actions sheet keeps its delete above cancel, like step 1.
+    const actions = sheets({ stage: 'actions', career });
+    expect(actions.indexOf('btn botao danger')).toBeLessThan(actions.lastIndexOf(cancel));
+  });
+
+  it('the live region of the failure is always in the tree, even empty (SHOULD 3)', () => {
+    const body = sheets({ stage: 'step2', career, busy: false, failed: false });
+    expect(body).toMatch(/<p class="body error[^"]*" aria-live="polite">/);
+  });
+
   it('step 2 deleting: busy with its text, cancel disabled; failed: the message, in text', () => {
     const busy = sheets({ stage: 'step2', career, busy: true, failed: false });
     expect(busy).toContain('aria-busy="true"');
@@ -323,8 +370,11 @@ describe('Carreiras e backup inside the frame (saves.md)', () => {
       expect(badge).toBeGreaterThan(body.indexOf(`data-career="${summary(0).id}"`));
       expect(badge).toBeLessThan(body.indexOf(`data-career="${summary(1).id}"`));
       // Every row is a disabled button (only "Mais ações" acts), without the chevron.
-      expect((body.match(/<button[^>]*class="hit[^"]*"[^>]*disabled/g) ?? []).length).toBe(3);
-      expect((body.match(/aria-label="[^"]*"[^>]*>\s*<svg/g) ?? []).length).toBeGreaterThan(0);
+      // A row that opens nothing is plain content, not a disabled button (review NIT 12).
+      expect((body.match(/<div class="hit static/g) ?? []).length).toBe(3);
+      expect(body).not.toMatch(/<button[^>]*class="hit/);
+      expect(body).not.toMatch(/<button[^>]*disabled/);
+      expect(body).not.toContain('class="chev');
       expect(body).not.toContain(shown(t('saves.onlyCurrent', lang)));
       expectNoRawKey(body, `${lang}/saves`);
       expect(primaries(body)).toBe(0);
@@ -400,6 +450,11 @@ describe('the new-game screen (novo-jogo.md, US-014)', () => {
       expect(body).not.toContain(shown(t('newGame.match.highlights', lang)));
       expect((body.match(/type="radio" name="match"/g) ?? []).length).toBe(1);
       expect((body.match(/type="radio" name="realism"/g) ?? []).length).toBe(2);
+      // Nothing to change the mode to yet: no "Dá para trocar depois" (SHOULD 4).
+      expect(body).not.toContain(shown(t('newGame.match.note', lang)));
+      expect(body).toContain(shown(t('newGame.realism.note', lang)));
+      // The club's whole label is its name; nothing repeated by aria-describedby (NIT 11).
+      expect(body).not.toMatch(/name="club"[^>]*aria-describedby/);
     });
   }
 

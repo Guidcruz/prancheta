@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { ErrorLog } from '../errors/index.ts';
 import { SAVE_FIELD_NAMES } from '../save/index.ts';
-import { onPut, store, useFreshDatabase } from '../save/testing/idb.ts';
+import { onPut, raw, store, useFreshDatabase } from '../save/testing/idb.ts';
 import { CLUB_SETS } from '../../data/club-sets.ts';
 import type { ClubDef } from '../../engine/index.ts';
 import { LAST_SETUP_KEY, parseLastSetup } from './new-game.ts';
@@ -16,6 +16,14 @@ import { CareerService, type CareerSetup } from './service.ts';
 useFreshDatabase();
 
 const COACH = 'Professor Zeca';
+/** Every row of the `kv` store, as text: the nickname must be in none of them. */
+async function allKv(): Promise<string> {
+  const db = await raw();
+  const rows = await db.getAll('kv');
+  db.close();
+  return JSON.stringify(rows);
+}
+
 const VERSIONS = { appVersion: '0.0.1', schemaVersion: 1, engineVersion: 1 };
 
 function made(clubSets = CLUB_SETS) {
@@ -69,10 +77,12 @@ describe('the last new-game setup in kv (US-014)', () => {
     await service.rememberSetup({ realism: 'full', matchMode: 'result' });
     const kv = await s.readKv(LAST_SETUP_KEY);
     expect(kv).toEqual({ ok: true, value: { realism: 'full', matchMode: 'result' } });
-    // Deleting the career removes the only copy of the nickname; the setup has none.
+    // No row of kv, under any key, has the nickname: the save is its only copy.
+    expect(await allKv()).toContain('newGame.last');
+    expect(await allKv()).not.toContain(COACH);
     const careerId = service.snapshot.save!.careerId;
     await service.remove(careerId);
-    expect(JSON.stringify(await s.readKv(LAST_SETUP_KEY))).not.toContain(COACH);
+    expect(await allKv()).not.toContain(COACH);
   });
 
   it('an invalid stored value counts as absent', async () => {

@@ -185,7 +185,8 @@
         >
       {:else if careers === undefined}
         <Skeleton label={t('home.loading', lang)} shape="featured" />
-        <Skeleton label="" count={2} />
+        <!-- The first skeleton announces the wait; these two rows only fill the space. -->
+        <div aria-hidden="true"><Skeleton label="" count={2} /></div>
       {:else if featured === undefined}
         <div class="empty" tabindex="-1" data-focus="list">
           <EmptyState

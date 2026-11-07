@@ -79,6 +79,7 @@
   const barId = $props.id();
   const realisms = $derived(realismOptions(lang));
   const matches = $derived(matchOptions(lang));
+  // "Dá para trocar depois" only when there is another mode to change to (one, for now: P3).
   const titleOf = (items: readonly { value: string; title: string }[], value: string) =>
     items.find((item) => item.value === value)?.title ?? '';
   const invalid = $derived(coach.problem !== undefined);
@@ -213,7 +214,7 @@
     <OptionGroup
       name="match"
       legend={t('newGame.options.match', lang)}
-      note={t('newGame.match.note', lang)}
+      note={matches.length > 1 ? t('newGame.match.note', lang) : undefined}
       options={matches}
       value={setup.matchMode}
       columns={1}

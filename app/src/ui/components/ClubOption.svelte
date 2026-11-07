@@ -40,23 +40,15 @@
   const id = $props.id();
 </script>
 
+<!-- The whole label is the radio's name: club, place, strength and band, read once. -->
 <label class="option" class:checked for={id}>
-  <input
-    {id}
-    class="radio"
-    type="radio"
-    {name}
-    value={club.id}
-    {checked}
-    onchange={onselect}
-    aria-describedby={detail ? `${id}-detail ${id}-strength` : `${id}-strength`}
-  />
+  <input {id} class="radio" type="radio" {name} value={club.id} {checked} onchange={onselect} />
   <Crest {club} size="md" instance="opt" />
   <span class="text">
     <span class="body-strong name">{label}</span>
-    {#if detail}<span class="caption muted" id="{id}-detail">{detail}</span>{/if}
+    {#if detail}<span class="caption muted">{detail}</span>{/if}
   </span>
-  <span class="strength" id="{id}-strength">
+  <span class="strength">
     <span class="caption muted">{strengthLabel}</span>
     <span class="numero">{strength}</span>
     {#if bandLabel}<span class="sr">{bandLabel}</span>{/if}

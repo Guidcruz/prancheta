@@ -5,7 +5,14 @@
   import { careers, errors } from './app-context';
   import CareerFrame from './CareerFrame.svelte';
   import ErrorBoundary from './components/ErrorBoundary.svelte';
-  import { HOME_DESTINATION, NEW_GAME_HASH, hrefOf } from './router';
+  import {
+    enterNewGame,
+    landOnClub,
+    leaveNewGame as leaveNewGameEntry,
+    screenAfterPop,
+    screenOfHash,
+  } from './home-routes';
+  import { HOME_DESTINATION, hrefOf } from './router';
   import FatalScreen from './screens/FatalScreen.svelte';
   import Home from './screens/Home.svelte';
   import NewGame from './screens/NewGame.svelte';
@@ -21,14 +28,17 @@
   const career = careers.state;
 
   let screen: 'home' | 'new' = $state(
-    typeof location !== 'undefined' && location.hash === NEW_GAME_HASH ? 'new' : 'home',
+    typeof location === 'undefined' ? 'home' : screenOfHash(location.hash),
   );
   /** The last opening failure shown on the home screen (a bug, by its code). */
   let openError: OpenError | 'unexpected' | undefined = $state();
   /** Careers refused when opening as written by a newer build: their cards say so. */
   let tooNew: string[] = $state([]);
   let notFound = $state(false);
-  /** The browser could not save when creating a career. */
+  /**
+   * The browser could not save (when creating or opening a career). Cleared when a career opens
+   * or is created, which proves the storage works again.
+   */
   let noStorage: NoStorage | undefined = $state();
   let focusList = $state(false);
   let lastOpened: string | undefined;
@@ -50,6 +60,7 @@
     // Every career opens on the Clube tab.
     history.replaceState(null, '', hrefOf(HOME_DESTINATION));
     const opened = await careers.open(careerId);
+    if (opened.ok) noStorage = undefined;
     if (opened.ok || opened.error === 'busy') return;
     const error = opened.error;
     // On the home screen (inicio.md, "Estados"); the other codes are full screens (status fatal).
@@ -81,23 +92,19 @@
     notFound = false;
     openError = undefined;
     focusList = false;
-    history.pushState({ newGame: true }, '', NEW_GAME_HASH);
-    screen = 'new';
+    screen = enterNewGame(history);
   }
 
   /** Back from the new-game screen: its entry goes away, as with the back gesture. */
   function leaveNewGame(list = false): void {
     focusList = list;
-    if (history.state?.newGame === true) history.back();
-    else history.replaceState(null, '', location.pathname + location.search);
-    screen = 'home';
+    screen = leaveNewGameEntry(history, location);
     homeVisit++;
   }
 
   function created(): void {
-    // The new career opens on the Clube tab, in the entry of the new-game screen.
-    history.replaceState(null, '', hrefOf(HOME_DESTINATION));
-    screen = 'home';
+    noStorage = undefined;
+    screen = landOnClub(history);
   }
 
   function cannotSave(code: NoStorage): void {
@@ -129,9 +136,8 @@
       });
     // Back and forward between the home screen and the new-game screen.
     const onPop = () => {
-      if ($career.status === 'open' || $career.status === 'fatal') return;
-      const next = location.hash === NEW_GAME_HASH ? 'new' : 'home';
-      if (next === screen) return;
+      const next = screenAfterPop(screen, location.hash, $career.status);
+      if (next === undefined) return;
       if (next === 'home') homeVisit++;
       screen = next;
     };

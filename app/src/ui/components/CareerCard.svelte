@@ -71,12 +71,26 @@
   {/if}
 {/snippet}
 
-{#snippet badgeChip()}
+{#snippet badgeChip(id?: string)}
   {#if badge}
-    <span class="badge rotulo {badgeTone}">
+    <span class="badge rotulo {badgeTone}" {id}>
       {#if badgeTone !== 'neutral'}<Icon name="warning" size={14} />{/if}
       {badge}
     </span>
+  {/if}
+{/snippet}
+
+{#snippet rowContent()}
+  <Crest {club} size="md" />
+  <span class="text">
+    <span class="body-strong name">{clubName}</span>
+    <span class="body progress" id="{noticeId}-progress">{progress}</span>
+    <span class="caption muted" id="{noticeId}-last">{lastPlayed}</span>
+    <!-- Under the text, so a long badge never squeezes the line at 360px. -->
+    {@render badgeChip(`${noticeId}-badge`)}
+  </span>
+  {#if !disabled}
+    <span class="chev"><Icon name="chevron-right" size={20} /></span>
   {/if}
 {/snippet}
 
@@ -104,26 +118,29 @@
     {/if}
   {:else}
     <div class="line">
-      <button
-        type="button"
-        class="hit"
-        aria-label={continueA11yLabel}
-        aria-describedby={notice ? noticeId : undefined}
-        aria-busy={busy || undefined}
-        {disabled}
-        onclick={busy ? undefined : oncontinue}
-      >
-        <Crest {club} size="md" />
-        <span class="text">
-          <span class="body-strong name">{clubName}</span>
-          <span class="body progress">{progress}</span>
-          <span class="caption muted">{lastPlayed}</span>
-        </span>
-        {@render badgeChip()}
-        {#if !disabled}
-          <span class="chev"><Icon name="chevron-right" size={20} /></span>
-        {/if}
-      </button>
+      {#if disabled}
+        <!-- Nothing to open from here (Carreiras e backup): plain content, not a disabled button. -->
+        <div class="hit static">{@render rowContent()}</div>
+      {:else}
+        <!-- The name is the action; the lines of the card describe it (season, round, date, badge). -->
+        <button
+          type="button"
+          class="hit"
+          aria-label={continueA11yLabel}
+          aria-describedby={[
+            `${noticeId}-progress`,
+            `${noticeId}-last`,
+            badge && `${noticeId}-badge`,
+            notice && noticeId,
+          ]
+            .filter(Boolean)
+            .join(' ')}
+          aria-busy={busy || undefined}
+          onclick={busy ? undefined : oncontinue}
+        >
+          {@render rowContent()}
+        </button>
+      {/if}
       {@render moreButton()}
     </div>
     {#if notice}
@@ -192,10 +209,10 @@
     text-align: left;
     cursor: pointer;
   }
-  .hit:hover:not(:disabled) {
+  .hit:hover:not(.static) {
     background: var(--surface-2);
   }
-  .hit:disabled {
+  .hit.static {
     cursor: default;
   }
   .hit[aria-busy='true'] {
@@ -224,6 +241,9 @@
   }
   .more:hover {
     background: var(--surface-2);
+  }
+  .text .badge {
+    margin-top: var(--space-1);
   }
   .badge {
     display: inline-flex;
