@@ -32,7 +32,11 @@
     | 'check'
     | 'plus'
     | 'trash'
-    | 'edit';
+    | 'edit'
+    | 'injury'
+    | 'card'
+    | 'star'
+    | 'derby';
 
   const paths: Record<IconName, string> = {
     club: '<path d="M5 4.5h14v8c0 4-3 6.5-7 8-4-1.5-7-4-7-8z"/>',
@@ -70,6 +74,11 @@
     trash:
       '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/><path d="M10.5 11v5M13.5 11v5"/>',
     edit: '<path d="M14.5 5.5l4 4L9 19H5v-4z"/><path d="M12.5 7.5l4 4"/>',
+    injury: '<rect x="4.5" y="4.5" width="15" height="15" rx="3"/><path d="M12 8.5v7M8.5 12h7"/>',
+    card: '<rect x="7" y="4" width="10" height="15" rx="1.5" transform="rotate(10 12 11.5)"/>',
+    star: '<path d="M12 4.5l2.3 4.8 5.2.7-3.8 3.6.9 5.2L12 16.3l-4.6 2.5.9-5.2-3.8-3.6 5.2-.7z"/>',
+    derby:
+      '<path d="M12 20.5c-3.5 0-6-2.4-6-5.6 0-3.4 2.6-5.2 3.4-8.4 1.6 1.2 2.4 2.8 2.4 4.4 1-.6 1.8-1.8 2-3.2 1.8 1.6 4.2 4 4.2 7.2 0 3.2-2.5 5.6-6 5.6z"/>',
   };
 </script>
 

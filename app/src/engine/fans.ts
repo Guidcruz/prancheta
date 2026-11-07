@@ -181,3 +181,31 @@ export function clubIdol(
   }
   return undefined;
 }
+
+/**
+ * The five fan moods (torcida.md, "Humor da rede social"), from the coldest to the hottest. The
+ * labels live in `app/src/content/<idioma>/fans.json` (`fans.mood.<mood>`), never here.
+ */
+export const FAN_MOODS = ['revolt', 'irritated', 'wary', 'excited', 'party'] as const;
+
+/** One of {@link FAN_MOODS}. */
+export type FanMood = (typeof FAN_MOODS)[number];
+
+/**
+ * Floor of each mood on the rounded thermometer, in the order of {@link FAN_MOODS}: 0–19, 20–39,
+ * 40–59, 60–79, 80–100. A rule constant of torcida.md, not a /balance knob (4.1, "Leituras para a
+ * interface (T-028)").
+ */
+const FAN_MOOD_FLOORS: readonly number[] = [0, 20, 40, 60, 80];
+
+/**
+ * The mood of a thermometer: the band of `Math.round(clamp(fans, 0, 100))`, the number the club
+ * screen shows, so the number and the label never disagree (19.6 shows as 20, `irritated`). A
+ * non-finite value reads as 0 (`revolt`), as in {@link fansDelta}. Pure, never throws.
+ */
+export function fanMood(fans: number): FanMood {
+  const shown = Number.isFinite(fans) ? Math.round(clamp(fans, 0, 100)) : 0;
+  let index = 0;
+  for (let i = 1; i < FAN_MOOD_FLOORS.length; i++) if (shown >= FAN_MOOD_FLOORS[i]!) index = i;
+  return FAN_MOODS[index]!;
+}

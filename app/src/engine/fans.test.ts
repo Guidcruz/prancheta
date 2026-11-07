@@ -3,7 +3,9 @@ import {
   clubIdol,
   EXPECTED_POINTS,
   expectedPoints,
+  FAN_MOODS,
   FANS_EXTRAS,
+  fanMood,
   fansDelta,
   fansVenue,
   IDOL_BENCH,
@@ -201,6 +203,34 @@ describe('fansDelta: the formula of torcida.md', () => {
         expect(move.fans).toBeLessThanOrEqual(100);
       }
     }
+  });
+});
+
+describe('fanMood: the five bands of torcida.md on the shown number', () => {
+  it('lists the moods from the coldest to the hottest', () => {
+    expect(FAN_MOODS).toEqual(['revolt', 'irritated', 'wary', 'excited', 'party']);
+  });
+
+  it('reads the band of every integer from 0 to 100', () => {
+    const expected = (n: number) =>
+      n < 20 ? 'revolt' : n < 40 ? 'irritated' : n < 60 ? 'wary' : n < 80 ? 'excited' : 'party';
+    for (let n = 0; n <= 100; n++) expect(fanMood(n), String(n)).toBe(expected(n));
+  });
+
+  it('reads the band of the rounded number, so number and label agree', () => {
+    expect(fanMood(19.49)).toBe('revolt');
+    expect(fanMood(19.5)).toBe('irritated');
+    expect(fanMood(79.49)).toBe('excited');
+    expect(fanMood(79.5)).toBe('party');
+    expect(fanMood(80)).toBe('party');
+  });
+
+  it('clamps out-of-range values and reads a non-finite one as 0', () => {
+    expect(fanMood(-1)).toBe('revolt');
+    expect(fanMood(101)).toBe('party');
+    expect(fanMood(Number.NaN)).toBe('revolt');
+    expect(fanMood(Number.POSITIVE_INFINITY)).toBe('revolt');
+    expect(fanMood(Number.NEGATIVE_INFINITY)).toBe('revolt');
   });
 });
 

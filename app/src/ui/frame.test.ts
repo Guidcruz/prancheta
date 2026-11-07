@@ -4,6 +4,7 @@ import type { CareerSave, CareerService, CareerState } from '@lib/career';
 import type { ErrorLog } from '@lib/errors';
 import { t } from '@lib/i18n';
 import { latestClubSet } from '../data/club-sets.ts';
+import { testCareer } from './testing/game';
 import CareerFrame from './CareerFrame.svelte';
 import FatalScreen from './screens/FatalScreen.svelte';
 import Banner from './components/Banner.svelte';
@@ -15,11 +16,11 @@ import Banner from './components/Banner.svelte';
  */
 
 const club = latestClubSet()!.clubs[0]!;
-/** Only what the frame reads of a save. */
+/** What the frame and the Clube tab read of a save: a real career on round 5. */
 const save = {
   careerId: '00000000-0000-4000-8000-000000000023',
   career: { clubId: club.id },
-  game: { clubs: { [club.id]: { def: club } }, year: 2026, round: 5, phase: 'season' },
+  game: testCareer('full', 5),
 } as unknown as CareerSave;
 
 const OPEN: CareerState = {
@@ -125,7 +126,7 @@ describe('the career frame (US-015)', () => {
   });
 
   it('season over: the button stays, blocked with the reason', () => {
-    const over = { ...save, game: { ...save.game, round: 39 } } as CareerSave;
+    const over = { ...save, game: testCareer('full', 39) } as CareerSave;
     const body = frame({ ...OPEN, save: over });
     expect(body).toContain(text('play.blocked.seasonOver'));
     expect(body).toContain(text('career.seasonOver', { season: 2026 }));

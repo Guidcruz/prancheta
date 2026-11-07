@@ -21,6 +21,7 @@ import {
   fitLevel,
   isProspect,
   overallWeight,
+  playerForm,
   validatePlayer,
   type AttributeKey,
   type PlayerIssue,
@@ -286,6 +287,33 @@ describe('isProspect', () => {
     expect(isProspect({ age: 24, overall: 60, potential: 70 })).toBe(false);
     expect(isProspect({ age: 18, overall: 60, potential: 69 })).toBe(false);
     expect(isProspect({ age: 17, overall: 55, potential: 55 })).toBe(false);
+  });
+});
+
+describe('playerForm', () => {
+  it('has no form without ratings (no games, also after the season turns)', () => {
+    expect(playerForm({ recentRatings: [] })).toBeUndefined();
+  });
+
+  it('is the rating itself with one game', () => {
+    expect(playerForm({ recentRatings: [7] })).toBe(7);
+  });
+
+  it('is the mean of the last 5 ratings', () => {
+    expect(playerForm({ recentRatings: [6, 7, 8, 7, 6] })).toBe(6.8);
+    expect(playerForm({ recentRatings: [10, 10, 10, 10, 10] })).toBe(10);
+  });
+
+  it('rounds the mean to one decimal', () => {
+    expect(playerForm({ recentRatings: [6, 7, 7] })).toBe(6.7); // 6.666...
+    expect(playerForm({ recentRatings: [6, 6, 7] })).toBe(6.3); // 6.333...
+    expect(playerForm({ recentRatings: [6.5, 7] })).toBe(6.8); // 6.75, half up
+  });
+
+  it('does not change its input', () => {
+    const recentRatings = Object.freeze([5, 9]);
+    expect(playerForm({ recentRatings })).toBe(7);
+    expect(recentRatings).toEqual([5, 9]);
   });
 });
 

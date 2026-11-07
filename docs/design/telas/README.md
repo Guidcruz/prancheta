@@ -23,8 +23,8 @@ Prioridade herdada das histórias (Must, Should, Could). A ordem é a sugerida p
 | 1     | [Moldura e navegação](navegacao.md)         | US-015                         | Must       | AppShell, TabBar, PlayRoundButton, ScreenHeader                    |
 | 2     | [Início](inicio.md)                         | US-034, US-043                 | Must       | CareerCard, Button, Banner                                         |
 | 3     | [Novo jogo](novo-jogo.md)                   | US-014                         | Must       | TextField, ClubOption, OptionGroup, Button                         |
-| 4     | [Clube](clube.md)                           | US-015, US-026, US-028         | Must       | Crest, MatchCard, FanThermometer, NewsCard, LinkRow                |
-| 5     | [Elenco](elenco.md)                         | US-016                         | Must       | ScrollTable, PlayerCard (linha), StatusBadge, SegmentedControl     |
+| 4     | [Clube](clube.md)                           | US-015, US-026, US-028         | Must       | SectionCard, MatchCard, FanThermometer, TableRow, LinkRow          |
+| 5     | [Elenco](elenco.md)                         | US-016                         | Must       | ScrollTable, PlayerRow, GroupRow, StatusBadge, SegmentedControl    |
 | 6     | [Jogador](jogador.md)                       | US-016                         | Must       | BottomSheet, PlayerCard (completo), Avatar, AttributeBar           |
 | 7     | [Escalação](escalacao.md)                   | US-017                         | Must       | LineupPitch, PlayerCard (linha), StrengthBars, StatusBadge         |
 | 8     | [Tática](tatica.md)                         | US-018                         | Must       | OptionGroup, LineupPitch (prévia), BottomSheet                     |

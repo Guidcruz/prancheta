@@ -37,14 +37,18 @@
     type DestinationId,
   } from './router';
   import { alertKey, unsavedActions } from './save-alerts';
+  import ClubView from './screens/ClubView.svelte';
   import Placeholder from './screens/Placeholder.svelte';
   import Saves from './screens/Saves.svelte';
+  import Squad from './screens/Squad.svelte';
+  import type { SquadSort } from './squad';
 
   /**
    * The frame of an open career (docs/design/telas/navegacao.md): tabs at the bottom on the
    * phone, sidebar from 900px, the "Mais" menu, the notice band, "Jogar rodada" and the error
-   * boundary around the screen of each destination. Carreiras e backup is the T-025 screen; the
-   * others are placeholders until their tasks (T-028, T-031, T-034...).
+   * boundary around the screen of each destination. Clube and Elenco are the T-028 screens and
+   * Carreiras e backup the T-025 one; the others are placeholders until their tasks (T-031,
+   * T-034...).
    */
   interface Props {
     career: CareerState;
@@ -59,6 +63,8 @@
     destinationOf(typeof location === 'undefined' ? '' : location.hash),
   );
   let sheetOpen = $state(false);
+  /** The "Mais" sheet asked `history.back()` and its popstate has not come yet. */
+  let closingSheet = false;
   let noticeBand: HTMLElement | undefined = $state();
   let errorArea: HTMLElement | undefined = $state();
   /**
@@ -86,6 +92,14 @@
   const more = $derived([...extra, ...settings, item(NAV_TUTORIAL)]);
 
   const save = $derived(career.save!);
+  /**
+   * The order of the Elenco while this career is open (elenco.md): the screen's state, kept here
+   * because the tab remounts on every visit; never in the save.
+   */
+  let squadSort: { careerId: string; sort: SquadSort } | undefined = $state();
+  const sort = $derived(
+    squadSort?.careerId === save.careerId ? squadSort.sort : ('position' as const),
+  );
   const club = $derived.by(() => {
     const def = save.game.clubs[save.career.clubId]?.def;
     return def === undefined
@@ -190,8 +204,12 @@
   }
 
   function closeSheet(): void {
-    if (history.state?.sheet === true) history.back();
-    else sheetOpen = false;
+    // A double tap on "Fechar": the first back is on its way; a second one would leave the tab.
+    if (closingSheet) return;
+    if (history.state?.sheet === true) {
+      closingSheet = true;
+      history.back();
+    } else sheetOpen = false;
   }
 
   function pick(event: MouseEvent, id: DestinationId): void {
@@ -226,6 +244,7 @@
   onMount(() => {
     const onHash = () => (current = destinationOf(location.hash));
     const onPop = () => {
+      closingSheet = false;
       if (sheetOpen && history.state?.sheet !== true) sheetOpen = false;
     };
     window.addEventListener('hashchange', onHash);
@@ -300,6 +319,23 @@
       >
         {#if current === SAVES_DESTINATION}
           <Saves {service} {lang} currentId={save.careerId} />
+        {:else if current === 'club'}
+          <ClubView
+            {lang}
+            game={save.game}
+            clubId={save.career.clubId}
+            {more}
+            onerror={onBoundaryError}
+          />
+        {:else if current === 'squad'}
+          <Squad
+            {lang}
+            game={save.game}
+            clubId={save.career.clubId}
+            {sort}
+            onsort={(next) => (squadSort = { careerId: save.careerId, sort: next })}
+            onerror={onBoundaryError}
+          />
         {:else}
           <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
         {/if}

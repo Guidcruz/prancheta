@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Tela do clube, elenco e card do jogador (T-028; US-015, US-016, US-026 na parte da tela):
+  - Clube: próximo jogo com mando em texto e posição na tabela, linha "Desfalques" só no realismo Completo, termômetro da torcida com número e rótulo de humor, mini classificação e últimos resultados, "Mais opções" no pé abaixo de 900px, duas colunas deitado e no desktop, erro por bloco.
+  - Elenco: colunas nome, posição, idade, nota, condição (só no Completo), moral e forma; ordenação por posição, nota e condição, guardada só na tela e nunca no save; selos com ícone e texto (lesionado, suspenso com N jogos, promessa).
+  - Card do jogador: folha no celular e diálogo no desktop, com atributos na ordem do motor, traço, jogos e gols; "Anterior" e "Próximo" trocam de jogador sem criar entrada no histórico, o voltar do sistema fecha o card e o foco volta ao jogador de origem; um erro aparece dentro do card.
+  - Motor: `isProspect` e `attributeKeysFor` exportados; novos `playerForm`, `FAN_MOODS`, `FanMood` e `fanMood` (5 faixas: Em revolta, Irritada, Desconfiada, Animada, Em festa). Nenhuma simulação muda, os goldens são os mesmos e o `ENGINE_VERSION` continua 16.
+  - Design system: 12 componentes novos, 6 tokens novos (tamanhos de barra e medalhão) e regras novas (selos, card em duas colunas, tamanhos).
+  - 131 chaves de texto em pt-BR, es e en.
+  - Testes: UI, motor e E2E (`club-squad.spec.ts`), com teste de valor sentinela que garante que o potencial nunca aparece na tela.
+
 - Exponencial portável no motor (T-074, ADR-0020):
   - A `exp` de `app/src/engine/math.ts` é o port do `e_exp.c` do fdlibm, só com `+ - * /`, comparações, `Math.trunc`, `Math.E` e uma tabela exata de 2^k; 0 ulp de diferença do `Math.exp` do Node em mais de 33 milhões de entradas, e `exp(1) === Math.E`.
   - `exp-table.json` com 4.096 entradas, incluindo 24 janelas que cruzam as trocas reais do `k`.
@@ -218,6 +227,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- Fadiga e condição valem só no realismo Completo (T-028; US-016 e US-010).
 - Determinismo entre motores JavaScript (T-074, ADR-0020):
   - `ENGINE_VERSION` 16. Nos goldens só mudaram a versão e os digests; os saves continuam válidos sem migração (`engineVersion` é só diagnóstico; `schemaVersion` segue 1).
   - O lint barra funções transcendentais em todo o motor, inclusive em `math.ts`, e também alias de `Math`, acesso computado e passar `Math` adiante.
@@ -270,5 +280,6 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Corrigido
 
+- Toque duplo no X do card do jogador e no "Fechar" do menu "Mais" não fecha duas vezes (T-028).
 - Site: espaços em volta de elementos inline ("eLiga", "oroteiro"), com teste geral em `site/src/lib/dist.test.ts`.
 - Site: tamanho da liga passa a "Até 20 (um técnico por clube da Série A)"; removida frase desatualizada sobre números ajustáveis.

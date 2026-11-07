@@ -494,6 +494,60 @@ PASS (commit 89d6725). Mapa critério → teste:
 | Goldens de partida e `exp-table` iguais no Chromium e no WebKit                    | `tests/e2e/golden.spec.ts` (bloqueante no CI)                                                            |
 | Simulação inalterada (`ENGINE_VERSION` 15 → 16)                                    | balance de release idêntico antes e depois                                                               |
 
+### QA da T-028 (tela do clube, elenco e card do jogador; US-015, US-016, US-026 parte da tela)
+
+**Veredito do QA: PASS** (HEAD f7c93e0).
+
+Testes de UI (`app/src/ui/club-screens.test.ts`, `squad.test.ts`, `frame.test.ts`) e do motor (`fans.test.ts`, `players.test.ts`: `fanMood`, `playerForm`, `isProspect`).
+
+E2E (`tests/e2e/club-squad.spec.ts`, `frame.spec.ts`; Chromium em celular em pé e deitado e em desktop; WebKit só no CI):
+
+- **Clube:**
+  - rodada 5, com adversário, mando e posição do `getStandings`;
+  - termômetro com `Math.round(fans)`, rótulo de humor e barra `aria-hidden`;
+  - sem rolagem lateral, alvos ≥44 px, temas noite e dia;
+  - pé igual ao menu "Mais", invisível a partir de 900 px;
+  - ordem dos blocos;
+  - desfalques só no Completo, levando a `#/squad`;
+  - sem animação com movimento reduzido;
+  - mini tabela a 360 px sem nome cortado.
+- **Elenco:**
+  - 25 linhas com as colunas;
+  - ordenação por Nota e Condição (`aria-sort`), mantida ao trocar de aba;
+  - coluna fixa a 360 px com a tabela rolando por dentro;
+  - sem rolagem da página em 360, 390, 844 e 1280;
+  - situação em texto com ícone;
+  - "Promessa" só para quem o motor marca;
+  - Simplificado sem "Cond." e sem a opção "Condição".
+- **Card do jogador:**
+  - 6 atributos de 1 a 99, traço e temporada;
+  - avatar em `svg`, sem texto nem imagem;
+  - o voltar do navegador fecha o card e mantém `#/squad`;
+  - "Próximo" não cresce o histórico;
+  - foco no X ao abrir e no nome de origem ao fechar, pelo botão ou pela linha;
+  - Anterior e Próximo desabilitados nas pontas;
+  - X e pé inteiros na janela e corpo rolando deitado;
+  - toque duplo no X;
+  - Simplificado sem a linha "Condição".
+- **Menu "Mais":** toque duplo em "Fechar" (`frame.spec.ts`).
+
+**Garantia do potencial:** teste de UI com valor sentinela (o número não aparece no HTML) e busca estática que garante que nenhum arquivo de `app/src/ui/` lê `potential`.
+
+**Regressão:**
+
+- `test:all`: 2047 testes passaram e 1 pulado, mais 137 e 18; lint 0 e build ok.
+- E2E Chromium: 75 passaram e 7 pulados.
+- `club-squad.spec.ts` com `--repeat-each=5`: 155 de 155.
+- `ENGINE_VERSION` em 16, sem mudança nos goldens.
+
+**A testar manualmente pelo CEO:**
+
+- termômetro e selos nos temas noite e dia, num aparelho real;
+- o card com o polegar, em pé e deitado;
+- leitor de tela;
+- Safari no iOS;
+- uma carreira longa no Simplificado.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

@@ -14,6 +14,9 @@ vi.mock('../content/es/ui.json', () => ({ default: { 'test.both': 'Los dos' } })
 vi.mock('../content/pt-BR/errors.json', () => ({ default: {} }));
 vi.mock('../content/en/errors.json', () => ({ default: {} }));
 vi.mock('../content/es/errors.json', () => ({ default: {} }));
+vi.mock('../content/pt-BR/fans.json', () => ({ default: {} }));
+vi.mock('../content/en/fans.json', () => ({ default: {} }));
+vi.mock('../content/es/fans.json', () => ({ default: {} }));
 
 describe('t() fallback', () => {
   it('uses pt-BR for a key not yet translated, with its variables', () => {

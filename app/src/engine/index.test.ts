@@ -35,6 +35,10 @@ const CONTRACT = [
   'seasonAwards',
   'roundRecap',
   'matchSheet',
+  'isProspect',
+  'attributeKeysFor',
+  'playerForm',
+  'fanMood',
   // closed lists and field ranges
   'PARAM_RANGES',
   'SEASON_ROUNDS',
@@ -67,6 +71,7 @@ const CONTRACT = [
   'MATCH_SHEET_EVENTS',
   'FORM_LENGTH',
   'RELEGATION_SPOTS',
+  'FAN_MOODS',
 ];
 /** Only for scripts/ (the /balance); 4.1, "API de ferramentas". */
 const TOOLS = [
