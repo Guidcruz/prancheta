@@ -21,7 +21,9 @@
    * number and bar, plus the change from the last swap as an arrow and a signed number (never
    * colour alone). The bar only reinforces the number and is hidden from screen readers. The
    * change stays until the next one; no timer, no animation under reduced motion. The screen
-   * announces the change in its status line; this strip has no live region of its own.
+   * announces the change in its status line; this strip has no live region of its own. With
+   * `help`, a native disclosure under the numbers ("O que conta na Força") explains the rule;
+   * closed by default, its summary is a 44px target.
    */
   interface Props {
     /** "Força do time" (`lineup.strength.title`), read by screen readers. */
@@ -29,8 +31,12 @@
     items: readonly StrengthItem[];
     /** Scale of the bars (the numbers can pass it; the bar stops full). */
     max?: number;
+    /** "O que conta na Força" (`lineup.strength.help.label`). */
+    helpLabel?: string;
+    /** The rule, per realism (`lineup.strength.help.full` / `.simplified`). */
+    help?: string;
   }
-  const { title, items, max = 100 }: Props = $props();
+  const { title, items, max = 100, helpLabel, help }: Props = $props();
   const id = $props.id();
   const width = (value: number) => `${Math.max(0, Math.min(100, (value / max) * 100))}%`;
   const signed = (delta: number) => (delta > 0 ? `+${delta}` : `−${Math.abs(delta)}`);
@@ -58,6 +64,12 @@
       </div>
     {/each}
   </dl>
+  {#if help && helpLabel}
+    <details class="help">
+      <summary class="caption"><Icon name="info" size={16} /><span>{helpLabel}</span></summary>
+      <p class="caption">{help}</p>
+    </details>
+  {/if}
 </section>
 
 <style>
@@ -111,6 +123,32 @@
   }
   .delta.down :global(svg) {
     color: var(--danger);
+  }
+  .help {
+    margin-block-start: var(--space-1);
+  }
+  .help summary {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-1);
+    min-block-size: var(--touch);
+    color: var(--ink-muted);
+    cursor: pointer;
+    list-style: none;
+  }
+  .help summary::-webkit-details-marker {
+    display: none;
+  }
+  .help summary:focus-visible {
+    outline: 2px solid var(--focus);
+    outline-offset: 2px;
+  }
+  .help[open] summary {
+    color: var(--ink);
+  }
+  .help p {
+    margin: 0 0 var(--space-1);
+    color: var(--ink);
   }
   .bar {
     block-size: var(--size-bar);

@@ -7,7 +7,7 @@
    * information.
    */
   export type LineupIssueKind =
-    'empty' | 'injured' | 'suspended' | 'outOfPosition' | 'improvised' | 'idol';
+    'empty' | 'injured' | 'suspended' | 'outOfPosition' | 'improvised' | 'tired' | 'idol';
 
   export interface LineupIssue {
     kind: LineupIssueKind;
@@ -21,6 +21,8 @@
     suspended: 'card',
     outOfPosition: 'warning',
     improvised: 'improvised',
+    // Condition under 85 (escalacao.md, "Titular cansado"); Realismo completo only.
+    tired: 'arrow-down',
     idol: 'info',
   };
 

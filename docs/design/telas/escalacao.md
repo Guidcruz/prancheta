@@ -21,7 +21,7 @@ Troca dois lugares (titular, banco ou não relacionado) de três jeitos que dão
 
 1. **Seletor** Elenco | Escalação | Tática.
 2. **Aviso de escalação incompleta** (Banner `warning`), só quando a escalação não pode ir para a rodada; ver "Estados".
-3. **Força do time** (StrengthBars): Força, Defesa, Meio, Ataque, cada um com número e barra. Depois de uma troca, cada número que mudou mostra a seta e o valor com sinal (`+2`, `−3`), até a próxima troca. A régua vem do motor (ver "Pedidos ao motor").
+3. **Força do time** (StrengthBars): Força, Defesa, Meio, Ataque, cada um com número e barra. Depois de uma troca, cada número que mudou mostra a seta e o valor com sinal (`+2`, `−3`), até a próxima troca. Embaixo, "O que conta na Força" abre a explicação. A regra está em "Força do time" e a conta é do motor.
 4. **Linha da formação:** "Formação **4-4-2**" e o link "Mudar na Tática" (≥ 44px de altura).
 5. **Campo** (LineupPitch): os 11 titulares (ver "Desenho do campo" e "Marca da vaga").
 6. **Avisos da escalação** (LineupIssues, título `lineup.issues.title`): uma linha por aviso, com ícone e texto completo: vaga sem jogador, titular lesionado ou suspenso, fora de posição ("Lauro Quintela (ZAG) jogando de ATA"), improvisado e ídolo fora do time. Sem avisos, a seção não aparece.
@@ -31,6 +31,24 @@ Troca dois lugares (titular, banco ou não relacionado) de três jeitos que dão
 10. **Barra de estado** (LineupStatusBar), presa embaixo, acima de "Jogar rodada" (ver "Barra de estado").
 
 Não há botão primário na tela: o primário continua sendo "Jogar rodada".
+
+## Força do time
+
+Decisão 8 do CEO, ajustada em 2026-11-07 depois da conferência do `game-designer`.
+
+- **Mesma fonte da Força do Novo jogo** (`teamStrength`, balance-targets.md, "Força"), agora com o cansaço. Valor de cada vaga: `v(vaga) = selectionValue(jogador, vaga) = overall × fit × (0,80 + 0,20 × condição / 100)` (`engine/selection.ts`). No Simplificado a condição é sempre 100, e o número é o da Força sem desconto.
+- **Vaga livre, lesionado ou suspenso escalado e gol vazio valem 0.**
+- **Força** = `Σ v / 11`. **Defesa, Meio e Ataque** = soma de `v` das vagas do setor (o setor de cada vaga é o do motor; os laterais da linha de 3 contam no meio) ÷ número de vagas do setor × `FORMATION_MULTIPLIERS[formação].setor`. O goleiro entra só na Força.
+- **Fica fora das barras:** moral, mando, postura e pressão. A postura e a pressão se explicam pela frase de efeito na Tática.
+- A tela mostra os quatro números arredondados; as setas comparam os números arredondados.
+- **Explicação** (disclosure "O que conta na Força", embaixo das barras, fechada por padrão): `lineup.strength.help.full` no Completo e `lineup.strength.help.simplified` no Simplificado.
+
+Critérios para o `developer` (testes unitários da leitura do motor):
+
+1. Com 11 aptos e condição 100, a Força é igual a `teamStrength` e os setores são iguais a `sectorStrengths` com moral 50, postura equilibrada, pressão média e sem mando.
+2. Tirar um titular (deixar a vaga livre) nunca aumenta nenhum dos quatro números.
+3. Trocar um titular por um inapto dá o mesmo resultado que deixar a vaga livre.
+4. É leitura pura: sem `Rng`, sem golden novo e sem mudar o `ENGINE_VERSION`.
 
 ## Desenho do campo
 
@@ -91,14 +109,14 @@ As listas de capitão e cobradores são de titulares ([funcoes.md](funcoes.md)).
 
 A LineupStatusBar fica no fim da tela, presa ao pé (`position: sticky`), acima de "Jogar rodada" e da barra de abas no celular, e no pé da coluna a partir de 900px. Ela é a região viva (`role="status"`, educada) da tela e está sempre no DOM, também vazia. Mostra uma coisa por vez:
 
-| Situação                              | Texto                                                      | Ações               |
-| ------------------------------------- | ---------------------------------------------------------- | ------------------- |
-| Jogador selecionado                   | "{nome} selecionado" + "Toque em outro lugar para trocar." | Ver card · Cancelar |
-| Troca feita                           | "{a} e {b} trocaram de lugar." + mudança da força          | —                   |
-| Recusa                                | "{nome} está lesionado e não pode ser escalado."           | —                   |
-| Depois de "Sugerir escalação"         | "Escalação sugerida."                                      | Desfazer            |
-| Depois de "Completar automaticamente" | "Escalação completada."                                    | Desfazer            |
-| Nada                                  | (vazia, sem caixa)                                         | —                   |
+| Situação                                                                               | Texto                                                      | Ações               |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------- |
+| Jogador selecionado                                                                    | "{nome} selecionado" + "Toque em outro lugar para trocar." | Ver card · Cancelar |
+| Troca feita                                                                            | "{a} e {b} trocaram de lugar." + mudança da força          | —                   |
+| Recusa                                                                                 | "{nome} está lesionado e não pode ser escalado."           | —                   |
+| Depois de "Sugerir escalação" (poupando alguém: "Escalação sugerida. Poupou {nomes}.") | "Escalação sugerida."                                      | Desfazer            |
+| Depois de "Completar automaticamente"                                                  | "Escalação completada."                                    | Desfazer            |
+| Nada                                                                                   | (vazia, sem caixa)                                         | —                   |
 
 - Abaixo de 480px de largura, as ações mostram só o ícone (o rótulo continua como nome acessível); com a tela baixa (celular deitado), a segunda linha some (continua ligada por `aria-describedby`) e a barra fica com uma linha só.
 - "Desfazer" volta à escalação de antes da última ação automática (um nível só) e some na próxima troca.
@@ -112,20 +130,21 @@ A LineupStatusBar fica no fim da tela, presa ao pé (`position: sticky`), acima 
 
 ## Estados
 
-| Estado                             | O que aparece                                                                                                                                                                                                                                                                                             |
-| ---------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Carregando**                     | Skeleton `card` × 3 com `lineup.loading`, só depois de 300 ms (como no Elenco: na prática não aparece).                                                                                                                                                                                                   |
-| **Primeira vez (rodada 1)**        | A escalação começa como a sugestão do motor para o técnico (`suggestSheet` com `controller: 'human'`): nunca há tela vazia na entrada.                                                                                                                                                                    |
-| **Vazio**                          | Só se o jogador tirar todos do campo: as 11 vagas tracejadas "Vaga livre", o Banner "Faltam 11 titulares" com "Completar automaticamente".                                                                                                                                                                |
-| **Incompleta (vaga livre)**        | Vaga tracejada no campo; Banner `warning` "Escalação incompleta · Falta 1 titular." com a ação "Completar automaticamente"; aviso "Vaga de ZAG sem jogador"; "Jogar rodada" com a linha de motivo `play.blocked.lineup`.                                                                                  |
-| **Lesionado ou suspenso escalado** | Acontece quando a rodada anterior lesiona ou suspende um titular ou reserva. Marca "Lesionado, 2 rodadas" na vaga (ou selo na linha do banco); aviso "Ícaro Tavernard (MEI) está lesionado, 2 rodadas"; o mesmo Banner e o mesmo bloqueio. Um não relacionado lesionado não bloqueia nada.                |
-| **Fora de posição ou improvisado** | Só informa: marca na vaga e aviso com as duas posições. Não bloqueia a rodada.                                                                                                                                                                                                                            |
-| **Ídolo fora do time**             | Aviso informativo `lineup.issue.idol` (a torcida esfria a partir da 2ª rodada seguida sem ele; torcida.md). Não bloqueia.                                                                                                                                                                                 |
-| **Menos de 11 aptos no elenco**    | A escalação vale com todos os aptos (`validateLineup`); as vagas que sobram ficam livres sem bloquear, e um Banner `info` diz "Só {count} jogadores podem jogar: o time entra com {count}."                                                                                                               |
-| **Erro**                           | Fronteira da aba (T-023): ErrorState `area`; a escalação salva fica como estava.                                                                                                                                                                                                                          |
-| **Realismo Completo**              | Coluna "Cond." nas listas, barra de condição nas vagas, selos e marcas de lesão e suspensão quando houver.                                                                                                                                                                                                |
-| **Realismo Simplificado**          | Sem "Cond." nas listas e sem barra de condição nas vagas (todos voltam a 100 entre as rodadas; decisão do CEO na T-028). Nunca há lesionado ou suspenso entre as rodadas, então nunca há recusa nem o estado "lesionado ou suspenso escalado". Fora de posição, improvisado e vaga livre funcionam igual. |
-| **Offline**                        | Nada muda.                                                                                                                                                                                                                                                                                                |
+| Estado                               | O que aparece                                                                                                                                                                                                                                                                                             |
+| ------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Carregando**                       | Skeleton `card` × 3 com `lineup.loading`, só depois de 300 ms (como no Elenco: na prática não aparece).                                                                                                                                                                                                   |
+| **Primeira vez (rodada 1)**          | A escalação começa como a sugestão do motor para o técnico (`suggestSheet` com `controller: 'human'`): nunca há tela vazia na entrada.                                                                                                                                                                    |
+| **Vazio**                            | Só se o jogador tirar todos do campo: as 11 vagas tracejadas "Vaga livre", o Banner "Faltam 11 titulares" com "Completar automaticamente".                                                                                                                                                                |
+| **Incompleta (vaga livre)**          | Vaga tracejada no campo; Banner `warning` "Escalação incompleta · Falta 1 titular." com a ação "Completar automaticamente"; aviso "Vaga de ZAG sem jogador"; "Jogar rodada" com a linha de motivo `play.blocked.lineup`.                                                                                  |
+| **Lesionado ou suspenso escalado**   | Acontece quando a rodada anterior lesiona ou suspende um titular ou reserva. Marca "Lesionado, 2 rodadas" na vaga (ou selo na linha do banco); aviso "Ícaro Tavernard (MEI) está lesionado, 2 rodadas"; o mesmo Banner e o mesmo bloqueio. Um não relacionado lesionado não bloqueia nada.                |
+| **Fora de posição ou improvisado**   | Só informa: marca na vaga e aviso com as duas posições. Não bloqueia a rodada.                                                                                                                                                                                                                            |
+| **Titular cansado** (só no Completo) | Aviso informativo `lineup.issue.tired` para cada titular com condição abaixo de 85 (o limiar de `ai.rotationCondition`): "Juca Pimentel está cansado (condição 79): rende menos e se machuca mais." Não bloqueia. No Simplificado não existe (a condição é sempre 100).                                   |
+| **Ídolo fora do time**               | Aviso informativo `lineup.issue.idol` (a torcida esfria a partir da 2ª rodada seguida sem ele; torcida.md). Não bloqueia.                                                                                                                                                                                 |
+| **Menos de 11 aptos no elenco**      | A escalação vale com todos os aptos (`validateLineup`); as vagas que sobram ficam livres sem bloquear, e um Banner `info` diz "Só {count} jogadores podem jogar: o time entra com {count}."                                                                                                               |
+| **Erro**                             | Fronteira da aba (T-023): ErrorState `area`; a escalação salva fica como estava.                                                                                                                                                                                                                          |
+| **Realismo Completo**                | Coluna "Cond." nas listas, barra de condição nas vagas, selos e marcas de lesão e suspensão quando houver.                                                                                                                                                                                                |
+| **Realismo Simplificado**            | Sem "Cond." nas listas e sem barra de condição nas vagas (todos voltam a 100 entre as rodadas; decisão do CEO na T-028). Nunca há lesionado ou suspenso entre as rodadas, então nunca há recusa nem o estado "lesionado ou suspenso escalado". Fora de posição, improvisado e vaga livre funcionam igual. |
+| **Offline**                          | Nada muda.                                                                                                                                                                                                                                                                                                |
 
 ### "Jogar rodada" com a escalação que não pode ir
 
@@ -133,13 +152,13 @@ O botão continua tocável, com a linha de motivo "Escalação incompleta" (nave
 
 - texto `lineup.check.message`; a lista dos problemas que bloqueiam (LineupIssues sem título visível); a nota `lineup.check.hint`;
 - no pé: **"Completar e jogar"** (primário da folha) e "Ajustar a escalação" (secundário, fecha a folha e mostra a vista Escalação).
-- "Completar e jogar" preenche só o que falta (vagas livres e inaptos no campo e no banco) com os melhores disponíveis, mantém o resto como o técnico deixou e já joga a rodada (decisão do CEO 4). O "Completar automaticamente" do Banner, na própria tela, faz o mesmo preenchimento sem jogar, com "Desfazer" na barra.
+- "Completar e jogar" preenche só o que falta (vagas livres e inaptos no campo e no banco) com os melhores disponíveis, mantém o resto como o técnico deixou e já joga a rodada (decisão 4 do CEO, aprovada em 2026-11-07). O "Completar automaticamente" do Banner, na própria tela, faz o mesmo preenchimento sem jogar, com "Desfazer" na barra.
 
 ## Celular deitado (844×390) e desktop
 
 - **Duas colunas a partir de 720px de largura útil** (consulta de contêiner, o mesmo 720px do padrão "tabela vira cartões"): à esquerda força, formação, campo, avisos e "Sugerir escalação"; à direita Banco e Não relacionados. A barra de estado ocupa a largura toda embaixo. No celular deitado, a página rola na vertical; o campo inteiro tem cerca de 470px, então rola-se para ver o goleiro.
 - **Desktop (a partir de 900px):** a mesma divisão, na coluna larga da moldura (`wide`, até `layout-wide-max`). As vagas ficam com cerca de 110px e os nomes cabem inteiros. A barra de estado fica no pé da coluna, com as ações com rótulo.
-- **Celular deitado:** a moldura da T-023 (abas + "Jogar rodada" flutuante) ocupa cerca de 120 dos 390px; com a barra de estado, sobram cerca de 200px de conteúdo visível. Ver a proposta 3 em "Decisões do CEO".
+- **Celular deitado:** a moldura da T-023 (abas + "Jogar rodada" flutuante) ocupa cerca de 120 dos 390px; com a barra de estado, sobram cerca de 200px de conteúdo visível. O CEO aprovou levar "Jogar rodada" para a barra de abas nessa altura (decisão 3), como ajuste de tela à parte, fora da T-029.
 
 ## Movimento
 
@@ -167,76 +186,81 @@ SegmentedControl, Banner, StrengthBars, LineupPitch, LineupChip, LineupIssues, B
 
 Rascunho pt-BR para o `content-writer`, em `ui.json`. Usam também `position.*`, `status.*`, `squad.col.overall`, `squad.col.condition` e `nav.close` da T-028.
 
-| Chave                              | Rascunho pt-BR                                                           | Onde                                             |
-| ---------------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
-| `squad.view.legend`                | Mostrar                                                                  | legenda escondida do seletor                     |
-| `squad.view.squad`                 | Elenco                                                                   | opção                                            |
-| `squad.view.lineup`                | Escalação                                                                | opção                                            |
-| `squad.view.tactic`                | Tática                                                                   | opção                                            |
-| `lineup.loading`                   | Carregando a escalação...                                                | Skeleton                                         |
-| `lineup.strength.title`            | Força do time                                                            | título escondido da StrengthBars                 |
-| `lineup.strength.overall`          | Força                                                                    | primeiro número                                  |
-| `lineup.sector.def`                | Defesa                                                                   | setor                                            |
-| `lineup.sector.mid`                | Meio                                                                     | setor                                            |
-| `lineup.sector.atk`                | Ataque                                                                   | setor                                            |
-| `lineup.strength.up`               | subiu {value}                                                            | leitor de tela da seta                           |
-| `lineup.strength.down`             | caiu {value}                                                             | leitor de tela da seta                           |
-| `lineup.formation.line`            | Formação {formation}                                                     | linha acima do campo                             |
-| `lineup.formation.change`          | Mudar na Tática                                                          | link                                             |
-| `lineup.pitch.label`               | Campo, formação {formation}                                              | nome do grupo do campo                           |
-| `lineup.slot.a11y`                 | {position}: {name}, nota {overall}                                       | nome da vaga (Simplificado)                      |
-| `lineup.slot.a11yCondition`        | {position}: {name}, nota {overall}, condição {condition}                 | nome da vaga (Completo)                          |
-| `lineup.slot.empty`                | Vaga livre                                                               | vaga sem jogador                                 |
-| `lineup.slot.emptyA11y`            | {position}: vaga livre                                                   | nome da vaga livre                               |
-| `lineup.captain.short`             | C                                                                        | marca do capitão na vaga                         |
-| `lineup.captain.a11y`              | capitão                                                                  | acrescentado ao nome da vaga                     |
-| `lineup.fit.improvised`            | Improvisado                                                              | marca da vaga                                    |
-| `lineup.fit.outOfPosition`         | Fora de posição                                                          | marca da vaga                                    |
-| `lineup.issues.title`              | Atenção na escalação                                                     | título dos avisos                                |
-| `lineup.issue.empty`               | Vaga de {position} sem jogador                                           | aviso                                            |
-| `lineup.issue.injured`             | {name} ({position}) está {status}                                        | aviso; `{status}` = `status.injured.*` minúsculo |
-| `lineup.issue.suspended`           | {name} ({position}) está {status}                                        | aviso; `{status}` = `status.suspended.*`         |
-| `lineup.issue.outOfPosition`       | {name} ({natural}) jogando de {position}                                 | aviso                                            |
-| `lineup.issue.improvised`          | {name} ({natural}) improvisado de {position}                             | aviso                                            |
-| `lineup.issue.idol`                | {name} é o ídolo da torcida: fora do time, ela esfria.                   | aviso informativo                                |
-| `lineup.issue.short`               | Só {count} jogadores podem jogar: o time entra com {count}.              | Banner `info`                                    |
-| `lineup.suggest`                   | Sugerir escalação                                                        | botão                                            |
-| `lineup.bench.title`               | Banco                                                                    | título                                           |
-| `lineup.bench.count`               | {count} de {max}                                                         | ao lado do título                                |
-| `lineup.bench.empty`               | Vaga no banco                                                            | linha livre                                      |
-| `lineup.bench.emptyA11y`           | Vaga no banco, livre                                                     | nome da linha livre                              |
-| `lineup.out.title`                 | Não relacionados                                                         | título                                           |
-| `lineup.row.a11y`                  | {name}, {position}, nota {overall}                                       | nome da linha (Simplificado)                     |
-| `lineup.row.a11yCondition`         | {name}, {position}, nota {overall}, condição {condition}                 | nome da linha (Completo)                         |
-| `lineup.select.selected`           | {name} selecionado                                                       | barra                                            |
-| `lineup.select.hint`               | Toque em outro lugar para trocar.                                        | barra, 2ª linha                                  |
-| `lineup.select.card`               | Ver card                                                                 | ação da barra                                    |
-| `lineup.select.cancel`             | Cancelar                                                                 | ação da barra                                    |
-| `lineup.swap.done`                 | {a} e {b} trocaram de lugar.                                             | barra                                            |
-| `lineup.move.done`                 | {name} foi para {place}.                                                 | barra (lugar livre)                              |
-| `lineup.place.bench`               | o banco                                                                  | `{place}`                                        |
-| `lineup.place.out`                 | os não relacionados                                                      | `{place}`                                        |
-| `lineup.strength.changed`          | {sector} {value}, {change}.                                              | acrescentado à mensagem da troca                 |
-| `lineup.refuse.injured`            | {name} está lesionado e não pode ser escalado.                           | barra (recusa)                                   |
-| `lineup.refuse.suspended`          | {name} está suspenso e não pode ser escalado.                            | barra (recusa)                                   |
-| `lineup.refuse.injured.short`      | Lesionado: não pode ser escalado.                                        | embaixo da linha ou da vaga                      |
-| `lineup.refuse.suspended.short`    | Suspenso: não pode ser escalado.                                         | embaixo da linha ou da vaga                      |
-| `lineup.roles.removed`             | {name} saiu da lista de {role}.                                          | barra, depois da troca                           |
-| `lineup.suggest.done`              | Escalação sugerida.                                                      | barra                                            |
-| `lineup.complete.done`             | Escalação completada.                                                    | barra                                            |
-| `lineup.undo`                      | Desfazer                                                                 | ação da barra                                    |
-| `lineup.undo.done`                 | A escalação anterior voltou.                                             | barra                                            |
-| `lineup.invalid.title`             | Escalação incompleta                                                     | Banner                                           |
-| `lineup.invalid.missing.one`       | Falta {count} titular.                                                   | Banner                                           |
-| `lineup.invalid.missing.other`     | Faltam {count} titulares.                                                | Banner                                           |
-| `lineup.invalid.unavailable.one`   | {count} escalado não pode jogar.                                         | Banner (titular ou reserva)                      |
-| `lineup.invalid.unavailable.other` | {count} escalados não podem jogar.                                       | Banner                                           |
-| `lineup.complete`                  | Completar automaticamente                                                | ação do Banner                                   |
-| `lineup.check.title`               | Escalação incompleta                                                     | título da folha                                  |
-| `lineup.check.message`             | Antes de jogar, o time precisa de 11 titulares que possam jogar.         | folha                                            |
-| `lineup.check.hint`                | Entram os melhores disponíveis nas vagas; o resto fica como você deixou. | folha                                            |
-| `lineup.check.play`                | Completar e jogar                                                        | primário da folha                                |
-| `lineup.check.adjust`              | Ajustar a escalação                                                      | secundário da folha                              |
+| Chave                              | Rascunho pt-BR                                                                                                                                                                                               | Onde                                                     |
+| ---------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------- |
+| `squad.view.legend`                | Mostrar                                                                                                                                                                                                      | legenda escondida do seletor                             |
+| `squad.view.squad`                 | Elenco                                                                                                                                                                                                       | opção                                                    |
+| `squad.view.lineup`                | Escalação                                                                                                                                                                                                    | opção                                                    |
+| `squad.view.tactic`                | Tática                                                                                                                                                                                                       | opção                                                    |
+| `lineup.loading`                   | Carregando a escalação...                                                                                                                                                                                    | Skeleton                                                 |
+| `lineup.strength.title`            | Força do time                                                                                                                                                                                                | título escondido da StrengthBars                         |
+| `lineup.strength.overall`          | Força                                                                                                                                                                                                        | primeiro número                                          |
+| `lineup.sector.def`                | Defesa                                                                                                                                                                                                       | setor                                                    |
+| `lineup.sector.mid`                | Meio                                                                                                                                                                                                         | setor                                                    |
+| `lineup.sector.atk`                | Ataque                                                                                                                                                                                                       | setor                                                    |
+| `lineup.strength.up`               | subiu {value}                                                                                                                                                                                                | leitor de tela da seta                                   |
+| `lineup.strength.help.label`       | O que conta na Força                                                                                                                                                                                         | disclosure embaixo das barras                            |
+| `lineup.strength.help.full`        | Força é a média das notas dos titulares na vaga em que cada um joga, com o desconto do cansaço. Defesa, Meio e Ataque já contam a formação. Moral, mando, postura e pressão contam na partida, mas não aqui. | explicação (Completo)                                    |
+| `lineup.strength.help.simplified`  | Força é a média das notas dos titulares na vaga em que cada um joga. Defesa, Meio e Ataque já contam a formação. Moral, mando, postura e pressão contam na partida, mas não aqui.                            | explicação (Simplificado)                                |
+| `lineup.strength.down`             | caiu {value}                                                                                                                                                                                                 | leitor de tela da seta                                   |
+| `lineup.formation.line`            | Formação {formation}                                                                                                                                                                                         | linha acima do campo                                     |
+| `lineup.formation.change`          | Mudar na Tática                                                                                                                                                                                              | link                                                     |
+| `lineup.pitch.label`               | Campo, formação {formation}                                                                                                                                                                                  | nome do grupo do campo                                   |
+| `lineup.slot.a11y`                 | {position}: {name}, nota {overall}                                                                                                                                                                           | nome da vaga (Simplificado)                              |
+| `lineup.slot.a11yCondition`        | {position}: {name}, nota {overall}, condição {condition}                                                                                                                                                     | nome da vaga (Completo)                                  |
+| `lineup.slot.empty`                | Vaga livre                                                                                                                                                                                                   | vaga sem jogador                                         |
+| `lineup.slot.emptyA11y`            | {position}: vaga livre                                                                                                                                                                                       | nome da vaga livre                                       |
+| `lineup.captain.short`             | C                                                                                                                                                                                                            | marca do capitão na vaga                                 |
+| `lineup.captain.a11y`              | capitão                                                                                                                                                                                                      | acrescentado ao nome da vaga                             |
+| `lineup.fit.improvised`            | Improvisado                                                                                                                                                                                                  | marca da vaga                                            |
+| `lineup.fit.outOfPosition`         | Fora de posição                                                                                                                                                                                              | marca da vaga                                            |
+| `lineup.issues.title`              | Atenção na escalação                                                                                                                                                                                         | título dos avisos                                        |
+| `lineup.issue.empty`               | Vaga de {position} sem jogador                                                                                                                                                                               | aviso                                                    |
+| `lineup.issue.injured`             | {name} ({position}) está {status}                                                                                                                                                                            | aviso; `{status}` = `status.injured.*` minúsculo         |
+| `lineup.issue.suspended`           | {name} ({position}) está {status}                                                                                                                                                                            | aviso; `{status}` = `status.suspended.*`                 |
+| `lineup.issue.outOfPosition`       | {name} ({natural}) jogando de {position}                                                                                                                                                                     | aviso                                                    |
+| `lineup.issue.improvised`          | {name} ({natural}) improvisado de {position}                                                                                                                                                                 | aviso                                                    |
+| `lineup.issue.tired`               | {name} está cansado (condição {condition}): rende menos e se machuca mais.                                                                                                                                   | aviso informativo (só no Completo)                       |
+| `lineup.issue.idol`                | {name} é o ídolo da torcida: fora do time, ela esfria.                                                                                                                                                       | aviso informativo                                        |
+| `lineup.issue.short`               | Só {count} jogadores podem jogar: o time entra com {count}.                                                                                                                                                  | Banner `info`                                            |
+| `lineup.suggest`                   | Sugerir escalação                                                                                                                                                                                            | botão                                                    |
+| `lineup.bench.title`               | Banco                                                                                                                                                                                                        | título                                                   |
+| `lineup.bench.count`               | {count} de {max}                                                                                                                                                                                             | ao lado do título                                        |
+| `lineup.bench.empty`               | Vaga no banco                                                                                                                                                                                                | linha livre                                              |
+| `lineup.bench.emptyA11y`           | Vaga no banco, livre                                                                                                                                                                                         | nome da linha livre                                      |
+| `lineup.out.title`                 | Não relacionados                                                                                                                                                                                             | título                                                   |
+| `lineup.row.a11y`                  | {name}, {position}, nota {overall}                                                                                                                                                                           | nome da linha (Simplificado)                             |
+| `lineup.row.a11yCondition`         | {name}, {position}, nota {overall}, condição {condition}                                                                                                                                                     | nome da linha (Completo)                                 |
+| `lineup.select.selected`           | {name} selecionado                                                                                                                                                                                           | barra                                                    |
+| `lineup.select.hint`               | Toque em outro lugar para trocar.                                                                                                                                                                            | barra, 2ª linha                                          |
+| `lineup.select.card`               | Ver card                                                                                                                                                                                                     | ação da barra                                            |
+| `lineup.select.cancel`             | Cancelar                                                                                                                                                                                                     | ação da barra                                            |
+| `lineup.swap.done`                 | {a} e {b} trocaram de lugar.                                                                                                                                                                                 | barra                                                    |
+| `lineup.move.done`                 | {name} foi para {place}.                                                                                                                                                                                     | barra (lugar livre)                                      |
+| `lineup.place.bench`               | o banco                                                                                                                                                                                                      | `{place}`                                                |
+| `lineup.place.out`                 | os não relacionados                                                                                                                                                                                          | `{place}`                                                |
+| `lineup.strength.changed`          | {sector} {value}, {change}.                                                                                                                                                                                  | acrescentado à mensagem da troca                         |
+| `lineup.refuse.injured`            | {name} está lesionado e não pode ser escalado.                                                                                                                                                               | barra (recusa)                                           |
+| `lineup.refuse.suspended`          | {name} está suspenso e não pode ser escalado.                                                                                                                                                                | barra (recusa)                                           |
+| `lineup.refuse.injured.short`      | Lesionado: não pode ser escalado.                                                                                                                                                                            | embaixo da linha ou da vaga                              |
+| `lineup.refuse.suspended.short`    | Suspenso: não pode ser escalado.                                                                                                                                                                             | embaixo da linha ou da vaga                              |
+| `lineup.roles.removed`             | {name} saiu da lista de {role}.                                                                                                                                                                              | barra, depois da troca                                   |
+| `lineup.suggest.rested`            | Escalação sugerida. Poupou {names}.                                                                                                                                                                          | barra, quando a sugestão tira do time titulares cansados |
+| `lineup.suggest.done`              | Escalação sugerida.                                                                                                                                                                                          | barra                                                    |
+| `lineup.complete.done`             | Escalação completada.                                                                                                                                                                                        | barra                                                    |
+| `lineup.undo`                      | Desfazer                                                                                                                                                                                                     | ação da barra                                            |
+| `lineup.undo.done`                 | A escalação anterior voltou.                                                                                                                                                                                 | barra                                                    |
+| `lineup.invalid.title`             | Escalação incompleta                                                                                                                                                                                         | Banner                                                   |
+| `lineup.invalid.missing.one`       | Falta {count} titular.                                                                                                                                                                                       | Banner                                                   |
+| `lineup.invalid.missing.other`     | Faltam {count} titulares.                                                                                                                                                                                    | Banner                                                   |
+| `lineup.invalid.unavailable.one`   | {count} escalado não pode jogar.                                                                                                                                                                             | Banner (titular ou reserva)                              |
+| `lineup.invalid.unavailable.other` | {count} escalados não podem jogar.                                                                                                                                                                           | Banner                                                   |
+| `lineup.complete`                  | Completar automaticamente                                                                                                                                                                                    | ação do Banner                                           |
+| `lineup.check.title`               | Escalação incompleta                                                                                                                                                                                         | título da folha                                          |
+| `lineup.check.message`             | Antes de jogar, o time precisa de 11 titulares que possam jogar.                                                                                                                                             | folha                                                    |
+| `lineup.check.hint`                | Entram os melhores disponíveis nas vagas; o resto fica como você deixou.                                                                                                                                     | folha                                                    |
+| `lineup.check.play`                | Completar e jogar                                                                                                                                                                                            | primário da folha                                        |
+| `lineup.check.adjust`              | Ajustar a escalação                                                                                                                                                                                          | secundário da folha                                      |
 
 Para o `content-writer`: "Fora de posição" e "Improvisado" precisam caber em 2 linhas de cerca de 60px na face condensada (12px) nos três idiomas; nenhuma palavra pode passar de cerca de 11 letras (es "Fuera de posición", en "Out of position", "Improvisado"/"Improvised" cabem). Os rótulos das ações da barra ("Ver card", "Cancelar", "Desfazer") só aparecem com 480px ou mais e podem ter até cerca de 12 letras.
 
@@ -254,10 +278,11 @@ Com `PRANCHETA_ENV=test`, uma carreira de teste com fixture conhecida (4-4-2, um
 8. **Recusa (US-017):** tentar levar o lesionado para o campo (dois toques) e para o banco: a escalação não muda (mesmos 18 nomes nos mesmos lugares), a barra tem "está lesionado e não pode ser escalado" e a linha do atleta tem o motivo; idem para o suspenso.
 9. **Incompleta (US-017):** mover um titular para uma vaga livre do banco deixa "Vaga livre" no campo e o Banner; tocar "Jogar rodada" abre a folha "Escalação incompleta" com "Completar e jogar"; "Completar e jogar" joga a rodada com 11 titulares (o resumo da rodada abre), e a escalação salva tem 11 aptos.
 10. **Sugerir e desfazer:** "Sugerir escalação" mantém a formação, a barra mostra "Desfazer"; "Desfazer" volta exatamente à escalação anterior.
-11. **Persistência:** recarregar a página depois de uma troca mostra a mesma escalação (depende do pedido 1 ao motor).
+11. **Persistência:** recarregar a página depois de uma troca mostra a mesma escalação (depende da ficha do técnico no save, do ADR em preparação).
 12. **Simplificado:** sem "Cond." nas listas e nenhuma vaga com barra de condição; nenhum selo de lesão ou suspensão.
 13. **Movimento:** com `reducedMotion: 'reduce'`, a barra da força tem `transition-duration` 0s.
 14. **Capitão:** a vaga do capitão tem o "C" e o nome acessível contém "capitão".
+15. **Força (decisão 8):** na fixture do Completo, um titular com condição abaixo de 85 aparece no aviso "está cansado"; mover um titular para o banco (vaga livre) não aumenta nenhum dos quatro números; "O que conta na Força" abre a explicação (`aria-expanded` muda) e o texto do Simplificado não fala de cansaço.
 
 ## Marcas do cenário
 
@@ -265,8 +290,8 @@ Nenhuma.
 
 ## Pedidos ao motor
 
-Ver [funcoes.md](funcoes.md#pedidos-ao-motor), a lista única das três telas (Escalação, Tática e Funções), que passa pelo `architect`.
+Ver [funcoes.md](funcoes.md#pedidos-ao-motor): o contrato fica no ADR da ficha do técnico, que o `architect` está escrevendo.
 
 ## Decisões do CEO
 
-Ver [funcoes.md](funcoes.md#decisões-do-ceo-t-029), a lista única da T-029.
+Aprovadas em 2026-11-07; lista única em [funcoes.md](funcoes.md#decisões-do-ceo-t-029). As desta tela: formação só na Tática (2), "Completar e jogar" (4), "Sugerir escalação" mantém formação e tática (6), arrastar no toque depois de 300ms (7), régua da força (8, pendente do `game-designer`) e selos novos (10).

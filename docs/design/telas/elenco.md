@@ -29,7 +29,7 @@ Lê o elenco, troca a ordem (posição, nota, condição) e toca num atleta para
    - Condição e moral são números reais no motor; a tela mostra `Math.round` (`jogadores.md`, "Frações").
    - **Agrupamento:** com a ordem "Posição", uma linha de grupo (GroupRow) antes de cada posição ("Goleiros", "Zagueiros"...). Com "Nota" e "Condição", lista corrida, sem grupos.
    - A coluna ordenada tem `aria-sort` e uma seta no cabeçalho; com "Posição", nenhuma coluna tem `aria-sort` (a posição não é coluna; os grupos dizem a ordem).
-3. **Titular e reserva:** não aparecem no Elenco, nem depois da T-029: a Escalação mostra titulares, banco e não relacionados (proposta do `ux-designer` na T-029, decisão 9 de [funcoes.md](funcoes.md#decisões-do-ceo-t-029)).
+3. **Titular e reserva:** não aparecem no Elenco, nem depois da T-029: a Escalação mostra titulares, banco e não relacionados (decisão 9 do CEO na T-029, aprovada em 2026-11-07; [funcoes.md](funcoes.md#decisões-do-ceo-t-029)).
 
 O número do potencial não aparece em lugar nenhum. O selo "Promessa" (decisão do CEO na US-016) aparece para quem se enquadra na regra de `jogadores.md`, "Potencial", e a tela recebe do motor só o booleano (ver "Pedidos ao motor" em [jogador.md](jogador.md#pedidos-ao-motor)).
 

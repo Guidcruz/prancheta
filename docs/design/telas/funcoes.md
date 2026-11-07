@@ -35,7 +35,7 @@ Na folha do Capitão, o selo "Líder" (StatusBadge `leader`) aparece em todo tit
 ## Regras das listas
 
 - **Só titulares.** Quem sai do campo numa troca da Escalação sai das três listas (a barra da Escalação avisa); quem entra não entra em nenhuma.
-- **No máximo 3 por lista** (decisão do CEO 1). O motor aceita qualquer tamanho; o limite é da tela.
+- **No máximo 3 por lista** (decisão 1 do CEO, aprovada em 2026-11-07). O motor aceita qualquer tamanho; o limite é da tela.
 - **O mesmo jogador pode estar nas três listas.**
 - **Lista vazia** é um estado válido: vale a regra automática, e a linha da Tática mostra "Automático: {nome}".
 - A ordem é a do motor (`Lineup.captains`, `penaltyTakers`, `freeKickTakers`): nenhuma regra nova.
@@ -114,7 +114,7 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. Usam também `attr.finishi
 4. **Alvos:** Subir, Descer, Tirar e as linhas de "Pôr" medem ≥ 44 × 44px a 390×844 e a 844×390.
 5. **Troca na Escalação tira da lista:** com A na lista de pênaltis, trocar A por um reserva na Escalação tira A da lista, e a barra diz "saiu da lista de pênaltis".
 6. **Capitão e cobradores na partida (US-018):** teste de integração, não E2E: a ficha entregue ao `playRound` leva as três listas na ordem da tela; quando o primeiro sai de campo, o motor usa o próximo (o comportamento já é do motor, T-010; o teste confere só que a tela entrega as listas certas).
-7. **Persistência:** recarregar a página mantém as três listas (depende do pedido 1 ao motor).
+7. **Persistência:** recarregar a página mantém as três listas (depende da ficha do técnico no save, do ADR em preparação).
 
 ## Marcas do cenário
 
@@ -122,30 +122,28 @@ Nenhuma.
 
 ## Pedidos ao motor
 
-O que Escalação, Tática e Funções precisam e o contrato do motor (`app/src/engine/index.ts`) ainda não tem. Passa pelo `architect`, que decide forma e nome. Só o item 1 mexe no save; os outros são leituras puras, sem `Rng` e sem efeito em golden nem no `ENGINE_VERSION`.
+O que Escalação, Tática e Funções precisam do motor e do save fica decidido no ADR da ficha do técnico, que o `architect` está escrevendo (aprovado pelo CEO em 2026-11-07, com tarefa própria antes da T-029). O contrato fica lá, não aqui. O que as três telas pedem, em uma linha cada:
 
-1. **Guardar a ficha do técnico no save.** Hoje o save não tem onde guardar a escalação e a tática que o técnico monta entre as rodadas: `GameState.lastSheets` só tem a ficha jogada, e `CareerData` não tem ficha. Sem isso, recarregar a página perde a escalação (medida 11 da Escalação). A ficha precisa aceitar **rascunho**: vaga livre no campo (o técnico pode deixar o campo incompleto e sair) e lesionados escalados (alguém se lesiona na rodada). Proposta: `CareerData.sheet?: DraftSheet`, com `starters` de 11 posições aceitando vazio, e o `validateLineup` decidindo na hora de jogar. É mudança de formato: ADR, versão nova do save e teste de migração (a migração deixa o campo ausente, e a tela usa a sugestão).
-2. **`fitLevel` no contrato** (já existe em `players.ts`, com o tipo `FitLevel`): a marca "Improvisado" / "Fora de posição" e os avisos leem dele, sem repetir a tabela `FIT`.
-3. **Força da ficha para a tela.** Uma leitura `sheetStrength(state, clubId, lineup)` → `{ overall, def, mid, atk }` (ou `undefined`), que aceite vaga livre (pela regra de "Vaga vazia"), para as barras mostrarem a queda de uma vaga livre. A régua é decisão do `game-designer` (decisão do CEO 8); a recomendação é a mesma base da Força (`teamStrength`: `overall × fit`, sem condição, moral, mando nem tática) por setor, com o multiplicador da formação, para os números andarem com a formação e baterem com a Força da tela Clube. `sectorStrengths` não serve: está na API de ferramentas, inclui mando e pede 11 aptos.
-4. **Troca de formação antes do jogo.** `reshapeLineup(state, clubId, lineup, formation)` → `Lineup`: a regra de "Troca de formação durante o jogo" (partida.md) com a energia igual à condição, aceitando vaga livre; o banco e as listas ficam. A US-018 pede "redistribuídos pela posição de cada um", e a regra do jogo já existe dentro da partida (`changeFormation`, sobre o estado interno).
-5. **Completar.** `completeSheet(state, clubId, sheet)` → ficha válida: cada vaga livre ou com inapto recebe o melhor disponível para a vaga (banco primeiro, depois o resto; `bestForSlot`, com os desempates de ia-clubes.md); o banco perde inaptos e repetidos e completa até 7 (`pickBench`); o resto fica como o técnico deixou; as listas perdem quem não é titular. O texto da T-028 ("pode reaproveitar `pickEleven` e `pickBench`") esbarra em que os dois estão fora do contrato.
-6. **Sugerir na formação escolhida.** `SuggestOptions.formation?: Formation` no `suggestSheet` (com `controller: 'human'`): o melhor XI e o banco para a formação do técnico, sem trocar a formação (decisão do CEO 6). A tática e as listas da sugestão a tela não usa.
-7. **Quem está com cada função agora.** `sheetRoles(state, clubId, lineup)` → para capitão, pênalti e falta, `{ player?: PlayerId, auto: boolean }`: o primeiro da lista entre os titulares ou, sem ninguém, a regra automática no apito inicial (partida.md, "Capitão e cobradores", com os desempates). Serve ao "C" do campo e ao "Automático: {nome}" da Tática, sem a tela repetir a regra.
-8. **Todos os problemas da ficha.** `validateLineup` devolve só o primeiro problema; o Banner ("Falta 1 titular e 1 escalado não pode jogar"), os avisos e a folha "Escalação incompleta" precisam de todos. `sheetProblems(state, clubId, sheet)` → lista de `SheetProblem` com o índice da vaga, ou, no mínimo, `isAvailable` no contrato (hoje só `isUnavailable` está na API de ferramentas).
-
-Nada mais falta: o elenco, a situação (lesão, suspensão), a condição, a nota, o traço líder, a idade e os atributos já saem de `GameState`; `FORMATIONS`, `FORMATION_SLOTS`, `POSTURES` e `BENCH_SIZE` já estão no contrato.
+1. Guardar a ficha do técnico no save, aceitando vaga livre e jogador inapto (rascunho).
+2. Ler o nível de posição (improvisado, fora de posição) do motor, sem repetir a tabela.
+3. Ler a força da ficha (Força e os três setores), com vaga livre e inapto valendo 0, na régua da decisão 8; a regra e os critérios de teste estão em [escalacao.md](escalacao.md#força-do-time).
+4. Trocar a formação antes do jogo pela posição de cada um (US-018).
+5. Completar só o que falta na ficha (vagas livres e inaptos).
+6. Sugerir o melhor XI e o banco na formação escolhida pelo técnico (decisão 6).
+7. Saber quem está com cada função agora, pela lista ou pela regra automática.
+8. Ler todos os problemas da ficha, não só o primeiro.
 
 ## Decisões do CEO (T-029)
 
-Cada uma com a recomendação do `ux-designer`.
+Aprovadas pelo CEO em 2026-11-07 ("ok recomendado").
 
-1. **Listas de funções com até 3 nomes, só titulares; quem sai do time sai das listas.** Recomendo: sim. Três cobrem uma partida (o primeiro, a substituição dele, a expulsão de mais um); além disso a regra automática já escolhe bem. Alternativa: lista com os 11, mais longa de ordenar.
-2. **Formação só na Tática.** Na Escalação fica a linha "Formação 4-4-2 · Mudar na Tática"; a Tática não tem uma segunda prévia de campo, só a força e os avisos de quem ficou fora de posição. Recomendo: sim (uma escolha num lugar só; o campo com os 11 redistribuídos está a um toque).
-3. **Celular deitado: "Jogar rodada" na própria barra de abas.** A moldura da T-023 ocupa cerca de 120 dos 390px de altura; com a barra de estado, sobram cerca de 200px. Proposta: com altura abaixo de 480px, o botão deixa de flutuar e vira o último item da barra de abas, à direita (cerca de 60px a mais de conteúdo). Mexe na moldura de todas as telas e no `navegacao.md`, então **não entra na T-029**. Recomendo: aprovar como ajuste de tela separado.
-4. **"Jogar rodada" com a escalação que não pode ir: "Completar e jogar".** A folha oferece "Completar e jogar" (completa só o que falta e já joga a rodada) e "Ajustar a escalação". A US-017 diz "oferece Completar automaticamente"; o rótulo novo diz o que acontece depois. Recomendo: sim (o jogador tocou "Jogar rodada" porque queria jogar). Na própria tela, o "Completar automaticamente" do aviso só completa, com "Desfazer".
-5. **Listas de funções começam vazias** ("Automático"), em vez de vir preenchidas pela sugestão do motor. O resultado na partida é praticamente o mesmo (a regra automática é a mesma que preencheria a lista), e a tela mostra o critério em vez de três nomes que o técnico não escolheu. Recomendo: sim.
-6. **"Sugerir escalação" mantém a formação e a tática** e troca só os 11 e o banco, com "Desfazer". As listas ficam, menos quem saiu do time. Recomendo: sim (respeita a escolha de formação do técnico; precisa do pedido 6 ao motor).
-7. **Arrastar no toque só depois de segurar 300ms;** deslizar sem segurar rola a página. Recomendo: sim (o campo ocupa quase a tela e não pode prender a rolagem; o toque em dois passos continua sendo o caminho rápido).
-8. **Régua da força por setor** na Escalação e na Tática: a mesma base da Força da tela Clube (`overall × fit`, sem condição, moral, mando nem tática), por setor e com o multiplicador da formação. Assim os números andam com a formação e com quem joga onde, e a postura e a pressão ficam explicadas só pela frase de efeito. Recomendo: sim, com a confirmação do `game-designer`. Alternativa: incluir condição e moral (no Completo, cansar um titular apareceria nas barras, mas os números deixariam de bater com a Força do Clube).
-9. **Elenco sem selo de titular ou reserva.** O rascunho da T-028 deixava para a T-029 "o selo e o agrupamento por titulares e reservas" no Elenco; a Escalação já mostra titulares, banco e não relacionados. Recomendo: não pôr no Elenco (a tabela do Elenco continua sendo "o estado de todos"; o selo em 18 das 25 linhas seria ruído).
-10. **Selos novos** (regra "Selos" do design system: tipo novo só com par conferido): `improvised` em `on-floodlight` sobre `floodlight`; `outOfPosition` em `ink` sobre `danger-soft`, borda e ícone `danger`; `leader` em `ink` sobre `surface-2`, borda `line`. Os três usam pares que o `npm run tokens` já confere. Recomendo: aprovar e registrar na tabela de "Selos".
+1. **Listas de funções com até 3 nomes, só titulares;** quem sai do time sai das listas.
+2. **Formação só na Tática.** Na Escalação fica a linha "Formação 4-4-2 · Mudar na Tática"; a Tática não tem uma segunda prévia de campo, só a força e os avisos de quem ficou fora de posição.
+3. **Celular deitado: "Jogar rodada" na própria barra de abas** quando a altura é menor que 480px. É um ajuste de tela à parte, na moldura e no `navegacao.md`, **fora da T-029**.
+4. **"Jogar rodada" com a escalação que não pode ir abre a folha com "Completar e jogar"** (completa só o que falta e já joga a rodada) e "Ajustar a escalação". Na própria tela, o "Completar automaticamente" do aviso só completa, com "Desfazer".
+5. **Listas de funções começam vazias** ("Automático: {nome}"), sem o preenchimento da sugestão do motor.
+6. **"Sugerir escalação" mantém a formação e a tática** e troca só os 11 e o banco, com "Desfazer"; as listas ficam, menos quem saiu do time.
+7. **Arrastar no toque só depois de segurar 300ms;** deslizar sem segurar rola a página.
+8. **Régua da força** na Escalação e na Tática (ajustada e aprovada em 2026-11-07, depois da conferência do `game-designer`): a mesma fonte da Força do Novo jogo (`teamStrength`), com o cansaço: cada vaga vale `overall × fit × (0,80 + 0,20 × condição / 100)`; vaga livre, inapto escalado e gol vazio valem 0; Força = soma ÷ 11; cada setor = soma do setor ÷ vagas do setor × multiplicador da formação. Moral, mando, postura e pressão ficam fora. Aviso de titular cansado (condição abaixo de 85) só no Completo. Detalhes em [escalacao.md](escalacao.md#força-do-time).
+9. **Elenco sem selo de titular ou reserva:** a Escalação mostra titulares, banco e não relacionados.
+10. **Selos novos** `improvised`, `outOfPosition` e `leader`, registrados em [design-system.md](../design-system.md), "Selos".

@@ -45,6 +45,11 @@ A escala completa (família, tamanho, entrelinha, peso e uso de cada estilo) est
 - Mesma família display já usada nos títulos; não entra fonte nova.
 - Uso restrito ao número da etapa. O nome e a descrição da etapa continuam nos estilos de texto comuns; números em tabela seguem em `tabular-nums`.
 
+### Face condensada sem caixa alta (aprovado pelo CEO em 2026-11-07)
+
+- Texto curto que precisa caber em cerca de 60px de largura (hoje, a marca "Improvisado" / "Fora de posição" na vaga do campo da escalação) usa `font: var(--type-rotulo)`: a face condensada do `rotulo`, sem a caixa alta e o espaçamento da classe `rotulo`.
+- Sem token novo; nenhum componente declara família, tamanho ou peso à mão.
+
 ## Tamanhos (aprovado pelo CEO em 2026-11-07)
 
 | Token               | Valor | Uso                                                                |
@@ -87,7 +92,28 @@ Vale para o site e para as telas futuras do jogo.
 - A consulta é de contêiner (`@container`), não da tela: o que manda é a largura da folha.
 - Variáveis CSS não funcionam em `@container`; o valor fica escrito no componente, com comentário apontando para cá, até o gerador de tokens exportar constantes.
 
+### Campo da escalação (aprovado pelo CEO em 2026-11-07)
+
+- O campo da escalação é DOM, não canvas: uma grade de **8 colunas por 10 linhas** sobre `pitch`, com as marcações em `pitch-line` (decorativas). Gol do time embaixo, ataque em cima.
+- Cada vaga cobre **2 × 2 células**, na posição da tabela `PITCH_LAYOUT` (`app/src/ui/components/pitch-layout.ts`), na ordem das vagas do motor. Assim uma vaga pode ficar meio passo ao lado ou atrás da vizinha, nenhuma linha visual tem mais de 4 vagas, e cada vaga tem 1/4 da largura do campo (75px a 360px): nenhuma fica abaixo de 44px, nem nas linhas de 5 (5-3-2, 3-5-2).
+- Duas vagas nunca dividem uma célula (teste em `pitch-layout.test.ts`). A altura de cada linha da grade é `touch`.
+- Leitor de tela e tabulação seguem a ordem das vagas (do goleiro ao ataque); o desenho é complemento.
+- Especificação: `docs/design/telas/escalacao.md`, "Desenho do campo".
+
+### Altura baixa (aprovado pelo CEO em 2026-11-07)
+
+- `breakpoint-short` = **480px de altura** (`@media (max-height: 480px)`): o celular deitado (844×390). Abaixo dele, barras presas ao pé ficam com uma linha só (ações só com ícone, o rótulo como nome acessível).
+- Variáveis CSS não funcionam em `@media`; o valor fica escrito no componente, com comentário apontando para cá, até o gerador de tokens exportar constantes (como `breakpoint-desktop` e `breakpoint-card`).
+
 ## Padrões de interação
+
+### Arrastar e soltar (aprovado pelo CEO em 2026-11-07)
+
+- **Arrastar nunca é o único caminho.** Todo arrasto tem o mesmo efeito em dois toques (tocar no item, depois no destino) e pelo teclado (Enter no item, Enter no destino; Esc cancela). O item escolhido tem `aria-pressed`, borda `floodlight` e uma marca de "check", nunca só cor.
+- **No toque, o arrasto começa depois de segurar 300ms** sem mexer mais de 8px; antes disso, deslizar rola a página. Com mouse, começa depois de 6px de movimento.
+- A cópia arrastada segue o dedo 48px acima do toque; o destino sob o dedo tem borda `grass`, fundo `grass-soft` (texto só em `ink`) e o ícone de troca; a origem fica tracejada. Soltar fora cancela, sem animação de volta.
+- O resultado e as recusas são anunciados numa região viva (`role="status"`) perto do polegar.
+- Implementação de referência: `LineupPitch`, `LineupChip`, `LineupRow` e `LineupStatusBar`; especificação em `docs/design/telas/escalacao.md`, "Trocar lugares".
 
 ### Confirmação em passos: o passo final (aprovado pelo CEO em 2026-11-07)
 
@@ -107,7 +133,7 @@ Vale para toda confirmação destrutiva em mais de um passo (hoje, apagar uma ca
 
 ## Selos (aprovado pelo CEO em 2026-11-07)
 
-Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qualquer selo de situação, resultado ou marca.
+Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qualquer selo de situação, resultado ou marca, também a marca da vaga no campo da escalação (LineupChip). Improvisado, fora de posição e líder entraram na T-029 (aprovados pelo CEO em 2026-11-07).
 
 | Tipo                                                          | Texto e fundo                      | Borda e ícone                     |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------- |
@@ -115,6 +141,9 @@ Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qual
 | Empate (`draw`)                                               | `ink` sobre `surface-2`            | borda `draw`                      |
 | Derrota, lesionado, suspenso (`loss`, `injured`, `suspended`) | `ink` sobre `danger-soft`          | borda `danger`; ícone em `danger` |
 | Promessa, clássico (`prospect`, `derby`)                      | `on-floodlight` sobre `floodlight` | —                                 |
+| Improvisado (`improvised`)                                    | `on-floodlight` sobre `floodlight` | —                                 |
+| Fora de posição (`outOfPosition`)                             | `ink` sobre `danger-soft`          | borda `danger`; ícone em `danger` |
+| Líder (`leader`)                                              | `ink` sobre `surface-2`            | borda `line`                      |
 
 - Todo selo tem letra ou ícone **e** texto (no selo só de letra, V/E/D, a palavra inteira vai para o leitor de tela); a cor só reforça.
 - Texto em `rotulo`. Os tipos formam uma lista fechada no componente.
