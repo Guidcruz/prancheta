@@ -99,6 +99,11 @@ export const EXP_CONSTANTS = {
  * 3. Scale back: e^x = 2^k e^r; for k < -1021 by 2^(k+1000) and then 2^-1000, a single rounding to
  *    the subnormal result; for k = 1024 by 2 and then 2^1023 (as later fdlibm releases do).
  *
+ * The notice of fdlibm, which its license asks to preserve, is the legal comment just below, marked
+ * so that a minifier that keeps legal comments keeps it.
+ */
+/*! @license
+ * exp: a port of e_exp.c of fdlibm.
  * ====================================================
  * Copyright (C) 1993 by Sun Microsystems, Inc. All rights reserved.
  *
