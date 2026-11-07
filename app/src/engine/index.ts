@@ -23,7 +23,7 @@ export type { EngineWarning, Result } from './types.ts';
 
 export { validateParams } from './params.ts';
 export { validateClubs } from './clubs.ts';
-export { validatePlayer } from './players.ts';
+export { attributeKeysFor, isProspect, playerForm, validatePlayer } from './players.ts';
 export { newGame } from './game.ts';
 export { playRound, prepareRound } from './round.ts';
 export { simulateMatch } from './match/simulate.ts';
@@ -39,6 +39,7 @@ export {
   targetPosition,
 } from './season.ts';
 export { matchSheet, roundRecap } from './recap.ts';
+export { fanMood } from './fans.ts';
 
 // ---------------------------------------------------------------- contract: closed lists and ranges
 // What the interface and the save schema (valibot, T-019) read instead of retyping them.
@@ -74,6 +75,7 @@ export { MATCH_MODES } from './round.ts';
 export { HALFTIME_TALKS, MARKERS } from './match/rules.ts';
 export { MATCH_SHEET_EVENTS } from './recap.ts';
 export { FORM_LENGTH, RELEGATION_SPOTS } from './standings.ts';
+export { FAN_MOODS } from './fans.ts';
 
 // ---------------------------------------------------------------- contract: types
 
@@ -162,6 +164,7 @@ export type {
 } from './round.ts';
 export type { MatchRecap, MatchSheet, MatchSheetEvent, RoundRecap } from './recap.ts';
 export type { Fact } from './facts.ts';
+export type { FanMood } from './fans.ts';
 export type { StandingResult, StandingRow, StandingsState } from './standings.ts';
 export type {
   AssistAward,

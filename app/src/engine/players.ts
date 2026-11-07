@@ -418,6 +418,20 @@ export function isProspect(player: Pick<Player, 'age' | 'overall' | 'potential'>
   return player.age <= PROSPECT_MAX_AGE && player.potential - player.overall >= PROSPECT_MIN_GAP;
 }
 
+/**
+ * The form (jogadores.md, "Forma": display only): the mean of `recentRatings` rounded to one
+ * decimal, `Math.round(mean × 10) / 10`; undefined with no rating ("sem jogos", also after the
+ * season turns). No simulation function reads it (docs/02-architecture.md, 4.1, "Leituras para a
+ * interface (T-028)"). Pure, never throws.
+ */
+export function playerForm(player: Pick<Player, 'recentRatings'>): number | undefined {
+  const ratings = player.recentRatings;
+  if (ratings.length === 0) return undefined;
+  let sum = 0;
+  for (const r of ratings) sum += r;
+  return Math.round((sum / ratings.length) * 10) / 10;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Validation
 
