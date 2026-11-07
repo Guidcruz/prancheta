@@ -1,7 +1,8 @@
-import { pickBench, pickCaptainAndTakers, pickEleven } from './ai.ts';
-import { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
+import { byOverall, pickBench, pickCaptainAndTakers, pickEleven } from './ai.ts';
+import { FORMATIONS, FORMATION_SLOTS, isFormation } from './formations.ts';
 import {
   BENCH_SIZE,
+  emptySheet,
   type DraftLineup,
   type DraftSheet,
   type Lineup,
@@ -60,10 +61,6 @@ export interface SheetCheck {
 
 /** No rotation in {@link pickEleven}: no condition is below 0 (the selection clamps it). */
 const NO_ROTATION = { rotationCondition: 0, rotationMinRatio: 1 } as const;
-
-function isFormation(value: unknown): value is Formation {
-  return typeof value === 'string' && (FORMATIONS as readonly string[]).includes(value);
-}
 
 /** A known formation; an unknown one (damaged input) reads as the first, `4-4-2`. */
 function knownFormation(formation: Formation): Formation {
@@ -136,6 +133,8 @@ export function reshapeLineup(
   );
   const current = knownFormation(lineup.formation);
   const target = isFormation(formation) ? formation : undefined;
+  // The same formation (or an unknown one) moves nobody. The result is the same lineup only for a
+  // reconciled sheet (no id out of the squad, ADR-0021): such an id still becomes a free slot.
   const placed =
     target === undefined || target === current
       ? occupants
@@ -179,33 +178,30 @@ function listsFor(
  *    unavailable player replaced leaves the sheet. A slot held by someone who can play never
  *    changes;
  * 2. bench: the sheet's reserves who are available, in the squad, not repeated and did not go up,
- *    in sheet order; the slots left up to `BENCH_SIZE` get, in `pickBench` order, the available
- *    players left;
+ *    in sheet order, without the free slots:
+ *    - a ready sheet (`sheetProblems(...).ready`) keeps only those: nobody joins, not even a
+ *      goalkeeper, and the bench may have fewer than 7 or none, as `validateLineup` accepts. The
+ *      ready sheet passes as it is (ADR-0021, item 2); the free bench slots are the only visible
+ *      difference, back at the end of the bench after the round (`draftFromSheet`);
+ *    - an incomplete sheet (`ready` false, for any problem, on the pitch or the bench): the slots
+ *      left up to `BENCH_SIZE` get `pickBench(candidates).slice(0, slots)`, the candidates being
+ *      the available players left with at most one goalkeeper: none when the bench kept one, else
+ *      only the best goalkeeper left (the first by `byOverall`, the one `pickBench` would take).
+ *      The fill never adds a second goalkeeper; two the coach left both stay. With no outfield
+ *      players left the bench has fewer than 7;
  * 3. lists: only the starters of the result, in sheet order. Same tactic;
  * 4. fewer than 11 available in the squad: a `Lineup` cannot hold a free slot in the middle, so
  *    the starters are all the available players, picked by `pickEleven` without rotation (the
  *    free slots at the end), and the bench is empty;
- * 5. a club with no squad in the state: the empty sheet of `suggestSheet` (first formation), with
- *    the sheet's tactic.
+ * 5. a club with no squad in the state: the empty sheet of `suggestSheet` (`emptySheet`, first
+ *    formation), with the sheet's tactic.
  * The result always passes `validateLineup` when the club has someone available. Pure.
  */
 export function completeSheet(state: LineupState, clubId: ClubId, sheet: DraftSheet): TeamSheet {
   const { lineup } = sheet;
   const tactic = { posture: sheet.tactic.posture, pressure: sheet.tactic.pressure };
   const squad = squadOf(state, clubId);
-  if (squad === undefined) {
-    return {
-      lineup: {
-        formation: FORMATIONS[0]!,
-        starters: [],
-        bench: [],
-        captains: [],
-        penaltyTakers: [],
-        freeKickTakers: [],
-      },
-      tactic,
-    };
-  }
+  if (squad === undefined) return emptySheet(tactic);
   const formation = knownFormation(lineup.formation);
   const { byId, available } = squad;
 
@@ -247,9 +243,17 @@ export function completeSheet(state: LineupState, clubId: ClubId, sheet: DraftSh
   const starters = placed.filter((p): p is Player => p !== undefined).map((p) => p.id);
 
   const bench = reserves.filter((p) => !used.has(p.id));
-  for (const player of bench) used.add(player.id);
-  const rest = available.filter((p) => !used.has(p.id));
-  bench.push(...pickBench(rest).slice(0, BENCH_SIZE - bench.length));
+  // A ready sheet passes as it is (ADR-0021, item 2): nobody joins the bench the coach chose.
+  if (!sheetProblems(state, clubId, sheet).ready) {
+    for (const player of bench) used.add(player.id);
+    const rest = available.filter((p) => !used.has(p.id));
+    // At most one goalkeeper: none when the bench has one, else only the best one left.
+    const goalkeeper = bench.some((p) => p.position === 'GK')
+      ? undefined
+      : byOverall(rest).find((p) => p.position === 'GK');
+    const candidates = rest.filter((p) => p.position !== 'GK' || p === goalkeeper);
+    bench.push(...pickBench(candidates).slice(0, BENCH_SIZE - bench.length));
+  }
 
   return {
     lineup: {

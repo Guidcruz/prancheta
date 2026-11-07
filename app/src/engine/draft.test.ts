@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { pickBench, pickCaptainAndTakers, pickEleven, suggestSheet, validateLineup } from './ai.ts';
+import { byOverall, pickCaptainAndTakers, pickEleven, suggestSheet, validateLineup } from './ai.ts';
 import { completeSheet, reshapeLineup, sheetProblems, sheetRoles } from './draft.ts';
 import { FORMATION_SLOTS } from './formations.ts';
 import type { GameState } from './game.ts';
@@ -220,18 +220,96 @@ describe('completeSheet', () => {
     const empty = suggestSheet(base, params, 'nao-existe');
     expect(result).toEqual({ lineup: empty.lineup, tactic: TACTIC });
   });
+});
 
-  it('fills the bench in pickBench order from an empty bench', () => {
-    const state = stateWith();
-    const full = suggested(state);
-    const result = completeSheet(state, clubId, {
-      lineup: { ...full, bench: [null, null] },
-      tactic: TACTIC,
-    });
-    const rest = state.squads[clubId]!.map((id) => state.players[id]!).filter(
-      (p) => !full.starters.includes(p.id),
+describe('completeSheet: the bench (a ready sheet passes as it is)', () => {
+  const state = stateWith();
+  const full = suggested(state);
+  const squad = state.squads[clubId]!.map((id) => state.players[id]!);
+  const isKeeper = (id: PlayerId) => state.players[id]!.position === 'GK';
+  const keepers = (ids: readonly PlayerId[]) => ids.filter(isKeeper);
+  const outfieldBench = full.bench.filter((id): id is PlayerId => id !== null && !isKeeper(id));
+  const offSheet = squad.filter((p) => !full.starters.includes(p.id) && !full.bench.includes(p.id));
+  const sheetWith = (lineup: Partial<DraftLineup>): DraftSheet => ({
+    lineup: { ...full, ...lineup },
+    tactic: TACTIC,
+  });
+
+  it('(a) keeps a ready bench of 5 without a goalkeeper as it is', () => {
+    const bench = outfieldBench.slice(0, 5);
+    expect(bench).toHaveLength(5);
+    const sheet = sheetWith({ bench });
+    expect(sheetProblems(state, clubId, sheet).ready).toBe(true);
+    const result = completeSheet(state, clubId, sheet);
+    expect(result.lineup.bench).toEqual(bench);
+    expect(keepers(result.lineup.bench)).toEqual([]);
+    expect(result.lineup.starters).toEqual(full.starters);
+    expect(validateLineup(state, clubId, result).ok).toBe(true);
+  });
+
+  it('(b) closes the free slots of a ready bench, in the same order', () => {
+    const [a, b, c] = outfieldBench;
+    const result = completeSheet(state, clubId, sheetWith({ bench: [a!, null, b!, null, c!] }));
+    expect(result.lineup.bench).toEqual([a, b, c]);
+  });
+
+  it('(c) keeps an empty bench of a ready sheet empty', () => {
+    expect(completeSheet(state, clubId, sheetWith({ bench: [] })).lineup.bench).toEqual([]);
+    expect(completeSheet(state, clubId, sheetWith({ bench: [null, null] })).lineup.bench).toEqual(
+      [],
     );
-    expect(result.lineup.bench).toEqual(pickBench(rest).map((p) => p.id));
+  });
+
+  it('(d) fills the bench of an incomplete sheet to 7 with exactly one goalkeeper', () => {
+    const keeper = keepers(full.bench.filter((id): id is PlayerId => id !== null))[0]!;
+    const bench = [keeper, ...outfieldBench.slice(0, 3)];
+    const starters = full.starters.map((id, i) => (i === 9 ? null : id));
+    const result = completeSheet(state, clubId, sheetWith({ starters, bench }));
+    expect(result.lineup.bench).toHaveLength(BENCH_SIZE);
+    expect(keepers(result.lineup.bench)).toHaveLength(1);
+    expect(validateLineup(state, clubId, result).ok).toBe(true);
+  });
+
+  it('(e) adds exactly one goalkeeper, the best available off the sheet, to a bench without one', () => {
+    const bench = outfieldBench.slice(0, 3);
+    const starters = full.starters.map((id, i) => (i === 9 ? null : id));
+    const result = completeSheet(state, clubId, sheetWith({ starters, bench }));
+    const added = keepers(result.lineup.bench);
+    expect(added).toHaveLength(1);
+    const left = squad.filter(
+      (p) => !result.lineup.starters.includes(p.id) && !bench.includes(p.id),
+    );
+    expect(added[0]).toBe(byOverall(left).find((p) => p.position === 'GK')!.id);
+    expect(result.lineup.bench).toHaveLength(BENCH_SIZE);
+  });
+
+  it('(f) keeps two goalkeepers the coach left and fills only with outfield players', () => {
+    const two = [
+      ...keepers(full.bench.filter((id): id is PlayerId => id !== null)),
+      ...offSheet.filter((p) => p.position === 'GK').map((p) => p.id),
+    ].slice(0, 2);
+    expect(two).toHaveLength(2);
+    const foreign = base.squads[otherId]![0]!;
+    const sheet = sheetWith({ bench: [...two, foreign] });
+    expect(sheetProblems(state, clubId, sheet).ready).toBe(false);
+    const result = completeSheet(state, clubId, sheet);
+    expect(result.lineup.bench.slice(0, 2)).toEqual(two);
+    expect(keepers(result.lineup.bench)).toEqual(two);
+    expect(result.lineup.bench).toHaveLength(BENCH_SIZE);
+    expect(result.lineup.starters).toEqual(full.starters);
+  });
+
+  it('(g) refills to 7 when the only problem is an injured reserve', () => {
+    const injured = full.bench[3]!;
+    const hurt = stateWith({ [injured]: { injuryRounds: 2 } });
+    const sheet = sheetWith({});
+    expect(sheetProblems(hurt, clubId, sheet).ready).toBe(false);
+    const result = completeSheet(hurt, clubId, sheet);
+    expect(result.lineup.starters).toEqual(full.starters);
+    expect(result.lineup.bench).toHaveLength(BENCH_SIZE);
+    expect(result.lineup.bench).not.toContain(injured);
+    expect(keepers(result.lineup.bench)).toHaveLength(1);
+    expect(validateLineup(hurt, clubId, result).ok).toBe(true);
   });
 });
 

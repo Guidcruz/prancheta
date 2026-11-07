@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { suggestSheet, validateLineup } from './ai.ts';
 import { completeSheet, reshapeLineup, sheetProblems, sheetRoles } from './draft.ts';
 import { FORMATIONS } from './formations.ts';
-import { draftFromSheet, type DraftLineup } from './lineup.ts';
+import { BENCH_SIZE, draftFromSheet, type DraftLineup, type DraftSheet } from './lineup.ts';
 import { changeFormation, kickoffTeam } from './match/team.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { GOALKEEPER_SLOT, isAvailable } from './strength.ts';
@@ -27,8 +27,8 @@ import type { PlayerId } from './types.ts';
  */
 const FULL = process.env.PROPERTY_FULL === '1';
 const CASES = FULL ? 20_000 : 2_000;
-/** Per test: the full counts take tens of seconds on a slow machine. */
-const TIMEOUT = 300_000;
+/** Per test, as in properties.test.ts: the full counts take tens of seconds on a slow machine. */
+const TIMEOUT = FULL ? 300_000 : 30_000;
 const params = testParams();
 const base = testGame();
 const clubIds = Object.keys(base.clubs);
@@ -156,8 +156,21 @@ describe('sheetProblems and validateLineup', () => {
         const valid = validateLineup(state, clubId, sheet).ok;
         const draft = draftFromSheet(sheet);
         const check = sheetProblems(state, clubId, draft);
+        const validated = validateLineup(state, clubId, sheet);
         if (valid !== check.ready) {
           failures.push(`case ${n}: validateLineup ${valid}, ready ${check.ready}`);
+        }
+        // The first problem is the one validateLineup refuses with (its count aside: a draft has
+        // no `wrong-count`, the free slots are `empty`).
+        if (!validated.ok && validated.error !== 'wrong-count') {
+          const first = check.problems[0];
+          if (
+            first === undefined ||
+            first.reason !== validated.error ||
+            first.part !== validated.detail.part
+          ) {
+            failures.push(`case ${n}: first ${JSON.stringify(first)} vs ${validated.error}`);
+          }
         }
         if (check.ready) {
           ready += 1;
@@ -217,19 +230,98 @@ describe('completeSheet properties', () => {
             failures.push(`${label}: slot ${i} moved`);
           }
         });
-        const benchSize = Math.min(7, available.length - 11);
-        if (result.lineup.bench.length !== benchSize) failures.push(`${label}: bench size`);
+        // The reserves the coach left that can stay: available, once, not gone up.
+        const kept: PlayerId[] = [];
+        for (const id of sheet.lineup.bench) {
+          if (id === null || kept.includes(id) || onPitch.has(id)) continue;
+          if (available.includes(id)) kept.push(id);
+        }
+        if (JSON.stringify(result.lineup.bench.slice(0, kept.length)) !== JSON.stringify(kept)) {
+          failures.push(`${label}: kept reserves`);
+        }
+        const keepers = (ids: readonly PlayerId[]) =>
+          ids.filter((id) => state.players[id]!.position === 'GK').length;
         if (sheetProblems(state, clubId, sheet).ready) {
           if (JSON.stringify(result.lineup.starters) !== JSON.stringify(sheet.lineup.starters)) {
             failures.push(`${label}: ready starters`);
           }
-          const kept = sheet.lineup.bench.filter((id): id is PlayerId => id !== null);
-          const prefix = result.lineup.bench.slice(0, kept.length);
-          if (JSON.stringify(prefix) !== JSON.stringify(kept))
+          // The whole bench: the coach's reserves, none more.
+          const bench = sheet.lineup.bench.filter((id): id is PlayerId => id !== null);
+          if (JSON.stringify(result.lineup.bench) !== JSON.stringify(bench)) {
             failures.push(`${label}: ready bench`);
+          }
+        } else {
+          if (keepers(result.lineup.bench) > Math.max(1, keepers(kept))) {
+            failures.push(`${label}: goalkeepers on the bench`);
+          }
+          const left = available.filter((id) => !onPitch.has(id) && !kept.includes(id));
+          const outfield = left.filter((id) => state.players[id]!.position !== 'GK').length;
+          const keeper = keepers(kept) === 0 && left.length > outfield ? 1 : 0;
+          const size = Math.min(BENCH_SIZE, kept.length + outfield + keeper);
+          if (result.lineup.bench.length !== size) failures.push(`${label}: bench size`);
         }
       }
       expect(failures).toEqual([]);
+    },
+  );
+});
+
+describe('completeSheet on a ready sheet', () => {
+  it(
+    `passes it as it is, without the free slots, in the 20 clubs (${CASES} sheets)`,
+    {
+      timeout: TIMEOUT,
+    },
+    () => {
+      const failures: string[] = [];
+      let ready = 0;
+      for (let n = 0; n < CASES; n++) {
+        const rng = caseRng('ready', n);
+        const clubId = clubIds[n % clubIds.length]!;
+        const state = drawnState(base, clubId, rng, 0.4);
+        const suggested = suggestSheet(state, params, clubId, undefined, {
+          controller: 'human',
+          formation: FORMATIONS[rng.int(0, FORMATIONS.length - 1)]!,
+        });
+        // Free bench slots drawn anywhere, some reserves dropped, lists with players off the pitch.
+        const bench: (PlayerId | null)[] = [];
+        for (const id of suggested.lineup.bench) {
+          if (bench.length < BENCH_SIZE && rng.next() < 0.3) bench.push(null);
+          if (bench.length < BENCH_SIZE && rng.next() < 0.8) bench.push(id);
+        }
+        const squad = state.squads[clubId]!;
+        const list = () => Array.from({ length: rng.int(0, 3) }, () => squad[rng.int(0, 24)]!);
+        const sheet: DraftSheet = {
+          lineup: {
+            ...draftFromSheet(suggested).lineup,
+            bench,
+            captains: [...new Set(list())],
+            penaltyTakers: [...new Set(list())],
+            freeKickTakers: [...new Set(list())],
+          },
+          tactic: rng.next() < 0.5 ? { posture: 'defensive', pressure: 'low' } : suggested.tactic,
+        };
+        if (!sheetProblems(state, clubId, sheet).ready) continue;
+        const starters = sheet.lineup.starters.filter((id): id is PlayerId => id !== null);
+        if (starters.length < 11) continue; // fewer than 11 available: the rebuild of step 4
+        ready += 1;
+        const onPitch = new Set(starters);
+        const expected = {
+          lineup: {
+            formation: sheet.lineup.formation,
+            starters,
+            bench: bench.filter((id): id is PlayerId => id !== null),
+            captains: sheet.lineup.captains.filter((id) => onPitch.has(id)),
+            penaltyTakers: sheet.lineup.penaltyTakers.filter((id) => onPitch.has(id)),
+            freeKickTakers: sheet.lineup.freeKickTakers.filter((id) => onPitch.has(id)),
+          },
+          tactic: sheet.tactic,
+        };
+        const result = completeSheet(state, clubId, sheet);
+        if (JSON.stringify(result) !== JSON.stringify(expected)) failures.push(`case ${n}`);
+      }
+      expect(failures).toEqual([]);
+      expect(ready).toBeGreaterThan(CASES / 2);
     },
   );
 });
@@ -274,16 +366,12 @@ describe('sheetRoles properties', () => {
     },
   );
 
-  it(
-    'is the formation-free reading: same roles for every formation of the same starters',
-    { timeout: TIMEOUT },
-    () => {
-      const state = drawnState(base, clubIds[4]!, new Rng(23), 0);
-      const { lineup } = drawnDraft(state, clubIds[4]!, new Rng(29));
-      const roles = FORMATIONS.map((formation) =>
-        sheetRoles(state, clubIds[4]!, { ...lineup, formation }),
-      );
-      for (const r of roles) expect(r).toEqual(roles[0]);
-    },
-  );
+  it('is the formation-free reading: same roles for every formation of the same starters', () => {
+    const state = drawnState(base, clubIds[4]!, new Rng(23), 0);
+    const { lineup } = drawnDraft(state, clubIds[4]!, new Rng(29));
+    const roles = FORMATIONS.map((formation) =>
+      sheetRoles(state, clubIds[4]!, { ...lineup, formation }),
+    );
+    for (const r of roles) expect(r).toEqual(roles[0]);
+  });
 });

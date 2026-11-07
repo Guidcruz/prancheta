@@ -158,7 +158,7 @@ describe('sheetStrength', () => {
 
   it(
     `(b) freeing a starter's slot never raises a number, and never NaN (${CASES} drafts)`,
-    { timeout: 300_000 },
+    { timeout: FULL ? 300_000 : 30_000 },
     () => {
       const failures: string[] = [];
       for (let n = 0; n < CASES; n++) {
