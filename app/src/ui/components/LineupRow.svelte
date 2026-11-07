@@ -15,7 +15,10 @@
     positionCode?: string;
     /** Built by the screen (`lineup.row.a11y` or `lineup.bench.emptyA11y`). */
     a11yLabel: string;
-    /** Absent: an empty bench place, shown with `emptyLabel`. */
+    /**
+     * Absent: a free place ("Vaga no banco", "Deixar de fora"), shown with `emptyLabel`. A free
+     * place only receives a player: it is never picked and has no `aria-pressed`.
+     */
     name?: string;
     /** "Vaga no banco" (`lineup.bench.empty`). */
     emptyLabel?: string;
@@ -56,7 +59,7 @@
     class:empty
     data-place={place}
     aria-label={a11yLabel}
-    aria-pressed={state === 'selected'}
+    aria-pressed={empty ? undefined : state === 'selected'}
     aria-describedby={[message ? `${id}-m` : '', describedby ?? ''].join(' ').trim() || undefined}
     {onclick}
     {onpointerdown}

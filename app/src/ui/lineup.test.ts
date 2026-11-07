@@ -31,6 +31,9 @@ import {
   strengthItems,
   suggestedSheet,
   swapPlaces,
+  OUT_FREE,
+  benchCount,
+  placeKey,
   type Place,
 } from './lineup';
 import { TEST_CLUB, testCareer, withPlayer } from './testing/game';
@@ -159,9 +162,41 @@ describe('the swap (escalacao.md, "Trocar lugares")', () => {
     expect(back.kind).toBe('move');
     expect(back.from).toBe('bench');
     expect(back.to).toBe('starters');
-    // Inside the bench: from the bench to the bench.
-    const inside = ok(swapPlaces(game, sheet, bench(2), bench(6)));
-    expect(inside).toMatchObject({ kind: 'move', from: 'bench', to: 'bench' });
+    expect(back.arrived).toEqual(slot(1));
+    // Inside the bench nothing changes: the bench is shown by position.
+    expect(swapPlaces(game, sheet, bench(2), bench(6))).toBeUndefined();
+  });
+
+  it('"Deixar de fora" takes a starter or a reserve out, with no swap (escalacao.md)', () => {
+    const fromPitch = ok(swapPlaces(game, sheet, slot(7), OUT_FREE));
+    expect(fromPitch).toMatchObject({ kind: 'move', from: 'starters', to: 'out-free' });
+    expect(fromPitch.sheet.lineup.starters[7]).toBeNull();
+    expect(outPlayers(game, TEST_CLUB, fromPitch.sheet).map((p) => p.id)).toContain(
+      fx.starters[7]!.id,
+    );
+    // Either order: the free place only receives.
+    expect(ok(swapPlaces(game, sheet, OUT_FREE, slot(7))).sheet).toEqual(fromPitch.sheet);
+    const fromBench = ok(swapPlaces(game, sheet, bench(0), OUT_FREE));
+    expect(fromBench.sheet.lineup.bench[0]).toBeNull();
+    // Who leaves the pitch leaves the role lists, as in a swap.
+    const lists = { ...sheet, lineup: { ...sheet.lineup, captains: [fx.starters[7]!.id] } };
+    expect(ok(swapPlaces(game, lists, slot(7), OUT_FREE)).removed).toEqual([
+      { role: 'captain', player: fx.starters[7]!.id },
+    ]);
+    // An injured reserve leaves without a refusal.
+    const hurt = withPlayer(game, fx.bench[0]!.id, { injuryRounds: 2 });
+    expect(swapPlaces(hurt, sheet, bench(0), OUT_FREE)?.ok).toBe(true);
+    // A player already left out: nothing changes.
+    expect(swapPlaces(game, sheet, out(fx.injured.id), OUT_FREE)).toBeUndefined();
+    expect(placeKey(OUT_FREE)).toBe('out-free');
+  });
+
+  it('the whole bench can be left out: no problem for the round (banco vazio)', () => {
+    let next = sheet;
+    for (let i = 0; i < 6; i++) next = ok(swapPlaces(game, next, bench(i), OUT_FREE)).sheet;
+    expect(next.lineup.bench.every((id) => id === null)).toBe(true);
+    expect(sheetProblems(game, TEST_CLUB, next).ready).toBe(true);
+    expect(benchCount(next)).toBe(0);
   });
 
   it('a starter and a player left out: the starter leaves the sheet', () => {

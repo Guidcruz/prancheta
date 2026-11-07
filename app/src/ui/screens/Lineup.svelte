@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
   import {
+    FORMATION_SLOTS,
     completeSheet,
     draftFromSheet,
     type ClubId,
@@ -16,6 +17,7 @@
   import {
     cardOrder,
     nameList,
+    OUT_FREE,
     outPlayers,
     playerAt,
     restedPlayers,
@@ -132,6 +134,9 @@
     if (place.part === 'bench') {
       return root.querySelector<HTMLElement>(`[data-place="bench-${place.index}"]`) ?? undefined;
     }
+    if (place.part === 'out-free') {
+      return root.querySelector<HTMLElement>('[data-place="out-free"]') ?? undefined;
+    }
     const n = outPlayers(game, clubId, of).findIndex((p) => p.id === place.id);
     return n < 0
       ? undefined
@@ -143,6 +148,7 @@
     if (element === undefined || root === undefined || !root.contains(element)) return undefined;
     const slot = element.dataset.slot;
     if (slot !== undefined) return { part: 'starters', index: Number(slot) };
+    if (element.dataset.place === 'out-free') return OUT_FREE;
     const match = /^(bench|out)-(\d+)$/.exec(element.dataset.place ?? '');
     if (match === null) return undefined;
     const index = Number(match[2]);
@@ -182,8 +188,11 @@
     refusal = undefined;
     if (selected === undefined) {
       const id = playerAt(sheet, place);
-      // A free place has nobody to pick: it only receives one.
-      if (id === null) return;
+      // A free place has nobody to pick: it only receives one, and the bar says so.
+      if (id === null) {
+        say({ kind: 'done', text: t('lineup.select.first', lang) });
+        return;
+      }
       selected = place;
       say({ kind: 'selected', player: id });
       return;
@@ -205,10 +214,19 @@
     const parts: string[] = [];
     if (result.kind === 'swap') {
       parts.push(t('lineup.swap.done', lang, { a: nameOf(result.moved), b: nameOf(result.other) }));
+    } else if (result.arrived.part === 'starters') {
+      // "foi para a vaga de ZAG": the short code of the slot, as in the warnings.
+      const position = FORMATION_SLOTS[result.sheet.lineup.formation][result.arrived.index];
+      parts.push(
+        t('lineup.move.pitch', lang, {
+          name: nameOf(result.moved),
+          position: position === undefined ? '' : t(`position.${position}.short`, lang),
+        }),
+      );
     } else if (result.to === 'bench' && result.from !== 'bench') {
       // A move inside the bench changes nothing the player needs to hear.
       parts.push(t('lineup.move.bench', lang, { name: nameOf(result.moved) }));
-    } else if (result.to === 'out') {
+    } else if (result.to === 'out-free') {
       parts.push(t('lineup.move.out', lang, { name: nameOf(result.moved) }));
     }
     parts.push(...strengthChange(now, was, lang));
@@ -243,8 +261,9 @@
     change = { before: was, key: keyOf(result.sheet) };
     undo = undefined;
     say({ kind: 'done', text: message(result, now, was) });
-    // Where the first player arrived (the second tap, or the drop).
-    const arrived = placeOfPlayer(result.moved, result.sheet);
+    // Where the first player arrived (the second tap, or the drop). "Deixar de fora" keeps the
+    // focus: it stays in its place while the player goes to his line of the list.
+    const arrived = result.to === 'out-free' ? OUT_FREE : placeOfPlayer(result.moved, result.sheet);
     onedit(result.sheet);
     await tick();
     elementOf(arrived, result.sheet)?.focus();
@@ -292,7 +311,11 @@
   function press(place: Place, event: PointerEvent): void {
     if (playerAt(sheet, place) === null) return;
     pressPlace<Place>(event, {
-      placeAt: (x, y) => placeOf(placeElementAt(x, y)),
+      placeAt: (x, y) => {
+        const target = placeOf(placeElementAt(x, y));
+        // A player already left out has nothing to leave: "Deixar de fora" does not light up.
+        return place.part === 'out' && target?.part === 'out-free' ? undefined : target;
+      },
       start: (x, y) => {
         // A drag replaces any pick: the bar's "selecionado" goes with it.
         selected = undefined;

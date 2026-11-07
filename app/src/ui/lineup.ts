@@ -34,16 +34,28 @@ import { playerBadges, shownCondition, sortPlayers, squadPlayers, type Realism }
  * sheet given is never changed.
  */
 
-/** A place of the lineup: a slot of the pitch, a bench place or a player left out. */
+/**
+ * A place of the lineup: a slot of the pitch, a bench place, a player left out, or "Deixar de
+ * fora" (`out-free`), the one free place of the players left out (escalacao.md, "Mudar de lugar
+ * sem troca").
+ */
 export type Place =
   | { readonly part: 'starters'; readonly index: number }
   | { readonly part: 'bench'; readonly index: number }
-  | { readonly part: 'out'; readonly id: PlayerId };
+  | { readonly part: 'out'; readonly id: PlayerId }
+  | { readonly part: 'out-free' };
 
-/** A stable key of a place ("starters-3", "bench-0", "out-<id>"), for equality and the DOM. */
+/** "Deixar de fora". */
+export const OUT_FREE: Place = { part: 'out-free' };
+
+/** A stable key of a place ("starters-3", "bench-0", "out-<id>", "out-free"), for equality. */
 export function placeKey(place: Place): string {
+  if (place.part === 'out-free') return 'out-free';
   return place.part === 'out' ? `out-${place.id}` : `${place.part}-${place.index}`;
 }
+
+/** The place is among the players left out (one of them, or "Deixar de fora"). */
+const leftOut = (place: Place) => place.part === 'out' || place.part === 'out-free';
 
 export const samePlace = (a: Place | undefined, b: Place | undefined): boolean =>
   a !== undefined && b !== undefined && placeKey(a) === placeKey(b);
@@ -51,6 +63,7 @@ export const samePlace = (a: Place | undefined, b: Place | undefined): boolean =
 /** The player in a place, or `null` for a free slot. */
 export function playerAt(sheet: DraftSheet, place: Place): PlayerId | null {
   if (place.part === 'out') return place.id;
+  if (place.part === 'out-free') return null;
   const list = place.part === 'starters' ? sheet.lineup.starters : sheet.lineup.bench;
   return list[place.index] ?? null;
 }
@@ -183,6 +196,8 @@ export type SwapResult =
       readonly from: Place['part'];
       /** Where `moved` went. */
       readonly to: Place['part'];
+      /** The place `moved` went to (the slot, for "foi para a vaga de ZAG"). */
+      readonly arrived: Place;
       /** Who left a role list because he left the pitch (funcoes.md), in list order. */
       readonly removed: readonly { readonly role: RoleName; readonly player: PlayerId }[];
     }
@@ -204,17 +219,18 @@ function refusal(
   const player = game.players[id];
   if (player === undefined || isAvailable(player)) return undefined;
   const enters =
-    (to.part === 'starters' && from.part !== 'starters') ||
-    (to.part === 'bench' && from.part === 'out');
+    (to.part === 'starters' && from.part !== 'starters') || (to.part === 'bench' && leftOut(from));
   if (!enters) return undefined;
   return { player: id, reason: player.injuryRounds > 0 ? 'injured' : 'suspended' };
 }
 
 /**
- * The swap of two places (escalacao.md, "Trocar lugares"): the two players change places; with one
- * place free, the player only moves and his place becomes free. `undefined` when nothing would
- * change (the same place, two free places, two players left out). Refused, with the reason, when
- * it would take an injured or suspended player in.
+ * The swap of two places (escalacao.md, "Trocar lugares" and "Mudar de lugar sem troca"): the two
+ * players change places; with one place free, the player only moves and his place becomes free
+ * ("Deixar de fora" takes him out of the sheet, injured or not). `undefined` when nothing would
+ * change: the same place, two free places, two places among the players left out, or a reserve
+ * to a free bench place (the bench is shown by position). Refused, with the reason, when it would
+ * take an injured or suspended player in.
  */
 export function swapPlaces(
   game: GameState,
@@ -226,7 +242,8 @@ export function swapPlaces(
   const a = playerAt(sheet, from);
   const b = playerAt(sheet, to);
   if (a === null && b === null) return undefined;
-  if (from.part === 'out' && to.part === 'out') return undefined;
+  if (leftOut(from) && leftOut(to)) return undefined;
+  if (from.part === 'bench' && to.part === 'bench' && (a === null || b === null)) return undefined;
   const refused = refusal(game, a, from, to) ?? refusal(game, b, to, from);
   if (refused !== undefined) return { ok: false, refused };
 
@@ -263,6 +280,7 @@ export function swapPlaces(
     ...(a !== null && b !== null ? { other: b } : {}),
     from: a !== null ? from.part : to.part,
     to: a !== null ? to.part : from.part,
+    arrived: a !== null ? to : from,
     removed,
   };
 }
@@ -509,6 +527,18 @@ export function outRows(
   return outPlayers(game, clubId, sheet).map((player, n) =>
     playerRow(player, { part: 'out', id: player.id }, `out-${n}`, realism, states, lang),
   );
+}
+
+/** "Deixar de fora": the free place on top of the players left out, always there. */
+export function outFreeRow(states: PlaceStates, lang: Lang): RowView {
+  return {
+    place: OUT_FREE,
+    dataPlace: 'out-free',
+    a11yLabel: t('lineup.out.freeA11y', lang),
+    badges: [],
+    cells: [],
+    state: stateOf(OUT_FREE, states),
+  };
 }
 
 /** The players that count as "o time inteiro": the bench count shown next to "Banco". */

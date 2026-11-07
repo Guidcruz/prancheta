@@ -16,6 +16,7 @@
     benchRows,
     incompleteMessage,
     lineupIssues,
+    outFreeRow,
     outRows,
     pitchSlots,
     shownStrength,
@@ -90,6 +91,7 @@
   const slots = $derived(pitchSlots(game, clubId, sheet, states, lang));
   const bench = $derived(benchRows(game, sheet, states, lang));
   const out = $derived(outRows(game, clubId, sheet, states, lang));
+  const freeOut = $derived(outFreeRow(states, lang));
   const issues = $derived(lineupIssues(game, clubId, sheet, check, tiredBelow, lang));
   const columns = $derived(
     realism === 'full'
@@ -183,25 +185,33 @@
             />
           {/each}
         </LineupGroup>
-        {#if out.length > 0}
-          <LineupGroup title={t('lineup.out.title', lang)} {columns}>
-            {#each out as row (row.dataPlace)}
-              <LineupRow
-                positionCode={row.positionCode}
-                a11yLabel={row.a11yLabel}
-                name={row.name}
-                badges={row.badges}
-                cells={row.cells}
-                state={row.state}
-                message={refusalOf(row.place)}
-                place={row.dataPlace}
-                {describedby}
-                onclick={(event) => onplace?.(row.place, event)}
-                onpointerdown={(event) => onpress?.(row.place, event)}
-              />
-            {/each}
-          </LineupGroup>
-        {/if}
+        <LineupGroup title={t('lineup.out.title', lang)} {columns}>
+          <!-- "Deixar de fora", always first and always there, so nothing jumps on a pick. -->
+          <LineupRow
+            a11yLabel={freeOut.a11yLabel}
+            emptyLabel={t('lineup.out.free', lang)}
+            state={freeOut.state}
+            place={freeOut.dataPlace}
+            {describedby}
+            onclick={(event) => onplace?.(freeOut.place, event)}
+            onpointerdown={(event) => onpress?.(freeOut.place, event)}
+          />
+          {#each out as row (row.dataPlace)}
+            <LineupRow
+              positionCode={row.positionCode}
+              a11yLabel={row.a11yLabel}
+              name={row.name}
+              badges={row.badges}
+              cells={row.cells}
+              state={row.state}
+              message={refusalOf(row.place)}
+              place={row.dataPlace}
+              {describedby}
+              onclick={(event) => onplace?.(row.place, event)}
+              onpointerdown={(event) => onpress?.(row.place, event)}
+            />
+          {/each}
+        </LineupGroup>
       </div>
     </div>
   {/if}

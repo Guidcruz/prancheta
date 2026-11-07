@@ -160,6 +160,38 @@ describe('the Escalação (escalacao.md; US-017)', () => {
     expect(body.match(/class="cond/g)).toHaveLength(11);
   });
 
+  it('"Deixar de fora": the first line of the players left out, free, never pressed', () => {
+    const body = view(fx.game, fx.sheet);
+    const group = body.slice(body.indexOf(t('lineup.out.title', 'pt-BR')));
+    const first = /data-place="([^"]+)"/.exec(group)![1];
+    expect(first).toBe('out-free');
+    expect(body).toContain(`aria-label="${shown(t('lineup.out.freeA11y', 'pt-BR'))}"`);
+    expect(body).toContain(t('lineup.out.free', 'pt-BR'));
+    // Free places (a free slot and "Deixar de fora"; the bench is full again) have no aria-pressed.
+    const free = view(fx.game, freed(1));
+    for (const tag of free.match(/<button[^>]*class="(?:row|chip)[^"]*empty[^"]*"[^>]*>/g)!) {
+      expect(tag).not.toContain('aria-pressed');
+    }
+    expect(free.match(/<button[^>]*class="(?:row|chip)[^"]*empty/g)).toHaveLength(2);
+    // A squad of 18 or fewer: the section has only that line.
+    const ids = [...fx.starters, ...fx.bench].map((p) => p.id);
+    const small = { ...fx.game, squads: { ...fx.game.squads, [TEST_CLUB]: ids } };
+    const smallBody = view(small, fx.sheet);
+    expect(smallBody).toContain('data-place="out-free"');
+    expect(smallBody).not.toMatch(/data-place="out-\d+"/);
+  });
+
+  it('a bench with free places only says so: no banner, the count goes down', () => {
+    const empty: DraftSheet = {
+      ...fx.sheet,
+      lineup: { ...fx.sheet.lineup, bench: fx.sheet.lineup.bench.map(() => null) },
+    };
+    const body = view(fx.game, empty);
+    expect(body).toContain(t('lineup.bench.count', 'pt-BR', { count: 0, max: 7 }));
+    expect(body.match(/data-place="bench-\d"/g)).toHaveLength(7);
+    expect(body).not.toContain('class="banner');
+  });
+
   it('a free slot: "Vaga livre", the warning banner with "Completar automaticamente" and the issue', () => {
     const body = view(fx.game, freed(1));
     expect(body).toContain(t('lineup.slot.empty', 'pt-BR'));

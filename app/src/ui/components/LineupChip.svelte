@@ -118,7 +118,7 @@
     class:empty
     data-slot={slot}
     aria-label={a11yLabel}
-    aria-pressed={state === 'selected'}
+    aria-pressed={empty ? undefined : state === 'selected'}
     aria-describedby={describedby}
     {onclick}
     {onpointerdown}
