@@ -27,6 +27,13 @@ const cases: [string, string, string][] = [
   ['Math.log', 'export const x = Math.log(2);', 'no-restricted-properties'],
   ['Math.sin', 'export const x = Math.sin(2);', 'no-restricted-properties'],
   ['**', 'export const f = (a: number) => a ** 0.5;', 'no-restricted-syntax'],
+  ['an alias of Math', 'const M = Math;\nexport const x = M.exp(1);', 'no-restricted-syntax'],
+  ['Math[name]', "const name = 'exp';\nexport const x = Math[name](1);", 'no-restricted-syntax'],
+  [
+    'Math passed around',
+    'export const f = (g: (m: Math) => number) => g(Math);',
+    'no-restricted-syntax',
+  ],
   ['import from ui/', "import '../ui/App.svelte';", 'no-restricted-imports'],
   ['import from lib/', "import '../lib/i18n.ts';", 'no-restricted-imports'],
   ['import from content/', "import '../content/pt-BR/ui.json';", 'no-restricted-imports'],

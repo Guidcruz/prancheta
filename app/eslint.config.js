@@ -112,6 +112,15 @@ const exponentOperator = {
   message: 'No ** in the engine: it is Math.pow; use engine/math.ts (ADR-0007, ADR-0020).',
 };
 
+// Math only as `Math.name`: an alias (`const M = Math`), a computed access (`Math[name]`) or
+// passing Math around would slip past the list above.
+const mathAlias = {
+  selector:
+    "Identifier[name='Math']:not(MemberExpression[computed=false] > Identifier.object), MemberExpression[computed=true][object.name='Math']",
+  message:
+    'Use Math only as Math.<name> in the engine, so the transcendental ban sees it (ADR-0020).',
+};
+
 // Locale-dependent string methods give different output per device, like Intl.
 const localeCall = {
   selector:
@@ -183,7 +192,7 @@ export default [
       // The engine must be deterministic, free of the DOM and runnable without a build.
       'no-restricted-globals': ['error', ...engineGlobals],
       'no-restricted-properties': ['error', ...randomAndClock, ...transcendental],
-      'no-restricted-syntax': ['error', exponentOperator, localeCall],
+      'no-restricted-syntax': ['error', exponentOperator, mathAlias, localeCall],
       'no-restricted-imports': ['error', { patterns: [...engineImportPatterns, testingImports] }],
       'prancheta/relative-ts-imports': 'error',
     },
