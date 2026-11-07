@@ -5,17 +5,21 @@ import en from '../content/en/ui.json';
 import ptBRErrors from '../content/pt-BR/errors.json';
 import esErrors from '../content/es/errors.json';
 import enErrors from '../content/en/errors.json';
+import ptBRFans from '../content/pt-BR/fans.json';
+import esFans from '../content/es/fans.json';
+import enFans from '../content/en/fans.json';
 
 /*
- * Interface texts (docs/02-architecture.md, 3, "Conteúdo e i18n"): `ui.json` and `errors.json` of
- * each language, one table per language (the `save.*` keys of `errors.json` never collide with
- * the ones of `ui.json`; i18n.test.ts checks it). The full i18n is T-022.
+ * Interface texts (docs/02-architecture.md, 3, "Conteúdo e i18n"): `ui.json`, `errors.json` and
+ * `fans.json` of each language, one table per language (the `save.*` keys of `errors.json` and the
+ * `fans.mood.*` keys of `fans.json` never collide with the ones of `ui.json`; i18n.test.ts checks
+ * it). The full i18n is T-022.
  */
 
 const tables: Record<Lang, Record<string, string>> = {
-  'pt-BR': { ...ptBR, ...ptBRErrors },
-  es: { ...es, ...esErrors },
-  en: { ...en, ...enErrors },
+  'pt-BR': { ...ptBR, ...ptBRErrors, ...ptBRFans },
+  es: { ...es, ...esErrors, ...esFans },
+  en: { ...en, ...enErrors, ...enFans },
 };
 
 export function detectLang(): Lang {

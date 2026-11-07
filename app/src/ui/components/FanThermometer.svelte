@@ -1,19 +1,12 @@
-<script lang="ts" module>
-  /**
-   * The five moods of the thermometer, coldest first: the bands of docs/design/torcida.md,
-   * "Humor da rede social" (0-19, 20-39, 40-59, 60-79, 80-100). Which band a value falls in is
-   * the screen's to ask (a reading function, not a rule written here); this list only fixes the
-   * order of the bar's segments and their tone.
-   */
-  export const FAN_MOODS = ['revolt', 'irritated', 'wary', 'excited', 'party'] as const;
-  export type FanMood = (typeof FAN_MOODS)[number];
-</script>
-
 <script lang="ts">
+  import { FAN_MOODS, type FanMood } from '@engine';
+
   /**
    * FanThermometer (US-026): the fans' mood from 0 to 100 as a number and a mood word, both
    * plain text; the bar of five segments only reinforces them (`aria-hidden`), with the current
-   * segment lit and a marker at the value. No animation: a new value just appears.
+   * segment lit and a marker at the value. No animation: a new value just appears. The five
+   * moods and their order are the engine's (`FAN_MOODS`, `fanMood`; 4.1, "Leituras para a
+   * interface (T-028)"); the screen asks `fanMood` which band a value falls in.
    */
   interface Props {
     /** The thermometer, already rounded by the caller (0..100). */

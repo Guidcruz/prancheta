@@ -5,7 +5,11 @@ import en from '../content/en/ui.json';
 import ptBRErrors from '../content/pt-BR/errors.json';
 import esErrors from '../content/es/errors.json';
 import enErrors from '../content/en/errors.json';
+import ptBRFans from '../content/pt-BR/fans.json';
+import esFans from '../content/es/fans.json';
+import enFans from '../content/en/fans.json';
 import untranslated from '../content/untranslated.json';
+import { FAN_MOODS } from '@engine';
 import { t, tPlural } from './i18n.ts';
 
 /*
@@ -16,9 +20,9 @@ import { t, tPlural } from './i18n.ts';
  */
 
 const tables = {
-  'pt-BR': { ...ptBR, ...ptBRErrors } as Record<string, string>,
-  es: { ...es, ...esErrors } as Record<string, string>,
-  en: { ...en, ...enErrors } as Record<string, string>,
+  'pt-BR': { ...ptBR, ...ptBRErrors, ...ptBRFans } as Record<string, string>,
+  es: { ...es, ...esErrors, ...esFans } as Record<string, string>,
+  en: { ...en, ...enErrors, ...enFans } as Record<string, string>,
 };
 const pending = new Set<string>(untranslated.keys as readonly string[]);
 
@@ -60,6 +64,28 @@ describe('ui texts', () => {
         expect(ui).not.toHaveProperty([key]);
       }
     }
+  });
+});
+
+describe('fans.json', () => {
+  it('has exactly one mood label per engine mood, none of them in ui.json or errors.json', () => {
+    for (const [fans, ui, errors] of [
+      [ptBRFans, ptBR, ptBRErrors],
+      [esFans, es, esErrors],
+      [enFans, en, enErrors],
+    ] as const) {
+      expect(Object.keys(fans).sort()).toEqual(FAN_MOODS.map((m) => `fans.mood.${m}`).sort());
+      for (const key of Object.keys(fans)) {
+        expect(ui).not.toHaveProperty([key]);
+        expect(errors).not.toHaveProperty([key]);
+      }
+    }
+  });
+
+  it('is read by t() in every language', () => {
+    expect(t('fans.mood.party', 'pt-BR')).toBe(ptBRFans['fans.mood.party']);
+    expect(t('fans.mood.revolt', 'es')).toBe(esFans['fans.mood.revolt']);
+    expect(t('fans.mood.wary', 'en')).toBe(enFans['fans.mood.wary']);
   });
 });
 
