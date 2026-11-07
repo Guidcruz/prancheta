@@ -3,6 +3,7 @@
  * layer and the error boundaries of the screens record here; nothing is ever sent anywhere.
  */
 export {
+  DETAIL_KEYS,
   ERROR_LOG_SIZE,
   ErrorLog,
   STACK_FRAMES,

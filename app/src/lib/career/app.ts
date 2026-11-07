@@ -1,6 +1,6 @@
 import { ENGINE_VERSION } from '../../engine/index.ts';
 import { ErrorLog } from '../errors/index.ts';
-import { SAVE_SCHEMA_VERSION, SaveStore } from '../save/index.ts';
+import { SAVE_FIELD_NAMES, SAVE_SCHEMA_VERSION, SaveStore } from '../save/index.ts';
 import { CareerService } from './service.ts';
 
 /*
@@ -23,6 +23,7 @@ export function createCareerApp(options: { readonly appVersion: string }): Caree
       engineVersion: ENGINE_VERSION,
     },
     store,
+    { fields: SAVE_FIELD_NAMES },
   );
   const careers = new CareerService({ store, log: errors, appVersion: options.appVersion });
   return { careers, errors };

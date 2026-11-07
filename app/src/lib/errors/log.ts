@@ -72,11 +72,31 @@ export interface ErrorLogVersions {
 
 /** A code or a name: letters, digits and `_ . : / -`, at most 60 characters. */
 const TOKEN = /^[A-Za-z0-9][A-Za-z0-9_.:/-]{0,59}$/;
-/** A key of `detail`. */
-const DETAIL_KEY = /^[A-Za-z][A-Za-z0-9]{0,31}$/;
-const DETAIL_KEYS = 12;
-/** A field name of the save format (camelCase), kept in a path; anything else is a record key. */
-const FIELD = /^[a-z][A-Za-z]{0,39}$/;
+/**
+ * The keys of `detail` that are kept: the diagnostics the save layer (`fail(...)` of store.ts and
+ * codec.ts) and the engine return. Any other key is dropped, whatever its value.
+ */
+export const DETAIL_KEYS: ReadonlySet<string> = new Set([
+  'name',
+  'problem',
+  'rolledBack',
+  'expectedHeadSeq',
+  'headSeq',
+  'bytes',
+  'maxBytes',
+  'atLeast',
+  'got',
+  'max',
+  'snapshots',
+  'seq',
+  'fromVersion',
+  'version',
+  'round',
+  'next',
+]);
+/** A string value of `detail`: a kebab-case code, or the name of a DOM or JS error. */
+const DETAIL_CODE = /^[a-z][a-z0-9-]{0,59}$/;
+const DETAIL_ERROR_NAME = /^[A-Z][A-Za-z]{0,55}Error$/;
 const PATH_SEGMENTS = 16;
 
 /** `value` when it is a short code, otherwise `*`. */
@@ -85,16 +105,20 @@ export function cleanToken(value: unknown): string {
 }
 
 /**
- * A save path with only the field names of the format and array indices: every other segment
- * (the id of a club, player or match, a key a hostile file brought, `<key>`) becomes `*`.
+ * A save path with only the field names of the format (`fields`, from the save schema) and array
+ * indices: every other segment (the id of a club, player or match, a key a hostile file brought,
+ * `<key>`) becomes `*`. Without `fields`, every segment that is not an index does.
  */
-export function cleanPath(path: unknown): string {
+export function cleanPath(path: unknown, fields: ReadonlySet<string> = new Set()): string {
   if (typeof path !== 'string' || path === '') return '';
   const segments = path.split('.').slice(0, PATH_SEGMENTS);
-  return segments.map((s) => (/^\d{1,6}$/.test(s) || FIELD.test(s) ? s : '*')).join('.');
+  return segments.map((s) => (/^\d{1,6}$/.test(s) || fields.has(s) ? s : '*')).join('.');
 }
 
-/** The flat, safe part of a `detail`: own fields that are finite numbers, booleans or codes. */
+/**
+ * The flat, safe part of a `detail`: the keys of {@link DETAIL_KEYS} whose value is a finite
+ * number, a boolean, a kebab-case code or an error name (`QuotaExceededError`).
+ */
 export function cleanDetail(
   detail: unknown,
 ): Record<string, string | number | boolean> | undefined {
@@ -102,8 +126,7 @@ export function cleanDetail(
   const out: Record<string, string | number | boolean> = {};
   let kept = 0;
   for (const key of Object.keys(detail)) {
-    if (kept >= DETAIL_KEYS) break;
-    if (!DETAIL_KEY.test(key)) continue;
+    if (!DETAIL_KEYS.has(key)) continue;
     let value: unknown;
     try {
       value = (detail as Record<string, unknown>)[key];
@@ -112,7 +135,10 @@ export function cleanDetail(
     }
     if (typeof value === 'boolean' || (typeof value === 'number' && Number.isFinite(value))) {
       out[key] = value;
-    } else if (typeof value === 'string' && TOKEN.test(value)) {
+    } else if (
+      typeof value === 'string' &&
+      (DETAIL_CODE.test(value) || DETAIL_ERROR_NAME.test(value))
+    ) {
       out[key] = value;
     } else {
       continue;
@@ -155,7 +181,7 @@ export function cleanStack(error: unknown): string[] | undefined {
   }
   if (typeof stack !== 'string') return undefined;
   const frames: string[] = [];
-  for (const line of stack.split('\n')) {
+  for (const line of withoutMessage(stack, error).split('\n')) {
     if (frames.length >= STACK_FRAMES) break;
     const frame = V8_FRAME.exec(line) ?? OTHER_FRAME.exec(line.trim());
     if (frame === null) continue;
@@ -165,6 +191,24 @@ export function cleanStack(error: unknown): string[] | undefined {
     frames.push(`${fn}@${where[1]}:${where[2]}:${where[3]}`);
   }
   return frames.length === 0 ? undefined : frames;
+}
+
+/**
+ * The stack without the `${name}: ${message}` that V8 puts first: a message of several lines
+ * could hold text that looks like a frame. The message is read only to cut it, never kept.
+ */
+function withoutMessage(stack: string, error: unknown): string {
+  try {
+    const { name, message } = error as { name?: unknown; message?: unknown };
+    if (typeof message !== 'string' || message === '') return stack;
+    const head = `${typeof name === 'string' ? name : 'Error'}: ${message}`;
+    if (stack.startsWith(head)) return stack.slice(head.length);
+    // A message of several lines elsewhere in the stack: keep only what comes after it.
+    const at = message.includes('\n') ? stack.lastIndexOf(message) : -1;
+    return at === -1 ? stack : stack.slice(at + message.length);
+  } catch {
+    return '';
+  }
 }
 
 /** A stored row read back, when it has the shape of an {@link ErrorEntry}. */
@@ -182,17 +226,27 @@ export class ErrorLog {
   private pending: Promise<unknown> = Promise.resolve();
   private readonly versions: ErrorLogVersions;
   private readonly sink: ErrorSink | undefined;
+  private readonly fields: ReadonlySet<string>;
 
-  constructor(versions: ErrorLogVersions, sink?: ErrorSink) {
+  /**
+   * `fields`: the field names of the save format, kept in a path (lib/save's
+   * `SAVE_FIELD_NAMES`); every other segment of a path is logged as `*`.
+   */
+  constructor(
+    versions: ErrorLogVersions,
+    sink?: ErrorSink,
+    options: { readonly fields?: ReadonlySet<string> } = {},
+  ) {
     this.versions = versions;
     this.sink = sink;
+    this.fields = options.fields ?? new Set();
   }
 
   /** The row a report becomes (exposed for the tests and the support report). */
   entryOf(report: ErrorReport): ErrorEntry {
     const type = report.error === undefined ? undefined : errorType(report.error);
     const stack = report.error === undefined ? undefined : cleanStack(report.error);
-    const path = report.path === undefined ? undefined : cleanPath(report.path);
+    const path = report.path === undefined ? undefined : cleanPath(report.path, this.fields);
     const detail = cleanDetail(report.detail);
     return {
       kind: report.kind,
