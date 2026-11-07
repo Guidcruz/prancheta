@@ -52,7 +52,7 @@ O código usa **apenas soma, subtração, multiplicação e divisão**, as opera
 
 ## Saves no aparelho
 
-A carreira fica no **IndexedDB**, o banco de dados do próprio navegador.
+A carreira fica num banco de dados do próprio navegador, no aparelho.
 
 - **Cópia conferida.** Cada gravação calcula um **SHA-256** (uma impressão digital de 256 bits do conteúdo) para conferir a cópia, e o jogo guarda 3 versões.
 - **Formato v1 congelado.** O formato tem número de versão, esquema estrito e migrações para quando mudar. Textos digitados são limitados a 60 caracteres.
@@ -76,7 +76,7 @@ O jogo agora tem a moldura da carreira, um **registro de erros** que guarda o qu
 
 ## Tela inicial e novo jogo
 
-- **Lista de carreiras**, com o apelido de cada uma.
+- **Lista de carreiras**, até 10, com a mais recente em destaque: escudo, clube, temporada, rodada e data da última jogada.
 - **Apagar em dois passos**, para ninguém perder uma carreira por engano. Há uma janela de 500 ms em que o toque é ignorado, contra toque duplo. "Cancelar" é sempre o último botão, e o botão de apagar do passo final fica 61 px acima do anterior, inclusive com o celular deitado, para que um toque repetido no mesmo ponto não confirme nada sem querer.
 - **Novo jogo** lembra a última configuração.
 - **Zoom de pinça liberado**, por acessibilidade, mas sem o zoom automático que o navegador do celular faz ao tocar num campo de texto.
