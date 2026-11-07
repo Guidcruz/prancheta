@@ -6,6 +6,11 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Cores de pontos fortes e fracos dos atributos e de setor da posição (aprovadas pelo CEO em 2026-11-07):
+  - No card do jogador, o atributo 5 pontos ou mais acima da nota geral aparece em verde ("ponto forte") e o 5 ou mais abaixo em vermelho ("ponto fraco"); os do meio e a nota geral ficam sem cor. A leitura para leitor de tela diz "75, ponto forte".
+  - A sigla da posição (GOL, ZAG, LAT, VOL, MEI, ATA) ganha a cor do setor (goleiro, defesa, meio, ataque) no fundo e na borda, no Elenco e no cabeçalho do card; o texto continua em tinta e a sigla segue escondida de leitor de tela, que lê a posição por extenso.
+  - Textos novos em pt-BR, es e en; testes de tela e E2E nas medidas novas. A escalação (T-029) usa as mesmas cores depois.
+
 - Leituras do motor para a escalação (T-076, ADR-0021):
   - O jogador ainda não vê a mudança: a tela de escalação, que usa essas leituras, vem na T-029.
   - Contrato do motor: `fitLevel`, `isAvailable`, `sheetStrength`, `reshapeLineup`, `completeSheet`, `sheetRoles`, `sheetProblems` e a opção `SuggestOptions.formation`.
