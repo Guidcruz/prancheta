@@ -12,6 +12,15 @@ import {
 import { startCareer } from './career.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
+  SIDE_FROM,
+  main,
+  noPageScroll,
+  openLineup,
+  pitch,
+  sizesOf,
+  withFixture,
+} from './lineup-fixture.ts';
+import {
   changePlayer,
   patchSave,
   readDraft,
@@ -25,108 +34,13 @@ import {
  * toque, arrasto, teclado, foco, CSS, histórico e gravação de verdade. Os textos por idioma e os
  * estados da tela estão no Vitest (app/src/ui/lineup-screens.test.ts).
  *
- * A fixture do Completo é montada sobre o elenco sorteado da carreira, sempre pela mesma regra
- * (a composição do elenco é fixa, 3/5/4/4/4/5): 4-4-2 com um zagueiro na vaga de atacante e um
- * meia na de volante, um lateral titular cansado (condição 79), 6 reservas e uma vaga livre no
- * banco, e entre os não relacionados um lesionado (3 rodadas) e um suspenso. Ela entra como a
- * ficha do snapshot (`career.draft`), que a abertura usa enquanto o registro não tem ficha.
+ * A fixture do Completo está em lineup-fixture.ts (a mesma da Tática).
  */
 
-const SIDE_FROM = 900;
-const main = (page: Page) => page.locator('main');
-const pitch = (page: Page) => main(page).getByRole('group', { name: /^Campo, formação/ });
 const slot = (page: Page, index: number) => main(page).locator(`[data-slot="${index}"]`);
 const place = (page: Page, key: string) => main(page).locator(`[data-place="${key}"]`);
 const bar = (page: Page) => main(page).locator('.bar-slot > [role="status"]');
 const numbers = (page: Page) => main(page).locator('section.strength dd.value .numero');
-
-interface Fixture {
-  readonly starters: Player[];
-  /** 6 reserves; the 7th bench place is free. */
-  readonly bench: Player[];
-  readonly injured: Player;
-  readonly suspended: Player;
-  /** The centre-back on the striker's slot (index 9). */
-  readonly misplaced: Player;
-  readonly tired: Player;
-  readonly draft: DraftJson;
-}
-
-function squadOf(save: SaveJson): Player[] {
-  return save.game.squads[save.career.clubId]!.map(
-    (id) => save.game.players[id] as unknown as Player,
-  );
-}
-
-/** Builds the fixture on `save` (changes it) and returns who is where. */
-function buildFixture(save: SaveJson): Fixture {
-  const left = [...squadOf(save)].sort((a, b) => b.overall - a.overall);
-  const take = (position: Position): Player => {
-    const at = left.findIndex((p) => p.position === position);
-    if (at < 0) throw new Error(`fixture: sem ${position} no elenco`);
-    return left.splice(at, 1)[0]!;
-  };
-  const gk = take('GK');
-  const [cb1, cb2, misplaced] = [take('CB'), take('CB'), take('CB')];
-  const [fb1, tired] = [take('FB'), take('FB')];
-  const dm = take('DM');
-  const [improvised, am1, am2] = [take('AM'), take('AM'), take('AM')];
-  const st = take('ST');
-  const starters = [gk, cb1, cb2, tired, fb1, dm, improvised, am1, am2, misplaced, st];
-  const bench = [take('GK'), take('CB'), take('FB'), take('DM'), take('ST'), take('ST')];
-  const injured = take('DM');
-  const suspended = take('ST');
-  for (const p of [...starters, ...bench, ...left]) {
-    changePlayer(save, p.id, { injuryRounds: 0, suspendedGames: 0 });
-  }
-  changePlayer(save, tired.id, { condition: 79 });
-  changePlayer(save, injured.id, { injuryRounds: 3, suspendedGames: 0 });
-  changePlayer(save, suspended.id, { injuryRounds: 0, suspendedGames: 1 });
-  const draft: DraftJson = {
-    lineup: {
-      formation: '4-4-2',
-      starters: starters.map((p) => p.id),
-      bench: [...bench.map((p) => p.id), null],
-      captains: [],
-      penaltyTakers: [],
-      freeKickTakers: [],
-    },
-    tactic: { posture: 'balanced', pressure: 'medium' },
-  };
-  (save.career as Record<string, unknown>).draft = draft;
-  const fresh = (p: Player) => save.game.players[p.id] as unknown as Player;
-  return {
-    starters: starters.map(fresh),
-    bench: bench.map(fresh),
-    injured: fresh(injured),
-    suspended: fresh(suspended),
-    misplaced: fresh(misplaced),
-    tired: fresh(tired),
-    draft,
-  };
-}
-
-/** A new career in Realismo completo with the fixture, opened on the Escalação. */
-async function withFixture(page: Page, change?: (save: SaveJson) => void): Promise<Fixture> {
-  await startCareer(page);
-  let fixture: Fixture | undefined;
-  await patchSave(page, (save) => {
-    fixture = buildFixture(save);
-    change?.(save);
-  });
-  await openLineup(page);
-  return fixture!;
-}
-
-async function openLineup(page: Page): Promise<void> {
-  await page
-    .getByRole('navigation', { name: 'Navegação principal' })
-    .getByRole('link', { name: 'Elenco' })
-    .click();
-  await expect(page).toHaveURL(/#\/squad$/);
-  await main(page).locator('fieldset label', { hasText: 'Escalação' }).click();
-  await expect(pitch(page).locator('button[data-slot]')).toHaveCount(11);
-}
 
 /** The 18 places as the screen shows them: each slot's name and each bench place's name. */
 async function places(page: Page): Promise<string[]> {
@@ -204,24 +118,6 @@ async function expectSwapped(
   );
   expect(await shown(page)).toEqual(await engineStrength(page, draft));
   return draft;
-}
-
-async function noPageScroll(page: Page): Promise<void> {
-  const box = await page.evaluate(() => ({
-    scroll: document.documentElement.scrollWidth,
-    client: document.documentElement.clientWidth,
-  }));
-  expect(box.scroll, 'rolagem lateral da página').toBeLessThanOrEqual(box.client);
-}
-
-function sizesOf(page: Page) {
-  return page.viewportSize()!.width >= SIDE_FROM
-    ? [{ width: 1280, height: 800 }]
-    : [
-        { width: 360, height: 740 },
-        { width: 390, height: 844 },
-        { width: 844, height: 390 },
-      ];
 }
 
 const box = async (locator: Locator) => (await locator.boundingBox())!;
