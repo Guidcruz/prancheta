@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { EXP_CONSTANTS, exp } from './math.ts';
 import { Rng } from './rng.ts';
-import { ulpDistance, ulpStep } from './testing/exp-table.ts';
+import { kSwitch, reductionK, ulpDistance, ulpStep } from './testing/exp-table.ts';
 
 /*
  * Properties of the engine's exp (ADR-0020, tests 4 and 5). 10,000 points by default;
@@ -20,6 +20,16 @@ function draw(rng: Rng, a: number, b: number): number {
 /** Half of the points in [-6, 6], the range of the game; the other half over the whole domain. */
 function point(rng: Rng, i: number): number {
   return i % 2 === 0 ? draw(rng, -6, 6) : draw(rng, U_THRESHOLD, O_THRESHOLD);
+}
+
+/** exp never decreases from 64 ulps below `x0` to 64 ulps above it. */
+function monotonicAround(x0: number): void {
+  let previous = exp(ulpStep(x0, -64));
+  for (let d = -63; d <= 64; d++) {
+    const value = exp(ulpStep(x0, d));
+    if (!(previous <= value)) expect.fail(`not monotonic at ${ulpStep(x0, d)}`);
+    previous = value;
+  }
 }
 
 describe('exp: properties (ADR-0020)', () => {
@@ -55,19 +65,23 @@ describe('exp: properties (ADR-0020)', () => {
   });
 
   it('is monotonic across each limit of the reduction, ulp by ulp', () => {
-    const { TINY, HALF_LN2, THREE_HALVES_LN2, LN2_HI } = EXP_CONSTANTS;
-    const limits: number[] = [TINY, HALF_LN2, THREE_HALVES_LN2, O_THRESHOLD, U_THRESHOLD];
-    for (let m = -1075; m <= 1023; m += 7) limits.push((m + 0.5) * LN2_HI);
-    for (const limit of limits) {
-      for (const x0 of limit > 0 && limit < 2 ? [limit, -limit] : [limit]) {
-        let previous = exp(ulpStep(x0, -64));
-        for (let d = -63; d <= 64; d++) {
-          const value = exp(ulpStep(x0, d));
-          if (!(previous <= value)) expect.fail(`not monotonic at ${ulpStep(x0, d)}`);
-          previous = value;
-        }
-      }
+    const { TINY, HALF_LN2, THREE_HALVES_LN2 } = EXP_CONSTANTS;
+    const branches = [TINY, HALF_LN2, THREE_HALVES_LN2].flatMap((x) => [x, -x]);
+    for (const limit of [...branches, O_THRESHOLD, U_THRESHOLD]) monotonicAround(limit);
+  });
+
+  it('is monotonic across every change of the general k, where k really changes', () => {
+    // From the first switch inside the domain to the last: (m + 0.5) ln 2 in [U, O].
+    let switches = 0;
+    for (let m = -1075; m <= 1023; m++) {
+      if (m === -1 || m === 0) continue; // inside the k = 0 and k = ±1 branches
+      const point = kSwitch(m);
+      // The window really crosses a limit of k: the k before and at the point differ by one.
+      expect(reductionK(point) - reductionK(ulpStep(point, -1)), `m = ${m}`).toBe(1);
+      monotonicAround(point);
+      switches++;
     }
+    expect(switches).toBe(2097);
   });
 
   it('stays positive and finite inside the domain, and in [e^-6, e^6] in the range of the game', () => {

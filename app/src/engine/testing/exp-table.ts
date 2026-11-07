@@ -12,8 +12,10 @@ import { Rng } from '../rng.ts';
  * (the bits of a NaN are not fixed by the specification, so they are never compared). The inputs:
  * - the special cases (±0, ±1, ±Infinity, NaN, both thresholds and 1 ulp on each side, the
  *   subnormal results, the extreme k);
- * - the neighbours of the limits of k (0.5 ln 2, 1.5 ln 2 and 2^-28, both signs, ±8 ulps), and of
- *   the rounding points of k, (m + 0.5) ln 2 for m in -12..11 (±2 ulps);
+ * - the neighbours of the limits of the branches (0.5 ln 2, 1.5 ln 2 and 2^-28, both signs,
+ *   ±8 ulps), and of the points where the general k = trunc(INV_LN2·x ± 0.5) changes: the first
+ *   double with the new k near (m + 0.5) / INV_LN2, for m in -13..12 but -1 and 0 (those two fall
+ *   in the k = 0 and k = ±1 branches), and ±2 ulps (2 inputs with the old k, 3 with the new);
  * - a seeded stratified grid on [-6, 6], the range of the game (the engine calls it with
  *   kChance·Δ/10 and kFinish·Δ/10);
  * - a seeded stratified grid on [U_THRESHOLD, O_THRESHOLD], the rest.
@@ -67,9 +69,46 @@ function ordered(x: number): bigint {
   return bits < 0n ? -(bits & MAGNITUDE) : bits;
 }
 
+/**
+ * The k of the argument reduction of math.ts, replicated for the tests: 0 below 0.5 ln 2, ±1
+ * below 1.5 ln 2, then trunc(INV_LN2·x ± 0.5). Test only: the engine has its own copy in `exp`.
+ */
+export function reductionK(x: number): number {
+  const { HALF_LN2, THREE_HALVES_LN2, INV_LN2 } = EXP_CONSTANTS;
+  const ax = x < 0 ? -x : x;
+  if (ax < HALF_LN2) return 0;
+  if (ax < THREE_HALVES_LN2) return x < 0 ? -1 : 1;
+  return Math.trunc(INV_LN2 * x + (x < 0 ? -0.5 : 0.5));
+}
+
+/** How far (in ulps) {@link kSwitch} looks for the change of k around its estimate. */
+const K_SWITCH_SEARCH = 64;
+
+/**
+ * The first double, going towards +Infinity, whose k differs from the k of the double before it,
+ * near (m + 0.5) / INV_LN2, where INV_LN2·x ± 0.5 crosses an integer (for m >= 1, from k = m to
+ * m + 1; for m <= -2, from k = m to m + 1 as well, since k grows with x). Throws (a test bug) if
+ * there is not exactly one change within ±64 ulps of the estimate.
+ */
+export function kSwitch(m: number): number {
+  const estimate = (m + 0.5) / EXP_CONSTANTS.INV_LN2;
+  const found: number[] = [];
+  let previous = reductionK(ulpStep(estimate, -K_SWITCH_SEARCH - 1));
+  for (let d = -K_SWITCH_SEARCH; d <= K_SWITCH_SEARCH; d++) {
+    const x = ulpStep(estimate, d);
+    const k = reductionK(x);
+    if (k !== previous) found.push(x);
+    previous = k;
+  }
+  if (found.length !== 1) {
+    throw new Error(`k changes ${found.length} times near (${m} + 0.5) / INV_LN2`);
+  }
+  return found[0]!;
+}
+
 /** The special inputs and the neighbours of the limits of k (see the header). */
 function edgeInputs(): number[] {
-  const { O_THRESHOLD, U_THRESHOLD, TINY, HALF_LN2, THREE_HALVES_LN2, LN2_HI } = EXP_CONSTANTS;
+  const { O_THRESHOLD, U_THRESHOLD, TINY, HALF_LN2, THREE_HALVES_LN2 } = EXP_CONSTANTS;
   const out: number[] = [
     0,
     -0,
@@ -97,8 +136,9 @@ function edgeInputs(): number[] {
       out.push(x, -x);
     }
   }
-  for (let m = -12; m <= 11; m++) {
-    const point = (m + 0.5) * LN2_HI;
+  for (let m = -13; m <= 12; m++) {
+    if (m === -1 || m === 0) continue;
+    const point = kSwitch(m);
     for (let d = -2; d <= 2; d++) out.push(ulpStep(point, d));
   }
   return out;
