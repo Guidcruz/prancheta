@@ -581,6 +581,14 @@ Cenários cobertos (todos automatizados, em `app/src/engine/`):
 - Contrato: `CONTRACT` de `index.test.ts` com os sete valores novos.
 - Regressão: goldens (inclusive no Chromium) sem mudança e balance de release (1.000 temporadas, semente 1, robô no mais fraco) idêntico ao da `main`, menos a linha do tempo.
 
+### Card do jogador, nome (US-016; correção de 2026-11-07, pedido do CEO)
+
+- O título é `name.display`, o mesmo da linha do Elenco; o `name.full` aparece uma vez abaixo, só se diferir do display (sem acento, caixa, hífen e espaços repetidos).
+- Cobertura unitária em `squad.test.ts` e `club-screens.test.ts`.
+- Cobertura E2E em `club-squad.spec.ts`: o elenco inteiro confere título e nome completo, e o anúncio `aria-live` de Próximo usa o display.
+- QA: PASS (`test:all` 2197 testes; E2E Chromium 87/7; `--repeat-each=3` 117/117).
+- Manual (CEO): com leitor de tela, ouvir o display como nome do diálogo e o nome completo uma vez; conferir o card de um jogador com apelido.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

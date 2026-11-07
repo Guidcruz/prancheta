@@ -316,6 +316,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - T-028 (motor/tela): `fanReading` da tela repete o arredondamento e o limite do `fanMood`. Avaliar com o `architect` uma leitura no contrato que devolva o número junto com o humor.
 - T-028 (E2E): `patchSave` valida só os jogadores; validar o save inteiro quando um teste mudar clubes ou partidas.
 - T-041 (da segurança, T-023): frase sobre o registro local de erros na página de privacidade e opção "Limpar registro de erros" em Sobre.
+- Com rodapé, o corpo da folha (BottomSheet) vira região nomeada pelo título: ao entrar nele com Tab, o leitor de tela relê o nome do jogador ('Paçoca, região'). Ajuste à parte no BottomSheet.
 - T-020 (da T-023): os textos de `verify-failed` e `too-large` já falam em exportar a carreira; o botão de exportar só existe depois da T-020.
 - Nome acessível da carta de carreira de versão mais nova: chave `home.career.updateA11y` ("Atualizar o jogo para abrir a carreira de {club}"), três idiomas pelo content-writer e aprovação do CEO. Tarefa futura, decisão do CEO de 2026-11-07. A exceção está registrada em `docs/design/telas/inicio.md`.
 - Arquivo de avisos de terceiros (licenças MIT das dependências) publicado com o jogo, gerado do `package-lock`, com link numa tela "Sobre"; proposta do `devops-engineer`, recomendação: junto da T-041; aguarda decisão do CEO.
