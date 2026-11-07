@@ -278,8 +278,9 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
           );
         expect(boxes).toHaveLength(11);
         for (const [i, b] of boxes.entries()) {
-          expect(b.w, `${formation} ${size.width}: vaga ${i}`).toBeGreaterThanOrEqual(44);
-          expect(b.h, `${formation} ${size.width}: vaga ${i}`).toBeGreaterThanOrEqual(44);
+          // escalacao.md, "Ao alcance do polegar": each slot at least 75 × 52px.
+          expect(b.w, `${formation} ${size.width}: vaga ${i}`).toBeGreaterThanOrEqual(75);
+          expect(b.h, `${formation} ${size.width}: vaga ${i}`).toBeGreaterThanOrEqual(52);
           for (const [j, o] of boxes.entries()) {
             if (j <= i) continue;
             const apart =
@@ -354,9 +355,17 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
 
   test('arrastar: mouse no desktop, segurar 400 ms no toque; deslizar sem segurar rola a página (medida 6)', async ({
     page,
+    browserName,
   }) => {
-    const fixture = await withFixture(page);
     const mobile = page.viewportSize()!.width < SIDE_FROM;
+    // The touch branch drives real touch events through CDP, which only Chromium has; the
+    // measure 6 of escalacao.md asks the hold on the "Chromium celular" only. The mouse branch
+    // runs on every desktop project.
+    test.skip(
+      mobile && browserName !== 'chromium',
+      'toque segurado e deslizado só pelo CDP (Chromium)',
+    );
+    const fixture = await withFixture(page);
     if (!mobile) {
       const from = await box(place(page, 'bench-4'));
       const to = await box(slot(page, 10));
@@ -417,6 +426,48 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     await touch('touchEnd', []);
     expect(await page.evaluate(() => window.scrollY)).toBe(scrollY);
     await expectSwapped(page, fixture.bench[0]!, 0, fixture.starters[0]!, 0);
+  });
+
+  test('arrastar outro jogador desfaz a seleção, e soltar fora deixa a barra limpa', async ({
+    page,
+  }) => {
+    await withFixture(page);
+    const before = await places(page);
+    await place(page, 'bench-0').click();
+    await expect(bar(page)).toContainText('selecionado');
+    // A mouse drag of another reserve, dropped on the strength strip (no place there).
+    const from = await box(place(page, 'bench-4'));
+    const outside = await box(main(page).locator('section.strength'));
+    await page.mouse.move(from.x + from.width / 2, from.y + from.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(from.x + from.width / 2 + 20, from.y + from.height / 2 - 20, {
+      steps: 4,
+    });
+    await expect(place(page, 'bench-0')).toHaveAttribute('aria-pressed', 'false');
+    await page.mouse.move(outside.x + outside.width / 2, outside.y + outside.height / 2, {
+      steps: 8,
+    });
+    await page.mouse.up();
+    await expect(bar(page)).toHaveText('');
+    await expect(bar(page)).toHaveClass(/hidden/);
+    expect(await places(page)).toEqual(before);
+    await expect(main(page).locator('[aria-pressed="true"]')).toHaveCount(0);
+  });
+
+  test('o voltar do navegador fecha o card aberto na Escalação e fica na Escalação', async ({
+    page,
+  }) => {
+    await withFixture(page);
+    await slot(page, 3).click();
+    await bar(page).getByRole('button', { name: 'Ver card' }).click();
+    const card = page.getByRole('dialog');
+    await expect(card).toBeVisible();
+    await card.getByRole('button', { name: 'Próximo' }).click();
+    await page.goBack();
+    await expect(card).toBeHidden();
+    await expect(page).toHaveURL(/#\/squad$/);
+    await expect(pitch(page)).toBeVisible();
+    expect(await page.evaluate(() => history.state?.sheet)).toBeUndefined();
   });
 
   test('fora de posição: ícone e texto na vaga; o aviso diz "(ZAG) jogando de ATA" (medida 7)', async ({
@@ -636,6 +687,23 @@ test.describe('Escalação no Simplificado (medida 12)', () => {
       'Cond.',
     );
     await expect(pitch(page).locator('.cond')).toHaveCount(0);
+    // Without the condition bar the slot keeps its 75 × 52px (escalacao.md).
+    for (const size of sizesOf(page)) {
+      await page.setViewportSize(size);
+      const boxes = await pitch(page)
+        .locator('button[data-slot]')
+        .evaluateAll((els) =>
+          els.map((el) => {
+            const r = el.getBoundingClientRect();
+            return { width: r.width, height: r.height };
+          }),
+        );
+      expect(boxes).toHaveLength(11);
+      for (const b of boxes) {
+        expect(b.width, `${size.width}`).toBeGreaterThanOrEqual(75);
+        expect(b.height, `${size.width}`).toBeGreaterThanOrEqual(52);
+      }
+    }
     await expect(main(page).locator('.badge.injured, .badge.suspended')).toHaveCount(0);
     await expect(main(page).locator('section.strength details p')).not.toContainText('cansaço');
     const save = await readSave(page);
