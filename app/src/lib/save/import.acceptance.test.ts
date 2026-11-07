@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import type { CareerSave } from './schema.ts';
+import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
 import { SAVE_LIMITS, parseCareerSave } from './validate.ts';
 import {
   atRound,
@@ -177,7 +177,7 @@ describe('US-033: a hostile save is refused and changes nothing', () => {
         {
           seq: 2,
           problem: 'invalid-save',
-          fromVersion: 1,
+          fromVersion: SAVE_SCHEMA_VERSION,
           issue: { path: expect.any(String), problem: expect.any(String) },
         },
       ]);
@@ -211,7 +211,7 @@ describe('US-033: a save of a newer format', () => {
 });
 
 describe('US-033: a save of the previous format (the v1 fixture, stored as an older build did)', () => {
-  it('opens identical, same round, same club, same table, with nothing written', async () => {
+  it('opens migrated to the current format, same round, club and table, with nothing written', async () => {
     const fixture = JSON.parse(
       readFileSync(new URL('./__fixtures__/v1.json', import.meta.url), 'utf8'),
     ) as CareerSave;
@@ -250,8 +250,15 @@ describe('US-033: a save of the previous format (the v1 fixture, stored as an ol
     expect(save.career.clubId).toBe(fixture.career.clubId);
     expect(save.game.fixtures).toEqual(fixture.game.fixtures);
     expect(save.game.clubs).toEqual(fixture.game.clubs);
-    // The whole save, field by field (its sheets were not stored here).
-    expect(save).toEqual({ ...fixture, career: { ...fixture.career, matchSheets: {} } });
+    // The whole save, field by field (its sheets were not stored here): only the version changes,
+    // and a v1 save has no draft sheet (ADR-0021, item 4).
+    expect(save).toEqual({
+      ...fixture,
+      schemaVersion: SAVE_SCHEMA_VERSION,
+      career: { ...fixture.career, matchSheets: {} },
+    });
+    expect(save.career.draft).toBeUndefined();
+    expect(opened.value.fromVersion).toBe(1);
     expect(opened.value.skipped).toEqual([]);
     expect(await allRows()).toEqual(before);
   });

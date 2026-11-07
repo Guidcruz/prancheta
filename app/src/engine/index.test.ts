@@ -39,6 +39,7 @@ const CONTRACT = [
   'attributeKeysFor',
   'playerForm',
   'fanMood',
+  'draftFromSheet',
   // closed lists and field ranges
   'PARAM_RANGES',
   'SEASON_ROUNDS',

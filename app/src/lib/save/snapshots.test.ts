@@ -8,7 +8,13 @@ import type { NameLists } from '../generators/names.ts';
 import { loadGameParams } from '../params.ts';
 import { encodeJson, encodeSave, gzip, sha256Hex } from './codec.ts';
 import { SAVE_DB_NAME, saveDbNameFor } from './db.ts';
-import { KEPT_SNAPSHOTS, MAX_SAVE_BYTES, type CareerSave, type SnapshotRecord } from './schema.ts';
+import {
+  KEPT_SNAPSHOTS,
+  MAX_SAVE_BYTES,
+  SAVE_SCHEMA_VERSION,
+  type CareerSave,
+  type SnapshotRecord,
+} from './schema.ts';
 import { SaveStore } from './store.ts';
 import {
   DB,
@@ -35,6 +41,9 @@ import { SAMPLE_CAREER_ID, careerIdOf } from './testing/sample.ts';
  */
 
 useFreshDatabase();
+
+/** A format newer than this build's. */
+const NEWER = SAVE_SCHEMA_VERSION + 1;
 
 describe('database', () => {
   it('uses prancheta, or prancheta-test only with PRANCHETA_ENV=test', () => {
@@ -136,7 +145,7 @@ describe('safe write with 3 versions (US-032)', () => {
       headSeq: 1,
       skipped: [],
       roundsLost: 0,
-      fromVersion: 1,
+      fromVersion: SAVE_SCHEMA_VERSION,
       missingSheetRounds: [],
       sheets: { season: 1, rounds: {} },
     });
@@ -311,7 +320,8 @@ describe('safe write with 3 versions (US-032)', () => {
   it('refuses what is not a save of the current format, without touching the database', async () => {
     const s = store();
     const wrong = [
-      { ...base, schemaVersion: 2 },
+      { ...base, schemaVersion: NEWER },
+      { ...base, schemaVersion: 1 },
       { ...base, careerId: '' },
       { ...base, career: { ...base.career, clubId: 'no-such-club' } },
       { ...base, career: { ...base.career, clubId: '__proto__' } },
@@ -534,7 +544,7 @@ describe('open with fallback (US-032)', () => {
       {
         seq: 3,
         problem: 'invalid-save',
-        fromVersion: 1,
+        fromVersion: SAVE_SCHEMA_VERSION,
         issue: { path: 'careerId', problem: 'other-career' },
       },
     ]);
@@ -574,7 +584,7 @@ describe('open with fallback (US-032)', () => {
   it('neither opens nor changes a save written by a newer build', async () => {
     const s = store();
     await threeRounds(s);
-    await tamper(3, (r) => ({ ...r, schemaVersion: 2 }));
+    await tamper(3, (r) => ({ ...r, schemaVersion: NEWER }));
     const db = await raw();
     const before = await db.getAll('snapshots');
     db.close();
@@ -588,7 +598,7 @@ describe('open with fallback (US-032)', () => {
     // And the career pointer written by the newer build is never overwritten.
     await after.put('careers', {
       ...(await after.get('careers', SAMPLE_CAREER_ID))!,
-      schemaVersion: 2,
+      schemaVersion: NEWER,
     });
     after.close();
     expect(await s.writeSnapshot(variant(7))).toMatchObject({ ok: false, error: 'save-too-new' });
@@ -598,7 +608,7 @@ describe('open with fallback (US-032)', () => {
   it('refuses a newer save also when only the JSON says so', async () => {
     const s = store();
     await s.writeSnapshot(variant(4));
-    const newer = await mustEncodeSnapshot({ ...variant(5), schemaVersion: 2 });
+    const newer = await mustEncodeSnapshot({ ...variant(5), schemaVersion: NEWER });
     await tamper(1, (r) => ({ ...r, blob: newer.json, sha256: newer.sha256, bytes: newer.bytes }));
     expect(await s.openCareer(SAMPLE_CAREER_ID)).toMatchObject({
       ok: false,
@@ -612,12 +622,12 @@ describe('open with fallback (US-032)', () => {
     await s.writeSnapshot(variant(5));
     // The newest says (only in the JSON) it is of a newer format, with a key that an older
     // format would refuse: still save-too-new, never the version before it.
-    const newer = await mustEncodeSnapshot({ ...variant(6), schemaVersion: 2, toString: 'x' });
+    const newer = await mustEncodeSnapshot({ ...variant(6), schemaVersion: NEWER, toString: 'x' });
     await tamper(2, (r) => ({ ...r, blob: newer.json, sha256: newer.sha256, bytes: newer.bytes }));
     expect(await s.openCareer(SAMPLE_CAREER_ID)).toEqual({
       ok: false,
       error: 'save-too-new',
-      detail: { version: 2 },
+      detail: { version: NEWER },
     });
   });
 

@@ -8,14 +8,18 @@ export {
   MAX_SAVE_BYTES,
   SAVE_SCHEMA_VERSION,
   type CareerData,
+  type CareerDataV1,
+  type CareerRecord,
   type CareerSave,
   type CareerSaveV1,
+  type CareerSaveV2,
   type CareerSummary,
   type MatchSheetRecord,
   type NewsRef,
   type SheetIndex,
   type SnapshotRecord,
   type SocialRef,
+  type StoredDraft,
 } from './schema.ts';
 export type { SaveResult } from './result.ts';
 export {
@@ -36,8 +40,11 @@ export { SAVE_FIELD_NAMES, fieldNamesOf } from './fields.ts';
 export { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './migrations/index.ts';
 export {
   SAVE_LIMITS,
+  STARTER_SLOTS,
   careerSaveSchema,
+  draftSheetSchema,
   parseCareerSave,
+  parseDraft,
   parseRoundSheets,
   roundSheetsSchema,
   type SaveCheck,
@@ -46,6 +53,8 @@ export {
 export { newCareerGame, type NewCareerError, type NewCareerGame } from './new-career.ts';
 export {
   SaveStore,
+  type DraftGuard,
+  type DraftWriteError,
   type OpenError,
   type OpenedCareer,
   type SaveStoreOptions,

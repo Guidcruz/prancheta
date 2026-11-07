@@ -1,5 +1,5 @@
 import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
-import type { CareerSummary, MatchSheetRecord, SnapshotRecord } from './schema.ts';
+import type { CareerRecord, MatchSheetRecord, SnapshotRecord } from './schema.ts';
 
 /*
  * The IndexedDB of the saves (docs/02-architecture.md, 4.2; ADR-0006). Only app/src/lib/save/
@@ -10,7 +10,9 @@ import type { CareerSummary, MatchSheetRecord, SnapshotRecord } from './schema.t
 /**
  * Structure version: 1 has `careers`, `snapshots` (with the index `bySeason`), `matchSheets`, `kv`
  * and `errors` (the `matchSheets` store came with T-018 and the index with T-072, still in version
- * 1: no database existed outside the tests before them). Etapa 1b adds `leagueCache` in version 2.
+ * 1: no database existed outside the tests before them). The coach's sheet between rounds (T-075,
+ * ADR-0021) is an optional field of the `careers` row, without an index: still version 1. Etapa 1b
+ * adds `leagueCache` in version 2.
  */
 export const SAVE_DB_VERSION = 1;
 
@@ -30,7 +32,8 @@ export interface ErrorRecord {
 }
 
 export interface SaveDbSchema extends DBSchema {
-  careers: { key: string; value: CareerSummary };
+  /** The summary of each career and, between rounds, the coach's sheet (ADR-0021). */
+  careers: { key: string; value: CareerRecord };
   snapshots: {
     key: [string, number];
     value: SnapshotRecord;

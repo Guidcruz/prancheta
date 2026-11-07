@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { MAX_CAREERS } from './schema.ts';
+import { MAX_CAREERS, SAVE_SCHEMA_VERSION } from './schema.ts';
 import {
   atRound,
   base,
@@ -36,7 +36,7 @@ describe('several careers (US-034)', () => {
       round: 9,
       updatedAt: '2026-11-05T10:00:00.000Z',
       headSeq: 1,
-      schemaVersion: 1,
+      schemaVersion: SAVE_SCHEMA_VERSION,
     });
   });
 

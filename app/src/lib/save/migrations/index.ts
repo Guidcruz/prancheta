@@ -1,5 +1,6 @@
 import { SAVE_SCHEMA_VERSION, type CareerSave } from '../schema.ts';
 import { fail, ok, type SaveResult } from '../result.ts';
+import { coachDraft } from './0001-coach-draft.ts';
 
 /*
  * Entry point of the save migrations (ADR-0006; docs/02-architecture.md, 4.2, "Migração"). Each
@@ -7,12 +8,12 @@ import { fail, ok, type SaveResult } from '../result.ts';
  * original snapshot is replaced only after the migrated one is stored and checked (the store does
  * that, by writing a new snapshot). A save newer than this build is never opened nor changed.
  *
- * The format is frozen at v1 (T-019): the fixture `__fixtures__/v1.json`, the shape test and the
- * strict schema (validate.ts). The chain is empty while the format is v1; every format change
- * after it raises `SAVE_SCHEMA_VERSION` and adds here one step, in its own file
- * (`0001-<slug>.ts` for v1 → v2), with the fixture of the new version (fixtures.test.ts) and a
- * test of the step. The infrastructure is tested with synthetic steps, also through the store
- * (migrated.test.ts).
+ * Every released format is frozen: the fixtures `__fixtures__/vN.json`, the shape test and the
+ * strict schema of the current one (validate.ts). v1 came with T-019; v2 with T-075 (ADR-0021,
+ * the coach's draft sheet), by `0001-coach-draft.ts`. Every format change raises
+ * `SAVE_SCHEMA_VERSION` and adds here one step, in its own file (`NNNN-<slug>.ts`), with the
+ * fixture of the new version (fixtures.test.ts) and a test of the step. The infrastructure is
+ * tested with synthetic steps, also through the store (migrated.test.ts).
  */
 
 /**
@@ -28,7 +29,7 @@ export interface Migration {
 }
 
 /** The chain, one step per version: the step `from: N` takes a save of version N to N + 1. */
-export const MIGRATIONS: readonly Migration[] = [];
+export const MIGRATIONS: readonly Migration[] = [coachDraft];
 
 export type MigrationError = 'save-too-new' | 'unknown-version' | 'migration-failed';
 
