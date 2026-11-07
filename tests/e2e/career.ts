@@ -50,10 +50,20 @@ export async function nextRound(page: Page): Promise<number> {
   return Number(match[1]);
 }
 
+/**
+ * Espera a gravação da rodada terminar: a tela já mostra a rodada nova com o botão em
+ * `aria-busy` enquanto o IndexedDB ainda grava; recarregar ou editar o save nesse intervalo
+ * aborta a transação (WebKit).
+ */
+export async function saveSettled(page: Page): Promise<void> {
+  await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
+}
+
 /** Joga rodadas pelo "Jogar rodada" até a próxima ser `round` (lida na tela do Clube). */
 export async function playUntil(page: Page, round: number): Promise<void> {
   for (let next = await nextRound(page); next < round; next++) {
     await playButton(page).click();
     await expect.poll(() => nextRound(page)).toBe(next + 1);
+    await saveSettled(page);
   }
 }
