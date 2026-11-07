@@ -48,4 +48,34 @@ export default [
       ],
     },
   },
+  // tests/ (E2E e regressão) e o config do Playwright seguem a mesma fronteira do motor.
+  {
+    files: ['tests/**/*.ts', 'playwright.config.ts'],
+    languageOptions: { parser: tseslint.parser },
+    plugins: { '@typescript-eslint': tseslint.plugin },
+    linterOptions: { reportUnusedDisableDirectives: 'off' },
+    rules: { 'no-restricted-imports': ['error', { patterns: [engineEntryOnly] }] },
+  },
+  // Única exceção: a página do golden no navegador importa o módulo de teste que compartilha as
+  // entradas com o golden do Vitest (app/src/engine/testing/match-goldens.ts, sem node:fs).
+  {
+    files: ['tests/e2e/golden/page.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              ...engineEntryOnly,
+              group: [
+                ...engineEntryOnly.group,
+                '!**/engine/testing',
+                '!**/engine/testing/match-goldens.ts',
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  },
 ];

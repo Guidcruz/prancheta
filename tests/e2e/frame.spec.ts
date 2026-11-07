@@ -53,7 +53,11 @@ test.describe('moldura da carreira', () => {
   });
 
   test('alvos de toque de pelo menos 44px nos elementos interativos', async ({ page }) => {
-    const small = (await touchTargets(page)).filter((t) => t.width < 44 || t.height < 44);
+    const targets = await touchTargets(page);
+    // Controle: a lista não pode estar vazia nem sem o botão principal.
+    expect(targets.length).toBeGreaterThan(0);
+    expect(targets.map((t) => t.name)).toContain('Jogar rodada');
+    const small = targets.filter((t) => t.width < 44 || t.height < 44);
     expect(small, 'alvos menores que 44px').toEqual([]);
   });
 
@@ -76,22 +80,31 @@ test.describe('moldura da carreira', () => {
     await expect(playButton(page)).toHaveCount(1);
   });
 
-  test('prefers-reduced-motion: nenhuma animação nem transição', async ({ page }) => {
+  test('prefers-reduced-motion: a regra do app.css desliga animação e transição', async ({
+    page,
+  }) => {
+    // Elemento de prova injetado, sem regra própria: só a regra global do app.css o afeta.
+    await page.evaluate(() => {
+      const probe = document.createElement('div');
+      probe.id = 'motion-probe';
+      probe.style.cssText =
+        'animation: probe-spin 1s linear infinite; transition: opacity 1s; width: 10px; height: 10px';
+      const style = document.createElement('style');
+      style.textContent = '@keyframes probe-spin { to { opacity: 0.5 } }';
+      document.head.append(style);
+      document.body.append(probe);
+    });
+    const read = () =>
+      page.locator('#motion-probe').evaluate((el) => {
+        const s = getComputedStyle(el);
+        return { animation: s.animationName, transition: s.transitionDuration };
+      });
+
+    // Controle: sem a preferência, o elemento anima (senão o teste não prova nada).
+    await page.emulateMedia({ reducedMotion: 'no-preference' });
+    expect(await read()).toEqual({ animation: 'probe-spin', transition: '1s' });
+
     await page.emulateMedia({ reducedMotion: 'reduce' });
-    const running = await page.evaluate(
-      () => document.getAnimations().filter((a) => a.playState === 'running').length,
-    );
-    expect(running).toBe(0);
-    const animated = await page.evaluate(
-      () =>
-        Array.from(document.querySelectorAll('*'))
-          .map((el) => getComputedStyle(el))
-          .filter(
-            (s) =>
-              s.animationName !== 'none' ||
-              s.transitionDuration.split(',').some((d) => parseFloat(d) > 0),
-          ).length,
-    );
-    expect(animated).toBe(0);
+    expect(await read()).toEqual({ animation: 'none', transition: '0s' });
   });
 });

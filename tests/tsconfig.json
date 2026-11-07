@@ -1,0 +1,10 @@
+{
+  "extends": "../app/tsconfig.json",
+  "compilerOptions": {
+    "paths": {},
+    "baseUrl": ".",
+    "types": ["node"],
+    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+  },
+  "include": ["./**/*.ts", "../playwright.config.ts", "../app/src/env.d.ts"]
+}
