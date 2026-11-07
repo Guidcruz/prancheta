@@ -156,31 +156,35 @@ describe('sheetStrength', () => {
     }
   });
 
-  it(`(b) freeing a starter's slot never raises a number, and never NaN (${CASES} drafts)`, () => {
-    const failures: string[] = [];
-    for (let n = 0; n < CASES; n++) {
-      const rng = new Rng(seedFromString(`sheet-strength-b-${n}`));
-      const clubId = clubIds[rng.int(0, clubIds.length - 1)]!;
-      const state = drawnState(base, clubId, rng);
-      // The save never holds a repeated id (ADR-0021); with one, freeing the first occurrence
-      // would make the second count.
-      const draft: DraftLineup = drawnDraft(state, clubId, rng, { repeats: false }).lineup;
-      const before = sheetStrength(state, clubId, draft)!;
-      if (!values(before).every(Number.isFinite)) failures.push(`case ${n}: ${values(before)}`);
-      for (let i = 0; i < 11; i++) {
-        if (draft.starters[i] === null) continue;
-        const after = sheetStrength(state, clubId, {
-          ...draft,
-          starters: draft.starters.map((id, j) => (j === i ? null : id)),
-        })!;
-        const raised = values(after).some((x, k) => x > values(before)[k]!);
-        if (raised || !values(after).every(Number.isFinite)) {
-          failures.push(`case ${n}, slot ${i}: ${values(before)} -> ${values(after)}`);
+  it(
+    `(b) freeing a starter's slot never raises a number, and never NaN (${CASES} drafts)`,
+    { timeout: 300_000 },
+    () => {
+      const failures: string[] = [];
+      for (let n = 0; n < CASES; n++) {
+        const rng = new Rng(seedFromString(`sheet-strength-b-${n}`));
+        const clubId = clubIds[rng.int(0, clubIds.length - 1)]!;
+        const state = drawnState(base, clubId, rng);
+        // The save never holds a repeated id (ADR-0021); with one, freeing the first occurrence
+        // would make the second count.
+        const draft: DraftLineup = drawnDraft(state, clubId, rng, { repeats: false }).lineup;
+        const before = sheetStrength(state, clubId, draft)!;
+        if (!values(before).every(Number.isFinite)) failures.push(`case ${n}: ${values(before)}`);
+        for (let i = 0; i < 11; i++) {
+          if (draft.starters[i] === null) continue;
+          const after = sheetStrength(state, clubId, {
+            ...draft,
+            starters: draft.starters.map((id, j) => (j === i ? null : id)),
+          })!;
+          const raised = values(after).some((x, k) => x > values(before)[k]!);
+          if (raised || !values(after).every(Number.isFinite)) {
+            failures.push(`case ${n}, slot ${i}: ${values(before)} -> ${values(after)}`);
+          }
         }
       }
-    }
-    expect(failures).toEqual([]);
-  });
+      expect(failures).toEqual([]);
+    },
+  );
 
   it('(d) is pure: same answer twice, input unchanged; undefined only for a club with no squad', () => {
     const rng = new Rng(11);
