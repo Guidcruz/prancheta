@@ -8,6 +8,7 @@ Regras que o `ux-designer` cobra:
 - Mobile first, uma mão: abas embaixo, "Jogar rodada" sempre acessível, alvos ≥ 44px.
 - Tema `noite` padrão e `dia` opcional; contraste ≥ 4,5:1 nos dois.
 - Resultado nunca só por cor (V/E/D ou ícone); `prefers-reduced-motion`.
+- A cor de faixa só pinta números; a cor de setor só pinta o fundo da sigla da posição ("Onde cada cor pinta").
 - Componentes base: Escudo, CardPartida, LinhaTabela, CardJogador, BarraAbas, Botao, Noticia.
 - Textos em `app/src/content/<idioma>/`; nome, logo e cores em `config/prancheta.config.ts`.
 
@@ -161,7 +162,7 @@ Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qual
 
 ## Cores por faixa (aprovado pelo CEO em 2026-11-07)
 
-Números de estado (hoje condição, moral e forma, no Elenco e no card do jogador) podem ganhar a cor da sua faixa: boa, regular ou ruim.
+Números de estado (hoje condição, moral e forma, no Elenco e no card do jogador) podem ganhar a cor da sua faixa: boa, regular ou ruim. Os atributos usam os mesmos tokens com outra regra, relativa à nota do jogador ("Pontos fortes e fracos dos atributos", abaixo).
 
 | Faixa   | Token        | Noite     | Dia       | Sobre `surface-1` (noite / dia) | Sobre `surface-2` (noite / dia) |
 | ------- | ------------ | --------- | --------- | ------------------------------- | ------------------------------- |
@@ -174,4 +175,47 @@ Números de estado (hoje condição, moral e forma, no Elenco e no card do jogad
 - **Limites numa constante só:** `LEVEL_BANDS` em `app/src/ui/components/levels.ts`, lidos por `levelOf(medida, valorMostrado)`; a faixa é sempre do valor mostrado (o inteiro arredondado, ou a forma com uma casa), para cor e número nunca discordarem. Nenhum componente escreve um limite.
 - **Tokens próprios, não `grass`, `floodlight` e `danger`:** o `grass` de dia fica em 4,49:1 sobre `surface-2` (o fundo da linha com o ponteiro em cima) e o `floodlight` de dia não chega a 2:1 sobre o branco. `level-good` e `level-poor` de noite têm o mesmo valor de `grass` e `danger`; mudar um não muda o outro.
 - **Sem valor, sem cor:** "—" e "Sem jogos ainda" ficam em `ink-muted`, como antes.
-- **Medida nova só com faixa definida na spec da tela** (limites, de onde vêm e o texto do leitor de tela). A nota geral não tem faixa: ver [elenco.md](telas/elenco.md#cores-por-faixa).
+- **Medida nova só com faixa definida na spec da tela** (limites, de onde vêm e o texto do leitor de tela). A nota geral não tem faixa e continua sem cor (decisão do CEO em 2026-11-07): ver [elenco.md](telas/elenco.md#cores-por-faixa).
+
+### Pontos fortes e fracos dos atributos (aprovado pelo CEO em 2026-11-07)
+
+Os 6 atributos do card do jogador ganham cor **em relação à nota geral do próprio jogador**, não por uma escala fixa: um 70 é ponto forte de um jogador de nota 62 e ponto fraco de um de nota 80.
+
+| Estado      | Regra                                | Token        | Leitor de tela    |
+| ----------- | ------------------------------------ | ------------ | ----------------- |
+| Ponto forte | atributo ≥ nota + `ATTRIBUTE_MARGIN` | `level-good` | "78, ponto forte" |
+| Ponto fraco | atributo ≤ nota − `ATTRIBUTE_MARGIN` | `level-poor` | "58, ponto fraco" |
+| (nenhum)    | entre os dois                        | sem cor      | só o número       |
+
+- `ATTRIBUTE_MARGIN = 5`, em `app/src/ui/components/levels.ts`, lida por `attributeLevelOf(valor, nota)`; nenhum componente escreve a margem.
+- **Só dois estados.** Não há "regular" nos atributos: `level-fair` nunca aparece num atributo. O que fica perto da nota não é notícia.
+- **Goleiro igual,** com os 6 atributos dele.
+- **Atributo de peso 0 na posição** (finalização do zagueiro, marcação do atacante) nasce cerca de 20 pontos abaixo da nota e aparece quase sempre como ponto fraco. Aceito pelo CEO: é a verdade do jogador.
+- Mesmos tokens e mesmas regras da faixa: só o número, a barra continua em `ink-muted`, o número visível fica `aria-hidden` e o texto escondido diz o estado em palavra (`level.reading` com `attr.level.strong` ou `attr.level.weak`).
+
+## Cor de setor (aprovado pelo CEO em 2026-11-07)
+
+A sigla da posição (GOL, ZAG, LAT, VOL, MEI, ATA) ganha a cor do seu setor, para o elenco se ler por linhas do time num relance.
+
+| Setor   | Posições | Borda (`sector-*`)    | Fundo (`sector-*-soft`) | `ink` sobre o fundo (noite / dia) | Borda sobre `surface-1` (noite / dia) | Borda sobre `surface-2` (noite / dia) |
+| ------- | -------- | --------------------- | ----------------------- | --------------------------------- | ------------------------------------- | ------------------------------------- |
+| Goleiro | GOL      | `#ffc83d` / `#a87200` | `#3d3214` / `#fdf0c8`   | 11,52 / 14,60                     | 10,06 / 4,14                          | 8,31 / 3,45                           |
+| Defesa  | ZAG, LAT | `#5fb0ff` / `#1565c0` | `#16365a` / `#dcebfc`   | 11,22 / 13,70                     | 6,77 / 5,75                           | 5,59 / 4,79                           |
+| Meio    | VOL, MEI | `#a78bfa` / `#6d3fd0` | `#2e2658` / `#ebe4fd`   | 12,50 / 13,48                     | 5,71 / 6,42                           | 4,72 / 5,35                           |
+| Ataque  | ATA      | `#e879d6` / `#a0208c` | `#46203f` / `#f7e0f4`   | 12,46 / 13,38                     | 6,02 / 6,82                           | 4,98 / 5,68                           |
+
+Valores na ordem noite / dia. Âmbar, azul, violeta e magenta. O azul, o violeta e o magenta ficam longe do verde e do vermelho das faixas. O âmbar do goleiro coincide com o amarelo de "regular" (`level-fair`) no tema noite (`#ffc83d`, o mesmo valor) e fica perto dele no tema dia (`#a87200` contra `#8a5a00`). É aceitável porque essa cor só pinta a borda da sigla, nunca um número, e a cor de faixa só pinta números ("Onde cada cor pinta"): as duas nunca aparecem no mesmo tipo de elemento.
+
+- **Só o fundo e a borda da sigla.** O texto da sigla é sempre `ink`; nenhum número, nome, linha ou ícone leva cor de setor.
+- **Contraste:** `ink` sobre os quatro `sector-*-soft` é conferido pelo `npm run tokens` (≥ 4,5:1 nos dois temas). A borda é reforço, não informação (a sigla está escrita); mesmo assim passa de 3:1 sobre `surface-1` e `surface-2` (conferido à mão, tabela acima).
+- **Nunca só por cor:** a sigla está sempre escrita, e a posição inteira vai para o leitor de tela onde a linha a diz.
+- **Mapa único:** `SECTOR_OF` em `app/src/ui/components/sectors.ts` leva a posição natural ao setor (GK → `gk`; CB, FB → `def`; DM, AM → `mid`; ST → `atk`), a mesma divisão das linhas do banco no motor. Nenhuma tela escreve um setor.
+- **Implementação de referência:** `PositionTag` (`code`, `sector`, `hidden?`), usado pela `PlayerRow` e pelo `PlayerCard`; a Escalação o usa no `LineupChip` ([escalacao.md](telas/escalacao.md#cor-de-setor-no-lineupchip)).
+
+## Onde cada cor pinta (aprovado pelo CEO em 2026-11-07)
+
+Regra para as duas famílias de cor de leitura, para nunca disputarem o mesmo lugar:
+
+- **A cor de faixa (`level-*`) só pinta números.** Estados do jogador (faixa boa, regular, ruim) e pontos fortes e fracos dos atributos. Nunca fundo, borda, barra, ícone ou texto que não seja o número.
+- **A cor de setor (`sector-*`) só pinta o fundo da sigla da posição** (e a borda dela). Nunca o texto, um número ou outro elemento.
+- Um elemento novo que queira uma dessas cores fora desses lugares é proposta ao design system, não ajuste de tela.

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import { getStandings, type GameState, type PlayerId } from '@engine';
+import { attributeKeysFor, getStandings, type GameState, type PlayerId } from '@engine';
 import type { CareerSave, CareerService, CareerState } from '@lib/career';
 import type { Lang } from '@lib/config';
 import type { ErrorLog } from '@lib/errors';
@@ -442,6 +442,33 @@ describe('the player card (jogador.md; US-016)', () => {
     expect(body).toContain('>Anterior<');
     expect(body).toContain('>Próximo<');
     expect(primaries(body)).toBe(0);
+  });
+
+  it('paints strong and weak points, reads them, and leaves the overall and the rest bare', () => {
+    const keys = attributeKeysFor('ST');
+    const values = [75, 74, 66, 65, 70, 70];
+    const attributes = Object.fromEntries(keys.map((k, i) => [k, values[i]!]));
+    const game = withPlayer(round5, striker.id, { overall: 70, attributes });
+    const body = sheet(game, striker.id);
+    const block = body.slice(body.indexOf(t('player.attributes.title', 'pt-BR')));
+    const section = block.slice(0, block.indexOf('</section>'));
+    expect(section.match(/level-good/g)).toHaveLength(1);
+    expect(section.match(/level-poor/g)).toHaveLength(1);
+    expect(section).not.toContain('level-fair');
+    expect(section).toContain('75, ponto forte');
+    expect(section).toContain('65, ponto fraco');
+    // A number with no band is read by itself: no hidden reading for it.
+    expect(section.match(/visually-hidden/g)).toHaveLength(2);
+    const overall = /<[^>]*class="[^"]*overall[^"]*"[^>]*>/.exec(body);
+    expect(overall?.[0] ?? '').not.toMatch(/level-/);
+  });
+
+  it('the position code is a hidden tag with the sector, and the full position is still read', () => {
+    const body = sheet(round5, striker.id);
+    expect(body).toMatch(
+      /<span class="rotulo tag[^"]*sector-atk[^"]*" aria-hidden="true">ATA<\/span>/,
+    );
+    expect(body).toContain(t('position.ST', 'pt-BR'));
   });
 
   it('the first has "Anterior" disabled and the last "Próximo"', () => {

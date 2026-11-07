@@ -24,7 +24,7 @@ Lê o elenco, troca a ordem (posição, nota, condição) e toca num atleta para
    - **Nota:** nota geral decrescente; empate pela ordem de posição e depois do elenco.
    - **Condição:** condição crescente (os mais cansados primeiro); empate pela nota geral decrescente.
 2. **Tabela do elenco** (ScrollTable, legenda visível "Elenco do Tufão: 25 jogadores"):
-   - **Coluna fixa (Jogador):** código da posição numa caixinha (`ATA`), o nome curto (`Player.name.display`) como botão, e embaixo dele os selos de situação (StatusBadge com ícone e texto): "Lesionado, 3 rodadas", "Suspenso, 1 jogo", "Promessa". Nome longo corta com reticências; o card mostra inteiro.
+   - **Coluna fixa (Jogador):** código da posição numa caixinha (`ATA`, o PositionTag, com fundo e borda da cor do setor; ver "Cor de setor", abaixo), o nome curto (`Player.name.display`) como botão, e embaixo dele os selos de situação (StatusBadge com ícone e texto): "Lesionado, 3 rodadas", "Suspenso, 1 jogo", "Promessa". Nome longo corta com reticências; o card mostra inteiro.
    - **Colunas que rolam, nesta ordem:** Nota (nota geral), Cond. (condição 0 a 100), Moral (0 a 100), Forma (média das notas dos últimos 5 jogos, uma casa decimal, "—" sem jogos), Idade. A ordem põe primeiro o que decide a escalação: no celular em pé, Nota, Cond. e Moral aparecem sem rolar.
    - Condição e moral são números reais no motor; a tela mostra `Math.round` (`jogadores.md`, "Frações").
    - **Condição, moral e forma em cor por faixa** (ver "Cores por faixa", abaixo); nota e idade em `ink`.
@@ -46,7 +46,16 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 - **Forma "—" (sem jogos):** sem cor, lida como "sem jogos", como antes.
 - **Simplificado:** não há coluna nem linha de condição; moral e forma ganham cor igual.
 - **Limites:** só em `LEVEL_BANDS` (`app/src/ui/components/levels.ts`), lidos por `levelOf`. Se o `/balance` mudar `ai.rotationCondition`, a faixa da condição não muda sozinha: o `ux-designer` revê esta tabela.
-- **Nota geral sem cor (recomendação do `ux-designer`; o CEO decide).** A nota é relativa ao nível do clube: um 65 é titular num time do fundo e reserva num do topo. Com faixas fixas, o elenco inteiro de um clube fraco ficaria vermelho e o de um forte, verde, sem ajudar a escolher entre os seus jogadores, e a coluna "Nota" já é a ordem padrão. Se um dia a nota ganhar cor, que seja relativa ao próprio elenco (por exemplo, quem está entre os 11 melhores da posição), e isso já vem com o selo de titular e reserva da T-029.
+- **Nota geral sem cor (decisão do CEO em 2026-11-07, pela recomendação do `ux-designer`).** A nota é relativa ao nível do clube: um 65 é titular num time do fundo e reserva num do topo. Com faixas fixas, o elenco inteiro de um clube fraco ficaria vermelho e o de um forte, verde, sem ajudar a escolher entre os seus jogadores, e a coluna "Nota" já é a ordem padrão. Se um dia a nota ganhar cor, que seja relativa ao próprio elenco (por exemplo, quem está entre os 11 melhores da posição), e isso já vem com o selo de titular e reserva da T-029.
+
+### Cor de setor
+
+Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-system.md#cor-de-setor-aprovado-pelo-ceo-em-2026-11-07)). A caixinha da posição ganha o fundo (`sector-*-soft`) e a borda (`sector-*`) do setor: âmbar no goleiro, azul na defesa (ZAG, LAT), violeta no meio (VOL, MEI), magenta no ataque (ATA). O código continua escrito em `ink`, e a posição inteira continua indo para o leitor de tela no texto escondido da linha.
+
+- **Componente:** `PositionTag` com `hidden` (o leitor de tela já lê "Atacante"), dentro da `PlayerRow`, que recebe a prop `sector`.
+- **O setor vem de `SECTOR_OF[player.position]`** (`app/src/ui/components/sectors.ts`), o mapa único da interface: a tela nunca escreve um setor.
+- **Com a ordem "Posição"**, a cor repete o agrupamento (os grupos já são por posição); com "Nota" e "Condição", é ela que deixa ver de relance quem é de que linha na lista corrida.
+- A caixinha tem o mesmo tamanho de antes; a largura da coluna fixa não muda.
 
 O número do potencial não aparece em lugar nenhum. O selo "Promessa" (decisão do CEO na US-016) aparece para quem se enquadra na regra de `jogadores.md`, "Potencial", e a tela recebe do motor só o booleano (ver "Pedidos ao motor" em [jogador.md](jogador.md#pedidos-ao-motor)).
 
@@ -75,7 +84,7 @@ A lista inteira é tocável: cada linha abre o card (o toque em qualquer ponto d
 
 ## Componentes
 
-SegmentedControl, ScrollTable, GroupRow, PlayerRow (o CardJogador `row`), StatusBadge, Skeleton, ErrorState, ErrorBoundary. Casca em [componentes.md](componentes.md#casca-da-t-028-clube-elenco-e-jogador).
+SegmentedControl, ScrollTable, GroupRow, PlayerRow (o CardJogador `row`), PositionTag, StatusBadge, Skeleton, ErrorState, ErrorBoundary. Casca em [componentes.md](componentes.md#casca-da-t-028-clube-elenco-e-jogador).
 
 ## Textos (chaves)
 
@@ -136,7 +145,7 @@ Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão p
 
 - **Tabela de verdade** (`table`, `caption`, `th scope="col"`, `th scope="row"` na coluna fixa, `th scope="colgroup"` nos grupos): o leitor de tela lê "Atacante, Ildo Albuquerque, Lesionado, 3 rodadas" e o cabeçalho de cada número.
 - **Linhas ≥ 44px**; o botão do nome tem pelo menos 44×44px (`min-block-size` e `min-inline-size: var(--touch)`), também quando o nome é curto. Linha com selo fica mais alta (cerca de 72px), sem cortar o selo.
-- **Situação nunca só por cor:** ícone + texto do conteúdo (US-016). A caixinha da posição tem o código em texto, e a posição inteira para leitor de tela.
+- **Situação nunca só por cor:** ícone + texto do conteúdo (US-016). A caixinha da posição tem o código em texto, e a posição inteira para leitor de tela; a cor do setor só reforça. `ink` sobre os quatro `sector-*-soft` passa de 10:1 nos dois temas (conferido pelo `npm run tokens`).
 - **Faixa nunca só por cor:** o número está sempre escrito; na célula com faixa, o número visível é `aria-hidden` e o texto escondido diz "82, boa" (`level.reading`). Contraste dos três tokens ≥ 4,5:1 sobre `surface-1` e sobre `surface-2` (a linha com o ponteiro em cima), nos dois temas.
 - **Ordenação:** grupo de rádio nativo (setas do teclado trocam a opção); `aria-sort` no cabeçalho da coluna ordenada.
 - **Caixa da tabela** é uma região nomeada pela legenda e focável, para rolar pelo teclado.
@@ -159,6 +168,7 @@ Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão p
 9. **Abrir e voltar:** tocar numa linha abre o card; o voltar do navegador fecha e a URL continua `#/squad`.
 10. **Cores por faixa:** com um jogador forçado na fixture com condição 74, moral 60 e forma 5,5, as três células têm as classes `level-poor`, `level-good` e `level-fair`, com o número visível e o texto escondido "74, ruim", "60, boa" e "5,5, regular"; a forma "—" não tem classe de faixa. A cor computada de cada uma é a do token no tema.
 11. **Anel depois do toque:** com toque emulado (`hasTouch`), abrir o card tocando no nome e fechá-lo tocando no X deixa o foco no nome com `outline-style: none`; o mesmo caminho pelo teclado (Enter, Esc) deixa o anel (`outline-style: solid`). Rodar também no WebKit do CI, onde o defeito aparecia.
+12. **Cor de setor:** cada caixinha da posição tem a classe do setor de `SECTOR_OF` (`sector-gk` no GOL, `sector-def` em ZAG e LAT, `sector-mid` em VOL e MEI, `sector-atk` no ATA), com a cor computada do fundo e da borda iguais às dos tokens no tema, e o texto em `ink`.
 
 ## Marcas do cenário
 
@@ -170,4 +180,5 @@ Aprovadas em 2026-11-07, com a lista completa em [jogador.md](jogador.md#decisõ
 
 - **Realismo simplificado sem condição:** sem a coluna Cond. e sem a opção "Condição" no seletor.
 - **Card do jogador no desktop como diálogo** ancorado pela base, não painel lateral.
-- **Cores por faixa** (2026-11-07, depois de testar a T-028 no celular): verde, amarelo e vermelho nos números de condição, moral e forma, sempre com o número junto. Faixas e tokens acima; a cor da nota geral espera a decisão do CEO.
+- **Cores por faixa** (2026-11-07, depois de testar a T-028 no celular): verde, amarelo e vermelho nos números de condição, moral e forma, sempre com o número junto. Faixas e tokens acima.
+- **Cores de atributos, posição e nota** (2026-11-07, pela recomendação do `ux-designer`): a caixinha da posição ganha a cor do setor, só no fundo e na borda, com o texto em `ink` (8 tokens `sector-*`, componente `PositionTag`); a nota geral continua sem cor. Os atributos ganham cor só no card ([jogador.md](jogador.md#pontos-fortes-e-fracos)). Regra nova do design system: a cor de faixa só pinta números, e a cor de setor só pinta o fundo da sigla.

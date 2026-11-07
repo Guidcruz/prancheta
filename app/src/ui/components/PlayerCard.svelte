@@ -4,7 +4,7 @@
     label: string;
     value: string;
   }
-  import type { Level } from './levels';
+  import type { AttributeLevel, Level } from './levels';
 
   /**
    * One state with a bar: condition and morale (0..100), form (3..10, `valueText` "7,2"). With
@@ -21,22 +21,32 @@
     level?: Level;
     srText?: string;
   }
+  /**
+   * One of the 6 attributes (1..99). With `level` (`attributeLevelOf(value, overall)`: a strong
+   * or a weak point next to the player's own overall) the number takes `level-good` or
+   * `level-poor`, and `srText` says it in words ("78, ponto forte"). Near the overall, no colour
+   * and no `srText`.
+   */
   export interface CardAttribute {
     id: string;
     label: string;
     value: number;
+    level?: AttributeLevel;
+    srText?: string;
   }
 </script>
 
 <script lang="ts">
   import AttributeBar from './AttributeBar.svelte';
   import Avatar from './Avatar.svelte';
+  import PositionTag from './PositionTag.svelte';
+  import type { Sector } from './sectors';
   import StatusBadge, { type StatusBadgeItem } from './StatusBadge.svelte';
 
   /**
    * PlayerCard (CardJogador, variant `full`): everything the coach reads before picking an
    * athlete, as the body of the player's BottomSheet (the sheet's title is the name the squad row
-   * shows; `fullName` is the civil name under it). Avatar, position, facts, overall and badges on top; then the states, the 6
+   * shows; `fullName` is the civil name under it). Avatar, position (the PositionTag and the full name), facts, overall and badges on top; then the states, the 6
    * attributes of the position, the trait and the season. Two columns when the sheet is wide (a phone lying down,
    * the desktop dialog). Every text comes in translated; the potential has no prop, ever.
    */
@@ -49,6 +59,12 @@
     shirt?: string;
     /** "Atacante". */
     positionLabel: string;
+    /**
+     * "ATA" (position.ST.short) and `SECTOR_OF[player.position]`: the PositionTag before the full
+     * name, hidden from screen readers (the name says it). The screens always pass both.
+     */
+    positionCode: string;
+    sector: Sector;
     /** "23 anos", "Camisa 9". */
     facts: readonly CardFact[];
     overall: number;
@@ -71,6 +87,8 @@
     face,
     shirt,
     positionLabel,
+    positionCode,
+    sector,
     facts,
     overall,
     overallLabel,
@@ -93,7 +111,10 @@
   <div class="top">
     <Avatar {face} {shirt} size="xl" />
     <div class="id">
-      <p class="body-strong">{positionLabel}</p>
+      <p class="body-strong position">
+        <PositionTag code={positionCode} {sector} hidden />
+        <span>{positionLabel}</span>
+      </p>
       <p class="body muted facts">
         {#each facts as fact (fact.label)}
           <span class="fact-item">{fact.value}</span>
@@ -135,7 +156,13 @@
       <h3 class="rotulo heading">{attributesTitle}</h3>
       <dl>
         {#each attributes as attribute (attribute.id)}
-          <AttributeBar label={attribute.label} value={attribute.value} max={99} />
+          <AttributeBar
+            label={attribute.label}
+            value={attribute.value}
+            max={99}
+            level={attribute.level}
+            srText={attribute.srText}
+          />
         {/each}
       </dl>
     </section>
@@ -184,6 +211,12 @@
     flex-direction: column;
     gap: var(--space-1);
     min-width: 0;
+  }
+  .position {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
   }
   .facts {
     display: flex;

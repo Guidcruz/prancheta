@@ -598,6 +598,23 @@ Critérios: trocar por arrasto, por dois toques e por teclado; fora de posição
 - Regressão: `npm run test:all` verde (2305 testes do app); E2E Chromium com 129 passados e 7 pulados; `lineup.spec.ts` x3 sem instabilidade. QA: PASS. Code review: aprovado em 2 rodadas.
 - Manual (CEO): sensação do arrasto e da vibração no celular real, rolagem automática com o polegar, legibilidade do campo, iPhone (WebKit).
 
+### Cores nos atributos e na posição (US-016; `elenco.md`, `jogador.md`, `design-system.md`; decisão do CEO de 2026-11-07)
+
+- QA: PASS.
+- Unitário (`levels.test.ts`, `PositionTag.test.ts`, `squad.test.ts`, `club-screens.test.ts`):
+  - `attributeLevelOf` marca ponto forte com nota+5 ou mais e ponto fraco com nota−5 ou menos, relativo ao jogador; nunca `fair`; o goleiro segue a mesma regra;
+  - a leitura é "N, ponto forte/fraco"; atributo sem faixa lê só o número;
+  - `SECTOR_OF` cobre toda posição;
+  - `PositionTag` pinta só fundo e borda, com texto em `ink` e `aria-hidden`; a posição por extenso continua lida.
+- E2E (`club-squad.spec.ts`):
+  - medida 10: setor na sigla do Elenco e nota sem cor;
+  - medida 11: pontos fortes e fracos no card, atacante e goleiro;
+  - medida 12: sigla com setor no cabeçalho do card;
+  - medida 9: nota sem classe.
+- Contraste dos tokens `sector-*`: `npm run tokens`.
+- Totais: `test:all` com 2210 testes; E2E Chromium 93/7; `--repeat-each=3` 135/135.
+- Manual (CEO): as quatro cores de setor nos dois temas, no celular real; o âmbar do GOL ao lado de um número "regular" no tema noite; magenta contra violeta.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

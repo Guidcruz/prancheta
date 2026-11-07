@@ -2,7 +2,9 @@ import type { Locator, Page } from '@playwright/test';
 import {
   POTENTIAL_STORED_MAX,
   getStandings,
+  attributeKeysFor,
   isProspect,
+  validatePlayer,
   type GameState,
   type Player,
 } from '../../app/src/engine/index.ts';
@@ -82,6 +84,77 @@ async function tokenColor(page: Page, token: string): Promise<string> {
     probe.remove();
     return color;
   }, token);
+}
+
+const SECTOR_OF_CODE: Record<string, string> = {
+  GOL: 'gk',
+  ZAG: 'def',
+  LAT: 'def',
+  VOL: 'mid',
+  MEI: 'mid',
+  ATA: 'atk',
+};
+
+/** Confere a classe, o fundo, a borda e o texto de uma caixinha de posição contra os tokens. */
+async function expectSectorTag(page: Page, tag: Locator, sector: string): Promise<void> {
+  await expect(tag).toHaveClass(new RegExp(`sector-${sector}\\b`));
+  await expect(tag).toHaveCSS('background-color', await tokenColor(page, `sector-${sector}-soft`));
+  await expect(tag).toHaveCSS('border-top-color', await tokenColor(page, `sector-${sector}`));
+  await expect(tag).toHaveCSS('color', await tokenColor(page, 'ink'));
+}
+
+/**
+ * Atributos de um jogador com dois pontos fortes, um perto da nota, um fraco e dois sem faixa.
+ * O save recusa uma nota diferente da fórmula, então a nota vem do `validatePlayer` (o `range` do
+ * `overall-mismatch`). A busca varia a base e a força dos dois primeiros até as faixas saírem
+ * como o teste espera, o que depende dos pesos de cada posição.
+ */
+function forcedAttributes(player: Player): { overall: number; values: Record<string, number> } {
+  const keys = attributeKeysFor(player.position);
+  for (let strong = 8; strong <= 20; strong++) {
+    for (let near = -6; near <= 4; near++) {
+      const offsets = [strong, strong - 1, near, -8, 0, 0];
+      for (let base = 40; base <= 75; base++) {
+        const values = Object.fromEntries(keys.map((key, i) => [key, base + offsets[i]!]));
+        const checked = validatePlayer({ ...player, attributes: values, overall: base });
+        const issue = checked.ok
+          ? undefined
+          : checked.detail.find((d) => d.problem === 'overall-mismatch');
+        const overall = checked.ok ? base : issue?.range?.min;
+        if (overall === undefined) continue;
+        const [a, b, c, d, e, f] = Object.values(values).map((v) => v - overall);
+        if (
+          a! >= 5 &&
+          b! >= 5 &&
+          Math.abs(c!) < 5 &&
+          d! <= -5 &&
+          Math.abs(e!) < 5 &&
+          Math.abs(f!) < 5
+        ) {
+          return { overall, values };
+        }
+      }
+    }
+  }
+  throw new Error(`sem atributos coerentes para ${player.position}`);
+}
+
+/** Força um atacante e um goleiro com os atributos acima; devolve os nomes. */
+async function forceAttributes(page: Page): Promise<{ striker: string; keeper: string }> {
+  const names = { striker: '', keeper: '' };
+  await patchSave(page, (save) => {
+    const players = squadOf(save);
+    for (const [slot, position] of [
+      ['striker', 'ST'],
+      ['keeper', 'GK'],
+    ] as const) {
+      const player = players.find((p) => p.position === position)!;
+      const { overall, values } = forcedAttributes(player);
+      changePlayer(save, player.id, { overall, attributes: values });
+      names[slot] = player.name.display;
+    }
+  });
+  return names;
 }
 
 /**
@@ -426,6 +499,30 @@ test.describe('Elenco (elenco.md; US-016)', () => {
   });
 });
 
+test.describe('Cor de setor no Elenco (elenco.md, medida 12)', () => {
+  test('cada caixinha tem o setor da posição, no fundo e na borda, com o texto em ink', async ({
+    page,
+  }) => {
+    await startCareer(page);
+    await openSquad(page);
+    for (const theme of ['noite', 'dia'] as const) {
+      await setTheme(page, theme);
+      const tags = main(page).locator('tbody th[scope="row"] .tag');
+      const seen = new Set<string>();
+      for (let i = 0; i < (await tags.count()); i++) {
+        const tag = tags.nth(i);
+        const code = (await tag.textContent())!.trim();
+        const sector = SECTOR_OF_CODE[code]!;
+        expect(sector, code).toBeDefined();
+        seen.add(sector);
+        await expect(tag).toHaveAttribute('aria-hidden', 'true');
+        await expectSectorTag(page, tag, sector);
+      }
+      expect([...seen].sort()).toEqual(['atk', 'def', 'gk', 'mid']);
+    }
+  });
+});
+
 test.describe('Anel de foco só para o teclado (elenco.md, medida 11)', () => {
   test.use({ hasTouch: true });
   const dialog = (page: Page) => page.getByRole('dialog');
@@ -684,11 +781,7 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
         await expect(number).toHaveCSS('color', await tokenColor(page, `level-${level}`));
       }
     }
-    // Attributes and the overall rating carry no band.
-    const attributes = dialog(page).locator('section.block', {
-      has: page.getByRole('heading', { name: 'Atributos' }),
-    });
-    await expect(attributes.locator('[class*="level-"]')).toHaveCount(0);
+    // The overall rating carries no band.
     await expect(dialog(page).locator('.overall [class*="level-"]')).toHaveCount(0);
     // No games: the dash keeps no band.
     await page.keyboard.press('Escape');
@@ -697,5 +790,66 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     await expect(row('Forma (últimos 5 jogos)').locator('[class*="level-"]')).toHaveCount(0);
     await expect(row('Moral').locator('span.level-poor')).toHaveText('30');
     await expect(row('Condição').locator('span.level-good')).toHaveText('90');
+  });
+
+  for (const who of ['striker', 'keeper'] as const) {
+    test(`pontos fortes e fracos dos atributos: ${who} (medida 11)`, async ({ page }) => {
+      await startCareer(page);
+      const names = await forceAttributes(page);
+      await openSquad(page);
+      await page.getByRole('button', { name: names[who], exact: true }).click();
+      await expect(dialog(page)).toBeVisible();
+      const attributes = dialog(page).locator('section.block', {
+        has: page.getByRole('heading', { name: 'Atributos' }),
+      });
+      const rows = attributes.locator('.attr');
+      await expect(rows).toHaveCount(6);
+      const overall = Number(await dialog(page).locator('.overall .number').textContent());
+      const shown = await rows
+        .locator('.numero')
+        .allTextContents()
+        .then((l) => l.map(Number));
+      const gaps = shown.map((v) => v - overall);
+      expect(gaps[0]).toBeGreaterThanOrEqual(5);
+      expect(gaps[1]).toBeGreaterThanOrEqual(5);
+      expect(Math.abs(gaps[2]!)).toBeLessThan(5);
+      expect(gaps[3]).toBeLessThanOrEqual(-5);
+      const expected = [
+        ['good', String(shown[0]), `${shown[0]}, ponto forte`],
+        ['good', String(shown[1]), `${shown[1]}, ponto forte`],
+        [undefined, String(shown[2]), undefined],
+        ['poor', String(shown[3]), `${shown[3]}, ponto fraco`],
+        [undefined, String(shown[4]), undefined],
+        [undefined, String(shown[5]), undefined],
+      ] as const;
+      for (const theme of ['noite', 'dia'] as const) {
+        await setTheme(page, theme);
+        for (const [i, [level, text, sr]] of expected.entries()) {
+          const number = rows.nth(i).locator('.numero');
+          await expect(number).toHaveText(text);
+          if (level === undefined) {
+            await expect(number).not.toHaveClass(LEVEL_CLASS);
+            await expect(rows.nth(i).locator('.visually-hidden')).toHaveCount(0);
+          } else {
+            await expect(number).toHaveClass(new RegExp(`level-${level}`));
+            await expect(rows.nth(i).locator('.visually-hidden')).toHaveText(sr!);
+            await expect(number).toHaveCSS('color', await tokenColor(page, `level-${level}`));
+          }
+        }
+      }
+      await expect(attributes.locator('.level-fair')).toHaveCount(0);
+      await expect(dialog(page).locator('.overall [class*="level-"]')).toHaveCount(0);
+    });
+  }
+
+  test('sigla no cabeçalho com o setor do jogador (medida 12)', async ({ page }) => {
+    await startCareer(page);
+    await openSquad(page);
+    await main(page).locator('tbody th[scope="row"] button').first().click();
+    await expect(dialog(page)).toBeVisible();
+    const tag = dialog(page).locator('.tag');
+    await expect(tag).toHaveAttribute('aria-hidden', 'true');
+    const code = (await tag.textContent())!.trim();
+    await expectSectorTag(page, tag, SECTOR_OF_CODE[code]!);
   });
 });
