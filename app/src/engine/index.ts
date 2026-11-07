@@ -40,6 +40,7 @@ export {
 } from './season.ts';
 export { matchSheet, roundRecap } from './recap.ts';
 export { fanMood } from './fans.ts';
+export { draftFromSheet } from './lineup.ts';
 
 // ---------------------------------------------------------------- contract: closed lists and ranges
 // What the interface and the save schema (valibot, T-019) read instead of retyping them.
@@ -134,7 +135,7 @@ export type {
 } from './params.ts';
 export type { ClubState, GameRules, GameState, NewGameSetup } from './game.ts';
 export type { Fixture } from './fixtures.ts';
-export type { Lineup, Tactic, TeamSheet } from './lineup.ts';
+export type { DraftLineup, DraftSheet, Lineup, Tactic, TeamSheet } from './lineup.ts';
 export type { SheetProblem, SuggestOptions, SuggestState, ValidateLineupResult } from './ai.ts';
 export type { ShownState } from './strength.ts';
 export type {
