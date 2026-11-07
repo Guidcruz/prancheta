@@ -581,6 +581,15 @@ Cenários cobertos (todos automatizados, em `app/src/engine/`):
 - Contrato: `CONTRACT` de `index.test.ts` com os sete valores novos.
 - Regressão: goldens (inclusive no Chromium) sem mudança e balance de release (1.000 temporadas, semente 1, robô no mais fraco) idêntico ao da `main`, menos a linha do tempo.
 
+### QA da T-029 (Escalação, US-017)
+
+Critérios: trocar por arrasto, por dois toques e por teclado; fora de posição; recusa de inapto; escalação incompleta e "Completar e jogar"; "Deixar de fora" e vaga livre; Sugerir e Desfazer; ficha no save (`busy`, aviso de falha); sem ficha joga a sugestão do motor.
+
+- E2E (`tests/e2e/lineup.spec.ts`, Chromium mobile e desktop; WebKit só no CI, com o arrasto por toque só no Chromium): medidas 1 a 16 de `docs/design/telas/escalacao.md`, mais voltar do navegador com o card aberto, toque duplo em "Completar e jogar" e "Ajustar a escalação".
+- Unitário: `app/src/ui/lineup.test.ts` (troca, recusa, força, avisos, nomes acessíveis, Sugerir e Completar, ficha intocada = rodada jogada), `lineup-screens.test.ts` (estados, aviso de falha de gravação), `draft-writer.test.ts` (`busy`), `lineup-drag.test.ts` (6 px no mouse, 300 ms e folga de 8 px no toque, Esc, segundo dedo, rolagem na borda), `engine/lineup.test.ts` e `lib/career/t075.acceptance.test.ts`.
+- Regressão: `npm run test:all` verde (2305 testes do app); E2E Chromium com 129 passados e 7 pulados; `lineup.spec.ts` x3 sem instabilidade. QA: PASS. Code review: aprovado em 2 rodadas.
+- Manual (CEO): sensação do arrasto e da vibração no celular real, rolagem automática com o polegar, legibilidade do campo, iPhone (WebKit).
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.
