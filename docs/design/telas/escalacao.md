@@ -8,7 +8,7 @@ Montar os 11 titulares e o banco com uma mão, vendo na hora o efeito de cada tr
 
 ## O que o jogador faz
 
-Troca dois lugares (titular, banco ou não relacionado) de três jeitos que dão o mesmo resultado: arrasta um jogador sobre outro; toca num e depois no outro; ou, pelo teclado, Enter num e Enter no outro. Vê a força por setor mudar, lê os avisos (fora de posição, lesionado, vaga livre) e, se quiser, toca "Sugerir escalação". Tudo vale na hora, sem "Salvar".
+Troca dois lugares (titular, banco ou não relacionado) de três jeitos que dão o mesmo resultado: arrasta um jogador sobre outro; toca num e depois no outro; ou, pelo teclado, Enter num e Enter no outro. Para tirar alguém do campo ou do banco sem pôr ninguém no lugar, leva-o do mesmo jeito a "Deixar de fora", a primeira linha dos Não relacionados. Vê a força por setor mudar, lê os avisos (fora de posição, lesionado, vaga livre) e, se quiser, toca "Sugerir escalação". Tudo vale na hora, sem "Salvar".
 
 ## Navegação
 
@@ -27,7 +27,7 @@ Troca dois lugares (titular, banco ou não relacionado) de três jeitos que dão
 6. **Avisos da escalação** (LineupIssues, título `lineup.issues.title`): uma linha por aviso, com ícone e texto completo: vaga sem jogador, titular lesionado ou suspenso, fora de posição ("Lauro Quintela (ZAG) jogando de ATA"), improvisado e ídolo fora do time. Sem avisos, a seção não aparece.
 7. **"Sugerir escalação"** (Button secundário, ícone `suggest`).
 8. **Banco** (LineupGroup + LineupRow): título "Banco" com "6 de 7", os cabeçalhos "Nota" e "Cond." e os reservas por posição (GOL a ATA, dentro da posição pela nota). As vagas livres do banco aparecem como linhas tracejadas "Vaga no banco", que também recebem um jogador.
-9. **Não relacionados** (LineupGroup + LineupRow): o resto do elenco, na mesma ordem, com os selos da T-028 (lesionado, suspenso, promessa).
+9. **Não relacionados** (LineupGroup + LineupRow): primeiro a linha tracejada **"Deixar de fora"** (o lugar livre dos não relacionados; ver "Mudar de lugar sem troca"), depois o resto do elenco, na mesma ordem, com os selos da T-028 (lesionado, suspenso, promessa). Com 18 jogadores ou menos no elenco, a seção tem só essa linha.
 10. **Barra de estado** (LineupStatusBar), presa embaixo, acima de "Jogar rodada" (ver "Barra de estado").
 
 Não há botão primário na tela: o primário continua sendo "Jogar rodada".
@@ -72,7 +72,9 @@ Níveis de posição (jogadores.md, "Jogador fora da posição"): `fit` 1,00 sem
 
 ## Trocar lugares
 
-Um lugar é uma vaga do campo (11), uma vaga do banco (7) ou um não relacionado. Toda troca é entre dois lugares: os dois jogadores trocam de lugar; se um dos lugares está livre, o jogador só muda de lugar e o de origem fica livre.
+Um lugar é uma vaga do campo (11), uma vaga do banco (7), um não relacionado ou o lugar livre "Deixar de fora" (sempre um, no topo dos Não relacionados). Toda troca é entre dois lugares: os dois jogadores trocam de lugar; se um dos lugares está livre, o jogador só muda de lugar e o de origem fica livre (ver "Mudar de lugar sem troca").
+
+Um lugar livre (vaga livre do campo, vaga no banco, "Deixar de fora") nunca fica selecionado: só recebe. Tocá-lo sem ninguém selecionado não muda nada e a barra diz `lineup.select.first` ("Toque antes num jogador e depois aqui.").
 
 ### Em dois toques (o caminho de base; também teclado e leitor de tela)
 
@@ -89,7 +91,24 @@ Um lugar é uma vaga do campo (11), uma vaga do banco (7) ou um não relacionado
 - **Toque e caneta:** o arrasto começa depois de **segurar 300ms** sem mexer mais de 8px; antes disso, deslizar rola a página (o campo ocupa quase a tela toda e não pode prender a rolagem). Ao começar, vibração curta onde houver (`navigator.vibrate(10)`, opcional).
 - Durante o arrasto: uma cópia do jogador (LineupChip `ghost`, com `shadow-lift`) segue o dedo, **48px acima do ponto de toque** para o dedo não cobrir; o lugar de origem fica tracejado (`origin`); o lugar sob o dedo fica com borda `grass`, fundo `grass-soft` e o ícone de troca (`target`). Perto da borda de cima ou de baixo da janela, a página rola sozinha (o banco fica abaixo do campo no celular).
 - Soltar num lugar = a mesma troca dos dois toques. Soltar fora de um lugar, Esc ou um segundo dedo cancela, sem troca.
-- O teste de colisão usa `data-slot` (vagas do campo) e `data-place` (`bench-0..6`, `out-0..n`).
+- O teste de colisão usa `data-slot` (vagas do campo) e `data-place` (`bench-0..6`, `out-free`, `out-0..n`).
+
+### Mudar de lugar sem troca
+
+Os mesmos três jeitos (dois toques, teclado, arrasto), com um lugar livre como destino. A barra diz para onde o jogador foi, seguida da mudança da força, como numa troca:
+
+| De                                   | Para                | Barra                                                                                                                               |
+| ------------------------------------ | ------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| banco, não relacionado ou outra vaga | vaga livre do campo | `lineup.move.pitch`: "Ildo Albuquerque foi para a vaga de ZAG." (`{position}` = código curto da vaga, como em `lineup.issue.empty`) |
+| campo ou não relacionado             | vaga no banco       | `lineup.move.bench`: "Ildo Albuquerque foi para o banco."                                                                           |
+| campo ou banco                       | "Deixar de fora"    | `lineup.move.out`: "Ildo Albuquerque foi para os não relacionados."                                                                 |
+| banco                                | outra vaga no banco | nada muda (o banco é ordenado por posição); a seleção some e a barra fica vazia                                                     |
+| não relacionado                      | "Deixar de fora"    | nada muda; a seleção some e a barra fica vazia (como tocar de novo no selecionado)                                                  |
+
+- **"Deixar de fora"** é uma LineupRow livre, igual à "Vaga no banco" (borda tracejada, fundo `surface-0`, texto em `ink-muted`, sem código de posição nem números), com o texto `lineup.out.free` e o nome acessível `lineup.out.freeA11y`. Fica sempre no DOM e sempre no mesmo lugar, para o banco e a lista não pularem quando se seleciona alguém.
+- Durante o arrasto de um titular ou reserva, "Deixar de fora" vira destino (`target`) como qualquer lugar. Arrastando um não relacionado, ela não acende e soltar nela cancela.
+- O jogador que sai vai para a sua linha nos Não relacionados, na ordem da lista (posição e nota); a vaga de origem fica livre ("Vaga livre" ou "Vaga no banco"). Quem sai do campo sai das listas de capitão e cobradores, como numa troca.
+- O lesionado ou suspenso pode ir para "Deixar de fora" sem recusa: é o jeito de tirá-lo do banco sem pôr ninguém no lugar.
 
 ### Recusa
 
@@ -113,6 +132,8 @@ A LineupStatusBar fica no fim da tela, presa ao pé (`position: sticky`), acima 
 | -------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------- |
 | Jogador selecionado                                                                    | "{nome} selecionado" + "Toque em outro lugar para trocar." | Ver card · Cancelar |
 | Troca feita                                                                            | "{a} e {b} trocaram de lugar." + mudança da força          | —                   |
+| Jogador mudou para um lugar livre                                                      | `lineup.move.pitch`, `.bench` ou `.out` + mudança da força | —                   |
+| Lugar livre tocado sem ninguém selecionado                                             | "Toque antes num jogador e depois aqui."                   | —                   |
 | Recusa                                                                                 | "{nome} está lesionado e não pode ser escalado."           | —                   |
 | Depois de "Sugerir escalação" (poupando alguém: "Escalação sugerida. Poupou {nomes}.") | "Escalação sugerida."                                      | Desfazer            |
 | Depois de "Completar automaticamente"                                                  | "Escalação completada."                                    | Desfazer            |
@@ -137,6 +158,7 @@ A LineupStatusBar fica no fim da tela, presa ao pé (`position: sticky`), acima 
 | **Vazio**                            | Só se o jogador tirar todos do campo: as 11 vagas tracejadas "Vaga livre", o Banner "Faltam 11 titulares" com "Completar automaticamente".                                                                                                                                                                |
 | **Incompleta (vaga livre)**          | Vaga tracejada no campo; Banner `warning` "Escalação incompleta · Falta 1 titular." com a ação "Completar automaticamente"; aviso "Vaga de ZAG sem jogador"; "Jogar rodada" com a linha de motivo `play.blocked.lineup`.                                                                                  |
 | **Lesionado ou suspenso escalado**   | Acontece quando a rodada anterior lesiona ou suspende um titular ou reserva. Marca "Lesionado, 2 rodadas" na vaga (ou selo na linha do banco); aviso "Ícaro Tavernard (MEI) está lesionado, 2 rodadas"; o mesmo Banner e o mesmo bloqueio. Um não relacionado lesionado não bloqueia nada.                |
+| **Banco incompleto ou vazio**        | As vagas que faltam aparecem como "Vaga no banco" e o título conta ("3 de 7"). Só informa: o banco pode ter de 0 a 7 (`validateLineup`), não há aviso e a rodada não bloqueia.                                                                                                                            |
 | **Fora de posição ou improvisado**   | Só informa: marca na vaga e aviso com as duas posições. Não bloqueia a rodada.                                                                                                                                                                                                                            |
 | **Titular cansado** (só no Completo) | Aviso informativo `lineup.issue.tired` para cada titular com condição abaixo de 85 (o limiar de `ai.rotationCondition`): "Juca Pimentel está cansado (condição 79): rende menos e se machuca mais." Não bloqueia. No Simplificado não existe (a condição é sempre 100).                                   |
 | **Ídolo fora do time**               | Aviso informativo `lineup.issue.idol` (a torcida esfria a partir da 2ª rodada seguida sem ele; torcida.md). Não bloqueia.                                                                                                                                                                                 |
@@ -169,12 +191,12 @@ O botão continua tocável, com a linha de motivo "Escalação incompleta" (nave
 ## Acessibilidade
 
 - **Alvos:** cada vaga ≥ 75 × 52px a 360px; linhas das listas ≥ 44px; ações da barra 44 × 44px; link "Mudar na Tática" ≥ 44px de altura.
-- **Nomes acessíveis** (montados pela tela com o conteúdo): vaga "Zagueiro: Quirino Bastos, nota 68, condição 92, capitão, fora de posição"; vaga livre "Zagueiro: vaga livre"; linha "Brenno Sá, Zagueiro, nota 63, condição 100, lesionado, 3 rodadas"; vaga livre do banco "Vaga no banco, livre".
+- **Nomes acessíveis** (montados pela tela com o conteúdo): vaga "Zagueiro: Quirino Bastos, nota 68, condição 92, capitão, fora de posição"; vaga livre "Zagueiro: vaga livre"; linha "Brenno Sá, Zagueiro, nota 63, condição 100, lesionado, 3 rodadas"; vaga livre do banco "Vaga no banco, livre"; "Deixar de fora" com `lineup.out.freeA11y` ("Deixar de fora: tirar do campo ou do banco sem trocar"). Um lugar livre não tem `aria-pressed` (nunca fica selecionado).
 - **Seleção** com `aria-pressed`, marca visível e borda; nunca só cor. Destino do arrasto com ícone de troca.
 - **Marcas** com ícone e texto (US-017: "a posição mostra um ícone e o texto"); os avisos repetem tudo em texto corrido.
 - **Região viva única:** a barra de estado. A StrengthBars não tem região própria: a mensagem da troca já diz o que mudou.
 - **Campo** é um `role="group"` com nome "Campo, formação 4-4-2"; as vagas são uma lista ordenada (`ol`) na ordem das vagas do motor. As marcações do campo são `aria-hidden`.
-- **Foco:** depois de uma troca, o foco fica no lugar onde o jogador chegou (o segundo toque); depois de uma recusa, no lugar que recusou; ao fechar o card, volta ao botão "Ver card" ou ao lugar de origem.
+- **Foco:** depois de uma troca, o foco fica no lugar do segundo toque (onde o jogador chegou; em "Deixar de fora", a própria linha, que continua no lugar, e o jogador vai para a sua linha da lista); depois de uma recusa, no lugar que recusou; ao fechar o card, volta ao botão "Ver card" ou ao lugar de origem.
 - **Contraste:** todo texto da vaga está sobre `surface-1`, `surface-2`, `surface-0`, `grass-soft` (só em `ink`), `danger-soft` ou `floodlight`, pares conferidos pelo `npm run tokens`. No destino do arrasto (`grass-soft`) o código da posição passa a `ink`.
 - **Zoom:** a tela não tem campo de texto.
 
@@ -236,9 +258,12 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. Usam também `position.*`,
 | `lineup.select.card`               | Ver card                                                                                                                                                                                                     | ação da barra                                            |
 | `lineup.select.cancel`             | Cancelar                                                                                                                                                                                                     | ação da barra                                            |
 | `lineup.swap.done`                 | {a} e {b} trocaram de lugar.                                                                                                                                                                                 | barra                                                    |
-| `lineup.move.done`                 | {name} foi para {place}.                                                                                                                                                                                     | barra (lugar livre)                                      |
-| `lineup.place.bench`               | o banco                                                                                                                                                                                                      | `{place}`                                                |
-| `lineup.place.out`                 | os não relacionados                                                                                                                                                                                          | `{place}`                                                |
+| `lineup.move.pitch`                | {name} foi para a vaga de {position}.                                                                                                                                                                        | barra (vaga livre do campo); **nova**                    |
+| `lineup.move.bench`                | {name} foi para o banco.                                                                                                                                                                                     | barra (vaga no banco)                                    |
+| `lineup.move.out`                  | {name} foi para os não relacionados.                                                                                                                                                                         | barra ("Deixar de fora")                                 |
+| `lineup.out.free`                  | Deixar de fora                                                                                                                                                                                               | lugar livre dos não relacionados; **nova**               |
+| `lineup.out.freeA11y`              | Deixar de fora: tirar do campo ou do banco sem trocar                                                                                                                                                        | nome acessível desse lugar; **nova**                     |
+| `lineup.select.first`              | Toque antes num jogador e depois aqui.                                                                                                                                                                       | barra (lugar livre tocado sem seleção); **nova**         |
 | `lineup.strength.changed`          | {sector} {value}, {change}.                                                                                                                                                                                  | acrescentado à mensagem da troca                         |
 | `lineup.refuse.injured`            | {name} está lesionado e não pode ser escalado.                                                                                                                                                               | barra (recusa)                                           |
 | `lineup.refuse.suspended`          | {name} está suspenso e não pode ser escalado.                                                                                                                                                                | barra (recusa)                                           |
@@ -276,13 +301,14 @@ Com `PRANCHETA_ENV=test`, uma carreira de teste com fixture conhecida (4-4-2, um
 6. **Arrastar (US-017, "trocar titular por reserva"):** no Chromium desktop, arrastar com o mouse um reserva até uma vaga dá o mesmo resultado do item 4. No Chromium celular, pressionar um reserva por 400ms e mover até a vaga dá o mesmo resultado; deslizar sem segurar rola a página (o `scrollY` muda e a escalação não).
 7. **Fora de posição (US-017):** a vaga com o zagueiro na posição de atacante tem um `svg` e o texto visível "Fora de posição"; a lista de avisos tem "(ZAG) jogando de ATA".
 8. **Recusa (US-017):** tentar levar o lesionado para o campo (dois toques) e para o banco: a escalação não muda (mesmos 18 nomes nos mesmos lugares), a barra tem "está lesionado e não pode ser escalado" e a linha do atleta tem o motivo; idem para o suspenso.
-9. **Incompleta (US-017):** mover um titular para uma vaga livre do banco deixa "Vaga livre" no campo e o Banner; tocar "Jogar rodada" abre a folha "Escalação incompleta" com "Completar e jogar"; "Completar e jogar" joga a rodada com 11 titulares (o resumo da rodada abre), e a escalação salva tem 11 aptos.
+9. **Incompleta (US-017):** levar um titular a "Deixar de fora" deixa "Vaga livre" no campo e o Banner; tocar "Jogar rodada" abre a folha "Escalação incompleta" com "Completar e jogar"; "Completar e jogar" joga a rodada com 11 titulares (o resumo da rodada abre), e a escalação salva tem 11 aptos.
 10. **Sugerir e desfazer:** "Sugerir escalação" mantém a formação, a barra mostra "Desfazer"; "Desfazer" volta exatamente à escalação anterior.
 11. **Persistência:** recarregar a página depois de uma troca mostra a mesma escalação (depende da ficha do técnico no save, do ADR em preparação).
 12. **Simplificado:** sem "Cond." nas listas e nenhuma vaga com barra de condição; nenhum selo de lesão ou suspensão.
 13. **Movimento:** com `reducedMotion: 'reduce'`, a barra da força tem `transition-duration` 0s.
 14. **Capitão:** a vaga do capitão tem o "C" e o nome acessível contém "capitão".
 15. **Força (decisão 8):** na fixture do Completo, um titular com condição abaixo de 85 aparece no aviso "está cansado"; mover um titular para o banco (vaga livre) não aumenta nenhum dos quatro números; "O que conta na Força" abre a explicação (`aria-expanded` muda) e o texto do Simplificado não fala de cansaço.
+16. **Mudar sem troca:** "Deixar de fora" é a primeira linha de Não relacionados, tem ≥ 44px e `data-place="out-free"`. (a) Dois toques: um titular e depois "Deixar de fora": a vaga mostra "Vaga livre", o jogador aparece nos Não relacionados e a barra tem "foi para os não relacionados"; o número de linhas de jogador dos Não relacionados sobe 1. (b) Teclado: um reserva, Enter, Tab até "Deixar de fora", Enter: o banco ganha uma "Vaga no banco", o título passa a "6 de 7" e a barra diz "foi para os não relacionados". (c) Arrasto (mouse no desktop, segurar 400ms no celular): de um titular até "Deixar de fora", mesmo resultado de (a). (d) Um não relacionado (Tab, Enter) para a "Vaga livre" de (a): a barra tem "foi para a vaga de" e o código da vaga, e o campo volta a ter 11. (e) Tocar "Deixar de fora" sem seleção não muda a escalação e a barra tem "Toque antes num jogador". (f) Levar os 7 reservas a "Deixar de fora": o banco mostra 7 "Vaga no banco", "0 de 7", e o Banner de escalação incompleta não aparece.
 
 ## Marcas do cenário
 
