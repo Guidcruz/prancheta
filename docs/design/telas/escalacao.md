@@ -74,11 +74,11 @@ Níveis de posição (jogadores.md, "Jogador fora da posição"): `fit` 1,00 sem
 
 Um lugar é uma vaga do campo (11), uma vaga do banco (7), um não relacionado ou o lugar livre "Deixar de fora" (sempre um, no topo dos Não relacionados). Toda troca é entre dois lugares: os dois jogadores trocam de lugar; se um dos lugares está livre, o jogador só muda de lugar e o de origem fica livre (ver "Mudar de lugar sem troca").
 
-Um lugar livre (vaga livre do campo, vaga no banco, "Deixar de fora") nunca fica selecionado: só recebe. Tocá-lo sem ninguém selecionado não muda nada e a barra diz `lineup.select.first` ("Toque antes num jogador e depois aqui.").
+Um lugar livre (vaga livre do campo, vaga no banco, "Deixar de fora") nunca fica selecionado: só recebe. Tocá-lo sem ninguém selecionado não muda nada e a barra diz `lineup.select.first` ("Selecione antes um jogador e depois use esta opção.").
 
 ### Em dois toques (o caminho de base; também teclado e leitor de tela)
 
-1. Toque num jogador (ou Enter/Espaço com o foco nele): ele fica **selecionado** (borda `floodlight`, marca de "check" no topo, `aria-pressed="true"`), e a barra de estado diz "Ildo Albuquerque selecionado · Toque em outro lugar para trocar", com "Ver card" e "Cancelar".
+1. Toque num jogador (ou Enter/Espaço com o foco nele): ele fica **selecionado** (borda `floodlight`, marca de "check" no topo, `aria-pressed="true"`), e a barra de estado diz "Ildo Albuquerque selecionado · Selecione outro lugar para trocar.", com "Ver card" e "Cancelar".
 2. Toque em outro lugar (ou Enter nele): a troca acontece, a seleção some e a barra anuncia o resultado ("Ildo Albuquerque e Reinor Alcântara trocaram de lugar. Ataque 64, caiu 3.").
 
 - Tocar de novo no selecionado, tocar "Cancelar" ou Esc desfaz a seleção, sem troca.
@@ -128,16 +128,16 @@ As listas de capitão e cobradores são de titulares ([funcoes.md](funcoes.md)).
 
 A LineupStatusBar fica no fim da tela, presa ao pé (`position: sticky`), acima de "Jogar rodada" e da barra de abas no celular, e no pé da coluna a partir de 900px. Ela é a região viva (`role="status"`, educada) da tela e está sempre no DOM, também vazia. Mostra uma coisa por vez:
 
-| Situação                                                                               | Texto                                                      | Ações               |
-| -------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------------------- |
-| Jogador selecionado                                                                    | "{nome} selecionado" + "Toque em outro lugar para trocar." | Ver card · Cancelar |
-| Troca feita                                                                            | "{a} e {b} trocaram de lugar." + mudança da força          | —                   |
-| Jogador mudou para um lugar livre                                                      | `lineup.move.pitch`, `.bench` ou `.out` + mudança da força | —                   |
-| Lugar livre tocado sem ninguém selecionado                                             | "Toque antes num jogador e depois aqui."                   | —                   |
-| Recusa                                                                                 | "{nome} está lesionado e não pode ser escalado."           | —                   |
-| Depois de "Sugerir escalação" (poupando alguém: "Escalação sugerida. Poupou {nomes}.") | "Escalação sugerida."                                      | Desfazer            |
-| Depois de "Completar automaticamente"                                                  | "Escalação completada."                                    | Desfazer            |
-| Nada                                                                                   | (vazia, sem caixa)                                         | —                   |
+| Situação                                                                               | Texto                                                       | Ações               |
+| -------------------------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------- |
+| Jogador selecionado                                                                    | "{nome} selecionado" + "Selecione outro lugar para trocar." | Ver card · Cancelar |
+| Troca feita                                                                            | "{a} e {b} trocaram de lugar." + mudança da força           | —                   |
+| Jogador mudou para um lugar livre                                                      | `lineup.move.pitch`, `.bench` ou `.out` + mudança da força  | —                   |
+| Lugar livre tocado sem ninguém selecionado                                             | "Selecione antes um jogador e depois use esta opção."       | —                   |
+| Recusa                                                                                 | "{nome} está lesionado e não pode ser escalado."            | —                   |
+| Depois de "Sugerir escalação" (poupando alguém: "Escalação sugerida. Poupou {nomes}.") | "Escalação sugerida."                                       | Desfazer            |
+| Depois de "Completar automaticamente"                                                  | "Escalação completada."                                     | Desfazer            |
+| Nada                                                                                   | (vazia, sem caixa)                                          | —                   |
 
 - Abaixo de 480px de largura, as ações mostram só o ícone (o rótulo continua como nome acessível); com a tela baixa (celular deitado), a segunda linha some (continua ligada por `aria-describedby`) e a barra fica com uma linha só.
 - "Desfazer" volta à escalação de antes da última ação automática (um nível só) e some na próxima troca.
@@ -191,7 +191,7 @@ O botão continua tocável, com a linha de motivo "Escalação incompleta" (nave
 ## Acessibilidade
 
 - **Alvos:** cada vaga ≥ 75 × 52px a 360px; linhas das listas ≥ 44px; ações da barra 44 × 44px; link "Mudar na Tática" ≥ 44px de altura.
-- **Nomes acessíveis** (montados pela tela com o conteúdo): vaga "Zagueiro: Quirino Bastos, nota 68, condição 92, capitão, fora de posição"; vaga livre "Zagueiro: vaga livre"; linha "Brenno Sá, Zagueiro, nota 63, condição 100, lesionado, 3 rodadas"; vaga livre do banco "Vaga no banco, livre"; "Deixar de fora" com `lineup.out.freeA11y` ("Deixar de fora: tirar do campo ou do banco sem trocar"). Um lugar livre não tem `aria-pressed` (nunca fica selecionado).
+- **Nomes acessíveis** (montados pela tela com o conteúdo): vaga "Zagueiro: Quirino Bastos, nota 68, condição 92, capitão, fora de posição"; vaga livre "Zagueiro: vaga livre"; linha "Brenno Sá, Zagueiro, nota 63, condição 100, lesionado, 3 rodadas"; vaga livre do banco "Vaga no banco, livre"; "Deixar de fora" com `lineup.out.freeA11y` ("Deixar de fora. Tira o jogador do campo ou do banco, sem trocar."). Um lugar livre não tem `aria-pressed` (nunca fica selecionado).
 - **Seleção** com `aria-pressed`, marca visível e borda; nunca só cor. Destino do arrasto com ícone de troca.
 - **Marcas** com ícone e texto (US-017: "a posição mostra um ícone e o texto"); os avisos repetem tudo em texto corrido.
 - **Região viva única:** a barra de estado. A StrengthBars não tem região própria: a mensagem da troca já diz o que mudou.
@@ -254,7 +254,7 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. Usam também `position.*`,
 | `lineup.row.a11y`                  | {name}, {position}, nota {overall}                                                                                                                                                                           | nome da linha (Simplificado)                             |
 | `lineup.row.a11yCondition`         | {name}, {position}, nota {overall}, condição {condition}                                                                                                                                                     | nome da linha (Completo)                                 |
 | `lineup.select.selected`           | {name} selecionado                                                                                                                                                                                           | barra                                                    |
-| `lineup.select.hint`               | Toque em outro lugar para trocar.                                                                                                                                                                            | barra, 2ª linha                                          |
+| `lineup.select.hint`               | Selecione outro lugar para trocar.                                                                                                                                                                           | barra, 2ª linha                                          |
 | `lineup.select.card`               | Ver card                                                                                                                                                                                                     | ação da barra                                            |
 | `lineup.select.cancel`             | Cancelar                                                                                                                                                                                                     | ação da barra                                            |
 | `lineup.swap.done`                 | {a} e {b} trocaram de lugar.                                                                                                                                                                                 | barra                                                    |
@@ -262,8 +262,8 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. Usam também `position.*`,
 | `lineup.move.bench`                | {name} foi para o banco.                                                                                                                                                                                     | barra (vaga no banco)                                    |
 | `lineup.move.out`                  | {name} foi para os não relacionados.                                                                                                                                                                         | barra ("Deixar de fora")                                 |
 | `lineup.out.free`                  | Deixar de fora                                                                                                                                                                                               | lugar livre dos não relacionados; **nova**               |
-| `lineup.out.freeA11y`              | Deixar de fora: tirar do campo ou do banco sem trocar                                                                                                                                                        | nome acessível desse lugar; **nova**                     |
-| `lineup.select.first`              | Toque antes num jogador e depois aqui.                                                                                                                                                                       | barra (lugar livre tocado sem seleção); **nova**         |
+| `lineup.out.freeA11y`              | Deixar de fora. Tira o jogador do campo ou do banco, sem trocar.                                                                                                                                             | nome acessível desse lugar; **nova**                     |
+| `lineup.select.first`              | Selecione antes um jogador e depois use esta opção.                                                                                                                                                          | barra (lugar livre tocado sem seleção); **nova**         |
 | `lineup.strength.changed`          | {sector} {value}, {change}.                                                                                                                                                                                  | acrescentado à mensagem da troca                         |
 | `lineup.refuse.injured`            | {name} está lesionado e não pode ser escalado.                                                                                                                                                               | barra (recusa)                                           |
 | `lineup.refuse.suspended`          | {name} está suspenso e não pode ser escalado.                                                                                                                                                                | barra (recusa)                                           |
