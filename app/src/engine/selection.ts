@@ -125,3 +125,60 @@ export function replaceUnavailable<T extends Player>(
     if (reserve !== undefined) bench.splice(bench.indexOf(reserve), 1);
   }
 }
+
+/**
+ * Steps 1 to 3 of the formation change (partida.md, "Troca de formação durante o jogo"), shared by
+ * the match (`changeFormation`, match/team.ts; T-012) and the change before the match
+ * (`reshapeLineup`, draft.ts; T-076), so both move players by the same rule:
+ * 1. in the slot order of the current formation (`from[i]` is the position of the slot of
+ *    `occupants[i]`), each occupant takes the first free slot of `to` with the **same position**
+ *    as the slot he is in (so whoever is in goal stays there, even an outfield player);
+ * 2. in the slot order of `to`, each slot still free gets, among those left over, the one with the
+ *    highest `eff` there; ties by {@link winsTie} (higher overall, then younger, then lower ID),
+ *    with the index in the list of those left over as the fallback;
+ * 3. with N occupants, exactly `to.length − N` slots stay empty: the last free ones of step 2.
+ *
+ * Pure: returns the occupants of the `to` slots (`undefined` = empty) and changes nothing. `tie`
+ * reads the tie-break fields of an occupant.
+ */
+export function reshapeSlots<T>(
+  occupants: readonly (T | undefined)[],
+  from: readonly Position[],
+  to: readonly Position[],
+  eff: (occupant: T, slot: Position) => number,
+  tie: (occupant: T) => Pick<Player, 'overall' | 'age' | 'id'>,
+): (T | undefined)[] {
+  const placed = new Array<T | undefined>(to.length).fill(undefined);
+  const leftover: T[] = [];
+  for (let i = 0; i < occupants.length; i++) {
+    const occupant = occupants[i];
+    if (occupant === undefined) continue;
+    let target = -1;
+    for (let j = 0; j < to.length; j++) {
+      if (placed[j] === undefined && to[j] === from[i]) {
+        target = j;
+        break;
+      }
+    }
+    if (target >= 0) placed[target] = occupant;
+    else leftover.push(occupant);
+  }
+  for (let j = 0; j < to.length && leftover.length > 0; j++) {
+    if (placed[j] !== undefined) continue;
+    let best = 0;
+    let bestValue = eff(leftover[0]!, to[j]!);
+    for (let k = 1; k < leftover.length; k++) {
+      const value = eff(leftover[k]!, to[j]!);
+      if (
+        value > bestValue ||
+        (value === bestValue && winsTie(tie(leftover[k]!), k, tie(leftover[best]!), best))
+      ) {
+        best = k;
+        bestValue = value;
+      }
+    }
+    placed[j] = leftover[best];
+    leftover.splice(best, 1);
+  }
+  return placed;
+}

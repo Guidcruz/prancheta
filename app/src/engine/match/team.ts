@@ -4,7 +4,12 @@ import { BENCH_SIZE } from '../lineup.ts';
 import { clamp } from '../math.ts';
 import type { MatchParams } from '../params.ts';
 import { attributeOf, fit, type Player } from '../players.ts';
-import { correctedCondition, kickoffBench, replaceUnavailable, winsTie } from '../selection.ts';
+import {
+  correctedCondition,
+  kickoffBench,
+  replaceUnavailable,
+  reshapeSlots,
+} from '../selection.ts';
 import {
   FORMATION_SECTORS,
   GOALKEEPER_SLOT,
@@ -399,47 +404,21 @@ export function substitute(
  *    the one with the highest `eff` there (energy and morale of the moment); ties by higher
  *    overall, then younger, then lower ID (`winsTie`);
  * 3. with N on the pitch, exactly 11 − N slots stay empty: the last free ones of step 2.
- * The same formation is not a change: nothing moves. Returns whether the formation changed.
+ * The same formation is not a change: nothing moves. Returns whether the formation changed. The
+ * three steps are `reshapeSlots` (selection.ts), shared with the change before the match
+ * (`reshapeLineup`, draft.ts; T-076).
  */
 export function changeFormation(team: TeamState, formation: Formation): boolean {
   if (formation === team.formation) return false;
   const positions = FORMATION_SLOTS[formation];
   const sectors = FORMATION_SECTORS[formation];
-  const placed: (Appearance | undefined)[] = new Array<Appearance | undefined>(
-    positions.length,
-  ).fill(undefined);
-  const leftover: Appearance[] = [];
-  for (const slot of team.slots) {
-    const app = slot.app;
-    if (app === undefined) continue;
-    let target = -1;
-    for (let j = 0; j < positions.length; j++) {
-      if (placed[j] === undefined && positions[j] === slot.position) {
-        target = j;
-        break;
-      }
-    }
-    if (target >= 0) placed[target] = app;
-    else leftover.push(app);
-  }
-  for (let j = 0; j < positions.length && leftover.length > 0; j++) {
-    if (placed[j] !== undefined) continue;
-    let best = 0;
-    let bestValue = slotEff(leftover[0]!.player, positions[j]!, leftover[0]!.energy);
-    for (let k = 1; k < leftover.length; k++) {
-      const app = leftover[k]!;
-      const value = slotEff(app.player, positions[j]!, app.energy);
-      if (
-        value > bestValue ||
-        (value === bestValue && winsTie(app.player, k, leftover[best]!.player, best))
-      ) {
-        best = k;
-        bestValue = value;
-      }
-    }
-    placed[j] = leftover[best];
-    leftover.splice(best, 1);
-  }
+  const placed = reshapeSlots(
+    team.slots.map((slot) => slot.app),
+    team.slots.map((slot) => slot.position),
+    positions,
+    (app, position) => slotEff(app.player, position, app.energy),
+    (app) => app.player,
+  );
   team.formation = formation;
   for (let j = 0; j < positions.length; j++) {
     const slot: Slot = {
