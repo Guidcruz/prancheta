@@ -1,7 +1,7 @@
 import { AI_PROFILES } from './clubs.ts';
-import { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS } from './formations.ts';
+import { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS, isFormation } from './formations.ts';
 import type { ClubState, GameState } from './game.ts';
-import { BENCH_SIZE, type Lineup, type Tactic, type TeamSheet } from './lineup.ts';
+import { BENCH_SIZE, emptySheet, type Lineup, type Tactic, type TeamSheet } from './lineup.ts';
 import { MARKERS } from './match/rules.ts';
 import type { AiParams, GameParams } from './params.ts';
 import { attributeOf, fit, type Player } from './players.ts';
@@ -117,10 +117,6 @@ function knownProfile(profile: AiProfile): AiProfile {
   return AI_PROFILES.includes(profile) ? profile : 'traditional';
 }
 
-function isFormation(value: unknown): value is Formation {
-  return typeof value === 'string' && (FORMATIONS as readonly string[]).includes(value);
-}
-
 /** The club's preferred formations that are known; none left → the traditional pair. */
 function preferredFormations(club: ClubState): readonly Formation[] {
   const known = (club.preferredFormations ?? []).filter(isFormation);
@@ -215,7 +211,7 @@ function effSum(starters: readonly Player[], formation: Formation): number {
 }
 
 /** Players ranked by overall, then younger, then lower ID (stable on full ties). */
-function byOverall(players: readonly Player[]): Player[] {
+export function byOverall(players: readonly Player[]): Player[] {
   return players
     .map((player, index) => ({ player, index }))
     .sort((a, b) =>
@@ -477,19 +473,7 @@ export function suggestSheet(
   options: SuggestOptions = {},
 ): TeamSheet {
   const club = state.clubs[clubId];
-  if (club === undefined) {
-    return {
-      lineup: {
-        formation: FORMATIONS[0]!,
-        starters: [],
-        bench: [],
-        captains: [],
-        penaltyTakers: [],
-        freeKickTakers: [],
-      },
-      tactic: { posture: 'balanced', pressure: 'medium' },
-    };
-  }
+  if (club === undefined) return emptySheet();
   const profile: AiProfile =
     options.controller === 'human' ? 'traditional' : knownProfile(club.profile);
   const rng = profile === 'chaotic' ? new Rng(aiSeed(state, clubId)) : undefined;

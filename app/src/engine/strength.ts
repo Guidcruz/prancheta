@@ -1,4 +1,4 @@
-import { FORMATION_SLOTS } from './formations.ts';
+import { FORMATION_SLOTS, isFormation } from './formations.ts';
 import type { GameState } from './game.ts';
 import { bestEleven, elevenStrength } from './generation.ts';
 import type { DraftLineup, Lineup, LineupState } from './lineup.ts';
@@ -350,10 +350,6 @@ export interface StrengthSheet {
 export interface StrengthContext extends RatingFactors {
   /** Energy on the pitch by player; a player not listed uses their condition. */
   readonly energy?: Readonly<Record<PlayerId, number>>;
-}
-
-function isFormation(value: string): value is Formation {
-  return Object.prototype.hasOwnProperty.call(FORMATION_SLOTS, value);
 }
 
 /** Injured or suspended players are not fit to play (jogadores.md, "Estados que mudam"). */

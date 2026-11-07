@@ -1,5 +1,5 @@
 import { AI_PROFILES } from '../clubs.ts';
-import { FORMATIONS, FORMATION_SLOTS } from '../formations.ts';
+import { FORMATIONS, FORMATION_SLOTS, isFormation } from '../formations.ts';
 import { BENCH_SIZE } from '../lineup.ts';
 import { clamp } from '../math.ts';
 import type { MatchParams } from '../params.ts';
@@ -143,10 +143,6 @@ const NO_STRENGTH: TeamStrengths = {
   defense: 0,
   factor: 0,
 };
-
-function isFormation(value: unknown): value is Formation {
-  return typeof value === 'string' && (FORMATIONS as readonly string[]).includes(value);
-}
 
 /**
  * A posture a sheet may start with: `allOut` is only reachable through a match command, from
