@@ -27,30 +27,31 @@
 - **Lint/format:** ESLint 10 + svelte-check + astro check + Prettier (`npm run lint` roda tudo e também os testes do hook; `npm run format`).
 - **Gerenciador:** npm com workspaces (`app`, `site`).
 
-| Ação                                                                                  | Comando                                                                                                       |
-| ------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| Instalar                                                                              | `npm install`                                                                                                 |
-| Rodar o jogo (dev)                                                                    | `npm run dev -w app`                                                                                          |
-| Rodar o site (dev)                                                                    | `npm run dev -w site`                                                                                         |
-| Testes unitários e do motor                                                           | `npm test`                                                                                                    |
-| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)                           | `npm run golden:update -w app`                                                                                |
-| Regressão completa (lint + testes + build)                                            | `npm run test:all`                                                                                            |
-| Lint                                                                                  | `npm run lint`                                                                                                |
-| Formatar                                                                              | `npm run format`                                                                                              |
-| Build (site + jogo em `dist/`)                                                        | `npm run build`                                                                                               |
-| Auditoria de dependências                                                             | `npm audit --audit-level=high`                                                                                |
-| Ícones da PWA a partir do SVG                                                         | `npm run icons`                                                                                               |
-| Testes do hook de travas                                                              | `bash scripts/test-hook.sh`                                                                                   |
-| Tokens do design system → CSS                                                         | `npm run tokens`                                                                                              |
-| Balanceamento (simula N temporadas)                                                   | `npm run balance -- --seasons 200`                                                                            |
-| Balanceamento de release (1.000 temporadas, robô no mais fraco)                       | `npm run balance -- --seasons 1000 --seed 1 --robot weakest`                                                  |
-| Conferir dados e conteúdo (clubes, lista bloqueada)                                   | `npm run content:check`                                                                                       |
-| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo)                       | `npm run blocklist:hash -- <arquivo>`                                                                         |
-| Medir a gravação do save (Chromium sem janela, CPU 4×)                                | `PRANCHETA_ENV=test npm run measure:save` (com `PRANCHETA_CHROMIUM=<caminho>`, usa um navegador já instalado) |
-| Gerar fixtures de uma versão nova do save (nunca sobrescreve)                         | `npm run save:fixtures -w app`                                                                                |
-| Recalcular as exclusões do gerador de nomes                                           | `npm run names:exclusions`                                                                                    |
-| Teste completo dos nomes (antes de release e quando as listas mudarem)                | `NAMES_FULL_CHECK=1 npm test -w app`                                                                          |
-| Testes de propriedade completos (10.000 partidas, 1.000 temporadas; antes de release) | `PROPERTY_FULL=1 npm test -w app`                                                                             |
+| Ação                                                                                  | Comando                                                                                                                                   |
+| ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Instalar                                                                              | `npm install`                                                                                                                             |
+| Rodar o jogo (dev)                                                                    | `npm run dev -w app`                                                                                                                      |
+| Rodar o site (dev)                                                                    | `npm run dev -w site`                                                                                                                     |
+| Testes unitários e do motor                                                           | `npm test`                                                                                                                                |
+| Atualizar golden do motor (recusa sem subir ENGINE_VERSION)                           | `npm run golden:update -w app`                                                                                                            |
+| Regressão completa (lint + testes + build)                                            | `npm run test:all`                                                                                                                        |
+| E2E (Playwright; WebKit só no CI)                                                     | `PRANCHETA_ENV=test npm run test:e2e` (local: `PRANCHETA_CHROMIUM=<caminho>` e `-- --project=chromium-mobile --project=chromium-desktop`) |
+| Lint                                                                                  | `npm run lint`                                                                                                                            |
+| Formatar                                                                              | `npm run format`                                                                                                                          |
+| Build (site + jogo em `dist/`)                                                        | `npm run build`                                                                                                                           |
+| Auditoria de dependências                                                             | `npm audit --audit-level=high`                                                                                                            |
+| Ícones da PWA a partir do SVG                                                         | `npm run icons`                                                                                                                           |
+| Testes do hook de travas                                                              | `bash scripts/test-hook.sh`                                                                                                               |
+| Tokens do design system → CSS                                                         | `npm run tokens`                                                                                                                          |
+| Balanceamento (simula N temporadas)                                                   | `npm run balance -- --seasons 200`                                                                                                        |
+| Balanceamento de release (1.000 temporadas, robô no mais fraco)                       | `npm run balance -- --seasons 1000 --seed 1 --robot weakest`                                                                              |
+| Conferir dados e conteúdo (clubes, lista bloqueada)                                   | `npm run content:check`                                                                                                                   |
+| Gerar hashes da lista bloqueada (arquivo de nomes fora do repo)                       | `npm run blocklist:hash -- <arquivo>`                                                                                                     |
+| Medir a gravação do save (Chromium sem janela, CPU 4×)                                | `PRANCHETA_ENV=test npm run measure:save` (com `PRANCHETA_CHROMIUM=<caminho>`, usa um navegador já instalado)                             |
+| Gerar fixtures de uma versão nova do save (nunca sobrescreve)                         | `npm run save:fixtures -w app`                                                                                                            |
+| Recalcular as exclusões do gerador de nomes                                           | `npm run names:exclusions`                                                                                                                |
+| Teste completo dos nomes (antes de release e quando as listas mudarem)                | `NAMES_FULL_CHECK=1 npm test -w app`                                                                                                      |
+| Testes de propriedade completos (10.000 partidas, 1.000 temporadas; antes de release) | `PROPERTY_FULL=1 npm test -w app`                                                                                                         |
 
 ## Estrutura
 
