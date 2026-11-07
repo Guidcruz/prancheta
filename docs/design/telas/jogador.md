@@ -18,7 +18,7 @@ Lê o card, passa para o atleta anterior ou o próximo da lista sem fechar, e fe
 
 ## Conteúdo (corpo da folha, de cima para baixo)
 
-Título da folha: o nome que a linha do Elenco mostra (`Player.name.display`, que pode ser um apelido), para o atleta ser o mesmo que o técnico tocou. Logo abaixo, no corpo, em `caption` e `ink-muted`, o nome completo (`Player.name.full`), só quando ele difere do `display` (comparação sem acento e sem caixa; iguais, a linha não aparece). O leitor de tela ouve o `display` como nome do diálogo e o nome completo uma vez, no corpo. Decisão do CEO, 2026-11-07 (antes o título era o nome completo e, com apelido, o card parecia de outro jogador). Depois, o PlayerCard `full`:
+Título da folha: o nome que a linha do Elenco mostra (`Player.name.display`, que pode ser um apelido), para o atleta ser o mesmo que o técnico tocou. Logo abaixo, no corpo, em `caption` e `ink-muted`, o nome completo (`Player.name.full`), só quando ele difere do `display` (comparação sem acento, sem caixa, sem hífen e sem espaços repetidos; iguais, a linha não aparece). O leitor de tela ouve o `display` como nome do diálogo e o nome completo uma vez, no corpo. Decisão do CEO, 2026-11-07 (antes o título era o nome completo e, com apelido, o card parecia de outro jogador). Depois, o PlayerCard `full`:
 
 1. **Cabeçalho:** Avatar `xl` (96px, do gerador da T-027, camisa na 1ª cor do clube); posição por extenso ("Meia"); idade e camisa ("23 anos · Camisa 9"); nota geral em `titulo` com o rótulo "Nota geral".
 2. **Selos** (se houver): "Lesionado, 3 rodadas", "Suspenso, 1 jogo" (`status.suspended.one/.other`), "Promessa", com ícone e texto.

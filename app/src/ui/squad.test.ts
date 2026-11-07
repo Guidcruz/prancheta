@@ -197,10 +197,17 @@ describe('the player card (jogador.md)', () => {
     const card = playerCard(nick, TEST_CLUB, striker.id, 'pt-BR')!;
     expect(card.title).toBe('Paçoca');
     expect(card.fullName).toBe('Lenon Pinheiro Souza');
-    const same = withPlayer(full, striker.id, {
-      name: { ...striker.name, display: 'Valmir Serrano', full: 'VALMIR SERRANO' },
-    });
-    expect(playerCard(same, TEST_CLUB, striker.id, 'pt-BR')!.fullName).toBeUndefined();
+    // Accents, case, hyphens and spaces are ignored: these are the same name.
+    for (const [display, fullName] of [
+      ['Valmir Serrano', 'VALMIR SERRANO'],
+      ['Valmír Serrano', 'Valmir Serrano'],
+      ['Jean-Pierre', 'Jean Pierre'],
+    ] as const) {
+      const same = withPlayer(full, striker.id, {
+        name: { ...striker.name, display, full: fullName },
+      });
+      expect(playerCard(same, TEST_CLUB, striker.id, 'pt-BR')!.fullName).toBeUndefined();
+    }
   });
 
   it('has the name of the row, position, age and shirt, and the 6 attributes in the order of the engine', () => {

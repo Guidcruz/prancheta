@@ -137,7 +137,7 @@ export function squadGroups(sorted: readonly Player[], sort: SquadSort, lang: La
 export interface PlayerCardView {
   /** The name the squad row shows (`name.display`): the sheet's title. */
   readonly title: string;
-  /** The full name, only when it differs from the title (accents and case ignored). */
+  /** The full name, only when it differs from the title (accents, case, hyphens and extra spaces ignored). */
   readonly fullName: string | undefined;
   readonly face: string;
   readonly shirt: string | undefined;

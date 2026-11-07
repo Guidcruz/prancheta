@@ -35,9 +35,9 @@
 
   /**
    * PlayerCard (CardJogador, variant `full`): everything the coach reads before picking an
-   * athlete, as the body of the player's BottomSheet (the sheet's title is the name the squad row shows; `fullName` is the civil name under it). Avatar,
-   * position, facts, overall and badges on top; then the states, the 6 attributes of the
-   * position, the trait and the season. Two columns when the sheet is wide (a phone lying down,
+   * athlete, as the body of the player's BottomSheet (the sheet's title is the name the squad row
+   * shows; `fullName` is the civil name under it). Avatar, position, facts, overall and badges on top; then the states, the 6
+   * attributes of the position, the trait and the season. Two columns when the sheet is wide (a phone lying down,
    * the desktop dialog). Every text comes in translated; the potential has no prop, ever.
    */
   interface Props {

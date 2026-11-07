@@ -491,14 +491,21 @@ describe('the player card (jogador.md; US-016)', () => {
     expect(body).toMatch(/<p class="caption muted[^"]*">Lenon Pinheiro Souza<\/p>/);
   });
 
-  it('no second line when the full name is the display, accents and case aside', () => {
-    const same = withPlayer(round5, striker.id, {
-      name: { ...striker.name, display: 'Valmir Serrano', full: 'VALMIR SERRANO' },
-    });
-    const body = sheet(same, striker.id);
-    expect(body).toContain('>Valmir Serrano</h2>');
-    expect(body).not.toContain('VALMIR SERRANO');
-  });
+  it.each([
+    ['Valmir Serrano', 'VALMIR SERRANO'],
+    ['Valmír Serrano', 'Valmir Serrano'],
+    ['Jean-Pierre', 'Jean Pierre'],
+  ])(
+    'no second line when the full name is the display (%s, %s), accents, case and hyphens aside',
+    (display, fullName) => {
+      const same = withPlayer(round5, striker.id, {
+        name: { ...striker.name, display, full: fullName },
+      });
+      const body = sheet(same, striker.id);
+      expect(body).toContain(`>${shown(display)}</h2>`);
+      expect(body).not.toContain(`>${shown(fullName)}</p>`);
+    },
+  );
 
   it('the potential never reaches the HTML: a sentinel value shows nowhere (US-016)', () => {
     const SENTINEL = 4242;
