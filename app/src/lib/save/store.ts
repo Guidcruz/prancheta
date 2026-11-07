@@ -31,16 +31,19 @@ import {
   MAX_CAREERS,
   MAX_SAVE_BYTES,
   SAVE_SCHEMA_VERSION,
+  type CareerRecord,
   type CareerSave,
   type CareerSummary,
   type MatchSheetRecord,
   type SheetIndex,
   type SnapshotRecord,
+  type StoredDraft,
 } from './schema.ts';
 import {
   errorPath,
   hasForbiddenKey,
   parseCareerSave,
+  parseDraft,
   parseRoundSheets,
   type SaveIssue,
 } from './validate.ts';
@@ -73,6 +76,13 @@ import {
  * snapshot: the round is reported in `missingSheetRounds`. The result says how many rounds were
  * lost. A save written by a newer build is never opened nor changed. When every snapshot fails
  * the career stays listed and the error says so (the game offers to import, US-036).
+ *
+ * The coach's sheet between rounds (ADR-0021, item 3; T-075): `writeDraft` puts `{ seq, sheet }`
+ * in the career's row of `careers`, in a transaction of that store only, with the same guard as a
+ * snapshot write; `seq` is the snapshot the sheet was built on. A snapshot write stores the row
+ * without it (the sheet is in the snapshot). Opening uses the row's sheet only with the snapshot of
+ * that `seq` and only if it passes `parseDraft` against that save's squad; else the snapshot's own
+ * sheet stays, and `draftSkipped` says why.
  *
  * Every operation of one store runs in order, one at a time, so a double tap never interleaves two
  * writes of the same career; another tab (another store on the same database) is caught by the
@@ -116,6 +126,20 @@ export type WriteError =
    * full), or a sheet of a match not played: a bug of the caller. `detail` has the path, never
    * the value.
    */
+  | 'invalid-save';
+
+/** Why `writeDraft` refused or failed; nothing changed in any of them. */
+export type DraftWriteError =
+  | StorageError
+  | 'quota-exceeded'
+  | 'write-failed'
+  /** The head is no longer `expectedHeadSeq` (another tab wrote): nothing changed. */
+  | 'conflict'
+  /** The career's row was written by a newer build: never overwritten (US-033). */
+  | 'save-too-new'
+  /** The career has no row on the device. */
+  | 'not-found'
+  /** The sheet does not pass `parseDraft` against the save's squad (a bug of the caller). */
   | 'invalid-save';
 
 export type OpenError =
@@ -193,6 +217,13 @@ export interface OpenedCareer {
    * only `Fixture.result` (T-030 shows the notice).
    */
   readonly missingSheetRounds: readonly number[];
+  /**
+   * The career's row had a coach's sheet that was not used, and the save keeps the snapshot's own
+   * (ADR-0021, item 3): `stale` when it was built on another snapshot (as after falling back to an
+   * older version; not an error), `invalid` when it did not pass `parseDraft` against this save's
+   * squad (the caller logs it, without content).
+   */
+  readonly draftSkipped?: 'stale' | 'invalid';
 }
 
 export interface SaveStoreOptions {
@@ -287,6 +318,18 @@ function sameStored(stored: unknown, meant: { sha256: string; bytes: number; blo
     stored.bytes === meant.bytes &&
     equalBytes(stored.blob, meant.blob)
   );
+}
+
+/** The summary of a row of `careers`, without the coach's sheet (what `listCareers` gives). */
+function summaryFrom(record: CareerRecord): CareerSummary {
+  const { draft, ...summary } = record;
+  void draft;
+  return summary;
+}
+
+/** A coach's sheet as a row of `careers` keeps it: a whole `seq` and something to parse. */
+function isStoredDraft(value: unknown): value is { seq: number; sheet: unknown } {
+  return isObject(value) && isWhole(value.seq) && Object.hasOwn(value, 'sheet');
 }
 
 function summaryOf(save: CareerSave, headSeq: number): CareerSummary {
@@ -436,7 +479,7 @@ export class SaveStore {
       const db = await this.open();
       if (!db.ok) return db;
       try {
-        const all = await db.value.getAll('careers');
+        const all = (await db.value.getAll('careers')).map(summaryFrom);
         all.sort((a, b) =>
           a.updatedAt === b.updatedAt ? (a.id < b.id ? -1 : 1) : a.updatedAt < b.updatedAt ? 1 : -1,
         );
@@ -520,7 +563,7 @@ export class SaveStore {
       const tx = begin(db.value);
       if (typeof tx === 'string') return fail('write-failed', { name: tx });
       const done = tx.done;
-      let previous: CareerSummary | undefined;
+      let previous: CareerRecord | undefined;
       let record: SnapshotRecord | undefined;
       // The rows this write replaces with other content, to put back if the check fails.
       let replaced: MatchSheetRecord[] = [];
@@ -570,6 +613,7 @@ export class SaveStore {
             () => snapshots.put(stored),
             ...rows.map((row) => () => sheets.put(row)),
           ]);
+          // Without the coach's sheet: it is in the snapshot (ADR-0021, item 3).
           await careers.put(summaryOf(save, record.seq));
         }
         await done;
@@ -605,13 +649,64 @@ export class SaveStore {
     });
   }
 
+  /**
+   * Stores the coach's sheet of `save` (`save.career.draft`) in the career's row of `careers`,
+   * between rounds (ADR-0021, item 3): `{ seq: guard.expectedHeadSeq, sheet }`, in one transaction
+   * of that store only, about 1 KB. Refused, with nothing changed, when the sheet does not pass
+   * `parseDraft` against `save.game`'s squad of the coach's club (`invalid-save`), when the career
+   * has no row (`not-found`), when the row is of a newer build (`save-too-new`) and when the head
+   * is not `expectedHeadSeq` (`conflict`: another tab wrote). Not read back: losing it costs only
+   * the edits since the last write, and opening checks it.
+   */
+  writeDraft(
+    save: CareerSave,
+    guard: WriteGuard,
+  ): Promise<SaveResult<{ readonly seq: number }, DraftWriteError>> {
+    return this.serial(async () => {
+      const squad = Object.hasOwn(save.game.squads, save.career.clubId)
+        ? save.game.squads[save.career.clubId]!
+        : [];
+      const checked = parseDraft(save.career.draft, squad);
+      if (!checked.ok) return checked;
+      const db = await this.open();
+      if (!db.ok) return db;
+      const stored: StoredDraft = { seq: guard.expectedHeadSeq, sheet: checked.value };
+      let refused: SaveResult<never, DraftWriteError> | undefined;
+      try {
+        const tx = db.value.transaction('careers', 'readwrite');
+        tx.done.catch(() => undefined);
+        const careers = tx.objectStore('careers');
+        const current = await careers.get(save.careerId);
+        if (current === undefined) {
+          refused = fail('not-found');
+        } else if (current.schemaVersion > SAVE_SCHEMA_VERSION) {
+          refused = fail('save-too-new', { version: current.schemaVersion });
+        } else if (current.headSeq !== guard.expectedHeadSeq) {
+          refused = fail('conflict', {
+            expectedHeadSeq: guard.expectedHeadSeq,
+            headSeq: current.headSeq,
+          });
+        }
+        if (refused !== undefined) {
+          tx.abort();
+        } else {
+          await careers.put({ ...current!, draft: stored });
+        }
+        await tx.done;
+        return ok({ seq: stored.seq });
+      } catch (error) {
+        return refused ?? fail(writeErrorOf(error), { name: errorName(error) });
+      }
+    });
+  }
+
   /** Opens the newest snapshot of `careerId` that passes every check (US-032). */
   openCareer(careerId: string): Promise<SaveResult<OpenedCareer, OpenError>> {
     return this.serial(async () => {
       if (!codecSupported()) return fail('unsupported-browser');
       const db = await this.open();
       if (!db.ok) return db;
-      let summary: CareerSummary | undefined;
+      let summary: CareerRecord | undefined;
       let records: unknown[];
       try {
         summary = await db.value.get('careers', careerId);
@@ -683,8 +778,10 @@ export class SaveStore {
         const game = valid.value.game;
         const lost =
           roundIndex(summary.season, summary.round) - roundIndex(game.season, game.round);
+        const { save, draftSkipped } = withStoredDraft(valid.value, summary.draft, at);
         return ok({
-          save: valid.value,
+          save,
+          ...(draftSkipped === undefined ? {} : { draftSkipped }),
           seq: at,
           headSeq: summary.headSeq,
           skipped,
@@ -838,7 +935,8 @@ export class SaveStore {
 
   /**
    * Undoes a write whose check failed, in one transaction: the new snapshot goes; if it is still
-   * the head (no other tab wrote after it), the pointer returns; and each row it replaced with
+   * the head (no other tab wrote after it), the pointer returns (the whole previous row, the
+   * coach's sheet of `writeDraft` included); and each row it replaced with
    * other content gets the old one back, if the key still holds the new row (by its SHA-256:
    * another tab may have written after). `false` when the undo itself failed.
    */
@@ -846,7 +944,7 @@ export class SaveStore {
     db: SaveDb,
     id: string,
     seq: number,
-    previous: CareerSummary | undefined,
+    previous: CareerRecord | undefined,
     rows: readonly MatchSheetRecord[],
     replaced: readonly MatchSheetRecord[],
   ): Promise<boolean> {
@@ -971,6 +1069,26 @@ export class SaveStore {
     this.queue = next.catch(() => undefined);
     return next;
   }
+}
+
+/**
+ * The opened save with the coach's sheet of the career's row, when it was built on this snapshot
+ * (`seq`) and passes `parseDraft` against this save's squad (ADR-0021, item 3); else the save as
+ * it is, with the reason the row's sheet was not used.
+ */
+function withStoredDraft(
+  save: CareerSave,
+  stored: unknown,
+  seq: number,
+): { save: CareerSave; draftSkipped?: 'stale' | 'invalid' } {
+  if (stored === undefined) return { save };
+  if (!isStoredDraft(stored)) return { save, draftSkipped: 'invalid' };
+  if (stored.seq !== seq) return { save, draftSkipped: 'stale' };
+  const clubId = save.career.clubId;
+  const squad = Object.hasOwn(save.game.squads, clubId) ? save.game.squads[clubId]! : [];
+  const draft = parseDraft(stored.sheet, squad);
+  if (!draft.ok) return { save, draftSkipped: 'invalid' };
+  return { save: { ...save, career: { ...save.career, draft: draft.value } } };
 }
 
 /** The decoded snapshot with the rows of sheets back in `career.matchSheets`. */

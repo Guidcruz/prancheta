@@ -1,25 +1,35 @@
 import { describe, expect, it } from 'vitest';
 import { SAVE_SCHEMA_VERSION } from '../schema.ts';
+import { coachDraft } from './0001-coach-draft.ts';
 import { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './index.ts';
 
 describe('migration entry point (ADR-0006)', () => {
-  it('is frozen at format 1 with an empty chain (T-019)', () => {
-    expect(SAVE_SCHEMA_VERSION).toBe(1);
-    expect(MIGRATIONS).toEqual([]);
+  it('is at format 2 with one step per older version (T-019, T-075)', () => {
+    expect(SAVE_SCHEMA_VERSION).toBe(2);
+    expect(MIGRATIONS).toEqual([coachDraft]);
+    expect(MIGRATIONS.map((step) => step.from)).toEqual([1]);
   });
 
   it('returns a save of the current version as it is', () => {
-    const save = { schemaVersion: 1, careerId: 'x' };
+    const save = { schemaVersion: 2, careerId: 'x' };
     const result = migrateSave(save);
     expect(result).toEqual({ ok: true, value: save });
   });
 
   it('refuses a save newer than this build, and one without a valid version', () => {
-    expect(migrateSave({ schemaVersion: 2 })).toEqual({
+    expect(migrateSave({ schemaVersion: 3 })).toEqual({
+      ok: false,
+      error: 'save-too-new',
+      detail: { version: 3, supported: 2 },
+    });
+    // A build of format 1 (an empty chain up to 1) refuses a v2 save, unchanged (ADR-0021).
+    const v2 = Object.freeze({ schemaVersion: 2, careerId: 'x' });
+    expect(migrateSave(v2, [], 1)).toEqual({
       ok: false,
       error: 'save-too-new',
       detail: { version: 2, supported: 1 },
     });
+    expect(v2).toEqual({ schemaVersion: 2, careerId: 'x' });
     for (const raw of [null, [], 'x', {}, { schemaVersion: -1 }, { schemaVersion: 1.5 }]) {
       expect(migrateSave(raw)).toEqual({ ok: false, error: 'unknown-version' });
       expect(schemaVersionOf(raw)).toBeUndefined();
@@ -34,7 +44,7 @@ describe('migration entry point (ADR-0006)', () => {
       detail: { from: 0 },
     });
     const v0: Migration[] = [{ from: 0, migrate: (s) => ({ ...s, added: true }) }];
-    expect(migrateSave({ schemaVersion: 0 }, v0)).toEqual({
+    expect(migrateSave({ schemaVersion: 0 }, v0, 1)).toEqual({
       ok: true,
       value: { schemaVersion: 1, added: true },
     });

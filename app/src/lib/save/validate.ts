@@ -14,6 +14,7 @@ import {
   validatePlayer,
   type ChanceKind,
   type ClubDef,
+  type DraftSheet,
   type FixtureId,
   type GameRules,
   type GameState,
@@ -22,6 +23,7 @@ import {
   type MatchSheet,
   type MissOutcome,
   type Player,
+  type PlayerId,
   type Posture,
   type Pressure,
   type Side,
@@ -32,7 +34,8 @@ import { fail, ok, type SaveResult } from './result.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
 
 /*
- * The strict schema of the save format v1 (ADR-0006; docs/02-architecture.md, 4.2; T-019). It is
+ * The strict schema of the current save format, v2 (ADR-0006, ADR-0021; docs/02-architecture.md,
+ * 4.2; T-019, T-075). It is
  * what a snapshot passes after the migration when it opens, what a save passes before it is
  * written, and what an imported file will pass (T-020), so it reads untrusted input:
  *
@@ -52,7 +55,8 @@ import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
  *   with `satisfies`, and a type check both ways between the schema and `CareerSave` makes the
  *   compiler refuse a drift;
  * - after the shape, a coherence check: the ids that the save references exist (the coach's club,
- *   the squads, the calendar, the sheets) and the first season's year is the base season (US-066).
+ *   the squads, the calendar, the sheets, the coach's draft sheet) and the first season's year is
+ *   the base season (US-066).
  *
  * The limits in {@link SAVE_LIMITS} are the save layer's bounds against a hostile file, far above
  * any real career; they are not game rules. Changing the format (a key, a type, a closed list)
@@ -354,19 +358,65 @@ const fixture = v.strictObject({
   result: v.exactOptional(matchSummary),
 });
 
+/** Slots of a formation: 11 in every one of them. */
+const XI = Math.max(...FORMATIONS.map((f) => FORMATION_SLOTS[f].length));
+
+/** A tactic chosen before the match: the 3 pre-match postures (never `allOut`). */
+const tactic = v.strictObject({
+  posture: v.picklist(PRE_MATCH_POSTURES),
+  pressure: v.picklist(PRESSURES),
+});
+
 const teamSheet = v.strictObject({
   lineup: v.strictObject({
     formation,
-    starters: list(id, Math.max(...FORMATIONS.map((f) => FORMATION_SLOTS[f].length))),
+    starters: list(id, XI),
     bench: list(id, BENCH_SIZE),
     captains: list(id, SAVE_LIMITS.takers),
     penaltyTakers: list(id, SAVE_LIMITS.takers),
     freeKickTakers: list(id, SAVE_LIMITS.takers),
   }),
-  tactic: v.strictObject({
-    posture: v.picklist(PRE_MATCH_POSTURES),
-    pressure: v.picklist(PRESSURES),
-  }),
+  tactic,
+});
+
+/** No id twice among `ids` (free slots, `null`, may repeat). */
+function noRepeat(ids: readonly (string | null)[]): boolean {
+  const seen = new Set<string>();
+  for (const playerId of ids) {
+    if (playerId === null) continue;
+    if (seen.has(playerId)) return false;
+    seen.add(playerId);
+  }
+  return true;
+}
+
+/**
+ * The coach's sheet being edited (`career.draft`, ADR-0021, item 7): exactly 11 starters and up
+ * to 7 bench slots, each an id or `null` (a free slot); each role list with up to 11 ids (the
+ * distinct starters; the screen's limit of 3 is the reconciliation's, not the format's); the
+ * pre-match tactic. No id twice in the 11 and the bench, nor in one list. The ids are checked
+ * against the coach's squad by the coherence ({@link draftIncoherence}).
+ */
+export const draftSheetSchema = v.strictObject({
+  lineup: v.pipe(
+    v.strictObject({
+      formation,
+      starters: v.pipe(v.array(v.nullable(id)), v.length(XI)),
+      bench: list(v.nullable(id), BENCH_SIZE),
+      captains: list(id, XI),
+      penaltyTakers: list(id, XI),
+      freeKickTakers: list(id, XI),
+    }),
+    v.check((lineup) => noRepeat([...lineup.starters, ...lineup.bench]), 'duplicate-player'),
+    v.check(
+      (lineup) =>
+        noRepeat(lineup.captains) &&
+        noRepeat(lineup.penaltyTakers) &&
+        noRepeat(lineup.freeKickTakers),
+      'duplicate-player',
+    ),
+  ),
+  tactic,
 });
 
 const seasonStats = v.strictObject({
@@ -500,7 +550,7 @@ const gameState = v.strictObject({
 });
 
 // ---------------------------------------------------------------------------------------------
-// The envelope (schema.ts, CareerSaveV1)
+// The envelope (schema.ts, CareerSaveV2)
 
 const ref = v.strictObject({
   factId: id,
@@ -526,6 +576,8 @@ const careerEntries = {
   baseSeason: positive,
   lastRound: v.exactOptional(roundRecap),
   matchSheets: dict(matchSheet, MAX_FIXTURES),
+  /** The same schema in the three levels: the application layer builds it (ADR-0021). */
+  draft: v.exactOptional(draftSheetSchema),
 };
 
 const envelopeEntries = {
@@ -539,7 +591,7 @@ const envelopeEntries = {
 };
 
 /**
- * The strict schema of {@link CareerSave} in the current format (v1): every field, down to each
+ * The strict schema of {@link CareerSave} in the current format (v2): every field, down to each
  * event of each match sheet. An imported file (T-020) and a migrated save pass this one.
  */
 export const careerSaveSchema = v.strictObject({
@@ -566,8 +618,9 @@ const openSchema = v.strictObject({
 });
 
 /**
- * Writing a save: the envelope and the career strictly; of what the engine made (the state, the
- * round's recap, the sheets) only what the store reads. The engine's output passes the full
+ * Writing a save: the envelope and the career strictly (the coach's draft sheet included); of what
+ * the engine made (the state, the round's recap, the sheets) only what the store reads, and the
+ * squads, which the coherence of the draft reads (ADR-0021). The engine's output passes the full
  * schema in CI (fixtures.test.ts), and the write has a budget too (150 ms, same section), which
  * the full check of a 1.4 MB save would take most of in a slow phone. The new rows of sheets are
  * checked one by one ({@link parseRoundSheets}) and the snapshot is checked in full when it opens.
@@ -585,6 +638,7 @@ const writeSchema = v.strictObject({
     round: int(1, SEASON_ROUNDS + 1),
     clubs: dict(v.looseObject({ def: plainObject }), SAVE_LIMITS.clubs),
     players: plainObject,
+    squads: dict(list(id, SAVE_LIMITS.squad), SAVE_LIMITS.clubs),
     fixtures: v.array(plainObject),
   }),
 });
@@ -778,6 +832,36 @@ function incoherence(save: CareerSave): SaveIssue | undefined {
   return own;
 }
 
+/** The parts of a draft lineup with ids, in the order of the coherence check. */
+const DRAFT_PARTS = ['starters', 'bench', 'captains', 'penaltyTakers', 'freeKickTakers'] as const;
+
+/**
+ * The coherence of the coach's draft sheet (ADR-0021, item 7): every id of it (starters, bench
+ * and lists) is in `squad`, the coach's squad; else `unknown-player` at
+ * `<prefix>.lineup.<part>.<index>`. The one implementation, used by the save's coherence in the
+ * three levels and by {@link parseDraft}: what the write accepts, the opening accepts.
+ */
+function draftIncoherence(
+  draft: DraftSheet,
+  squad: readonly PlayerId[],
+  prefix: readonly string[],
+): SaveIssue | undefined {
+  const members = new Set(squad);
+  for (const part of DRAFT_PARTS) {
+    for (const [i, playerId] of draft.lineup[part].entries()) {
+      if (playerId !== null && !members.has(playerId)) {
+        return { path: at(...prefix, 'lineup', part, i), problem: 'unknown-player' };
+      }
+    }
+  }
+  return undefined;
+}
+
+/** The squad of `clubId` in `game`, or none. */
+function squadOf(game: Pick<GameState, 'squads'>, clubId: string): readonly PlayerId[] {
+  return Object.hasOwn(game.squads, clubId) ? game.squads[clubId]! : [];
+}
+
 /** The part of {@link incoherence} that the application layer builds (the `write` check). */
 function writeIncoherence(save: CareerSave): SaveIssue | undefined {
   if (!Object.hasOwn(save.game.clubs, save.career.clubId)) {
@@ -786,6 +870,10 @@ function writeIncoherence(save: CareerSave): SaveIssue | undefined {
   // D4 (US-066): season 1 is played in the base season's year, and each turn adds one.
   if (save.game.year !== save.career.baseSeason + save.game.season - 1) {
     return { path: 'game.year', problem: 'base-season-mismatch' };
+  }
+  const draft = save.career.draft;
+  if (draft !== undefined) {
+    return draftIncoherence(draft, squadOf(save.game, save.career.clubId), ['career', 'draft']);
   }
   return undefined;
 }
@@ -819,7 +907,8 @@ export function parseCareerSave(
     }
     if (check === 'write') {
       // What the open's coherence reads of the application layer's part (what the write accepts,
-      // the opening accepts): the coach's club and the base season. The store checks the sheets
+      // the opening accepts): the coach's club, the base season and the draft sheet's ids in the
+      // coach's squad. The store checks the sheets
       // against the calendar itself; the rest of the coherence is the engine's, tested.
       const issue = writeIncoherence(save);
       return issue === undefined ? ok(save) : fail('invalid-save', issue);
@@ -844,6 +933,28 @@ export function parseRoundSheets(
         return fail('invalid-save', { path: at(key), problem: 'key-mismatch' });
     }
     return ok(parsed.output);
+  } catch {
+    return fail('invalid-save', { path: '', problem: 'unreadable' });
+  }
+}
+
+/**
+ * Checks the coach's draft sheet kept in the `careers` row (ADR-0021, item 7) against `squad`, the
+ * coach's squad in the save it goes with: the same schema as `career.draft`, the same coherence and
+ * the search for prototype keys. `SaveStore.writeDraft` calls it before writing and `openCareer`
+ * before using the row's sheet. Never throws; the issue's path is relative to the sheet
+ * (`lineup.starters.3`), and never has the value.
+ */
+export function parseDraft(
+  raw: unknown,
+  squad: readonly PlayerId[],
+): SaveResult<DraftSheet, 'invalid-save'> {
+  try {
+    if (hasForbiddenKey(raw)) return fail('invalid-save', { path: '', problem: 'forbidden-key' });
+    const parsed = v.safeParse(draftSheetSchema, raw, { abortEarly: true });
+    if (!parsed.success) return fail('invalid-save', issueOf(parsed.issues));
+    const issue = draftIncoherence(parsed.output, squad, []);
+    return issue === undefined ? ok(parsed.output) : fail('invalid-save', issue);
   } catch {
     return fail('invalid-save', { path: '', problem: 'unreadable' });
   }

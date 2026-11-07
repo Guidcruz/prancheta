@@ -1,8 +1,10 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { suggestSheet } from '../../engine/index.ts';
+import { loadGameParams } from '../params.ts';
 import { migrateSave } from './migrations/index.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
-import { sampleCareerSave } from './testing/sample.ts';
+import { sampleCareerSave, sampleDraft } from './testing/sample.ts';
 import { formatShape, shapePaths, type Shape } from './testing/shape.ts';
 import { careerSaveSchema, parseCareerSave } from './validate.ts';
 
@@ -36,14 +38,22 @@ const file = (name: string) => new URL(name, dir);
 const readJson = (name: string): unknown => JSON.parse(readFileSync(file(name), 'utf8'));
 const WRITE = process.env.SAVE_FIXTURES_WRITE === '1';
 
-/** The career of the fixture: a whole season played and turned, and 2 rounds of the second. */
+/**
+ * The career of the fixture: a whole season played and turned, and 2 rounds of the second. From
+ * v2 on it carries the coach's draft sheet (ADR-0021, item 4), with free slots on the pitch and on
+ * the bench, so the shape records `null` there.
+ */
 const FIXTURE_CAREER_ID = '00000000-0000-4000-8000-000000000019';
-const fresh: CareerSave = sampleCareerSave({
+const played: CareerSave = sampleCareerSave({
   season: 2,
   rounds: 2,
   careerId: FIXTURE_CAREER_ID,
   club: 7,
 });
+const fresh: CareerSave = {
+  ...played,
+  career: { ...played.career, draft: sampleDraft(played) },
+};
 const freshShape = formatShape(careerSaveSchema, [fresh]);
 
 if (WRITE) {
@@ -91,8 +101,19 @@ describe('the frozen save format (US-033, T-019)', () => {
         raw.game.fixtures.map((f) => f.result?.score),
       );
       if (version === SAVE_SCHEMA_VERSION) expect(save).toEqual(raw);
+      // v1 had no draft sheet, and the step to v2 never builds one (ADR-0021, item 4).
+      if (version < 2) expect(save.career.draft).toBeUndefined();
     },
   );
+
+  it('the fixture of the current version passes the three levels (full, open and write)', () => {
+    const raw = readJson(`v${SAVE_SCHEMA_VERSION}.json`);
+    for (const check of ['full', 'open', 'write'] as const) {
+      const parsed = parseCareerSave(raw, { check });
+      expect(parsed.ok, check).toBe(true);
+      if (parsed.ok) expect(parsed.value, check).toEqual(raw);
+    }
+  });
 
   it('a save made now has the frozen shape (else: new schemaVersion, migration and fixture)', () => {
     const frozen = readJson(`shape-v${SAVE_SCHEMA_VERSION}.json`) as Shape;
@@ -132,6 +153,10 @@ describe('the frozen save format (US-033, T-019)', () => {
     'career.lastRound?.results.[].events',
     'career.matchSheets.{}.events',
     'career.baseSeason',
+    'career.draft?.lineup.starters.[].nullable',
+    'career.draft?.lineup.bench.[].nullable',
+    'career.draft?.lineup.captains.[]',
+    'career.draft?.tactic.posture',
   ])('the shape has %s', (path) => {
     expect(shapePaths(freshShape)).toContain(path);
   });
@@ -152,5 +177,30 @@ describe('the frozen save format (US-033, T-019)', () => {
     const players = Object.values(v1.game.players);
     expect(players.length).toBeGreaterThanOrEqual(500);
     expect(players.every((p) => p.name.display !== '' && p.face !== '')).toBe(true);
+  });
+
+  it('the v2 fixture has a draft sheet with free slots, a list of 2 and its own tactic', () => {
+    const v2 = readJson('v2.json') as CareerSave;
+    const v1 = readJson('v1.json') as CareerSave;
+    // The same career as the v1 fixture: season 2, round 2 played, club 7.
+    expect([v2.game.season, v2.game.round, v2.career.clubId]).toEqual([
+      v1.game.season,
+      v1.game.round,
+      v1.career.clubId,
+    ]);
+    const draft = v2.career.draft!;
+    expect(draft.lineup.starters).toHaveLength(11);
+    expect(draft.lineup.starters.filter((id) => id === null)).toHaveLength(1);
+    expect(draft.lineup.bench.filter((id) => id === null)).toHaveLength(1);
+    expect(draft.lineup.captains).toHaveLength(2);
+    const squad = new Set(v2.game.squads[v2.career.clubId]);
+    for (const id of [...draft.lineup.starters, ...draft.lineup.bench]) {
+      if (id !== null) expect(squad.has(id)).toBe(true);
+    }
+    const suggested = suggestSheet(v2.game, loadGameParams(), v2.career.clubId, undefined, {
+      controller: 'human',
+    });
+    expect(draft.tactic.posture).not.toBe(suggested.tactic.posture);
+    expect(draft.tactic.pressure).not.toBe(suggested.tactic.pressure);
   });
 });
