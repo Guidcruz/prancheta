@@ -10,7 +10,13 @@ import {
   type Bytes,
   type DecodeError,
 } from './codec.ts';
-import { SAVE_DB_NAME, openSaveDb, type SaveDb, type SaveDbSchema } from './db.ts';
+import {
+  SAVE_DB_NAME,
+  openSaveDb,
+  type ErrorRecord,
+  type SaveDb,
+  type SaveDbSchema,
+} from './db.ts';
 import {
   MIGRATIONS,
   migrateSave,
@@ -124,6 +130,22 @@ export type OpenError =
 /** Why one snapshot was skipped when opening (diagnostics, no content). */
 export type SnapshotProblem = DecodeError | MigrationError | 'invalid-record' | 'invalid-save';
 
+/**
+ * A snapshot skipped when opening. An `invalid-save` one also says which format it had before the
+ * migration (`fromVersion`) and the path and kind of its first problem (`issue`, never the value):
+ * a snapshot of the current format that fails the schema is a bug of the build that wrote it, and
+ * the `CareerService` records it as a programming error (4.2, "Níveis de conferência do esquema",
+ * condition 2).
+ */
+export type SkippedSnapshot =
+  | { readonly seq: number; readonly problem: Exclude<SnapshotProblem, 'invalid-save'> }
+  | {
+      readonly seq: number;
+      readonly problem: 'invalid-save';
+      readonly fromVersion: number;
+      readonly issue: SaveIssue;
+    };
+
 /** Optional guard of a write against another tab. */
 export interface WriteGuard {
   /**
@@ -152,7 +174,7 @@ export interface OpenedCareer {
   /** `headSeq` of the career when it opened: the `expectedHeadSeq` of the next write. */
   readonly headSeq: number;
   /** Newer snapshots that failed the checks and were skipped. */
-  readonly skipped: readonly { readonly seq: number; readonly problem: SnapshotProblem }[];
+  readonly skipped: readonly SkippedSnapshot[];
   /** Rounds played after the opened snapshot that were lost with the skipped ones (US-032). */
   readonly roundsLost: number;
   /**
@@ -194,6 +216,13 @@ const isWhole = (value: unknown): value is number =>
 /** Position of a (season, round) on the career's timeline: one step per round played. */
 function roundIndex(season: number, round: number): number {
   return (season - 1) * SEASON_ROUNDS + (Math.min(round, SEASON_ROUNDS + 1) - 1);
+}
+
+/** The path and kind of a `parseCareerSave` failure (its `detail`), never a value. */
+function issueIn(detail: unknown): SaveIssue {
+  return isObject(detail) && typeof detail.path === 'string' && typeof detail.problem === 'string'
+    ? { path: detail.path, problem: detail.problem }
+    : { path: '', problem: 'unknown' };
 }
 
 function errorName(error: unknown): string {
@@ -593,7 +622,7 @@ export class SaveStore {
       }
       if (summary === undefined) return fail('not-found');
 
-      const skipped: { seq: number; problem: SnapshotProblem }[] = [];
+      const skipped: SkippedSnapshot[] = [];
       for (const record of records.reverse()) {
         const seq = (record as { seq?: unknown }).seq;
         const at = typeof seq === 'number' ? seq : -1;
@@ -625,7 +654,8 @@ export class SaveStore {
         // An older save is read in full; its prototype keys are refused before the steps run
         // (they copy with spread, but a key never reaches them; security review L4).
         if (!current && hasForbiddenKey(whole)) {
-          skipped.push({ seq: at, problem: 'invalid-save' });
+          const issue: SaveIssue = { path: '', problem: 'forbidden-key' };
+          skipped.push({ seq: at, problem: 'invalid-save', fromVersion, issue });
           continue;
         }
         const migrated = migrateSave(whole, this.migrations);
@@ -642,7 +672,12 @@ export class SaveStore {
           check: current ? 'open' : 'full',
         });
         if (!valid.ok) {
-          skipped.push({ seq: at, problem: 'invalid-save' });
+          skipped.push({
+            seq: at,
+            problem: 'invalid-save',
+            fromVersion,
+            issue: issueIn(valid.detail),
+          });
           continue;
         }
         const game = valid.value.game;
@@ -714,6 +749,49 @@ export class SaveStore {
         return ok(undefined);
       } catch (error) {
         return fail(writeErrorOf(error), { name: errorName(error) });
+      }
+    });
+  }
+
+  /**
+   * Appends a row to the `errors` store and drops the oldest past `keep`, in one transaction (the
+   * ring of US-045). What goes in is the caller's: lib/errors builds rows without personal data.
+   */
+  appendError(
+    entry: Omit<ErrorRecord, 'id'>,
+    keep: number,
+  ): Promise<SaveResult<void, StorageError | 'quota-exceeded' | 'write-failed'>> {
+    return this.serial(async () => {
+      const db = await this.open();
+      if (!db.ok) return db;
+      try {
+        const tx = db.value.transaction('errors', 'readwrite');
+        tx.done.catch(() => undefined);
+        const errors = tx.objectStore('errors');
+        await errors.add(entry as ErrorRecord);
+        const excess = (await errors.count()) - Math.max(0, keep);
+        if (excess > 0) {
+          const oldest = await errors.getAllKeys(undefined, excess);
+          const last = oldest[oldest.length - 1];
+          if (last !== undefined) await errors.delete(IDBKeyRange.upperBound(last));
+        }
+        await tx.done;
+        return ok(undefined);
+      } catch (error) {
+        return fail(writeErrorOf(error), { name: errorName(error) });
+      }
+    });
+  }
+
+  /** The rows of the `errors` store, the oldest first. */
+  listErrors(): Promise<SaveResult<ErrorRecord[], StorageError>> {
+    return this.serial(async () => {
+      const db = await this.open();
+      if (!db.ok) return db;
+      try {
+        return ok(await db.value.getAll('errors'));
+      } catch (error) {
+        return fail('read-failed', { name: errorName(error) });
       }
     });
   }

@@ -52,11 +52,23 @@ function hasForbidden(text: string): boolean {
 
 const COMBINING_RUN = new RegExp(`\\p{M}{${MAX_COMBINING_RUN + 1}}`, 'u');
 
+/** A high surrogate not followed by a low one, or a low one not preceded by a high one. */
+const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/;
+
+/**
+ * `String.prototype.isWellFormed`, or the same test by a regular expression where the browser
+ * lacks it (Firefox 113 to 118): never throws.
+ */
+export function isWellFormedText(text: string): boolean {
+  const native = (String.prototype as { isWellFormed?: () => boolean }).isWellFormed;
+  return typeof native === 'function' ? native.call(text) : !LONE_SURROGATE.test(text);
+}
+
 /** `true` when `text` can be shown as it is (see the rules above). Never throws. */
 export function isSafeDisplayText(text: string): boolean {
   return (
     typeof text === 'string' &&
-    text.isWellFormed() &&
+    isWellFormedText(text) &&
     !hasForbidden(text) &&
     !COMBINING_RUN.test(text) &&
     text.normalize('NFC') === text

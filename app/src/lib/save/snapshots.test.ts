@@ -530,7 +530,14 @@ describe('open with fallback (US-032)', () => {
     const other = await mustEncodeSnapshot(variant(6, careerIdOf('another-career')));
     await tamper(3, (r) => ({ ...r, blob: other.json, sha256: other.sha256, bytes: other.bytes }));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
-    expect(opened.ok && opened.value.skipped).toEqual([{ seq: 3, problem: 'invalid-save' }]);
+    expect(opened.ok && opened.value.skipped).toEqual([
+      {
+        seq: 3,
+        problem: 'invalid-save',
+        fromVersion: 1,
+        issue: { path: 'careerId', problem: 'other-career' },
+      },
+    ]);
   });
 
   it('falls back two versions and counts the rounds across a season turn', async () => {
