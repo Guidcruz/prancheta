@@ -428,7 +428,7 @@ Cenário: pênalti usa o cobrador escolhido
 
 **Prioridade:** Must
 **Depende de:** US-008
-**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado) (forma e moral sobem e descem com jogos, resultados e tempo no banco; fadiga cresce com os jogos e cai com descanso). Clássicos têm moral mais alta ([Táticas](PROJETO.md#táticas)). Taxas são parâmetros do `game-designer`. O efeito do termômetro da torcida na moral está em US-026.
+**Notas:** [PROJETO.md › Jogadores, contratos e mercado](PROJETO.md#jogadores-contratos-e-mercado) (forma e moral sobem e descem com jogos, resultados e tempo no banco; fadiga cresce com os jogos e cai com descanso). Clássicos têm moral mais alta ([Táticas](PROJETO.md#táticas)). Taxas são parâmetros do `game-designer`. O efeito do termômetro da torcida na moral está em US-026. No realismo Simplificado a condição de todos volta a 100 depois de cada rodada (decisão do CEO de 2026-11-07, T-028), e o cenário "fadiga sobe ao jogar e cai ao descansar" vale só no realismo Completo.
 
 ### Critérios de aceite
 
@@ -661,16 +661,22 @@ Cenário: tela do clube
 
 **Prioridade:** Must
 **Depende de:** US-004, US-009, US-010, US-015
-**Notas:** componente "card de jogador" de [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design). O número do potencial nunca aparece (só olheiros ou tempo; olheiros na Etapa 5). Decisão do CEO: jovens que se enquadram na regra do `game-designer` ([jogadores › Potencial](design/jogadores.md#potencial); limiares definidos em `docs/design/` (constante ou parâmetro), no mesmo documento) levam o rótulo "promessa", só o rótulo, nunca o número. Tabelas no celular: coluna fixa e estatísticas rolando para o lado.
+**Notas:** componente "card de jogador" de [PROJETO.md › Padrões de design](PROJETO.md#padrões-de-design). O número do potencial nunca aparece (só olheiros ou tempo; olheiros na Etapa 5). Decisão do CEO: jovens que se enquadram na regra do `game-designer` ([jogadores › Potencial](design/jogadores.md#potencial); limiares definidos em `docs/design/` (constante ou parâmetro), no mesmo documento) levam o rótulo "promessa", só o rótulo, nunca o número. Tabelas no celular: coluna fixa e estatísticas rolando para o lado. Decisão do CEO (2026-11-07, T-028): no realismo Simplificado a condição física de todos os jogadores é sempre 100 entre as rodadas, por isso a fadiga na lista, a ordenação por fadiga e a linha de condição do card valem só no realismo Completo. Tela em `docs/design/telas/elenco.md` e `docs/design/telas/jogador.md`.
 
 ### Critérios de aceite
 
 ```gherkin
 Cenário: lista do elenco
-  Dado um clube com o elenco gerado
+  Dado um clube com o elenco gerado, numa carreira no realismo Completo
   Quando o jogador abre a aba Elenco
   Então cada atleta mostra nome, posição, idade, nota geral, forma, moral e fadiga em número ou ícone com rótulo
   E a lista pode ser ordenada por posição, nota e fadiga
+
+Cenário: realismo Simplificado sem condição
+  Dado um clube com o elenco gerado, numa carreira no realismo Simplificado
+  Quando o jogador abre a aba Elenco e depois o card de um atleta
+  Então não aparecem a coluna "Cond.", a opção de ordenar por condição nem a linha de condição do card
+  E a lista pode ser ordenada por posição e nota
 
 Cenário: situação nunca só por cor
   Dado um atleta suspenso e outro lesionado
