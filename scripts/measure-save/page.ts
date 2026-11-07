@@ -7,7 +7,11 @@ import {
   type SheetIndex,
 } from '../../app/src/lib/save/index.ts';
 import { setWriteProbe, type WriteStage } from '../../app/src/lib/save/probe.ts';
-import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/sample.ts';
+import {
+  sampleAtRound,
+  sampleCareerSave,
+  sampleDraft,
+} from '../../app/src/lib/save/testing/sample.ts';
 
 /*
  * Page of the write measurement (scripts/measure-save.ts; docs/02-architecture.md, 5, "Gravação
@@ -21,6 +25,8 @@ import { sampleAtRound, sampleCareerSave } from '../../app/src/lib/save/testing/
  * - `noNewRound`: the same save with the `base` of the 38 rounds, no row written;
  * - `allRounds`: no `base`, the 38 rows written (new career, import, migration);
  * - `open`: opening that career (3 snapshots, 38 rows), sheets reassembled;
+ * - `draft`: the coach's sheet written alone between rounds (`writeDraft`, the row of `careers`;
+ *   ADR-0021), alternating two sheets; reported, it does not decide;
  * - `seasonTurn`: the first three writes of season 2 after the one of round 38 of season 1, each
  *   with the `base` of the write before: the turn (sheets zeroed, no row), round 1 (one row) and
  *   round 2 (one row; the oldest kept snapshot is then of season 2, so it reads the 3 snapshots and
@@ -95,6 +101,10 @@ export interface Measurement {
   readonly noNewRound: number[];
   readonly allRounds: number[];
   readonly open: number[];
+  /** `writeDraft` of the coach's sheet between rounds (ADR-0021). */
+  readonly draft: number[];
+  /** JSON bytes of the sheet as the row of `careers` keeps it (`{ seq, sheet }`). */
+  readonly draftJsonBytes: number;
   /** The 1st, 2nd and 3rd writes of season 2, in this order. */
   readonly seasonTurn: [number[], number[], number[]];
   /** The stages of each write of `seasonTurn`, in the same order. */
@@ -141,7 +151,9 @@ function stamp(save: CareerSave, i: number): CareerSave {
 }
 
 async function prepare(): Promise<void> {
-  full = sampleCareerSave({ rounds: 38 });
+  const played = sampleCareerSave({ rounds: 38 });
+  // With the coach's sheet (format v2, ADR-0021): about 0.6 KB more in every snapshot.
+  full = { ...played, career: { ...played.career, draft: sampleDraft(played) } };
   // The garbage of building a whole season at once is not the write's: collected here, before
   // the slowdown.
   collectGarbage();
@@ -158,9 +170,11 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const keepStages = (into: Stages, i: number, spent: Map<WriteStage, number>) => {
     for (const stage of WRITE_STAGES) keep(into[stage], i, spent.get(stage) ?? 0);
   };
+  let head = 0;
   const write = async (next: CareerSave, base: SheetIndex | undefined, rounds: number) => {
     const result = await store.writeSnapshot(next, base);
     if (!result.ok) throw new Error(`writeSnapshot: ${result.error}`);
+    head = result.value.seq;
     if (result.value.writtenRounds.length !== rounds) {
       throw new Error(`writeSnapshot wrote ${result.value.writtenRounds.length} rounds`);
     }
@@ -201,6 +215,25 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
     });
     keep(open, i, ms);
   }
+
+  // The coach's sheet alone, on the head written last; two sheets, so each write changes it.
+  const sheet = save.career.draft!;
+  const sheets = [0, 1].map((k): CareerSave => ({
+    ...save,
+    career: {
+      ...save.career,
+      draft: { ...sheet, tactic: { ...sheet.tactic, pressure: k === 0 ? 'low' : 'medium' } },
+    },
+  }));
+  const draft: number[] = [];
+  for (let i = 0; i < total; i++) {
+    const ms = await time(async () => {
+      const written = await store.writeDraft(sheets[i % 2]!, { expectedHeadSeq: head });
+      if (!written.ok) throw new Error(`writeDraft: ${written.error}`);
+    });
+    keep(draft, i, ms);
+  }
+  const draftJsonBytes = new TextEncoder().encode(JSON.stringify({ seq: head, sheet })).byteLength;
 
   // Each run starts the same: a clean career with season 1 written up to round 38 (untimed).
   const seasonTurn: [number[], number[], number[]] = [[], [], []];
@@ -260,6 +293,8 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
     noNewRound,
     allRounds,
     open,
+    draft,
+    draftJsonBytes,
     seasonTurn,
     seasonTurnStages,
     encode,

@@ -48,6 +48,9 @@ export interface MeasurementLike {
   readonly noNewRound: readonly number[];
   readonly allRounds: readonly number[];
   readonly open: readonly number[];
+  /** `writeDraft` of the coach's sheet between rounds (ADR-0021); reported, it does not decide. */
+  readonly draft: readonly number[];
+  readonly draftJsonBytes: number;
   /** The 1st, 2nd and 3rd writes of season 2. */
   readonly seasonTurn: readonly [readonly number[], readonly number[], readonly number[]];
   /** The stages of each write of `seasonTurn` (ms per write, same order). */
@@ -166,12 +169,14 @@ export function formatReport(
     `${m.incremental.length} medições por caso`,
     `Snapshot sem súmulas: ${kb(m.snapshotJsonBytes)} de JSON, ${kb(m.snapshotStoredBytes)} guardados sem gzip (${kb(m.snapshotGzipBytes)} em gzip no arquivo exportado)`,
     `Súmulas (38 linhas): ${kb(m.sheetsJsonBytes)} de JSON, ${kb(m.sheetsGzipBytes)} em gzip`,
+    `Ficha do técnico no registro da carreira: ${m.draftJsonBytes} bytes de JSON`,
     '',
     row('gravação após a rodada 38 (base 1–37, só a 38)', m.incremental),
     row('gravação sem rodada nova (base 1–38)', m.noNewRound),
     row('gravação sem base (as 38 linhas)', m.allRounds),
     ...m.seasonTurn.map((values, i) => row(TURN_NAMES[i]!, values)),
     row('abrir a carreira (38 linhas remontadas)', m.open),
+    row('gravação da ficha entre rodadas (writeDraft)', m.draft),
     row('snapshot: serializar + UTF-8 + hash (sem gzip)', m.encode),
     row('snapshot: só JSON.stringify', m.stringify),
     '',
