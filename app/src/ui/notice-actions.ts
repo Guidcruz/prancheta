@@ -5,12 +5,14 @@ import type { AlertAction } from './save-alerts';
 
 /*
  * The buttons of a notice or an error from its actions (erros-e-avisos.md, "Ações e onde levam"),
- * translated. `retry` and `home` depend on where the notice is, so the caller passes them.
+ * translated. `retry`, `home` and `free` depend on where the notice is, so the caller passes them.
  */
 
 export interface ActionHandlers {
   readonly retry?: () => void;
   readonly home?: () => void;
+  /** "Liberar espaço": opens Carreiras e backup (inside the frame). */
+  readonly free?: () => void;
 }
 
 function reload(): void {
@@ -32,6 +34,7 @@ export function noticeActions(
     else if (action === 'retry' && handlers.retry) {
       out.push({ label, onclick: handlers.retry, icon: 'retry' });
     } else if (action === 'home' && handlers.home) out.push({ label, onclick: handlers.home });
+    else if (action === 'free' && handlers.free) out.push({ label, onclick: handlers.free });
     else if (action === 'help') {
       out.push({
         label,

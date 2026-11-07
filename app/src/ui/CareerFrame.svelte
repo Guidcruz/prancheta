@@ -28,15 +28,23 @@
     type NavDestination,
   } from './components/nav-items';
   import { noticeActions } from './notice-actions';
-  import { destinationOf, hrefOf, labelKeyOf, type DestinationId } from './router';
+  import {
+    HOME_DESTINATION,
+    SAVES_DESTINATION,
+    destinationOf,
+    hrefOf,
+    labelKeyOf,
+    type DestinationId,
+  } from './router';
   import { alertKey, unsavedActions } from './save-alerts';
   import Placeholder from './screens/Placeholder.svelte';
+  import Saves from './screens/Saves.svelte';
 
   /**
    * The frame of an open career (docs/design/telas/navegacao.md): tabs at the bottom on the
    * phone, sidebar from 900px, the "Mais" menu, the notice band, "Jogar rodada" and the error
-   * boundary around the screen of each destination. The screens themselves are placeholders
-   * until their tasks (T-028, T-031, T-034...).
+   * boundary around the screen of each destination. Carreiras e backup is the T-025 screen; the
+   * others are placeholders until their tasks (T-028, T-031, T-034...).
    */
   interface Props {
     career: CareerState;
@@ -116,7 +124,11 @@
         tone: 'danger',
         title: t(alertKey(unsaved, 'title'), lang),
         message: t(alertKey(unsaved, 'body'), lang),
-        actions: noticeActions(unsavedActions(unsaved), { retry, home: onhome }, lang),
+        actions: noticeActions(
+          unsavedActions(unsaved),
+          { retry, home: onhome, free: openSaves },
+          lang,
+        ),
       });
     }
     if (career.roundsLost > 0) {
@@ -190,6 +202,23 @@
     current = id;
   }
 
+  /** "Liberar espaço": Carreiras e backup, with its own entry (back returns to the tab). */
+  function openSaves(): void {
+    if (current === SAVES_DESTINATION) return;
+    history.pushState({ saves: true }, '', hrefOf(SAVES_DESTINATION));
+    current = SAVES_DESTINATION;
+  }
+
+  /** The back of Carreiras e backup: where it came from, or the Clube tab. */
+  function back(): void {
+    if (history.state?.saves === true) {
+      history.back();
+      return;
+    }
+    history.replaceState(null, '', hrefOf(HOME_DESTINATION));
+    current = HOME_DESTINATION;
+  }
+
   function onBoundaryError(error: unknown): void {
     void log.record({ kind: 'programming', code: 'unexpected', screen: current, error });
   }
@@ -211,6 +240,8 @@
 {#snippet header()}
   <ScreenHeader
     title={t(labelKeyOf(current), lang)}
+    backLabel={t('nav.back', lang)}
+    onback={current === SAVES_DESTINATION ? back : undefined}
     moreLabel={t('nav.more', lang)}
     onmore={openSheet}
   />
@@ -267,7 +298,11 @@
         onerror={onBoundaryError}
         {onhome}
       >
-        <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
+        {#if current === SAVES_DESTINATION}
+          <Saves {service} {lang} currentId={save.careerId} />
+        {:else}
+          <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
+        {/if}
       </ErrorBoundary>
     {/key}
   {/if}

@@ -1,233 +1,159 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import { config, type Lang } from '@lib/config';
-  import type { CareerService, CareerSummary, CreateError, OpenError } from '@lib/career';
+  import { onMount, tick } from 'svelte';
+  import type { Lang } from '@lib/config';
+  import type { CareerService, CareerSummary } from '@lib/career';
   import { t } from '@lib/i18n';
-  import { shieldSpecFor, shieldSvg } from '@lib/generators/shield';
-  import Banner from '../components/Banner.svelte';
-  import Button from '../components/Button.svelte';
-  import ErrorState from '../components/ErrorState.svelte';
-  import LinkRow from '../components/LinkRow.svelte';
-  import { noticeActions } from '../notice-actions';
-  import { alertKey, hasAlertText } from '../save-alerts';
+  import { DeleteFlow, type FocusTarget } from '../delete-flow';
+  import { popSheet, pushSheet, sheetOnTop } from '../sheet-history';
+  import CareerSheets from './CareerSheets.svelte';
+  import HomeView from './HomeView.svelte';
 
   /**
-   * Provisional home screen, only so the career frame can be reached (T-023): the careers on the
-   * device ("Continuar") and a new career with the default options. The real Início and Novo jogo
-   * (club, nickname, realism, match mode, last setup, delete with double confirmation) are T-025.
+   * The home screen (docs/design/telas/inicio.md, US-034): reads the careers on the device, opens
+   * one (App.svelte does the opening), starts a new one and deletes one with the double
+   * confirmation. What it shows for each state is HomeView.svelte.
    */
+  type NoStorage = 'unsupported-browser' | 'storage-unavailable';
   interface Props {
     service: CareerService;
     lang: Lang;
-    /** An opening error to show in place of the list (not-found, save-too-new...). */
-    openError?: OpenError | 'unexpected';
+    /** Careers refused when opening as written by a newer build. */
+    tooNew?: readonly string[];
+    /** The career just tapped is no longer on the device. */
+    notFound?: boolean;
+    /** A bug while opening, by its code. */
+    openError?: string;
+    /** The browser could not save when creating a career (the new-game screen came back). */
+    noStorage?: NoStorage;
+    /** Focus the list once read ("Liberar espaço" of the new-game screen). */
+    focusList?: boolean;
     onopen: (careerId: string) => void;
+    onnew: () => void;
   }
-  const { service, lang, openError, onopen }: Props = $props();
+  const {
+    service,
+    lang,
+    tooNew = [],
+    notFound = false,
+    openError,
+    noStorage,
+    focusList = false,
+    onopen,
+    onnew,
+  }: Props = $props();
+
+  const SHEET = 'career-actions';
+  // One service for the whole app: it never changes.
+  // svelte-ignore state_referenced_locally
+  const career = service.state;
+  const flow = new DeleteFlow((id) => service.remove(id));
+  const flowState = flow.state;
 
   let careers: CareerSummary[] | undefined = $state();
-  let listError: string | undefined = $state();
-  let createError: CreateError | undefined = $state();
-  let creating = $state(false);
+  let listError: 'read-failed' | 'app-outdated' | undefined = $state();
+  let listNoStorage: NoStorage | undefined = $state();
+  let requested: string | undefined = $state();
+  let announcement: string | undefined = $state();
+  let now = $state(new Date());
+  let view: ReturnType<typeof HomeView> | undefined = $state();
 
-  // The app's own crest (not a club): fixed crest data, brand colours from the config.
-  const shield = shieldSvg(
-    shieldSpecFor({
-      id: 'prancheta',
-      colors: [config.colors.primary, config.colors.accent],
-      size: 'big',
-      titles: { league: 0 },
-      crestShape: 'french',
-      crestPattern: 'chevron',
-      crestBase: 0,
-      crestSymbol: 'sol',
-    }),
-    96,
-  );
-
-  // Without storage nothing can be saved: no "Novo jogo" nor "Continuar" (erros-e-avisos.md).
-  const noStorage = $derived(
-    listError === 'storage-unavailable' ||
-      listError === 'unsupported-browser' ||
-      createError === 'unsupported-browser' ||
-      createError === 'storage-unavailable',
-  );
-  const blockCode = $derived(
-    openError ??
-      listError ??
-      (createError !== undefined &&
-      createError !== 'career-limit' &&
-      !createError.startsWith('coach-name')
-        ? createError
-        : undefined),
-  );
+  const opening = $derived($career.status === 'opening' ? requested : undefined);
+  const blocked = $derived($career.busy || $flowState.stage !== 'idle');
 
   async function load(): Promise<void> {
+    listError = undefined;
     const listed = await service.list();
+    now = new Date();
     if (listed.ok) {
       careers = listed.value;
-      listError = undefined;
-    } else {
-      listError = listed.error;
+      return;
     }
+    careers = undefined;
+    if (listed.error === 'storage-unavailable') listNoStorage = listed.error;
+    else listError = listed.error;
   }
 
-  async function create(): Promise<void> {
-    const first = service.clubs()[0];
-    if (first === undefined || creating) return;
-    creating = true;
-    createError = undefined;
-    try {
-      const created = await service.create({
-        coachName: t('career.coachDefault', lang),
-        clubId: first.id,
-        realism: 'full',
-        matchMode: 'result',
-      });
-      if (!created.ok) createError = created.error;
-    } catch {
-      // The service never throws; if it ever does, the button must not stay busy.
-      createError = 'unexpected';
-    } finally {
-      creating = false;
-    }
+  function open(careerId: string): void {
+    // One opening at a time: the other cards and "Nova carreira" do nothing until it ends.
+    if (blocked) return;
+    requested = careerId;
+    onopen(careerId);
   }
 
-  /** Texts of a block error: the code's own, or the unexpected error's for a bug. */
-  function blockTexts(code: string): { title: string; message: string } {
-    if (hasAlertText(code)) {
-      return { title: t(alertKey(code, 'title'), lang), message: t(alertKey(code, 'body'), lang) };
-    }
-    return { title: t('error.unexpected.title', lang), message: t('error.unexpected.body', lang) };
+  function startNew(): void {
+    if (blocked) return;
+    onnew();
+  }
+
+  async function focus(target: FocusTarget | undefined): Promise<void> {
+    if (target === undefined) return;
+    await tick();
+    if (target.kind === 'actions') view?.focusActions(target.careerId);
+    else view?.focusList();
+  }
+
+  function actions(summary: CareerSummary): void {
+    if ($career.busy) return;
+    if (flow.openActions(summary)) pushSheet(SHEET);
+  }
+
+  function cancel(): void {
+    const target = flow.cancel();
+    if (target === undefined) return;
+    popSheet(SHEET);
+    void focus(target);
+  }
+
+  async function confirm(): Promise<void> {
+    const outcome = await flow.confirm();
+    if (outcome.kind !== 'deleted') return;
+    popSheet(SHEET);
+    announcement = t('home.deleted', lang, { club: outcome.career.club.shortName });
+    await load();
+    void focus({ kind: 'list' });
+  }
+
+  function reload(): void {
+    location.reload();
   }
 
   onMount(() => {
-    void load();
+    void load().then(() => {
+      if (focusList) void focus({ kind: 'list' });
+    });
+    // The back gesture over a sheet ends the flow without deleting.
+    const onPop = () => {
+      if (flow.open && !sheetOnTop(SHEET)) cancel();
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   });
 </script>
 
-<main class="home">
-  <header>
-    {#if config.logo.hasBrand}
-      <!-- eslint-disable-next-line svelte/no-at-html-tags -- SVG from config/prancheta.config.ts, never user input -->
-      <div class="logo">{@html config.logo.mark}</div>
-    {/if}
-    <!-- eslint-disable-next-line svelte/no-at-html-tags -- SVG from our own generator with constant inputs, never user input -->
-    <div class="shield">{@html shield}</div>
-    <h1 class="titulo">{config.name}</h1>
-    <p class="body subtitle">{t('home.subtitle', lang)}</p>
-  </header>
+<HomeView
+  bind:this={view}
+  {lang}
+  {now}
+  {careers}
+  {listError}
+  noStorage={noStorage ?? listNoStorage}
+  openingId={opening}
+  {tooNew}
+  {notFound}
+  {openError}
+  {announcement}
+  onopen={open}
+  onupdate={reload}
+  onnew={startNew}
+  onretry={() => void load()}
+  onactions={actions}
+/>
 
-  <section class="careers">
-    {#if blockCode !== undefined}
-      {@const texts = blockTexts(blockCode)}
-      <ErrorState
-        layout="block"
-        title={texts.title}
-        message={texts.message}
-        code={t('error.code', lang, { code: blockCode })}
-        primary={noStorage ? noticeActions(['help'], {}, lang)[0] : undefined}
-      />
-    {/if}
-    {#if createError === 'career-limit'}
-      <Banner
-        tone="warning"
-        title={t(alertKey('career-limit', 'title'), lang)}
-        message={t(alertKey('career-limit', 'body'), lang)}
-      />
-    {/if}
-    {#if !noStorage}
-      {#if careers === undefined && listError === undefined}
-        <p class="body muted">{t('home.loading', lang)}</p>
-      {:else if careers !== undefined && careers.length > 0}
-        <h2 class="subtitulo">{t('home.careers', lang)}</h2>
-        <ul>
-          {#each careers as career (career.id)}
-            <li>
-              <LinkRow
-                label={t('home.careerLine', lang, {
-                  club: career.club.name,
-                  season: career.season,
-                  round: career.round,
-                })}
-                value={t('home.continue', lang)}
-                onclick={() => onopen(career.id)}
-              />
-            </li>
-          {/each}
-        </ul>
-      {/if}
-      <div class="new">
-        <Button variant="primary" fullWidth busy={creating} onclick={create}
-          >{t('home.new', lang)}</Button
-        >
-      </div>
-    {/if}
-  </section>
-
-  <footer class="caption">
-    <a class="link" href={config.paths.site + 'devlog/'}>{t('home.devlog', lang)}</a>
-    <span>{t('home.version', lang, { version: config.version })}</span>
-  </footer>
-</main>
-
-<style>
-  .home {
-    min-height: 100dvh;
-    display: grid;
-    grid-template-rows: auto 1fr auto;
-    gap: var(--space-6);
-    padding: var(--space-8) var(--space-4) var(--space-6);
-    max-width: 480px;
-    margin: 0 auto;
-  }
-  header {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    text-align: center;
-    gap: var(--space-3);
-  }
-  .logo {
-    width: 64px;
-    height: 64px;
-  }
-  h1,
-  h2,
-  p {
-    margin: 0;
-  }
-  .subtitle,
-  .muted {
-    color: var(--ink-muted);
-  }
-  .subtitle {
-    max-width: 32ch;
-  }
-  .careers {
-    display: flex;
-    flex-direction: column;
-    gap: var(--space-3);
-  }
-  ul {
-    list-style: none;
-    margin: 0;
-    padding: 0;
-  }
-  .new {
-    margin-top: var(--space-3);
-  }
-  footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: var(--space-2);
-    color: var(--ink-muted);
-  }
-  .link {
-    color: var(--info);
-    min-height: var(--touch);
-    display: inline-flex;
-    align-items: center;
-  }
-</style>
+<CareerSheets
+  {lang}
+  flow={$flowState}
+  onchoose={() => flow.chooseDelete()}
+  onproceed={() => flow.proceed()}
+  onconfirm={() => void confirm()}
+  oncancel={cancel}
+/>
