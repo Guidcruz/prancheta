@@ -27,7 +27,12 @@
     | 'reload'
     | 'download'
     | 'upload'
-    | 'copy';
+    | 'copy'
+    | 'more'
+    | 'check'
+    | 'plus'
+    | 'trash'
+    | 'edit';
 
   const paths: Record<IconName, string> = {
     club: '<path d="M5 4.5h14v8c0 4-3 6.5-7 8-4-1.5-7-4-7-8z"/>',
@@ -59,6 +64,12 @@
     download: '<path d="M12 4v11M7.5 10.5L12 15l4.5-4.5M5 19.5h14"/>',
     upload: '<path d="M12 15V4M7.5 8.5L12 4l4.5 4.5M5 19.5h14"/>',
     copy: '<rect x="8" y="8" width="11.5" height="11.5" rx="2"/><path d="M5 15.5V5a.5.5 0 01.5-.5H16"/>',
+    more: '<path d="M12 5.5v.5M12 11.75v.5M12 18v.5"/>',
+    check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+    plus: '<path d="M12 5v14M5 12h14"/>',
+    trash:
+      '<path d="M4.5 7h15M9.5 7V4.5h5V7M6.5 7l1 12.5h9l1-12.5"/><path d="M10.5 11v5M13.5 11v5"/>',
+    edit: '<path d="M14.5 5.5l4 4L9 19H5v-4z"/><path d="M12.5 7.5l4 4"/>',
   };
 </script>
 

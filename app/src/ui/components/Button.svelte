@@ -17,6 +17,8 @@
     /** Accessible hint for external links ("opens in a new tab"), already translated. */
     externalLabel?: string;
     type?: 'button' | 'submit';
+    /** Id of the text that explains the button (e.g. why it is disabled). */
+    describedby?: string;
     onclick?: (event: MouseEvent) => void;
     children: Snippet;
   }
@@ -31,6 +33,7 @@
     external = false,
     externalLabel,
     type = 'button',
+    describedby,
     onclick,
     children,
   }: Props = $props();
@@ -69,6 +72,7 @@
     {type}
     {disabled}
     aria-busy={busy || undefined}
+    aria-describedby={describedby}
     onclick={busy ? undefined : onclick}
   >
     {@render inner()}
