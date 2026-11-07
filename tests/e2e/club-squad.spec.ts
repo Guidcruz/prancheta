@@ -385,7 +385,9 @@ test.describe('Elenco (elenco.md; US-016)', () => {
     await startCareer(page, { realism: 'simplified' });
     await openSquad(page);
     await expect(main(page).locator('thead th', { hasText: 'Cond.' })).toHaveCount(0);
-    await expect(main(page).getByRole('radio')).toHaveCount(2);
+    // The sort's radios (the view selector of T-029 sits above, with its own three).
+    const sorts = main(page).getByRole('group', { name: 'Ordenar por' });
+    await expect(sorts.getByRole('radio')).toHaveCount(2);
     await expect(main(page).locator('label', { hasText: 'Condição' })).toHaveCount(0);
   });
 
