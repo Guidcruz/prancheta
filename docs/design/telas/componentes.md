@@ -71,6 +71,12 @@ Arquivos em `app/src/ui/components/`. Todos recebem os textos prontos por prop; 
 | EmptyState             | `EmptyState.svelte`     | `icon?`, `title`, `message?`, snippet `children` (a ação)                                                                                                                                                                                                             |
 | Skeleton               | `Skeleton.svelte`       | `label` (lido uma vez pelo leitor de tela), `shape` (`card`/`featured`), `count?`                                                                                                                                                                                     |
 
+Regras do CareerCard e do ConfirmSheet depois da revisão de código da T-025:
+
+- **CareerCard `row`:** o nome acessível do botão da linha é o `clubName` (nome curto); `progress`, `lastPlayed`, o selo e o `notice` entram por `aria-describedby`. O selo fica abaixo do texto, não ao lado do nome (aperto em 360px). Detalhes em [inicio.md](inicio.md), "Acessibilidade".
+- **CareerCard sem `oncontinue`** (Carreiras e backup, onde tocar na linha não troca de carreira): a linha não é botão; só o "Mais ações" é. Ver [saves.md](saves.md).
+- **ConfirmSheet em passos seguidos:** a ação de confirmar ignora toques por cerca de 500 ms depois de a folha abrir, e o botão destrutivo de um passo nunca fica no mesmo lugar do botão principal do passo anterior (proteção contra toque duplo; [inicio.md](inicio.md), "Apagar com confirmação dupla").
+
 Mudanças na casca existente: `Button` ganhou `describedby?` (liga o botão ao texto que explica por que está desabilitado); `Icon` ganhou `more`, `check`, `plus`, `trash` e `edit` (entram na lista que o `art-director` redesenha).
 
 ## Zoom no celular

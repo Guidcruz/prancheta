@@ -20,7 +20,7 @@ Vê as carreiras do aparelho, apaga as que não quer (com confirmação dupla) e
 1. ScreenHeader "Carreiras e backup" com voltar.
 2. Banner de armazenamento não persistente, quando o navegador negou (US-037): recomenda instalar o app e exportar (T-020).
 3. Lista de CareerCard `row`, da mais recente para a mais antiga, a mesma do Início (mesmas linhas e textos, `home.career.*`). A carreira aberta vem primeiro, com o selo "Atual" (`saves.current`).
-4. Ações por carreira, no botão "Mais ações" (três pontos, ≥ 44px), numa folha: **Exportar carreira** (T-020) e **Apagar carreira**. Tocar na linha de outra carreira não troca de carreira daqui (seria fechar a atual): a linha não é tocável, só as ações.
+4. Ações por carreira, no botão "Mais ações" (três pontos, ≥ 44px), numa folha: **Exportar carreira** (T-020) e **Apagar carreira**. Tocar na linha de outra carreira não troca de carreira daqui (seria fechar a atual): a linha não é tocável, só as ações. Linha que não abre nada **não é botão** (nem `button`, nem `role="button"`, nem cursor de mão): é texto comum, e o único controle dela é o "Mais ações", com nome que cita o clube. Assim o leitor de tela não anuncia um botão que não faz nada.
 5. "Importar backup" (secundário) no pé (T-020).
 
 ### O que a T-025 entrega aqui
@@ -35,7 +35,7 @@ A lista (itens 1 e 3), o selo "Atual" e o apagar com a mesma confirmação dupla
 ## Fluxos em folha
 
 - **Exportar (T-020):** aviso de que o apelido do técnico vai junto no arquivo; depois a folha de compartilhar do sistema (ou download no desktop).
-- **Apagar (T-025):** igual ao Início: passo 1 oferece exportar antes (com a T-020), passo 2 pede confirmação explícita, com o botão destrutivo em `danger`; cancelar em qualquer um não apaga nada.
+- **Apagar (T-025):** igual ao Início: passo 1 oferece exportar antes (com a T-020), passo 2 pede confirmação explícita, com o botão destrutivo em `danger`; cancelar em qualquer um não apaga nada. Valem as mesmas proteções contra toque duplo (janela de cerca de 500 ms em cada passo e botão destrutivo fora do lugar do botão principal do passo anterior) e a mesma entrada única no histórico para o fluxo inteiro.
 - **Importar (T-020):** escolha do arquivo; se a carreira já existir, folha comparando as duas versões (clube, temporada, rodada, data) com "Substituir" e "Guardar separada"; recusas (arquivo corrompido, de outro tipo, grande demais, versão mais nova) com mensagem em texto e nada alterado.
 
 ## Ao alcance do polegar

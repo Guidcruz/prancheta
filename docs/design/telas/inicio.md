@@ -49,7 +49,7 @@ Um sheet de ações, e não um botão "Apagar" na própria carta, para que o apa
 
 ### Apagar com confirmação dupla (US-034)
 
-Dois ConfirmSheet seguidos; cada um tem endereço no histórico (o voltar do celular fecha sem apagar). Os dois mostram, num bloco em `surface-2`, o escudo, o clube e a linha de progresso da carreira.
+Dois ConfirmSheet seguidos. O fluxo inteiro (folha de ações, passo 1 e passo 2) usa **uma** entrada no histórico, não uma por passo: o voltar do celular, em qualquer passo, fecha o fluxo sem apagar e volta ao Início. Os dois mostram, num bloco em `surface-2`, o escudo, o clube e a linha de progresso da carreira.
 
 | Passo | Título                                                         | Texto                                                                           | Ações (de cima para baixo)                                                                                             |
 | ----- | -------------------------------------------------------------- | ------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------- |
@@ -57,6 +57,9 @@ Dois ConfirmSheet seguidos; cada um tem endereço no histórico (o voltar do cel
 | 2     | `delete.step2.title` ("Apagar de vez a carreira do Flamingo?") | `delete.step2.body` (some do aparelho com as três cópias; não dá para desfazer) | **Apagar carreira** (`danger`, ícone de lixeira, `busy` enquanto apaga), **Cancelar** (ghost)                          |
 
 - O foco entra no botão de fechar da folha (o `showModal` foca o primeiro controle), nunca no de apagar. Cancelar fica por último, embaixo, no alcance do polegar; o botão destrutivo fica acima dele, com borda `danger`, ícone e texto.
+- **Proteção contra toque duplo.** Na folha de ações, no passo 1 e no passo 2, os botões "Apagar carreira", "Quero apagar" e "Apagar carreira" ficavam no mesmo lugar da tela, e um toque duplo atravessava os passos e apagava. Duas regras:
+  1. **Janela de proteção:** cada passo ignora a sua ação de avançar ou confirmar por cerca de 500 ms depois de abrir (o toque nesse intervalo não faz nada; cancelar, fechar e voltar continuam valendo na hora).
+  2. **Posição:** o botão destrutivo de um passo nunca fica no mesmo lugar do botão principal do passo anterior. Em particular, o "Apagar carreira" do passo 2 não coincide com o "Quero apagar" do passo 1; a forma (ordem dos botões, altura do bloco acima) é do `developer`, desde que "Cancelar" continue por último, no alcance do polegar.
 - Cancelar, fechar, Esc, toque fora ou voltar em qualquer passo: nada é apagado e o foco volta ao botão "Mais ações" da carta.
 - Apagou: a folha fecha, a lista é relida e uma mensagem `home.deleted` ("Carreira do Flamingo apagada.") sai numa região `aria-live="polite"` da tela. O foco vai para o cabeçalho "Suas carreiras" (ou para o EmptyState, se era a última).
 - Falhou (`CareerService.remove` devolveu erro): a folha do passo 2 fica aberta, o botão sai do `busy` e a mensagem `delete.failed` aparece na própria folha, em `aria-live`. Nada foi apagado.
@@ -104,7 +107,7 @@ Para o `content-writer` (`app/src/content/<idioma>/ui.json`); o rascunho em pt-B
 | `home.career.seasonOver`      | Temporada {season} encerrada                                                                           | progresso com `round` 39                                   |
 | `home.career.lastPlayed`      | Jogada em {date}                                                                                       | data da última jogada                                      |
 | `home.career.lastPlayedToday` | Jogada hoje, {time}                                                                                    | idem, no mesmo dia                                         |
-| `home.career.continueA11y`    | Continuar a carreira do {club}                                                                         | nome acessível da linha `row`                              |
+| `home.career.continueA11y`    | Continuar a carreira do {club}                                                                         | não vai mais na linha `row` (nome acessível = nome curto)  |
 | `home.career.actions`         | Mais ações da carreira do {club}                                                                       | nome acessível dos três pontos                             |
 | `home.career.actionsTitle`    | Carreira do {club}                                                                                     | título da folha de ações                                   |
 | `home.career.opening`         | Abrindo a carreira...                                                                                  | `busy` do "Continuar" (leitor de tela)                     |
@@ -130,7 +133,8 @@ Para o `content-writer` (`app/src/content/<idioma>/ui.json`); o rascunho em pt-B
 ## Acessibilidade
 
 - Botões e linhas ≥ 44px; um único primário; foco visível em tudo (anel de `app.css`).
-- A linha `row` é um botão só, com nome acessível próprio ("Continuar a carreira do Flamingo") e a linha de aviso ligada por `aria-describedby`; os três pontos são outro botão, com nome que cita o clube.
+- A linha `row` é um botão só. O nome acessível é o nome curto do clube ("Flamingo"); temporada e rodada, data da última jogada, selo e linha de aviso (quando houver) ficam ligados ao botão por `aria-describedby`, para o leitor de tela ler o resto como descrição, e não repetir tudo como nome. Os três pontos são outro botão, com nome que cita o clube.
+- Na linha `row`, o selo ("Versão mais nova", "Danificada", "Atual") fica abaixo do texto, não ao lado do nome: em 360px, nome, selo e o botão de três pontos não cabem na mesma linha em es e en.
 - O selo de problema tem ícone e texto, nunca só cor.
 - O aviso de ficção é texto real com contraste ≥ 4,5:1 (`ink-muted` sobre `surface-0`).
 - Nenhuma animação de entrada; o Skeleton só pulsa com movimento ligado.
