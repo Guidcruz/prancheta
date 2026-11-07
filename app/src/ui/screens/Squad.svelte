@@ -19,12 +19,17 @@
     clubId: ClubId;
     sort: SquadSort;
     onsort: (sort: SquadSort) => void;
+    /** Logs a card that failed to build. */
+    onerror?: (error: unknown) => void;
   }
-  const { lang, game, clubId, sort, onsort }: Props = $props();
+  const { lang, game, clubId, sort, onsort, onerror }: Props = $props();
 
   const SHEET = 'player';
   let openId: PlayerId | undefined = $state();
-  let originId: PlayerId | undefined = $state();
+  /** The name button of the player that opened the card: the focus returns there. */
+  let origin: HTMLElement | undefined;
+  /** `history.back()` was asked and its popstate has not come yet: a second close waits. */
+  let closing = false;
   let announce = $state('');
   let view: ReturnType<typeof SquadView> | undefined = $state();
   let sheet: ReturnType<typeof PlayerSheet> | undefined = $state();
@@ -43,7 +48,7 @@
   function open(id: PlayerId): void {
     history.pushState({ ...(history.state ?? {}), sheet: SHEET, player: id }, '');
     announce = '';
-    originId = id;
+    origin = view?.nameButton(id);
     openId = id;
   }
 
@@ -58,31 +63,34 @@
   }
 
   async function closed(): Promise<void> {
-    const origin = originId;
+    const back = origin;
     openId = undefined;
-    originId = undefined;
+    origin = undefined;
     await tick();
-    // The native dialog gives the focus back to the name that opened it; a tap on the row (not
-    // on the name) left it nowhere, so put it there.
-    if (origin !== undefined && (document.activeElement ?? document.body) === document.body) {
-      view?.focusPlayer(origin);
-    }
+    // Always to the name of the player that opened the card: the native dialog gives the focus
+    // back to whatever had it, and a tap on a cell of the row leaves it on the table's box.
+    back?.focus();
   }
 
   function close(): void {
+    // A double tap on the X: the first back is on its way; a second one would leave the tab.
+    if (closing) return;
     // Back removes the sheet's entry; the popstate then closes the sheet.
-    if (sheetOnTop(SHEET)) history.back();
-    else void closed();
+    if (sheetOnTop(SHEET)) {
+      closing = true;
+      history.back();
+    } else void closed();
   }
 
   onMount(() => {
     const onPop = () => {
+      closing = false;
       const id = playerOfEntry();
       if (id === undefined) {
         if (openId !== undefined) void closed();
       } else if (id !== openId) {
         // Forward to the sheet's entry: the card opens again on its player.
-        originId ??= id;
+        origin ??= view?.nameButton(id);
         openId = id;
       }
     };
@@ -114,4 +122,5 @@
   onprev={() => void step(-1)}
   onnext={() => void step(1)}
   onclose={close}
+  {onerror}
 />

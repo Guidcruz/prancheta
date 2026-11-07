@@ -419,6 +419,45 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   });
 
+  test('aberto pela linha (não pelo nome), o foco volta ao nome da linha ao fechar', async ({
+    page,
+  }) => {
+    await startCareer(page);
+    await openSquad(page);
+    const rows = main(page).locator('tbody tr:has(th[scope="row"])');
+    const names = main(page).locator('tbody th[scope="row"] button');
+    // A tap on a number cell of the 3rd row: the focus goes to the table's box, not the name.
+    await rows.nth(2).locator('td').nth(2).click();
+    await expect(dialog(page)).toBeVisible();
+    await page.keyboard.press('Escape');
+    await expect(dialog(page)).toBeHidden();
+    await expect(names.nth(2)).toBeFocused();
+    // The same by the X, after moving to the next player: back to the name that opened it.
+    await rows.nth(4).locator('td').first().click();
+    await dialog(page).getByRole('button', { name: 'Próximo' }).click();
+    await dialog(page).getByRole('button', { name: 'Fechar' }).click();
+    await expect(dialog(page)).toBeHidden();
+    await expect(names.nth(4)).toBeFocused();
+  });
+
+  test('toque duplo no X fecha o card e continua no Elenco', async ({ page }) => {
+    await startCareer(page);
+    await openSquad(page);
+    await main(page).locator('tbody th[scope="row"] button').first().click();
+    await expect(dialog(page)).toBeVisible();
+    // Two taps in the same instant, before the popstate of the first one arrives.
+    await dialog(page)
+      .getByRole('button', { name: 'Fechar' })
+      .evaluate((button: HTMLElement) => {
+        button.click();
+        button.click();
+      });
+    await expect(dialog(page)).toBeHidden();
+    await expect(page).toHaveURL(/#\/squad$/);
+    await expect(main(page).locator('tbody th[scope="row"]')).toHaveCount(25);
+    expect(await page.evaluate(() => history.state?.sheet)).toBeUndefined();
+  });
+
   test('Simplificado: sem a linha "Condição"', async ({ page }) => {
     await startCareer(page, { realism: 'simplified' });
     await openSquad(page);

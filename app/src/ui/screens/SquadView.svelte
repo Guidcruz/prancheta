@@ -94,11 +94,11 @@
     ];
   }
 
-  /** Puts the focus back on the name button of a player of the list (after the card closes). */
-  export function focusPlayer(id: PlayerId): void {
+  /** The name button of a player of the list (where the focus returns after the card). */
+  export function nameButton(id: PlayerId): HTMLElement | undefined {
     const at = players.findIndex((p) => p.id === id);
     const buttons = table?.querySelectorAll<HTMLElement>('tbody th[scope="row"] button');
-    if (at >= 0) buttons?.[at]?.focus();
+    return at >= 0 ? buttons?.[at] : undefined;
   }
 </script>
 
