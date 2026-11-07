@@ -219,8 +219,8 @@
     flex-direction: column;
   }
   /* A wide sheet (phone lying down, 720px; desktop dialog, 540px): two columns. A phone
-     standing (390px) keeps one. No token for this width yet: componentes.md, "Propostas ao
-     design system" (`breakpoint-card`). */
+     standing (390px) keeps one. `breakpoint-card` (design-system.md, "Card em duas colunas"):
+     a CSS variable cannot sit in @container, so the value is written here. */
   @container (min-width: 480px) {
     .grid {
       grid-template-columns: repeat(2, minmax(0, 1fr));

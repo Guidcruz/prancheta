@@ -45,6 +45,22 @@ A escala completa (família, tamanho, entrelinha, peso e uso de cada estilo) est
 - Mesma família display já usada nos títulos; não entra fonte nova.
 - Uso restrito ao número da etapa. O nome e a descrição da etapa continuam nos estilos de texto comuns; números em tabela seguem em `tabular-nums`.
 
+## Tamanhos (aprovado pelo CEO em 2026-11-07)
+
+| Token               | Valor | Uso                                                                |
+| ------------------- | ----- | ------------------------------------------------------------------ |
+| `size-bar`          | 4px   | Altura das barras de atributo, condição e moral (AttributeBar).    |
+| `size-bar-lg`       | 8px   | Altura da barra do termômetro da torcida (FanThermometer).         |
+| `size-medallion-sm` | 32px  | Escudo e avatar pequenos: listas, linhas de tabela, barra lateral. |
+| `size-medallion-md` | 48px  | Escudo e avatar médios: cards.                                     |
+| `size-medallion-lg` | 64px  | Escudo e avatar grandes: cabeçalho da tela Clube.                  |
+| `size-medallion-xl` | 96px  | Escudo e avatar em destaque: card do jogador, comemoração.         |
+
+- Moram em `design/tokens.json`, no grupo de espaçamento ao lado do `touch` (o mesmo caso: tamanho, não espaçamento), e chegam ao CSS por `npm run tokens`.
+- Escudo e avatar dividem a mesma escala: um medalhão de 48px tem o mesmo tamanho seja clube ou jogador.
+- Os geradores (`shield.ts`, `avatar.ts`) recebem a largura em número; por isso `CREST_SIZES` e `AVATAR_SIZES` repetem os valores, com comentário apontando para cá, até o gerador de tokens exportar também constantes TypeScript.
+- Nenhuma barra nem medalhão declara altura ou largura à mão fora dessas medidas.
+
 ## Padrões de layout
 
 ### Tabela vira cartões abaixo de 720px (aprovado pelo CEO em 2026-11-04)
@@ -65,6 +81,12 @@ Vale para o site e para as telas futuras do jogo.
 
 **Implementação de referência.** No site, `site/src/components/TableScroll.astro` com a prop `stack`. No jogo, quando aparecer a primeira tabela desse tipo, a casca entra em `app/src/ui/components/` com o mesmo comportamento e as mesmas classes (`.col-state`, `.inline-state`).
 
+### Card em duas colunas (aprovado pelo CEO em 2026-11-07)
+
+- Um card de leitura dentro de uma folha (hoje, o card do jogador) passa a duas colunas quando a folha tem **480px** ou mais de largura (`breakpoint-card`): o celular em pé (390px) fica com uma coluna; a folha do celular deitado (720px) e o diálogo do desktop (540px) ficam com duas.
+- A consulta é de contêiner (`@container`), não da tela: o que manda é a largura da folha.
+- Variáveis CSS não funcionam em `@container`; o valor fica escrito no componente, com comentário apontando para cá, até o gerador de tokens exportar constantes.
+
 ## Padrões de interação
 
 ### Confirmação em passos: o passo final (aprovado pelo CEO em 2026-11-07)
@@ -82,3 +104,18 @@ Vale para toda confirmação destrutiva em mais de um passo (hoje, apagar uma ca
 **Medida.** No celular (em pé e deitado) e no desktop, o topo do destrutivo do passo final fica pelo menos 56 px acima do topo do botão principal do passo anterior, sem sobreposição, e "Cancelar" tem o mesmo `y` (±1 px) em todas as folhas do fluxo. O E2E confere.
 
 **Implementação de referência.** `ConfirmSheet` com `finalStep` sobre o `BottomSheet`, em `app/src/ui/components/`; especificação em `docs/design/telas/inicio.md`, "Apagar com confirmação dupla".
+
+## Selos (aprovado pelo CEO em 2026-11-07)
+
+Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qualquer selo de situação, resultado ou marca.
+
+| Tipo                                                          | Texto e fundo                      | Borda e ícone                     |
+| ------------------------------------------------------------- | ---------------------------------- | --------------------------------- |
+| Vitória (`win`)                                               | `on-grass` sobre `grass`           | —                                 |
+| Empate (`draw`)                                               | `ink` sobre `surface-2`            | borda `draw`                      |
+| Derrota, lesionado, suspenso (`loss`, `injured`, `suspended`) | `ink` sobre `danger-soft`          | borda `danger`; ícone em `danger` |
+| Promessa, clássico (`prospect`, `derby`)                      | `on-floodlight` sobre `floodlight` | —                                 |
+
+- Todo selo tem letra ou ícone **e** texto (no selo só de letra, V/E/D, a palavra inteira vai para o leitor de tela); a cor só reforça.
+- Texto em `rotulo`. Os tipos formam uma lista fechada no componente.
+- **Um tipo novo de selo só entra com o seu par de texto e fundo conferido pelo `npm run tokens`** (a lista de pares de `scripts/tokens-to-css.mjs`); cor solta num selo é correção na revisão.

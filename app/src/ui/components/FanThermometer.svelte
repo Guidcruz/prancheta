@@ -77,8 +77,7 @@
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     gap: var(--space-1);
-    /* Bar height: no token yet (componentes.md, "Propostas ao design system", `size-bar`). */
-    block-size: var(--space-2);
+    block-size: var(--size-bar-lg);
     margin-block: var(--space-1);
   }
   .segment {

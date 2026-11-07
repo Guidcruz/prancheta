@@ -69,8 +69,7 @@
     inset-inline: 0;
     inset-block-end: var(--space-1);
     display: block;
-    /* Bar height: no token yet (componentes.md, "Propostas ao design system", `size-bar`). */
-    block-size: var(--space-1);
+    block-size: var(--size-bar);
     border-radius: var(--radius-pill);
     background: var(--surface-2);
     overflow: hidden;

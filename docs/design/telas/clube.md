@@ -162,6 +162,13 @@ No celular 390×844 e 360×740, no celular deitado 844×390 e no desktop 1280×8
 
 Nenhuma.
 
-## Decisões para o CEO (T-028)
+## Decisões do CEO (T-028)
 
-Reunidas em [jogador.md](jogador.md#decisões-para-o-ceo-t-028).
+Aprovadas em 2026-11-07, com a lista completa em [jogador.md](jogador.md#decisões-do-ceo-t-028). As desta tela:
+
+- Rótulo de humor com as 5 faixas de `torcida.md` ("Em revolta" a "Em festa").
+- Notícias e Rede social só com a T-034 e a T-035, sem "em breve".
+- "Mais opções" no pé só abaixo de 900px.
+- Ordem: Próximo jogo, Torcida, Classificação.
+- Linha "Desfalques" só no Realismo completo.
+- Termômetro sem seta de tendência na 1a.

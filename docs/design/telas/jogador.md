@@ -14,7 +14,7 @@ Lê o card, passa para o atleta anterior ou o próximo da lista sem fechar, e fe
 
 - Abre do Elenco (e, na T-029, da Escalação) como BottomSheet, com entrada própria no histórico: o voltar do celular fecha a folha. "Anterior" e "Próximo" trocam o atleta na mesma entrada (`history.replaceState`), para o voltar não percorrer o elenco inteiro.
 - "Anterior" e "Próximo" seguem a ordem da lista que abriu o card (a ordenação atual do Elenco). No primeiro atleta, "Anterior" fica desabilitado; no último, "Próximo". Nunca dá a volta.
-- No desktop, o mesmo BottomSheet vira o diálogo flutuante ancorado pela base (T-025), com 540px de largura. Não é painel lateral (ver as decisões).
+- No desktop, o mesmo BottomSheet vira o diálogo flutuante ancorado pela base (T-025), com 540px de largura. Não é painel lateral (decisão do CEO, 2026-11-07).
 
 ## Conteúdo (corpo da folha, de cima para baixo)
 
@@ -138,13 +138,15 @@ O que a T-028 precisa e o contrato do motor (`app/src/engine/index.ts`) ainda n�
 
 Nada mais falta: próximo jogo, clássico, desfalques, termômetro, posição e "últimos 5" já saem de `GameState` e de `getStandings`; jogos e gols, de `seasonStats`; o rosto, de `Player.face` com `renderFace`.
 
-## Decisões para o CEO (T-028)
+## Decisões do CEO (T-028)
 
-1. **Rótulo de humor = as 5 faixas da rede social.** "Em revolta" (0–19), "Irritada" (20–39), "Desconfiada" (40–59), "Animada" (60–79), "Em festa" (80–100), as mesmas de `torcida.md`. A US-026 cita "fria" só como exemplo. **Recomendo sim:** uma escala só para a tela e para o tom dos posts, sem número novo.
-2. **Realismo simplificado sem "Condição".** No Simplificado todos voltam a 100 a cada rodada; a tela tira a coluna Cond., a opção "Condição" do seletor e a linha do card. A US-016 pede "ordenar por fadiga", o que nesse modo não muda nada. **Recomendo esconder** e registrar a exceção na US-016.
-3. **Notícias e Rede social fora do Clube até a T-034 e a T-035.** A US-015 lista "as últimas notícias" na tela, mas ainda não há notícia para mostrar. **Recomendo** os blocos entrarem com as suas tarefas, sem "em breve" (P3).
-4. **Card do jogador no desktop como diálogo, não painel lateral.** O rascunho do kickoff falava em painel à direita; o BottomSheet aprovado na T-025 já vira diálogo flutuante ancorado pela base. **Recomendo o diálogo** agora: um componente a menos, mesma navegação por "Anterior" e "Próximo". Painel lateral só se o CEO sentir falta de ver a lista com o card aberto.
-5. **"Mais opções" no pé do Clube só no celular.** A US-015 pede as mesmas entradas do menu "Mais" no pé; no desktop elas já estão na barra lateral e o ícone "Mais" some. **Recomendo esconder a partir de 900px.**
-6. **Ordem do Clube no celular: Próximo jogo, Torcida, Classificação.** O kickoff punha a classificação antes do termômetro. Com o termômetro em segundo, ele aparece na primeira tela do celular em pé (US-026), e a classificação, que tem a sua aba, fica logo abaixo. **Recomendo esta ordem.**
-7. **Linha de desfalques no próximo jogo.** Elemento novo, não estava no kickoff: "Desfalques: 1 lesionado, 1 suspenso", que leva ao Elenco. Serve ao objetivo da tela (mexer no time ou jogar). **Recomendo sim**, só no Realismo completo.
-8. **Sem seta de tendência no termômetro.** Mostrar "subiu 4 desde a rodada passada" exigiria guardar o valor anterior no save (formato congelado, ADR). **Recomendo não ter na 1a.**
+Aprovadas pelo CEO em 2026-11-07 ("ok recomendado"). Valem para Clube, Elenco e Jogador.
+
+1. **Rótulo de humor = as 5 faixas de `torcida.md`:** "Em revolta" (0–19), "Irritada" (20–39), "Desconfiada" (40–59), "Animada" (60–79), "Em festa" (80–100), a mesma escala do tom dos posts da rede social. O "fria" da US-026 era só exemplo.
+2. **Realismo simplificado sem condição:** a tela tira a coluna Cond. e a opção "Condição" do Elenco e a linha "Condição" do card, porque nesse modo todos voltam a 100 a cada rodada. A exceção à US-016 ("ordenar por fadiga") fica registrada pelo `product-manager` na história.
+3. **Notícias e Rede social no Clube só com a T-034 e a T-035,** sem "em breve" antes disso (P3).
+4. **Card do jogador no desktop como diálogo** flutuante ancorado pela base (o BottomSheet da T-025), com "Anterior" e "Próximo" no pé. Não há painel lateral.
+5. **"Mais opções" no pé do Clube só abaixo de 900px;** a partir daí as entradas estão na barra lateral.
+6. **Ordem do Clube:** Próximo jogo, Torcida, Classificação (no DOM e no celular; no desktop, Torcida na coluna da direita).
+7. **Linha "Desfalques"** no bloco do próximo jogo, só no Realismo completo, levando ao Elenco.
+8. **Sem seta de tendência no termômetro na 1a** (exigiria guardar o valor anterior no save).

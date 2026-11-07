@@ -1,8 +1,9 @@
 <script lang="ts" module>
   /**
-   * Avatar sizes, in px (the generator draws a 48x48 viewBox at any size; at 32px or less it
-   * draws the simple version). The same scale as CREST_SIZES; no token yet: componentes.md,
-   * "Propostas ao design system" (`size-crest-*`, proposal 8, extended to the avatar).
+   * Avatar sizes, in px: the `size-medallion-*` tokens (design-system.md, "Tamanhos"), the same
+   * scale as CREST_SIZES. The generator takes the width as a number, so the values are repeated
+   * here until the token script also exports them as TypeScript constants. At 32px or less the
+   * generator draws the simple version.
    */
   export const AVATAR_SIZES = { sm: 32, md: 48, lg: 64, xl: 96 } as const;
   export type AvatarSize = keyof typeof AVATAR_SIZES;
