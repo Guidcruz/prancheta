@@ -39,5 +39,5 @@ Que quem acompanha o projeto possa comentar nos posts do devlog, de forma anôni
 
 ## Avisos
 
-- **Numeração provisória.** ADR-0020, US-075 a US-083 e T-072 a T-083 **não estão reservados** e serão renumerados se o estudo for retomado. `docs/01-requirements.md`, `docs/02-architecture.md` e `docs/adr/` não foram alterados.
+- **Numeração provisória.** ADR-0020, US-075 a US-083 e T-072 a T-083 **não estão reservados** e serão renumerados se o estudo for retomado. `docs/01-requirements.md`, `docs/02-architecture.md` e `docs/adr/` não foram alterados. Desde 2026-11-07, o ADR-0020 é a exponencial portável do motor, e a T-074 é a tarefa dele; se o estudo for retomado, recebe os próximos números livres.
 - **Conferência jurídica incompleta.** O texto oficial da Lei 15.211/2025 (ECA Digital) não foi aberto: o Planalto estava bloqueado na sessão. A conferência foi feita em fontes secundárias; os pontos marcados "conferir no Planalto" em `seguranca.md` continuam abertos.
