@@ -2,6 +2,7 @@
 
 - **Status:** aceita (CEO, 2026-11-07: "1 e 2 ok", abrir a correção do determinismo entre motores JavaScript; a forma técnica abaixo é do `architect`)
 - **Data:** 2026-11-07
+- **Implementação:** feita na T-074 (aguardando merge); `ENGINE_VERSION` 16.
 - **Decisores:** devops-engineer (mediu, T-024), architect (propôs e redigiu), CEO (aprovou abrir a correção)
 - **Complementa:** ADR-0007, regra 9 ("se divergir do V8, troca-se a implementação em `math.ts` por uma própria"). Este ADR é essa troca e diz como ela é feita e conferida.
 

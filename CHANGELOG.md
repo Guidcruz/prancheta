@@ -6,6 +6,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Exponencial portável no motor (T-074, ADR-0020):
+  - A `exp` de `app/src/engine/math.ts` é o port do `e_exp.c` do fdlibm, só com `+ - * /`, comparações, `Math.trunc`, `Math.E` e uma tabela exata de 2^k; 0 ulp de diferença do `Math.exp` do Node em mais de 33 milhões de entradas, e `exp(1) === Math.E`.
+  - `exp-table.json` com 4.096 entradas, incluindo 24 janelas que cruzam as trocas reais do `k`.
+  - Golden E2E no navegador (5 goldens de partida e a `exp-table`) sem `fixme`, no Chromium e no WebKit, bloqueante no CI.
+  - Teste de fronteira do lint para as funções transcendentais e os acessos a `Math`.
+
 - Tela inicial e novo jogo (T-025; US-034, US-014):
   - Lista de carreiras com a mais recente em destaque e o contador "N de 10"; continuar uma carreira.
   - Apagar em dois passos: o botão do passo seguinte ignora toques por 500 ms depois de a folha abrir; "Cancelar" fica sempre por último e na mesma altura; o destrutivo do passo 2 sobe pelo menos 56 px, com um separador.
@@ -211,6 +217,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 - Capturas de tela do site implementado em `docs/design/`.
 
 ### Alterado
+
+- Determinismo entre motores JavaScript (T-074, ADR-0020):
+  - `ENGINE_VERSION` 16. Nos goldens só mudaram a versão e os digests; os saves continuam válidos sem migração (`engineVersion` é só diagnóstico; `schemaVersion` segue 1).
+  - O lint barra funções transcendentais em todo o motor, inclusive em `math.ts`, e também alias de `Math`, acesso computado e passar `Math` adiante.
+  - O build mantém o aviso de licença da Sun no bundle (`rolldownOptions.output.comments.legal`), com +222 B em gzip.
+  - Balanceamento idêntico ao anterior (39/39, 91/91 e 75/75; de release, 39/39).
+  - `KNOWN_DIVERGENCE` e `GOLDEN_STRICT` saíram dos testes E2E.
 
 - Fronteira do motor e relatório da rodada fora do estado (T-049, ADR-0019; decisões 12 e 13 da auditoria de 2026-11-05):
   - `ENGINE_VERSION` 13. O `lastRound` saiu do `GameState`: o relatório da rodada só volta no retorno do `playRound`. Entram no contrato `roundRecap` (relatório enxuto, até cerca de 7 KB gzip) e `matchSheet` (súmula da partida, até cerca de 2,4 KB gzip com os clubes reais), para a camada de aplicação guardar fora do estado.

@@ -139,10 +139,10 @@ beforeAll(() => {
 }, 300_000);
 
 describe('T-048: a career of several seasons through the real path', () => {
-  it('runs on engine 15 with the save format still v1', () => {
-    expect(ENGINE_VERSION).toBe(15);
+  it('runs on engine 15 or later with the save format still v1', () => {
+    expect(ENGINE_VERSION).toBeGreaterThanOrEqual(15);
     expect(SAVE_SCHEMA_VERSION).toBe(1);
-    expect(career.turns.at(-1)!.next.engineVersion).toBe(15);
+    expect(career.turns.at(-1)!.next.engineVersion).toBe(ENGINE_VERSION);
   });
 
   it('really renews: every season somebody leaves and the same number comes up (the campaign lists both)', () => {

@@ -5,10 +5,17 @@ import { fileURLToPath } from 'node:url';
 import { expect, test } from './fixtures.ts';
 
 /*
- * Golden da partida dentro do navegador (docs/03-test-plan.md, 4; risco do `Math.exp` em
- * docs/02-architecture.md, 9): as saídas do motor em Chromium e em WebKit têm de bater, byte a
- * byte, com os arquivos de app/src/engine/__golden__/ (gerados no Node/V8). Diferença é bloqueante
- * e vira ADR. Roda uma vez por navegador (projetos de celular).
+ * Golden do motor dentro do navegador (docs/03-test-plan.md, 4; ADR-0020, teste 6): as saídas do
+ * motor em Chromium e em WebKit têm de bater, byte a byte, com os arquivos de
+ * app/src/engine/__golden__/ (gerados no Node). São os 5 goldens de partida e a tabela da `exp`
+ * (`exp-table`, os bits da `exp` do motor em 4.096 entradas). Diferença é bloqueante: não existe
+ * fixme nem quarentena para este teste. Roda uma vez por navegador (projetos de celular).
+ *
+ * Histórico: na T-024 (2026-11-07) o `Math.exp` do Chromium 153 diferia do Node 22 no último bit
+ * em cerca de 10% das entradas, e três goldens de partida divergiam (risco da regra 9 do
+ * ADR-0007). Desde a T-074 (ADR-0020, ENGINE_VERSION 16) a `exp` de engine/math.ts é um port do
+ * fdlibm só com aritmética, igual bit a bit em qualquer motor IEEE-754; se este teste reprovar,
+ * a causa é um uso novo de função transcendente ou um erro no port, nunca o navegador.
  */
 const GOLDENS = [
   'match-derby',
@@ -16,29 +23,15 @@ const GOLDENS = [
   'match-round',
   'match-ai-sheets',
   'match-commands',
+  'exp-table',
 ] as const;
 const goldenDir = fileURLToPath(new URL('../../app/src/engine/__golden__/', import.meta.url));
 const pageEntry = fileURLToPath(new URL('./golden/page.ts', import.meta.url));
 
-/*
- * DESLIGADO (fixme) ATÉ A T-074 (ADR-0020). Achado da T-024 em 2026-11-07: `Math.exp` do Chromium
- * 153 (V8 14) difere em 1 bit de `Math.exp` do Node 22 (V8 12.4) em cerca de 10% das entradas, e
- * três goldens (match-round, match-ai-sheets, match-commands) divergem no último dígito de `pGoal`
- * (risco da regra 9 do ADR-0007). A T-074 troca o `exp` de engine/math.ts por uma implementação
- * determinística e sobe o ENGINE_VERSION. Depois dela, tire o fixme.
- * Ideia para depois: `test.fail(browserName === 'chromium', ...)`, que avisa quando a T-074 fizer
- * o teste passar e vale de verdade no WebKit; fica como fixme nos dois porque o WebKit nunca
- * rodou (não se sabe se ele também diverge). GOLDEN_STRICT=1 liga o teste para ver a falha.
- */
-const KNOWN_DIVERGENCE = process.env['GOLDEN_STRICT'] !== '1';
-
 let script = '';
 let dir = '';
 
-// No nível da descrição: com o fixme, nem o beforeAll (que monta a página) roda.
-test.describe('golden da partida no navegador', () => {
-  test.fixme(KNOWN_DIVERGENCE, 'Math.exp diverge entre Node e o navegador; T-074 / ADR-0020');
-
+test.describe('golden do motor no navegador', () => {
   test.beforeAll(async () => {
     const { build } = await import('vite');
     dir = await mkdtemp(join(tmpdir(), 'prancheta-golden-'));
@@ -59,7 +52,7 @@ test.describe('golden da partida no navegador', () => {
     if (dir !== '') await rm(dir, { recursive: true, force: true });
   });
 
-  test('o golden da partida bate no navegador', async ({ page, browserName }) => {
+  test('os goldens da partida e da exp batem no navegador', async ({ page, browserName }) => {
     test.skip(page.viewportSize()!.width >= 900, 'uma vez por navegador');
     // A página do golden vem da própria origem do servidor de teste (a trava de rede a deixa passar).
     await page.route('**/__golden__/**', (route) =>
@@ -74,6 +67,9 @@ test.describe('golden da partida no navegador', () => {
     const actual = await page.evaluate(() =>
       (globalThis as unknown as { runGoldens: () => Record<string, string> }).runGoldens(),
     );
+
+    // A página roda exatamente os goldens listados: um caso novo não entra sem conferência.
+    expect(Object.keys(actual).sort(), 'goldens da página').toEqual([...GOLDENS].sort());
 
     // Confere todos antes de reprovar, para o relatório mostrar quais divergem.
     const diverge: string[] = [];

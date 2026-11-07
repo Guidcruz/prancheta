@@ -59,4 +59,11 @@
 //    in its data (the renewal, the strengths of season 2 and the digest). The digests of
 //    new-game, round-first, season-full and season-human-simplified changed only because the
 //    states hold `engineVersion`; the other goldens only carry the version.
-export const ENGINE_VERSION = 15;
+// 16: the engine's exp is its own (T-074, ADR-0020): a port of fdlibm's e_exp.c with the four
+//    operations only, instead of Math.exp, so the same seed gives the same bits on every
+//    JavaScript engine (Node, Chromium, WebKit, Workers), not only on the one that ran it. On
+//    Node 22.23.4 the port gives the same bits as Math.exp, so no simulation output changed: only
+//    the digests of the states that hold `engineVersion` (new-game, round-first, season-full,
+//    season-human-simplified, season-turn) and the version field of every golden. New golden:
+//    exp-table (the bits of exp on 4,096 inputs).
+export const ENGINE_VERSION = 16;
