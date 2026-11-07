@@ -24,7 +24,7 @@ Na moldura (AppShell) a faixa de avisos fica logo abaixo do ScreenHeader e acima
 - A carreira salva não é alterada; o registro local (`lib/errors`) leva versão do app, tela, tipo e pilha, nunca apelido, conteúdo do save, IP ou identificador do aparelho.
 - Uma linha `caption` com o código do erro ("Código: conflict"), para o jogador citar ao suporte. Só o código, nunca a pilha.
 - Erro dentro de um bloco (Clube, listas) usa o ErrorState `block` no lugar do bloco, com "Tentar de novo".
-- "Copiar relatório de erros" fica em Sobre (US-045, P11), não no ErrorState: a tela de erro é para sair do erro, não para suporte.
+- "Copiar relatório" fica em Sobre (US-045, P11), não no ErrorState: a tela de erro é para sair do erro, não para suporte.
 
 ## Erros do save (`docs/02-architecture.md` §4.2)
 
@@ -41,7 +41,7 @@ O `CareerService` recebe o código do `SaveStore` e a tela mostra o aviso da tab
 | `save-too-new`        | Ao abrir: a carreira foi salva por uma versão mais nova do jogo. Ao salvar: idem, por outra aba. | Ao abrir: ErrorState `block` no lugar do CareerCard, que ganha StatusBadge "versão mais nova". Ao salvar: ErrorState `screen`. | **Atualizar o jogo** (recarrega; se houver versão nova no cache, ela entra). A carreira não é aberta nem sobrescrita.      | `title`, `body`, `action.update`                                | **Esta carreira é de uma versão mais nova do jogo.** Atualize o jogo para continuar. Nada foi apagado.                                                                          |
 | `all-corrupt`         | Ao abrir: as três cópias salvas estão danificadas. A carreira continua na lista.                 | ErrorState `screen`; na lista de Carreiras, o card ganha StatusBadge "danificada".                                             | **Importar backup** (primário, abre a importação), **Voltar ao início**. Apagar fica em Carreiras e backup.                | `title`, `body`, `action.import`, `action.home`                 | **Não deu para abrir esta carreira.** As três cópias salvas estão danificadas. Se você exportou um backup, importe o arquivo para continuar.                                    |
 | `verify-failed`       | Ao salvar: a conferência depois da gravação não bateu. O jogo desfez a gravação.                 | Banner `danger`, não dispensável.                                                                                              | **Tentar de novo** (primário), **Exportar carreira**. O `detail` (`problem`, `rolledBack`) vai só para o registro.         | `title`, `body`, `action.retry`, `action.export`                | **A rodada não foi salva.** O jogo conferiu a gravação e algo não bateu, então manteve a versão anterior. Tente de novo; se repetir, exporte a carreira.                        |
-| `too-large`           | Ao salvar: a carreira passou do tamanho máximo. É defeito do jogo, não do jogador.               | Banner `danger`, não dispensável.                                                                                              | **Exportar carreira** (primário), **Copiar relatório de erros** (secundário; mesmo texto de Sobre).                        | `title`, `body`, `action.export`, `action.report`               | **A carreira ficou grande demais para salvar.** Isso é um defeito nosso. Exporte a carreira para não perder nada e mande o relatório de erros ao suporte.                       |
+| `too-large`           | Ao salvar: a carreira passou do tamanho máximo. É defeito do jogo, não do jogador.               | Banner `danger`, não dispensável.                                                                                              | **Exportar carreira** (primário), **Copiar relatório** (secundário; mesmo texto de Sobre).                                 | `title`, `body`, `action.export`, `action.report`               | **A carreira ficou grande demais para salvar.** Isso é um defeito nosso. Exporte a carreira para não perder nada e mande o relatório de erros ao suporte.                       |
 
 ### Rodadas perdidas ao voltar para a versão anterior (`roundsLost`)
 
@@ -64,17 +64,17 @@ O `CareerService` recebe o código do `SaveStore` e a tela mostra o aviso da tab
 
 ### Ações e onde levam
 
-| Ação                      | Chave           | O que faz                                                                                        |
-| ------------------------- | --------------- | ------------------------------------------------------------------------------------------------ |
-| Tentar de novo            | `action.retry`  | Repete a mesma gravação (o `CareerService` ainda tem a rodada na memória) ou remonta a tela.     |
-| Recarregar o jogo         | `action.reload` | `location.reload()`.                                                                             |
-| Atualizar o jogo          | `action.update` | Pede a versão nova ao service worker e recarrega; sem versão nova, só recarrega.                 |
-| Liberar espaço            | `action.free`   | Abre Carreiras e backup, que mostra quanto cada carreira ocupa e permite apagar (US-034).        |
-| Exportar carreira         | `action.export` | Baixa o arquivo da carreira em memória (T-020); funciona mesmo sem espaço para salvar.           |
-| Importar backup           | `action.import` | Abre a importação de Carreiras e backup.                                                         |
-| Copiar relatório de erros | `action.report` | O mesmo de Sobre (US-045).                                                                       |
-| Saber como resolver       | `action.help`   | Link externo para a página de suporte (`config.contacts.supportUrl`), com ícone de link externo. |
-| Voltar ao início          | `action.home`   | Fecha a carreira na memória (sem gravar) e vai ao Início.                                        |
+| Ação                | Chave           | O que faz                                                                                        |
+| ------------------- | --------------- | ------------------------------------------------------------------------------------------------ |
+| Tentar de novo      | `action.retry`  | Repete a mesma gravação (o `CareerService` ainda tem a rodada na memória) ou remonta a tela.     |
+| Recarregar o jogo   | `action.reload` | `location.reload()`.                                                                             |
+| Atualizar o jogo    | `action.update` | Pede a versão nova ao service worker e recarrega; sem versão nova, só recarrega.                 |
+| Liberar espaço      | `action.free`   | Abre Carreiras e backup, que mostra quanto cada carreira ocupa e permite apagar (US-034).        |
+| Exportar carreira   | `action.export` | Baixa o arquivo da carreira em memória (T-020); funciona mesmo sem espaço para salvar.           |
+| Importar backup     | `action.import` | Abre a importação de Carreiras e backup.                                                         |
+| Copiar relatório    | `action.report` | O mesmo de Sobre (US-045).                                                                       |
+| Saber como resolver | `action.help`   | Link externo para a página de suporte (`config.contacts.supportUrl`), com ícone de link externo. |
+| Voltar ao início    | `action.home`   | Fecha a carreira na memória (sem gravar) e vai ao Início.                                        |
 
 As chaves de ação são comuns a todos os códigos (`action.*`, em `ui.json`); a tabela dos códigos lista quais aparecem em cada um. Um único primário por aviso.
 

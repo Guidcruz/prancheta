@@ -14,7 +14,7 @@ Dizer que tudo é fictício, qual versão está rodando e o que o jogo faz com o
 4. Novidades da versão (US-039): LinkRow que abre as notas curtas no idioma atual.
 5. Privacidade: resumo curto e LinkRow externo para a política do site.
 6. Comunidade (P13) e Apoiar: LinkRow externos; não há convite para anunciar (nada de "Patrocine aqui" nem equivalente, ADR-0015); "Apoiar" abre antes uma ConfirmSheet avisando que é página externa e que menores precisam de um responsável.
-7. Suporte: e-mail só se existir na configuração (nunca link vazio); "Copiar relatório de erros" (US-045).
+7. Suporte: e-mail só se existir na configuração (nunca link vazio); "Copiar relatório" (US-045).
 8. "Rever tutorial".
 
 ## Ao alcance do polegar

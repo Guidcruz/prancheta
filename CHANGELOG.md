@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Casca da interface (T-023; US-015, US-045):
+  - Navegação com abas embaixo no celular e barra lateral no desktop, a partir de 900px de largura.
+  - `CareerService` (`app/src/lib/career/`): toda gravação do save passa o `guard` com `expectedHeadSeq`, e uma rodada não salva bloqueia o botão "Jogar rodada" até salvar.
+  - Avisos e telas cheias para os códigos do save (sem espaço, navegador sem suporte, jogo desatualizado, conflito entre abas, save de versão mais nova, cópias danificadas, falha na conferência), sempre com o código do erro visível para citar ao suporte.
+  - Registro local de até 50 erros, sem dados pessoais (versão do app, tela, tipo e pilha), guardado no aparelho.
+  - Textos em pt-BR, es e en (73 chaves), aprovados pelo CEO em 2026-11-06.
+  - Provisório: a tela inicial e o conteúdo das abas são placeholders (telas reais na T-025 e na T-028), e o apelido é limitado a 24 caracteres até a tela de novo jogo.
+
 - Renovação mínima dos elencos (T-048, US-025 no motor; decisão 14 do `balance-targets.md`, com a regra variável decidida pelo CEO em 2026-11-06):
   - Aposentadoria variável de 33 a 40 anos na virada da temporada: cada jogador sorteia uma chance que cresce com a idade (jogador de linha de 5% aos 33 a 70% aos 39), a do goleiro é mais baixa (de 0 a 30%), e aos 40 todos saem. Sorteio por jogador no fluxo `${seed}-s${season}-retirement-${playerId}`, então o mesmo save aposenta os mesmos.
   - Para cada aposentado entra um jovem de 17 anos da base, na mesma posição, com nome e rosto gerados; o elenco segue com 25 jogadores (3/5/4/4/4/5). Quando o ídolo se aposenta, o clube escolhe um novo ídolo na mesma virada.

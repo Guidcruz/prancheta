@@ -1888,7 +1888,7 @@ Cenário: desligar a rede social
 
 **Prioridade:** Must
 **Depende de:** —
-**Notas:** item "Registro de erros sem dados pessoais" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) e regra de erros do `CLAUDE.md` (motor retorna resultados tipados; a interface mostra em pt-BR e registra sem dados pessoais). Decisão P11: na 1a o registro fica só no aparelho, com o botão "Copiar relatório de erros" para mandar ao suporte; o envio anônimo ao nosso servidor na 1b é outra história e passa antes pelo `security-auditor`.
+**Notas:** item "Registro de erros sem dados pessoais" do [backlog](PROJETO.md#backlog-de-recursos-por-etapa) e regra de erros do `CLAUDE.md` (motor retorna resultados tipados; a interface mostra em pt-BR e registra sem dados pessoais). Decisão P11: na 1a o registro fica só no aparelho, com o botão "Copiar relatório" para mandar ao suporte; o envio anônimo ao nosso servidor na 1b é outra história e passa antes pelo `security-auditor`.
 
 ### Critérios de aceite
 
@@ -1909,7 +1909,7 @@ Cenário: limite do registro local (P11)
 
 Cenário: copiar para o suporte (P11)
   Dado a tela "Sobre"
-  Quando o jogador toca "Copiar relatório de erros"
+  Quando o jogador toca "Copiar relatório"
   Então o texto copiado é o mesmo registro, sem dados pessoais
 ```
 
@@ -3109,7 +3109,7 @@ Respostas às perguntas do `/kickoff`, registradas em `docs/status.md` ("Decisõ
 8. **P8. Aparelho sem passkey.** O online exige passkey; quem não tem suporte recebe a explicação, e a carreira offline não é afetada. (US-047)
 9. **P9. Entrar numa liga em andamento.** Permitido enquanto houver vaga: a pessoa assume um clube da IA a partir da próxima rodada, herdando pontos e elenco. (US-052)
 10. **P10. Volta depois da inatividade.** O clube fica reservado e a pessoa o retoma ao confirmar uma escalação, sem pedir nada ao dono. (US-060)
-11. **P11. Registro de erros e estatísticas.** Na 1a, registro de erros só no aparelho, com "Copiar relatório de erros"; o envio anônimo ao nosso servidor na 1b passa antes pelo `security-auditor`. Estatísticas de uso só no site; nenhuma no jogo. (US-045, US-046, US-038)
+11. **P11. Registro de erros e estatísticas.** Na 1a, registro de erros só no aparelho, com "Copiar relatório"; o envio anônimo ao nosso servidor na 1b passa antes pelo `security-auditor`. Estatísticas de uso só no site; nenhuma no jogo. (US-045, US-046, US-038)
 12. **P12. Prazos por rodada.** Opções fixas: ao vivo com 1, 2 ou 5 minutos (padrão 2); assíncrono com 12, 24 ou 48 horas (padrão 24). (US-051, US-061)
 13. **P13. Canal com a comunidade.** Até existir o e-mail de suporte, o devlog com um formulário simples ou as Discussions do repositório público; sem Discord nem grupos de WhatsApp, por causa do público menor de idade. Segue aberto qual dos dois (ver abaixo). (US-043)
 
