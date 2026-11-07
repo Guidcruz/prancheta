@@ -66,6 +66,15 @@ describe('the career frame (US-015)', () => {
     expect(body).toMatch(/<section class="banner danger[^"]*">/);
     expect(body).toContain(escaped(text('save.quota-exceeded.title')));
     expect(body).toContain(text('action.retry'));
+    // "Liberar espaço" opens Carreiras e backup inside the frame (T-025, saves.md).
+    expect(body).toContain(text('action.free'));
+    expect(body.indexOf(text('action.retry'))).toBeLessThan(body.indexOf(text('action.free')));
+  });
+
+  it('only the no-room banner offers "Liberar espaço"', () => {
+    for (const unsaved of ['write-failed', 'verify-failed', 'too-large'] as const) {
+      expect(frame({ ...OPEN, unsaved }), unsaved).not.toContain(text('action.free'));
+    }
   });
 
   it('a saved round has no banner and the button is ready', () => {

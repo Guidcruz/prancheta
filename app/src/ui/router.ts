@@ -14,6 +14,12 @@ export type DestinationId = string;
 /** Where the career opens (US-015: the Clube tab). */
 export const HOME_DESTINATION: DestinationId = NAV_TABS[0]!.id;
 
+/** Carreiras e backup: also where "Liberar espaço" leads (saves.md). */
+export const SAVES_DESTINATION: DestinationId = 'saves';
+
+/** The address of the new-game screen, outside the frame (its own entry: back returns home). */
+export const NEW_GAME_HASH = '#/new';
+
 const ids = new Set(DESTINATIONS.map((d) => d.id));
 
 /** The address of a destination. */

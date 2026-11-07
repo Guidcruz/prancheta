@@ -8,9 +8,9 @@
   "save.career-limit.title": "You already have 10 careers.",
   "save.conflict.body": "Progress there was saved and progress here was not. Close the other tab and reload this page to pick up where you left off.",
   "save.conflict.title": "This career is open in another tab.",
-  "save.not-found.body": "Go back to the start to see your saved careers.",
+  "save.not-found.body": "Check the list of your saved careers.",
   "save.not-found.title": "This career is no longer on this device.",
-  "save.quota-exceeded.body": "The last round has not been saved yet. Free up space on your device (delete old careers or other browser data) and try again.",
+  "save.quota-exceeded.body": "Free up space on your device (delete old careers or other browser data) and try again.",
   "save.quota-exceeded.title": "No space left to save.",
   "save.read-failed.body": "Try again.",
   "save.read-failed.title": "We could not read the career right now.",
@@ -26,8 +26,8 @@
   "save.too-large.title": "The career got too big to save.",
   "save.unsupported-browser.body": "Open the game from the official address (with https) or update your browser. On iPhone and iPad, you need iOS 16.4 or newer.",
   "save.unsupported-browser.title": "This browser cannot save your career.",
-  "save.verify-failed.body": "The game checked the save and something did not match, so it kept the previous version. Try again; if it happens again, export your career.",
-  "save.verify-failed.title": "The round was not saved.",
+  "save.verify-failed.body": "The game checked the save and something did not match, so it kept the previous version. Try again; if it happens again, export a backup of your careers.",
+  "save.verify-failed.title": "We could not save.",
   "save.write-failed.body": "Try again.",
-  "save.write-failed.title": "The round was not saved."
+  "save.write-failed.title": "We could not save."
 }

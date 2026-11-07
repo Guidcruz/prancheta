@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Tela inicial e novo jogo (T-025; US-034, US-014):
+  - Lista de carreiras com a mais recente em destaque e o contador "N de 10"; continuar uma carreira.
+  - Apagar em dois passos: o botão do passo seguinte ignora toques por 500 ms depois de a folha abrir; "Cancelar" fica sempre por último e na mesma altura; o destrutivo do passo 2 sobe pelo menos 56 px, com um separador.
+  - Novo jogo com clube, apelido (`checkCoachName`, até 24 caracteres), realismo e modo de partida; a última configuração (sem o apelido) fica lembrada.
+  - Erros de save com textos neutros, aprovados pelo CEO.
+  - Zoom por pinça continua liberado: `touch-action: manipulation` e campos de 16px ou mais.
+  - `BottomSheet` com cabeçalho e pé fixos e corpo rolável; com `footer`, o corpo vira região focável; a partir de 900px a folha fica ancorada pela base.
+  - Padrão novo no design system, "Confirmação em passos: o passo final" (aprovado pelo CEO em 2026-11-07).
+  - E2E: `tests/e2e/delete.spec.ts` (celular em pé, deitado em 844×390 e 932×430, e desktop) e `tests/e2e/careers.spec.ts`.
 - Infraestrutura de testes de tela (T-024; US-038, base):
   - Playwright em Chromium e WebKit, no celular (390×844) e no desktop (1280×800). Rodar: `PRANCHETA_ENV=test npm run test:e2e`.
   - Build de teste em `app/dist-e2e`, separado do de produção. Trava de produção: `tests/regression/no-test-hooks-in-prod.test.ts` e a conferência do `dist/` no CI garantem que nenhum gancho de teste vai para o build público.

@@ -78,6 +78,8 @@ describe('save alerts', () => {
       for (const a of actions) expect(AVAILABLE_ACTIONS.has(a), `${code}: ${a}`).toBe(true);
     }
     expect(unsavedActions('quota-exceeded')[0]).toBe('retry');
+    // "Liberar espaço" leads to Carreiras e backup from T-025 on; export waits for T-020.
+    expect(unsavedActions('quota-exceeded')).toEqual(['retry', 'free']);
     // Export and the error report come with T-020 and T-041: until then, back home.
     expect(unsavedActions('too-large')).toEqual(['home']);
   });

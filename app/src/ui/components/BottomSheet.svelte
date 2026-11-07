@@ -3,9 +3,19 @@
   import Icon from './Icon.svelte';
 
   /**
-   * Sheet that rises from the bottom on the phone and becomes a centred dialog from 900px up.
+   * Sheet that rises from the bottom on the phone and becomes a floating dialog from 900px up,
+   * anchored by its base (not centred), so the buttons at the bottom stay at the same height
+   * whatever the text above them: "Cancelar" in the same place in every sheet of a flow, and the
+   * final step of a confirmation measurable at both widths (design-system.md, "Passo final").
    * Built on the native modal <dialog>: focus stays inside, Esc closes. A tap on the backdrop
-   * closes too. The caller owns `open` and ties it to the history (back gesture closes).
+   * closes too. The caller owns `open` and ties it to the history (back gesture closes). No
+   * motion: it appears in place.
+   *
+   * Head (title and close), body and the optional `footer` share the max height: only the body
+   * scrolls, so the title, the close button and the footer's buttons never leave the sheet, even
+   * on a phone lying down. The footer sits at the base, at the same height in every sheet, with or
+   * without a footer (the last button of a sheet without one, when it fits, lands in the same
+   * place); ConfirmSheet puts its buttons there (design-system.md, "Confirmação em passos").
    */
   interface Props {
     open: boolean;
@@ -14,8 +24,10 @@
     closeLabel: string;
     onclose: () => void;
     children: Snippet;
+    /** Buttons fixed at the base of the sheet, outside the scrolling body. */
+    footer?: Snippet;
   }
-  const { open, title, closeLabel, onclose, children }: Props = $props();
+  const { open, title, closeLabel, onclose, children, footer }: Props = $props();
   const titleId = $props.id();
   let dialog: HTMLDialogElement | undefined = $state();
 
@@ -50,9 +62,22 @@
         <Icon name="close" />
       </button>
     </div>
-    <div class="body">
+    <!-- With a footer, the body may scroll alone (a phone lying down, large text): it is a named
+         region that takes the focus, between close and the footer, so the keyboard can scroll it
+         too (a scrollable region must be focusable; the lint does not know that case). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div
+      class="body"
+      class:last={!footer}
+      role={footer ? 'region' : undefined}
+      aria-labelledby={footer ? titleId : undefined}
+      tabindex={footer ? 0 : undefined}
+    >
       {@render children()}
     </div>
+    {#if footer}
+      <div class="foot">{@render footer()}</div>
+    {/if}
   </div>
 </dialog>
 
@@ -73,14 +98,40 @@
     background: var(--surface-0);
     opacity: 0.7;
   }
+  /* Same max height as the sheet: the head and the footer stay, the body takes what is left. */
   .panel {
-    padding: var(--space-2) var(--space-2) calc(var(--space-4) + env(safe-area-inset-bottom));
+    display: flex;
+    flex-direction: column;
+    max-height: inherit;
+    padding-top: var(--space-2);
   }
   .head {
     display: flex;
+    flex: none;
     align-items: center;
     gap: var(--space-2);
-    padding-left: var(--space-2);
+    padding: 0 var(--space-2) 0 var(--space-4);
+  }
+  /* The scroll container keeps the inline padding inside it, so focus rings are not clipped. */
+  .body {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    padding: 0 var(--space-2);
+  }
+  /* Inside the box: the sheet's edges would clip a ring drawn outside the scrolling body. */
+  .body:focus-visible {
+    outline-offset: -2px;
+  }
+  /* The base of the sheet: below the footer, or below the body when there is none. */
+  .body.last,
+  .foot {
+    padding-bottom: calc(var(--space-4) + env(safe-area-inset-bottom));
+  }
+  .foot {
+    flex: none;
+    padding-inline: var(--space-2);
   }
   .title {
     flex: 1;
@@ -105,10 +156,16 @@
   /* Same value as the desktop breakpoint in AppShell.svelte (no token yet: componentes.md). */
   @media (min-width: 900px) {
     .sheet {
-      margin: auto;
+      /* Anchored by the base, above the safe area; the top takes what is left. */
+      margin: auto auto calc(var(--space-8) + env(safe-area-inset-bottom));
       /* Dialog width: no token yet: componentes.md, "Propostas ao design system". */
       max-width: calc(var(--layout-content-max) * 0.75);
       border-radius: var(--radius-lg);
+    }
+    /* The safe area is already in the margin below the floating dialog. */
+    .body.last,
+    .foot {
+      padding-bottom: var(--space-4);
     }
   }
 </style>

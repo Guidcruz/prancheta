@@ -7,8 +7,8 @@ import type { FatalCode, WriteError } from '@lib/career';
  * action is the primary of the notice.
  *
  * Actions whose screen does not exist yet are left out until their task lands: `export` and
- * `import` (T-020), `free` (Carreiras e backup, T-025) and `report` (Sobre, T-041). A notice left
- * with no action offers "Voltar ao início".
+ * `import` (T-020) and `report` (Sobre, T-041). A notice left with no action offers "Voltar ao
+ * início". `free` opens Carreiras e backup (T-025), so it shows only where the caller passes it.
  */
 
 export type AlertAction =
@@ -21,6 +21,7 @@ export const AVAILABLE_ACTIONS: ReadonlySet<AlertAction> = new Set<AlertAction>(
   'update',
   'home',
   'help',
+  'free',
 ]);
 
 /** Full-screen errors (ErrorState `screen`, no tabs). */
