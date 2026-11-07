@@ -11,6 +11,8 @@ import { expect, test } from './fixtures.ts';
  */
 
 const GUARD_MS = 500;
+/** A largura do projeto de desktop (o de celular tem 390). */
+const DESKTOP_FROM = 900;
 
 const dialog = (page: Page) => page.getByRole('dialog');
 const button = (page: Page, name: string) =>
@@ -99,9 +101,7 @@ test.describe('apagar com confirmação dupla', () => {
     await expect(careerActions(page, club)).toBeVisible();
   });
 
-  test('em todas as folhas o "Cancelar" fica abaixo do botão do passo, também no passo 2', async ({
-    page,
-  }) => {
+  test('no passo 2 o "Cancelar" fica abaixo do destrutivo', async ({ page }) => {
     const club = await homeWithCareer(page);
     await careerActions(page, club).click();
     await page.clock.runFor(GUARD_MS);
@@ -116,25 +116,56 @@ test.describe('apagar com confirmação dupla', () => {
   test('o destrutivo do passo 2 sobe e o "Cancelar" não sai do lugar entre as folhas', async ({
     page,
   }) => {
-    const club = await homeWithCareer(page);
-    await careerActions(page, club).click();
-    const cancelActions = await button(page, 'Cancelar').boundingBox();
-    await page.clock.runFor(GUARD_MS);
-    await button(page, 'Apagar carreira').click();
-    const step1 = await button(page, 'Quero apagar').boundingBox();
-    const cancelStep1 = await button(page, 'Cancelar').boundingBox();
-    await page.clock.runFor(GUARD_MS);
-    await button(page, 'Quero apagar').click();
-    await expect(dialog(page)).toHaveAccessibleName(`Apagar de vez a carreira de ${club}?`);
-    const destroy = await button(page, 'Apagar carreira').boundingBox();
-    const cancelStep2 = await button(page, 'Cancelar').boundingBox();
-    // O destrutivo do passo 2 fica pelo menos 56 px acima de onde estava o "Quero apagar".
-    expect(step1!.y - destroy!.y).toBeGreaterThanOrEqual(56);
-    const overlap = (a: typeof step1, b: typeof step1) =>
-      a!.y < b!.y + b!.height && b!.y < a!.y + a!.height;
-    expect(overlap(step1, destroy)).toBe(false);
-    // O "Cancelar" fica no mesmo lugar nas três folhas (até 1 px).
-    expect(Math.abs(cancelStep1!.y - cancelActions!.y)).toBeLessThanOrEqual(1);
-    expect(Math.abs(cancelStep2!.y - cancelActions!.y)).toBeLessThanOrEqual(1);
+    await checkStepGeometry(page);
   });
 });
+
+/** Celular deitado: a folha tem cabeçalho e pé fixos e o corpo rola (BottomSheet.svelte). */
+test.describe('apagar com o celular deitado', () => {
+  test.use({ hasTouch: true });
+
+  for (const viewport of [
+    { width: 844, height: 390 },
+    { width: 932, height: 430 },
+  ]) {
+    test(`${viewport.width}x${viewport.height}: o destrutivo sobe e o "Cancelar" fica inteiro na tela`, async ({
+      page,
+    }) => {
+      // Uma vez por navegador: só no projeto de celular (o de desktop repetiria o mesmo caso).
+      test.skip(page.viewportSize()!.width >= DESKTOP_FROM, 'uma vez por navegador');
+      await page.setViewportSize(viewport);
+      await checkStepGeometry(page);
+    });
+  }
+});
+
+/**
+ * A geometria das três folhas do apagar: o destrutivo do passo 2 pelo menos 56 px acima de onde
+ * estava o "Quero apagar", sem sobrepor; o "Cancelar" no mesmo lugar (até 1 px) nas três, inteiro
+ * na janela e abaixo do destrutivo.
+ */
+async function checkStepGeometry(page: Page): Promise<void> {
+  const club = await homeWithCareer(page);
+  const height = page.viewportSize()!.height;
+  const inWindow = (box: { y: number; height: number } | null) =>
+    box !== null && box.y >= 0 && box.y + box.height <= height;
+  await careerActions(page, club).click();
+  const cancelActions = await button(page, 'Cancelar').boundingBox();
+  await page.clock.runFor(GUARD_MS);
+  await button(page, 'Apagar carreira').click();
+  const step1 = await button(page, 'Quero apagar').boundingBox();
+  const cancelStep1 = await button(page, 'Cancelar').boundingBox();
+  await page.clock.runFor(GUARD_MS);
+  await button(page, 'Quero apagar').click();
+  await expect(dialog(page)).toHaveAccessibleName(`Apagar de vez a carreira de ${club}?`);
+  const destroy = await button(page, 'Apagar carreira').boundingBox();
+  const cancelStep2 = await button(page, 'Cancelar').boundingBox();
+  expect(step1!.y - destroy!.y).toBeGreaterThanOrEqual(56);
+  const overlap = (a: typeof step1, b: typeof step1) =>
+    a!.y < b!.y + b!.height && b!.y < a!.y + a!.height;
+  expect(overlap(step1, destroy)).toBe(false);
+  expect(Math.abs(cancelStep1!.y - cancelActions!.y)).toBeLessThanOrEqual(1);
+  expect(Math.abs(cancelStep2!.y - cancelActions!.y)).toBeLessThanOrEqual(1);
+  for (const box of [cancelActions, cancelStep1, cancelStep2]) expect(inWindow(box)).toBe(true);
+  expect(cancelStep2!.y).toBeGreaterThan(destroy!.y);
+}

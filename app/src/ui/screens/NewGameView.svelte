@@ -210,10 +210,10 @@
       columns={2}
       onchange={onrealism}
     />
+    <!-- "Dá para trocar depois" only when there is another mode to change to (one, for now: P3). -->
     <OptionGroup
       name="match"
       legend={t('newGame.options.match', lang)}
-      // "Dá para trocar depois" only when there is another mode to change to (one, for now: P3).
       note={matches.length > 1 ? t('newGame.match.note', lang) : undefined}
       options={matches}
       value={setup.matchMode}
