@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { completeSheet, sheetProblems, type DraftSheet } from '@engine';
+  import { sheetProblems, type DraftSheet } from '@engine';
   import type { Lang } from '@lib/config';
   import {
     roundBlock,
@@ -32,6 +32,7 @@
   } from './components/nav-items';
   import { createDraftWriter } from './draft-writer';
   import { coachSheet, lineupIssues } from './lineup';
+  import { roundSheet } from './tactic';
   import { noticeActions } from './notice-actions';
   import {
     HOME_DESTINATION,
@@ -273,11 +274,8 @@
    * engine plays its own suggestion and the draft stays absent.
    */
   function play(): void {
-    if (untouched && check.ready) {
-      void service.playRound();
-      return;
-    }
-    void service.playRound({ sheet: completeSheet(save.game, save.career.clubId, sheet) });
+    const sent = roundSheet(save.game, save.career.clubId, sheet, untouched, check.ready);
+    void service.playRound(sent === undefined ? {} : { sheet: sent });
   }
 
   // ------------------------------------------------- "Escalação incompleta" (escalacao.md; US-017)

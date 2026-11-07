@@ -58,12 +58,21 @@
   .row:hover {
     background: var(--surface-2);
   }
+  /* The label keeps at least its longest word; a long value is the one cut, with an ellipsis
+     ("Automático: Ildo Albuque…", tatica.md). Without a value the label takes the row. */
   .label {
-    flex: 1;
-    min-width: 0;
+    flex: 1 1 auto;
   }
   .value {
+    flex: 0 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--ink-muted);
+  }
+  .row > :global(svg) {
+    flex: none;
   }
   .row > :global(svg:last-child) {
     color: var(--ink-muted);

@@ -182,7 +182,7 @@ export function cardOrder(game: GameState, clubId: ClubId, sheet: DraftSheet): P
 
 export type RoleName = 'captain' | 'penalty' | 'freeKick';
 
-const ROLE_LISTS = {
+export const ROLE_LISTS = {
   captain: 'captains',
   penalty: 'penaltyTakers',
   freeKick: 'freeKickTakers',

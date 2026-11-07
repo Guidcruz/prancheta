@@ -292,9 +292,10 @@ describe('the selector of the Elenco tab (escalacao.md, "Navegação")', () => {
     expect(squad).toContain('<table');
     expect(squad).not.toContain('data-slot=');
     expect(tab('lineup')).toContain('data-slot="10"');
-    // Tática comes with T-077: until then it says so.
+    // The Tática (T-077): the formations, no pitch of its own (CEO decision 2).
     const tactic = tab('tactic');
-    expect(tactic).toContain(t('screen.soon', 'pt-BR'));
+    expect(tactic).not.toContain(t('screen.soon', 'pt-BR'));
+    expect(tactic).toContain(t('tactic.formation.legend', 'pt-BR'));
     expect(tactic).not.toContain('data-slot=');
   });
 });
