@@ -262,6 +262,35 @@ describe('CareerService.setDraft (ADR-0021)', () => {
     expect(saveOf(await reloaded()).career.draft).toEqual(draft);
   });
 
+  it('a failed write of the sheet is told to the player (draftUnsaved) until a write passes (T-029)', async () => {
+    const h = await created();
+    h.drafts.mockImplementationOnce(() => fail('quota-exceeded', { name: 'QuotaExceededError' }));
+    const draft = edited(h);
+    await h.service.setDraft(draft);
+    expect(get(h.service.state).draftUnsaved).toBe('quota-exceeded');
+    // "Tentar de novo" writes the sheet in memory again, and the notice goes away.
+    expect(await h.service.retryDraft()).toEqual({ ok: true, value: undefined });
+    expect(h.drafts).toHaveBeenCalledTimes(2);
+    expect(h.drafts.mock.calls[1]![0].career.draft).toEqual(draft);
+    expect(get(h.service.state).draftUnsaved).toBeUndefined();
+    expect(saveOf(await reloaded()).career.draft).toEqual(draft);
+    // Nothing to retry now.
+    expect(await h.service.retryDraft()).toEqual({ ok: false, error: 'nothing-to-save' });
+  });
+
+  it('a write of the sheet that throws is a bug in the log and a failed write for the player', async () => {
+    const h = await created();
+    h.drafts.mockImplementationOnce(() => Promise.reject(new Error('boom')));
+    await h.service.setDraft(edited(h));
+    expect(get(h.service.state)).toMatchObject({ status: 'open', draftUnsaved: 'write-failed' });
+    const entries = await h.log.list();
+    expect(entries.at(-1)).toMatchObject({ kind: 'programming', code: 'unexpected' });
+    expect(entries.filter((e) => e.screen === 'career.draft')).toHaveLength(1);
+    // The next snapshot carries the sheet: the notice goes away with it.
+    await h.service.playRound();
+    expect(get(h.service.state).draftUnsaved).toBeUndefined();
+  });
+
   it('another tab wrote: the sheet is refused with conflict and the career ends on this tab', async () => {
     const one = await created();
     const two = await reloaded();

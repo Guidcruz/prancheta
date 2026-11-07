@@ -22,6 +22,7 @@ export {
   type CareerSetup,
   type CareerState,
   type CreateError,
+  type DraftUnsaved,
   type FatalCode,
   type PlayError,
   type PlayInput,

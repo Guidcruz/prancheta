@@ -136,7 +136,16 @@ export interface CareerState {
   readonly roundsLost: number;
   /** Rounds whose match sheets were lost when opening (the round screen says so; T-030). */
   readonly missingSheetRounds: readonly number[];
+  /**
+   * The last write of the coach's sheet alone failed, and why (T-029): the sheet is in memory and
+   * goes with the next snapshot, and the frame tells the player, with "Tentar de novo"
+   * ({@link CareerService.retryDraft}). Cleared by the next write of the sheet or of a snapshot.
+   */
+  readonly draftUnsaved?: DraftUnsaved;
 }
+
+/** A write of the coach's sheet that failed without ending the career on this tab. */
+export type DraftUnsaved = Exclude<DraftWriteError, 'conflict' | 'app-outdated' | 'save-too-new'>;
 
 const CLOSED: CareerState = {
   status: 'closed',
@@ -584,7 +593,8 @@ export class CareerService {
    * sheet alone (`writeDraft`). Edits that arrive while one is being written are written once,
    * the last. With a round in memory not yet stored (`unsaved`) nothing is written: the sheet goes
    * with "Tentar de novo". While a round is played or written (`busy`) the sheet does not change.
-   * A failed write is logged and the sheet stays in memory (the next snapshot takes it); a
+   * A failed write is logged, kept in `draftUnsaved` for the frame's notice ("Tentar de novo":
+   * {@link retryDraft}) and the sheet stays in memory (the next snapshot takes it); a
    * `conflict` (another tab), `app-outdated` or `save-too-new` ends the career on this tab, as a
    * snapshot write does. Resolves when the write is done.
    */
@@ -595,6 +605,21 @@ export class CareerService {
     const sheet = reconcileDraft(save.game, save.career.clubId, draft);
     this.set({ save: { ...save, career: { ...save.career, draft: sheet } } });
     if (this.current.unsaved === undefined) await this.flushDraft();
+    return { ok: true, value: undefined };
+  }
+
+  /**
+   * "Tentar de novo" of a failed write of the coach's sheet (`draftUnsaved`): writes the sheet in
+   * memory again. With a round not stored (`unsaved`) the sheet goes with {@link retrySave}.
+   */
+  async retryDraft(): Promise<SaveResult<void, 'nothing-to-save' | 'busy'>> {
+    const { status, save, busy, unsaved, draftUnsaved } = this.current;
+    if (busy) return { ok: false, error: 'busy' };
+    if (status !== 'open' || save === undefined || draftUnsaved === undefined) {
+      return { ok: false, error: 'nothing-to-save' };
+    }
+    if (unsaved !== undefined) return { ok: false, error: 'nothing-to-save' };
+    await this.flushDraft();
     return { ok: true, value: undefined };
   }
 
@@ -676,16 +701,25 @@ export class CareerService {
 
   private async writeDraft(save: CareerSave): Promise<void> {
     let written: SaveResult<unknown, DraftWriteError>;
+    let thrown = false;
     try {
       written = await this.store.writeDraft(save, {
         expectedHeadSeq: this.headSeq,
         snapshotSeq: this.snapshotSeq,
       });
     } catch (error) {
+      // The store never throws for a storage situation: a bug, logged with its stack, and shown
+      // to the player as a write that failed.
       this.logException('career.draft', error);
+      written = { ok: false, error: 'write-failed' };
+      thrown = true;
+    }
+    // The career may have been closed or changed while the sheet was written.
+    const same = this.current.status === 'open' && this.current.save?.careerId === save.careerId;
+    if (written.ok) {
+      if (same && this.current.draftUnsaved !== undefined) this.set({ draftUnsaved: undefined });
       return;
     }
-    if (written.ok) return;
     if (written.error === 'invalid-save') {
       void this.log.record({
         kind: 'programming',
@@ -693,12 +727,16 @@ export class CareerService {
         screen: 'career.draft',
         ...issueOf(written.detail),
       });
-      return;
+    } else if (!thrown) {
+      this.logStorage(written.error, 'career.draft', written.detail);
     }
-    this.logStorage(written.error, 'career.draft', written.detail);
-    const same = this.current.status === 'open' && this.current.save?.careerId === save.careerId;
-    if (isFatalOnDraft(written.error) && same) {
+    if (!same) return;
+    if (isFatalOnDraft(written.error)) {
       this.set({ status: 'fatal', fatal: { code: written.error, unsaved: false } });
+    } else {
+      // Never silent (T-029): the frame shows the notice; the sheet stays in memory and goes with
+      // the next snapshot.
+      this.set({ draftUnsaved: written.error });
     }
   }
 
@@ -726,7 +764,8 @@ export class CareerService {
       this.headSeq = written.value.seq;
       this.snapshotSeq = written.value.seq;
       this.base = written.value.sheets;
-      this.set({ busy: false, unsaved: undefined });
+      // The snapshot carries the sheet in memory: a failed write of the sheet alone is behind.
+      this.set({ busy: false, unsaved: undefined, draftUnsaved: undefined });
       return { ok: true, value: undefined };
     }
     this.recordWriteError(written.error, screen, written.detail);
