@@ -4,6 +4,7 @@ import { getStandings, type GameState, type PlayerId } from '@engine';
 import type { CareerSave, CareerService, CareerState } from '@lib/career';
 import type { Lang } from '@lib/config';
 import type { ErrorLog } from '@lib/errors';
+import { loadGameParams } from '@lib/params';
 import { t, tPlural } from '@lib/i18n';
 import CareerFrame from './CareerFrame.svelte';
 import type { TabItem } from './components/TabBar.svelte';
@@ -256,7 +257,7 @@ describe('the Clube screen (clube.md; US-015, US-026)', () => {
     const body = render(CareerFrame, {
       props: {
         career,
-        service: {} as CareerService,
+        service: { params: loadGameParams() } as unknown as CareerService,
         log: {} as ErrorLog,
         lang: 'pt-BR',
         onhome: noop,

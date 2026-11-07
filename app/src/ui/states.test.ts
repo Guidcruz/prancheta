@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import type { CareerSave, CareerService, CareerState, FatalCode, WriteError } from '@lib/career';
 import type { ErrorLog } from '@lib/errors';
+import { loadGameParams } from '@lib/params';
 import { t } from '@lib/i18n';
 import type { Lang } from '@lib/config';
 import { latestClubSet } from '../data/club-sets.ts';
@@ -39,7 +40,13 @@ const noop = () => undefined;
 
 const frame = (career: CareerState, lang: Lang): string =>
   render(CareerFrame, {
-    props: { career, service: {} as CareerService, log: {} as ErrorLog, lang, onhome: noop },
+    props: {
+      career,
+      service: { params: loadGameParams() } as unknown as CareerService,
+      log: {} as ErrorLog,
+      lang,
+      onhome: noop,
+    },
   }).body;
 const fatal = (code: FatalCode, unsaved: boolean, lang: Lang): string =>
   render(FatalScreen, {

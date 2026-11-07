@@ -272,7 +272,7 @@ describe("the frame and the coach's sheet (US-017; ADR-0021)", () => {
     render(CareerFrame, {
       props: {
         career,
-        service: {} as CareerService,
+        service: { params } as unknown as CareerService,
         log: {} as ErrorLog,
         lang: 'pt-BR',
         onhome: () => undefined,

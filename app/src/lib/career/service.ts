@@ -240,7 +240,11 @@ export class CareerService {
   private readonly store: SaveStore;
   private readonly log: ErrorLog;
   private readonly appVersion: string;
-  private readonly params: GameParams;
+  /**
+   * The game parameters of this career layer: the ones every round is played with, also read by
+   * the screens that show the engine's suggestion (T-029), so both use the same values.
+   */
+  readonly params: GameParams;
   /** Only a new career needs it: the name lists are compiled on first use. */
   private readonly identities: IdentitySource | undefined;
   private readonly clubSets: readonly ClubSet[];

@@ -12,7 +12,6 @@
   import type { ErrorLog } from '@lib/errors';
   import { shieldSpecFor, shieldSvg } from '@lib/generators/shield';
   import { t, tPlural } from '@lib/i18n';
-  import { loadGameParams } from '@lib/params';
   import AppShell from './components/AppShell.svelte';
   import Banner from './components/Banner.svelte';
   import BottomSheet from './components/BottomSheet.svelte';
@@ -104,7 +103,8 @@
   const more = $derived([...extra, ...settings, item(NAV_TUTORIAL)]);
 
   const save = $derived(career.save!);
-  const params = loadGameParams();
+  /** The parameters the rounds are played with: the suggestion shown is the one played. */
+  const params = $derived(service.params);
   const writer = createDraftWriter({
     get state() {
       return service.state;

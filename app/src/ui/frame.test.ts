@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import type { CareerSave, CareerService, CareerState } from '@lib/career';
 import type { ErrorLog } from '@lib/errors';
+import { loadGameParams } from '@lib/params';
 import { t } from '@lib/i18n';
 import { latestClubSet } from '../data/club-sets.ts';
 import { testCareer } from './testing/game';
@@ -30,7 +31,7 @@ const OPEN: CareerState = {
   roundsLost: 0,
   missingSheetRounds: [],
 };
-const service = {} as CareerService;
+const service = { params: loadGameParams() } as unknown as CareerService;
 const log = {} as ErrorLog;
 
 function frame(career: CareerState): string {
