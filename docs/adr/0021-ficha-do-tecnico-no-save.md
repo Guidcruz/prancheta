@@ -1,13 +1,13 @@
 # ADR-0021: Ficha do técnico no save (formato v2), fora do estado do motor
 
-- **Status:** proposto (aguarda o CEO). O CEO aprovou em 2026-11-07, pela recomendação, que a escalação montada pelo técnico seja guardada no save. A forma técnica abaixo é do `architect`.
+- **Status:** aceito (CEO, 2026-11-07: "ok" para todas as recomendações, inclusive a opção A da virada). Antes, no mesmo dia, o CEO já tinha aprovado, pela recomendação, que a escalação montada pelo técnico fosse guardada no save. A forma técnica é do `architect`.
 - **Data:** 2026-11-07
 - **Decisores:** ux-designer (pediu: `docs/design/telas/funcoes.md`, "Pedidos ao motor", pedido 1), architect (propôs e redigiu), CEO (aprova)
 - **Complementa:** ADR-0006 (formato do save: versão 2 e migração), ADR-0007 (contrato do motor: leituras novas, sem mudar a simulação) e ADR-0019 (dado da aplicação fica fora do `GameState`).
 
 ## Contexto
 
-A tela de escalação, tática e funções (T-029) muda a ficha na hora, sem botão "Salvar". O save não tem onde guardar essa ficha. O `CareerData` não tem ficha, e o `GameState.lastSheets` só guarda a ficha que cada clube já levou a campo. Por isso, recarregar a página perde a escalação, a formação, a postura, a pressão, o capitão e os cobradores. Três medidas de E2E da T-029 dependem disso: a 11 da Escalação, a 2 da Tática e a 7 das Funções.
+A tela de escalação, tática e funções (T-029 e T-077) muda a ficha na hora, sem botão "Salvar". O save não tem onde guardar essa ficha. O `CareerData` não tem ficha, e o `GameState.lastSheets` só guarda a ficha que cada clube já levou a campo. Por isso, recarregar a página perde a escalação, a formação, a postura, a pressão, o capitão e os cobradores. Três medidas de E2E da T-029 dependem disso: a 11 da Escalação, a 2 da Tática e a 7 das Funções.
 
 A ficha guardada precisa aceitar um estado inválido. O técnico pode deixar uma vaga livre e sair, e um titular pode se lesionar ou ser suspenso na rodada. A tela mostra essa ficha com o aviso até ela ser consertada. Quatro fatos pesam no desenho:
 
@@ -100,14 +100,14 @@ export function draftFromSheet(sheet: TeamSheet): DraftSheet; // completa titula
 
 ### 5. Virada da temporada e mudanças no elenco
 
-| Situação                                                  | O que acontece com a ficha                                                                                                                                                                                         |
-| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| Titular ou reserva lesionado ou suspenso depois da edição | Fica na ficha. A tela mostra "lesionado (ou suspenso) escalado" e bloqueia o "Jogar rodada" até consertar, ou até o "Completar e jogar" trocar (`escalacao.md`, "Estados"). No realismo simplificado não acontece. |
-| Aposentado na virada (`endSeason` tira do elenco, T-048)  | A conciliação na gravação do fim da temporada troca o id por vaga livre e o tira das listas. O snapshot da fase `seasonEnd` já sai coerente, antes de o `startNextSeason` tirar o jogador de `players`.            |
-| Vendido ou emprestado (mercado, fora da 1a)               | A mesma regra: saiu do elenco, vira vaga livre e sai das listas. Nenhuma mudança neste ADR quando o mercado entrar.                                                                                                |
-| Jovem promovido da base                                   | Não entra na ficha sozinho: aparece em "Não relacionados".                                                                                                                                                         |
-| `startNextSeason`                                         | A ficha fica: formação, tática, titulares e listas, menos quem saiu. Condição, lesões e suspensões voltam a zero no motor, então só as vagas livres de quem saiu bloqueiam. Ver a decisão 2 do CEO, abaixo.        |
-| Jogador que sai de `players` com o id ainda na ficha      | Não acontece: a conciliação roda antes de toda gravação, e a coerência do esquema recusa a gravação se o id não estiver no elenco (erro de programação, registrado).                                               |
+| Situação                                                  | O que acontece com a ficha                                                                                                                                                                                                                                                                                                              |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Titular ou reserva lesionado ou suspenso depois da edição | Fica na ficha. A tela mostra "lesionado (ou suspenso) escalado" e bloqueia o "Jogar rodada" até consertar, ou até o "Completar e jogar" trocar (`escalacao.md`, "Estados"). No realismo simplificado não acontece.                                                                                                                      |
+| Aposentado na virada (`endSeason` tira do elenco, T-048)  | A conciliação na gravação do fim da temporada troca o id por vaga livre e o tira das listas. O snapshot da fase `seasonEnd` já sai coerente, antes de o `startNextSeason` tirar o jogador de `players`.                                                                                                                                 |
+| Vendido ou emprestado (mercado, fora da 1a)               | A mesma regra: saiu do elenco, vira vaga livre e sai das listas. Nenhuma mudança neste ADR quando o mercado entrar.                                                                                                                                                                                                                     |
+| Jovem promovido da base                                   | Não entra na ficha sozinho: aparece em "Não relacionados".                                                                                                                                                                                                                                                                              |
+| `startNextSeason`                                         | A ficha fica: formação, tática, titulares e listas, menos quem saiu. Condição, lesões e suspensões voltam a zero no motor, então só as vagas livres de quem saiu bloqueiam. Decisão do CEO de 2026-11-07 (opção A, abaixo): a primeira tela da temporada nova mostra o aviso "Escalação incompleta", com o "Completar automaticamente". |
+| Jogador que sai de `players` com o id ainda na ficha      | Não acontece: a conciliação roda antes de toda gravação, e a coerência do esquema recusa a gravação se o id não estiver no elenco (erro de programação, registrado).                                                                                                                                                                    |
 
 ### 6. O `ENGINE_VERSION` não sobe
 
@@ -145,7 +145,7 @@ O contrato completo está no §4.1, "Ficha em edição e leituras para a escala�
 - **Pendências:**
   - **T-075** (`developer`): tipos `DraftLineup` e `DraftSheet` e a função `draftFromSheet` no contrato do motor; save v2 (`schema.ts`, `validate.ts` com `parseDraft`, `migrations/0001-coach-draft.ts`, `__fixtures__/v2.json` e `shape-v2.json`); `SaveStore.writeDraft` e a ficha do registro na abertura; `CareerService.setDraft`, `reconcileDraft` e a ficha depois da rodada; testes acima.
   - **T-076** (`developer`): as leituras do item 8 no contrato, com os testes de propriedade do §4.1.
-  - **T-029** passa a depender da T-075 e da T-076.
+  - A T-029 se divide em duas, ambas M (decisão do CEO de 2026-11-07): **T-029**, a Escalação (`escalacao.md`), depende da T-028, da T-075 e da T-076; **T-077**, a Tática e as Funções (`tatica.md` e `funcoes.md`), depende da T-029.
 
 ## Testes (com o `qa-engineer`)
 
@@ -165,8 +165,11 @@ O contrato completo está no §4.1, "Ficha em edição e leituras para a escala�
 
 ## Decisões do CEO
 
-1. **Aprovar este ADR**, com a ficha no envelope (`career.draft`), o formato v2 com a migração acima e a gravação entre as rodadas no registro da carreira. _Recomendação:_ sim. É a forma mais simples que guarda a ficha sem mexer no motor nem nos goldens e sem gravar 680 KB a cada toque.
-2. **A ficha na virada da temporada.**
-   - Opção A: a ficha fica. Formação, tática, titulares e listas continuam, e quem se aposentou vira vaga livre, com o aviso "Escalação incompleta" e o "Completar automaticamente" na primeira tela da temporada nova. Com cerca de 1,3 aposentadoria por clube por virada (§4.1, T-048), o aviso deve aparecer na maioria das viradas.
-   - Opção B: a ficha some na virada, e a temporada começa com a sugestão do motor, como a rodada 1 da carreira. O técnico perde a formação, a tática e as listas que escolheu.
-   - _Recomendação:_ A. Respeita a escolha do técnico, a tela já trata a vaga livre, e o resumo da temporada já mostra as despedidas. Nada muda sem o técnico ver.
+Decididas pelo CEO em 2026-11-07 ("ok" para todas as recomendações). Ficam como registro.
+
+1. **Aprovar este ADR**, com a ficha no envelope (`career.draft`), o formato v2 com a migração acima e a gravação entre as rodadas no registro da carreira. **Decidido: sim**, pela recomendação. É a forma mais simples que guarda a ficha sem mexer no motor nem nos goldens e sem gravar 680 KB a cada toque.
+2. **A ficha na virada da temporada. Decidido: opção A**, pela recomendação.
+   - Opção A (escolhida): a ficha fica. Formação, tática, titulares e listas continuam, e quem se aposentou vira vaga livre, com o aviso "Escalação incompleta" e o "Completar automaticamente" na primeira tela da temporada nova. Com cerca de 1,3 aposentadoria por clube por virada (§4.1, T-048), o aviso deve aparecer na maioria das viradas.
+   - Opção B (descartada): a ficha some na virada, e a temporada começa com a sugestão do motor, como a rodada 1 da carreira. O técnico perderia a formação, a tática e as listas que escolheu.
+   - Motivo: respeita a escolha do técnico, a tela já trata a vaga livre, e o resumo da temporada já mostra as despedidas. Nada muda sem o técnico ver.
+3. **Tamanho da T-029.** Mesmo sem o save e as contas do motor, que foram para a T-075 e a T-076, a tela continuava G. **Decidido:** dividir em duas M, a T-029 (Escalação) e a T-077 (Tática e Funções).
