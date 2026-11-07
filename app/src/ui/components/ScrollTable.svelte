@@ -35,7 +35,7 @@
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="box" role="region" aria-labelledby="{id}-caption" tabindex="0">
+<div class="box scroll-table" role="region" aria-labelledby="{id}-caption" tabindex="0">
   <table>
     <caption id="{id}-caption" class="caption" class:visually-hidden={!showCaption}>
       {caption}

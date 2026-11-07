@@ -8,7 +8,6 @@
   import FanThermometer from '../components/FanThermometer.svelte';
   import LinkRow from '../components/LinkRow.svelte';
   import MatchCard from '../components/MatchCard.svelte';
-  import ScrollTable from '../components/ScrollTable.svelte';
   import SectionCard from '../components/SectionCard.svelte';
   import Skeleton from '../components/Skeleton.svelte';
   import StatusBadge from '../components/StatusBadge.svelte';
@@ -80,27 +79,14 @@
   $effect(() => {
     for (const block of [nextBlock, fansBlock, tableBlock]) if (!block.ok) onerror?.(block.error);
   });
-  const tableColumns = $derived([
-    { id: 'club', label: t('table.col.club', lang) },
-    {
-      id: 'played',
-      label: t('table.col.played', lang),
-      full: t('table.col.played.full', lang),
-      numeric: true,
-    },
-    {
-      id: 'goalDiff',
-      label: t('table.col.goalDiff', lang),
-      full: t('table.col.goalDiff.full', lang),
-      numeric: true,
-    },
-    {
-      id: 'points',
-      label: t('table.col.points', lang),
-      full: t('table.col.points.full', lang),
-      numeric: true,
-    },
-  ]);
+  /** The mini table's columns after the club: short label shown, full name read. */
+  const statColumns = $derived(
+    (['played', 'goalDiff', 'points'] as const).map((id) => ({
+      id,
+      label: t(`table.col.${id}`, lang),
+      full: t(`table.col.${id}.full`, lang),
+    })),
+  );
 </script>
 
 <!-- eslint-disable-next-line @typescript-eslint/no-unused-vars -- Svelte passes the error first; onerror already got it -->
@@ -223,19 +209,39 @@
                       )}`}
                 </p>
               </div>
-              <ScrollTable caption={t('club.table.caption', lang)} columns={tableColumns}>
-                {#each standing.window as row (row.clubId)}
-                  <TableRow
-                    position={row.position}
-                    club={game.clubs[row.clubId]!.def}
-                    name={nameOf(row.clubId)}
-                    stats={[row.played, signed(row.goalDifference, lang), row.points]}
-                    isMine={row.clubId === clubId}
-                    mineLabel={t('table.mine', lang)}
-                    instance="mini"
-                  />
-                {/each}
-              </ScrollTable>
+              <!-- A plain table, not a ScrollTable: three rows that never scroll, so the club
+                   column takes the room left (clube.md, "Classificação"; no 50% cap). -->
+              <div class="mini">
+                <table>
+                  <caption class="visually-hidden">{t('club.table.caption', lang)}</caption>
+                  <thead>
+                    <tr>
+                      <th scope="col" class="rotulo">{t('table.col.club', lang)}</th>
+                      {#each statColumns as column (column.id)}
+                        <th scope="col" class="rotulo numeric">
+                          <abbr title={column.full}>
+                            <span aria-hidden="true">{column.label}</span>
+                            <span class="visually-hidden">{column.full}</span>
+                          </abbr>
+                        </th>
+                      {/each}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {#each standing.window as row (row.clubId)}
+                      <TableRow
+                        position={row.position}
+                        club={game.clubs[row.clubId]!.def}
+                        name={nameOf(row.clubId)}
+                        stats={[row.played, signed(row.goalDifference, lang), row.points]}
+                        isMine={row.clubId === clubId}
+                        mineLabel={t('table.mine', lang)}
+                        instance="mini"
+                      />
+                    {/each}
+                  </tbody>
+                </table>
+              </div>
               <div class="form">
                 <p class="rotulo muted">{t('club.form.title', lang)}</p>
                 {#if form.length === 0}
@@ -312,6 +318,43 @@
   .position,
   .standing p {
     font-variant-numeric: tabular-nums;
+  }
+  .mini {
+    position: relative;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-md);
+    background: var(--surface-1);
+    overflow: hidden;
+  }
+  .mini table {
+    inline-size: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .mini thead th {
+    position: relative;
+    padding: var(--space-2);
+    border-block-end: 1px solid var(--line);
+    color: var(--ink-muted);
+    text-align: start;
+    white-space: nowrap;
+  }
+  .mini thead th:first-child {
+    padding-inline-start: var(--space-3);
+  }
+  .mini .numeric {
+    text-align: end;
+  }
+  .mini abbr {
+    text-decoration: none;
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .form {
     display: flex;

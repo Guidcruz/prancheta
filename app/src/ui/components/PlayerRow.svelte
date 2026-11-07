@@ -90,15 +90,17 @@
     z-index: 1;
     padding-inline-start: var(--space-3);
   }
-  /* The fixed column never takes more than half the table's box (ScrollTable is the
-     container), the cell's padding and the fold line included (elenco.md, E2E measure 3: at
-     360px, 45cqi plus the padding came to 51%). Long names end in an ellipsis; the card shows
-     them whole. */
   .cell {
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
+  }
+  /* Inside a ScrollTable the fixed column never takes more than half the table's box, the
+     cell's padding and the fold line included (componentes.md, "Coluna fixa das tabelas que
+     rolam"; elenco.md, E2E measure 3). Long names end in an ellipsis; the card shows them
+     whole. */
+  :global(.scroll-table) .cell {
     max-inline-size: calc(50cqi - var(--space-3) - var(--space-2) - 1px);
   }
   .pos {

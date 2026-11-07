@@ -170,6 +170,32 @@ test.describe('Clube (clube.md; US-015, US-026)', () => {
     }
   });
 
+  test('mini tabela a 360 px: nenhum nome cortado e sem rolagem lateral (medida 9)', async ({
+    page,
+  }) => {
+    test.skip(page.viewportSize()!.width >= SIDE_FROM, 'a medida é do celular estreito');
+    await startCareer(page);
+    await page.setViewportSize({ width: 360, height: 740 });
+    const table = block(page, 'table').locator('table');
+    await expect(table.locator('tbody th[scope="row"]')).toHaveCount(3);
+    const names = await table
+      .locator('tbody th[scope="row"] .name')
+      .evaluateAll((els) => els.map((el) => ({ scroll: el.scrollWidth, client: el.clientWidth })));
+    expect(names).toHaveLength(3);
+    for (const name of names) expect(name.scroll).toBeLessThanOrEqual(name.client);
+    const box = await table.evaluate((el) => {
+      const outer = el.parentElement!;
+      return {
+        table: el.getBoundingClientRect().width,
+        outer: outer.clientWidth,
+        scroll: outer.scrollWidth,
+      };
+    });
+    expect(box.scroll).toBeLessThanOrEqual(box.outer);
+    expect(box.table).toBeLessThanOrEqual(box.outer + 1);
+    await noPageScroll(page);
+  });
+
   test('com movimento reduzido, nenhuma animação depois de a tela abrir', async ({ page }) => {
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await startCareer(page);

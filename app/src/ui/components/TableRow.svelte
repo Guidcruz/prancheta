@@ -58,14 +58,17 @@
     padding-inline-start: var(--space-2);
     border-inline-start: var(--space-1) solid transparent;
   }
-  /* The whole fixed cell (content, padding, the marker bar and the fold line) never takes more
-     than half the table's box (ScrollTable is the container; componentes.md, "Coluna fixa das
-     tabelas"): start padding, bar, end padding and the 1px line come off the 50cqi. */
   .cell {
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
+  }
+  /* Inside a ScrollTable the whole fixed cell (content, padding, the marker bar and the fold
+     line) never takes more than half the table's box (componentes.md, "Coluna fixa das tabelas
+     que rolam"): start padding, bar, end padding and the 1px line come off the 50cqi. Outside
+     one (the Clube's mini table, which does not scroll) the name takes the room that is left. */
+  :global(.scroll-table) .cell {
     max-inline-size: calc(50cqi - var(--space-2) - var(--space-1) - var(--space-2) - 1px);
   }
   .pos {
