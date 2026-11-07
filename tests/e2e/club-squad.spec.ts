@@ -72,6 +72,43 @@ async function smallTargets(scope: Locator) {
   });
 }
 
+/** A cor computada de um token no tema atual (resolvida por um elemento de prova). */
+async function tokenColor(page: Page, token: string): Promise<string> {
+  return page.evaluate((name) => {
+    const probe = document.createElement('span');
+    probe.style.color = `var(--${name})`;
+    document.body.append(probe);
+    const color = getComputedStyle(probe).color;
+    probe.remove();
+    return color;
+  }, token);
+}
+
+/**
+ * Imita o WebKit, que não move o foco num toque: impede o foco do mouse emulado, de modo que o
+ * único foco depois do toque é o dado por script (o que desenhava o anel no iPhone). No WebKit
+ * do CI é inofensivo.
+ */
+async function emulateWebKitTapFocus(page: Page): Promise<void> {
+  await page.addInitScript(() =>
+    document.addEventListener('mousedown', (event) => event.preventDefault(), { capture: true }),
+  );
+}
+
+/** Condição 74, moral 60 e forma 5,5 no primeiro jogador; forma vazia no segundo. */
+async function forceStates(page: Page): Promise<{ banded: string; noForm: string }> {
+  let names = { banded: '', noForm: '' };
+  await patchSave(page, (save) => {
+    const [a, b] = squadOf(save);
+    changePlayer(save, a!.id, { condition: 74, morale: 60, recentRatings: [5.5] });
+    changePlayer(save, b!.id, { condition: 90, morale: 30, recentRatings: [] });
+    names = { banded: a!.name.display, noForm: b!.name.display };
+  });
+  return names;
+}
+
+const LEVEL_CLASS = /level-(good|fair|poor)/;
+
 const main = (page: Page) => page.locator('main');
 const block = (page: Page, name: string) => main(page).locator(`[data-block="${name}"]`);
 const squadTab = (page: Page) =>
@@ -351,6 +388,81 @@ test.describe('Elenco (elenco.md; US-016)', () => {
     await expect(main(page).getByRole('radio')).toHaveCount(2);
     await expect(main(page).locator('label', { hasText: 'Condição' })).toHaveCount(0);
   });
+
+  test('cores por faixa: condição 74 ruim, moral 60 boa, forma 5,5 regular; a nota sem cor (medida 10)', async ({
+    page,
+  }) => {
+    await startCareer(page);
+    const names = await forceStates(page);
+    await openSquad(page);
+    const rowOf = (name: string) =>
+      main(page).locator('tbody tr', { has: page.getByRole('button', { name, exact: true }) });
+    const cells = rowOf(names.banded).locator('td');
+    const expected = [
+      { index: 1, text: '74', level: 'poor', sr: '74, ruim' },
+      { index: 2, text: '60', level: 'good', sr: '60, boa' },
+      { index: 3, text: '5,5', level: 'fair', sr: '5,5, regular' },
+    ];
+    for (const theme of ['noite', 'dia'] as const) {
+      await setTheme(page, theme);
+      for (const { index, text, level, sr } of expected) {
+        const number = cells.nth(index).locator(`span.level-${level}`);
+        await expect(number).toHaveText(text);
+        await expect(number).toBeVisible();
+        await expect(cells.nth(index).locator('.visually-hidden')).toHaveText(sr);
+        await expect(number).toHaveCSS('color', await tokenColor(page, `level-${level}`));
+      }
+    }
+    // The overall rating and the age have no band.
+    await expect(cells.nth(0).locator('[class*="level-"]')).toHaveCount(0);
+    await expect(cells.nth(4).locator('[class*="level-"]')).toHaveCount(0);
+    // No games: the dash has no band, read as "sem jogos".
+    const bare = rowOf(names.noForm).locator('td').nth(3);
+    await expect(bare).toContainText('—');
+    await expect(bare.locator('[class*="level-"]')).toHaveCount(0);
+    await expect(bare.locator('.visually-hidden')).toHaveText('sem jogos');
+  });
+});
+
+test.describe('Anel de foco só para o teclado (elenco.md, medida 11)', () => {
+  test.use({ hasTouch: true });
+  const dialog = (page: Page) => page.getByRole('dialog');
+  const outline = (locator: Locator) => locator.evaluate((el) => getComputedStyle(el).outlineStyle);
+
+  test('toque: o nome volta com o foco sem anel; Enter e Esc: com anel', async ({ page }) => {
+    await emulateWebKitTapFocus(page);
+    await startCareer(page);
+    await openSquad(page);
+    const name = main(page).locator('tbody th[scope="row"] button').first();
+    const close = dialog(page).getByRole('button', { name: 'Fechar' });
+
+    await name.tap();
+    await expect(close).toBeFocused();
+    expect(await outline(close), 'X aberto por toque').toBe('none');
+    await close.tap();
+    await expect(dialog(page)).toBeHidden();
+    await expect(name).toBeFocused();
+    expect(await outline(name), 'nome depois do toque').toBe('none');
+
+    // The keyboard: Tab after a tap brings the ring back on the element it reaches, before any
+    // Enter; then Enter opens and Esc closes, with the ring.
+    await page.keyboard.press('Tab');
+    await expect(name).not.toBeFocused();
+    expect(
+      await page.evaluate(() => getComputedStyle(document.activeElement!).outlineStyle),
+      'foco movido pelo Tab',
+    ).toBe('solid');
+    await page.keyboard.press('Shift+Tab');
+    await expect(name).toBeFocused();
+    expect(await outline(name), 'nome depois do Shift+Tab').toBe('solid');
+    await page.keyboard.press('Enter');
+    await expect(close).toBeFocused();
+    expect(await outline(close), 'X aberto pelo teclado').toBe('solid');
+    await page.keyboard.press('Escape');
+    await expect(dialog(page)).toBeHidden();
+    await expect(name).toBeFocused();
+    expect(await outline(name), 'nome depois do Esc').toBe('solid');
+  });
 });
 
 test.describe('Card do jogador (jogador.md; US-016)', () => {
@@ -496,5 +608,48 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     await main(page).locator('tbody th[scope="row"] button').first().click();
     await expect(dialog(page).getByText('Moral', { exact: true })).toBeVisible();
     await expect(dialog(page).getByText('Condição', { exact: true })).toHaveCount(0);
+  });
+
+  test('faixas no card: estados com cor e leitura; atributos e nota sem classe (medida 9)', async ({
+    page,
+  }) => {
+    await startCareer(page);
+    const names = await forceStates(page);
+    await openSquad(page);
+    const states = () =>
+      dialog(page).locator('section.block', {
+        has: page.getByRole('heading', { name: 'Como está' }),
+      });
+    const row = (label: string) =>
+      states().locator('.attr', { has: page.getByText(label, { exact: true }) });
+    await page.getByRole('button', { name: names.banded, exact: true }).click();
+    await expect(dialog(page)).toBeVisible();
+    for (const theme of ['noite', 'dia'] as const) {
+      await setTheme(page, theme);
+      const expected = [
+        ['Condição', '74', 'poor', '74, ruim'],
+        ['Moral', '60', 'good', '60, boa'],
+        ['Forma (últimos 5 jogos)', '5,5', 'fair', '5,5, regular'],
+      ] as const;
+      for (const [label, text, level, sr] of expected) {
+        const number = row(label).locator(`span.level-${level}`);
+        await expect(number).toHaveText(text);
+        await expect(row(label).locator('.visually-hidden')).toHaveText(sr);
+        await expect(number).toHaveCSS('color', await tokenColor(page, `level-${level}`));
+      }
+    }
+    // Attributes and the overall rating carry no band.
+    const attributes = dialog(page).locator('section.block', {
+      has: page.getByRole('heading', { name: 'Atributos' }),
+    });
+    await expect(attributes.locator('[class*="level-"]')).toHaveCount(0);
+    await expect(dialog(page).locator('.overall [class*="level-"]')).toHaveCount(0);
+    // No games: the dash keeps no band.
+    await page.keyboard.press('Escape');
+    await expect(dialog(page)).toBeHidden();
+    await page.getByRole('button', { name: names.noForm, exact: true }).click();
+    await expect(row('Forma (últimos 5 jogos)').locator('[class*="level-"]')).toHaveCount(0);
+    await expect(row('Moral').locator('span.level-poor')).toHaveText('30');
+    await expect(row('Condição').locator('span.level-good')).toHaveText('90');
   });
 });

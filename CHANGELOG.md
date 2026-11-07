@@ -13,6 +13,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - Carreira: `reconcileDraft` (quem saiu do elenco vira vaga livre e sai das listas; lesionado e suspenso ficam; listas com até 3 titulares) roda antes de toda gravação; `CareerService.setDraft` guarda a ficha na hora e grava só a última das edições que esperam; a ficha enviada para a rodada vira a ficha guardada.
   - Testes: tipos, migração com a fixture v1, esquema nos três níveis, store, carreira (recarregar mantém a ficha), virada da temporada com aposentados e a propriedade do formato com fichas editadas ao acaso. A medição do save passa a incluir a ficha no snapshot e o tempo do `writeDraft`.
 
+- Anel de foco só para o teclado e cores por faixa no Elenco:
+  - O anel de foco aparece só para quem usa o teclado e não aparece depois de um toque (no iPhone ele surgia no botão de fechar e no nome do jogador).
+  - Condição, moral e forma ganham verde, amarelo ou vermelho por faixa no Elenco e no card do jogador, com o texto da faixa ("74, ruim") para o leitor de tela; a nota geral continua sem cor.
+
 - Tela do clube, elenco e card do jogador (T-028; US-015, US-016, US-026 na parte da tela):
   - Clube: próximo jogo com mando em texto e posição na tabela, linha "Desfalques" só no realismo Completo, termômetro da torcida com número e rótulo de humor, mini classificação e últimos resultados, "Mais opções" no pé abaixo de 900px, duas colunas deitado e no desktop, erro por bloco.
   - Elenco: colunas nome, posição, idade, nota, condição (só no Completo), moral e forma; ordenação por posição, nota e condição, guardada só na tela e nunca no save; selos com ícone e texto (lesionado, suspenso com N jogos, promessa).

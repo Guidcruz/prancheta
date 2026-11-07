@@ -1,6 +1,13 @@
 <script lang="ts" module>
-  /** A number cell; `{ text, sr }` when the visible text needs words for screen readers ("—"). */
-  export type PlayerCell = number | string | { readonly text: string; readonly sr: string };
+  import type { Level } from './levels';
+
+  /**
+   * A number cell; `{ text, sr }` when the visible text needs words for screen readers ("—",
+   * "82, boa"), with `level` when the number is painted by its band (condition, morale, form:
+   * `levelOf`). The band is never only the colour: `sr` says it in words.
+   */
+  export type PlayerCell =
+    number | string | { readonly text: string; readonly sr: string; readonly level?: Level };
 </script>
 
 <script lang="ts">
@@ -58,7 +65,11 @@
   {#each cells as cell, i (i)}
     <td class="numero stat">
       {#if typeof cell === 'object'}
-        <span aria-hidden="true">{cell.text}</span>
+        {#if cell.level === undefined}
+          <span aria-hidden="true">{cell.text}</span>
+        {:else}
+          <span aria-hidden="true" class="level-{cell.level}">{cell.text}</span>
+        {/if}
         <span class="visually-hidden">{cell.sr}</span>
       {:else}
         {text(cell)}
@@ -151,6 +162,17 @@
     text-align: end;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
+  }
+  /* The band reinforces the number (levels.ts); the tokens pass 4.5:1 on surface-1 and on the
+     hover's surface-2 in both themes. */
+  .level-good {
+    color: var(--level-good);
+  }
+  .level-fair {
+    color: var(--level-fair);
+  }
+  .level-poor {
+    color: var(--level-poor);
   }
   .visually-hidden {
     position: absolute;
