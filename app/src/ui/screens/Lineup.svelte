@@ -67,6 +67,11 @@
   let root: HTMLElement | undefined = $state();
   let selected: Place | undefined = $state();
   let status: Status = $state({ kind: 'none' });
+  /**
+   * Counts the messages said: a message equal to the last one (the same refusal twice) is still
+   * a new one, and the status bar says it again.
+   */
+  let said = $state(0);
   /** The athlete of the last refused swap: his row shows why, until the next action. */
   let refusal: { place: Place; message: string } | undefined = $state();
   /** The strength before the last change, while the sheet is the one that change made. */
@@ -83,7 +88,7 @@
   const nameOf = (id: PlayerId | undefined | null) =>
     id === null || id === undefined ? '' : (game.players[id]?.name.full ?? '');
 
-  const statusView = $derived.by(() => {
+  const statusBody = $derived.by(() => {
     const actions: StatusBarAction[] = [];
     switch (status.kind) {
       case 'selected':
@@ -108,6 +113,8 @@
         return { message: '' };
     }
   });
+
+  const statusView = $derived({ ...statusBody, said });
 
   const states = $derived({
     ...(selected === undefined ? {} : { selected }),
@@ -153,9 +160,14 @@
     return { part: 'out', id };
   }
 
+  function say(next: Status): void {
+    status = next;
+    said += 1;
+  }
+
   function cancel(): void {
     selected = undefined;
-    status = { kind: 'none' };
+    say({ kind: 'none' });
   }
 
   async function cancelFromBar(): Promise<void> {
@@ -173,7 +185,7 @@
       // A free place has nobody to pick: it only receives one.
       if (id === null) return;
       selected = place;
-      status = { kind: 'selected', player: id };
+      say({ kind: 'selected', player: id });
       return;
     }
     if (samePlace(selected, place)) {
@@ -193,7 +205,8 @@
     const parts: string[] = [];
     if (result.kind === 'swap') {
       parts.push(t('lineup.swap.done', lang, { a: nameOf(result.moved), b: nameOf(result.other) }));
-    } else if (result.to === 'bench') {
+    } else if (result.to === 'bench' && result.from !== 'bench') {
+      // A move inside the bench changes nothing the player needs to hear.
       parts.push(t('lineup.move.bench', lang, { name: nameOf(result.moved) }));
     } else if (result.to === 'out') {
       parts.push(t('lineup.move.out', lang, { name: nameOf(result.moved) }));
@@ -208,7 +221,7 @@
   async function swap(from: Place, to: Place): Promise<void> {
     const result = swapPlaces(game, sheet, from, to);
     if (result === undefined) {
-      status = { kind: 'none' };
+      say({ kind: 'none' });
       return;
     }
     if (!result.ok) {
@@ -217,10 +230,10 @@
         place: placeOfPlayer(player, sheet),
         message: t(`lineup.refuse.${reason}.short`, lang),
       };
-      status = {
+      say({
         kind: 'refused',
         text: t(`lineup.refuse.${reason}`, lang, { name: nameOf(player) }),
-      };
+      });
       await tick();
       elementOf(to)?.focus();
       return;
@@ -229,7 +242,7 @@
     const now = shownStrength(game, clubId, result.sheet);
     change = { before: was, key: keyOf(result.sheet) };
     undo = undefined;
-    status = { kind: 'done', text: message(result, now, was) };
+    say({ kind: 'done', text: message(result, now, was) });
     // Where the first player arrived (the second tap, or the drop).
     const arrived = placeOfPlayer(result.moved, result.sheet);
     onedit(result.sheet);
@@ -246,7 +259,7 @@
       key: keyOf(next),
     };
     undo = { sheet, key: keyOf(next) };
-    status = { kind: 'auto', text };
+    say({ kind: 'auto', text });
     onedit(next);
   }
 
@@ -270,7 +283,7 @@
     const back = undo.sheet;
     change = { before: shownStrength(game, clubId, sheet), key: keyOf(back) };
     undo = undefined;
-    status = { kind: 'done', text: t('lineup.undo.done', lang) };
+    say({ kind: 'done', text: t('lineup.undo.done', lang) });
     onedit(back);
   }
 
@@ -281,8 +294,10 @@
     pressPlace<Place>(event, {
       placeAt: (x, y) => placeOf(placeElementAt(x, y)),
       start: (x, y) => {
+        // A drag replaces any pick: the bar's "selecionado" goes with it.
         selected = undefined;
         refusal = undefined;
+        say({ kind: 'none' });
         drag = { origin: place, x, y };
       },
       move: (x, y, target) => {
@@ -297,6 +312,14 @@
         else void swap(origin, target);
       },
       cancel: () => (drag = undefined),
+      // The bar sticks above the frame's dock (`--tabbar-h` + `--play-h` on the phone, nothing
+      // from 900px): its offset is what covers the bottom of the window.
+      bottomInset: () => {
+        const bar = root?.querySelector<HTMLElement>('.bar-slot');
+        return bar === undefined || bar === null
+          ? 0
+          : parseFloat(getComputedStyle(bar).bottom) || 0;
+      },
     });
   }
 
@@ -393,7 +416,7 @@
   $effect(() => {
     if (selected !== undefined && playerAt(sheet, selected) === null) {
       selected = undefined;
-      if (status.kind === 'selected') status = { kind: 'none' };
+      if (status.kind === 'selected') say({ kind: 'none' });
     }
   });
 </script>

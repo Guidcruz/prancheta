@@ -1,14 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
   FORMATION_SLOTS,
+  MATCH_MODES,
   completeSheet,
   draftFromSheet,
   fitLevel,
   sheetProblems,
+  playRound,
+  prepareRound,
   sheetStrength,
   suggestSheet,
   type DraftSheet,
   type GameState,
+  type TeamSheet,
 } from '@engine';
 import { loadGameParams } from '@lib/params';
 import {
@@ -72,6 +76,33 @@ describe('the sheet shown (coachSheet; ADR-0021)', () => {
   });
 });
 
+describe('the untouched sheet is the one the round plays (ADR-0021, "Ausente")', () => {
+  // Without a draft the frame plays without a sheet, so the engine's own suggestion goes to the
+  // match: the screen must show exactly that one, lineup and tactic.
+  const asDraft = (s: TeamSheet) => draftFromSheet(s);
+  for (const round of [1, 5, 20]) {
+    for (const mode of MATCH_MODES) {
+      it(`round ${round}, ${mode}: prepareRound's suggestion and the lastSheets of a round played`, () => {
+        const state = testCareer('full', round);
+        const coaches = { [TEST_CLUB]: mode };
+        const shown = coachSheet(state, TEST_CLUB, undefined, params);
+        const plan = prepareRound(state, params, { coaches });
+        if (!plan.ok) throw new Error(plan.error);
+        expect(shown).toEqual(asDraft(plan.value.suggested[TEST_CLUB]!));
+        const played = playRound(state, params, {
+          round: state.round,
+          sheets: {},
+          commands: {},
+          fanDecisions: {},
+          coaches,
+        });
+        if (!played.ok) throw new Error(played.error);
+        expect(shown).toEqual(asDraft(played.value.state.lastSheets[TEST_CLUB]!));
+      });
+    }
+  }
+});
+
 describe('the places (escalacao.md, "Conteúdo")', () => {
   it('the bench by position (GOL to ATA) and overall, then the free places', () => {
     const lines = benchLines(game, sheet);
@@ -126,7 +157,11 @@ describe('the swap (escalacao.md, "Trocar lugares")', () => {
     expect(result.sheet.lineup.bench[6]).toBe(fx.starters[1]!.id);
     const back = ok(swapPlaces(game, result.sheet, bench(3), slot(1)));
     expect(back.kind).toBe('move');
+    expect(back.from).toBe('bench');
     expect(back.to).toBe('starters');
+    // Inside the bench: from the bench to the bench.
+    const inside = ok(swapPlaces(game, sheet, bench(2), bench(6)));
+    expect(inside).toMatchObject({ kind: 'move', from: 'bench', to: 'bench' });
   });
 
   it('a starter and a player left out: the starter leaves the sheet', () => {

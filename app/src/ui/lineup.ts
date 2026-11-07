@@ -179,6 +179,8 @@ export type SwapResult =
       readonly moved: PlayerId;
       /** The other player of a swap. */
       readonly other?: PlayerId;
+      /** Where `moved` came from. */
+      readonly from: Place['part'];
       /** Where `moved` went. */
       readonly to: Place['part'];
       /** Who left a role list because he left the pitch (funcoes.md), in list order. */
@@ -259,6 +261,7 @@ export function swapPlaces(
     kind: a !== null && b !== null ? 'swap' : 'move',
     moved,
     ...(a !== null && b !== null ? { other: b } : {}),
+    from: a !== null ? from.part : to.part,
     to: a !== null ? to.part : from.part,
     removed,
   };

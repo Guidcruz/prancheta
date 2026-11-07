@@ -34,10 +34,33 @@ export interface DragCallbacks<P> {
   readonly drop: (target: P | undefined) => void;
   /** Esc, a second finger or a cancelled pointer: no swap. */
   readonly cancel: () => void;
+  /**
+   * What covers the bottom of the window (on the phone, the tab bar and "Jogar rodada", read from
+   * `--tabbar-h` and `--play-h`): the automatic scroll starts above it. Asked when a drag starts.
+   */
+  readonly bottomInset?: () => number;
 }
 
 let dragging = false;
 let stopCurrent: (() => void) | undefined;
+/**
+ * Pointers of a gesture cancelled by a second finger: until each one lifts, it starts nothing
+ * (the second finger landing on a place would otherwise begin a new press in the same gesture).
+ */
+const blocked = new Set<number>();
+
+function block(pointerId: number): void {
+  if (blocked.has(pointerId)) return;
+  blocked.add(pointerId);
+  const release = (e: PointerEvent) => {
+    if (e.pointerId !== pointerId) return;
+    blocked.delete(pointerId);
+    window.removeEventListener('pointerup', release, { capture: true });
+    window.removeEventListener('pointercancel', release, { capture: true });
+  };
+  window.addEventListener('pointerup', release, { capture: true });
+  window.addEventListener('pointercancel', release, { capture: true });
+}
 
 /** A drag is on: the page must not scroll by the finger. */
 export function isDragging(): boolean {
@@ -75,6 +98,7 @@ export function pressPlace<P>(event: PointerEvent, callbacks: DragCallbacks<P>):
     if (wasDragging) callbacks.cancel();
     return;
   }
+  if (blocked.has(event.pointerId)) return;
   if (event.pointerType === 'mouse' && event.button !== 0) return;
   const touch = event.pointerType !== 'mouse';
   const pointerId = event.pointerId;
@@ -84,11 +108,13 @@ export function pressPlace<P>(event: PointerEvent, callbacks: DragCallbacks<P>):
   let y = y0;
   let timer: ReturnType<typeof setTimeout> | undefined;
   let frame: number | undefined;
+  /** Bottom of the area where the finger can drop: above the dock of the frame. */
+  let bottom = window.innerHeight;
 
   const scrollStep = () => {
     frame = undefined;
     if (!dragging) return;
-    const by = y < EDGE ? -SCROLL_STEP : y > window.innerHeight - EDGE ? SCROLL_STEP : 0;
+    const by = y < EDGE ? -SCROLL_STEP : y > bottom - EDGE ? SCROLL_STEP : 0;
     if (by === 0) return;
     window.scrollBy(0, by);
     callbacks.move(x, y, callbacks.placeAt(x, y));
@@ -98,6 +124,7 @@ export function pressPlace<P>(event: PointerEvent, callbacks: DragCallbacks<P>):
   const begin = () => {
     timer = undefined;
     dragging = true;
+    bottom = window.innerHeight - Math.max(0, callbacks.bottomInset?.() ?? 0);
     if (touch && typeof navigator.vibrate === 'function') navigator.vibrate(10);
     callbacks.start(x, y);
     callbacks.move(x, y, callbacks.placeAt(x, y));
@@ -146,6 +173,9 @@ export function pressPlace<P>(event: PointerEvent, callbacks: DragCallbacks<P>):
   // A second finger, anywhere: no swap.
   const onOtherDown = (e: PointerEvent) => {
     if (e.pointerId === pointerId) return;
+    // Neither finger starts anything else until it lifts.
+    block(e.pointerId);
+    block(pointerId);
     const was = dragging;
     stop();
     if (was) callbacks.cancel();

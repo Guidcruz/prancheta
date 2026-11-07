@@ -135,7 +135,9 @@
     align-items: stretch;
     gap: calc(var(--space-1) / 2);
     inline-size: 100%;
-    min-block-size: var(--touch);
+    /* At least 52px high, also without the condition bar (Simplificado) and with a one-line
+       name: escalacao.md, "Ao alcance do polegar" (75 × 52px at 360px). */
+    min-block-size: calc(var(--touch) + var(--space-2));
     max-block-size: 100%;
     padding: calc(var(--space-1) / 2) var(--space-1);
     border: 2px solid var(--line);

@@ -38,6 +38,8 @@
     detail?: string;
     tone?: 'neutral' | 'danger';
     actions?: readonly StatusBarAction[];
+    /** Changes with every message said, also a repeated one (it is announced again). */
+    said?: number;
   }
   interface Props {
     lang: Lang;
@@ -210,6 +212,7 @@
     detailId={hintId}
     tone={status.tone}
     actions={status.actions}
+    said={status.said}
   />
 </div>
 

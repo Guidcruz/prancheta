@@ -33,8 +33,34 @@
     detailId?: string;
     tone?: 'neutral' | 'danger';
     actions?: readonly StatusBarAction[];
+    /**
+     * Changes with every message the screen says. The same text said again (a second refusal of
+     * the same player) leaves the region empty for one frame and writes it back, so screen
+     * readers announce it again; a new text is announced by itself.
+     */
+    said?: number;
   }
-  const { message, detail, detailId, tone = 'neutral', actions = [] }: Props = $props();
+  const { message, detail, detailId, tone = 'neutral', actions = [], said }: Props = $props();
+
+  /** The text is out of the region for a frame, so a repeated message is a new one. */
+  let quiet = $state(false);
+  let last: { said: number | undefined; message: string } | undefined;
+  $effect(() => {
+    const now = { said, message };
+    const repeated =
+      last !== undefined &&
+      now.said !== last.said &&
+      now.message === last.message &&
+      message !== '';
+    last = now;
+    if (!repeated) return;
+    quiet = true;
+    const frame = requestAnimationFrame(() => (quiet = false));
+    return () => {
+      cancelAnimationFrame(frame);
+      quiet = false;
+    };
+  });
 </script>
 
 <div class="bar-slot">
@@ -42,7 +68,7 @@
     {#if message !== ''}
       {#if tone === 'danger'}<Icon name="warning" size={20} />{/if}
       <p class="text">
-        <span class="body-strong">{message}</span>
+        <span class="body-strong">{quiet ? '' : message}</span>
         {#if detail}<span class="caption detail" id={detailId}>{detail}</span>{/if}
       </p>
       {#if actions.length > 0}
