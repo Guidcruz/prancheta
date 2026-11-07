@@ -190,10 +190,30 @@ describe('the player card (jogador.md)', () => {
   const striker = squad.find((p) => p.position === 'ST')!;
   const keeper = squad.find((p) => p.position === 'GK')!;
 
-  it('has the full name, position, age and shirt, and the 6 attributes in the order of the engine', () => {
+  it('the full name shows only when it differs from the display', () => {
+    const nick = withPlayer(full, striker.id, {
+      name: { ...striker.name, display: 'Paçoca', full: 'Lenon Pinheiro Souza' },
+    });
+    const card = playerCard(nick, TEST_CLUB, striker.id, 'pt-BR')!;
+    expect(card.title).toBe('Paçoca');
+    expect(card.fullName).toBe('Lenon Pinheiro Souza');
+    // Accents, case, hyphens and spaces are ignored: these are the same name.
+    for (const [display, fullName] of [
+      ['Valmir Serrano', 'VALMIR SERRANO'],
+      ['Valmír Serrano', 'Valmir Serrano'],
+      ['Jean-Pierre', 'Jean Pierre'],
+    ] as const) {
+      const same = withPlayer(full, striker.id, {
+        name: { ...striker.name, display, full: fullName },
+      });
+      expect(playerCard(same, TEST_CLUB, striker.id, 'pt-BR')!.fullName).toBeUndefined();
+    }
+  });
+
+  it('has the name of the row, position, age and shirt, and the 6 attributes in the order of the engine', () => {
     for (const player of [striker, keeper]) {
       const card = playerCard(full, TEST_CLUB, player.id, 'pt-BR')!;
-      expect(card.title).toBe(player.name.full);
+      expect(card.title).toBe(player.name.display);
       expect(card.attributes.map((a) => a.id)).toEqual(attributeKeysFor(player.position));
       for (const a of card.attributes) {
         expect(a.value).toBe(player.attributes[a.id as keyof typeof player.attributes]);

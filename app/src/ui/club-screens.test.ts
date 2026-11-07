@@ -423,10 +423,10 @@ describe('the player card (jogador.md; US-016)', () => {
     });
   }
 
-  it('a dialog named by the full name, with the avatar, 6 attributes, the trait and the season', () => {
+  it('a dialog named by the name of the row, with the avatar, 6 attributes, the trait and the season', () => {
     const body = sheet(round5, striker.id);
     expect(body).toMatch(/<dialog[^>]*aria-labelledby/);
-    expect(body).toContain(`>${shown(striker.name.full)}</h2>`);
+    expect(body).toContain(`>${shown(striker.name.display)}</h2>`);
     const attributes = body.slice(body.indexOf(t('player.attributes.title', 'pt-BR')));
     expect(attributes.match(/<dt class="body label/g)!.length).toBeGreaterThanOrEqual(6);
     expect(body).toContain(t('attr.finishing', 'pt-BR'));
@@ -482,6 +482,32 @@ describe('the player card (jogador.md; US-016)', () => {
     expect(body.match(/<button[^>]*disabled/g)).toHaveLength(2);
   });
 
+  it('a nickname titles the card and the full name sits once under it', () => {
+    const nick = withPlayer(round5, striker.id, {
+      name: { ...striker.name, display: 'Paçoca', full: 'Lenon Pinheiro Souza' },
+    });
+    const body = sheet(nick, striker.id);
+    expect(body).toContain('>Paçoca</h2>');
+    expect(body.match(/Lenon Pinheiro Souza/g)).toHaveLength(1);
+    expect(body).toMatch(/<p class="caption muted[^"]*">Lenon Pinheiro Souza<\/p>/);
+  });
+
+  it.each([
+    ['Valmir Serrano', 'VALMIR SERRANO'],
+    ['Valmír Serrano', 'Valmir Serrano'],
+    ['Jean-Pierre', 'Jean Pierre'],
+  ])(
+    'no second line when the full name is the display (%s, %s), accents, case and hyphens aside',
+    (display, fullName) => {
+      const same = withPlayer(round5, striker.id, {
+        name: { ...striker.name, display, full: fullName },
+      });
+      const body = sheet(same, striker.id);
+      expect(body).toContain(`>${shown(display)}</h2>`);
+      expect(body).not.toContain(`>${shown(fullName)}</p>`);
+    },
+  );
+
   it('the potential never reaches the HTML: a sentinel value shows nowhere (US-016)', () => {
     const SENTINEL = 4242;
     const game = withPlayer(round5, striker.id, { potential: SENTINEL });
@@ -490,7 +516,7 @@ describe('the player card (jogador.md; US-016)', () => {
     const card = sheet(game, striker.id);
     // Control: the player is on both.
     expect(row).toContain(shown(striker.name.display));
-    expect(card).toContain(shown(striker.name.full));
+    expect(card).toContain(shown(striker.name.display));
     expect(row).not.toContain(String(SENTINEL));
     expect(card).not.toContain(String(SENTINEL));
   });

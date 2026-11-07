@@ -581,6 +581,14 @@ Cenários cobertos (todos automatizados, em `app/src/engine/`):
 - Contrato: `CONTRACT` de `index.test.ts` com os sete valores novos.
 - Regressão: goldens (inclusive no Chromium) sem mudança e balance de release (1.000 temporadas, semente 1, robô no mais fraco) idêntico ao da `main`, menos a linha do tempo.
 
+### Card do jogador, nome (US-016; correção de 2026-11-07, pedido do CEO)
+
+- O título é `name.display`, o mesmo da linha do Elenco; o `name.full` aparece uma vez abaixo, só se diferir do display (sem acento, caixa, hífen e espaços repetidos).
+- Cobertura unitária em `squad.test.ts` e `club-screens.test.ts`.
+- Cobertura E2E em `club-squad.spec.ts`: o elenco inteiro confere título e nome completo, e o anúncio `aria-live` de Próximo usa o display.
+- QA: PASS (`test:all` 2197 testes; E2E Chromium 87/7; `--repeat-each=3` 117/117).
+- Manual (CEO): com leitor de tela, ouvir o display como nome do diálogo e o nome completo uma vez; conferir o card de um jogador com apelido.
+
 ### QA da T-029 (Escalação, US-017)
 
 Critérios: trocar por arrasto, por dois toques e por teclado; fora de posição; recusa de inapto; escalação incompleta e "Completar e jogar"; "Deixar de fora" e vaga livre; Sugerir e Desfazer; ficha no save (`busy`, aviso de falha); sem ficha joga a sugestão do motor.
