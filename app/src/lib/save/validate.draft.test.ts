@@ -51,7 +51,7 @@ function refusedIn(check: SaveCheck, raw: unknown): SaveIssue {
 }
 
 function refusedByParseDraft(raw: unknown): SaveIssue {
-  const result = parseDraft(raw, squad);
+  const result = parseDraft(raw, good.game, clubId);
   if (result.ok) throw new Error('parseDraft: accepted');
   expect(result.error).toBe('invalid-save');
   return result.detail as SaveIssue;
@@ -66,7 +66,7 @@ describe('career.draft in the three levels (ADR-0021)', () => {
       expect(parsed.ok, check).toBe(true);
       if (parsed.ok) expect(parsed.value.career.draft, check).toEqual(draft);
     }
-    expect(parseDraft(JSON.parse(JSON.stringify(draft)), squad)).toEqual({
+    expect(parseDraft(JSON.parse(JSON.stringify(draft)), good.game, clubId)).toEqual({
       ok: true,
       value: draft,
     });
@@ -226,10 +226,18 @@ describe('career.draft in the three levels (ADR-0021)', () => {
 
   it('the coherence reads the squad of the coach club, not any squad', () => {
     const raw = changed((d) => (d.lineup.starters[0] = stranger));
-    expect(parseDraft(raw, good.game.squads[otherClub]!).ok).toBe(false);
-    expect(parseDraft(draft, [])).toMatchObject({ ok: false, error: 'invalid-save' });
+    expect(parseDraft(raw, good.game, clubId).ok).toBe(false);
+    // The stranger's own club: the coach's ids are not in it.
+    expect(parseDraft(draft, good.game, otherClub).ok).toBe(false);
+    expect(parseDraft(draft, good.game, 'no-such-club')).toMatchObject({
+      ok: false,
+      error: 'invalid-save',
+    });
+    expect(parseDraft(draft, { squads: { [clubId]: [] } }, clubId).ok).toBe(false);
     const theirs = [...good.game.squads[otherClub]!, ...squad];
-    expect(parseDraft(raw, theirs).ok).toBe(true);
+    expect(parseDraft(raw, { squads: { [clubId]: theirs } }, clubId).ok).toBe(true);
+    // An own key only: a club id such as "constructor" is not read through the prototype.
+    expect(parseDraft(draft, { squads: {} }, 'constructor').ok).toBe(false);
   });
 
   it('refuses a prototype key in the draft in full, write and parseDraft', () => {
@@ -249,7 +257,7 @@ describe('career.draft in the three levels (ADR-0021)', () => {
       },
       tactic: draft.tactic,
     };
-    expect(parseDraft(hostile, squad)).toEqual({
+    expect(parseDraft(hostile, good.game, clubId)).toEqual({
       ok: false,
       error: 'invalid-save',
       detail: { path: '', problem: 'unreadable' },

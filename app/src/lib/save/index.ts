@@ -40,6 +40,7 @@ export { SAVE_FIELD_NAMES, fieldNamesOf } from './fields.ts';
 export { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './migrations/index.ts';
 export {
   SAVE_LIMITS,
+  STARTER_SLOTS,
   careerSaveSchema,
   draftSheetSchema,
   parseCareerSave,
@@ -52,6 +53,7 @@ export {
 export { newCareerGame, type NewCareerError, type NewCareerGame } from './new-career.ts';
 export {
   SaveStore,
+  type DraftGuard,
   type DraftWriteError,
   type OpenError,
   type OpenedCareer,

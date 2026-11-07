@@ -228,7 +228,10 @@ async function measure(options: MeasureOptions): Promise<Measurement> {
   const draft: number[] = [];
   for (let i = 0; i < total; i++) {
     const ms = await time(async () => {
-      const written = await store.writeDraft(sheets[i % 2]!, { expectedHeadSeq: head });
+      const written = await store.writeDraft(sheets[i % 2]!, {
+        expectedHeadSeq: head,
+        snapshotSeq: head,
+      });
       if (!written.ok) throw new Error(`writeDraft: ${written.error}`);
     });
     keep(draft, i, ms);

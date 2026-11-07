@@ -15,7 +15,7 @@ import {
   type DraftWriteError,
   type SaveStore,
 } from '../save/index.ts';
-import { raw, store, useFreshDatabase } from '../save/testing/idb.ts';
+import { flipByte, raw, store, tamper, useFreshDatabase } from '../save/testing/idb.ts';
 import { SAMPLE_CAREER_ID } from '../save/testing/sample.ts';
 import { reconcileDraft } from './draft.ts';
 import { CareerService, type CareerSetup } from './service.ts';
@@ -115,7 +115,8 @@ describe('CareerService.setDraft (ADR-0021)', () => {
     expect(h.snapshots).toHaveBeenCalledTimes(1); // only the creation
     expect(h.drafts).toHaveBeenCalledTimes(1);
     const [save, guard] = h.drafts.mock.calls[0]!;
-    expect(guard).toEqual({ expectedHeadSeq: 1 });
+    // The normal case: the snapshot in memory is the head.
+    expect(guard).toEqual({ expectedHeadSeq: 1, snapshotSeq: 1 });
     expect(save.career.draft).toEqual(draft);
   });
 
@@ -150,6 +151,38 @@ describe('CareerService.setDraft (ADR-0021)', () => {
     expect(kept.lineup.captains).toEqual(draft.lineup.captains);
     expect(h.drafts.mock.calls[0]![0].career.draft).toEqual(kept);
     expect(saveOf(await reloaded()).career.draft).toEqual(kept);
+  });
+
+  it('after a fallback to an older version, the sheet survives reloads and the next round', async () => {
+    const h = await created();
+    await h.service.playRound();
+    // The head N+1 = 2 is corrupted: the career opens on N = 1, with the head still 2.
+    await tamper(2, flipByte);
+    const back = await reloaded();
+    expect(saveOf(back).game.round).toBe(1);
+    const draft = edited(back);
+    await back.service.setDraft(draft);
+    const [, guard] = back.drafts.mock.calls[0]!;
+    expect(guard).toEqual({ expectedHeadSeq: 2, snapshotSeq: 1 });
+    expect(await back.drafts.mock.results[0]!.value).toEqual({ ok: true, value: { seq: 1 } });
+    // Reloading again falls back to the same snapshot, and its sheet is the one written.
+    const again = await reloaded();
+    expect(saveOf(again).career.draft).toEqual(draft);
+    // The next round is the snapshot N+2 = 3, without conflict, and the next sheet goes with it.
+    expect(await again.service.playRound()).toMatchObject({ ok: true, value: { saved: true } });
+    expect(await again.snapshots.mock.results[0]!.value).toMatchObject({
+      ok: true,
+      value: { seq: 3 },
+    });
+    await again.service.setDraft({ ...draft, tactic: { posture: 'defensive', pressure: 'low' } });
+    expect(again.drafts.mock.calls.at(-1)![1]).toEqual({ expectedHeadSeq: 3, snapshotSeq: 3 });
+    const db = await raw();
+    expect((await db.get('careers', SAMPLE_CAREER_ID))?.draft?.seq).toBe(3);
+    db.close();
+    expect(saveOf(await reloaded()).career.draft?.tactic).toEqual({
+      posture: 'defensive',
+      pressure: 'low',
+    });
   });
 
   it('writes the edits waiting once, the last', async () => {

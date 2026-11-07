@@ -72,7 +72,9 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
   it('stores { seq, sheet } in the career row, and opening gives the sheet back', async () => {
     const s = store();
     expect((await s.writeSnapshot(variant(2))).ok).toBe(true);
-    expect(await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 })).toEqual({
+    expect(
+      await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 }),
+    ).toEqual({
       ok: true,
       value: { seq: 1 },
     });
@@ -88,8 +90,8 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
   it('the last sheet written wins', async () => {
     const s = store();
     await s.writeSnapshot(variant(2));
-    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 });
-    await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1 });
+    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 });
+    await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1, snapshotSeq: 1 });
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     expect(opened.ok && opened.value.save.career.draft).toEqual(other);
   });
@@ -98,9 +100,11 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
     const s = store();
     await s.writeSnapshot(variant(2));
     await s.writeSnapshot(variant(3), undefined, { expectedHeadSeq: 1 });
-    await s.writeDraft(withDraft(variant(3)), { expectedHeadSeq: 2 });
+    await s.writeDraft(withDraft(variant(3)), { expectedHeadSeq: 2, snapshotSeq: 2 });
     const before = await allRows();
-    expect(await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1 })).toEqual({
+    expect(
+      await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1, snapshotSeq: 1 }),
+    ).toEqual({
       ok: false,
       error: 'conflict',
       detail: { expectedHeadSeq: 1, headSeq: 2 },
@@ -110,14 +114,18 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
 
   it('refuses a career not on the device, and a row of a newer build, changing nothing', async () => {
     const s = store();
-    expect(await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 0 })).toEqual({
+    expect(
+      await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 0, snapshotSeq: 0 }),
+    ).toEqual({
       ok: false,
       error: 'not-found',
     });
     await s.writeSnapshot(variant(2));
     await putRow((row) => ({ ...row, schemaVersion: SAVE_SCHEMA_VERSION + 1 }));
     const before = await allRows();
-    expect(await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 })).toMatchObject({
+    expect(
+      await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 }),
+    ).toMatchObject({
       ok: false,
       error: 'save-too-new',
     });
@@ -140,10 +148,10 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
     ];
     for (const sheet of wrong) {
       expect(
-        await s.writeDraft(withDraft(variant(2), sheet), { expectedHeadSeq: 1 }),
+        await s.writeDraft(withDraft(variant(2), sheet), { expectedHeadSeq: 1, snapshotSeq: 1 }),
       ).toMatchObject({ ok: false, error: 'invalid-save' });
     }
-    expect(await s.writeDraft(variant(2), { expectedHeadSeq: 1 })).toMatchObject({
+    expect(await s.writeDraft(variant(2), { expectedHeadSeq: 1, snapshotSeq: 1 })).toMatchObject({
       ok: false,
       error: 'invalid-save',
     });
@@ -157,7 +165,9 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
     onPut('careers', () => {
       throw new DOMException('full', 'QuotaExceededError');
     });
-    expect(await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 })).toMatchObject({
+    expect(
+      await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 }),
+    ).toMatchObject({
       ok: false,
       error: 'quota-exceeded',
     });
@@ -172,7 +182,9 @@ describe('SaveStore.writeDraft (ADR-0021, item 3)', () => {
     const transaction = vi.spyOn(IDBDatabase.prototype, 'transaction');
     const get = vi.spyOn(IDBObjectStore.prototype, 'get');
     const put = vi.spyOn(IDBObjectStore.prototype, 'put');
-    expect((await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 })).ok).toBe(true);
+    expect(
+      (await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 })).ok,
+    ).toBe(true);
     const scopes = transaction.mock.calls.map(([names]) => [names].flat());
     expect(scopes).toEqual([['careers']]);
     expect(get.mock.contexts.map((store) => (store as IDBObjectStore).name)).toEqual(['careers']);
@@ -184,7 +196,7 @@ describe('the row sheet when opening (ADR-0021, item 3)', () => {
   it('is ignored when built on another snapshot (stale), and the snapshot sheet stays', async () => {
     const s = store();
     await s.writeSnapshot(withDraft(variant(2)));
-    await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1 });
+    await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1, snapshotSeq: 1 });
     await putRow((row) => ({ ...row, draft: { ...row.draft!, seq: 7 } }));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     if (!opened.ok) throw new Error(opened.error);
@@ -196,13 +208,37 @@ describe('the row sheet when opening (ADR-0021, item 3)', () => {
     const s = store();
     await s.writeSnapshot(withDraft(variant(2)));
     await s.writeSnapshot(withDraft(variant(3)), undefined, { expectedHeadSeq: 1 });
-    await s.writeDraft(withDraft(variant(3), other), { expectedHeadSeq: 2 });
+    await s.writeDraft(withDraft(variant(3), other), { expectedHeadSeq: 2, snapshotSeq: 2 });
     await tamper(2, (r: SnapshotRecord) => flipByte(r));
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     if (!opened.ok) throw new Error(opened.error);
     expect(opened.value.seq).toBe(1);
     expect(opened.value.draftSkipped).toBe('stale');
     expect(opened.value.save).toEqual(withDraft(variant(2)));
+  });
+
+  it('after a fallback, a sheet written with the seq of the snapshot that opened is used', async () => {
+    const s = store();
+    await s.writeSnapshot(withDraft(variant(2)));
+    await s.writeSnapshot(withDraft(variant(3)), undefined, { expectedHeadSeq: 1 });
+    // The head N+1 = 2 is corrupted: opening falls back to N = 1, the head stays 2.
+    await tamper(2, (r: SnapshotRecord) => flipByte(r));
+    const opened = await s.openCareer(SAMPLE_CAREER_ID);
+    if (!opened.ok) throw new Error(opened.error);
+    expect([opened.value.seq, opened.value.headSeq]).toEqual([1, 2]);
+    // The guard against another tab is the head; the sheet's seq is the snapshot that opened.
+    expect(
+      await s.writeDraft(withDraft(opened.value.save, other), {
+        expectedHeadSeq: 2,
+        snapshotSeq: 1,
+      }),
+    ).toEqual({ ok: true, value: { seq: 1 } });
+    expect((await careerRow())?.draft).toEqual({ seq: 1, sheet: other });
+    const again = await store().openCareer(SAMPLE_CAREER_ID);
+    if (!again.ok) throw new Error(again.error);
+    expect(again.value.seq).toBe(1);
+    expect(again.value.draftSkipped).toBeUndefined();
+    expect(again.value.save).toEqual(withDraft(variant(2), other));
   });
 
   it('is ignored when it does not pass parseDraft (invalid), and the career opens with the snapshot sheet', async () => {
@@ -241,7 +277,7 @@ describe('the row sheet and the other operations', () => {
   it('a snapshot write stores the row without the sheet; the sheet is in the snapshot', async () => {
     const s = store();
     await s.writeSnapshot(variant(2));
-    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 });
+    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 });
     expect((await careerRow())?.draft).toBeDefined();
     expect(
       (await s.writeSnapshot(withDraft(variant(3)), undefined, { expectedHeadSeq: 1 })).ok,
@@ -255,7 +291,7 @@ describe('the row sheet and the other operations', () => {
   it('the undo of a failed check gives back the previous row with its sheet', async () => {
     const s = store();
     await s.writeSnapshot(variant(2));
-    await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1 });
+    await s.writeDraft(withDraft(variant(2), other), { expectedHeadSeq: 1, snapshotSeq: 1 });
     const before = await careerRow();
     onPut('snapshots', (put, _store, value) => put(flipByte(value as SnapshotRecord)));
     expect(await s.writeSnapshot(withDraft(variant(3)), undefined, { expectedHeadSeq: 1 })).toEqual(
@@ -270,7 +306,7 @@ describe('the row sheet and the other operations', () => {
   it('listCareers gives the summary without the sheet', async () => {
     const s = store();
     await s.writeSnapshot(variant(2));
-    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 });
+    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 });
     const listed = await s.listCareers();
     if (!listed.ok) throw new Error(listed.error);
     expect(listed.value).toHaveLength(1);
@@ -281,10 +317,12 @@ describe('the row sheet and the other operations', () => {
   it('deleteCareer removes the sheet with the career', async () => {
     const s = store();
     await s.writeSnapshot(variant(2));
-    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 });
+    await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 });
     expect((await s.deleteCareer(SAMPLE_CAREER_ID)).ok).toBe(true);
     expect(await careerRow()).toBeUndefined();
-    expect(await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1 })).toEqual({
+    expect(
+      await s.writeDraft(withDraft(variant(2)), { expectedHeadSeq: 1, snapshotSeq: 1 }),
+    ).toEqual({
       ok: false,
       error: 'not-found',
     });

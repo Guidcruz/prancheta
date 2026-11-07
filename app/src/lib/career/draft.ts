@@ -5,6 +5,7 @@ import {
   type GameState,
   type PlayerId,
 } from '../../engine/index.ts';
+import { STARTER_SLOTS } from '../save/index.ts';
 
 /*
  * The coach's sheet being edited, reconciled with the squad (ADR-0021, item 2; docs/02-
@@ -13,9 +14,6 @@ import {
  * always stored coherent with the squad of the save it goes with, which the save's schema demands
  * (validate.ts, `writeIncoherence` and `parseDraft`, the one implementation of that check).
  */
-
-/** Slots of every formation (`FORMATION_SLOTS[formation].length`): a draft always has 11. */
-const XI = 11;
 
 /**
  * Most names in a role list (captains, penalty and free-kick takers): decision 1 of the CEO on
@@ -29,8 +27,8 @@ export const ROLE_LIST_MAX = 3;
  *
  * - An id out of the squad (retired at the season turn, sold or loaned later) becomes a free slot
  *   (`null`), and so does the second time an id appears in the 11 and the bench.
- * - The 11 are kept at 11 slots and the bench is filled with `null` up to {@link BENCH_SIZE} (both
- *   cut there).
+ * - The 11 are kept at {@link STARTER_SLOTS} slots and the bench is filled with `null` up to
+ *   {@link BENCH_SIZE} (both cut there).
  * - The role lists keep only the starters left (not `null`), without repeats, in their order, at
  *   most {@link ROLE_LIST_MAX}.
  * - An injured or suspended player stays where he is (the screen warns and blocks "Jogar
@@ -50,7 +48,7 @@ export function reconcileDraft(
     return id;
   };
   const { lineup, tactic } = draft;
-  const starters = Array.from({ length: XI }, (_, i) => keep(lineup.starters[i]));
+  const starters = Array.from({ length: STARTER_SLOTS }, (_, i) => keep(lineup.starters[i]));
   const bench = Array.from({ length: BENCH_SIZE }, (_, i) => keep(lineup.bench[i]));
   const onPitch = new Set(starters.filter((id): id is PlayerId => id !== null));
   const roles = (list: readonly PlayerId[]): PlayerId[] => {

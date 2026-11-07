@@ -157,7 +157,7 @@ describe('reconcileDraft (ADR-0021)', () => {
       const once = reconcileDraft(game, clubId, draft);
       expect(draft).toEqual(before);
       expect(reconcileDraft(game, clubId, once)).toEqual(once);
-      const parsed = parseDraft(JSON.parse(JSON.stringify(once)), squad);
+      const parsed = parseDraft(JSON.parse(JSON.stringify(once)), game, clubId);
       expect(parsed.ok, JSON.stringify(parsed)).toBe(true);
     }
   });
@@ -234,8 +234,8 @@ describe('the season turn (ADR-0021, item 5; option A of the CEO)', () => {
     // The formation and the tactic stay; who is still in the squad stays where he was.
     expect(out.lineup.formation).toBe(draft.lineup.formation);
     expect(out.tactic).toEqual(draft.tactic);
-    expect(parseDraft(out, atEnd.squads[club.id]!).ok).toBe(true);
-    expect(parseDraft(draft, atEnd.squads[club.id]!).ok).toBe(false);
+    expect(parseDraft(out, atEnd, club.id).ok).toBe(true);
+    expect(parseDraft(draft, atEnd, club.id).ok).toBe(false);
   });
 
   it('startNextSeason keeps the sheet (option A): no change, and no youngster enters by himself', () => {
@@ -251,6 +251,6 @@ describe('the season turn (ADR-0021, item 5; option A of the CEO)', () => {
     for (const p of promoted) expect(ids.has(p)).toBe(false);
     // The free slots are those of who retired: "Escalação incompleta" on the first screen.
     expect(out.lineup.starters.filter((id) => id === null).length).toBeGreaterThan(0);
-    expect(parseDraft(out, season2.squads[club.id]!).ok).toBe(true);
+    expect(parseDraft(out, season2, club.id).ok).toBe(true);
   });
 });

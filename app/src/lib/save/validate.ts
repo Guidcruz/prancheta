@@ -14,6 +14,7 @@ import {
   validatePlayer,
   type ChanceKind,
   type ClubDef,
+  type ClubId,
   type DraftSheet,
   type FixtureId,
   type GameRules,
@@ -358,8 +359,12 @@ const fixture = v.strictObject({
   result: v.exactOptional(matchSummary),
 });
 
-/** Slots of a formation: 11 in every one of them. */
-const XI = Math.max(...FORMATIONS.map((f) => FORMATION_SLOTS[f].length));
+/**
+ * Slots of a formation, read from the engine's `FORMATION_SLOTS` (11 in every one): the starters
+ * of a sheet and of the coach's draft sheet. The one value outside the engine (lib/career reads it
+ * from here); the engine derives its own the same way.
+ */
+export const STARTER_SLOTS = Math.max(...FORMATIONS.map((f) => FORMATION_SLOTS[f].length));
 
 /** A tactic chosen before the match: the 3 pre-match postures (never `allOut`). */
 const tactic = v.strictObject({
@@ -370,7 +375,7 @@ const tactic = v.strictObject({
 const teamSheet = v.strictObject({
   lineup: v.strictObject({
     formation,
-    starters: list(id, XI),
+    starters: list(id, STARTER_SLOTS),
     bench: list(id, BENCH_SIZE),
     captains: list(id, SAVE_LIMITS.takers),
     penaltyTakers: list(id, SAVE_LIMITS.takers),
@@ -401,11 +406,11 @@ export const draftSheetSchema = v.strictObject({
   lineup: v.pipe(
     v.strictObject({
       formation,
-      starters: v.pipe(v.array(v.nullable(id)), v.length(XI)),
+      starters: v.pipe(v.array(v.nullable(id)), v.length(STARTER_SLOTS)),
       bench: list(v.nullable(id), BENCH_SIZE),
-      captains: list(id, XI),
-      penaltyTakers: list(id, XI),
-      freeKickTakers: list(id, XI),
+      captains: list(id, STARTER_SLOTS),
+      penaltyTakers: list(id, STARTER_SLOTS),
+      freeKickTakers: list(id, STARTER_SLOTS),
     }),
     v.check((lineup) => noRepeat([...lineup.starters, ...lineup.bench]), 'duplicate-player'),
     v.check(
@@ -857,7 +862,10 @@ function draftIncoherence(
   return undefined;
 }
 
-/** The squad of `clubId` in `game`, or none. */
+/**
+ * The squad of `clubId` in `game`, or none: the one lookup of the coach's squad for the coherence
+ * of the draft sheet (the save's and {@link parseDraft}'s).
+ */
 function squadOf(game: Pick<GameState, 'squads'>, clubId: string): readonly PlayerId[] {
   return Object.hasOwn(game.squads, clubId) ? game.squads[clubId]! : [];
 }
@@ -939,21 +947,22 @@ export function parseRoundSheets(
 }
 
 /**
- * Checks the coach's draft sheet kept in the `careers` row (ADR-0021, item 7) against `squad`, the
- * coach's squad in the save it goes with: the same schema as `career.draft`, the same coherence and
- * the search for prototype keys. `SaveStore.writeDraft` calls it before writing and `openCareer`
+ * Checks the coach's draft sheet kept in the `careers` row (ADR-0021, item 7) against the squad of
+ * `clubId` (the coach's club) in `game`, the state of the save it goes with: the same schema as
+ * `career.draft`, the same coherence and the search for prototype keys. `SaveStore.writeDraft` calls it before writing and `openCareer`
  * before using the row's sheet. Never throws; the issue's path is relative to the sheet
  * (`lineup.starters.3`), and never has the value.
  */
 export function parseDraft(
   raw: unknown,
-  squad: readonly PlayerId[],
+  game: Pick<GameState, 'squads'>,
+  clubId: ClubId,
 ): SaveResult<DraftSheet, 'invalid-save'> {
   try {
     if (hasForbiddenKey(raw)) return fail('invalid-save', { path: '', problem: 'forbidden-key' });
     const parsed = v.safeParse(draftSheetSchema, raw, { abortEarly: true });
     if (!parsed.success) return fail('invalid-save', issueOf(parsed.issues));
-    const issue = draftIncoherence(parsed.output, squad, []);
+    const issue = draftIncoherence(parsed.output, squadOf(game, clubId), []);
     return issue === undefined ? ok(parsed.output) : fail('invalid-save', issue);
   } catch {
     return fail('invalid-save', { path: '', problem: 'unreadable' });

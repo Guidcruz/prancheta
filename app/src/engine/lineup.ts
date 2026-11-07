@@ -1,3 +1,4 @@
+import { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
 import type { Formation, PlayerId, Posture, Pressure } from './types.ts';
 
 /*
@@ -15,8 +16,8 @@ import type { Formation, PlayerId, Posture, Pressure } from './types.ts';
 /** Bench size (partida.md, "Substituições": `match.benchSize = 7`, a rule constant). */
 export const BENCH_SIZE = 7;
 
-/** Slots of every formation (`FORMATION_SLOTS[formation].length`). */
-const STARTER_SLOTS = 11;
+/** Slots of a formation, read from `FORMATION_SLOTS` (11 in every one): a draft's starters. */
+const STARTER_SLOTS = Math.max(...FORMATIONS.map((f) => FORMATION_SLOTS[f].length));
 
 /** The team the coach (or the AI) puts on the pitch. */
 export interface Lineup {

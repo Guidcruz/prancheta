@@ -89,8 +89,7 @@ function check(label: string, save: CareerSave): void {
     const parsed = parseCareerSave(stored, { check: level, careerId: save.careerId });
     if (!parsed.ok) throw new Error(`${label} ${level}: ${JSON.stringify(parsed.detail)}`);
   }
-  const squad = save.game.squads[save.career.clubId]!;
-  const sheet = parseDraft((stored as CareerSave).career.draft, squad);
+  const sheet = parseDraft((stored as CareerSave).career.draft, save.game, save.career.clubId);
   if (!sheet.ok) throw new Error(`${label} parseDraft: ${JSON.stringify(sheet.detail)}`);
 }
 

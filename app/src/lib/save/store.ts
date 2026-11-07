@@ -179,6 +179,20 @@ export interface WriteGuard {
   readonly expectedHeadSeq: number;
 }
 
+/**
+ * The guard of `writeDraft` (ADR-0021, item 3, clarified on 2026-11-07): the head check against
+ * another tab, and the snapshot the sheet was built on.
+ */
+export interface DraftGuard extends WriteGuard {
+  /**
+   * `seq` of the snapshot the `save.game` in memory came from: `OpenedCareer.seq` when the career
+   * opened, then `WrittenSnapshot.seq` after each snapshot write that succeeded. Equal to
+   * `expectedHeadSeq` except after a fallback to an older version (the head failed its checks):
+   * the sheet is stored with this `seq`, so opening (which falls back to the same snapshot) uses it.
+   */
+  readonly snapshotSeq: number;
+}
+
 export interface WrittenSnapshot {
   readonly seq: number;
   readonly sha256: string;
@@ -651,26 +665,24 @@ export class SaveStore {
 
   /**
    * Stores the coach's sheet of `save` (`save.career.draft`) in the career's row of `careers`,
-   * between rounds (ADR-0021, item 3): `{ seq: guard.expectedHeadSeq, sheet }`, in one transaction
-   * of that store only, about 1 KB. Refused, with nothing changed, when the sheet does not pass
+   * between rounds (ADR-0021, item 3): `{ seq: guard.snapshotSeq, sheet }`, the snapshot the sheet
+   * was built on (after a fallback, the older one that opened, not the head), in one transaction of
+   * that store only, about 1 KB. Refused, with nothing changed, when the sheet does not pass
    * `parseDraft` against `save.game`'s squad of the coach's club (`invalid-save`), when the career
    * has no row (`not-found`), when the row is of a newer build (`save-too-new`) and when the head
-   * is not `expectedHeadSeq` (`conflict`: another tab wrote). Not read back: losing it costs only
-   * the edits since the last write, and opening checks it.
+   * is not `guard.expectedHeadSeq` (`conflict`: another tab wrote). Not read back: losing it costs
+   * only the edits since the last write, and opening checks it.
    */
   writeDraft(
     save: CareerSave,
-    guard: WriteGuard,
+    guard: DraftGuard,
   ): Promise<SaveResult<{ readonly seq: number }, DraftWriteError>> {
     return this.serial(async () => {
-      const squad = Object.hasOwn(save.game.squads, save.career.clubId)
-        ? save.game.squads[save.career.clubId]!
-        : [];
-      const checked = parseDraft(save.career.draft, squad);
+      const checked = parseDraft(save.career.draft, save.game, save.career.clubId);
       if (!checked.ok) return checked;
       const db = await this.open();
       if (!db.ok) return db;
-      const stored: StoredDraft = { seq: guard.expectedHeadSeq, sheet: checked.value };
+      const stored: StoredDraft = { seq: guard.snapshotSeq, sheet: checked.value };
       let refused: SaveResult<never, DraftWriteError> | undefined;
       try {
         const tx = db.value.transaction('careers', 'readwrite');
@@ -1084,9 +1096,7 @@ function withStoredDraft(
   if (stored === undefined) return { save };
   if (!isStoredDraft(stored)) return { save, draftSkipped: 'invalid' };
   if (stored.seq !== seq) return { save, draftSkipped: 'stale' };
-  const clubId = save.career.clubId;
-  const squad = Object.hasOwn(save.game.squads, clubId) ? save.game.squads[clubId]! : [];
-  const draft = parseDraft(stored.sheet, squad);
+  const draft = parseDraft(stored.sheet, save.game, save.career.clubId);
   if (!draft.ok) return { save, draftSkipped: 'invalid' };
   return { save: { ...save, career: { ...save.career, draft: draft.value } } };
 }

@@ -92,6 +92,19 @@ const FATAL_ON_WRITE: ReadonlySet<WriteError> = new Set<WriteError>([
   'unsupported-browser',
 ]);
 
+/**
+ * A write of the coach's sheet refused by one of these ends the career on this tab, as a snapshot
+ * write does (another tab wrote, or a newer build owns the career). `fatal.unsaved` stays `false`:
+ * the screen's text for it speaks of a round not stored, and no round is pending when the sheet
+ * is written (`busy` and `unsaved` hold it back); the edit lost is only the last ones.
+ */
+const FATAL_ON_DRAFT: ReadonlySet<DraftWriteError & FatalCode> = new Set<
+  DraftWriteError & FatalCode
+>(['conflict', 'app-outdated', 'save-too-new']);
+
+const isFatalOnDraft = (code: DraftWriteError): code is DraftWriteError & FatalCode =>
+  (FATAL_ON_DRAFT as ReadonlySet<string>).has(code);
+
 /** Opening failures that take the whole screen; the others are shown on the home screen. */
 const FATAL_ON_OPEN: ReadonlySet<OpenError> = new Set<OpenError>([
   'all-corrupt',
@@ -229,6 +242,12 @@ export class CareerService {
   private current: CareerState = CLOSED;
   /** The `expectedHeadSeq` of the next write of the open career. */
   private headSeq = 0;
+  /**
+   * `seq` of the snapshot the career in memory came from (ADR-0021, item 3, clarified): the one
+   * that opened, then each one written. The same as `headSeq` except after a fallback to an older
+   * version; the coach's sheet is stored with it.
+   */
+  private snapshotSeq = 0;
   /** Opaque: handed back to `writeSnapshot` as it came from the store, never read here. */
   private base: SheetIndex | undefined;
   /** A sheet edit waits to be written (only the last one is). */
@@ -403,6 +422,7 @@ export class CareerService {
       return written;
     }
     this.headSeq = written.value.seq;
+    this.snapshotSeq = written.value.seq;
     this.base = written.value.sheets;
     this.set({ status: 'open', save, busy: false });
     return { ok: true, value: undefined };
@@ -453,6 +473,7 @@ export class CareerService {
     }
     const {
       save,
+      seq,
       headSeq,
       sheets,
       skipped,
@@ -466,6 +487,7 @@ export class CareerService {
     // sheet. `stale` (built on another snapshot, as after a fallback) is not an error.
     if (draftSkipped === 'invalid') this.logStorage('draft-skipped', 'career.open');
     this.headSeq = headSeq;
+    this.snapshotSeq = seq;
     this.base = sheets;
     this.set({ status: 'open', save, busy: false, roundsLost, missingSheetRounds });
     // A migrated save becomes a snapshot of the current format (4.2, "Migração"): the original is
@@ -641,7 +663,9 @@ export class CareerService {
       while (this.draftQueued) {
         this.draftQueued = false;
         const { status, save, busy, unsaved } = this.current;
-        // A snapshot being written (or waiting for "Tentar de novo") carries the sheet in memory.
+        // A snapshot being written (or waiting for "Tentar de novo") carries the sheet in memory:
+        // an edit that waited here is not written alone. It stays in memory and goes with that
+        // snapshot (a round played with a sheet replaces it by the sheet sent, ADR-0021).
         if (status !== 'open' || save === undefined || busy || unsaved !== undefined) return;
         await this.writeDraft(save);
       }
@@ -653,7 +677,10 @@ export class CareerService {
   private async writeDraft(save: CareerSave): Promise<void> {
     let written: SaveResult<unknown, DraftWriteError>;
     try {
-      written = await this.store.writeDraft(save, { expectedHeadSeq: this.headSeq });
+      written = await this.store.writeDraft(save, {
+        expectedHeadSeq: this.headSeq,
+        snapshotSeq: this.snapshotSeq,
+      });
     } catch (error) {
       this.logException('career.draft', error);
       return;
@@ -670,8 +697,8 @@ export class CareerService {
     }
     this.logStorage(written.error, 'career.draft', written.detail);
     const same = this.current.status === 'open' && this.current.save?.careerId === save.careerId;
-    if (FATAL_ON_WRITE.has(written.error as WriteError) && same) {
-      this.set({ status: 'fatal', fatal: { code: written.error as FatalCode, unsaved: false } });
+    if (isFatalOnDraft(written.error) && same) {
+      this.set({ status: 'fatal', fatal: { code: written.error, unsaved: false } });
     }
   }
 
@@ -697,6 +724,7 @@ export class CareerService {
     }
     if (written.ok) {
       this.headSeq = written.value.seq;
+      this.snapshotSeq = written.value.seq;
       this.base = written.value.sheets;
       this.set({ busy: false, unsaved: undefined });
       return { ok: true, value: undefined };
@@ -776,6 +804,7 @@ export class CareerService {
   private reset(): void {
     this.current = CLOSED;
     this.headSeq = 0;
+    this.snapshotSeq = 0;
     this.base = undefined;
   }
 
