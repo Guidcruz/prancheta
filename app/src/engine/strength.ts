@@ -1,11 +1,11 @@
 import { FORMATION_SLOTS } from './formations.ts';
 import type { GameState } from './game.ts';
 import { bestEleven, elevenStrength } from './generation.ts';
-import type { Lineup } from './lineup.ts';
+import type { DraftLineup, Lineup, LineupState } from './lineup.ts';
 import { clamp } from './math.ts';
 import type { GameParams, MatchParams } from './params.ts';
 import { attributeOf, fit, type Player } from './players.ts';
-import { kickoffBench, replaceUnavailable } from './selection.ts';
+import { kickoffBench, replaceUnavailable, selectionValue } from './selection.ts';
 import type { ClubId, Formation, PlayerId, Position, Posture, Pressure, Result } from './types.ts';
 
 /*
@@ -518,4 +518,70 @@ export function teamStrength(
     false,
   );
   return 'reason' in resolved ? undefined : elevenStrength(resolved.eleven);
+}
+
+/** The strength bars of the lineup screen (US-017; {@link sheetStrength}). */
+export interface SheetStrength {
+  readonly overall: number;
+  readonly def: number;
+  readonly mid: number;
+  readonly atk: number;
+}
+
+/**
+ * Strength of the sheet being edited (docs/02-architecture.md, 4.1, "Ficha em edição e leituras
+ * para a escalação"; escalacao.md, "Força do time"; the scale approved by the CEO on 2026-11-07):
+ * - each slot is worth `selectionValue(player, slot)` = `overall × fit × (0.80 + 0.20 ×
+ *   condition / 100)` (selection.ts);
+ * - a free slot, an unavailable starter (`isAvailable`), an empty goal, an id out of the club's
+ *   squad and the second occurrence of a repeated id are worth 0;
+ * - `overall = Σ v / 11`, over the 11 slots;
+ * - `def`, `mid` and `atk` = the sum of `v` of the slots of the sector ÷ the number of slots of the
+ *   sector × `FORMATION_MULTIPLIERS[formation][sector]` (the sector of each slot from
+ *   `FORMATION_SECTORS`; the full-backs of a back three count in midfield). The goalkeeper is only
+ *   in `overall`;
+ * - morale, home advantage, posture and pressure are left out.
+ *
+ * With 11 available starters at condition 100 it is `teamStrength` and the sectors of
+ * `sectorStrengths` at morale 50, balanced, medium pressure and no home advantage. Pure, no `Rng`,
+ * never throws and never NaN for a valid state: an unknown formation (damaged input) reads as
+ * `4-4-2` ("Valor desconhecido na entrada"), and a `starters` shorter than 11 has free slots at
+ * the end. `undefined` only for a club with no squad in the state. Not called by the simulation.
+ */
+export function sheetStrength(
+  state: LineupState,
+  clubId: ClubId,
+  lineup: Pick<DraftLineup, 'formation' | 'starters'>,
+): SheetStrength | undefined {
+  const squadIds = state.squads[clubId];
+  if (squadIds === undefined) return undefined;
+  const inSquad = new Set(squadIds);
+  const formation = isFormation(lineup.formation) ? lineup.formation : '4-4-2';
+  const positions = FORMATION_SLOTS[formation];
+  const sectors = FORMATION_SECTORS[formation];
+  const seen = new Set<PlayerId>();
+  const sums = { gk: 0, def: 0, mid: 0, atk: 0 };
+  const counts = { gk: 0, def: 0, mid: 0, atk: 0 };
+  let total = 0;
+  for (let i = 0; i < positions.length; i++) {
+    const sector = sectors[i]!;
+    counts[sector] += 1;
+    const id = lineup.starters[i] ?? null;
+    if (id === null || seen.has(id)) continue;
+    seen.add(id);
+    const player = inSquad.has(id) ? state.players[id] : undefined;
+    if (player === undefined || !isAvailable(player)) continue;
+    const value = selectionValue(player, positions[i]!);
+    sums[sector] += value;
+    total += value;
+  }
+  const shape = FORMATION_MULTIPLIERS[formation];
+  const sector = (key: 'def' | 'mid' | 'atk') =>
+    counts[key] > 0 ? (sums[key] / counts[key]) * shape[key] : 0;
+  return {
+    overall: total / STARTERS_COUNT,
+    def: sector('def'),
+    mid: sector('mid'),
+    atk: sector('atk'),
+  };
 }
