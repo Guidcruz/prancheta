@@ -170,10 +170,10 @@ A sigla da posição (GOL, ZAG, LAT, VOL, MEI, ATA) ganha a cor do seu setor, pa
 
 | Setor   | Posições | Borda (`sector-*`)    | Fundo (`sector-*-soft`) | `ink` sobre o fundo (noite / dia) | Borda sobre `surface-1` (noite / dia) | Borda sobre `surface-2` (noite / dia) |
 | ------- | -------- | --------------------- | ----------------------- | --------------------------------- | ------------------------------------- | ------------------------------------- |
-| Goleiro | GOL      | `#f5a524` / `#b26a00` | `#4a3510` / `#fdecc8`   | 10,61 / 14,24                     | 7,62 / 4,24                           | 6,30 / 3,53                           |
-| Defesa  | ZAG, LAT | `#4f9cf0` / `#1f63c0` | `#163556` / `#dce8f9`   | 11,43 / 13,40                     | 5,44 / 5,83                           | 4,50 / 4,86                           |
-| Meio    | VOL, MEI | `#a78bfa` / `#6d3fd0` | `#2e2452` / `#ece5fb`   | 12,87 / 13,57                     | 5,71 / 6,42                           | 4,72 / 5,35                           |
-| Ataque  | ATA      | `#e879d6` / `#a0208c` | `#46193f` / `#f9e1f4`   | 13,04 / 13,52                     | 6,02 / 6,82                           | 4,98 / 5,68                           |
+| Goleiro | GOL      | `#ffc83d` / `#a87200` | `#3d3214` / `#fdf0c8`   | 11,52 / 14,60                     | 10,06 / 4,14                          | 8,31 / 3,45                           |
+| Defesa  | ZAG, LAT | `#5fb0ff` / `#1565c0` | `#16365a` / `#dcebfc`   | 11,22 / 13,70                     | 6,77 / 5,75                           | 5,59 / 4,79                           |
+| Meio    | VOL, MEI | `#a78bfa` / `#6d3fd0` | `#2e2658` / `#ebe4fd`   | 12,50 / 13,48                     | 5,71 / 6,42                           | 4,72 / 5,35                           |
+| Ataque  | ATA      | `#e879d6` / `#a0208c` | `#46203f` / `#f7e0f4`   | 12,46 / 13,38                     | 6,02 / 6,82                           | 4,98 / 5,68                           |
 
 Valores na ordem noite / dia. Âmbar, azul, violeta e magenta: matizes próprios, longe do verde, do amarelo e do vermelho das faixas, para a sigla não ser lida como "bom" ou "ruim".
 
