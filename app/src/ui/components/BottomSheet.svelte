@@ -62,7 +62,17 @@
         <Icon name="close" />
       </button>
     </div>
-    <div class="body" class:last={!footer}>
+    <!-- With a footer, the body may scroll alone (a phone lying down, large text): it is a named
+         region that takes the focus, between close and the footer, so the keyboard can scroll it
+         too (a scrollable region must be focusable; the lint does not know that case). -->
+    <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+    <div
+      class="body"
+      class:last={!footer}
+      role={footer ? 'region' : undefined}
+      aria-labelledby={footer ? titleId : undefined}
+      tabindex={footer ? 0 : undefined}
+    >
       {@render children()}
     </div>
     {#if footer}
@@ -109,6 +119,10 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     padding: 0 var(--space-2);
+  }
+  /* Inside the box: the sheet's edges would clip a ring drawn outside the scrolling body. */
+  .body:focus-visible {
+    outline-offset: -2px;
   }
   /* The base of the sheet: below the footer, or below the body when there is none. */
   .body.last,
