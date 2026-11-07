@@ -172,10 +172,10 @@ A sigla da posição (GOL, ZAG, LAT, VOL, MEI, ATA) ganha a cor do seu setor, pa
 | ------- | -------- | --------------------- | ----------------------- | --------------------------------- | ------------------------------------- | ------------------------------------- |
 | Goleiro | GOL      | `#f5a524` / `#b26a00` | `#4a3510` / `#fdecc8`   | 10,61 / 14,24                     | 7,62 / 4,24                           | 6,30 / 3,53                           |
 | Defesa  | ZAG, LAT | `#4f9cf0` / `#1f63c0` | `#163556` / `#dce8f9`   | 11,43 / 13,40                     | 5,44 / 5,83                           | 4,50 / 4,86                           |
-| Meio    | VOL, MEI | `#2fc4a0` / `#0f7d68` | `#123f37` / `#d3f0e8`   | 10,70 / 13,75                     | 7,05 / 5,06                           | 5,83 / 4,21                           |
-| Ataque  | ATA      | `#f0708f` / `#c0365a` | `#4b1c2c` / `#fbe0e7`   | 12,77 / 13,37                     | 5,49 / 5,36                           | 4,54 / 4,47                           |
+| Meio    | VOL, MEI | `#a78bfa` / `#6d3fd0` | `#2e2452` / `#ece5fb`   | 12,87 / 13,57                     | 5,71 / 6,42                           | 4,72 / 5,35                           |
+| Ataque  | ATA      | `#e879d6` / `#a0208c` | `#46193f` / `#f9e1f4`   | 13,04 / 13,52                     | 6,02 / 6,82                           | 4,98 / 5,68                           |
 
-Valores na ordem noite / dia. Âmbar, azul, verde-água e rosa: matizes próprios, longe do verde, do amarelo e do vermelho das faixas, para a sigla não ser lida como "bom" ou "ruim".
+Valores na ordem noite / dia. Âmbar, azul, violeta e magenta: matizes próprios, longe do verde, do amarelo e do vermelho das faixas, para a sigla não ser lida como "bom" ou "ruim".
 
 - **Só o fundo e a borda da sigla.** O texto da sigla é sempre `ink`; nenhum número, nome, linha ou ícone leva cor de setor.
 - **Contraste:** `ink` sobre os quatro `sector-*-soft` é conferido pelo `npm run tokens` (≥ 4,5:1 nos dois temas). A borda é reforço, não informação (a sigla está escrita); mesmo assim passa de 3:1 sobre `surface-1` e `surface-2` (conferido à mão, tabela acima).

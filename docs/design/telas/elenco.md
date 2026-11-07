@@ -50,7 +50,7 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 
 ### Cor de setor
 
-Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-system.md#cor-de-setor-aprovado-pelo-ceo-em-2026-11-07)). A caixinha da posição ganha o fundo (`sector-*-soft`) e a borda (`sector-*`) do setor: âmbar no goleiro, azul na defesa (ZAG, LAT), verde-água no meio (VOL, MEI), rosa no ataque (ATA). O código continua escrito em `ink`, e a posição inteira continua indo para o leitor de tela no texto escondido da linha.
+Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-system.md#cor-de-setor-aprovado-pelo-ceo-em-2026-11-07)). A caixinha da posição ganha o fundo (`sector-*-soft`) e a borda (`sector-*`) do setor: âmbar no goleiro, azul na defesa (ZAG, LAT), violeta no meio (VOL, MEI), magenta no ataque (ATA). O código continua escrito em `ink`, e a posição inteira continua indo para o leitor de tela no texto escondido da linha.
 
 - **Componente:** `PositionTag` com `hidden` (o leitor de tela já lê "Atacante"), dentro da `PlayerRow`, que recebe a prop `sector`.
 - **O setor vem de `SECTOR_OF[player.position]`** (`app/src/ui/components/sectors.ts`), o mapa único da interface: a tela nunca escreve um setor.
