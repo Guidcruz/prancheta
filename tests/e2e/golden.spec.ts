@@ -68,6 +68,9 @@ test.describe('golden do motor no navegador', () => {
       (globalThis as unknown as { runGoldens: () => Record<string, string> }).runGoldens(),
     );
 
+    // A página roda exatamente os goldens listados: um caso novo não entra sem conferência.
+    expect(Object.keys(actual).sort(), 'goldens da página').toEqual([...GOLDENS].sort());
+
     // Confere todos antes de reprovar, para o relatório mostrar quais divergem.
     const diverge: string[] = [];
     for (const name of GOLDENS) {
