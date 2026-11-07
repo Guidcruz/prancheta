@@ -589,6 +589,15 @@ Cenários cobertos (todos automatizados, em `app/src/engine/`):
 - QA: PASS (`test:all` 2197 testes; E2E Chromium 87/7; `--repeat-each=3` 117/117).
 - Manual (CEO): com leitor de tela, ouvir o display como nome do diálogo e o nome completo uma vez; conferir o card de um jogador com apelido.
 
+### QA da T-029 (Escalação, US-017)
+
+Critérios: trocar por arrasto, por dois toques e por teclado; fora de posição; recusa de inapto; escalação incompleta e "Completar e jogar"; "Deixar de fora" e vaga livre; Sugerir e Desfazer; ficha no save (`busy`, aviso de falha); sem ficha joga a sugestão do motor.
+
+- E2E (`tests/e2e/lineup.spec.ts`, Chromium mobile e desktop; WebKit só no CI, com o arrasto por toque só no Chromium): medidas 1 a 16 de `docs/design/telas/escalacao.md`, mais voltar do navegador com o card aberto, toque duplo em "Completar e jogar" e "Ajustar a escalação".
+- Unitário: `app/src/ui/lineup.test.ts` (troca, recusa, força, avisos, nomes acessíveis, Sugerir e Completar, ficha intocada = rodada jogada), `lineup-screens.test.ts` (estados, aviso de falha de gravação), `draft-writer.test.ts` (`busy`), `lineup-drag.test.ts` (6 px no mouse, 300 ms e folga de 8 px no toque, Esc, segundo dedo, rolagem na borda), `engine/lineup.test.ts` e `lib/career/t075.acceptance.test.ts`.
+- Regressão: `npm run test:all` verde (2305 testes do app); E2E Chromium com 129 passados e 7 pulados; `lineup.spec.ts` x3 sem instabilidade. QA: PASS. Code review: aprovado em 2 rodadas.
+- Manual (CEO): sensação do arrasto e da vibração no celular real, rolagem automática com o polegar, legibilidade do campo, iPhone (WebKit).
+
 ### Cores nos atributos e na posição (US-016; `elenco.md`, `jogador.md`, `design-system.md`; decisão do CEO de 2026-11-07)
 
 - QA: PASS.

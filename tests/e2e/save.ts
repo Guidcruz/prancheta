@@ -57,6 +57,40 @@ export async function readSave(page: Page): Promise<SaveJson> {
   });
 }
 
+/** A ficha do técnico gravada entre as rodadas (`careers.draft`, ADR-0021), se houver. */
+export interface DraftJson {
+  lineup: {
+    formation: string;
+    starters: (string | null)[];
+    bench: (string | null)[];
+    captains: string[];
+    penaltyTakers: string[];
+    freeKickTakers: string[];
+  };
+  tactic: { posture: string; pressure: string };
+}
+
+/** A ficha do registro da carreira mais recente (`undefined` antes da primeira gravação). */
+export async function readDraft(page: Page): Promise<DraftJson | undefined> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open('prancheta-test');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => resolve(open.result);
+    });
+    const careers = await new Promise<{ updatedAt: string; draft?: { sheet: unknown } }[]>(
+      (resolve, reject) => {
+        const request = db.transaction('careers').objectStore('careers').getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      },
+    );
+    db.close();
+    const newest = careers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0];
+    return newest?.draft?.sheet as DraftJson | undefined;
+  });
+}
+
 /** Regrava o snapshot da cabeça da carreira mais recente com `save`. */
 async function writeSave(page: Page, save: SaveJson): Promise<void> {
   await page.evaluate(async (json) => {

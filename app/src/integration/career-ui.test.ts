@@ -4,6 +4,7 @@ import { get } from 'svelte/store';
 import { CareerService, type FatalCode } from '@lib/career';
 import { ErrorLog } from '@lib/errors';
 import { t } from '@lib/i18n';
+import { loadGameParams } from '@lib/params';
 import type { Lang } from '@lib/config';
 import { SAVE_FIELD_NAMES } from '@lib/save';
 import { DB, onPut, store, useFreshDatabase } from '../lib/save/testing/idb.ts';
@@ -106,7 +107,9 @@ describe('states of the real CareerService on screen', () => {
       store: store(),
       log: a.log,
       appVersion: '0.0.1',
-      params: {} as never,
+      // Only the AI part, which the frame reads for the coach's suggestion (T-029): the round
+      // still throws inside the engine.
+      params: { ai: loadGameParams().ai } as never,
     });
     await broken.open(SAMPLE_CAREER_ID);
     await broken.playRound();

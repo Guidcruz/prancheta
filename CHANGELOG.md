@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Tela de Escalação (T-029; US-017):
+  - A aba Elenco ganha o seletor Elenco | Escalação | Tática. A Tática mostra "Esta tela chega numa próxima versão." até a T-077. Trocar de vista não cria entrada no histórico, e a vista fica lembrada enquanto a carreira está aberta.
+  - Escalação: força do time (Força, Defesa, Meio e Ataque arredondados, com seta e sinal depois de cada troca, e "O que conta na Força"), formação com "Mudar na Tática", campo com as 11 vagas, avisos (vaga livre, lesionado, suspenso, fora de posição, improvisado, cansado e ídolo fora do time), "Sugerir escalação", banco e não relacionados.
+  - Três jeitos de trocar dois lugares, com o mesmo resultado: dois toques, Enter e Enter no teclado, ou arrastar (mouse depois de 6 px; toque depois de segurar 300 ms, para o deslizar continuar rolando a página). Lesionado e suspenso não entram no campo nem no banco: a troca é recusada com o motivo.
+  - "Deixar de fora", a primeira linha dos Não relacionados, tira um titular ou reserva sem pôr ninguém no lugar; um jogador levado a uma vaga livre do campo ocupa a vaga ("foi para a vaga de ZAG"). O banco pode ficar incompleto ou vazio sem bloquear a rodada.
+  - Barra de estado embaixo, a única região viva da tela: selecionado (com "Ver card" e "Cancelar"), troca feita com a mudança da força, recusa, e "Desfazer" depois de "Sugerir escalação" e de "Completar automaticamente".
+  - Tudo vale na hora, sem "Salvar": cada troca vai para a ficha do técnico no save. Se uma rodada está sendo jogada, a edição espera e é gravada logo depois; se a gravação da ficha falha, o aviso do save aparece com "Tentar de novo".
+  - "Jogar rodada" com a escalação que não pode ir continua tocável, com o motivo "Escalação incompleta", e abre a folha com "Completar e jogar" e "Ajustar a escalação". A ficha pronta vai para a rodada como está.
 - Cores de pontos fortes e fracos dos atributos e de setor da posição (aprovadas pelo CEO em 2026-11-07):
   - No card do jogador, o atributo 5 pontos ou mais acima da nota geral aparece em verde ("ponto forte") e o 5 ou mais abaixo em vermelho ("ponto fraco"); os do meio e a nota geral ficam sem cor. A leitura para leitor de tela diz "75, ponto forte".
   - A sigla da posição (GOL, ZAG, LAT, VOL, MEI, ATA) ganha a cor do setor (goleiro, defesa, meio, ataque) no fundo e na borda, no Elenco e no cabeçalho do card; o texto continua em tinta e a sigla segue escondida de leitor de tela, que lê a posição por extenso.
