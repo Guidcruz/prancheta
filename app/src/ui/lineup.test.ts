@@ -6,6 +6,7 @@ import {
   draftFromSheet,
   fitLevel,
   sheetProblems,
+  sheetRoles,
   playRound,
   prepareRound,
   sheetStrength,
@@ -83,8 +84,21 @@ describe('the sheet shown (coachSheet; ADR-0021)', () => {
 
 describe('the untouched sheet is the one the round plays (ADR-0021, "Ausente")', () => {
   // Without a draft the frame plays without a sheet, so the engine's own suggestion goes to the
-  // match: the screen must show exactly that one, lineup and tactic.
-  const asDraft = (s: TeamSheet) => draftFromSheet(s);
+  // match: the screen must show exactly that one, lineup and tactic. Its role lists start empty
+  // (CEO decision 5 of T-029, "Automático"), and the automatic rule gives the very holders of the
+  // suggestion's one-name lists.
+  const asDraft = (s: TeamSheet): DraftSheet => {
+    const draft = draftFromSheet(s);
+    return {
+      ...draft,
+      lineup: { ...draft.lineup, captains: [], penaltyTakers: [], freeKickTakers: [] },
+    };
+  };
+  /** Captain, penalty and free-kick taker of a sheet, as `sheetRoles` reads them. */
+  const holders = (state: GameState, lineup: DraftSheet['lineup']) => {
+    const roles = sheetRoles(state, TEST_CLUB, lineup);
+    return [roles.captain.player, roles.penalty.player, roles.freeKick.player];
+  };
   for (const round of [1, 5, 20]) {
     for (const mode of MATCH_MODES) {
       it(`round ${round}, ${mode}: prepareRound's suggestion and the lastSheets of a round played`, () => {
@@ -93,7 +107,17 @@ describe('the untouched sheet is the one the round plays (ADR-0021, "Ausente")',
         const shown = coachSheet(state, TEST_CLUB, undefined, params);
         const plan = prepareRound(state, params, { coaches });
         if (!plan.ok) throw new Error(plan.error);
-        expect(shown).toEqual(asDraft(plan.value.suggested[TEST_CLUB]!));
+        const suggested = plan.value.suggested[TEST_CLUB]!;
+        expect(shown).toEqual(asDraft(suggested));
+        // "Automático: {nome}" names the one the suggestion's list holds.
+        const listed = draftFromSheet(suggested).lineup;
+        expect(listed.captains).toHaveLength(1);
+        expect(holders(state, shown.lineup)).toEqual([
+          listed.captains[0],
+          listed.penaltyTakers[0],
+          listed.freeKickTakers[0],
+        ]);
+        expect(holders(state, shown.lineup)).toEqual(holders(state, listed));
         const played = playRound(state, params, {
           round: state.round,
           sheets: {},

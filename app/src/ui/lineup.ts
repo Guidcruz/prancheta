@@ -73,7 +73,10 @@ export function playerAt(sheet: DraftSheet, place: Place): PlayerId | null {
  * The sheet the screen shows and edits: the coach's draft reconciled with the squad (an id that
  * left is a free slot, the bench has its 7 places), or, while the coach never touched it, the
  * engine's suggestion for the coach (`suggestSheet` with `controller: 'human'`; ADR-0021,
- * "Ausente": the round plays that same sheet).
+ * "Ausente": the round plays that same sheet) with the role lists empty (CEO decision 5 of
+ * T-029: they start as "Automático"). The suggestion's lists hold one name each, the one the
+ * automatic rule picks (`pickCaptainAndTakers`, the rule of `sheetRoles`), so the holders shown
+ * are the ones the round plays.
  */
 export function coachSheet(
   game: GameState,
@@ -81,9 +84,14 @@ export function coachSheet(
   draft: DraftSheet | undefined,
   params: Pick<GameParams, 'ai'>,
 ): DraftSheet {
-  const sheet =
-    draft ?? draftFromSheet(suggestSheet(game, params, clubId, undefined, { controller: 'human' }));
-  return reconcileDraft(game, clubId, sheet);
+  if (draft !== undefined) return reconcileDraft(game, clubId, draft);
+  const suggested = draftFromSheet(
+    suggestSheet(game, params, clubId, undefined, { controller: 'human' }),
+  );
+  return reconcileDraft(game, clubId, {
+    lineup: { ...suggested.lineup, captains: [], penaltyTakers: [], freeKickTakers: [] },
+    tactic: suggested.tactic,
+  });
 }
 
 /**
