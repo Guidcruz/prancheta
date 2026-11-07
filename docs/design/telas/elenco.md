@@ -125,7 +125,7 @@ Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão p
 
 1. **Lista (US-016):** a tabela tem 25 linhas de jogador (`tbody th[scope="row"]`), cada uma com nome, posição, idade, nota, forma e moral (e condição no Completo).
 2. **Ordenar:** "Nota" deixa as notas em ordem decrescente e põe `aria-sort="descending"` em "Nota"; "Condição" deixa a condição em ordem crescente com `aria-sort="ascending"`.
-3. **Coluna fixa:** a 360×740, depois de rolar a caixa da tabela até o fim (`scrollLeft = scrollWidth`), o `x` do primeiro `th[scope="row"]` não muda (±1 px), e a largura dele, com o respiro e a linha da borda, é no máximo 50% da largura da caixa. A mesma regra vale para a coluna do clube na mini tabela do Clube.
+3. **Coluna fixa:** a 360×740, depois de rolar a caixa da tabela até o fim (`scrollLeft = scrollWidth`), o `x` do primeiro `th[scope="row"]` não muda (±1 px), e a largura dele, com o respiro e a linha da borda, é no máximo 50% da largura da caixa. A regra é da `ScrollTable`: vale para toda tabela que rola (o Elenco e, na T-031, a Tabela), não para a mini tabela do Clube, que não rola.
 4. **Sem rolagem lateral da página** em 360, 390, 844 (deitado) e 1280; no desktop e deitado, a caixa da tabela não rola (`scrollWidth <= clientWidth`).
 5. **Situação:** com um jogador lesionado (3 rodadas) e outro suspenso forçados na fixture, as linhas mostram "Lesionado, 3 rodadas" e "Suspenso, 1 jogo" como texto visível, cada um com um `svg` ao lado.
 6. **Promessa:** um jogador que o motor marca como promessa mostra o selo; outro, não. A garantia de que o número nunca aparece fica num teste unitário, não no E2E: nenhum arquivo de `app/src/ui/` lê o campo `potential` (busca no código), e a tela só chama a função de leitura do motor.

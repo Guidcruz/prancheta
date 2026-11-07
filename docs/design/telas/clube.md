@@ -26,7 +26,7 @@ Lê os três blocos, toca no próximo jogo (vai ao Calendário), nos desfalques 
 3. **Torcida** (SectionCard sem link): FanThermometer com o número (0 a 100, arredondado), "de 100", o rótulo de humor em texto e a barra de cinco faixas; embaixo, uma frase do que o humor muda (`club.fans.hint`).
 4. **Classificação** (SectionCard com o link "Tabela"):
    - Posição em `titulo` ("13º") e a linha "6 pontos em 5 jogos".
-   - Mini tabela de 3 linhas (TableRow): o clube de cima, o meu e o de baixo; no 1º lugar, as 3 primeiras; no 20º, as 3 últimas. Colunas: Clube (posição, escudo, nome), J, SG, Pts. A linha do meu clube tem o destaque de TableRow (fundo, negrito, barra à esquerda, `aria-current` e "seu clube" para leitor de tela).
+   - Mini tabela de 3 linhas (TableRow, numa `table` simples, fora da `ScrollTable`: não rola e a coluna do clube não tem o limite de 50%; ver [componentes.md](componentes.md#casca-da-t-028-clube-elenco-e-jogador)): o clube de cima, o meu e o de baixo; no 1º lugar, as 3 primeiras; no 20º, as 3 últimas. Colunas: Clube (posição, escudo, nome), J, SG, Pts. A linha do meu clube tem o destaque de TableRow (fundo, negrito, barra à esquerda, `aria-current` e "seu clube" para leitor de tela).
    - **Últimos jogos:** até 5 StatusBadge de letra (V/E/D) do `StandingRow.form`, do mais antigo ao mais recente, cada um com a palavra inteira para leitor de tela.
 5. **Mais opções** (só no celular): título `nav.more` em `rotulo` e as mesmas entradas do menu "Mais", na mesma ordem e com os mesmos ícones (`NAV_EXTRA`, `NAV_SETTINGS`, `NAV_TUTORIAL`, com a Rede social só se estiver ligada), em LinkRow. A partir de 900px some: a barra lateral já tem todas.
 
@@ -157,6 +157,7 @@ No celular 390×844 e 360×740, no celular deitado 844×390 e no desktop 1280×8
 6. **Ordem:** no DOM, Próximo jogo vem antes de Torcida, e Torcida antes de Classificação, nas duas larguras.
 7. **Simplificado:** numa carreira simplificada, a linha de desfalques não existe; no Completo, com um lesionado forçado na fixture de teste, ela existe e leva a `#/squad`.
 8. **Movimento:** com `reducedMotion: 'reduce'`, `document.getAnimations().length === 0` depois de a tela abrir.
+9. **Mini tabela sem nome cortado:** a 360×740, em cada linha da mini tabela, o elemento do nome do clube tem `scrollWidth <= clientWidth` (sem reticências), e a mini tabela não rola na horizontal. O nome curto mais longo do conjunto de clubes, "Inter-Regional", mede cerca de 94px em negrito, e sobram cerca de 107px para o nome a 360px, então a medida vale para os 20 clubes.
 
 ## Marcas do cenário
 
