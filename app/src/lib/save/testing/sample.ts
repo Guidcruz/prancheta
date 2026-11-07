@@ -1,9 +1,12 @@
 import {
+  draftFromSheet,
   endSeason,
   matchSheet,
   playRound,
   roundRecap,
   startNextSeason,
+  suggestSheet,
+  type DraftSheet,
   type Fixture,
   type FixtureId,
   type GameState,
@@ -136,6 +139,37 @@ export function sampleCareerSave(options: SampleOptions = {}): CareerSave {
       matchSheets,
     },
     game: state,
+  };
+}
+
+/**
+ * A coach's draft sheet for `save` (ADR-0021, item 4: the sample of the v2 fixture): the engine's
+ * suggestion for the coach's club with one free slot on the pitch (slot 4) and one on the bench
+ * (slot 3), captains with 2 names, one penalty taker, no free-kick taker, and a posture and a
+ * pressure other than the suggestion's. So the fixture records `null` in the slots.
+ */
+export function sampleDraft(save: CareerSave): DraftSheet {
+  const { game, career } = save;
+  const suggested = suggestSheet(game, loadGameParams(), career.clubId, undefined, {
+    controller: 'human',
+  });
+  const { lineup } = draftFromSheet(suggested);
+  const starters = lineup.starters.map((id, i) => (i === 3 ? null : id));
+  const bench = lineup.bench.map((id, i) => (i === 2 ? null : id));
+  const onPitch = starters.filter((id): id is string => id !== null);
+  return {
+    lineup: {
+      ...lineup,
+      starters,
+      bench,
+      captains: onPitch.slice(-2),
+      penaltyTakers: onPitch.slice(-3, -2),
+      freeKickTakers: [],
+    },
+    tactic: {
+      posture: suggested.tactic.posture === 'attacking' ? 'defensive' : 'attacking',
+      pressure: suggested.tactic.pressure === 'high' ? 'low' : 'high',
+    },
   };
 }
 

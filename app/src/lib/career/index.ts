@@ -10,6 +10,7 @@ export {
   type CoachNameCheck,
   type CoachNameProblem,
 } from './coach-name.ts';
+export { ROLE_LIST_MAX, reconcileDraft } from './draft.ts';
 export { LAST_SETUP_KEY, parseLastSetup, type LastSetup, type NewGameClub } from './new-game.ts';
 export { canonicalJson, paramsHash } from './params-hash.ts';
 export {

@@ -4,6 +4,7 @@ import { CLUB_SETS, type ClubSet } from '../../data/club-sets.ts';
 import type { ClubDef } from '../../engine/index.ts';
 import { gameIdentitySource } from '../generators/identity.ts';
 import { loadGameParams } from '../params.ts';
+import { migrateSave } from './migrations/index.ts';
 import { newCareerGame } from './new-career.ts';
 import type { CareerSave } from './schema.ts';
 import { store, useFreshDatabase } from './testing/idb.ts';
@@ -82,13 +83,16 @@ describe('an existing career does not change (US-066, third scenario)', () => {
     if (!created.ok) throw new Error(created.error);
     const newDefs = Object.values(created.value.game.clubs).map((c) => c.def);
     expect(newDefs).not.toEqual(Object.values(fixture.game.clubs).map((c) => c.def));
-    // ...and the existing one keeps its own, written and opened through the store.
+    // ...and the existing one keeps its own, migrated to the current format, written and opened
+    // through the store (the migration never changes `def`, ADR-0006).
+    const migrated = migrateSave(fixture);
+    if (!migrated.ok) throw new Error(migrated.error);
     const s = store();
-    const written = await s.writeSnapshot(fixture);
+    const written = await s.writeSnapshot(migrated.value);
     if (!written.ok) throw new Error(written.error);
     const opened = await store().openCareer(fixture.careerId);
     if (!opened.ok) throw new Error(opened.error);
-    expect(opened.value.save).toEqual(fixture);
+    expect(opened.value.save).toEqual(migrated.value);
     expect(opened.value.save.career.baseSeason).toBe(2026);
     for (const [id, club] of Object.entries(opened.value.save.game.clubs)) {
       expect(club.def, id).toEqual(fixture.game.clubs[id]!.def);

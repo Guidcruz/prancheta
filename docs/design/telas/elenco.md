@@ -27,9 +27,26 @@ Lê o elenco, troca a ordem (posição, nota, condição) e toca num atleta para
    - **Coluna fixa (Jogador):** código da posição numa caixinha (`ATA`), o nome curto (`Player.name.display`) como botão, e embaixo dele os selos de situação (StatusBadge com ícone e texto): "Lesionado, 3 rodadas", "Suspenso, 1 jogo", "Promessa". Nome longo corta com reticências; o card mostra inteiro.
    - **Colunas que rolam, nesta ordem:** Nota (nota geral), Cond. (condição 0 a 100), Moral (0 a 100), Forma (média das notas dos últimos 5 jogos, uma casa decimal, "—" sem jogos), Idade. A ordem põe primeiro o que decide a escalação: no celular em pé, Nota, Cond. e Moral aparecem sem rolar.
    - Condição e moral são números reais no motor; a tela mostra `Math.round` (`jogadores.md`, "Frações").
+   - **Condição, moral e forma em cor por faixa** (ver "Cores por faixa", abaixo); nota e idade em `ink`.
    - **Agrupamento:** com a ordem "Posição", uma linha de grupo (GroupRow) antes de cada posição ("Goleiros", "Zagueiros"...). Com "Nota" e "Condição", lista corrida, sem grupos.
    - A coluna ordenada tem `aria-sort` e uma seta no cabeçalho; com "Posição", nenhuma coluna tem `aria-sort` (a posição não é coluna; os grupos dizem a ordem).
 3. **Titular e reserva:** não aparecem no Elenco, nem depois da T-029: a Escalação mostra titulares, banco e não relacionados (decisão 9 do CEO na T-029, aprovada em 2026-11-07; [funcoes.md](funcoes.md#decisões-do-ceo-t-029)).
+
+### Cores por faixa
+
+Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-system.md#cores-por-faixa-aprovado-pelo-ceo-em-2026-11-07)). O número ganha a cor da faixa; o número continua escrito e a faixa vai em palavra para o leitor de tela.
+
+| Medida           | Boa (`level-good`) | Regular (`level-fair`) | Ruim (`level-poor`) | De onde vêm os limites                                                                                                                                                                                               |
+| ---------------- | ------------------ | ---------------------- | ------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Condição (0–100) | 85 a 100           | 75 a 84                | 0 a 74              | 85 é a linha da rotação da IA (`ai.rotationCondition`): abaixo dela a IA poupa o titular. Abaixo de 75 o `/balance` conta o titular como gasto ([ia-clubes.md](../ia-clubes.md)); entra no jogo e acaba perto de 50. |
+| Moral (0–100)    | 60 a 100           | 40 a 59                | 0 a 39              | A escala do termômetro, para onde a moral anda 1 ponto por rodada ([torcida.md](../torcida.md)): 60+ é "Animada", abaixo de 40 é "Irritada". A moral começa entre 50 e 70.                                           |
+| Forma (3,0–10,0) | 7,0 a 10,0         | 5,5 a 6,9              | 3,0 a 5,4           | 6,0 é a nota de quem só jogou num empate ([partida.md](../partida.md), "Nota do jogador"); 7,0 é um bom jogo; uma derrota sozinha dá 5,6, então abaixo de 5,5 é sequência ruim, não um tropeço.                      |
+
+- **A faixa é do valor mostrado:** condição e moral arredondadas (`Math.round`), forma com uma casa (a de `playerForm`). Um 84,6 aparece como 85 e é "boa".
+- **Forma "—" (sem jogos):** sem cor, lida como "sem jogos", como antes.
+- **Simplificado:** não há coluna nem linha de condição; moral e forma ganham cor igual.
+- **Limites:** só em `LEVEL_BANDS` (`app/src/ui/components/levels.ts`), lidos por `levelOf`. Se o `/balance` mudar `ai.rotationCondition`, a faixa da condição não muda sozinha: o `ux-designer` revê esta tabela.
+- **Nota geral sem cor (recomendação do `ux-designer`; o CEO decide).** A nota é relativa ao nível do clube: um 65 é titular num time do fundo e reserva num do topo. Com faixas fixas, o elenco inteiro de um clube fraco ficaria vermelho e o de um forte, verde, sem ajudar a escolher entre os seus jogadores, e a coluna "Nota" já é a ordem padrão. Se um dia a nota ganhar cor, que seja relativa ao próprio elenco (por exemplo, quem está entre os 11 melhores da posição), e isso já vem com o selo de titular e reserva da T-029.
 
 O número do potencial não aparece em lugar nenhum. O selo "Promessa" (decisão do CEO na US-016) aparece para quem se enquadra na regra de `jogadores.md`, "Potencial", e a tela recebe do motor só o booleano (ver "Pedidos ao motor" em [jogador.md](jogador.md#pedidos-ao-motor)).
 
@@ -83,6 +100,10 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. `status.*` e `position.*` 
 | `squad.col.form.full`      | Forma: média das notas dos últimos 5 jogos | nome completo                                          |
 | `squad.col.age`            | Idade                                      | cabeçalho                                              |
 | `squad.form.none`          | sem jogos                                  | leitor de tela do "—" na coluna Forma                  |
+| `level.good`               | boa                                        | faixa, para leitor de tela (Elenco e card)             |
+| `level.fair`               | regular                                    | faixa, para leitor de tela                             |
+| `level.poor`               | ruim                                       | faixa, para leitor de tela                             |
+| `level.reading`            | {value}, {level}                           | leitura da célula com faixa: "82, boa"                 |
 | `position.GK.short`        | GOL                                        | caixinha da posição                                    |
 | `position.CB.short`        | ZAG                                        |                                                        |
 | `position.FB.short`        | LAT                                        |                                                        |
@@ -107,6 +128,8 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. `status.*` e `position.*` 
 | `status.suspended.other`   | Suspenso, {count} jogos                    | StatusBadge `suspended`                                |
 | `status.prospect`          | Promessa                                   | StatusBadge `prospect`                                 |
 
+As quatro chaves `level.*` são novas (2026-11-07) e vão no lote do CEO. "boa" no feminino concorda com condição, forma e com "a moral", como o jogo escreve; rascunho es "buena / regular / mala", en "good / fair / poor"; `level.reading` igual nos três.
+
 Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão para o `content-writer`: es POR, DEF, LAT, MCD, MCO, DEL; en GK, CB, FB, DM, AM, ST). Cabeçalhos curtos vêm com o nome completo em `.full`; a caixinha da posição tem largura mínima para 3 letras.
 
 ## Acessibilidade
@@ -114,9 +137,11 @@ Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão p
 - **Tabela de verdade** (`table`, `caption`, `th scope="col"`, `th scope="row"` na coluna fixa, `th scope="colgroup"` nos grupos): o leitor de tela lê "Atacante, Ildo Albuquerque, Lesionado, 3 rodadas" e o cabeçalho de cada número.
 - **Linhas ≥ 44px**; o botão do nome tem pelo menos 44×44px (`min-block-size` e `min-inline-size: var(--touch)`), também quando o nome é curto. Linha com selo fica mais alta (cerca de 72px), sem cortar o selo.
 - **Situação nunca só por cor:** ícone + texto do conteúdo (US-016). A caixinha da posição tem o código em texto, e a posição inteira para leitor de tela.
+- **Faixa nunca só por cor:** o número está sempre escrito; na célula com faixa, o número visível é `aria-hidden` e o texto escondido diz "82, boa" (`level.reading`). Contraste dos três tokens ≥ 4,5:1 sobre `surface-1` e sobre `surface-2` (a linha com o ponteiro em cima), nos dois temas.
 - **Ordenação:** grupo de rádio nativo (setas do teclado trocam a opção); `aria-sort` no cabeçalho da coluna ordenada.
 - **Caixa da tabela** é uma região nomeada pela legenda e focável, para rolar pelo teclado.
 - **Foco:** ao fechar o card, o foco volta ao botão do nome da linha de origem, também quando o card foi aberto por um toque fora do botão, em outro ponto da linha. A tela guarda o botão de origem e devolve o foco a ele; não depende do `<dialog>` nativo, que devolveria o foco ao elemento ativo antes de abrir (num toque na linha, a caixa da tabela, que é focável).
+- **Anel de foco só para o teclado:** depois de fechar o card por toque, o nome recebe o foco sem desenhar o anel; pelo teclado (Esc), com o anel ([design-system.md](../design-system.md#foco-anel-só-para-o-teclado-pedido-do-ceo-em-2026-11-07)).
 - **Texto só para leitor de tela dentro das células** ("sem jogos" da coluna Forma): a célula numérica tem `position: relative`, para o texto escondido ficar dentro do recorte da caixa que rola e não criar rolagem lateral da página.
 - **Números** em `tabular-nums`, alinhados à direita.
 - **Movimento:** nenhum; trocar a ordem só reordena.
@@ -132,6 +157,8 @@ Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão p
 7. **Simplificado:** sem cabeçalho "Cond." e sem a opção "Condição".
 8. **Alvos ≥ 44px:** opções do seletor e botões de nome.
 9. **Abrir e voltar:** tocar numa linha abre o card; o voltar do navegador fecha e a URL continua `#/squad`.
+10. **Cores por faixa:** com um jogador forçado na fixture com condição 74, moral 60 e forma 5,5, as três células têm as classes `level-poor`, `level-good` e `level-fair`, com o número visível e o texto escondido "74, ruim", "60, boa" e "5,5, regular"; a forma "—" não tem classe de faixa. A cor computada de cada uma é a do token no tema.
+11. **Anel depois do toque:** com toque emulado (`hasTouch`), abrir o card tocando no nome e fechá-lo tocando no X deixa o foco no nome com `outline-style: none`; o mesmo caminho pelo teclado (Enter, Esc) deixa o anel (`outline-style: solid`). Rodar também no WebKit do CI, onde o defeito aparecia.
 
 ## Marcas do cenário
 
@@ -143,3 +170,4 @@ Aprovadas em 2026-11-07, com a lista completa em [jogador.md](jogador.md#decisõ
 
 - **Realismo simplificado sem condição:** sem a coluna Cond. e sem a opção "Condição" no seletor.
 - **Card do jogador no desktop como diálogo** ancorado pela base, não painel lateral.
+- **Cores por faixa** (2026-11-07, depois de testar a T-028 no celular): verde, amarelo e vermelho nos números de condição, moral e forma, sempre com o número junto. Faixas e tokens acima; a cor da nota geral espera a decisão do CEO.

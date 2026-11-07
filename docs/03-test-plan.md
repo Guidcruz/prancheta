@@ -548,6 +548,39 @@ E2E (`tests/e2e/club-squad.spec.ts`, `frame.spec.ts`; Chromium em celular em pé
 - Safari no iOS;
 - uma carreira longa no Simplificado.
 
+### Anel de foco só para o teclado e cores por faixa (Elenco e card)
+
+- Anel (E2E, `tests/e2e/club-squad.spec.ts` e `tests/e2e/focus-ring.spec.ts`): sem anel depois de toque (com o foco do mouse impedido, como no WebKit), de clique e de foco por código (X da folha, nome ao fechar o card); com anel em Tab (inclusive depois de toque ou clique), Shift+Tab, Enter e Esc; campo de texto mantém o anel depois de clique e de digitar, e Esc dentro dele passa para teclado. Unitário: `input-modality.test.ts`. O WebKit real só roda no CI.
+- Faixas: limites exatos de condição, moral e forma em `levels.test.ts`. E2E nos temas noite e dia, no Elenco e no card: classe e cor do token `level-*`, número visível, leitura "74, ruim", forma "—" lida como "sem jogos" e sem faixa, nota, idade e atributos sem cor, Simplificado sem condição. Textos `level.*` nos três idiomas pela paridade de chaves. Contraste ≥ 4,5:1 conferido pelo `npm run tokens`.
+- Manual (CEO): iPhone real (toque e teclado), olho nas cores de faixa nos dois temas, leitor de tela.
+
+### QA da T-075 (ficha do técnico no save, formato v2, ADR-0021)
+
+Cenários cobertos (todos automatizados):
+
+- Formato: `SAVE_SCHEMA_VERSION` 2 e `ENGINE_VERSION` exatamente 16 (`career/t075.acceptance.test.ts`); fixtures v1 intactas e v2 com vaga livre no campo e no banco; migração `0001-coach-draft` (só `schemaVersion`; v1 com `draft` sai sem ele).
+- Esquema e coerência iguais em `full`, `open`, `write` e `parseDraft` (`save/validate.draft.test.ts`, casos por `it.each`, chaves de protótipo, `parseDraft` nunca lança); propriedade da T-019 com fichas por edições aleatórias conciliadas, inclusive `seasonEnd` e rodada 1 da temporada seguinte.
+- Store (`save/draft.store.test.ts`): `writeDraft` grava `{ seq: snapshotSeq, sheet }` só em `careers`; `conflict`, `invalid-save`, `save-too-new`, `quota-exceeded`; abertura usa a ficha só com o `seq` aberto (`stale`, `invalid` sem erro/ com log), volta a versão anterior depois de head corrompido sem perder a ficha; `writeSnapshot` deixa o registro sem ficha; desfazer devolve a ficha anterior; `listCareers` sem ficha; `deleteCareer` apaga.
+- Carreira (`career/draft.test.ts`, `career/service.draft.test.ts`): `reconcileDraft` pura e idempotente (aposentado vira vaga livre, lesionado/suspenso ficam, máx. 3 por lista); virada com a ficha mantida (opção A); `setDraft` (`not-open`, `busy`, última edição vence, `unsaved`, falha de gravação, `conflict` de outra aba); recarregar devolve a mesma ficha; ficha enviada na rodada vira a ficha guardada; toda gravação recebe ficha conciliada.
+- Invariante do motor: a ficha nunca entra no `GameState` nem no `lastSheets` (game byte a byte igual depois de `setDraft` e de recarregar); goldens sem mudança.
+- E2E: smoke "reabre a página e vê a carreira" verde com o v2 (Chromium mobile e desktop).
+- Desempenho (`npm run measure:save`, 3 execuções em 2026-11-07): maior p90 de gravação 80,3 / 82,9 / 78,7 ms (meta ≤ 130 ms); abertura 141,1 / 140,6 / 136,7 ms (meta ≤ 400 ms).
+
+Pendente: cabeçalho `PRANCHETA-SAVE 2` do arquivo exportado (T-020); E2E da ficha na tela (T-029 e T-077).
+
+### QA da T-076 (leituras do motor para a escalação, ADR-0021)
+
+Cenários cobertos (todos automatizados, em `app/src/engine/`):
+
+- `sheetStrength` (`strength.sheet.test.ts`): (a) igual ao `teamStrength` e ao `sectorStrengths` com 11 aptos e condição 100; régua (Σv/11, setores vezes a formação, goleiro só no `overall`); vaga livre, id fora do elenco e id repetido valem 0; (b) vaga livre nunca aumenta nenhum dos quatro números; (c) inapto igual a vaga livre; (d) pureza; `undefined` só para clube sem elenco; nunca `NaN`.
+- `reshapeLineup` (`draft.test.ts`, `draft.property.test.ts`): exemplo de `partida.md`; inapto só muda de vaga; id fora do elenco vira vaga livre; mesma formação devolve igual; 6 × 6 formações × 0 a 11 vagas (nunca lança, mesmos ids, goleiro no gol, vagas livres conservadas, determinístico); regra compartilhada com a partida provada pelos 5 goldens.
+- `completeSheet`: preenchimento das vagas (banco, depois não relacionados); inaptos e repetidos saem; menos de 11 aptos; clube desconhecido; ficha pronta passa igual (banco de 5 sem goleiro, vagas livres fechadas, banco vazio); ficha incompleta enche até 7 com no máximo um goleiro, preserva dois goleiros do técnico, refaz o banco com reserva lesionado; propriedades (sempre passa no `validateLineup`, pronta passa igual, goleiros do banco limitados, determinismo).
+- `SuggestOptions.formation` (`ai.formation.test.ts`): XI e banco na formação pedida só com `controller: 'human'`; ignorada com `ai`, valor desconhecido e sem opção (saída igual à de hoje); capitão, cobradores e tática intactos.
+- `sheetRoles` e `sheetProblems`: primeiro candidato apto, regra automática da IA, sem titular apto; todos os problemas na ordem do `validateLineup`; `missing` com menos de 11 aptos e com 0 aptos; propriedade `validateLineup.ok` equivale a `ready`, e `ready` implica `completeSheet` válida.
+- Aceite do QA (`t076.acceptance.test.ts`): `ENGINE_VERSION` 16; as sete funções no `index.ts` e `pickEleven` fora dele; `isAvailable` nas bordas; `fitLevel` nos três níveis; `strength.ts` e `draft.ts` sem `Rng`, `Math.random` e `Date.now`; `game.ts`, `round.ts` e `season.ts` não chamam as leituras; ficha vazia sem `NaN`; a sugestão é ficha pronta e passa igual.
+- Contrato: `CONTRACT` de `index.test.ts` com os sete valores novos.
+- Regressão: goldens (inclusive no Chromium) sem mudança e balance de release (1.000 temporadas, semente 1, robô no mais fraco) idêntico ao da `main`, menos a linha do tempo.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

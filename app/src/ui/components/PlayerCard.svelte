@@ -4,7 +4,13 @@
     label: string;
     value: string;
   }
-  /** One state with a bar: condition and morale (0..100), form (3..10, `valueText` "7,2"). */
+  import type { Level } from './levels';
+
+  /**
+   * One state with a bar: condition and morale (0..100), form (3..10, `valueText` "7,2"). With
+   * `level` (`levelOf` on the shown value) the number takes its band's colour, and `srText` reads
+   * it with the band in words ("82, boa").
+   */
   export interface CardMeter {
     id: string;
     label: string;
@@ -12,6 +18,8 @@
     max: number;
     valueText?: string;
     emptyText?: string;
+    level?: Level;
+    srText?: string;
   }
   export interface CardAttribute {
     id: string;
@@ -110,6 +118,8 @@
             max={meter.max}
             valueText={meter.valueText}
             emptyText={meter.emptyText}
+            level={meter.level}
+            srText={meter.srText}
           />
         {/each}
       </dl>

@@ -6,6 +6,26 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Leituras do motor para a escalação (T-076, ADR-0021):
+  - O jogador ainda não vê a mudança: a tela de escalação, que usa essas leituras, vem na T-029.
+  - Contrato do motor: `fitLevel`, `isAvailable`, `sheetStrength`, `reshapeLineup`, `completeSheet`, `sheetRoles`, `sheetProblems` e a opção `SuggestOptions.formation`.
+  - `sheetStrength` calcula a força da ficha em edição: usa o valor de seleção de cada jogador, vaga vazia ou inapto vale 0, soma dividida por 11, com os setores multiplicados pela formação.
+  - A troca de formação passou a ser uma regra só (`reshapeSlots`), usada pela partida e pela escalação.
+  - `completeSheet`: a ficha pronta passa igual; a incompleta é completada até 7 no banco, com no máximo um goleiro.
+  - Nenhum golden mudou, o `ENGINE_VERSION` continua 16 e o balanceamento de release (1.000 temporadas) saiu idêntico ao da `main`.
+
+- Ficha do técnico no save, formato v2 (T-075, ADR-0021):
+  - O jogador ainda não vê a mudança: a tela de escalação, que usa a ficha, vem na T-029.
+  - Motor: tipos `DraftLineup` e `DraftSheet` (vaga livre como `null` no campo e no banco) e `draftFromSheet` no contrato. Nenhuma simulação recebe a ficha em edição, os goldens são os mesmos e o `ENGINE_VERSION` continua 16.
+  - Save v2: `career.draft` opcional, com o mesmo esquema estrito e a mesma coerência (todo id no elenco do clube do técnico) no `full`, no `open`, no `write` e no `parseDraft`; o esquema `write` passa a ler `game.squads`. Migração `0001-coach-draft` (v1 → v2, tira um `career.draft` que um v1 não poderia ter). Fixtures `v2.json` e `shape-v2.json`; as da v1 não mudaram.
+  - Entre as rodadas, `SaveStore.writeDraft` grava `{ seq, sheet }` no registro da carreira (store `careers`, uma transação só dele, com a trava de outra aba); o `seq` é o do snapshot aberto, e por isso a ficha continua valendo depois de uma volta a uma versão anterior. Ao abrir, a ficha do registro só vale com o snapshot daquele `seq` e se passar no `parseDraft`; senão vale a do snapshot (`draftSkipped`). A gravação de snapshot tira a ficha do registro, e o `listCareers` não a devolve. A estrutura do banco continua na versão 1.
+  - Carreira: `reconcileDraft` (quem saiu do elenco vira vaga livre e sai das listas; lesionado e suspenso ficam; listas com até 3 titulares) roda antes de toda gravação; `CareerService.setDraft` guarda a ficha na hora e grava só a última das edições que esperam; a ficha enviada para a rodada vira a ficha guardada.
+  - Testes: tipos, migração com a fixture v1, esquema nos três níveis, store, carreira (recarregar mantém a ficha), virada da temporada com aposentados e a propriedade do formato com fichas editadas ao acaso. A medição do save passa a incluir a ficha no snapshot e o tempo do `writeDraft`.
+
+- Anel de foco só para o teclado e cores por faixa no Elenco:
+  - O anel de foco aparece só para quem usa o teclado e não aparece depois de um toque (no iPhone ele surgia no botão de fechar e no nome do jogador).
+  - Condição, moral e forma ganham verde, amarelo ou vermelho por faixa no Elenco e no card do jogador, com o texto da faixa ("74, ruim") para o leitor de tela; a nota geral continua sem cor.
+
 - Tela do clube, elenco e card do jogador (T-028; US-015, US-016, US-026 na parte da tela):
   - Clube: próximo jogo com mando em texto e posição na tabela, linha "Desfalques" só no realismo Completo, termômetro da torcida com número e rótulo de humor, mini classificação e últimos resultados, "Mais opções" no pé abaixo de 900px, duas colunas deitado e no desktop, erro por bloco.
   - Elenco: colunas nome, posição, idade, nota, condição (só no Completo), moral e forma; ordenação por posição, nota e condição, guardada só na tela e nunca no save; selos com ícone e texto (lesionado, suspenso com N jogos, promessa).

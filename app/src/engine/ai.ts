@@ -1,7 +1,7 @@
 import { AI_PROFILES } from './clubs.ts';
-import { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS } from './formations.ts';
+import { FORMATIONS, FORMATION_SLOTS, PROFILE_FORMATIONS, isFormation } from './formations.ts';
 import type { ClubState, GameState } from './game.ts';
-import { BENCH_SIZE, type Lineup, type Tactic, type TeamSheet } from './lineup.ts';
+import { BENCH_SIZE, emptySheet, type Lineup, type Tactic, type TeamSheet } from './lineup.ts';
 import { MARKERS } from './match/rules.ts';
 import type { AiParams, GameParams } from './params.ts';
 import { attributeOf, fit, type Player } from './players.ts';
@@ -117,10 +117,6 @@ function knownProfile(profile: AiProfile): AiProfile {
   return AI_PROFILES.includes(profile) ? profile : 'traditional';
 }
 
-function isFormation(value: unknown): value is Formation {
-  return typeof value === 'string' && (FORMATIONS as readonly string[]).includes(value);
-}
-
 /** The club's preferred formations that are known; none left → the traditional pair. */
 function preferredFormations(club: ClubState): readonly Formation[] {
   const known = (club.preferredFormations ?? []).filter(isFormation);
@@ -215,7 +211,7 @@ function effSum(starters: readonly Player[], formation: Formation): number {
 }
 
 /** Players ranked by overall, then younger, then lower ID (stable on full ties). */
-function byOverall(players: readonly Player[]): Player[] {
+export function byOverall(players: readonly Player[]): Player[] {
   return players
     .map((player, index) => ({ player, index }))
     .sort((a, b) =>
@@ -430,6 +426,15 @@ export interface SuggestOptions {
    * (ia-clubes.md, "Clube do técnico humano"). Default `'ai'`.
    */
   readonly controller?: 'ai' | 'human';
+  /**
+   * The formation of the sheet, for the coach's "Sugerir escalação" on the lineup screen
+   * (decision 6 of the CEO in T-029; docs/02-architecture.md, 4.1): with `controller: 'human'`
+   * and a known formation, the XI ({@link pickEleven}) and the bench ({@link pickBench}) are
+   * picked in it, without choosing between the club's two preferred ones. Captain, takers and
+   * tactic come out as without it. Ignored, without a warning, with `controller: 'ai'` or an
+   * unknown value.
+   */
+  readonly formation?: Formation;
 }
 
 /** What `suggestSheet` reads from the state (`lastSheets` for the opponent's strength, T-013). */
@@ -452,7 +457,8 @@ export type SuggestState = Pick<
  *   current round (home points: `MARKERS.homePoints`, as the `zebra` marker). Without an
  *   opponent (none given and no fixture this round) `Δ = 0` on neutral ground.
  *
- * - The coach's club (`options.controller = 'human'`) plays as `traditional` (SuggestOptions).
+ * - The coach's club (`options.controller = 'human'`) plays as `traditional` (SuggestOptions);
+ *   with `options.formation` its XI and bench are picked in that formation.
  *
  * Never throws: fewer than 11 available players give a shorter `starters` (the match plays with
  * empty slots, partida.md), and an unknown club gets an empty sheet in the first formation,
@@ -467,19 +473,7 @@ export function suggestSheet(
   options: SuggestOptions = {},
 ): TeamSheet {
   const club = state.clubs[clubId];
-  if (club === undefined) {
-    return {
-      lineup: {
-        formation: FORMATIONS[0]!,
-        starters: [],
-        bench: [],
-        captains: [],
-        penaltyTakers: [],
-        freeKickTakers: [],
-      },
-      tactic: { posture: 'balanced', pressure: 'medium' },
-    };
-  }
+  if (club === undefined) return emptySheet();
   const profile: AiProfile =
     options.controller === 'human' ? 'traditional' : knownProfile(club.profile);
   const rng = profile === 'chaotic' ? new Rng(aiSeed(state, clubId)) : undefined;
@@ -490,12 +484,15 @@ export function suggestSheet(
   if (rng !== undefined) {
     formation = FORMATIONS[rng.int(0, FORMATIONS.length - 1)]!;
     starters = pickEleven(available, formation, params.ai).starters;
+  } else if (options.controller === 'human' && isFormation(options.formation)) {
+    formation = options.formation;
+    starters = pickEleven(available, formation, params.ai).starters;
   } else {
-    const options = preferredFormations(club);
-    formation = options[0]!;
+    const preferred = preferredFormations(club);
+    formation = preferred[0]!;
     starters = pickEleven(available, formation, params.ai).starters;
     let best = effSum(starters, formation);
-    for (const other of options.slice(1)) {
+    for (const other of preferred.slice(1)) {
       const xi = pickEleven(available, other, params.ai).starters;
       const sum = effSum(xi, other);
       if (sum > best) {

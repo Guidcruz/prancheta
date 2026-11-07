@@ -2,12 +2,14 @@ import { writable, type Readable } from 'svelte/store';
 import { CLUB_SETS, latestClubSet, type ClubSet } from '../../data/club-sets.ts';
 import {
   SEASON_ROUNDS,
+  draftFromSheet,
   matchSheet,
   playRound as playEngineRound,
   prepareRound as prepareEngineRound,
   roundRecap,
   type ClubDef,
   type ClubId,
+  type DraftSheet,
   type FixtureId,
   type GameParams,
   type GameState,
@@ -30,6 +32,7 @@ import {
   newCareerGame,
   type CareerSave,
   type CareerSummary,
+  type DraftWriteError,
   type OpenError,
   type SaveResult,
   type SaveStore,
@@ -40,6 +43,7 @@ import {
   type WrittenSnapshot,
 } from '../save/index.ts';
 import { checkCoachName, type CoachNameProblem } from './coach-name.ts';
+import { reconcileDraft } from './draft.ts';
 import { LAST_SETUP_KEY, parseLastSetup, type LastSetup, type NewGameClub } from './new-game.ts';
 import { paramsHash } from './params-hash.ts';
 
@@ -57,7 +61,13 @@ import { paramsHash } from './params-hash.ts';
  * - a write that fails keeps the new state in memory and blocks the next round until it is
  *   stored ("rodada anterior não salva", CEO decision 1 of erros-e-avisos.md); "Tentar de novo"
  *   repeats the same write. `conflict`, `app-outdated`, `save-too-new` and `unsupported-browser`
- *   end the career on this tab instead (full screen, decision 3).
+ *   end the career on this tab instead (full screen, decision 3);
+ * - the coach's sheet being edited (`career.draft`, ADR-0021) is reconciled with the squad
+ *   (`reconcileDraft`) before every write, at one point: `persist` for a snapshot and `setDraft`
+ *   for the sheet alone. Between rounds `setDraft` writes only the sheet (`writeDraft`, about
+ *   1 KB, with the same guard); only the last of the edits waiting is written. A round played
+ *   with a sheet keeps that sheet as the draft (`draftFromSheet`); the changes made during the
+ *   match never reach it.
  *
  * Errors go to the local log (lib/errors) with their code and the store's flat diagnostics, and a
  * snapshot of the current format skipped by `invalid-save` when opening goes there as a
@@ -81,6 +91,19 @@ const FATAL_ON_WRITE: ReadonlySet<WriteError> = new Set<WriteError>([
   'save-too-new',
   'unsupported-browser',
 ]);
+
+/**
+ * A write of the coach's sheet refused by one of these ends the career on this tab, as a snapshot
+ * write does (another tab wrote, or a newer build owns the career). `fatal.unsaved` stays `false`:
+ * the screen's text for it speaks of a round not stored, and no round is pending when the sheet
+ * is written (`busy` and `unsaved` hold it back); the edit lost is only the last ones.
+ */
+const FATAL_ON_DRAFT: ReadonlySet<DraftWriteError & FatalCode> = new Set<
+  DraftWriteError & FatalCode
+>(['conflict', 'app-outdated', 'save-too-new']);
+
+const isFatalOnDraft = (code: DraftWriteError): code is DraftWriteError & FatalCode =>
+  (FATAL_ON_DRAFT as ReadonlySet<string>).has(code);
 
 /** Opening failures that take the whole screen; the others are shown on the home screen. */
 const FATAL_ON_OPEN: ReadonlySet<OpenError> = new Set<OpenError>([
@@ -219,8 +242,19 @@ export class CareerService {
   private current: CareerState = CLOSED;
   /** The `expectedHeadSeq` of the next write of the open career. */
   private headSeq = 0;
+  /**
+   * `seq` of the snapshot the career in memory came from (ADR-0021, item 3, clarified): the one
+   * that opened, then each one written. The same as `headSeq` except after a fallback to an older
+   * version; the coach's sheet is stored with it.
+   */
+  private snapshotSeq = 0;
   /** Opaque: handed back to `writeSnapshot` as it came from the store, never read here. */
   private base: SheetIndex | undefined;
+  /** A sheet edit waits to be written (only the last one is). */
+  private draftQueued = false;
+  /** The loop of {@link writeDrafts} is running, and its promise. */
+  private draftLoop = false;
+  private draftDone: Promise<void> = Promise.resolve();
   private hash: Promise<string> | undefined;
 
   /** The open career, for the screens (read-only). */
@@ -388,6 +422,7 @@ export class CareerService {
       return written;
     }
     this.headSeq = written.value.seq;
+    this.snapshotSeq = written.value.seq;
     this.base = written.value.sheets;
     this.set({ status: 'open', save, busy: false });
     return { ok: true, value: undefined };
@@ -436,10 +471,23 @@ export class CareerService {
       }
       return opened;
     }
-    const { save, headSeq, sheets, skipped, roundsLost, missingSheetRounds, fromVersion } =
-      opened.value;
+    const {
+      save,
+      seq,
+      headSeq,
+      sheets,
+      skipped,
+      roundsLost,
+      missingSheetRounds,
+      fromVersion,
+      draftSkipped,
+    } = opened.value;
     this.logSkipped(skipped);
+    // The row's sheet did not pass its check: the snapshot's own is used. Only the code, never the
+    // sheet. `stale` (built on another snapshot, as after a fallback) is not an error.
+    if (draftSkipped === 'invalid') this.logStorage('draft-skipped', 'career.open');
     this.headSeq = headSeq;
+    this.snapshotSeq = seq;
     this.base = sheets;
     this.set({ status: 'open', save, busy: false, roundsLost, missingSheetRounds });
     // A migrated save becomes a snapshot of the current format (4.2, "Migração"): the original is
@@ -522,10 +570,32 @@ export class CareerService {
         pendingFanDecision: 0,
         lastRound: roundRecap(report),
         matchSheets,
+        // The sheet sent is kept as it was played (ADR-0021); without one, the draft stays.
+        ...(input.sheet === undefined ? {} : { draft: draftFromSheet(input.sheet) }),
       },
     };
     const written = await this.persist(next, 'career.play');
     return { ok: true, value: { report, saved: written.ok } };
+  }
+
+  /**
+   * The coach changed the sheet (ADR-0021; the Escalação, Tática and Funções screens, which have no
+   * "Salvar"): reconciled with the squad, kept in memory at once and written between rounds as the
+   * sheet alone (`writeDraft`). Edits that arrive while one is being written are written once,
+   * the last. With a round in memory not yet stored (`unsaved`) nothing is written: the sheet goes
+   * with "Tentar de novo". While a round is played or written (`busy`) the sheet does not change.
+   * A failed write is logged and the sheet stays in memory (the next snapshot takes it); a
+   * `conflict` (another tab), `app-outdated` or `save-too-new` ends the career on this tab, as a
+   * snapshot write does. Resolves when the write is done.
+   */
+  async setDraft(draft: DraftSheet): Promise<SaveResult<void, 'not-open' | 'busy'>> {
+    const { status, save, busy } = this.current;
+    if (status !== 'open' || save === undefined) return { ok: false, error: 'not-open' };
+    if (busy) return { ok: false, error: 'busy' };
+    const sheet = reconcileDraft(save.game, save.career.clubId, draft);
+    this.set({ save: { ...save, career: { ...save.career, draft: sheet } } });
+    if (this.current.unsaved === undefined) await this.flushDraft();
+    return { ok: true, value: undefined };
   }
 
   /** "Tentar de novo": repeats the write of the save in memory that is not stored yet. */
@@ -564,8 +634,82 @@ export class CareerService {
 
   // ------------------------------------------------------------------------------- internals
 
+  /** `save` with its draft sheet reconciled with its squad (ADR-0021), before any write. */
+  private reconciled(save: CareerSave): CareerSave {
+    const draft = save.career.draft;
+    if (draft === undefined) return save;
+    return {
+      ...save,
+      career: { ...save.career, draft: reconcileDraft(save.game, save.career.clubId, draft) },
+    };
+  }
+
+  /**
+   * Asks for the sheet in memory to be written, and gives the promise of the loop that writes it:
+   * one loop at a time, each turn writing the sheet in memory then, so the edits waiting are
+   * written once, the last.
+   */
+  private flushDraft(): Promise<void> {
+    this.draftQueued = true;
+    if (!this.draftLoop) {
+      this.draftLoop = true;
+      this.draftDone = this.writeDrafts();
+    }
+    return this.draftDone;
+  }
+
+  private async writeDrafts(): Promise<void> {
+    try {
+      while (this.draftQueued) {
+        this.draftQueued = false;
+        const { status, save, busy, unsaved } = this.current;
+        // A snapshot being written (or waiting for "Tentar de novo") carries the sheet in memory:
+        // an edit that waited here is not written alone. It stays in memory and goes with that
+        // snapshot (a round played with a sheet replaces it by the sheet sent, ADR-0021).
+        if (status !== 'open' || save === undefined || busy || unsaved !== undefined) return;
+        await this.writeDraft(save);
+      }
+    } finally {
+      this.draftLoop = false;
+    }
+  }
+
+  private async writeDraft(save: CareerSave): Promise<void> {
+    let written: SaveResult<unknown, DraftWriteError>;
+    try {
+      written = await this.store.writeDraft(save, {
+        expectedHeadSeq: this.headSeq,
+        snapshotSeq: this.snapshotSeq,
+      });
+    } catch (error) {
+      this.logException('career.draft', error);
+      return;
+    }
+    if (written.ok) return;
+    if (written.error === 'invalid-save') {
+      void this.log.record({
+        kind: 'programming',
+        code: written.error,
+        screen: 'career.draft',
+        ...issueOf(written.detail),
+      });
+      return;
+    }
+    this.logStorage(written.error, 'career.draft', written.detail);
+    const same = this.current.status === 'open' && this.current.save?.careerId === save.careerId;
+    if (isFatalOnDraft(written.error) && same) {
+      this.set({ status: 'fatal', fatal: { code: written.error, unsaved: false } });
+    }
+  }
+
   /** Writes `save` with the guard and the opaque base; keeps it in memory whatever happens. */
-  private async persist(save: CareerSave, screen: string): Promise<SaveResult<void, WriteError>> {
+  private async persist(
+    unreconciled: CareerSave,
+    screen: string,
+  ): Promise<SaveResult<void, WriteError>> {
+    // The one point where a snapshot's draft sheet is reconciled (ADR-0021): a player who left
+    // the squad (retired at the season turn) is a free slot already in the snapshot written.
+    const save = this.reconciled(unreconciled);
     this.set({ save, busy: true });
     let written: SaveResult<WrittenSnapshot, WriteError>;
     try {
@@ -580,6 +724,7 @@ export class CareerService {
     }
     if (written.ok) {
       this.headSeq = written.value.seq;
+      this.snapshotSeq = written.value.seq;
       this.base = written.value.sheets;
       this.set({ busy: false, unsaved: undefined });
       return { ok: true, value: undefined };
@@ -659,6 +804,7 @@ export class CareerService {
   private reset(): void {
     this.current = CLOSED;
     this.headSeq = 0;
+    this.snapshotSeq = 0;
     this.base = undefined;
   }
 

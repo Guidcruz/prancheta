@@ -71,7 +71,8 @@ describe('a hostile or broken save is refused, never thrown', () => {
   const player = `game.players.${playerId}`;
   const cases: [string, () => unknown, string, string][] = [
     ['not an object', () => 'save', '', 'strict_object'],
-    ['a newer format', () => set('schemaVersion', 2), 'schemaVersion', 'literal'],
+    ['a newer format', () => set('schemaVersion', 3), 'schemaVersion', 'literal'],
+    ['an older format', () => set('schemaVersion', 1), 'schemaVersion', 'literal'],
     ['an unknown key at the top', () => set('extra', 1), 'extra', 'strict_object'],
     [
       'an unknown key in the career',

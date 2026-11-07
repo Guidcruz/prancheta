@@ -131,6 +131,16 @@ Vale para toda confirmação destrutiva em mais de um passo (hoje, apagar uma ca
 
 **Implementação de referência.** `ConfirmSheet` com `finalStep` sobre o `BottomSheet`, em `app/src/ui/components/`; especificação em `docs/design/telas/inicio.md`, "Apagar com confirmação dupla".
 
+### Foco: anel só para o teclado (pedido do CEO em 2026-11-07)
+
+O anel de foco (`focus`, 2px sólido) aparece para quem navega pelo teclado e nunca depois de um toque ou clique.
+
+- **Por que não basta `:focus-visible`.** O WebKit (Safari e todo navegador do iPhone) não move o foco num toque em botão; um foco dado por código logo depois (o X que o `<dialog>` foca ao abrir, o nome que recebe o foco de volta ao fechar) casa com `:focus-visible` e desenha o anel. O Chromium não desenha nesse caso. `focus({ focusVisible: false })` não cobre o foco automático do `<dialog>` e não existe em todo navegador.
+- **Regra.** `ui/components/input-modality.ts` guarda a última forma de interação no `<html>`: `data-input="pointer"` no `pointerdown` (toque, mouse, caneta), `data-input="keyboard"` numa tecla de navegação (Tab, setas, Enter, Esc...). Com `pointer`, nenhum elemento focado desenha contorno; campos de texto (`input`, `textarea`, `select`) mantêm o seu, porque mostram onde o texto vai entrar. Sem o atributo (antes da primeira interação), vale o `:focus-visible` do navegador.
+- **Teclas que não contam:** modificadores sozinhos, atalhos com Ctrl, Alt ou Cmd, composição e o teclado virtual (`Unidentified`, `Process`); dentro de um campo de texto, só o Tab.
+- **O foco não muda de lugar.** Quem usa leitor de tela continua recebendo o foco no X ao abrir e no nome ao fechar; só o desenho do anel depende da modalidade.
+- **Componentes novos** usam `:focus-visible` como sempre; não precisam saber da modalidade. Um anel desenhado num pai (`:has(:focus-visible)`, como nos rádios do SegmentedControl) não é apagado pela regra; hoje isso só acontece com rádios, que nenhum navegador marca como `:focus-visible` depois de um toque.
+
 ## Selos (aprovado pelo CEO em 2026-11-07)
 
 Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qualquer selo de situação, resultado ou marca, também a marca da vaga no campo da escalação (LineupChip). Improvisado, fora de posição e líder entraram na T-029 (aprovados pelo CEO em 2026-11-07).
@@ -148,3 +158,20 @@ Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qual
 - Todo selo tem letra ou ícone **e** texto (no selo só de letra, V/E/D, a palavra inteira vai para o leitor de tela); a cor só reforça.
 - Texto em `rotulo`. Os tipos formam uma lista fechada no componente.
 - **Um tipo novo de selo só entra com o seu par de texto e fundo conferido pelo `npm run tokens`** (a lista de pares de `scripts/tokens-to-css.mjs`); cor solta num selo é correção na revisão.
+
+## Cores por faixa (aprovado pelo CEO em 2026-11-07)
+
+Números de estado (hoje condição, moral e forma, no Elenco e no card do jogador) podem ganhar a cor da sua faixa: boa, regular ou ruim.
+
+| Faixa   | Token        | Noite     | Dia       | Sobre `surface-1` (noite / dia) | Sobre `surface-2` (noite / dia) |
+| ------- | ------------ | --------- | --------- | ------------------------------- | ------------------------------- |
+| Boa     | `level-good` | `#2fb866` | `#157040` | 6,05 / 6,13                     | 5,00 / 5,11                     |
+| Regular | `level-fair` | `#ffc83d` | `#8a5a00` | 10,06 / 5,93                    | 8,31 / 4,94                     |
+| Ruim    | `level-poor` | `#ff6b6b` | `#c62828` | 5,60 / 5,62                     | 4,63 / 4,69                     |
+
+- **A cor só pinta o número, que está sempre escrito.** Nada de fundo, ícone ou barra colorida; a barra do AttributeBar continua em `ink-muted`.
+- **A faixa vai em palavra para o leitor de tela:** "82, boa" (`level.reading`), num texto escondido; o número visível fica `aria-hidden`. Assim a faixa nunca depende só da cor, nem para quem não distingue verde de vermelho (o número continua lá).
+- **Limites numa constante só:** `LEVEL_BANDS` em `app/src/ui/components/levels.ts`, lidos por `levelOf(medida, valorMostrado)`; a faixa é sempre do valor mostrado (o inteiro arredondado, ou a forma com uma casa), para cor e número nunca discordarem. Nenhum componente escreve um limite.
+- **Tokens próprios, não `grass`, `floodlight` e `danger`:** o `grass` de dia fica em 4,49:1 sobre `surface-2` (o fundo da linha com o ponteiro em cima) e o `floodlight` de dia não chega a 2:1 sobre o branco. `level-good` e `level-poor` de noite têm o mesmo valor de `grass` e `danger`; mudar um não muda o outro.
+- **Sem valor, sem cor:** "—" e "Sem jogos ainda" ficam em `ink-muted`, como antes.
+- **Medida nova só com faixa definida na spec da tela** (limites, de onde vêm e o texto do leitor de tela). A nota geral não tem faixa: ver [elenco.md](telas/elenco.md#cores-por-faixa).

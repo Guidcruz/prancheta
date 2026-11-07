@@ -41,6 +41,8 @@ const measurement = (
   noNewRound: incremental.map((n) => n - 5),
   allRounds: incremental.map((n) => n * 2),
   open,
+  draft: incremental.map((n) => n / 10),
+  draftJsonBytes: 640,
   seasonTurn,
   seasonTurnStages: [stagesOf(seasonTurn[0]), stagesOf(seasonTurn[1]), stagesOf(seasonTurn[2])],
   encode: incremental.map((n) => n / 2),
@@ -121,6 +123,8 @@ describe('measure-save report', () => {
     expect(within).toContain('virada: 2ª gravação (rodada 1, uma linha)');
     expect(within).toContain('virada: 3ª gravação (rodada 2, poda as 38 linhas)');
     expect(within).toContain('abrir a carreira');
+    expect(within).toContain('gravação da ficha entre rodadas (writeDraft)');
+    expect(within).toContain('Ficha do técnico no registro da carreira: 640 bytes de JSON');
     expect(within).toContain(
       'Gravação DENTRO da folga: maior p90 de 110.0 ms (após a rodada 38) ≤ 130 ms',
     );

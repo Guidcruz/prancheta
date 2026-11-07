@@ -1,8 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { MatchSheet } from '../../engine/index.ts';
 import { encodeJson, encodeSave } from './codec.ts';
-import type { Migration } from './migrations/index.ts';
-import type { CareerSave, MatchSheetRecord, SnapshotRecord } from './schema.ts';
+import { MIGRATIONS, type Migration } from './migrations/index.ts';
+import {
+  SAVE_SCHEMA_VERSION,
+  type CareerSave,
+  type MatchSheetRecord,
+  type SnapshotRecord,
+} from './schema.ts';
 import {
   atRound,
   flipByte,
@@ -17,11 +22,12 @@ import { SAMPLE_CAREER_ID } from './testing/sample.ts';
 
 /*
  * The migration through the store (US-033; docs/02-architecture.md, 4.2, "Migração" and "Gravação
- * sem `base` numa carreira que já existe"; T-019). The real chain is empty while the format is
- * v1, so these tests use a synthetic version 0 that no build ever wrote: the coach's nickname is
- * `coach` instead of `coachName` and, in the variant that changes the sheets, the rating of the
- * best on the pitch is `bestRating` instead of `motmRating`. The step 0 → 1 is given to the store
- * as its chain (`SaveStoreOptions.migrations`).
+ * sem `base` numa carreira que já existe"; T-019). These tests use a synthetic version 0 that no
+ * build ever wrote, whose step can change the sheets (the real step v1 → v2 of T-075 never does):
+ * the coach's nickname is `coach` instead of `coachName` and, in the variant that changes the
+ * sheets, the rating of the best on the pitch is `bestRating` instead of `motmRating`. The step
+ * 0 → 1, followed by the real chain from 1, is given to the store as its chain
+ * (`SaveStoreOptions.migrations`); the real migration of a v1 save is in import.acceptance.test.ts.
  *
  * The three cases of 4.2: a migration that does not change the sheets keeps them in the older
  * snapshots; one that changes them and fails the check gives the old rows back; one that changes
@@ -147,7 +153,7 @@ async function rows(): Promise<MatchSheetRecord[]> {
 
 /** Opens with the synthetic chain, writes the migrated save as the game does, returns both. */
 async function openAndMigrate(changesSheets: boolean) {
-  const s = store(undefined, { migrations: [stepFrom0(changesSheets)] });
+  const s = store(undefined, { migrations: [stepFrom0(changesSheets), ...MIGRATIONS] });
   const opened = await s.openCareer(SAMPLE_CAREER_ID);
   if (!opened.ok) throw new Error(opened.error);
   const write = () =>
@@ -179,10 +185,14 @@ describe('opening a save of an older format (US-033)', () => {
     const written = await write();
     if (!written.ok) throw new Error(written.error);
     expect(written.value.writtenRounds).toEqual([1, 2, 3, 4, 5]);
-    // A build with the real (empty) chain opens it without migrating.
+    // A build with the real chain opens it without migrating.
     const reopened = await store().openCareer(SAMPLE_CAREER_ID);
     if (!reopened.ok) throw new Error(reopened.error);
-    expect(reopened.value).toMatchObject({ seq: 4, fromVersion: 1, missingSheetRounds: [] });
+    expect(reopened.value).toMatchObject({
+      seq: 4,
+      fromVersion: SAVE_SCHEMA_VERSION,
+      missingSheetRounds: [],
+    });
     expect(reopened.value.save).toEqual(atRound(5));
     expect(reopened.value.sheets).toEqual(written.value.sheets);
   });
@@ -197,9 +207,9 @@ describe('opening a save of an older format (US-033)', () => {
       before.map((r) => [r.round, r.sha256]),
     );
     await tamper(4, flipByte);
-    const back = await store(undefined, { migrations: [stepFrom0(false)] }).openCareer(
-      SAMPLE_CAREER_ID,
-    );
+    const back = await store(undefined, {
+      migrations: [stepFrom0(false), ...MIGRATIONS],
+    }).openCareer(SAMPLE_CAREER_ID);
     if (!back.ok) throw new Error(back.error);
     expect(back.value).toMatchObject({ seq: 3, fromVersion: 0, missingSheetRounds: [] });
     expect(back.value.save).toEqual(atRound(5));
@@ -220,9 +230,9 @@ describe('opening a save of an older format (US-033)', () => {
     // Every row is the old one again, byte for byte, and the original opens whole.
     expect(await rows()).toEqual(before);
     expect(await snapshotSeqs()).toEqual([1, 2, 3]);
-    const again = await store(undefined, { migrations: [stepFrom0(true)] }).openCareer(
-      SAMPLE_CAREER_ID,
-    );
+    const again = await store(undefined, {
+      migrations: [stepFrom0(true), ...MIGRATIONS],
+    }).openCareer(SAMPLE_CAREER_ID);
     if (!again.ok) throw new Error(again.error);
     expect(again.value).toMatchObject({ seq: 3, headSeq: 3, missingSheetRounds: [] });
     expect(again.value.save).toEqual(atRound(5));
@@ -236,9 +246,9 @@ describe('opening a save of an older format (US-033)', () => {
     // The accepted limit of 4.2: if the migrated snapshot breaks later, the older one opens, and
     // the rounds whose sheets the migration changed are reported as missing.
     await tamper(4, flipByte);
-    const back = await store(undefined, { migrations: [stepFrom0(true)] }).openCareer(
-      SAMPLE_CAREER_ID,
-    );
+    const back = await store(undefined, {
+      migrations: [stepFrom0(true), ...MIGRATIONS],
+    }).openCareer(SAMPLE_CAREER_ID);
     if (!back.ok) throw new Error(back.error);
     expect(back.value.seq).toBe(3);
     expect(back.value.missingSheetRounds).toEqual([1, 2, 3, 4, 5]);
@@ -260,7 +270,7 @@ describe('opening a save of an older format (US-033)', () => {
         throw new Error('broken step');
       },
     };
-    const s = store(undefined, { migrations: [failing] });
+    const s = store(undefined, { migrations: [failing, ...MIGRATIONS] });
     const opened = await s.openCareer(SAMPLE_CAREER_ID);
     expect(opened).toEqual({
       ok: false,
@@ -284,9 +294,9 @@ describe('opening a save of an older format (US-033)', () => {
     for (const key of ['__proto__', 'toString']) {
       await storeV0(saves, false, key);
       const run = vi.fn();
-      const opened = await store(undefined, { migrations: [stepFrom0(false, run)] }).openCareer(
-        SAMPLE_CAREER_ID,
-      );
+      const opened = await store(undefined, {
+        migrations: [stepFrom0(false, run), ...MIGRATIONS],
+      }).openCareer(SAMPLE_CAREER_ID);
       expect(opened, key).toMatchObject({ ok: false, error: 'all-corrupt' });
       expect(opened.ok === false && opened.detail).toMatchObject({
         skipped: [3, 2, 1].map((seq) => ({ seq, problem: 'invalid-save' })),
@@ -304,9 +314,11 @@ describe('opening a save of an older format (US-033)', () => {
 
   it('a migrated save that does not pass the strict schema is skipped, not opened', async () => {
     await storeV0(saves, true);
-    // A step that forgets to rename the sheets' field: the result is not the v1 format.
+    // A step that forgets to rename the sheets' field: the result is not the current format.
     const sloppy = stepFrom0(false);
-    const opened = await store(undefined, { migrations: [sloppy] }).openCareer(SAMPLE_CAREER_ID);
+    const opened = await store(undefined, { migrations: [sloppy, ...MIGRATIONS] }).openCareer(
+      SAMPLE_CAREER_ID,
+    );
     expect(opened).toMatchObject({ ok: false, error: 'all-corrupt' });
     expect(opened.ok === false && opened.detail).toMatchObject({
       skipped: [3, 2, 1].map((seq) => ({ seq, problem: 'invalid-save' })),
@@ -321,7 +333,7 @@ describe('the step of a sheet that changes (the synthetic format itself)', () =>
     const sheets = Object.values((v0.career as Raw).matchSheets as Record<string, Raw>);
     expect(sheets.some((sheet) => 'bestRating' in sheet)).toBe(true);
     const back = stepFrom0(true).migrate(v0);
-    expect({ ...back, schemaVersion: 1 }).toEqual(save);
+    expect({ ...back, schemaVersion: SAVE_SCHEMA_VERSION }).toEqual(save);
     const sheet = Object.values(save.career.matchSheets)[0] as MatchSheet;
     expect(sheet.motmRating).toBeDefined();
   });

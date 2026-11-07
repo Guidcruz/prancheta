@@ -1,11 +1,12 @@
 /*
  * The shape of the save format (docs/02-architecture.md, 4.2, "Migração"; ADR-0006): the tree of
- * keys and types, with optional keys marked `?`, records as `{}`, lists as `[]`, closed lists and
- * variants with their values. It is read from the strict schema (validate.ts), so it does not
- * depend on what a sample career happened to produce, except at the nodes the engine validates
- * itself (`validatePlayer` for players, `validateClubs` for the club definitions): there the
- * schema is opaque, and the shape is read from the sample values, merged. Players and club
- * definitions have the same keys in every career, so the result is stable under any tuning.
+ * keys and types, with optional keys marked `?`, records as `{}`, lists as `[]`, a value that may
+ * be `null` as `{ nullable }`, closed lists and variants with their values. It is read from the
+ * strict schema (validate.ts), so it does not depend on what a sample career happened to produce,
+ * except at the nodes the engine validates itself (`validatePlayer` for players, `validateClubs`
+ * for the club definitions): there the schema is opaque, and the shape is read from the sample
+ * values, merged. Players and club definitions have the same keys in every career, so the result
+ * is stable under any tuning.
  * The limit: at those nodes a key that is optional but present in every sample (as
  * `ClubDef.aiProfile` in the 2026 data) is shown as required, so a sample without it changes the
  * shape without a change of format (see fixtures.test.ts).
@@ -96,6 +97,14 @@ export function formatShape(schema: unknown, samples: readonly unknown[] = []): 
     case 'exact_optional':
     case 'optional':
       return formatShape(node.wrapped, samples);
+    case 'nullable':
+      // A value or `null` (the free slots of the coach's draft sheet, v2).
+      return {
+        nullable: formatShape(
+          node.wrapped,
+          samples.filter((s) => s !== null),
+        ),
+      };
     case 'strict_object':
     case 'object':
     case 'loose_object': {

@@ -22,7 +22,7 @@ Título da folha: o nome completo (`Player.name.full`). Depois, o PlayerCard `fu
 
 1. **Cabeçalho:** Avatar `xl` (96px, do gerador da T-027, camisa na 1ª cor do clube); posição por extenso ("Meia"); idade e camisa ("23 anos · Camisa 9"); nota geral em `titulo` com o rótulo "Nota geral".
 2. **Selos** (se houver): "Lesionado, 3 rodadas", "Suspenso, 1 jogo" (`status.suspended.one/.other`), "Promessa", com ícone e texto.
-3. **Como está:** Condição (0 a 100; só no Completo), Moral (0 a 100) e Forma (média das últimas 5 notas, uma casa decimal; "Sem jogos ainda" quando não há), cada uma com rótulo, número e barra (AttributeBar).
+3. **Como está:** Condição (0 a 100; só no Completo), Moral (0 a 100) e Forma (média das últimas 5 notas, uma casa decimal; "Sem jogos ainda" quando não há), cada uma com rótulo, número e barra (AttributeBar). O número ganha a cor da faixa (boa, regular, ruim), com as mesmas faixas e tokens do Elenco ([elenco.md](elenco.md#cores-por-faixa)); a barra continua em `ink-muted`. "Sem jogos ainda" fica sem cor. Os atributos e a nota geral não têm faixa.
 4. **Atributos:** os 6 da posição natural, na ordem de `jogadores.md` (linha: velocidade, técnica, passe, finalização, marcação, físico; goleiro: reflexos, posicionamento, jogo aéreo, saída do gol, reposição, físico), cada um com rótulo, número de 1 a 99 e barra.
 5. **Personalidade:** nome do traço e uma frase do que ele faz no jogo (do conteúdo).
 6. **Na temporada:** Jogos e Gols de `seasonStats` (0 e 0 quando não jogou; a seção nunca some).
@@ -101,16 +101,19 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. As frases dos traços resu
 | `player.error.title`      | Não deu para abrir este jogador.                                        | ErrorState                 |
 | `player.error.body`       | A sua carreira não foi alterada. Feche e tente de novo.                 | ErrorState                 |
 
+As faixas dos estados usam `level.good`, `level.fair`, `level.poor` e `level.reading` ("82, boa"), as mesmas do Elenco ([elenco.md](elenco.md#textos-chaves)); nenhuma chave própria do card.
+
 ## Acessibilidade
 
 - **Diálogo modal nativo:** foco preso na folha; Esc fecha; o foco entra no X (o padrão do BottomSheet, aprovado na T-025; muda o rascunho do kickoff, que punha o foco no nome) e o título da folha, que é o nome, é anunciado como nome do diálogo. Ao fechar, o foco volta ao botão do nome da linha de origem, também quando o card foi aberto por um toque em outro ponto da linha (a tela guarda o botão de origem; ver [elenco.md](elenco.md#acessibilidade)).
 - **Ao trocar de atleta** com "Anterior"/"Próximo", o foco fica no botão tocado, e o novo nome é anunciado por um texto escondido com `aria-live="polite"` no pé da folha, junto dos botões (o título do diálogo não é relido ao mudar). Se o botão tocado ficar desabilitado (chegou ao primeiro ou ao último), o foco passa para o outro botão do pé.
 - **Estrutura:** título da folha `h2`; seções em `h3`; estados e atributos em `dl` (rótulo `dt`, número `dd`); as barras são `aria-hidden`.
-- **Nunca só cor:** selos com ícone e texto; as barras não carregam informação que o número não tenha.
+- **Nunca só cor:** selos com ícone e texto; as barras não carregam informação que o número não tenha. Nos estados com faixa, o número visível é `aria-hidden` e o texto escondido lê "Condição, 82, boa" (o `dt` e depois `level.reading`).
+- **Anel de foco só para o teclado:** aberto por toque, o X recebe o foco sem anel; aberto pelo teclado, com anel ([design-system.md](../design-system.md#foco-anel-só-para-o-teclado-pedido-do-ceo-em-2026-11-07)). O lugar do foco não muda.
 - **Avatar** decorativo (o nome está no título); gerado, nunca foto.
 - **Alvos ≥ 44px:** X, "Anterior", "Próximo"; botão desabilitado explica-se pela posição na lista (primeiro ou último), o que é óbvio, então não leva texto extra.
 - **Movimento:** a folha aparece sem animação (BottomSheet); nada a reduzir.
-- **Contraste:** `ink` e `ink-muted` sobre `surface-1`; barras em `ink-muted` sobre `surface-2` são reforço.
+- **Contraste:** `ink` e `ink-muted` sobre `surface-1`; `level-good`, `level-fair` e `level-poor` sobre `surface-1` (≥ 5,6:1 nos dois temas); barras em `ink-muted` sobre `surface-2` são reforço.
 
 ## Medidas para o E2E
 
@@ -122,6 +125,8 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. As frases dos traços resu
 6. **Simplificado:** sem a linha "Condição".
 7. **Alvos ≥ 44px** e **sem animação** com `reducedMotion: 'reduce'` (`document.getAnimations().length === 0`).
 8. **Avatar:** um `svg` dentro do cabeçalho do card, sem `<text>` e sem `<image>`.
+9. **Faixas:** o número de cada estado tem a classe da faixa de `levelOf` sobre o valor mostrado e o texto escondido de `level.reading`; nenhum atributo nem a nota geral tem classe `level-*`.
+10. **Anel:** aberto por toque, o X está focado com `outline-style: none`; aberto pelo teclado, `solid` (ver [elenco.md](elenco.md#medidas-para-o-e2e), medida 11).
 
 ## Marcas do cenário
 

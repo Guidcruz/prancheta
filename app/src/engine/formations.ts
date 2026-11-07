@@ -16,6 +16,14 @@ export const FORMATIONS: readonly Formation[] = [
 ];
 
 /**
+ * A known formation (one of {@link FORMATIONS}): the one check of a formation read from a sheet,
+ * a command or a save, shared by the whole engine.
+ */
+export function isFormation(value: unknown): value is Formation {
+  return typeof value === 'string' && (FORMATIONS as readonly string[]).includes(value);
+}
+
+/**
  * Natural position of each of the 11 slots, in the order of `Lineup.starters`: always 1 GK, then
  * the defence, midfield and attack positions in the order GK, CB, FB, DM, AM, ST. The full-backs
  * of a back three (3-5-2, 3-4-3) are wing-backs and count in midfield (T-008), but keep the `FB`

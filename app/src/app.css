@@ -27,6 +27,15 @@ button {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+/* After a tap or a click, no ring, whatever the browser decides (WebKit draws it on a focus given
+   by script after a tap): ui/components/input-modality.ts writes data-input on the html. Text
+   fields keep theirs: they show where the typing goes (design-system.md, "Foco: anel só para o
+   teclado"). The radios are not text fields: their ring is drawn on the parent (:has(:focus-visible)),
+   which is not the focused element, so this rule does not touch it. */
+html[data-input='pointer']
+  :focus:not(textarea, select, input:not([type='radio'], [type='checkbox'], [type='range'])) {
+  outline: none !important;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,6 +1,7 @@
 import type {
   ClubDef,
   ClubId,
+  DraftSheet,
   FixtureId,
   GameState,
   MatchMode,
@@ -11,13 +12,14 @@ import type {
 /*
  * The envelope of a career save (docs/02-architecture.md, 4.2; ADR-0006, ADR-0019). This file has
  * the TypeScript shape; the strict schema of the same format is validate.ts, and a drift between
- * the two fails to compile. The format v1 is frozen (T-019): the fixture `__fixtures__/v1.json`
- * and the shape test (fixtures.test.ts). Any change to this shape or to `GameState` raises
+ * the two fails to compile. Every released format is frozen: the fixtures `__fixtures__/vN.json`
+ * and the shape test (fixtures.test.ts). v1 came with T-019; v2 (T-075, ADR-0021) adds the
+ * coach's sheet being edited, `career.draft`. Any change to this shape or to `GameState` raises
  * `SAVE_SCHEMA_VERSION`, with a migration (migrations/) and the new fixture.
  */
 
 /** The current format of `CareerSave` (ADR-0006); every change of the format raises it. */
-export const SAVE_SCHEMA_VERSION = 1;
+export const SAVE_SCHEMA_VERSION = 2;
 
 /** Careers kept on the device at the same time (docs/02-architecture.md, 4.2). */
 export const MAX_CAREERS = 10;
@@ -45,8 +47,8 @@ export interface NewsRef {
 /** A social post, kept like {@link NewsRef}. */
 export type SocialRef = NewsRef;
 
-/** The application part of a career (docs/02-architecture.md, 4.2). */
-export interface CareerData {
+/** The application part of a career in the format v1 (docs/02-architecture.md, 4.2). */
+export interface CareerDataV1 {
   /** The only text typed by the player; stays on the device and in the exported file. */
   readonly coachName: string;
   readonly clubId: ClubId;
@@ -66,6 +68,16 @@ export interface CareerData {
   readonly matchSheets: Readonly<Record<FixtureId, MatchSheet>>;
 }
 
+/** The application part of a career (docs/02-architecture.md, 4.2), format v2. */
+export interface CareerData extends CareerDataV1 {
+  /**
+   * The coach's sheet being edited (ADR-0021), free slots included; absent until the coach
+   * changes it (the screen then shows the engine's suggestion). Always reconciled with the squad
+   * before it is written (lib/career, `reconcileDraft`); never in the `GameState`.
+   */
+  readonly draft?: DraftSheet;
+}
+
 /** Version 1 of the save (docs/02-architecture.md, 4.2). */
 export interface CareerSaveV1 {
   readonly schemaVersion: 1;
@@ -77,12 +89,18 @@ export interface CareerSaveV1 {
   readonly appVersion: string;
   readonly engineVersion: number;
   readonly paramsHash: string;
-  readonly career: CareerData;
+  readonly career: CareerDataV1;
   readonly game: GameState;
 }
 
+/** Version 2 of the save (ADR-0021): v1 with `career.draft`. */
+export interface CareerSaveV2 extends Omit<CareerSaveV1, 'schemaVersion' | 'career'> {
+  readonly schemaVersion: 2;
+  readonly career: CareerData;
+}
+
 /** The save in the current format. */
-export type CareerSave = CareerSaveV1;
+export type CareerSave = CareerSaveV2;
 
 /**
  * A row of the `careers` store: what the career list shows without opening a snapshot (US-034),
@@ -99,6 +117,24 @@ export interface CareerSummary {
   /** `seq` of the newest snapshot. */
   readonly headSeq: number;
   readonly schemaVersion: number;
+}
+
+/**
+ * The coach's sheet kept between rounds in the career's row of `careers` (ADR-0021, item 3):
+ * `seq` is the snapshot it was built on, and opening uses it only with that snapshot.
+ */
+export interface StoredDraft {
+  readonly seq: number;
+  readonly sheet: DraftSheet;
+}
+
+/**
+ * A row of the `careers` store as stored: the summary and, between rounds, the coach's sheet
+ * (`SaveStore.writeDraft`). A snapshot write stores the row without it (the sheet is in the
+ * snapshot), and `listCareers` gives the summary only.
+ */
+export interface CareerRecord extends CareerSummary {
+  readonly draft?: StoredDraft;
 }
 
 /**
