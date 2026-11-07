@@ -69,6 +69,12 @@ const pairs = [
   ['info', 'surface-0'],
   ['info', 'surface-1'],
   ['danger', 'surface-1'],
+  ['level-good', 'surface-1'],
+  ['level-good', 'surface-2'],
+  ['level-fair', 'surface-1'],
+  ['level-fair', 'surface-2'],
+  ['level-poor', 'surface-1'],
+  ['level-poor', 'surface-2'],
   ['ink', 'grass-soft'],
   ['ink', 'danger-soft'],
   // Site only (solid pairs; the rgba tokens are checked by hand in docs/design/site.md).

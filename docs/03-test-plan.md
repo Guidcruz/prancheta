@@ -548,6 +548,12 @@ E2E (`tests/e2e/club-squad.spec.ts`, `frame.spec.ts`; Chromium em celular em pé
 - Safari no iOS;
 - uma carreira longa no Simplificado.
 
+### Anel de foco só para o teclado e cores por faixa (Elenco e card)
+
+- Anel (E2E, `tests/e2e/club-squad.spec.ts` e `tests/e2e/focus-ring.spec.ts`): sem anel depois de toque (com o foco do mouse impedido, como no WebKit), de clique e de foco por código (X da folha, nome ao fechar o card); com anel em Tab (inclusive depois de toque ou clique), Shift+Tab, Enter e Esc; campo de texto mantém o anel depois de clique e de digitar, e Esc dentro dele passa para teclado. Unitário: `input-modality.test.ts`. O WebKit real só roda no CI.
+- Faixas: limites exatos de condição, moral e forma em `levels.test.ts`. E2E nos temas noite e dia, no Elenco e no card: classe e cor do token `level-*`, número visível, leitura "74, ruim", forma "—" lida como "sem jogos" e sem faixa, nota, idade e atributos sem cor, Simplificado sem condição. Textos `level.*` nos três idiomas pela paridade de chaves. Contraste ≥ 4,5:1 conferido pelo `npm run tokens`.
+- Manual (CEO): iPhone real (toque e teclado), olho nas cores de faixa nos dois temas, leitor de tela.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

@@ -12,6 +12,7 @@ import type { Lang } from '@lib/config';
 import { t, tPlural } from '@lib/i18n';
 import type { CardAttribute, CardFact, CardMeter } from './components/PlayerCard.svelte';
 import type { StatusBadgeItem } from './components/StatusBadge.svelte';
+import { levelOf, type Level, type LevelMeasure } from './components/levels';
 
 /*
  * What the Elenco screen and the player card read of the career (docs/design/telas/elenco.md and
@@ -98,6 +99,21 @@ export function formText(player: Player, lang: Lang): string | undefined {
   }).format(form);
 }
 
+/**
+ * The band of a state as shown (elenco.md, "Cores por faixa"): the `level` that paints the
+ * number and the reading for screen readers ("82, boa"); nothing with no number (form "—").
+ */
+export function stateLevel(
+  measure: LevelMeasure,
+  shown: number | undefined,
+  text: string,
+  lang: Lang,
+): { readonly level: Level; readonly sr: string } | undefined {
+  const level = levelOf(measure, shown);
+  if (level === undefined) return undefined;
+  return { level, sr: t('level.reading', lang, { value: text, level: t(`level.${level}`, lang) }) };
+}
+
 /** One position group of the squad table (only with the "Posição" sort). */
 export interface SquadGroup {
   /** `undefined`: a list with no group rows (the "Nota" and "Condição" sorts). */
@@ -149,23 +165,38 @@ export function playerCard(
   const shirtNumber = t('player.shirt', lang, { number: player.shirt });
   const form = playerForm(player);
   const states: CardMeter[] = [];
+  const banded = (measure: LevelMeasure, shown: number | undefined, text: string | undefined) => {
+    const band = text === undefined ? undefined : stateLevel(measure, shown, text, lang);
+    return band === undefined ? {} : { level: band.level, srText: band.sr };
+  };
   if (realism === 'full') {
+    const condition = shownCondition(player);
     states.push({
       id: 'condition',
       label: t('player.condition', lang),
-      value: shownCondition(player),
+      value: condition,
       max: 100,
+      ...banded('condition', condition, String(condition)),
     });
   }
+  const morale = shownMorale(player);
+  const formShown = formText(player, lang);
   states.push(
-    { id: 'morale', label: t('player.morale', lang), value: shownMorale(player), max: 100 },
+    {
+      id: 'morale',
+      label: t('player.morale', lang),
+      value: morale,
+      max: 100,
+      ...banded('morale', morale, String(morale)),
+    },
     {
       id: 'form',
       label: t('player.form', lang),
       value: form,
       max: 10,
-      valueText: formText(player, lang),
+      valueText: formShown,
       emptyText: t('player.form.none', lang),
+      ...banded('form', form, formShown),
     },
   );
   const stats = game.seasonStats[id];

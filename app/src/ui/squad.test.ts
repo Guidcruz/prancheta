@@ -13,6 +13,7 @@ import {
   sortsFor,
   squadGroups,
   squadPlayers,
+  stateLevel,
 } from './squad';
 import { TEST_CLUB, testCareer, withPlayer } from './testing/game';
 
@@ -154,6 +155,34 @@ describe('the form', () => {
     expect(formText({ ...p!, recentRatings: [7] }, 'pt-BR')).toBe('7,0');
     expect(formText({ ...p!, recentRatings: [6, 7, 8, 7, 6] }, 'en')).toBe('6.8');
     expect(formText({ ...p!, recentRatings: [] }, 'pt-BR')).toBeUndefined();
+  });
+});
+
+describe('the bands of the states (elenco.md, "Cores por faixa")', () => {
+  it('gives the level and the reading in each language; nothing without a number', () => {
+    expect(stateLevel('condition', 74, '74', 'pt-BR')).toEqual({ level: 'poor', sr: '74, ruim' });
+    expect(stateLevel('morale', 60, '60', 'pt-BR')).toEqual({ level: 'good', sr: '60, boa' });
+    expect(stateLevel('form', 5.5, '5,5', 'pt-BR')).toEqual({ level: 'fair', sr: '5,5, regular' });
+    expect(stateLevel('morale', 45, '45', 'es')?.sr).toBe('45, regular');
+    expect(stateLevel('condition', 90, '90', 'en')?.sr).toBe('90, good');
+    expect(stateLevel('form', undefined, '—', 'pt-BR')).toBeUndefined();
+  });
+
+  it('puts the band on the card states, never on the overall', () => {
+    const id = squad[0]!.id;
+    const game = withPlayer(full, id, {
+      condition: 74,
+      morale: 60,
+      recentRatings: [5.5],
+    });
+    const card = playerCard(game, TEST_CLUB, id, 'pt-BR')!;
+    const byId = Object.fromEntries(card.states.map((s) => [s.id, s]));
+    expect(byId.condition).toMatchObject({ level: 'poor', srText: '74, ruim' });
+    expect(byId.morale).toMatchObject({ level: 'good', srText: '60, boa' });
+    expect(byId.form).toMatchObject({ level: 'fair', srText: '5,5, regular' });
+    for (const attribute of card.attributes) expect(attribute).not.toHaveProperty('level');
+    const none = playerCard(withPlayer(full, id, { recentRatings: [] }), TEST_CLUB, id, 'pt-BR')!;
+    expect(none.states.find((s) => s.id === 'form')).not.toHaveProperty('level');
   });
 });
 

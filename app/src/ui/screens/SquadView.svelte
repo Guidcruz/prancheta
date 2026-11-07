@@ -1,5 +1,5 @@
 <script lang="ts">
-  import type { ClubId, GameState, Player, PlayerId } from '@engine';
+  import { playerForm, type ClubId, type GameState, type Player, type PlayerId } from '@engine';
   import type { Lang } from '@lib/config';
   import { t, tPlural } from '@lib/i18n';
   import GroupRow from '../components/GroupRow.svelte';
@@ -13,6 +13,7 @@
     shownCondition,
     shownMorale,
     sortOrDefault,
+    stateLevel,
     sortsFor,
     squadGroups,
     type SquadSort,
@@ -83,13 +84,27 @@
     }),
   );
 
+  /** A state's number painted by its band, with the band in words for screen readers. */
+  function banded(
+    measure: 'condition' | 'morale' | 'form',
+    shown: number,
+    text: string,
+  ): PlayerCell {
+    const band = stateLevel(measure, shown, text, lang);
+    return band === undefined ? text : { text, sr: band.sr, level: band.level };
+  }
+
   function cells(player: Player): PlayerCell[] {
     const form = formText(player, lang);
+    const condition = shownCondition(player);
+    const morale = shownMorale(player);
     return [
       player.overall,
-      ...(realism === 'full' ? [shownCondition(player)] : []),
-      shownMorale(player),
-      form ?? { text: '—', sr: t('squad.form.none', lang) },
+      ...(realism === 'full' ? [banded('condition', condition, String(condition))] : []),
+      banded('morale', morale, String(morale)),
+      form === undefined
+        ? { text: '—', sr: t('squad.form.none', lang) }
+        : banded('form', playerForm(player)!, form),
       player.age,
     ];
   }

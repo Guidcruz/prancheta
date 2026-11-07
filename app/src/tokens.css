@@ -14,6 +14,9 @@
   --danger: #ff6b6b;
   --danger-soft: #4a1f24;
   --draw: #c3ced6;
+  --level-good: #2fb866;
+  --level-fair: #ffc83d;
+  --level-poor: #ff6b6b;
   --info: #5fb0ff;
   --focus: #ffc83d;
   --pitch: #1e6b3f;
@@ -47,6 +50,9 @@
   --danger: #c62828;
   --danger-soft: #fbe3e3;
   --draw: #51626f;
+  --level-good: #157040;
+  --level-fair: #8a5a00;
+  --level-poor: #c62828;
   --info: #1565c0;
   --focus: #1565c0;
   --pitch: #2d8f55;
