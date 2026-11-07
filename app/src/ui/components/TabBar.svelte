@@ -61,6 +61,11 @@
   .tab[aria-current='page'] {
     color: var(--grass);
   }
+  /* The active tab is marked by weight too, not only by colour and the bar (navegacao.md):
+     the inactive labels drop from the 700 of .rotulo to 600 (both weights are bundled). */
+  .bottom .tab:not([aria-current='page']) span {
+    font-weight: 600;
+  }
 
   /* Phone: four equal tabs, icon over label; the marker is a bar on top. */
   .bottom {
@@ -84,6 +89,7 @@
     top: 0;
     left: 25%;
     right: 25%;
+    /* Marker thickness: no token yet: componentes.md, "Propostas ao design system". */
     height: 3px;
     border-radius: 0 0 var(--radius-sm) var(--radius-sm);
     background: var(--grass);
@@ -117,7 +123,7 @@
     left: 0;
     top: var(--space-2);
     bottom: var(--space-2);
-    width: 4px;
+    width: var(--space-1);
     border-radius: var(--radius-pill);
     background: var(--grass);
   }

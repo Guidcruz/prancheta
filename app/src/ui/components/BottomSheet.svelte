@@ -61,6 +61,7 @@
     margin: auto auto 0;
     width: 100%;
     max-width: var(--layout-content-max);
+    /* Sheet height and backdrop: no token yet: componentes.md, "Propostas ao design system". */
     max-height: 85dvh;
     padding: 0;
     border: 0;
@@ -105,6 +106,7 @@
   @media (min-width: 900px) {
     .sheet {
       margin: auto;
+      /* Dialog width: no token yet: componentes.md, "Propostas ao design system". */
       max-width: calc(var(--layout-content-max) * 0.75);
       border-radius: var(--radius-lg);
     }

@@ -89,12 +89,14 @@
   .screen {
     justify-content: center;
     min-height: 100dvh;
+    /* Reading width of an error (0.6 of the content): no token yet: componentes.md, "Propostas ao design system". */
     max-width: calc(var(--layout-content-max) * 0.6);
     margin: 0 auto;
     padding: var(--space-8) var(--space-4) calc(var(--space-8) + env(safe-area-inset-bottom));
   }
   .area {
     justify-content: center;
+    /* Height of the error in the content area: no token yet: componentes.md, "Propostas ao design system". */
     min-height: 60dvh;
     max-width: calc(var(--layout-content-max) * 0.6);
     margin: 0 auto;

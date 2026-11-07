@@ -126,6 +126,8 @@
     cursor: progress;
   }
   .spinner {
+    /* The size of the button's icon (Icon size 20); no icon-size token yet: componentes.md,
+       "Propostas ao design system". */
     width: 20px;
     height: 20px;
     flex: none;

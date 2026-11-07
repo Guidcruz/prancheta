@@ -85,13 +85,16 @@
     cursor: progress;
   }
   .spinner {
+    /* The size of the icon it replaces (Icon size 22); no icon-size token yet: componentes.md,
+       "Propostas ao design system". */
     width: 22px;
     height: 22px;
     flex: none;
     border-radius: var(--radius-pill);
     border: 2px solid currentColor;
     border-right-color: transparent;
-    /* Stopped by app.css under prefers-reduced-motion; the still ring and the status text stay. */
+    /* Duration waits for the motion tokens (componentes.md, proposal 2); app.css stops it under
+       prefers-reduced-motion, and the still ring and the status text stay. */
     animation: spin 0.9s linear infinite;
   }
   @keyframes spin {

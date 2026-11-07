@@ -115,6 +115,7 @@
     /* Height of the phone tab bar and of the floating button, from the touch token. */
     --tabbar-h: calc(var(--touch) + var(--space-3));
     --play-h: calc(var(--touch) + var(--space-2));
+    /* Sidebar width: no token yet: componentes.md, "Propostas ao design system". */
     --side-w: 272px;
     min-height: 100dvh;
   }
@@ -207,8 +208,8 @@
     .logo,
     .crest {
       display: block;
-      width: 32px;
-      height: 32px;
+      width: var(--space-8);
+      height: var(--space-8);
       flex: none;
     }
     .crest :global(svg) {
