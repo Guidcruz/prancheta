@@ -295,7 +295,7 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
           const rows = await main(page)
             .locator('[data-place]')
             .evaluateAll((els) => els.map((el) => el.getBoundingClientRect().height));
-          expect(rows.length).toBe(15);
+          expect(rows.length).toBe(16); // 7 bench places, "Deixar de fora" and 8 left out
           for (const h of rows) expect(h).toBeGreaterThanOrEqual(44);
           // The bar's actions (with a player picked).
           await place(page, 'bench-0').click();
@@ -339,7 +339,7 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     // While picked, every place points to the hint of the bar.
     const hint = await slot(page, 0).getAttribute('aria-describedby');
     expect(hint).toBeTruthy();
-    await expect(page.locator(`[id="${hint}"]`)).toHaveText('Toque em outro lugar para trocar.');
+    await expect(page.locator(`[id="${hint}"]`)).toHaveText('Selecione outro lugar para trocar.');
     await page.keyboard.press('Escape');
     await expect(place(page, 'bench-4')).toHaveAttribute('aria-pressed', 'false');
     expect(await places(page)).toEqual(before);
@@ -522,11 +522,13 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
   }) => {
     const fixture = await withFixture(page);
     await slot(page, 1).click();
-    await place(page, 'bench-6').click();
+    await place(page, 'out-free').click();
     await expect(slot(page, 1)).toContainText('Vaga livre');
     await expect(main(page).locator('.banner.warning')).toContainText('Falta 1 titular.');
     await expect(main(page).locator('section.issues')).toContainText('Vaga de ZAG sem jogador');
-    await expect(bar(page)).toContainText(`${fixture.starters[1]!.name.full} foi para o banco.`);
+    await expect(bar(page)).toContainText(
+      `${fixture.starters[1]!.name.full} foi para os não relacionados.`,
+    );
     await expect(playButton(page)).toContainText('Escalação incompleta');
 
     await playButton(page).click();
@@ -674,6 +676,160 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     await expect(sheet).toBeHidden();
     await expect(page).toHaveURL(/#\/squad$/);
     await expect(slot(page, 1)).toContainText('Vaga livre');
+  });
+});
+
+test.describe('Mudar sem troca: "Deixar de fora" e a vaga livre (medida 16)', () => {
+  const outRowsOf = (page: Page) =>
+    main(page).locator('[data-place^="out-"]:not([data-place="out-free"])');
+  const freeOut = (page: Page) => place(page, 'out-free');
+
+  test('(a) dois toques e (d) de volta pela vaga livre; (e) sem seleção nada muda', async ({
+    page,
+  }) => {
+    const fixture = await withFixture(page);
+    // The first line of the players left out, at least 44px, free (no aria-pressed).
+    const group = main(page).locator('section.group', { hasText: 'Não relacionados' });
+    await expect(group.locator('[data-place]').first()).toHaveAttribute('data-place', 'out-free');
+    expect((await box(freeOut(page))).height).toBeGreaterThanOrEqual(44);
+    await expect(freeOut(page)).not.toHaveAttribute('aria-pressed', /.*/);
+    await expect(freeOut(page)).toHaveAccessibleName(
+      'Deixar de fora. Tira o jogador do campo ou do banco, sem trocar.',
+    );
+
+    // (e) A tap on it with nobody picked: nothing changes, the bar says what to do.
+    const before = await places(page);
+    await freeOut(page).click();
+    await expect(bar(page)).toContainText('Selecione antes um jogador');
+    expect(await places(page)).toEqual(before);
+
+    // (a) A starter, then "Deixar de fora".
+    const leaving = fixture.starters[7]!;
+    const outBefore = await outRowsOf(page).count();
+    await slot(page, 7).click();
+    await freeOut(page).click();
+    await expect(slot(page, 7)).toContainText('Vaga livre');
+    await expect(bar(page)).toContainText(`${leaving.name.full} foi para os não relacionados.`);
+    await expect(outRowsOf(page)).toHaveCount(outBefore + 1);
+    await expect(
+      group.getByRole('button', { name: new RegExp(`^${leaving.name.full},`) }),
+    ).toHaveCount(1);
+    await expect(freeOut(page)).toBeFocused();
+    await expectStored(page, (d) => d.lineup.starters[7] === null);
+
+    // (d) A player left out (keyboard) to that free slot: the pitch has 11 again.
+    await place(page, 'out-0').focus();
+    await page.keyboard.press('Enter');
+    await slot(page, 7).focus();
+    await page.keyboard.press('Enter');
+    await expect(bar(page)).toContainText('foi para a vaga de MEI.');
+    await expect(pitch(page).locator('button[data-slot].empty')).toHaveCount(0);
+    await expectStored(page, (d) => d.lineup.starters.every((id) => id !== null));
+  });
+
+  test('(b) teclado: um reserva, Enter, Tab até "Deixar de fora", Enter', async ({ page }) => {
+    const fixture = await withFixture(page);
+    const reserve = fixture.bench[2]!;
+    const benchGroup = main(page).locator('section.group', { hasText: 'Banco' });
+    await expect(benchGroup.locator('h2, h3').first()).toContainText('6 de 7');
+    await place(page, 'bench-2').focus();
+    await page.keyboard.press('Enter');
+    for (let i = 0; i < 20; i++) {
+      await page.keyboard.press('Tab');
+      if (await freeOut(page).evaluate((el) => el === document.activeElement)) break;
+    }
+    await expect(freeOut(page)).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(bar(page)).toContainText(`${reserve.name.full} foi para os não relacionados.`);
+    await expect(benchGroup.locator('h2, h3').first()).toContainText('5 de 7');
+    await expect(benchGroup.getByText('Vaga no banco')).toHaveCount(2);
+  });
+
+  test('(c) arrasto de um titular até "Deixar de fora": mouse; no celular, segurar 400 ms', async ({
+    page,
+    browserName,
+  }) => {
+    const mobile = page.viewportSize()!.width < SIDE_FROM;
+    // The touch hold goes through CDP, which only Chromium has (as in measure 6).
+    test.skip(mobile && browserName !== 'chromium', 'toque segurado só pelo CDP (Chromium)');
+    const fixture = await withFixture(page);
+    // Desktop: a striker, high on the pitch, so the mouse never crosses the bottom band where
+    // the page scrolls by itself. Phone: the goalkeeper, and the page does scroll.
+    const index = mobile ? 0 : 10;
+    const leaving = fixture.starters[index]!;
+    const center = (b: { x: number; y: number; width: number; height: number }) => ({
+      x: b.x + b.width / 2,
+      y: b.y + b.height / 2,
+    });
+    if (!mobile) {
+      const from = center(await box(slot(page, index)));
+      const to = center(await box(freeOut(page)));
+      await page.mouse.move(from.x, from.y);
+      await page.mouse.down();
+      await page.mouse.move(to.x, to.y, { steps: 12 });
+      await expect(freeOut(page)).toHaveClass(/target/);
+      await page.mouse.up();
+    } else {
+      // The free place is far below the pitch: the drag scrolls the page near the bottom edge.
+      const cdp = await page.context().newCDPSession(page);
+      const touch = (
+        type: 'touchStart' | 'touchMove' | 'touchEnd',
+        points: { x: number; y: number }[],
+      ) =>
+        cdp.send('Input.dispatchTouchEvent', {
+          type,
+          touchPoints: points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })),
+        });
+      await slot(page, 0).scrollIntoViewIfNeeded();
+      const gk = await box(slot(page, 0));
+      await page.evaluate((y) => window.scrollBy(0, y - 120), gk.y);
+      const from = center(await box(slot(page, 0)));
+      await touch('touchStart', [from]);
+      await page.waitForTimeout(400);
+      // Above the dock (the bar's sticky offset) and inside the band where the page scrolls.
+      const inset = await main(page)
+        .locator('.bar-slot')
+        .evaluate((el) => parseFloat(getComputedStyle(el).bottom) || 0);
+      const height = page.viewportSize()!.height;
+      const band = height - inset - 20;
+      for (let i = 1; i <= 8; i++) {
+        await touch('touchMove', [{ x: from.x, y: from.y + ((band - from.y) * i) / 8 }]);
+      }
+      // Wait until the free place comes up above the band, then go there.
+      await expect
+        .poll(async () => center(await box(freeOut(page))).y, { timeout: 15_000 })
+        .toBeLessThan(height - inset - 80);
+      const to = center(await box(freeOut(page)));
+      for (let i = 1; i <= 6; i++) {
+        await touch('touchMove', [
+          { x: from.x + ((to.x - from.x) * i) / 6, y: band + ((to.y - band) * i) / 6 },
+        ]);
+      }
+      const target = center(await box(freeOut(page)));
+      await touch('touchMove', [target]);
+      await expect(freeOut(page)).toHaveClass(/target/);
+      await touch('touchEnd', []);
+    }
+    await expect(slot(page, index)).toContainText('Vaga livre');
+    await expect(bar(page)).toContainText(`${leaving.name.full} foi para os não relacionados.`);
+    await expectStored(page, (d) => d.lineup.starters[index] === null);
+  });
+
+  test('(f) os reservas todos a "Deixar de fora": 7 "Vaga no banco", "0 de 7" e nenhum bloqueio', async ({
+    page,
+  }) => {
+    await withFixture(page);
+    for (let i = 0; i < 6; i++) {
+      await place(page, `bench-${i}`).click();
+      await freeOut(page).click();
+      await expect(bar(page)).toContainText('foi para os não relacionados.');
+    }
+    const benchGroup = main(page).locator('section.group', { hasText: 'Banco' });
+    await expect(benchGroup.getByText('Vaga no banco')).toHaveCount(7);
+    await expect(benchGroup.locator('h2, h3').first()).toContainText('0 de 7');
+    await expect(main(page).locator('.banner.warning')).toHaveCount(0);
+    await expect(playButton(page)).not.toContainText('Escalação incompleta');
+    await expectStored(page, (d) => d.lineup.bench.every((id) => id === null));
   });
 });
 
