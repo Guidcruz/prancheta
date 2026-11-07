@@ -505,6 +505,9 @@ test.describe('Card do jogador (jogador.md; US-016)', () => {
     const title = await dialog(page).getByRole('heading', { level: 2 }).first().innerText();
     await dialog(page).getByRole('button', { name: 'Próximo' }).click();
     await expect(dialog(page).getByRole('heading', { level: 2 }).first()).not.toHaveText(title);
+    // The announcement carries the display name, the same as the new title.
+    const newTitle = await dialog(page).getByRole('heading', { level: 2 }).first().innerText();
+    await expect(dialog(page).locator('[aria-live="polite"]')).toHaveText(newTitle.trim());
     expect(await page.evaluate(() => history.length)).toBe(before + 1);
 
     await page.evaluate(() => history.back());
