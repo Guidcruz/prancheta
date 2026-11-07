@@ -8,9 +8,9 @@
   "save.career-limit.title": "Ya tienes 10 carreras.",
   "save.conflict.body": "El progreso de allá se guardó y el de aquí no. Cierra la otra pestaña y recarga esta página para seguir donde lo dejaste.",
   "save.conflict.title": "Esta carrera está abierta en otra pestaña.",
-  "save.not-found.body": "Vuelve al inicio para ver tus carreras guardadas.",
+  "save.not-found.body": "Revisa la lista de tus carreras guardadas.",
   "save.not-found.title": "Esta carrera ya no existe en este dispositivo.",
-  "save.quota-exceeded.body": "La última jornada aún no se guardó. Libera espacio en el dispositivo (borra carreras antiguas u otros datos del navegador) e intenta de nuevo.",
+  "save.quota-exceeded.body": "Libera espacio en el dispositivo (borra carreras antiguas u otros datos del navegador) e intenta de nuevo.",
   "save.quota-exceeded.title": "No hay espacio para guardar.",
   "save.read-failed.body": "Intenta de nuevo.",
   "save.read-failed.title": "No se pudo leer la carrera ahora.",
@@ -26,8 +26,8 @@
   "save.too-large.title": "La carrera quedó demasiado grande para guardarla.",
   "save.unsupported-browser.body": "Abre el juego desde la dirección oficial (con https) o actualiza el navegador. En iPhone y iPad se necesita iOS 16.4 o superior.",
   "save.unsupported-browser.title": "Este navegador no puede guardar la carrera.",
-  "save.verify-failed.body": "El juego revisó la grabación y algo no coincidió, así que conservó la versión anterior. Intenta de nuevo; si se repite, exporta la carrera.",
-  "save.verify-failed.title": "La jornada no se guardó.",
+  "save.verify-failed.body": "El juego revisó la grabación y algo no coincidió, así que conservó la versión anterior. Intenta de nuevo; si se repite, exporta una copia de seguridad de tus carreras.",
+  "save.verify-failed.title": "No se pudo guardar.",
   "save.write-failed.body": "Intenta de nuevo.",
-  "save.write-failed.title": "La jornada no se guardó."
+  "save.write-failed.title": "No se pudo guardar."
 }
