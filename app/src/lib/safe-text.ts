@@ -57,7 +57,7 @@ const LONE_SURROGATE = /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[
 
 /**
  * `String.prototype.isWellFormed`, or the same test by a regular expression where the browser
- * lacks it (Firefox 113 to 118, Safari before 16.4): never throws.
+ * lacks it (Firefox 113 to 118): never throws.
  */
 export function isWellFormedText(text: string): boolean {
   const native = (String.prototype as { isWellFormed?: () => boolean }).isWellFormed;

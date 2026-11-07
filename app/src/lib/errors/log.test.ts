@@ -108,6 +108,17 @@ describe('what a row keeps', () => {
     expect(cleanStack(error)).toEqual(['real@b.js:3:4']);
   });
 
+  it('drops the head of a V8 stack even when it looks like a Firefox frame', () => {
+    const error = new Error(`${NICK}@a.js:1:2`);
+    error.name = '';
+    error.stack = `${NICK}@a.js:1:2\n    at real (http://x/assets/b.js:3:4)`;
+    expect(cleanStack(error)).toEqual(['real@b.js:3:4']);
+    // A head with no message to match: still not a frame.
+    expect(cleanStack({ stack: `${NICK}@c.js:5:6\n    at real (http://x/b.js:3:4)` })).toEqual([
+      'real@b.js:3:4',
+    ]);
+  });
+
   it('reads the frames of Firefox and Safari', () => {
     const error = { stack: 'render@http://x/assets/App-1.js:10:4\n@http://x/a.js:1:2\n' };
     expect(cleanStack(error)).toEqual(['render@App-1.js:10:4', '@a.js:1:2']);

@@ -181,9 +181,15 @@ export function cleanStack(error: unknown): string[] | undefined {
   }
   if (typeof stack !== 'string') return undefined;
   const frames: string[] = [];
-  for (const line of withoutMessage(stack, error).split('\n')) {
+  const lines = withoutMessage(stack, error).split('\n');
+  // A V8 stack: only `    at ...` lines are frames, and its first line, when it is not one, is
+  // the head (`name: message`) whatever is left of it, so it never counts, even when it looks
+  // like a Firefox frame (`x@a.js:1:2`, a message with an empty name).
+  const v8 = lines.some((line) => V8_FRAME.test(line));
+  if (v8 && lines.length > 0 && !V8_FRAME.test(lines[0]!)) lines.shift();
+  for (const line of lines) {
     if (frames.length >= STACK_FRAMES) break;
-    const frame = V8_FRAME.exec(line) ?? OTHER_FRAME.exec(line.trim());
+    const frame = v8 ? V8_FRAME.exec(line) : OTHER_FRAME.exec(line.trim());
     if (frame === null) continue;
     const where = LOCATION.exec(frame[2] ?? '');
     if (where === null) continue;
