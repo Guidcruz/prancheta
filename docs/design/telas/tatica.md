@@ -19,8 +19,8 @@ Toca uma formação, uma postura e uma pressão (cada uma com a frase de efeito)
 ## Conteúdo (de cima para baixo)
 
 1. **Seletor** Elenco | Escalação | **Tática**.
-2. **Formação** (FormationPicker): as 6 formações em cartas de rádio, cada uma com o desenho pequeno do esquema (as mesmas posições do campo da Escalação, `PITCH_LAYOUT`), o nome e a frase de efeito. Duas colunas no celular em pé; três quando o grupo tem 480px ou mais. Nota embaixo da legenda: `tactic.formation.note`.
-3. **Força do time** (StrengthBars, a mesma da Escalação): mostra a mudança com a seta e o número com sinal logo depois de trocar a formação.
+2. **Formação** (FormationPicker): as 6 formações em cartas de rádio, cada uma com a miniatura do esquema (ver "Miniatura da formação"), o nome ao lado e a frase de efeito embaixo, na largura toda da carta. Duas colunas no celular em pé; três quando o grupo tem 480px ou mais. Nota embaixo da legenda: `tactic.formation.note`.
+3. **Força do time** (StrengthBars, a mesma da Escalação, com a mesma regra: [escalacao.md](escalacao.md#força-do-time)): mostra a mudança com a seta e o número com sinal logo depois de trocar a formação.
 4. **Nesta formação** (LineupIssues, título `tactic.issues.title`): fora de posição e improvisados que a troca criou ou desfez, com nome e as duas posições. Os avisos de vaga livre e de inaptos também aparecem aqui, se houver.
 5. **Postura** (OptionGroup): Defensiva, Equilibrada, Ofensiva, cada uma com a frase de efeito.
 6. **Pressão** (OptionGroup): Baixa, Média, Alta, com a frase.
@@ -28,12 +28,25 @@ Toca uma formação, uma postura e uma pressão (cada uma com a frase de efeito)
 
 Não há botão primário: o primário é "Jogar rodada".
 
+## Miniatura da formação
+
+Pedido do CEO em 2026-11-07, depois da primeira captura ("melhore as imagens de formação, talvez colocar linhas conectando as bolinhas"): na versão 1, as bolinhas ficavam amontoadas, o 4-4-2 não se lia como 4 + 4 + 2 e o 4-2-3-1 parecia o 3-5-2.
+
+- **Mesma geometria do campo da Escalação.** Cada vaga é uma bolinha no centro da sua área em `PITCH_LAYOUT` (um campo de 8 × 10 células), para as duas telas nunca discordarem.
+- **Linhas do nome.** Um traço liga as bolinhas de cada linha que o nome da formação diz, da esquerda para a direita (`PITCH_LINES`: 4-2-3-1 tem as linhas 4, 2, 3 e 1; 3-5-2 tem 3, 5 e 2). Assim o 4-2-3-1 mostra duas linhas no meio e o 3-5-2 uma linha de 5 em "W". O goleiro não entra em linha nenhuma. Testado em `pitch-layout.test.ts`: os tamanhos batem com o nome, cada jogador de linha está numa linha só e cada linha corre da esquerda para a direita.
+- **Campo de referência.** Fundo `pitch`; borda, linha do meio, círculo central e as duas grandes áreas em `pitch-line`, finos e apagados (traço de 1px, 45% de opacidade), por baixo dos traços dos jogadores (2px, `pitch-line` cheio).
+- **Direção do ataque.** O goleiro é a bolinha `floodlight` embaixo, com contorno `on-floodlight`; uma seta em `ink-muted`, acima do campo, aponta o ataque, como no campo da Escalação (gol embaixo, ataque em cima).
+- **Jogadores** em `ink` com contorno `pitch`, que separa a bolinha do traço. Funciona nos temas noite (bolinha clara) e dia (bolinha escura sobre o verde, traço quase branco).
+- **Tamanho:** 72px de largura (`touch + space-6 + space-1`) e cerca de 98px de altura, também a 360px; os traços não mudam de espessura com o desenho (`vector-effect: non-scaling-stroke`).
+- **Leitor de tela:** a miniatura é um `svg` com `aria-hidden="true"` e `focusable="false"`; o rádio tem o nome da formação como rótulo e a frase de efeito como descrição.
+- **Movimento:** nenhum. Escolher uma carta só muda a borda e a marca de "check".
+
 ## Trocar a formação
 
-- Os 11 titulares continuam os mesmos e são redistribuídos **pela posição de cada um** (US-018): quem joga numa posição que existe na formação nova fica nela; quem sobra vai para as vagas livres pelo melhor rendimento. A regra é a de "Troca de formação durante o jogo" (partida.md), aplicada antes do jogo, e mora no motor (ver "Pedidos ao motor"). O banco e as listas de funções não mudam.
+- Os 11 titulares continuam os mesmos e são redistribuídos **pela posição de cada um** (US-018): quem joga numa posição que existe na formação nova fica nela; quem sobra vai para as vagas livres pelo melhor rendimento. A regra é a de "Troca de formação durante o jogo" (partida.md), aplicada antes do jogo, e mora no motor (ver [funcoes.md](funcoes.md#pedidos-ao-motor)). O banco e as listas de funções não mudam.
 - Depois da troca, a força mostra a mudança, os avisos listam quem ficou fora de posição, e uma mensagem na região viva da tela resume: "Formação 4-3-3. Ataque 67, subiu 3. 1 jogador fora de posição."
 - Trocar para a formação atual não muda nada.
-- O campo com os 11 redistribuídos está na Escalação (o critério da US-018 "o campo mostra 4-3-3 com os mesmos 11" se confere lá). Não há uma segunda prévia de campo nesta tela (decisão do CEO 2).
+- O campo com os 11 redistribuídos está na Escalação (o critério da US-018 "o campo mostra 4-3-3 com os mesmos 11" se confere lá). Não há uma segunda prévia de campo nesta tela (decisão 2 do CEO, aprovada em 2026-11-07).
 
 ## Ao alcance do polegar
 
@@ -41,16 +54,16 @@ Postura, pressão e funções, as escolhas mais frequentes, ficam na metade de b
 
 ## Estados
 
-| Estado                      | O que aparece                                                                                                                                                                               |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Carregando**              | Skeleton `card` × 3 com `tactic.loading`, só depois de 300 ms.                                                                                                                              |
-| **Primeira vez**            | Formação, postura e pressão vêm da sugestão do motor para o técnico (perfil Tradicional, ia-clubes.md); as listas de funções vêm vazias, com "Automático" (decisão do CEO 5).               |
-| **Vazio**                   | Não existe: sempre há uma formação, uma postura e uma pressão escolhidas.                                                                                                                   |
-| **Lista de função vazia**   | A linha mostra "Automático: {nome}", o titular que a regra escolhe agora.                                                                                                                   |
-| **Escalação incompleta**    | A Tática funciona igual; "Nesta formação" mostra também os avisos de vaga livre e inaptos; "Automático" lê só os titulares que existem. Sem nenhum titular, "Automático: ninguém em campo". |
-| **Erro**                    | Fronteira da aba: ErrorState `area`; a tática salva fica como estava.                                                                                                                       |
-| **Completo e Simplificado** | Iguais. A frase da pressão alta fala de cansaço e cartões, que valem dentro do jogo nos dois modos (partida.md, "Realismo simplificado").                                                   |
-| **Offline**                 | Nada muda.                                                                                                                                                                                  |
+| Estado                      | O que aparece                                                                                                                                                                                         |
+| --------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Carregando**              | Skeleton `card` × 3 com `tactic.loading`, só depois de 300 ms.                                                                                                                                        |
+| **Primeira vez**            | Formação, postura e pressão vêm da sugestão do motor para o técnico (perfil Tradicional, ia-clubes.md); as listas de funções vêm vazias, com "Automático" (decisão 5 do CEO, aprovada em 2026-11-07). |
+| **Vazio**                   | Não existe: sempre há uma formação, uma postura e uma pressão escolhidas.                                                                                                                             |
+| **Lista de função vazia**   | A linha mostra "Automático: {nome}", o titular que a regra escolhe agora.                                                                                                                             |
+| **Escalação incompleta**    | A Tática funciona igual; "Nesta formação" mostra também os avisos de vaga livre e inaptos; "Automático" lê só os titulares que existem. Sem nenhum titular, "Automático: ninguém em campo".           |
+| **Erro**                    | Fronteira da aba: ErrorState `area`; a tática salva fica como estava.                                                                                                                                 |
+| **Completo e Simplificado** | Iguais. A frase da pressão alta fala de cansaço e cartões, que valem dentro do jogo nos dois modos (partida.md, "Realismo simplificado").                                                             |
+| **Offline**                 | Nada muda.                                                                                                                                                                                            |
 
 ## Celular deitado (844×390) e desktop
 

@@ -12,13 +12,18 @@
 
 <script lang="ts">
   import Icon from './Icon.svelte';
-  import { PITCH_LAYOUT } from './pitch-layout';
+  import { PITCH_COLUMNS, PITCH_LAYOUT, PITCH_LINES, PITCH_ROWS } from './pitch-layout';
 
   /**
-   * FormationPicker: the six formations as radio cards (tatica.md, "Formação"), each with a small
-   * drawing of the shape (the same `PITCH_LAYOUT` of the lineup pitch, decorative), the name and
-   * the effect in one line. Native radios in a fieldset: arrows move between the options. Two
-   * columns on the phone, three when the group is 480px wide or more (`breakpoint-card`).
+   * FormationPicker: the six formations as radio cards (tatica.md, "Formação"), each with a
+   * miniature of the shape, the name and the effect in one line. The miniature (tatica.md,
+   * "Miniatura da formação") uses the same geometry as the lineup pitch (`PITCH_LAYOUT`): a slot
+   * at cell (col, row) is a dot at (col, row) of an 8 × 10 field. A stroke joins the dots of each
+   * line of the name (`PITCH_LINES`: 4 + 2 + 3 + 1), the goalkeeper is the floodlight dot at the
+   * bottom, the field has its halfway line, centre circle and boxes, and a chevron above it points
+   * the way of the attack. Decorative (`aria-hidden`): the name and the effect say it all.
+   * Native radios in a fieldset: arrows move between the options. Two columns on the phone,
+   * three when the group is 480px wide or more (`breakpoint-card`).
    */
   interface Props {
     name: string;
@@ -32,6 +37,20 @@
   }
   const { name, legend, note, options, value, onchange }: Props = $props();
   const id = $props.id();
+
+  /** Room above the field for the chevron of the attack, in cells. */
+  const TOP = 0.9;
+  const viewBox = `0 ${-TOP} ${PITCH_COLUMNS} ${PITCH_ROWS + TOP}`;
+  /** The polyline of each line of the formation, through the centres of its slots. */
+  const lines = (formation: Formation): string[] =>
+    PITCH_LINES[formation].map((line) =>
+      line
+        .map((slot) => {
+          const cell = PITCH_LAYOUT[formation][slot]!;
+          return `${cell.col},${cell.row}`;
+        })
+        .join(' '),
+    );
 </script>
 
 <fieldset class="group" aria-describedby={note ? `${id}-note` : undefined}>
@@ -40,6 +59,7 @@
   <div class="cards">
     {#each options as option (option.value)}
       {@const checked = option.value === value}
+      {@const cells = PITCH_LAYOUT[option.value]}
       <label class="card" class:checked for="{id}-{option.value}">
         <input
           id="{id}-{option.value}"
@@ -51,21 +71,29 @@
           onchange={() => onchange(option.value)}
           aria-describedby="{id}-{option.value}-d"
         />
-        <span class="mini" aria-hidden="true">
-          {#each PITCH_LAYOUT[option.value] as cell, i (i)}
-            <span
-              class="dot"
-              style="grid-column: {cell.col} / span 2; grid-row: {cell.row} / span 2"
-            ></span>
+        <svg class="mini" {viewBox} aria-hidden="true" focusable="false">
+          <!-- Way of the attack, above the field. -->
+          <polyline class="arrow" points="3.4,-0.25 4,-0.7 4.6,-0.25" />
+          <rect class="field" x="0" y="0" width="8" height="10" rx="0.35" />
+          <g class="marks">
+            <rect x="0.3" y="0.3" width="7.4" height="9.4" />
+            <line x1="0.3" y1="5" x2="7.7" y2="5" />
+            <circle cx="4" cy="5" r="0.9" />
+            <rect x="2.3" y="0.3" width="3.4" height="1.1" />
+            <rect x="2.3" y="8.6" width="3.4" height="1.1" />
+          </g>
+          {#each lines(option.value) as points, i (i)}
+            <polyline class="line" {points} />
           {/each}
+          {#each cells as cell, i (i)}
+            <circle class="dot" class:gk={i === 0} cx={cell.col} cy={cell.row} r="0.44" />
+          {/each}
+        </svg>
+        <span class="numero title">
+          {option.title}
+          {#if checked}<Icon name="check" size={16} />{/if}
         </span>
-        <span class="text">
-          <span class="numero title">
-            {option.title}
-            {#if checked}<Icon name="check" size={16} />{/if}
-          </span>
-          <span class="caption muted" id="{id}-{option.value}-d">{option.description}</span>
-        </span>
+        <span class="caption muted desc" id="{id}-{option.value}-d">{option.description}</span>
       </label>
     {/each}
   </div>
@@ -98,10 +126,15 @@
       grid-template-columns: repeat(3, minmax(0, 1fr));
     }
   }
+  /* Miniature on the left with the name beside it; the effect under both, full width. */
   .card {
     position: relative;
-    display: flex;
-    align-items: flex-start;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-areas:
+      'mini title'
+      'desc desc';
+    align-items: start;
     gap: var(--space-2);
     min-block-size: var(--touch);
     padding: var(--space-2);
@@ -129,34 +162,65 @@
     height: 1px;
     margin: 0;
   }
-  /* The shape in miniature: the 8 × 10 grid of the pitch, a dot per slot. */
+  /* 72px wide (touch + space-6 + space-1); the height follows the viewBox (8 × 10.9). */
   .mini {
-    display: grid;
-    flex: none;
-    /* 6px cells: two cells (12px) per slot leave room around each 8px dot. */
-    grid-template-columns: repeat(8, calc(var(--space-1) * 1.5));
-    grid-template-rows: repeat(10, calc(var(--space-1) * 1.5));
-    padding: var(--space-1);
-    border-radius: var(--radius-sm);
-    background: var(--pitch);
+    grid-area: mini;
+    display: block;
+    inline-size: calc(var(--touch) + var(--space-6) + var(--space-1));
+    block-size: auto;
+    overflow: visible;
+  }
+  .field {
+    fill: var(--pitch);
+  }
+  /* Field markings: thin and faint, under the players. Strokes do not scale with the drawing. */
+  .marks {
+    fill: none;
+    stroke: var(--pitch-line);
+    stroke-width: 1px;
+    stroke-opacity: 0.45;
+    vector-effect: non-scaling-stroke;
+  }
+  .marks * {
+    vector-effect: non-scaling-stroke;
+  }
+  .arrow {
+    fill: none;
+    stroke: var(--ink-muted);
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
+  }
+  /* The lines of the name (4 + 4 + 2), over the markings and under the dots. */
+  .line {
+    fill: none;
+    stroke: var(--pitch-line);
+    stroke-width: 2px;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    vector-effect: non-scaling-stroke;
   }
   .dot {
-    place-self: center;
-    inline-size: var(--space-2);
-    block-size: var(--space-2);
-    border-radius: var(--radius-pill);
-    background: var(--pitch-line);
+    fill: var(--ink);
+    stroke: var(--pitch);
+    stroke-width: 1.5px;
+    vector-effect: non-scaling-stroke;
   }
-  .text {
-    display: flex;
-    flex-direction: column;
-    gap: calc(var(--space-1) / 2);
-    min-inline-size: 0;
+  .dot.gk {
+    fill: var(--floodlight);
+    stroke: var(--on-floodlight);
+    stroke-width: 1px;
   }
   .title {
+    grid-area: title;
     display: inline-flex;
     align-items: center;
     gap: var(--space-1);
+    padding-block-start: var(--space-1);
+  }
+  .desc {
+    grid-area: desc;
   }
   .muted {
     color: var(--ink-muted);

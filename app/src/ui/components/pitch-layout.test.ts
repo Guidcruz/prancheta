@@ -1,6 +1,27 @@
 import { describe, expect, it } from 'vitest';
 import { FORMATIONS, FORMATION_SLOTS } from '@engine';
-import { PITCH_COLUMNS, PITCH_LAYOUT, PITCH_ROWS } from './pitch-layout';
+import { PITCH_COLUMNS, PITCH_LAYOUT, PITCH_LINES, PITCH_ROWS } from './pitch-layout';
+
+describe('PITCH_LINES (tatica.md, "Miniatura da formação")', () => {
+  it.each(FORMATIONS)('%s has the lines its name reads', (formation) => {
+    const sizes = PITCH_LINES[formation].map((line) => line.length);
+    expect(sizes.join('-')).toBe(formation);
+  });
+
+  it.each(FORMATIONS)('%s puts every outfield slot in exactly one line', (formation) => {
+    const all = PITCH_LINES[formation].flat().sort((a, b) => a - b);
+    expect(all).toEqual(Array.from({ length: 10 }, (_, i) => i + 1));
+  });
+
+  it.each(FORMATIONS)('%s runs each line left to right on the pitch', (formation) => {
+    const cells = PITCH_LAYOUT[formation];
+    for (const line of PITCH_LINES[formation]) {
+      const cols = line.map((slot) => cells[slot]!.col);
+      expect(cols).toEqual([...cols].sort((a, b) => a - b));
+      expect(new Set(cols).size).toBe(cols.length);
+    }
+  });
+});
 
 describe('PITCH_LAYOUT (escalacao.md, "Desenho do campo")', () => {
   it.each(FORMATIONS)('%s has one cell per slot, inside the grid', (formation) => {

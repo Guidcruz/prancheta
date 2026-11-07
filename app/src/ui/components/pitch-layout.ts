@@ -116,3 +116,40 @@ export const PITCH_LAYOUT: { readonly [F in Formation]: readonly PitchCell[] } =
     c(6, 1),
   ],
 };
+
+/**
+ * The lines of each formation as its name reads them ("4-2-3-1" is a line of 4, of 2, of 3 and
+ * of 1), from the back to the front, each with its slot indices from left to right. Visual only:
+ * the miniatures of the FormationPicker join the dots of each line with a stroke, so the
+ * 4 + 4 + 2 shows at a glance and 4-2-3-1 never looks like 3-5-2. The goalkeeper (slot 0) is in
+ * no line. Checked by `pitch-layout.test.ts`: the sizes match the name, every outfield slot is in
+ * exactly one line, and each line runs left to right in `PITCH_LAYOUT`.
+ */
+export const PITCH_LINES: { readonly [F in Formation]: readonly (readonly number[])[] } = {
+  '4-4-2': [
+    [3, 1, 2, 4],
+    [7, 5, 6, 8],
+    [9, 10],
+  ],
+  '4-3-3': [
+    [3, 1, 2, 4],
+    [6, 5, 7],
+    [8, 9, 10],
+  ],
+  '4-2-3-1': [[3, 1, 2, 4], [5, 6], [7, 8, 9], [10]],
+  '3-5-2': [
+    [1, 2, 3],
+    [4, 6, 8, 7, 5],
+    [9, 10],
+  ],
+  '3-4-3': [
+    [1, 2, 3],
+    [4, 6, 7, 5],
+    [8, 9, 10],
+  ],
+  '5-3-2': [
+    [4, 1, 2, 3, 5],
+    [6, 8, 7],
+    [9, 10],
+  ],
+};
