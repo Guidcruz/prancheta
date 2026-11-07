@@ -20,7 +20,7 @@
     service: CareerService;
     lang: Lang;
     /** An opening error to show in place of the list (not-found, save-too-new...). */
-    openError?: OpenError;
+    openError?: OpenError | 'unexpected';
     onopen: (careerId: string) => void;
   }
   const { service, lang, openError, onopen }: Props = $props();
@@ -77,14 +77,20 @@
     if (first === undefined || creating) return;
     creating = true;
     createError = undefined;
-    const created = await service.create({
-      coachName: t('career.coachDefault', lang),
-      clubId: first.id,
-      realism: 'full',
-      matchMode: 'result',
-    });
-    creating = false;
-    if (!created.ok) createError = created.error;
+    try {
+      const created = await service.create({
+        coachName: t('career.coachDefault', lang),
+        clubId: first.id,
+        realism: 'full',
+        matchMode: 'result',
+      });
+      if (!created.ok) createError = created.error;
+    } catch {
+      // The service never throws; if it ever does, the button must not stay busy.
+      createError = 'unexpected';
+    } finally {
+      creating = false;
+    }
   }
 
   /** Texts of a block error: the code's own, or the unexpected error's for a bug. */

@@ -2,6 +2,7 @@ import { describe, expect, it, vi, type MockInstance } from 'vitest';
 import { get } from 'svelte/store';
 import { ErrorLog, type ErrorEntry } from '../errors/index.ts';
 import {
+  SAVE_FIELD_NAMES,
   SAVE_SCHEMA_VERSION,
   parseCareerSave,
   type CareerSave,
@@ -17,7 +18,13 @@ import {
   useFreshDatabase,
 } from '../save/testing/idb.ts';
 import { SAMPLE_CAREER_ID, careerIdOf } from '../save/testing/sample.ts';
-import { CareerService, roundBlock, type CareerSetup } from './service.ts';
+import type { GameParams, IdentitySource } from '../../engine/index.ts';
+import {
+  CareerService,
+  roundBlock,
+  type CareerServiceOptions,
+  type CareerSetup,
+} from './service.ts';
 
 /*
  * The CareerService over the real SaveStore and fake-indexeddb (T-023; docs/02-architecture.md,
@@ -29,7 +36,10 @@ import { CareerService, roundBlock, type CareerSetup } from './service.ts';
 
 useFreshDatabase();
 
-const COACH = 'Treinador Teste';
+/** One ASCII word: a loose alphabet check would let it through, so only key lists stop it. */
+const COACH = 'Zeca';
+const UUID = '6f1c2a9e-3b7d-4c55-9a10-2b8e4f7d1c03';
+const VERSIONS = { appVersion: '0.0.1', schemaVersion: 1, engineVersion: 1 };
 const SETUP: CareerSetup = {
   coachName: COACH,
   clubId: 'flamingo',
@@ -47,7 +57,7 @@ interface Harness {
 
 function harness(options: { careerId?: string; label?: string } = {}): Harness {
   const s = store();
-  const log = new ErrorLog({ appVersion: '0.0.1', schemaVersion: 1, engineVersion: 1 }, s);
+  const log = new ErrorLog(VERSIONS, s, { fields: SAVE_FIELD_NAMES });
   const write = vi.spyOn(s, 'writeSnapshot');
   const service = new CareerService({
     store: s,
@@ -142,7 +152,7 @@ describe('create (US-014)', () => {
 
   it('answers unsupported-browser without a UUID source (not a secure context)', async () => {
     const s = store();
-    const log = new ErrorLog({ appVersion: '0.0.1', schemaVersion: 1, engineVersion: 1 }, s);
+    const log = new ErrorLog(VERSIONS, s, { fields: SAVE_FIELD_NAMES });
     const service = new CareerService({
       store: s,
       log,
@@ -311,7 +321,8 @@ describe('a round that was not saved blocks the next one (CEO decision 1)', () =
     expect((await h.entries()).at(-1)).toMatchObject({
       kind: 'programming',
       code: 'invalid-save',
-      path: 'career.news.0.vars.club',
+      // `club` is a key of the `vars` record, not a field of the format: logged as `*`.
+      path: 'career.news.0.vars.*',
       problem: 'max_length',
     });
   });
@@ -421,7 +432,7 @@ describe('open', () => {
       schemaVersion: 1,
       engineVersion: 1,
     });
-    expect(JSON.stringify(entries)).not.toContain('Treinador');
+    expect(JSON.stringify(entries)).not.toContain(COACH);
   });
 
   it('a migrated save is written again at once, with the base the opening returned', async () => {
@@ -453,13 +464,16 @@ describe('the log never has personal data (US-045)', () => {
   it('after failures of every kind, no row has the nickname or the save', async () => {
     const h = await created();
     for (const code of ['quota-exceeded', 'verify-failed', 'write-failed'] as const) {
-      h.write.mockImplementationOnce(() => fail(code, { name: COACH, coachName: COACH }));
+      h.write.mockImplementationOnce(() =>
+        fail(code, { name: COACH, problem: COACH, coachName: COACH, careerId: UUID, seq: UUID }),
+      );
       await h.service.playRound();
       await h.service.retrySave();
     }
     const text = JSON.stringify(await h.entries());
     expect(text).not.toContain(COACH);
-    expect(text).not.toContain('Treinador');
+    expect(text).not.toContain(UUID);
+    expect(text).not.toContain(SAMPLE_CAREER_ID);
   });
 });
 
@@ -469,5 +483,84 @@ describe('delete and list', () => {
     expect(await h.service.remove(SAMPLE_CAREER_ID)).toEqual({ ok: true, value: undefined });
     expect(get(h.service.state).status).toBe('closed');
     expect(await h.service.list()).toEqual({ ok: true, value: [] });
+  });
+});
+
+describe('a bug never leaves the career busy (review SHOULD 1 and 2)', () => {
+  /** A service over the same store whose engine throws: params the engine cannot read. */
+  function broken(h: Harness, options: Partial<CareerServiceOptions> = {}): CareerService {
+    return new CareerService({
+      store: h.store,
+      log: h.log,
+      appVersion: '0.0.1',
+      newCareerId: () => SAMPLE_CAREER_ID,
+      newSeed: () => 2026,
+      ...options,
+    });
+  }
+
+  it('an exception of the engine while playing: logged, not busy, the frame shows the error', async () => {
+    const h = await created();
+    const service = broken(h, { params: {} as GameParams });
+    await service.open(SAMPLE_CAREER_ID);
+    expect(await service.playRound()).toEqual({ ok: false, error: 'unexpected' });
+    const state = get(service.state);
+    expect(state).toMatchObject({ status: 'open', busy: false, crash: 'unexpected' });
+    expect(state.save?.game.round).toBe(1);
+    expect((await h.entries()).at(-1)).toMatchObject({
+      kind: 'programming',
+      code: 'unexpected',
+      screen: 'career.play',
+      type: 'TypeError',
+    });
+    // Until "Tentar de novo", no round starts; afterwards the frame is back.
+    expect(await service.playRound()).toEqual({ ok: false, error: 'unexpected' });
+    service.dismissCrash();
+    expect(get(service.state).crash).toBeUndefined();
+    expect(await snapshotSeqs()).toEqual([1]);
+  });
+
+  it('an exception while creating: logged, not busy, nothing stored', async () => {
+    const h = harness();
+    const throwing = new Proxy({} as IdentitySource, {
+      get() {
+        throw new RangeError('identity source');
+      },
+    });
+    const service = broken(h, { identities: throwing });
+    expect(await service.create(SETUP)).toEqual({ ok: false, error: 'unexpected' });
+    expect(get(service.state)).toMatchObject({ status: 'closed', busy: false });
+    expect(await service.list()).toEqual({ ok: true, value: [] });
+    expect((await h.entries()).at(-1)).toMatchObject({
+      code: 'unexpected',
+      screen: 'career.create',
+    });
+  });
+
+  it('a double tap on "Nova carreira" creates one career', async () => {
+    const h = harness();
+    const [a, b] = await Promise.all([h.service.create(SETUP), h.service.create(SETUP)]);
+    expect([a.ok, b]).toEqual([true, { ok: false, error: 'busy' }]);
+    expect(h.write).toHaveBeenCalledTimes(1);
+  });
+
+  it('a failed paramsHash is not kept: the next creation computes it again', async () => {
+    const h = harness();
+    const digest = vi
+      .spyOn(globalThis.crypto.subtle, 'digest')
+      .mockRejectedValueOnce(new Error('digest'));
+    expect(await h.service.create(SETUP)).toEqual({ ok: false, error: 'unexpected' });
+    expect(get(h.service.state).busy).toBe(false);
+    expect(await h.service.create(SETUP)).toEqual({ ok: true, value: undefined });
+    expect(digest.mock.calls.length).toBeGreaterThan(1);
+    expect(get(h.service.state).save?.paramsHash).toMatch(/^[0-9a-f]{64}$/);
+  });
+
+  it('a store that throws on write keeps the round as unsaved, for "Tentar de novo"', async () => {
+    const h = await created();
+    h.write.mockImplementationOnce(() => Promise.reject(new Error('bug')));
+    expect(await h.service.playRound()).toMatchObject({ ok: true, value: { saved: false } });
+    expect(get(h.service.state)).toMatchObject({ busy: false, unsaved: 'write-failed' });
+    expect(await h.service.retrySave()).toEqual({ ok: true, value: undefined });
   });
 });

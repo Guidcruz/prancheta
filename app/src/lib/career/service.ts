@@ -36,6 +36,7 @@ import {
   type SkippedSnapshot,
   type StorageError,
   type WriteError,
+  type WrittenSnapshot,
 } from '../save/index.ts';
 import { checkCoachName, type CoachNameProblem } from './coach-name.ts';
 import { paramsHash } from './params-hash.ts';
@@ -99,6 +100,13 @@ export interface CareerState {
   /** The save in memory is not stored, and why: the next round waits for it. */
   readonly unsaved?: WriteError;
   readonly fatal?: { readonly code: FatalCode; readonly unsaved: boolean };
+  /**
+   * A programming error thrown while playing (the engine, or this layer): the round was not
+   * played, the career in memory is the one before it, and the frame shows the unexpected error
+   * until "Tentar de novo" ({@link CareerService.dismissCrash}). Event handlers are outside the
+   * Svelte boundaries, so the state carries it.
+   */
+  readonly crash?: 'unexpected';
   /** Rounds lost to a fallback when the career opened, until the notice is dismissed. */
   readonly roundsLost: number;
   /** Rounds whose match sheets were lost when opening (the round screen says so; T-030). */
@@ -127,10 +135,11 @@ export type CreateError =
   | 'invalid-clubs'
   | 'invalid-calendar'
   | 'busy'
+  | 'unexpected'
   | WriteError;
 
 export type PlayError =
-  'not-open' | 'busy' | RoundBlock | 'round-already-played' | 'round-not-open';
+  'not-open' | 'busy' | RoundBlock | 'round-already-played' | 'round-not-open' | 'unexpected';
 
 /** What the coach brings to the round (the lineup of T-029, the live commands of T-032). */
 export interface PlayInput {
@@ -252,6 +261,24 @@ export class CareerService {
       this.logStorage('unsupported-browser', 'career.create');
       return { ok: false, error: 'unsupported-browser' };
     }
+    // Busy before the first await: a second tap while this one runs is refused.
+    this.reset();
+    this.set({ busy: true });
+    try {
+      return await this.createStored(setup, name.value, careerId);
+    } catch (error) {
+      this.logException('career.create', error);
+      this.current = CLOSED;
+      this.set({});
+      return { ok: false, error: 'unexpected' };
+    }
+  }
+
+  private async createStored(
+    setup: CareerSetup,
+    coachName: string,
+    careerId: string,
+  ): Promise<SaveResult<void, CreateError>> {
     const created = newCareerGame(
       { seed: this.newSeed(), realism: setup.realism },
       this.params,
@@ -260,9 +287,10 @@ export class CareerService {
     );
     if (!created.ok) {
       this.logProgramming(created.error, 'career.create', created.detail);
+      this.current = CLOSED;
+      this.set({});
       return { ok: false, error: created.error };
     }
-    this.hash ??= paramsHash(this.params);
     const at = this.now().toISOString();
     const save: CareerSave = {
       schemaVersion: SAVE_SCHEMA_VERSION,
@@ -271,9 +299,9 @@ export class CareerService {
       updatedAt: at,
       appVersion: this.appVersion,
       engineVersion: created.value.game.engineVersion,
-      paramsHash: await this.hash,
+      paramsHash: await this.paramsHashOnce(),
       career: {
-        coachName: name.value,
+        coachName,
         clubId: setup.clubId,
         matchMode: setup.matchMode,
         news: [],
@@ -286,8 +314,6 @@ export class CareerService {
       },
       game: created.value.game,
     };
-    this.reset();
-    this.set({ busy: true });
     // A new career: no base (every round is written) and the guard of a career not yet stored.
     const written = await this.store.writeSnapshot(save, undefined, { expectedHeadSeq: 0 });
     if (!written.ok) {
@@ -309,11 +335,32 @@ export class CareerService {
     return { ok: true, value: undefined };
   }
 
+  /** The `paramsHash` of this build, computed once; a failed attempt is not kept. */
+  private paramsHashOnce(): Promise<string> {
+    const pending = this.hash ?? paramsHash(this.params);
+    this.hash = pending;
+    pending.catch(() => {
+      if (this.hash === pending) this.hash = undefined;
+    });
+    return pending;
+  }
+
   /** Opens a career from the device (US-032), writing it again first if it was migrated. */
-  async open(careerId: string): Promise<SaveResult<void, OpenError | 'busy'>> {
+  async open(careerId: string): Promise<SaveResult<void, OpenError | 'busy' | 'unexpected'>> {
     if (this.current.busy) return { ok: false, error: 'busy' };
     this.reset();
     this.set({ status: 'opening', busy: true });
+    try {
+      return await this.openStored(careerId);
+    } catch (error) {
+      this.logException('career.open', error);
+      this.reset();
+      this.set({});
+      return { ok: false, error: 'unexpected' };
+    }
+  }
+
+  private async openStored(careerId: string): Promise<SaveResult<void, OpenError>> {
     const opened = await this.store.openCareer(careerId);
     if (!opened.ok) {
       if (opened.error === 'all-corrupt' && isObject(opened.detail)) {
@@ -366,9 +413,24 @@ export class CareerService {
     const save = state.save;
     if (state.status !== 'open' || save === undefined) return { ok: false, error: 'not-open' };
     if (state.busy) return { ok: false, error: 'busy' };
+    if (state.crash !== undefined) return { ok: false, error: 'unexpected' };
     const blocked = roundBlock(state);
     if (blocked !== undefined) return { ok: false, error: blocked };
     this.set({ busy: true });
+    try {
+      return await this.playAndStore(save, input);
+    } catch (error) {
+      // A bug: the round is not played and the career in memory stays the one before it.
+      this.logException('career.play', error);
+      this.set({ save, busy: false, crash: 'unexpected' });
+      return { ok: false, error: 'unexpected' };
+    }
+  }
+
+  private async playAndStore(
+    save: CareerSave,
+    input: PlayInput,
+  ): Promise<SaveResult<PlayedRound, PlayError>> {
     // Let the screen show "Calculando a rodada..." before the engine takes the thread.
     await new Promise((resolve) => setTimeout(resolve, 0));
     const clubId = save.career.clubId;
@@ -414,6 +476,11 @@ export class CareerService {
     return this.persist(save, 'career.retry');
   }
 
+  /** "Tentar de novo" after a crash while playing: the frame goes back to the screen. */
+  dismissCrash(): void {
+    if (this.current.crash !== undefined) this.set({ crash: undefined });
+  }
+
   /** Closes the "rodadas perdidas" notice for good (it does not come back for this opening). */
   dismissRoundsLost(): void {
     if (this.current.roundsLost !== 0) this.set({ roundsLost: 0 });
@@ -438,9 +505,17 @@ export class CareerService {
   /** Writes `save` with the guard and the opaque base; keeps it in memory whatever happens. */
   private async persist(save: CareerSave, screen: string): Promise<SaveResult<void, WriteError>> {
     this.set({ save, busy: true });
-    const written = await this.store.writeSnapshot(save, this.base, {
-      expectedHeadSeq: this.headSeq,
-    });
+    let written: SaveResult<WrittenSnapshot, WriteError>;
+    try {
+      written = await this.store.writeSnapshot(save, this.base, {
+        expectedHeadSeq: this.headSeq,
+      });
+    } catch (error) {
+      // The store never throws for a storage situation: this is a bug, kept as an unsaved round
+      // so "Tentar de novo" can still store it.
+      this.logException(screen, error);
+      written = { ok: false, error: 'write-failed' };
+    }
     if (written.ok) {
       this.headSeq = written.value.seq;
       this.base = written.value.sheets;
@@ -511,6 +586,10 @@ export class CareerService {
     void this.log.record({ kind: 'storage', code, screen, detail });
   }
 
+  private logException(screen: string, error: unknown): void {
+    void this.log.record({ kind: 'programming', code: 'unexpected', screen, error });
+  }
+
   private logProgramming(code: string, screen: string, detail?: unknown): void {
     void this.log.record({ kind: 'programming', code, screen, detail });
   }
@@ -522,12 +601,10 @@ export class CareerService {
   }
 
   private set(change: Partial<CareerState>): void {
-    this.current = { ...this.current, ...change };
-    if (change.unsaved === undefined && 'unsaved' in change) {
-      const { unsaved: _drop, ...rest } = this.current;
-      void _drop;
-      this.current = rest;
-    }
+    const next: Record<string, unknown> = { ...this.current, ...change };
+    // A field set to `undefined` is removed, so the state never has `key: undefined`.
+    for (const key of Object.keys(change)) if (next[key] === undefined) delete next[key];
+    this.current = next as unknown as CareerState;
     this.writableState.set(this.current);
   }
 }

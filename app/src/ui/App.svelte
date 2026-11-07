@@ -16,7 +16,7 @@
   const lang = detectLang();
   const career = careers.state;
 
-  let openError: OpenError | undefined = $state();
+  let openError: OpenError | 'unexpected' | undefined = $state();
   let lastOpened: string | undefined;
   /** Remounts the home screen (and its list) after going back to it. */
   let homeVisit = $state(0);
