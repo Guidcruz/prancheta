@@ -27,6 +27,13 @@ button {
   outline: 2px solid var(--focus);
   outline-offset: 2px;
 }
+/* After a tap or a click, no ring, whatever the browser decides (WebKit draws it on a focus given
+   by script after a tap): ui/components/input-modality.ts writes data-input on the html. Text
+   fields keep theirs: they show where the typing goes (design-system.md, "Foco: anel só para o
+   teclado"). */
+html[data-input='pointer'] :focus:not(input, textarea, select) {
+  outline: none !important;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
