@@ -16,7 +16,13 @@ export default defineConfig({
   // database `prancheta-test` (docs/03-test-plan.md, 3). In any other build the comparison folds
   // to a constant and the test name is not in the output.
   define: { __PRANCHETA_ENV__: JSON.stringify(process.env.PRANCHETA_ENV ?? '') },
-  build: { outDir },
+  build: {
+    outDir,
+    // Vite 8 passes `comments.legal = !minify` to Rolldown, so the minified bundle drops every
+    // `/*! @license */` notice. Keep them: the fdlibm port (Sun Microsystems) and MIT dependencies
+    // require the notice to ship with the distributed copy. Minification stays on.
+    rolldownOptions: { output: { comments: { legal: true } } },
+  },
   resolve: {
     alias: {
       '@config': fileURLToPath(new URL('../config/prancheta.config.ts', import.meta.url)),
