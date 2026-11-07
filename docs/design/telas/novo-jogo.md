@@ -34,7 +34,7 @@ BottomSheet (diálogo centrado no desktop) com:
 
 1. **Apelido do técnico** (TextField): rótulo visível, a frase "Fica só neste aparelho e no arquivo de backup.", contador "16/24" à direita e o erro em texto embaixo. Teclado com a primeira letra maiúscula, sem corretor (`autocapitalize="words"`, `spellcheck="false"`, `autocomplete="off"`), tecla de confirmar "Concluído" (`enterkeyhint="done"`) que fecha o teclado.
 2. **Realismo** (OptionGroup, 2 cartas): Completo / Simplificado, cada um com a frase de efeito; nota "Não dá para mudar depois de começar." (decisão do CEO na US-014).
-3. **Partida** (OptionGroup, 3 cartas, uma coluna também no desktop): Animada completa / Só lances principais / Só resultado, com a frase de efeito; nota "Dá para trocar depois, nas Preferências e antes de cada rodada." Enquanto só houver uma opção (antes da T-031/T-032, só "Só resultado"; ver "Decisões para o CEO", item 3), a nota fica escondida: falar em trocar sem ter para o que trocar promete o que não existe (P3).
+3. **Partida** (OptionGroup, 3 cartas, uma coluna também no desktop): Animada completa / Só lances principais / Só resultado, com a frase de efeito; nota "Dá para trocar depois, nas Preferências ou antes de cada rodada." Enquanto só houver uma opção (antes da T-031/T-032, só "Só resultado"; ver "Decisões para o CEO", item 3), a nota fica escondida: falar em trocar sem ter para o que trocar promete o que não existe (P3).
 4. **Pronto** (secundário, largura toda): fecha a folha. As mudanças valem na hora; fechar pelo X, Esc, toque fora ou voltar tem o mesmo efeito que "Pronto".
 
 ### Regras do apelido
@@ -115,7 +115,7 @@ Para o `content-writer` (`ui.json`); rascunho em pt-BR. As frases de efeito do r
 | `newGame.realism.full.body`       | Lesões, suspensões e cansaço passam de um jogo para o outro.                | carta                               |
 | `newGame.realism.simplified`      | Simplificado                                                                | carta                               |
 | `newGame.realism.simplified.body` | Cartão e lesão valem só dentro do jogo; na rodada seguinte, todos inteiros. | carta                               |
-| `newGame.match.note`              | Dá para trocar depois, nas Preferências e antes de cada rodada.             | nota do grupo                       |
+| `newGame.match.note`              | Dá para trocar depois, nas Preferências ou antes de cada rodada.            | nota do grupo                       |
 | `newGame.match.full`              | Animada completa                                                            | carta                               |
 | `newGame.match.full.body`         | Assista ao jogo no campo e mexa no time ao vivo.                            | carta                               |
 | `newGame.match.highlights`        | Só lances principais                                                        | carta                               |

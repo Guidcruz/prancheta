@@ -6,14 +6,18 @@
 
   /**
    * ConfirmSheet: a confirmation over the BottomSheet (delete a career in two steps, replace an
-   * imported save, external link). The confirm button comes first and the cancel last, at the
-   * bottom, in the thumb's reach; the focus starts on the sheet's close button, never on the
-   * confirm (BottomSheet opens with the native `showModal`, which focuses the first control).
-   * The two steps of a delete are two uses of this component, driven by the screen.
+   * imported save, external link). The confirm button comes first and the cancel always last, at
+   * the bottom, in the thumb's reach and in the same place in every sheet of a flow; the focus
+   * starts on the sheet's close button, never on the confirm (BottomSheet opens with the native
+   * `showModal`, which focuses the first control). The steps of a delete are uses of this
+   * component, driven by the screen.
    *
-   * `cancelFirst` puts cancel above the confirm: the last step of a delete uses it so its
-   * destructive button is never where the button of the step before was (a double tap would
-   * land on it; T-025 review). The screen also ignores taps right after a sheet opens.
+   * `finalStep` marks the last step of a multi-step confirmation (the destructive one). Cancel
+   * stays last, but it is set apart below a divider, which lifts the confirm by one touch target
+   * plus a gap (61px on the phone): the destructive button never lands where the main button of
+   * the step before was, so a double tap or a reflex tap at the bottom hits empty space or
+   * cancel (inicio.md, "Apagar com confirmação dupla"). The screen also ignores taps on the
+   * confirm right after a sheet opens.
    */
   interface Props {
     open: boolean;
@@ -33,8 +37,8 @@
     busyLabel?: string;
     /** An error of the confirmation itself, in text ("Nada foi apagado..."). */
     error?: string;
-    /** Cancel above the confirm (the last step of a delete). */
-    cancelFirst?: boolean;
+    /** The last, destructive step of a multi-step confirmation: cancel set apart below. */
+    finalStep?: boolean;
     onconfirm: () => void;
     oncancel: () => void;
   }
@@ -51,15 +55,11 @@
     busy = false,
     busyLabel,
     error,
-    cancelFirst = false,
+    finalStep = false,
     onconfirm,
     oncancel,
   }: Props = $props();
 </script>
-
-{#snippet cancel()}
-  <Button variant="ghost" fullWidth disabled={busy} onclick={oncancel}>{cancelLabel}</Button>
-{/snippet}
 
 <BottomSheet {open} {title} {closeLabel} onclose={oncancel}>
   <div class="content">
@@ -76,7 +76,6 @@
           onclick={'onclick' in item ? item.onclick : undefined}>{item.label}</Button
         >
       {/each}
-      {#if cancelFirst}{@render cancel()}{/if}
       <Button
         variant={confirmVariant}
         fullWidth
@@ -85,7 +84,9 @@
         icon={confirmVariant === 'danger' ? 'trash' : undefined}
         onclick={onconfirm}>{confirmLabel}</Button
       >
-      {#if !cancelFirst}{@render cancel()}{/if}
+      <div class="cancel" class:apart={finalStep}>
+        <Button variant="ghost" fullWidth disabled={busy} onclick={oncancel}>{cancelLabel}</Button>
+      </div>
     </div>
   </div>
 </BottomSheet>
@@ -124,5 +125,16 @@
     flex-direction: column;
     gap: var(--space-2);
     margin-top: var(--space-2);
+  }
+  .cancel {
+    display: flex;
+    flex-direction: column;
+  }
+  /* Last step: one touch target plus space-4 between the confirm and cancel (half above the
+     divider, half below), so the confirm sits higher than the main button of the step before. */
+  .apart {
+    margin-top: calc((var(--touch) + var(--space-4)) / 2);
+    padding-top: calc((var(--touch) + var(--space-4)) / 2);
+    border-top: 1px solid var(--line);
   }
 </style>
