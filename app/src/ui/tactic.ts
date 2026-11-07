@@ -1,7 +1,6 @@
 import {
   FORMATIONS,
   FORMATION_SLOTS,
-  attributeOf,
   completeSheet,
   fitLevel,
   reshapeLineup,
@@ -219,20 +218,31 @@ export function addToRole(sheet: DraftSheet, role: RoleName, id: PlayerId): Draf
   return withList(sheet, role, [...list, id]);
 }
 
+const ROLE_ATTRIBUTE = { penalty: 'finishing', freeKick: 'technique' } as const;
+
+/**
+ * The player's own attribute of a taker's role, as the card shows it; `undefined` for a
+ * goalkeeper, who has neither (the engine's derived value is in its tools API, which ui/ does not
+ * import; the holder "Agora" still comes from the engine's `sheetRoles`).
+ */
+export function roleAttribute(player: Player, role: 'penalty' | 'freeKick'): number | undefined {
+  return player.attributes[ROLE_ATTRIBUTE[role]];
+}
+
 /** The attribute that decides the role, as shown next to the name ("Finalização 84", "31 anos"). */
 export function roleDetail(player: Player, role: RoleName, lang: Lang): string {
   if (role === 'captain') return tPlural('player.age', player.age, lang);
-  const key = role === 'penalty' ? 'finishing' : 'technique';
   return t('roles.detail.attribute', lang, {
-    attribute: t(`attr.${key}`, lang),
-    value: attributeOf(player, key),
+    attribute: t(`attr.${ROLE_ATTRIBUTE[role]}`, lang),
+    // A goalkeeper has no finishing nor technique of his own: the dash of a missing number.
+    value: roleAttribute(player, role) ?? '—',
   });
 }
 
 /**
- * The order of "Outros titulares" (funcoes.md): by the attribute of the role, the highest first;
- * for the captain, the rule of `sheetRoles` (the leaders first, by overall, then the oldest). Ties
- * keep the slot order (the sort is stable).
+ * The order of "Outros titulares" (funcoes.md): by the attribute of the role, the highest first
+ * (a goalkeeper, without it, last); for the captain, the rule of `sheetRoles` (the leaders first,
+ * by overall, then the oldest). Ties keep the slot order (the sort is stable).
  */
 function byRole(role: RoleName): (a: Player, b: Player) => number {
   if (role === 'captain') {
@@ -242,8 +252,8 @@ function byRole(role: RoleName): (a: Player, b: Player) => number {
       return a.trait === 'leader' ? b.overall - a.overall : b.age - a.age;
     };
   }
-  const key = role === 'penalty' ? 'finishing' : 'technique';
-  return (a, b) => attributeOf(b, key) - attributeOf(a, key);
+  const value = (p: Player) => roleAttribute(p, role) ?? -1;
+  return (a, b) => value(b) - value(a);
 }
 
 function roleBadges(
