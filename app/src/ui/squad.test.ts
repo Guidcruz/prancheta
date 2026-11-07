@@ -180,9 +180,48 @@ describe('the bands of the states (elenco.md, "Cores por faixa")', () => {
     expect(byId.condition).toMatchObject({ level: 'poor', srText: '74, ruim' });
     expect(byId.morale).toMatchObject({ level: 'good', srText: '60, boa' });
     expect(byId.form).toMatchObject({ level: 'fair', srText: '5,5, regular' });
-    for (const attribute of card.attributes) expect(attribute).not.toHaveProperty('level');
     const none = playerCard(withPlayer(full, id, { recentRatings: [] }), TEST_CLUB, id, 'pt-BR')!;
     expect(none.states.find((s) => s.id === 'form')).not.toHaveProperty('level');
+  });
+});
+
+describe('strong and weak points of the attributes (jogador.md, "Pontos fortes e fracos")', () => {
+  const forced = (position: 'ST' | 'GK') => {
+    const player = squad.find((p) => p.position === position)!;
+    const keys = attributeKeysFor(position);
+    const values = [75, 74, 66, 65, 70, 70];
+    const attributes = Object.fromEntries(keys.map((k, i) => [k, values[i]!]));
+    const game = withPlayer(full, player.id, { overall: 70, attributes });
+    return playerCard(game, TEST_CLUB, player.id, 'pt-BR')!;
+  };
+
+  for (const position of ['ST', 'GK'] as const) {
+    it(`${position}: only good or poor, never fair, read as "75, ponto forte"`, () => {
+      const card = forced(position);
+      expect(card.attributes.map((a) => a.level)).toEqual([
+        'good',
+        undefined,
+        undefined,
+        'poor',
+        undefined,
+        undefined,
+      ]);
+      expect(card.attributes[0]!.srText).toBe('75, ponto forte');
+      expect(card.attributes[3]!.srText).toBe('65, ponto fraco');
+      expect(card.attributes[1]).not.toHaveProperty('srText');
+      expect(card.attributes.some((a) => (a.level as string) === 'fair')).toBe(false);
+    });
+  }
+
+  it('the card carries the position code and the sector of the natural position', () => {
+    const striker = squad.find((p) => p.position === 'ST')!;
+    const card = playerCard(full, TEST_CLUB, striker.id, 'pt-BR')!;
+    expect(card.positionCode).toBe('ATA');
+    expect(card.sector).toBe('atk');
+    const keeper = squad.find((p) => p.position === 'GK')!;
+    const keeperCard = playerCard(full, TEST_CLUB, keeper.id, 'en')!;
+    expect(keeperCard.positionCode).toBe('GK');
+    expect(keeperCard.sector).toBe('gk');
   });
 });
 

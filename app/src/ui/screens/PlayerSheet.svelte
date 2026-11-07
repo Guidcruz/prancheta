@@ -105,6 +105,8 @@
       face={card.face}
       shirt={card.shirt}
       positionLabel={card.positionLabel}
+      positionCode={card.positionCode}
+      sector={card.sector}
       facts={card.facts}
       overall={card.overall}
       overallLabel={t('player.overall', lang)}

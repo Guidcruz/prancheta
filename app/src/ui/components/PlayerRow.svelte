@@ -32,9 +32,9 @@
     positionLabel: string;
     /**
      * `SECTOR_OF[player.position]` (sectors.ts): the tag's background and border. The screens
-     * always pass it; without it the tag is the neutral box.
+     * always pass it.
      */
-    sector?: Sector;
+    sector: Sector;
     badges?: readonly StatusBadgeItem[];
     /** The numbers after the player, in the order of the table's columns. */
     cells: readonly PlayerCell[];

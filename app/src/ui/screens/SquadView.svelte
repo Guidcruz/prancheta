@@ -4,6 +4,7 @@
   import { t, tPlural } from '@lib/i18n';
   import GroupRow from '../components/GroupRow.svelte';
   import PlayerRow, { type PlayerCell } from '../components/PlayerRow.svelte';
+  import { SECTOR_OF } from '../components/sectors';
   import ScrollTable, { type TableColumn } from '../components/ScrollTable.svelte';
   import SegmentedControl from '../components/SegmentedControl.svelte';
   import Skeleton from '../components/Skeleton.svelte';
@@ -138,6 +139,7 @@
             name={player.name.display}
             positionCode={t(`position.${player.position}.short`, lang)}
             positionLabel={t(`position.${player.position}`, lang)}
+            sector={SECTOR_OF[player.position]}
             badges={playerBadges(player, realism, lang)}
             cells={cells(player)}
             onopen={() => onopen(player.id)}

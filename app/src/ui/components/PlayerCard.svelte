@@ -59,11 +59,10 @@
     positionLabel: string;
     /**
      * "ATA" (position.ST.short) and `SECTOR_OF[player.position]`: the PositionTag before the full
-     * name, hidden from screen readers (the name says it). The screens always pass both; without
-     * the code, no tag.
+     * name, hidden from screen readers (the name says it). The screens always pass both.
      */
-    positionCode?: string;
-    sector?: Sector;
+    positionCode: string;
+    sector: Sector;
     /** "23 anos", "Camisa 9". */
     facts: readonly CardFact[];
     overall: number;
@@ -107,7 +106,7 @@
     <Avatar {face} {shirt} size="xl" />
     <div class="id">
       <p class="body-strong position">
-        {#if positionCode !== undefined}<PositionTag code={positionCode} {sector} hidden />{/if}
+        <PositionTag code={positionCode} {sector} hidden />
         <span>{positionLabel}</span>
       </p>
       <p class="body muted facts">
