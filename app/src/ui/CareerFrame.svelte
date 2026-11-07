@@ -63,6 +63,8 @@
     destinationOf(typeof location === 'undefined' ? '' : location.hash),
   );
   let sheetOpen = $state(false);
+  /** The "Mais" sheet asked `history.back()` and its popstate has not come yet. */
+  let closingSheet = false;
   let noticeBand: HTMLElement | undefined = $state();
   let errorArea: HTMLElement | undefined = $state();
   /**
@@ -202,8 +204,12 @@
   }
 
   function closeSheet(): void {
-    if (history.state?.sheet === true) history.back();
-    else sheetOpen = false;
+    // A double tap on "Fechar": the first back is on its way; a second one would leave the tab.
+    if (closingSheet) return;
+    if (history.state?.sheet === true) {
+      closingSheet = true;
+      history.back();
+    } else sheetOpen = false;
   }
 
   function pick(event: MouseEvent, id: DestinationId): void {
@@ -238,6 +244,7 @@
   onMount(() => {
     const onHash = () => (current = destinationOf(location.hash));
     const onPop = () => {
+      closingSheet = false;
       if (sheetOpen && history.state?.sheet !== true) sheetOpen = false;
     };
     window.addEventListener('hashchange', onHash);

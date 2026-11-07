@@ -80,6 +80,27 @@ test.describe('moldura da carreira', () => {
     await expect(playButton(page)).toHaveCount(1);
   });
 
+  test('toque duplo em "Fechar" do menu "Mais" fecha o menu e continua na aba', async ({
+    page,
+  }) => {
+    test.skip(page.viewportSize()!.width >= SIDE_FROM, 'o menu "Mais" é do celular');
+    // A mark on the entry of the tab: back exactly once must land on it.
+    await page.evaluate(() => history.replaceState({ ...history.state, mark: 'tab' }, ''));
+    const url = page.url();
+    await page.getByRole('button', { name: 'Mais opções' }).click();
+    const sheet = page.getByRole('dialog');
+    await expect(sheet).toBeVisible();
+    // Dois toques no mesmo instante, antes de chegar o popstate do primeiro.
+    await sheet.getByRole('button', { name: 'Fechar' }).evaluate((button: HTMLElement) => {
+      button.click();
+      button.click();
+    });
+    await expect(sheet).toBeHidden();
+    await expect(playButton(page)).toBeVisible();
+    await expect.poll(() => page.evaluate(() => history.state?.mark)).toBe('tab');
+    expect(page.url()).toBe(url);
+  });
+
   test('prefers-reduced-motion: a regra do app.css desliga animação e transição', async ({
     page,
   }) => {
