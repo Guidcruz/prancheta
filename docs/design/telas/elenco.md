@@ -116,7 +116,7 @@ Os códigos de posição têm no máximo 3 letras nos três idiomas (sugestão p
 - **Situação nunca só por cor:** ícone + texto do conteúdo (US-016). A caixinha da posição tem o código em texto, e a posição inteira para leitor de tela.
 - **Ordenação:** grupo de rádio nativo (setas do teclado trocam a opção); `aria-sort` no cabeçalho da coluna ordenada.
 - **Caixa da tabela** é uma região nomeada pela legenda e focável, para rolar pelo teclado.
-- **Foco:** ao fechar o card, o foco volta ao botão do nome da linha de origem, também quando o card foi aberto por um toque fora do botão, em outro ponto da linha. A tela guarda o botão de origem e devolve o foco a ele; não depende do `<dialog>` nativo, que devolveria o foco ao elemento ativo (o `body`, num toque na linha).
+- **Foco:** ao fechar o card, o foco volta ao botão do nome da linha de origem, também quando o card foi aberto por um toque fora do botão, em outro ponto da linha. A tela guarda o botão de origem e devolve o foco a ele; não depende do `<dialog>` nativo, que devolveria o foco ao elemento ativo antes de abrir (num toque na linha, a caixa da tabela, que é focável).
 - **Texto só para leitor de tela dentro das células** ("sem jogos" da coluna Forma): a célula numérica tem `position: relative`, para o texto escondido ficar dentro do recorte da caixa que rola e não criar rolagem lateral da página.
 - **Números** em `tabular-nums`, alinhados à direita.
 - **Movimento:** nenhum; trocar a ordem só reordena.
