@@ -52,6 +52,18 @@
   );
   let sheetOpen = $state(false);
   let noticeBand: HTMLElement | undefined = $state();
+  let errorArea: HTMLElement | undefined = $state();
+  /**
+   * The content area shows the unexpected error: a bug while playing (`crash`), or a save the
+   * store refused as not of the format (`invalid-save`), with its code.
+   */
+  const areaError = $derived(
+    career.crash !== undefined
+      ? ('unexpected' as const)
+      : career.unsaved === 'invalid-save'
+        ? ('invalid-save' as const)
+        : undefined,
+  );
 
   const item = (d: NavDestination): TabItem => ({
     id: d.id,
@@ -143,6 +155,11 @@
   }
 
   function onplay(): void {
+    if (areaError !== undefined) {
+      // The way out is in the error of the content area: take the focus there.
+      errorArea?.querySelector<HTMLElement>('h2')?.focus();
+      return;
+    }
     if (block === 'unsaved') {
       // "Ao tocar, leva ao aviso com as saídas" (navegacao.md): the banner of the notice band.
       noticeBand?.scrollIntoView({ block: 'nearest' });
@@ -200,7 +217,9 @@
 {/snippet}
 
 {#snippet noticeList()}
-  <div class="band" bind:this={noticeBand}>
+  <!-- Always mounted, so a notice that appears later is announced (a live region added together
+       with its content often is not). -->
+  <div class="band" role="status" bind:this={noticeBand}>
     {#each notices as notice (notice.key)}
       <Banner
         tone={notice.tone}
@@ -222,17 +241,23 @@
   navLabel={t('nav.label', lang)}
   skipLabel={t('nav.skip', lang)}
   {header}
-  notices={notices.length > 0 ? noticeList : undefined}
+  notices={noticeList}
 >
-  {#if career.unsaved === 'invalid-save'}
-    <ErrorState
-      layout="area"
-      title={boundaryCopy.title}
-      message={boundaryCopy.message}
-      code={t('error.code', lang, { code: 'invalid-save' })}
-      primary={{ label: boundaryCopy.retry, onclick: retry, icon: 'retry' }}
-      secondary={[{ label: boundaryCopy.home, onclick: onhome }]}
-    />
+  {#if areaError !== undefined}
+    <div bind:this={errorArea}>
+      <ErrorState
+        layout="area"
+        title={boundaryCopy.title}
+        message={boundaryCopy.message}
+        code={t('error.code', lang, { code: areaError })}
+        primary={{
+          label: boundaryCopy.retry,
+          onclick: areaError === 'unexpected' ? () => service.dismissCrash() : retry,
+          icon: 'retry',
+        }}
+        secondary={[{ label: boundaryCopy.home, onclick: onhome }]}
+      />
+    </div>
   {:else}
     {#key current}
       <ErrorBoundary

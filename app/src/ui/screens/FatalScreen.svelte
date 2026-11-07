@@ -28,12 +28,14 @@
   );
 </script>
 
-<ErrorState
-  layout="screen"
-  title={t(alertKey(code, 'title'), lang)}
-  message={t(alertKey(code, 'body'), lang)}
-  {extra}
-  code={t('error.code', lang, { code })}
-  primary={actions[0]}
-  secondary={actions.slice(1)}
-/>
+<main>
+  <ErrorState
+    layout="screen"
+    title={t(alertKey(code, 'title'), lang)}
+    message={t(alertKey(code, 'body'), lang)}
+    {extra}
+    code={t('error.code', lang, { code })}
+    primary={actions[0]}
+    secondary={actions.slice(1)}
+  />
+</main>

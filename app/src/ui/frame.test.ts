@@ -88,6 +88,19 @@ describe('the career frame (US-015)', () => {
     expect(body).not.toContain('class="banner');
   });
 
+  it('a crash while playing takes the content area as an unexpected error', () => {
+    const body = frame({ ...OPEN, crash: 'unexpected' });
+    expect(body).toContain('error area');
+    expect(body).toContain(text('error.code', { code: 'unexpected' }));
+    expect(body).toContain(text('action.retry'));
+    expect(body).toContain(text('action.home'));
+  });
+
+  it('the notice band is a live region mounted even without notices', () => {
+    expect(frame(OPEN)).toContain('class="band');
+    expect(frame(OPEN)).toMatch(/class="band[^"]*" role="status"/);
+  });
+
   it('season over: the button stays, blocked with the reason', () => {
     const over = { ...save, game: { ...save.game, round: 39 } } as CareerSave;
     const body = frame({ ...OPEN, save: over });
@@ -104,6 +117,7 @@ describe('full-screen save errors (CEO decisions 2 and 3)', () => {
 
   it('conflict: no tabs, the code, "Recarregar o jogo" first', () => {
     const body = screen('conflict', true);
+    expect(body).toMatch(/^(<!--[^>]*-->)*<main/);
     expect(body).toContain('error screen');
     expect(body).toContain(text('error.code', { code: 'conflict' }));
     expect(body).not.toContain('aria-current');
