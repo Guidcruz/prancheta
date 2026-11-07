@@ -62,11 +62,11 @@ Critérios para o `developer` (testes unitários da leitura do motor):
 
 Um botão por vaga, com:
 
-- **Linha de cima:** o código da posição da vaga (`ZAG`, em `rotulo`), o "C" do capitão quando for o caso (círculo em `ink`, a palavra "capitão" no nome acessível) e a nota geral do jogador à direita (`numero`).
+- **Linha de cima:** a sigla da **posição natural do jogador** num `PositionTag` com a cor do setor dele (`ZAG` em azul, mesmo com o zagueiro na vaga de atacante; ver "Cor de setor no LineupChip"), nunca o código da vaga, que o lugar no campo e o nome acessível já dizem; o "C" do capitão quando for o caso (círculo em `ink`, a palavra "capitão" no nome acessível) e a nota geral do jogador à direita (`numero`).
 - **Nome:** `Player.name.display` em `caption`, uma linha, cortado com reticências (o nome inteiro está no nome acessível, na barra de estado e no card).
 - **Marca da vaga** (no máximo uma; a mais grave vence): lesionado, suspenso, fora de posição, improvisado. Ícone mais texto, no par de cores dos selos (lesionado, suspenso e fora de posição: `ink` sobre `danger-soft` com borda e ícone `danger`; improvisado: `on-floodlight` sobre `floodlight`). Texto na face condensada do `rotulo`, sem caixa alta, até duas linhas ("Fora de / posição"). As outras situações do mesmo jogador vão para o nome acessível e para os avisos.
 - **Barra de condição** (só no realismo Completo): traço de `size-bar` em `grass` sobre `surface-2`, com o comprimento da condição. Decorativa: o número está no nome acessível e nas listas.
-- **Vaga livre:** borda tracejada, fundo `surface-0`, "Vaga livre" em `ink-muted`.
+- **Vaga livre:** borda tracejada, fundo `surface-0`, "Vaga livre" em `ink-muted`, sem sigla e sem cor de setor (a posição da vaga vai só no nome acessível, "Zagueiro: vaga livre").
 
 Níveis de posição (jogadores.md, "Jogador fora da posição"): `fit` 1,00 sem marca; 0,85 a 0,90 "Improvisado"; abaixo de 0,85 "Fora de posição". A tela lê o nível do motor (`fitLevel`; ver "Pedidos ao motor"), nunca a tabela.
 
@@ -190,7 +190,7 @@ O botão continua tocável, com a linha de motivo "Escalação incompleta" (nave
 
 ### Cor de setor no LineupChip
 
-Decisão do CEO de 2026-11-07 (regra em [design-system.md](../design-system.md#cor-de-setor-aprovado-pelo-ceo-em-2026-11-07)). O `LineupChip` é da T-029 e está sendo feito em outra branch; esta nota diz como ele recebe a cor, para quem o terminar.
+Decisão do CEO de 2026-11-07 (regra em [design-system.md](../design-system.md#cor-de-setor-aprovado-pelo-ceo-em-2026-11-07)). Feito na T-077. Esta seção vale sobre qualquer outra menção à sigla do chip: a sigla é a da posição natural do jogador, não a da vaga.
 
 - **O chip mostra a sigla com o `PositionTag`,** nunca uma caixinha própria: `<PositionTag code={positionCode} sector={sector} hidden />`, com `hidden` porque o nome acessível do chip já diz a posição.
 - **O chip ganha a prop `sector`** (tipo `Sector` de `app/src/ui/components/sectors.ts`) e a repassa ao `PositionTag`. A tela calcula `SECTOR_OF[player.position]`: a cor é da **posição natural do jogador**, a mesma sigla do Elenco, não da vaga. Um zagueiro improvisado no meio continua com a sigla ZAG em azul, e o selo "fora de posição" (ícone e texto) diz o resto; o lugar no campo já diz a linha da vaga.
@@ -207,7 +207,7 @@ Decisão do CEO de 2026-11-07 (regra em [design-system.md](../design-system.md#c
 - **Região viva única:** a barra de estado. A StrengthBars não tem região própria: a mensagem da troca já diz o que mudou.
 - **Campo** é um `role="group"` com nome "Campo, formação 4-4-2"; as vagas são uma lista ordenada (`ol`) na ordem das vagas do motor. As marcações do campo são `aria-hidden`.
 - **Foco:** depois de uma troca, o foco fica no lugar do segundo toque (onde o jogador chegou; em "Deixar de fora", a própria linha, que continua no lugar, e o jogador vai para a sua linha da lista); depois de uma recusa, no lugar que recusou; ao fechar o card, volta ao botão "Ver card" ou ao lugar de origem.
-- **Contraste:** todo texto da vaga está sobre `surface-1`, `surface-2`, `surface-0`, `grass-soft` (só em `ink`), `danger-soft` ou `floodlight`, pares conferidos pelo `npm run tokens`. No destino do arrasto (`grass-soft`) o código da posição passa a `ink`.
+- **Contraste:** todo texto da vaga está sobre `surface-1`, `surface-2`, `surface-0`, `grass-soft` (só em `ink`), `danger-soft` ou `floodlight`, pares conferidos pelo `npm run tokens`. A sigla da posição fica sempre em `ink` sobre o seu `sector-*-soft`, em todos os estados da vaga, também no destino do arrasto (`grass-soft`).
 - **Zoom:** a tela não tem campo de texto.
 
 ## Componentes
@@ -303,7 +303,7 @@ Para o `content-writer`: "Fora de posição" e "Improvisado" precisam caber em 2
 
 Com `PRANCHETA_ENV=test`, uma carreira de teste com fixture conhecida (4-4-2, um zagueiro forçado na vaga de atacante, um meia na de volante, um não relacionado lesionado e outro suspenso, no realismo Completo; e uma carreira no Simplificado).
 
-1. **Seletor:** em `#/squad`, as três opções têm ≥ 44px de altura; escolher "Escalação" mostra o grupo `Campo, formação 4-4-2` com 11 botões, na ordem GOL, ZAG, ZAG, LAT, LAT, VOL, VOL, MEI, MEI, ATA, ATA (lida pelo código da posição de cada botão).
+1. **Seletor:** em `#/squad`, as três opções têm ≥ 44px de altura; escolher "Escalação" mostra o grupo `Campo, formação 4-4-2` com 11 botões, na ordem Goleiro, Zagueiro, Zagueiro, Lateral, Lateral, Volante, Volante, Meia, Meia, Atacante, Atacante (lida pela posição da vaga no início do nome acessível de cada botão). A sigla de cada vaga é a posição natural do titular: a vaga 9, com o zagueiro na posição de atacante, mostra "ZAG" com a cor de setor da defesa.
 2. **Alvos:** a 360×740, todas as vagas medem ≥ 44 × 44px e nenhuma se sobrepõe a outra (retângulos sem interseção), em cada uma das 6 formações; o mesmo a 390×844, 844×390 e 1280×800. As linhas do banco e dos não relacionados têm ≥ 44px; as ações da barra, 44 × 44px.
 3. **Sem rolagem lateral** da página em 360, 390, 844 (deitado) e 1280.
 4. **Dois toques (US-017, "alternativa sem arrastar"):** tocar num reserva (`aria-pressed="true"`, barra com "selecionado") e depois num titular troca os dois: o reserva aparece na vaga, o titular no banco, e pelo menos um número da força muda ou fica igual ao calculado pelo motor para a ficha nova (o teste compara com a leitura do motor, não com um número fixo).
