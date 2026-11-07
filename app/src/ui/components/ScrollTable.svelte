@@ -95,6 +95,9 @@
     color: var(--ink-muted);
   }
   th {
+    /* The containing block of the hidden full name: without it the text escapes the box's
+       clipping and widens the page at 360px. */
+    position: relative;
     padding: var(--space-2);
     border-block-end: 1px solid var(--line);
     background: var(--surface-1);

@@ -90,14 +90,16 @@
     z-index: 1;
     padding-inline-start: var(--space-3);
   }
-  /* The fixed column never takes more than about half the table's box (ScrollTable is the
-     container). Long names end in an ellipsis; the card shows them whole. */
+  /* The fixed column never takes more than half the table's box (ScrollTable is the
+     container), the cell's padding and the fold line included (elenco.md, E2E measure 3: at
+     360px, 45cqi plus the padding came to 51%). Long names end in an ellipsis; the card shows
+     them whole. */
   .cell {
     display: flex;
     align-items: center;
     gap: var(--space-2);
     min-width: 0;
-    max-inline-size: 45cqi;
+    max-inline-size: calc(50cqi - var(--space-3) - var(--space-2) - 1px);
   }
   .pos {
     flex: none;
@@ -118,6 +120,8 @@
   /* The button keeps the 44px target over the whole cell height. */
   .name {
     max-inline-size: 100%;
+    /* A short name ("Léo") still makes a 44px target. */
+    min-inline-size: var(--touch);
     min-block-size: var(--touch);
     margin-block: calc(var(--space-1) * -1);
     padding: 0;
@@ -140,6 +144,8 @@
     max-inline-size: 100%;
   }
   .stat {
+    /* The containing block of the hidden "sem jogos": it stays inside the box's clipping. */
+    position: relative;
     text-align: end;
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
