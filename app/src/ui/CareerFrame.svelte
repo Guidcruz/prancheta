@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { completeSheet, sheetProblems, type DraftSheet } from '@engine';
   import type { Lang } from '@lib/config';
   import {
     roundBlock,
@@ -11,11 +12,14 @@
   import type { ErrorLog } from '@lib/errors';
   import { shieldSpecFor, shieldSvg } from '@lib/generators/shield';
   import { t, tPlural } from '@lib/i18n';
+  import { loadGameParams } from '@lib/params';
   import AppShell from './components/AppShell.svelte';
   import Banner from './components/Banner.svelte';
   import BottomSheet from './components/BottomSheet.svelte';
+  import Button from './components/Button.svelte';
   import ErrorBoundary from './components/ErrorBoundary.svelte';
   import ErrorState from './components/ErrorState.svelte';
+  import LineupIssues, { BLOCKING_ISSUES } from './components/LineupIssues.svelte';
   import LinkRow from './components/LinkRow.svelte';
   import ScreenHeader from './components/ScreenHeader.svelte';
   import type { TabItem } from './components/TabBar.svelte';
@@ -27,6 +31,8 @@
     NAV_TUTORIAL,
     type NavDestination,
   } from './components/nav-items';
+  import { createDraftWriter } from './draft-writer';
+  import { coachSheet, lineupIssues } from './lineup';
   import { noticeActions } from './notice-actions';
   import {
     HOME_DESTINATION,
@@ -36,19 +42,25 @@
     labelKeyOf,
     type DestinationId,
   } from './router';
-  import { alertKey, unsavedActions } from './save-alerts';
+  import { alertKey, draftActions, hasAlertText, unsavedActions } from './save-alerts';
+  import { pushSheet, sheetOnTop } from './sheet-history';
   import ClubView from './screens/ClubView.svelte';
   import Placeholder from './screens/Placeholder.svelte';
   import Saves from './screens/Saves.svelte';
-  import Squad from './screens/Squad.svelte';
+  import SquadTab, { type SquadViewId } from './screens/SquadTab.svelte';
   import type { SquadSort } from './squad';
 
   /**
    * The frame of an open career (docs/design/telas/navegacao.md): tabs at the bottom on the
    * phone, sidebar from 900px, the "Mais" menu, the notice band, "Jogar rodada" and the error
-   * boundary around the screen of each destination. Clube and Elenco are the T-028 screens and
-   * Carreiras e backup the T-025 one; the others are placeholders until their tasks (T-031,
-   * T-034...).
+   * boundary around the screen of each destination. Clube and Elenco are the T-028 screens (the
+   * Elenco tab with the Escalação of T-029) and Carreiras e backup the T-025 one; the others are
+   * placeholders until their tasks (T-031, T-034...).
+   *
+   * The coach's sheet (ADR-0021; T-029) is read here, because "Jogar rodada" needs it on every
+   * tab: the draft of the save (or the edit held while a round is played, `draft-writer.ts`), or
+   * the engine's suggestion while the coach never touched it. A sheet that cannot go to the round
+   * keeps the button tappable with its reason, and the tap opens "Escalação incompleta".
    */
   interface Props {
     career: CareerState;
@@ -92,6 +104,33 @@
   const more = $derived([...extra, ...settings, item(NAV_TUTORIAL)]);
 
   const save = $derived(career.save!);
+  const params = loadGameParams();
+  const writer = createDraftWriter({
+    get state() {
+      return service.state;
+    },
+    setDraft: (next) => service.setDraft(next),
+  });
+  const held = writer.held;
+  /** The sheet shown and played: the edit held, the coach's draft or the engine's suggestion. */
+  const sheet = $derived(
+    coachSheet(
+      save.game,
+      save.career.clubId,
+      ($held?.careerId === save.careerId ? $held.sheet : undefined) ?? save.career.draft,
+      params,
+    ),
+  );
+  /** The coach never touched the sheet: the round plays the engine's suggestion, as shown. */
+  const untouched = $derived(save.career.draft === undefined && $held === undefined);
+  const check = $derived(sheetProblems(save.game, save.career.clubId, sheet));
+  /**
+   * The view of the Elenco tab while this career is open (escalacao.md, "Navegação"): the
+   * frame's state, never the save's, and no entry in the history.
+   */
+  let squadView: { careerId: string; view: SquadViewId } | undefined = $state();
+  const view = $derived(squadView?.careerId === save.careerId ? squadView.view : 'squad');
+  const setView = (next: SquadViewId) => (squadView = { careerId: save.careerId, view: next });
   /**
    * The order of the Elenco while this career is open (elenco.md): the screen's state, kept here
    * because the tab remounts on every visit; never in the save.
@@ -112,10 +151,21 @@
     'season-over': 'play.blocked.seasonOver',
   };
   const block = $derived(roundBlock(career));
+  /** The sheet cannot go to the round (US-017): the button keeps working and says why. */
+  const lineupBlocked = $derived(block === undefined && !check.ready);
   const playRound = $derived({
-    state: career.busy ? ('busy' as const) : block ? ('blocked' as const) : ('ready' as const),
+    state: career.busy
+      ? ('busy' as const)
+      : block || lineupBlocked
+        ? ('blocked' as const)
+        : ('ready' as const),
     label: t('play.label', lang),
-    hint: block === undefined ? undefined : t(BLOCK_KEYS[block], lang),
+    hint:
+      block !== undefined
+        ? t(BLOCK_KEYS[block], lang)
+        : lineupBlocked
+          ? t('play.blocked.lineup', lang)
+          : undefined,
     busyLabel: t('play.busy', lang),
     onplay,
   });
@@ -141,6 +191,22 @@
         actions: noticeActions(
           unsavedActions(unsaved),
           { retry, home: onhome, free: openSaves },
+          lang,
+        ),
+      });
+    }
+    // The coach's sheet did not reach the device; with a round unsaved its banner covers both.
+    const draftUnsaved = career.draftUnsaved;
+    if (draftUnsaved !== undefined && unsaved === undefined) {
+      const code = hasAlertText(draftUnsaved) ? draftUnsaved : 'write-failed';
+      list.push({
+        key: `draft-${draftUnsaved}`,
+        tone: 'danger',
+        title: t(alertKey(code, 'title'), lang),
+        message: t(alertKey(code, 'body'), lang),
+        actions: noticeActions(
+          draftActions(draftUnsaved),
+          { retry: () => void service.retryDraft(), free: openSaves },
           lang,
         ),
       });
@@ -194,7 +260,79 @@
     }
     // The end of the season has its own screens (T-037).
     if (block === 'season-over') return;
-    void service.playRound();
+    if (!check.ready) {
+      openCheck();
+      return;
+    }
+    play();
+  }
+
+  /**
+   * Plays the round with the sheet shown: a ready sheet passes as it is (`completeSheet`, ADR-0021,
+   * item 2), an incomplete one gets the best available ("Completar e jogar"). Untouched, the
+   * engine plays its own suggestion and the draft stays absent.
+   */
+  function play(): void {
+    if (untouched && check.ready) {
+      void service.playRound();
+      return;
+    }
+    void service.playRound({ sheet: completeSheet(save.game, save.career.clubId, sheet) });
+  }
+
+  // ------------------------------------------------- "Escalação incompleta" (escalacao.md; US-017)
+
+  const CHECK = 'lineup-check';
+  let checkOpen = $state(false);
+  let closingCheck = false;
+  const blocking = $derived(
+    lineupIssues(
+      save.game,
+      save.career.clubId,
+      sheet,
+      check,
+      params.ai.rotationCondition,
+      lang,
+    ).filter((issue) => BLOCKING_ISSUES.includes(issue.kind)),
+  );
+
+  function openCheck(): void {
+    checkOpen = true;
+    pushSheet(CHECK);
+  }
+
+  function closeCheck(): void {
+    if (closingCheck) return;
+    if (sheetOnTop(CHECK)) {
+      closingCheck = true;
+      history.back();
+    } else checkOpen = false;
+  }
+
+  /** "Completar e jogar": fills only what is missing and plays (CEO decision 4). */
+  function completeAndPlay(): void {
+    if (!checkOpen) return;
+    closeCheck();
+    checkOpen = false;
+    play();
+  }
+
+  /** "Ajustar a escalação": closes the sheet and shows the Escalação. */
+  function adjust(): void {
+    if (!checkOpen) return;
+    setView('lineup');
+    if (current === 'squad') {
+      closeCheck();
+      return;
+    }
+    checkOpen = false;
+    // Replaces the sheet's entry, as a pick of the "Mais" menu: back returns to the tab before.
+    history.replaceState(null, '', hrefOf('squad'));
+    current = 'squad';
+  }
+
+  function edit(next: DraftSheet): void {
+    void writer.write(next);
   }
 
   function openSheet(): void {
@@ -245,7 +383,9 @@
     const onHash = () => (current = destinationOf(location.hash));
     const onPop = () => {
       closingSheet = false;
+      closingCheck = false;
       if (sheetOpen && history.state?.sheet !== true) sheetOpen = false;
+      if (checkOpen && !sheetOnTop(CHECK)) checkOpen = false;
     };
     window.addEventListener('hashchange', onHash);
     window.addEventListener('popstate', onPop);
@@ -293,6 +433,7 @@
   skipLabel={t('nav.skip', lang)}
   {header}
   notices={noticeList}
+  wide={current === 'squad' && view === 'lineup'}
 >
   {#if areaError !== undefined}
     <div bind:this={errorArea}>
@@ -328,12 +469,17 @@
             onerror={onBoundaryError}
           />
         {:else if current === 'squad'}
-          <Squad
+          <SquadTab
             {lang}
             game={save.game}
             clubId={save.career.clubId}
+            {view}
+            onview={setView}
             {sort}
             onsort={(next) => (squadSort = { careerId: save.careerId, sort: next })}
+            {sheet}
+            {params}
+            onedit={edit}
             onerror={onBoundaryError}
           />
         {:else}
@@ -364,7 +510,46 @@
   </ul>
 </BottomSheet>
 
+{#snippet checkFooter()}
+  <div class="check-foot">
+    <Button variant="primary" fullWidth icon="play" onclick={completeAndPlay}
+      >{t('lineup.check.play', lang)}</Button
+    >
+    <Button variant="secondary" fullWidth onclick={adjust}>{t('lineup.check.adjust', lang)}</Button>
+  </div>
+{/snippet}
+
+<BottomSheet
+  open={checkOpen}
+  title={t('lineup.check.title', lang)}
+  closeLabel={t('nav.close', lang)}
+  onclose={closeCheck}
+  footer={checkFooter}
+>
+  <div class="check">
+    <p class="body">{t('lineup.check.message', lang)}</p>
+    <LineupIssues title={t('lineup.issues.title', lang)} items={blocking} hideTitle level={3} />
+    <p class="caption hint">{t('lineup.check.hint', lang)}</p>
+  </div>
+</BottomSheet>
+
 <style>
+  .check {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .check p {
+    margin: 0;
+  }
+  .hint {
+    color: var(--ink-muted);
+  }
+  .check-foot {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-2);
+  }
   .band {
     display: flex;
     flex-direction: column;

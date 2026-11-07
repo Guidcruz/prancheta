@@ -1,4 +1,4 @@
-import type { FatalCode, WriteError } from '@lib/career';
+import type { DraftUnsaved, FatalCode, WriteError } from '@lib/career';
 
 /*
  * Which way out each code of the save offers (docs/design/telas/erros-e-avisos.md, "Erros do
@@ -55,6 +55,15 @@ export function fatalActions(code: FatalCode): AlertAction[] {
 /** Codes without their own row (read-failed, storage-unavailable...) retry, like write-failed. */
 export function unsavedActions(code: WriteError): AlertAction[] {
   return available(UNSAVED[code] ?? ['retry', 'export']);
+}
+
+/**
+ * A write of the coach's sheet that failed (`CareerState.draftUnsaved`; T-029): Banner `danger`
+ * with the code's text, "Tentar de novo" writes the sheet again; no room also offers "Liberar
+ * espaço". The sheet is in memory and goes with the next round, so "Jogar rodada" is not blocked.
+ */
+export function draftActions(code: DraftUnsaved): AlertAction[] {
+  return available(code === 'quota-exceeded' ? ['retry', 'free'] : ['retry']);
 }
 
 /** The key of the code's text in errors.json (`save.<code>.title` and `.body`). */
