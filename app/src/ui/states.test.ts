@@ -5,6 +5,7 @@ import type { ErrorLog } from '@lib/errors';
 import { t } from '@lib/i18n';
 import type { Lang } from '@lib/config';
 import { latestClubSet } from '../data/club-sets.ts';
+import { testCareer } from './testing/game';
 import CareerFrame from './CareerFrame.svelte';
 import FatalScreen from './screens/FatalScreen.svelte';
 
@@ -25,7 +26,7 @@ const club = latestClubSet()!.clubs[0]!;
 const save = {
   careerId: '00000000-0000-4000-8000-000000000023',
   career: { clubId: club.id },
-  game: { clubs: { [club.id]: { def: club } }, year: 2026, round: 5, phase: 'season' },
+  game: testCareer('full', 5),
 } as unknown as CareerSave;
 const OPEN: CareerState = {
   status: 'open',
