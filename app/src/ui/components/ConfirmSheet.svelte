@@ -15,10 +15,12 @@
    *
    * `finalStep` marks the last step of a multi-step confirmation (the destructive one). Cancel
    * stays last, but it is set apart below a divider, which lifts the confirm by one touch target
-   * plus a gap (61px, on the phone and on the desktop): the destructive button never lands where the main button of
-   * the step before was, so a double tap or a reflex tap at the bottom hits empty space or
-   * cancel (inicio.md, "Apagar com confirmação dupla"). The screen also ignores taps on the
-   * confirm right after a sheet opens.
+   * plus a gap (61px, at every size): the destructive button never lands where the main button
+   * of the step before was, so a double tap or a reflex tap at the bottom hits empty space or
+   * cancel (inicio.md, "Apagar com confirmação dupla"). The buttons go in the BottomSheet's
+   * footer, fixed at its base: on a short screen (a phone lying down) only the subject and the
+   * message scroll, and the geometry holds. The screen also ignores taps on the confirm right
+   * after a sheet opens.
    */
   interface Props {
     open: boolean;
@@ -62,33 +64,37 @@
   }: Props = $props();
 </script>
 
-<BottomSheet {open} {title} {closeLabel} onclose={oncancel}>
+<!-- The error sits with the buttons, in the fixed footer: never scrolled out of sight. -->
+{#snippet actions()}
+  <div class="actions">
+    <p class="body error" aria-live="polite">{error ?? ''}</p>
+    {#each extra as item (item.label)}
+      <Button
+        variant="secondary"
+        fullWidth
+        icon={item.icon}
+        href={'href' in item ? item.href : undefined}
+        onclick={'onclick' in item ? item.onclick : undefined}>{item.label}</Button
+      >
+    {/each}
+    <Button
+      variant={confirmVariant}
+      fullWidth
+      {busy}
+      {busyLabel}
+      icon={confirmVariant === 'danger' ? 'trash' : undefined}
+      onclick={onconfirm}>{confirmLabel}</Button
+    >
+    <div class="cancel" class:apart={finalStep}>
+      <Button variant="ghost" fullWidth disabled={busy} onclick={oncancel}>{cancelLabel}</Button>
+    </div>
+  </div>
+{/snippet}
+
+<BottomSheet {open} {title} {closeLabel} onclose={oncancel} footer={actions}>
   <div class="content">
     {#if subject}<div class="subject">{@render subject()}</div>{/if}
     <p class="body message">{message}</p>
-    <p class="body error" aria-live="polite">{error ?? ''}</p>
-    <div class="actions">
-      {#each extra as item (item.label)}
-        <Button
-          variant="secondary"
-          fullWidth
-          icon={item.icon}
-          href={'href' in item ? item.href : undefined}
-          onclick={'onclick' in item ? item.onclick : undefined}>{item.label}</Button
-        >
-      {/each}
-      <Button
-        variant={confirmVariant}
-        fullWidth
-        {busy}
-        {busyLabel}
-        icon={confirmVariant === 'danger' ? 'trash' : undefined}
-        onclick={onconfirm}>{confirmLabel}</Button
-      >
-      <div class="cancel" class:apart={finalStep}>
-        <Button variant="ghost" fullWidth disabled={busy} onclick={oncancel}>{cancelLabel}</Button>
-      </div>
-    </div>
   </div>
 </BottomSheet>
 
@@ -125,7 +131,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    margin-top: var(--space-2);
+    padding: var(--space-4) var(--space-2) 0;
   }
   .cancel {
     display: flex;

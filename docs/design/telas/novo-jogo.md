@@ -81,51 +81,51 @@ ScreenHeader, OptionsSummary, ClubPicker, ClubOption, Crest, ActionBar, Button, 
 
 ## Textos (chaves)
 
-Para o `content-writer` (`ui.json`); rascunho em pt-BR. As frases de efeito do realismo e da partida resumem `partida.md` e `ia-clubes.md`; o `game-designer` confere se dizem a regra certa.
+Textos em `ui.json`; a coluna pt-BR traz os textos aprovados pelo CEO no lote da T-025 (a fonte continua sendo o `ui.json`). As frases de efeito do realismo e da partida resumem `partida.md` e `ia-clubes.md`; o `game-designer` confere se dizem a regra certa.
 
-| Chave                             | Rascunho pt-BR                                                              | Onde                                |
-| --------------------------------- | --------------------------------------------------------------------------- | ----------------------------------- |
-| `newGame.title`                   | Nova carreira                                                               | cabeçalho                           |
-| `newGame.options.title`           | Opções da carreira                                                          | resumo e título da folha            |
-| `newGame.options.change`          | Alterar                                                                     | resumo                              |
-| `newGame.options.coach`           | Técnico                                                                     | rótulo no resumo                    |
-| `newGame.options.realism`         | Realismo                                                                    | rótulo no resumo e legenda do grupo |
-| `newGame.options.match`           | Partida                                                                     | rótulo no resumo e legenda do grupo |
-| `newGame.options.problem`         | O apelido do técnico precisa de ajuste.                                     | resumo com apelido inválido         |
-| `newGame.options.done`            | Pronto                                                                      | fecha a folha                       |
-| `newGame.clubs.legend`            | Escolha o seu clube                                                         | título da lista                     |
-| `newGame.clubs.hint`              | A dificuldade de verdade é o clube: quanto menor a força, maior o desafio.  | sob o título                        |
-| `newGame.clubs.place`             | {city} ({state})                                                            | linha de cada clube                 |
-| `newGame.band.favorite`           | Favoritos                                                                   | título do grupo                     |
-| `newGame.band.favorite.one`       | Favorito                                                                    | barra e nome acessível              |
-| `newGame.band.mid`                | Meio de tabela                                                              | título do grupo, barra              |
-| `newGame.band.relegation`         | Luta contra a queda                                                         | título do grupo, barra              |
-| `newGame.strength`                | Força                                                                       | rótulo do número                    |
-| `newGame.bar.club`                | Força {strength} · {band}                                                   | barra, sob o nome do clube          |
-| `newGame.bar.noClub`              | Escolha um clube para começar.                                              | barra sem clube                     |
-| `newGame.bar.invalidName`         | Corrija o apelido do técnico para começar.                                  | barra com apelido inválido          |
-| `newGame.coach.label`             | Apelido do técnico                                                          | campo                               |
-| `newGame.coach.hint`              | Fica só neste aparelho e no arquivo de backup.                              | campo                               |
-| `newGame.coach.counter`           | {count}/{max}                                                               | contador                            |
-| `newGame.coach.error.empty`       | Escreva um apelido.                                                         | erro                                |
-| `newGame.coach.error.tooLong`     | Use até {max} caracteres.                                                   | erro                                |
-| `newGame.coach.error.unsafe`      | Use só letras, números e sinais comuns.                                     | erro                                |
-| `newGame.realism.note`            | Não dá para mudar depois de começar.                                        | nota do grupo                       |
-| `newGame.realism.full`            | Completo                                                                    | carta                               |
-| `newGame.realism.full.body`       | Lesões, suspensões e cansaço passam de um jogo para o outro.                | carta                               |
-| `newGame.realism.simplified`      | Simplificado                                                                | carta                               |
-| `newGame.realism.simplified.body` | Cartão e lesão valem só dentro do jogo; na rodada seguinte, todos inteiros. | carta                               |
-| `newGame.match.note`              | Dá para trocar depois, nas Preferências ou antes de cada rodada.            | nota do grupo                       |
-| `newGame.match.full`              | Animada completa                                                            | carta                               |
-| `newGame.match.full.body`         | Assista ao jogo no campo e mexa no time ao vivo.                            | carta                               |
-| `newGame.match.highlights`        | Só lances principais                                                        | carta                               |
-| `newGame.match.highlights.body`   | Só os momentos que importam, mais rápido; você ainda mexe no time.          | carta                               |
-| `newGame.match.result`            | Só resultado                                                                | carta                               |
-| `newGame.match.result.body`       | O auxiliar comanda o jogo; você vê o placar na hora.                        | carta                               |
-| `newGame.start`                   | Começar                                                                     | barra                               |
-| `newGame.start.busy`              | Criando a carreira...                                                       | `busy` (leitor de tela)             |
-| `newGame.loading`                 | Montando o elenco e o calendário...                                         | tela de carregamento                |
-| `newGame.limit.action`            | Ir para as carreiras                                                        | Banner `career-limit`               |
+| Chave                             | Texto pt-BR (aprovado pelo CEO)                                                | Onde                                |
+| --------------------------------- | ------------------------------------------------------------------------------ | ----------------------------------- |
+| `newGame.title`                   | Nova carreira                                                                  | cabeçalho                           |
+| `newGame.options.title`           | Opções da carreira                                                             | resumo e título da folha            |
+| `newGame.options.change`          | Alterar                                                                        | resumo                              |
+| `newGame.options.coach`           | Técnico                                                                        | rótulo no resumo                    |
+| `newGame.options.realism`         | Realismo                                                                       | rótulo no resumo e legenda do grupo |
+| `newGame.options.match`           | Partida                                                                        | rótulo no resumo e legenda do grupo |
+| `newGame.options.problem`         | O apelido do técnico precisa de ajuste.                                        | resumo com apelido inválido         |
+| `newGame.options.done`            | Pronto                                                                         | fecha a folha                       |
+| `newGame.clubs.legend`            | Escolha o seu clube                                                            | título da lista                     |
+| `newGame.clubs.hint`              | A dificuldade de verdade é o clube: quanto menor a força, maior o desafio.     | sob o título                        |
+| `newGame.clubs.place`             | {city} ({state})                                                               | linha de cada clube                 |
+| `newGame.band.favorite`           | Favoritos                                                                      | título do grupo                     |
+| `newGame.band.favorite.one`       | Favorito                                                                       | barra e nome acessível              |
+| `newGame.band.mid`                | Meio de tabela                                                                 | título do grupo, barra              |
+| `newGame.band.relegation`         | Luta contra a queda                                                            | título do grupo, barra              |
+| `newGame.strength`                | Força                                                                          | rótulo do número                    |
+| `newGame.bar.club`                | Força {strength} · {band}                                                      | barra, sob o nome do clube          |
+| `newGame.bar.noClub`              | Escolha um clube para começar.                                                 | barra sem clube                     |
+| `newGame.bar.invalidName`         | Corrija o apelido do técnico para começar.                                     | barra com apelido inválido          |
+| `newGame.coach.label`             | Apelido do técnico                                                             | campo                               |
+| `newGame.coach.hint`              | Fica só neste aparelho e no arquivo de backup.                                 | campo                               |
+| `newGame.coach.counter`           | {count}/{max}                                                                  | contador                            |
+| `newGame.coach.error.empty`       | Escreva um apelido.                                                            | erro                                |
+| `newGame.coach.error.tooLong`     | Use até {max} caracteres.                                                      | erro                                |
+| `newGame.coach.error.unsafe`      | Use só letras, números e sinais comuns.                                        | erro                                |
+| `newGame.realism.note`            | Não dá para mudar depois de começar.                                           | nota do grupo                       |
+| `newGame.realism.full`            | Completo                                                                       | carta                               |
+| `newGame.realism.full.body`       | Lesões, suspensões e cansaço passam de um jogo para o outro.                   | carta                               |
+| `newGame.realism.simplified`      | Simplificado                                                                   | carta                               |
+| `newGame.realism.simplified.body` | Cartão e lesão valem só dentro do jogo; na rodada seguinte, todos disponíveis. | carta                               |
+| `newGame.match.note`              | Dá para trocar depois, nas Preferências ou antes de cada rodada.               | nota do grupo                       |
+| `newGame.match.full`              | Animada completa                                                               | carta                               |
+| `newGame.match.full.body`         | Assista ao jogo no campo e mexa no time ao vivo.                               | carta                               |
+| `newGame.match.highlights`        | Só lances principais                                                           | carta                               |
+| `newGame.match.highlights.body`   | Só os momentos que importam, mais rápido; você ainda mexe no time.             | carta                               |
+| `newGame.match.result`            | Só resultado                                                                   | carta                               |
+| `newGame.match.result.body`       | O auxiliar comanda o jogo; você vê o placar na hora.                           | carta                               |
+| `newGame.start`                   | Começar                                                                        | barra                               |
+| `newGame.start.busy`              | Criando a carreira...                                                          | `busy` (leitor de tela)             |
+| `newGame.loading`                 | Montando o elenco e o calendário...                                            | tela de carregamento                |
+| `newGame.limit.action`            | Ir para as carreiras                                                           | Banner `career-limit`               |
 
 As chaves `newGame.match.*` servem também às Preferências (US-044) e à escolha antes da rodada (US-019): o mesmo texto nos três lugares.
 
