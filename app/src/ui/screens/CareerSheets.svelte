@@ -80,6 +80,7 @@
       busy={flow.busy}
       busyLabel={t('delete.busy', lang)}
       error={flow.failed ? t('delete.failed', lang) : undefined}
+      cancelFirst
       {onconfirm}
       {oncancel}
     />

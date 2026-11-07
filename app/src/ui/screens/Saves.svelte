@@ -23,10 +23,7 @@
   const { service, lang, currentId }: Props = $props();
 
   const SHEET = 'saves-actions';
-  const flow = new DeleteFlow(
-    (id) => service.remove(id),
-    () => currentId,
-  );
+  const flow = new DeleteFlow((id) => service.remove(id), { protectedId: () => currentId });
   const flowState = flow.state;
 
   let careers: CareerSummary[] | undefined = $state();

@@ -54,6 +54,12 @@ async function twoCareers(): Promise<CareerService> {
   return service;
 }
 
+/** A human pace between taps: each read of the clock is past the double-tap guard. */
+function pace(): () => number {
+  let t = 0;
+  return () => (t += 1000);
+}
+
 const ids = async (service: CareerService) => {
   const listed = await service.list();
   return listed.ok ? listed.value.map((c) => c.id) : [];
@@ -64,7 +70,7 @@ describe('delete on the home screen with the real service (US-034)', () => {
     const service = await twoCareers();
     const listed = await service.list();
     const target = listed.ok ? listed.value.find((c) => c.id === A)! : undefined;
-    const flow = new DeleteFlow((id) => service.remove(id));
+    const flow = new DeleteFlow((id) => service.remove(id), { now: pace() });
     for (const steps of [0, 1, 2]) {
       flow.openActions(target!);
       if (steps >= 1) flow.chooseDelete();
@@ -79,7 +85,7 @@ describe('delete on the home screen with the real service (US-034)', () => {
     const service = await twoCareers();
     const listed = await service.list();
     const target = listed.ok ? listed.value.find((c) => c.id === A)! : undefined;
-    const flow = new DeleteFlow((id) => service.remove(id));
+    const flow = new DeleteFlow((id) => service.remove(id), { now: pace() });
     flow.openActions(target!);
     flow.chooseDelete();
     flow.proceed();
@@ -111,7 +117,7 @@ describe('delete on the home screen with the real service (US-034)', () => {
     const service = await twoCareers();
     const listed = await service.list();
     const target = listed.ok ? listed.value[0]! : undefined;
-    const flow = new DeleteFlow(async () => ({ ok: false }));
+    const flow = new DeleteFlow(async () => ({ ok: false }), { now: pace() });
     flow.openActions(target!);
     flow.chooseDelete();
     flow.proceed();

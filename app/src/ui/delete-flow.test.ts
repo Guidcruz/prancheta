@@ -1,13 +1,14 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CareerSummary } from '@lib/career';
 import { latestClubSet } from '../data/club-sets.ts';
-import { DeleteFlow } from './delete-flow';
+import { DeleteFlow, STEP_GUARD_MS } from './delete-flow';
 
 /*
  * The delete in two steps (US-034, inicio.md): only the confirm of step 2 removes, cancelling at
  * any step removes nothing and gives the focus back to the career's "Mais ações", a failure keeps
- * step 2 open with the message, a second tap while deleting does nothing, and the career open in
- * the frame cannot be deleted from Carreiras e backup.
+ * step 2 open with the message, a second tap while deleting does nothing, the career open in
+ * the frame cannot be deleted from Carreiras e backup, and a double or triple tap never goes
+ * through two sheets (review BLOCKER of T-025).
  */
 
 const club = latestClubSet()!.clubs[0]!;
@@ -21,9 +22,24 @@ const career: CareerSummary = {
   schemaVersion: 1,
 };
 
+/** A human pace: every read of the clock is 600 ms after the one before (past the guard). */
+function humanClock(): () => number {
+  let t = 0;
+  return () => (t += 600);
+}
+
 function flow(result: { ok: boolean } = { ok: true }, protectedId?: string) {
   const remove = vi.fn<(careerId: string) => Promise<{ ok: boolean }>>(async () => result);
-  return { remove, flow: new DeleteFlow(remove, () => protectedId) };
+  return {
+    remove,
+    flow: new DeleteFlow(remove, { protectedId: () => protectedId, now: humanClock() }),
+  };
+}
+
+/** A clock the test moves by hand. */
+function manualClock() {
+  const clock = { t: 1000, now: () => clock.t, wait: (ms: number) => void (clock.t += ms) };
+  return clock;
 }
 
 describe('delete with double confirmation (US-034)', () => {
@@ -73,9 +89,12 @@ describe('delete with double confirmation (US-034)', () => {
   });
 
   it('a service that throws counts as a failure, never a busy button forever', async () => {
-    const f = new DeleteFlow(async () => {
-      throw new Error('bug');
-    });
+    const f = new DeleteFlow(
+      async () => {
+        throw new Error('bug');
+      },
+      { now: humanClock() },
+    );
     f.openActions(career);
     f.chooseDelete();
     f.proceed();
@@ -86,7 +105,7 @@ describe('delete with double confirmation (US-034)', () => {
   it('a second tap while deleting does nothing, and cancel waits for it', async () => {
     let finish: (value: { ok: boolean }) => void = () => undefined;
     const remove = vi.fn(() => new Promise<{ ok: boolean }>((resolve) => (finish = resolve)));
-    const f = new DeleteFlow(remove);
+    const f = new DeleteFlow(remove, { now: humanClock() });
     f.openActions(career);
     f.chooseDelete();
     f.proceed();
@@ -116,5 +135,97 @@ describe('delete with double confirmation (US-034)', () => {
     expect(await f.confirm()).toEqual({ kind: 'ignored' });
     expect(remove).not.toHaveBeenCalled();
     expect(f.cancel()).toEqual({ kind: 'actions', careerId: career.id });
+  });
+});
+
+describe('a double or triple tap never deletes (review BLOCKER of T-025)', () => {
+  function tapped() {
+    const clock = manualClock();
+    const remove = vi.fn<(careerId: string) => Promise<{ ok: boolean }>>(async () => ({
+      ok: true,
+    }));
+    const f = new DeleteFlow(remove, { now: clock.now });
+    return { clock, remove, f };
+  }
+
+  it('a double tap on "Apagar carreira" in the actions sheet stays on step 1', async () => {
+    const { clock, remove, f } = tapped();
+    f.openActions(career);
+    clock.wait(STEP_GUARD_MS);
+    f.chooseDelete(); // first tap: step 1 opens under the finger
+    clock.wait(120);
+    f.proceed(); // second tap of the same double tap, on "Quero apagar"
+    expect(f.snapshot.stage).toBe('step1');
+    clock.wait(120);
+    expect(await f.confirm()).toEqual({ kind: 'ignored' }); // a third tap
+    expect(f.snapshot.stage).toBe('step1');
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('a double tap on "Quero apagar" does not delete in step 2', async () => {
+    const { clock, remove, f } = tapped();
+    f.openActions(career);
+    clock.wait(STEP_GUARD_MS);
+    f.chooseDelete();
+    clock.wait(STEP_GUARD_MS);
+    f.proceed(); // step 2 opens under the finger
+    clock.wait(150);
+    expect(await f.confirm()).toEqual({ kind: 'ignored' });
+    clock.wait(150);
+    expect(await f.confirm()).toEqual({ kind: 'ignored' }); // triple tap
+    expect(f.snapshot).toMatchObject({ stage: 'step2', busy: false });
+    expect(remove).not.toHaveBeenCalled();
+    // A deliberate tap, after the guard, deletes.
+    clock.wait(STEP_GUARD_MS);
+    expect(await f.confirm()).toMatchObject({ kind: 'deleted' });
+    expect(remove).toHaveBeenCalledTimes(1);
+  });
+
+  it('a fast triple tap from the actions sheet never reaches step 2', async () => {
+    const { clock, remove, f } = tapped();
+    f.openActions(career);
+    clock.wait(STEP_GUARD_MS);
+    for (let tap = 0; tap < 3; tap++) {
+      f.chooseDelete();
+      f.proceed();
+      await f.confirm();
+      clock.wait(100);
+    }
+    expect(f.snapshot.stage).toBe('step1');
+    expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('the guard counts from each sheet opening: right at the limit the tap counts', () => {
+    const { clock, f } = tapped();
+    f.openActions(career);
+    clock.wait(STEP_GUARD_MS - 1);
+    f.chooseDelete();
+    expect(f.snapshot.stage).toBe('actions');
+    clock.wait(1);
+    f.chooseDelete();
+    expect(f.snapshot.stage).toBe('step1');
+  });
+
+  it('cancel is never delayed: it removes nothing, so it works at once', () => {
+    const { f } = tapped();
+    f.openActions(career);
+    expect(f.cancel()).toEqual({ kind: 'actions', careerId: career.id });
+  });
+
+  it('"Tentar de novo" after a failure is not guarded again (step 2 did not reopen)', async () => {
+    const clock = manualClock();
+    const remove = vi
+      .fn<(careerId: string) => Promise<{ ok: boolean }>>()
+      .mockResolvedValueOnce({ ok: false })
+      .mockResolvedValueOnce({ ok: true });
+    const f = new DeleteFlow(remove, { now: clock.now });
+    f.openActions(career);
+    clock.wait(STEP_GUARD_MS);
+    f.chooseDelete();
+    clock.wait(STEP_GUARD_MS);
+    f.proceed();
+    clock.wait(STEP_GUARD_MS);
+    expect(await f.confirm()).toEqual({ kind: 'failed' });
+    expect(await f.confirm()).toMatchObject({ kind: 'deleted' });
   });
 });

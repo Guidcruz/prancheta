@@ -11,7 +11,21 @@ import type { CareerSummary } from '@lib/career';
  * gesture, at any step, end the flow without deleting and give the focus back to the career's
  * "Mais ações" button. A protected career (the one open in the frame) never leaves `actions`.
  * Before T-020 step 1 has no "Exportar carreira" (CEO decision 5 of T-025).
+ *
+ * A double tap must never delete (T-025 review, BLOCKER): each sheet opens where the player's
+ * finger still is, so the step buttons ignore taps for {@link STEP_GUARD_MS} after their sheet
+ * opens. The clock is injected, so the tests are deterministic.
  */
+
+/** How long after a sheet opens its step button ignores taps (a double or triple tap). */
+export const STEP_GUARD_MS = 500;
+
+export interface DeleteFlowOptions {
+  /** A career that cannot be deleted from here (the open one, in Carreiras e backup). */
+  readonly protectedId?: () => string | undefined;
+  /** A monotonic clock in ms (`performance.now` by default). */
+  readonly now?: () => number;
+}
 
 export type DeleteState =
   | { readonly stage: 'idle' }
@@ -42,19 +56,24 @@ export class DeleteFlow {
   private current: DeleteState = IDLE;
   private readonly remove: (careerId: string) => Promise<{ readonly ok: boolean }>;
   private readonly protectedId: () => string | undefined;
+  private readonly now: () => number;
+  /** When the sheet of the current stage opened. */
+  private openedAt = 0;
   readonly state: Readable<DeleteState> = { subscribe: this.store.subscribe };
 
-  /**
-   * @param remove `CareerService.remove`.
-   * @param protectedId A career that cannot be deleted from here (the open one, in Carreiras e
-   *   backup).
-   */
+  /** @param remove `CareerService.remove`. */
   constructor(
     remove: (careerId: string) => Promise<{ readonly ok: boolean }>,
-    protectedId: () => string | undefined = () => undefined,
+    options: DeleteFlowOptions = {},
   ) {
     this.remove = remove;
-    this.protectedId = protectedId;
+    this.protectedId = options.protectedId ?? (() => undefined);
+    this.now = options.now ?? (() => performance.now());
+  }
+
+  /** The sheet of the current stage opened too recently: the tap is the end of a double tap. */
+  private tooSoon(): boolean {
+    return this.now() - this.openedAt < STEP_GUARD_MS;
   }
 
   get snapshot(): DeleteState {
@@ -73,22 +92,22 @@ export class DeleteFlow {
   /** "Mais ações" of a career. Ignored while another flow is open. */
   openActions(career: CareerSummary): boolean {
     if (this.open) return false;
-    this.set({ stage: 'actions', career });
+    this.enter({ stage: 'actions', career });
     return true;
   }
 
   /** "Apagar carreira" in the actions sheet: step 1, which destroys nothing yet. */
   chooseDelete(): void {
     const now = this.current;
-    if (now.stage !== 'actions' || !this.canDelete(now.career)) return;
-    this.set({ stage: 'step1', career: now.career });
+    if (now.stage !== 'actions' || !this.canDelete(now.career) || this.tooSoon()) return;
+    this.enter({ stage: 'step1', career: now.career });
   }
 
   /** "Quero apagar" in step 1: the explicit second confirmation. */
   proceed(): void {
     const now = this.current;
-    if (now.stage !== 'step1') return;
-    this.set({ stage: 'step2', career: now.career, busy: false, failed: false });
+    if (now.stage !== 'step1' || this.tooSoon()) return;
+    this.enter({ stage: 'step2', career: now.career, busy: false, failed: false });
   }
 
   /**
@@ -106,7 +125,7 @@ export class DeleteFlow {
   /** "Apagar carreira" in step 2: the only call to `remove`. A second tap while busy is ignored. */
   async confirm(): Promise<DeleteOutcome> {
     const now = this.current;
-    if (now.stage !== 'step2' || now.busy || !this.canDelete(now.career)) {
+    if (now.stage !== 'step2' || now.busy || !this.canDelete(now.career) || this.tooSoon()) {
       return { kind: 'ignored' };
     }
     const career = now.career;
@@ -125,6 +144,12 @@ export class DeleteFlow {
     }
     this.set(IDLE);
     return { kind: 'deleted', career };
+  }
+
+  /** A new sheet opens: its step button waits for the guard. */
+  private enter(next: DeleteState): void {
+    this.openedAt = this.now();
+    this.set(next);
   }
 
   private set(next: DeleteState): void {

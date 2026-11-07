@@ -10,6 +10,10 @@
    * bottom, in the thumb's reach; the focus starts on the sheet's close button, never on the
    * confirm (BottomSheet opens with the native `showModal`, which focuses the first control).
    * The two steps of a delete are two uses of this component, driven by the screen.
+   *
+   * `cancelFirst` puts cancel above the confirm: the last step of a delete uses it so its
+   * destructive button is never where the button of the step before was (a double tap would
+   * land on it; T-025 review). The screen also ignores taps right after a sheet opens.
    */
   interface Props {
     open: boolean;
@@ -29,6 +33,8 @@
     busyLabel?: string;
     /** An error of the confirmation itself, in text ("Nada foi apagado..."). */
     error?: string;
+    /** Cancel above the confirm (the last step of a delete). */
+    cancelFirst?: boolean;
     onconfirm: () => void;
     oncancel: () => void;
   }
@@ -45,10 +51,15 @@
     busy = false,
     busyLabel,
     error,
+    cancelFirst = false,
     onconfirm,
     oncancel,
   }: Props = $props();
 </script>
+
+{#snippet cancel()}
+  <Button variant="ghost" fullWidth disabled={busy} onclick={oncancel}>{cancelLabel}</Button>
+{/snippet}
 
 <BottomSheet {open} {title} {closeLabel} onclose={oncancel}>
   <div class="content">
@@ -65,6 +76,7 @@
           onclick={'onclick' in item ? item.onclick : undefined}>{item.label}</Button
         >
       {/each}
+      {#if cancelFirst}{@render cancel()}{/if}
       <Button
         variant={confirmVariant}
         fullWidth
@@ -73,7 +85,7 @@
         icon={confirmVariant === 'danger' ? 'trash' : undefined}
         onclick={onconfirm}>{confirmLabel}</Button
       >
-      <Button variant="ghost" fullWidth disabled={busy} onclick={oncancel}>{cancelLabel}</Button>
+      {#if !cancelFirst}{@render cancel()}{/if}
     </div>
   </div>
 </BottomSheet>
@@ -99,8 +111,13 @@
   .message {
     color: var(--ink);
   }
+  /* Empty, it takes no room but stays in the tree, so the live region announces the failure. */
   .error:empty {
-    display: none;
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
   }
   .actions {
     display: flex;
