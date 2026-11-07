@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import clubsData from '../data/clubs.serie-a.json';
-import { isSafeDisplayText } from './safe-text.ts';
+import { isSafeDisplayText, isWellFormedText } from './safe-text.ts';
 
 /*
  * isSafeDisplayText (T-019, security review M2): what it refuses, and the real data passing it.
@@ -76,5 +76,24 @@ describe('isSafeDisplayText', () => {
     );
     expect(strings.length).toBeGreaterThan(1000);
     expect(strings.filter((text) => !isSafeDisplayText(text))).toEqual([]);
+  });
+});
+
+describe('isWellFormedText without String.prototype.isWellFormed (Firefox 113 to 118)', () => {
+  it('finds lone surrogates by itself, and never throws', () => {
+    const proto = String.prototype as { isWellFormed?: unknown };
+    const native = proto.isWellFormed;
+    proto.isWellFormed = undefined;
+    try {
+      expect(isWellFormedText('Jo\u00e3o')).toBe(true);
+      expect(isWellFormedText('gol \ud83e\udd45')).toBe(true);
+      expect(isWellFormedText('a\ud800')).toBe(false);
+      expect(isWellFormedText('\udc00a')).toBe(false);
+      expect(isWellFormedText('\udc00\ud800')).toBe(false);
+      expect(isSafeDisplayText('a\ud800')).toBe(false);
+      expect(isSafeDisplayText('Jo\u00e3o')).toBe(true);
+    } finally {
+      proto.isWellFormed = native;
+    }
   });
 });

@@ -1,4 +1,4 @@
-import { isSafeDisplayText } from '../safe-text.ts';
+import { isSafeDisplayText, isWellFormedText } from '../safe-text.ts';
 
 /*
  * The coach's nickname (US-014): the only text the player types, kept on the device and in the
@@ -22,7 +22,7 @@ export type CoachNameCheck =
 
 /** The nickname as it will be stored, or why it cannot be. Never throws. */
 export function checkCoachName(raw: string): CoachNameCheck {
-  if (typeof raw !== 'string' || !raw.isWellFormed()) return { ok: false, error: 'unsafe' };
+  if (typeof raw !== 'string' || !isWellFormedText(raw)) return { ok: false, error: 'unsafe' };
   const value = raw.normalize('NFC').trim();
   if (value === '') return { ok: false, error: 'empty' };
   if ([...value].length > COACH_NAME_MAX) return { ok: false, error: 'too-long' };
