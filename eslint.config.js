@@ -56,8 +56,9 @@ export default [
     linterOptions: { reportUnusedDisableDirectives: 'off' },
     rules: { 'no-restricted-imports': ['error', { patterns: [engineEntryOnly] }] },
   },
-  // Única exceção: a página do golden no navegador importa o módulo de teste que compartilha as
-  // entradas com o golden do Vitest (app/src/engine/testing/match-goldens.ts, sem node:fs).
+  // Única exceção: a página do golden no navegador importa os módulos de teste que compartilham
+  // as entradas com o golden do Vitest (app/src/engine/testing/match-goldens.ts e, desde a T-074,
+  // app/src/engine/testing/exp-table.ts, a tabela da exp do ADR-0020; os dois sem node:fs).
   // A negação '!**/engine/testing' existe pela semântica dos padrões (não se reinclui um arquivo
   // cuja pasta está excluída); por isso não pode existir engine/testing/index.ts, que ficaria
   // liberado também (tests/regression/engine-testing-no-index.test.ts falha se existir).
@@ -74,6 +75,7 @@ export default [
                 ...engineEntryOnly.group,
                 '!**/engine/testing',
                 '!**/engine/testing/match-goldens.ts',
+                '!**/engine/testing/exp-table.ts',
               ],
             },
           ],
