@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import {
+  POTENTIAL_STORED_MAX,
   getStandings,
   isProspect,
   type GameState,
@@ -7,7 +8,7 @@ import {
 } from '../../app/src/engine/index.ts';
 import { playUntil, startCareer } from './career.ts';
 import { expect, test } from './fixtures.ts';
-import { patchSave, readSave, type SaveJson } from './save.ts';
+import { changePlayer, patchSave, readSave, type SaveJson } from './save.ts';
 
 /*
  * Clube, Elenco e card do jogador (T-028; US-015, US-016, US-026): as "Medidas para o E2E" de
@@ -207,7 +208,7 @@ test.describe('Clube (clube.md; US-015, US-026)', () => {
     await startCareer(page);
     await patchSave(page, (save) => {
       const [first] = squadOf(save);
-      save.game.players[first!.id]!.injuryRounds = 2;
+      changePlayer(save, first!.id, { injuryRounds: 2 });
     });
     const line = block(page, 'next').getByRole('link', { name: /Desfalques: 1 lesionado/ });
     await expect(line).toBeVisible();
@@ -219,7 +220,7 @@ test.describe('Clube (clube.md; US-015, US-026)', () => {
     await startCareer(page, { realism: 'simplified' });
     await patchSave(page, (save) => {
       const [first] = squadOf(save);
-      save.game.players[first!.id]!.injuryRounds = 2;
+      changePlayer(save, first!.id, { injuryRounds: 2 });
     });
     await expect(block(page, 'next').locator('a.match')).toBeVisible();
     await expect(block(page, 'next')).not.toContainText('Desfalques');
@@ -309,20 +310,25 @@ test.describe('Elenco (elenco.md; US-016)', () => {
     let names = { injured: '', suspended: '', prospect: '', plain: '' };
     await patchSave(page, (save) => {
       const squad = squadOf(save);
-      const [a, b, c, d] = squad;
-      Object.assign(save.game.players[a!.id]!, { injuryRounds: 3, suspendedGames: 0 });
-      Object.assign(save.game.players[b!.id]!, { injuryRounds: 0, suspendedGames: 1 });
+      const [a, b] = squad;
+      // The prospect needs room for overall + 15 under the stored ceiling of the potential
+      // (99): any squad has players that low, whatever the career's seed.
+      const GAP = 15;
+      const c = squad.slice(2).find((p) => p.overall + GAP <= POTENTIAL_STORED_MAX)!;
+      const d = squad.slice(2).find((p) => p.id !== c.id)!;
+      changePlayer(save, a!.id, { injuryRounds: 3, suspendedGames: 0 });
+      changePlayer(save, b!.id, { injuryRounds: 0, suspendedGames: 1 });
       // A prospect and a player who is not one, by the engine's own rule.
-      Object.assign(save.game.players[c!.id]!, { age: 19, potential: c!.overall + 15 });
-      Object.assign(save.game.players[d!.id]!, { age: 30, potential: d!.overall });
+      changePlayer(save, c.id, { age: 19, potential: c.overall + GAP });
+      changePlayer(save, d.id, { age: 30, potential: d.overall });
       expect(isProspect(save.game.players[c!.id] as unknown as Player)).toBe(true);
       expect(isProspect(save.game.players[d!.id] as unknown as Player)).toBe(false);
       const display = (p: Player) => p.name.display;
       names = {
         injured: display(a!),
         suspended: display(b!),
-        prospect: display(c!),
-        plain: display(d!),
+        prospect: display(c),
+        plain: display(d),
       };
     });
     await openSquad(page);
