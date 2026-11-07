@@ -10,11 +10,13 @@ export {
   type CoachNameCheck,
   type CoachNameProblem,
 } from './coach-name.ts';
+export { LAST_SETUP_KEY, parseLastSetup, type LastSetup, type NewGameClub } from './new-game.ts';
 export { canonicalJson, paramsHash } from './params-hash.ts';
 export {
   CareerService,
   roundBlock,
   seasonOver,
+  summarySeasonOver,
   type CareerServiceOptions,
   type CareerSetup,
   type CareerState,
@@ -25,6 +27,7 @@ export {
   type PlayedRound,
   type RoundBlock,
 } from './service.ts';
+export { MAX_CAREERS } from '../save/index.ts';
 export type {
   CareerSave,
   CareerSummary,

@@ -19,6 +19,7 @@ import {
   type RoundPlan,
   type RoundReport,
   type TeamSheet,
+  validateClubs,
 } from '../../engine/index.ts';
 import type { ErrorLog } from '../errors/index.ts';
 import { gameIdentitySource } from '../generators/identity.ts';
@@ -39,6 +40,7 @@ import {
   type WrittenSnapshot,
 } from '../save/index.ts';
 import { checkCoachName, type CoachNameProblem } from './coach-name.ts';
+import { LAST_SETUP_KEY, parseLastSetup, type LastSetup, type NewGameClub } from './new-game.ts';
 import { paramsHash } from './params-hash.ts';
 
 /*
@@ -178,6 +180,11 @@ export function seasonOver(game: GameState): boolean {
   return game.phase !== 'season' || game.round > SEASON_ROUNDS;
 }
 
+/** The season of a career on the device is over (its next round is past the last one). */
+export function summarySeasonOver(summary: Pick<CareerSummary, 'round'>): boolean {
+  return summary.round > SEASON_ROUNDS;
+}
+
 /** Why the round cannot be played from this state, or `undefined` when it can. */
 export function roundBlock(state: CareerState): RoundBlock | undefined {
   if (state.unsaved !== undefined) return 'unsaved';
@@ -239,6 +246,57 @@ export class CareerService {
   /** The clubs a new career can choose: those of the latest set of club data (US-066). */
   clubs(): readonly ClubDef[] {
     return latestClubSet(this.clubSets)?.clubs ?? [];
+  }
+
+  /**
+   * The clubs of the new-game screen with the strength the engine will play them with: the
+   * data's, or the engine's default when a club has none (`validateClubs` fills it in, with a
+   * warning). Empty when the data does not pass the check: `create` would refuse it as well.
+   */
+  newGameClubs(): readonly NewGameClub[] {
+    const checked = validateClubs(this.clubs());
+    if (!checked.ok) {
+      this.logProgramming(checked.error, 'newGame.clubs', checked.detail);
+      return [];
+    }
+    return checked.value.flatMap((club) =>
+      typeof club.strength === 'number' ? [{ club, strength: club.strength }] : [],
+    );
+  }
+
+  /**
+   * The last new-game setup kept on the device (US-014, "última configuração"), or `undefined`
+   * the first time, after a failed read or when the stored value is not one (the screen then uses
+   * its defaults).
+   */
+  async lastSetup(): Promise<LastSetup | undefined> {
+    try {
+      const read = await this.store.readKv(LAST_SETUP_KEY);
+      if (!read.ok) {
+        this.logStorage(read.error, 'newGame.last', read.detail);
+        return undefined;
+      }
+      return parseLastSetup(read.value);
+    } catch (error) {
+      this.logException('newGame.last', error);
+      return undefined;
+    }
+  }
+
+  /**
+   * Keeps the realism and the match mode of a career just created as the next "última
+   * configuração". Only those two fields are written, whatever else `setup` carries: never the
+   * club nor the nickname (CEO decision 2 of T-025). A failure is only logged: the career is
+   * already created.
+   */
+  async rememberSetup(setup: LastSetup): Promise<void> {
+    const value: LastSetup = { realism: setup.realism, matchMode: setup.matchMode };
+    try {
+      const written = await this.store.writeKv(LAST_SETUP_KEY, value);
+      if (!written.ok) this.logStorage(written.error, 'newGame.last', written.detail);
+    } catch (error) {
+      this.logException('newGame.last', error);
+    }
   }
 
   /** The careers on the device, the most recent first (US-034). */

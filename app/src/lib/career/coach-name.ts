@@ -9,8 +9,8 @@ import { isSafeDisplayText, isWellFormedText } from '../safe-text.ts';
  */
 
 /**
- * Most characters (code points) of a nickname. Provisional, for the new-game screen of T-025 to
- * confirm with the ux-designer; well under the 100 of the save schema (`SAVE_LIMITS`).
+ * Most characters (code points) of a nickname: 24, confirmed by the CEO with the new-game screen
+ * (T-025, decision 1); well under the 100 of the save schema (`SAVE_LIMITS`).
  */
 export const COACH_NAME_MAX = 24;
 
