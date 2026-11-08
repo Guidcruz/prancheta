@@ -22,5 +22,7 @@
 | 0018 | Favorito por 20 pontos: meta "cerca de 65%" vira a faixa de 62% a 68%, centro realista 63%, com `kChance` 0,125; favorito e zebra com menos de 1 ponto de folga                                                                               | 2026-11-05 |
 | 0019 | Relatório da rodada fora do estado (`RoundRecap` e súmulas da temporada no save e no D1); `index.ts` só com o contrato e a API de ferramentas, travado por lint; `ENGINE_VERSION` 13                                                          | 2026-11-05 |
 | 0020 | `exp` do motor própria (port do fdlibm só com `+ - * /`), igual bit a bit em qualquer motor JavaScript e ao `Math.exp` do Node 22; transcendentes proibidas no motor inteiro; golden obrigatório no Chromium e no WebKit; `ENGINE_VERSION` 16 | 2026-11-07 |
+| 0021 | Ficha do técnico no save (formato v2) no envelope, `career.draft`, nunca no `GameState`; entre as rodadas, gravada no registro de `careers`; leituras do motor para a escalação; `ENGINE_VERSION` sem subir                                   | 2026-11-07 |
+| 0022 | **Proposta** (aguarda o CEO): posição secundária no jogador (`secondaryPosition`, `null` quando não tem), save v3 com migração pela semente da carreira e pelo id do jogador, `fit` lendo a secundária em todo o motor                        | 2026-11-08 |
 
 Decisões pendentes: `docs/status.md`.
