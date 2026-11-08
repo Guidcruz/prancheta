@@ -43,8 +43,9 @@
    * setor no LineupChip": the natural position, the same tag as the Elenco, never the slot's; the
    * slot is said by its place on the pitch and by the accessible name), the player's overall and
    * short name, at most one mark (icon plus text, never colour alone), the captain's "C" and, in
-   * Realismo completo, a thin condition bar. Without `name` it is an empty slot: no tag, no sector. The same component, with `ghost`, is the copy that
-   * follows the finger while dragging. Every text comes by prop.
+   * Realismo completo, a thin condition bar. Without `name` it is an empty slot: no tag, no
+   * sector. The same component, with `ghost`, is the copy that follows the finger while dragging.
+   * Every text comes by prop.
    */
   interface Props {
     /**
