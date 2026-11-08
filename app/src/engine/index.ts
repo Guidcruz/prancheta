@@ -23,7 +23,14 @@ export type { EngineWarning, Result } from './types.ts';
 
 export { validateParams } from './params.ts';
 export { validateClubs } from './clubs.ts';
-export { attributeKeysFor, fitLevel, isProspect, playerForm, validatePlayer } from './players.ts';
+export {
+  attributeKeysFor,
+  fitLevel,
+  isProspect,
+  playerForm,
+  takerValue,
+  validatePlayer,
+} from './players.ts';
 export { newGame } from './game.ts';
 export { playRound, prepareRound } from './round.ts';
 export { simulateMatch } from './match/simulate.ts';
@@ -68,6 +75,7 @@ export {
   RECENT_RATINGS_MAX,
   SHIRT_RANGE,
   SQUAD_SIZE,
+  TAKER_ATTRIBUTE,
   TRAITS,
 } from './players.ts';
 export { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
@@ -119,6 +127,7 @@ export type {
   PlayerNameText,
   PlayerProblem,
   PlayerResult,
+  TakerRole,
 } from './players.ts';
 export type {
   AiParams,

@@ -362,6 +362,29 @@ export function attributeOf(
   return clamp(rounded, ATTRIBUTE_RANGE.min, ATTRIBUTE_RANGE.max);
 }
 
+/** A set-piece role: penalty or free kick (partida.md, "Capitão e cobradores"). */
+export type TakerRole = 'penalty' | 'freeKick';
+
+/** The attribute that decides each set-piece role. */
+export const TAKER_ATTRIBUTE: { readonly [R in TakerRole]: 'finishing' | 'technique' } = {
+  penalty: 'finishing',
+  freeKick: 'technique',
+};
+
+/**
+ * The value that decides a set-piece role for a player: {@link attributeOf} of
+ * {@link TAKER_ATTRIBUTE} (finishing for penalties, technique for free kicks), with the derived
+ * value for a goalkeeper. The one reading of `pickCaptainAndTakers` (and so of `sheetRoles`) and
+ * the same number the match gives the appearance for `setPieceTaker`; the role screens show it and
+ * order by it. Pure, never throws.
+ */
+export function takerValue(
+  player: Pick<Player, 'attributes' | 'overall'>,
+  role: TakerRole,
+): number {
+  return attributeOf(player, TAKER_ATTRIBUTE[role]);
+}
+
 /**
  * Attribute keys of a position with weight > 0, from the heaviest down; ties keep the order of
  * the design table (so AM → technique, ST → finishing, GK → reflexes first).
