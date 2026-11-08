@@ -58,10 +58,12 @@
   .row:hover {
     background: var(--surface-2);
   }
-  /* The label keeps at least its longest word; a long value is the one cut, with an ellipsis
-     ("Automático: Ildo Albuque…", tatica.md). Without a value the label takes the row. */
+  /* The value shrinks, never the label: a long value is cut with an ellipsis ("Automático: Ildo
+     Albuque…", tatica.md) and the label stays on one line ("Tiros libres" at 360px). A label
+     longer than the whole row still wraps inside it. */
   .label {
-    flex: 1 1 auto;
+    flex: 1 0 auto;
+    max-inline-size: 100%;
   }
   .value {
     flex: 0 1 auto;
