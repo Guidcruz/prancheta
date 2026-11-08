@@ -339,7 +339,7 @@ test.describe('Funções (funcoes.md; US-018)', () => {
     await expect(sheet(page).getByText('no máximo 3')).toBeVisible();
   });
 
-  test('alvos: Subir, Descer, Tirar e as linhas de "Pôr" medem 44 × 44 px (medida 4)', async ({
+  test('alvos: Subir, Descer, Tirar e as linhas de "Pôr" medem 44 × 44 px; a folha sem rolagem lateral (medida 4)', async ({
     page,
   }) => {
     await withLists(page, (s) => ({ captains: [s[10]!, s[8]!] }));
@@ -347,6 +347,7 @@ test.describe('Funções (funcoes.md; US-018)', () => {
       page.viewportSize()!.width >= SIDE_FROM
         ? [{ width: 1280, height: 800 }]
         : [
+            { width: 360, height: 740 },
             { width: 390, height: 844 },
             { width: 844, height: 390 },
           ];
@@ -360,6 +361,19 @@ test.describe('Funções (funcoes.md; US-018)', () => {
         const b = await box(target);
         expect(b.width, `${size.width}`).toBeGreaterThanOrEqual(44);
         expect(b.height, `${size.width}`).toBeGreaterThanOrEqual(44);
+      }
+      // Nothing wider than the sheet: the page, the sheet and every line of it.
+      await noPageScroll(page);
+      const wide = await sheet(page)
+        .locator('.panel, .body, .entry')
+        .evaluateAll((els) =>
+          els.filter((el) => el.scrollWidth > el.clientWidth + 1).map((el) => el.className),
+        );
+      expect(wide, `${size.width}`).toEqual([]);
+      const dialog = await box(sheet(page));
+      for (const target of await targets.all()) {
+        const b = await box(target);
+        expect(b.x + b.width, `${size.width}`).toBeLessThanOrEqual(dialog.x + dialog.width + 0.5);
       }
       await sheet(page).getByRole('button', { name: 'Pronto' }).click();
       await expect(sheet(page)).toBeHidden();
