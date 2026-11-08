@@ -8,6 +8,7 @@ import {
   reshapeLineup,
   sheetProblems,
   sheetRoles,
+  takerValue,
   type DraftSheet,
   type Player,
   type PlayerId,
@@ -54,8 +55,6 @@ const fx = lineupFixture(testCareer('full', 1));
 const { game, sheet } = fx;
 const starterIds = sheet.lineup.starters as PlayerId[];
 const player = (id: PlayerId): Player => game.players[id]!;
-/** A taker's attribute as the card shows it; a goalkeeper has none (-1, the last). */
-const own = (p: Player, key: 'finishing' | 'technique') => p.attributes[key] ?? -1;
 
 /** The sheet with `ids` in the list of `role`, added one by one as the screen does. */
 function withList(base: DraftSheet, role: RoleName, ids: readonly PlayerId[]): DraftSheet {
@@ -281,14 +280,14 @@ describe('the lines of the Tática and the role sheets', () => {
     expect(view.intro).toBe(t('roles.taker.intro', 'pt-BR'));
     expect(view.list).toEqual([]);
     expect(view.others).toHaveLength(11);
-    const finishing = view.others.map((e) => own(player(e.id), 'finishing'));
+    const finishing = view.others.map((e) => takerValue(player(e.id), 'penalty'));
     expect(finishing).toEqual([...finishing].sort((x, y) => y - x));
     const holder = player(sheetRoles(game, TEST_CLUB, sheet.lineup).penalty.player!);
     expect(view.nowText).toBe(
-      `Agora: ${holder.name.display} (Finalização ${own(holder, 'finishing')})`,
+      `Agora: ${holder.name.display} (Finalização ${takerValue(holder, 'penalty')})`,
     );
     const first = view.others[0]!;
-    expect(first.detail).toBe(`Finalização ${own(player(first.id), 'finishing')}`);
+    expect(first.detail).toBe(`Finalização ${takerValue(player(first.id), 'penalty')}`);
     expect(first.addLabel).toBe(`Pôr ${player(first.id).name.full} na lista`);
     // With a list, no "Agora", and the listed are not among the others.
     const listed = roleSheetView(
@@ -303,16 +302,19 @@ describe('the lines of the Tática and the role sheets', () => {
     expect(listed.others.map((e) => e.id)).not.toContain(first.id);
     expect(listed.list[0]!.upLabel).toBe(`Subir ${player(first.id).name.full}`);
     expect(listed.list[0]!.removeLabel).toBe(`Tirar ${player(first.id).name.full} da lista`);
-    // The goalkeeper has no finishing of his own: the last line, with the dash.
-    const keeper = view.others.at(-1)!;
-    expect(player(keeper.id).position).toBe('GK');
-    expect(keeper.detail).toBe('Finalização —');
+    // The goalkeeper shows the engine's derived value (40% of the overall), with no dash, and
+    // sits where that value puts him; the first line is the holder the engine picks.
+    const keeper = view.others.find((e) => player(e.id).position === 'GK')!;
+    const derived = Math.max(1, Math.round(0.4 * player(keeper.id).overall));
+    expect(keeper.detail).toBe(`Finalização ${derived}`);
+    expect(view.others.map((e) => e.detail).join()).not.toContain('—');
+    expect(first.id).toBe(holder.id);
   });
 
   it('the free-kick sheet reads technique; the captain sheet, the age and "Líder"', () => {
     const fk = roleSheetView(game, TEST_CLUB, sheet, 'freeKick', 'pt-BR');
     expect(fk.title).toBe('Cobrador de falta');
-    const technique = fk.others.map((e) => own(player(e.id), 'technique'));
+    const technique = fk.others.map((e) => takerValue(player(e.id), 'freeKick'));
     expect(technique).toEqual([...technique].sort((x, y) => y - x));
 
     let g = game;

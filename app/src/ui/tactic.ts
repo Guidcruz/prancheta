@@ -1,10 +1,12 @@
 import {
   FORMATIONS,
   FORMATION_SLOTS,
+  TAKER_ATTRIBUTE,
   completeSheet,
   fitLevel,
   reshapeLineup,
   sheetRoles,
+  takerValue,
   type ClubId,
   type DraftSheet,
   type Formation,
@@ -218,31 +220,23 @@ export function addToRole(sheet: DraftSheet, role: RoleName, id: PlayerId): Draf
   return withList(sheet, role, [...list, id]);
 }
 
-const ROLE_ATTRIBUTE = { penalty: 'finishing', freeKick: 'technique' } as const;
-
 /**
- * The player's own attribute of a taker's role, as the card shows it; `undefined` for a
- * goalkeeper, who has neither (the engine's derived value is in its tools API, which ui/ does not
- * import; the holder "Agora" still comes from the engine's `sheetRoles`).
+ * The attribute that decides the role, as shown next to the name ("Finalização 84", "31 anos"):
+ * for a taker, the engine's own value (`takerValue`, the derived one for a goalkeeper), the
+ * number `sheetRoles` and the match decide by.
  */
-export function roleAttribute(player: Player, role: 'penalty' | 'freeKick'): number | undefined {
-  return player.attributes[ROLE_ATTRIBUTE[role]];
-}
-
-/** The attribute that decides the role, as shown next to the name ("Finalização 84", "31 anos"). */
 export function roleDetail(player: Player, role: RoleName, lang: Lang): string {
   if (role === 'captain') return tPlural('player.age', player.age, lang);
   return t('roles.detail.attribute', lang, {
-    attribute: t(`attr.${ROLE_ATTRIBUTE[role]}`, lang),
-    // A goalkeeper has no finishing nor technique of his own: the dash of a missing number.
-    value: roleAttribute(player, role) ?? '—',
+    attribute: t(`attr.${TAKER_ATTRIBUTE[role]}`, lang),
+    value: takerValue(player, role),
   });
 }
 
 /**
- * The order of "Outros titulares" (funcoes.md): by the attribute of the role, the highest first
- * (a goalkeeper, without it, last); for the captain, the rule of `sheetRoles` (the leaders first,
- * by overall, then the oldest). Ties keep the slot order (the sort is stable).
+ * The order of "Outros titulares" (funcoes.md): by the value that decides the role
+ * (`takerValue`), the highest first; for the captain, the rule of `sheetRoles` (the leaders
+ * first, by overall, then the oldest). Ties keep the slot order (the sort is stable).
  */
 function byRole(role: RoleName): (a: Player, b: Player) => number {
   if (role === 'captain') {
@@ -252,8 +246,7 @@ function byRole(role: RoleName): (a: Player, b: Player) => number {
       return a.trait === 'leader' ? b.overall - a.overall : b.age - a.age;
     };
   }
-  const value = (p: Player) => roleAttribute(p, role) ?? -1;
-  return (a, b) => value(b) - value(a);
+  return (a, b) => takerValue(b, role) - takerValue(a, role);
 }
 
 function roleBadges(
@@ -369,7 +362,9 @@ export function roleLineValue(
     : t('tactic.roles.auto', lang, { name: player.name.display });
 }
 
-/** The new order said in the sheet's live region: "Pênaltis: 1 Ildo Albuquerque, 2 Zuza Ferraz." */
+/**
+ * The new order said in the sheet's live region: "Pênaltis: 1 Ildo Albuquerque, 2 Zuza Ferraz."
+ */
 export function roleOrderMessage(
   game: GameState,
   sheet: DraftSheet,
