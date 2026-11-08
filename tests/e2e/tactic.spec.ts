@@ -18,7 +18,7 @@ import {
   withFixture,
   type Fixture,
 } from './lineup-fixture.ts';
-import { readDraft, readSave, type DraftJson, type SaveJson } from './save.ts';
+import { changePlayer, readDraft, readSave, type DraftJson, type SaveJson } from './save.ts';
 
 /*
  * Tática e Funções (T-077; US-018): as "Medidas para o E2E" de docs/design/telas/tatica.md e
@@ -243,6 +243,16 @@ test.describe('Tática (tatica.md; US-018)', () => {
       const draft = (save.career as unknown as { draft: DraftJson }).draft;
       const s = draft.lineup.starters as string[];
       draft.lineup.freeKickTakers = [s[10]!, s[8]!, s[7]!];
+      // The names are drawn with the squad: long ones, so the cut does not depend on the draw.
+      for (const [i, id] of draft.lineup.freeKickTakers.entries()) {
+        const long = ['Wellington', 'Maximiliano', 'Bartolomeu'][i]!;
+        const name = {
+          display: `${long} Albuquerque`,
+          full: `${long} Albuquerque`,
+          family: 'Albuquerque',
+        };
+        changePlayer(save, id, { name });
+      }
     });
     await reopenInSpanish(page);
     await page.setViewportSize({ width: 360, height: 740 });
