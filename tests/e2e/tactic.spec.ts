@@ -6,7 +6,7 @@ import {
   type Player,
   type Position,
 } from '../../app/src/engine/index.ts';
-import { startCareer } from './career.ts';
+import { reopenInSpanish, startCareer } from './career.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
   SIDE_FROM,
@@ -233,6 +233,42 @@ test.describe('Tática (tatica.md; US-018)', () => {
     for (const role of ['captain', 'penalty', 'freeKick'] as const) {
       await expect(roleLine(page, role)).toContainText(/Automático: \S+/);
     }
+  });
+
+  test('em es a 360 px, "Tiros libres" fica numa linha e a lista longa é cortada com reticências', async ({
+    page,
+  }) => {
+    test.skip(page.viewportSize()!.width >= SIDE_FROM, 'medida do celular');
+    await withFixture(page, (save: SaveJson) => {
+      const draft = (save.career as unknown as { draft: DraftJson }).draft;
+      const s = draft.lineup.starters as string[];
+      draft.lineup.freeKickTakers = [s[10]!, s[8]!, s[7]!];
+    });
+    await reopenInSpanish(page);
+    await page.setViewportSize({ width: 360, height: 740 });
+    await page
+      .getByRole('navigation', { name: 'Navegación principal' })
+      .getByRole('link', { name: 'Plantel' })
+      .click();
+    await view(page, 'Táctica').click();
+    const line = roleLine(page, 'freeKick');
+    await expect(line.locator('.label')).toHaveText('Tiros libres');
+    const box = await line.evaluate((row) => {
+      const label = row.querySelector('.label') as HTMLElement;
+      const value = row.querySelector('.value') as HTMLElement;
+      return {
+        labelHeight: label.getBoundingClientRect().height,
+        lineHeight: parseFloat(getComputedStyle(label).lineHeight),
+        labelFits: label.scrollWidth <= label.clientWidth,
+        valueCut: value.scrollWidth > value.clientWidth,
+        spill: row.scrollWidth > row.clientWidth + 1,
+      };
+    });
+    expect(box.labelHeight, 'rótulo em uma linha').toBeLessThan(box.lineHeight * 1.5);
+    expect(box.labelFits).toBe(true);
+    expect(box.valueCut, 'valor cortado').toBe(true);
+    expect(box.spill).toBe(false);
+    await noPageScroll(page);
   });
 });
 

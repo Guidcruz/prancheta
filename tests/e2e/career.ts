@@ -67,3 +67,18 @@ export async function playUntil(page: Page, round: number): Promise<void> {
     await saveSettled(page);
   }
 }
+
+/**
+ * Reabre a carreira mais recente com o navegador em espanhol: o jogo lê `navigator.language` ao
+ * carregar (`detectLang`), e a carreira continua a mesma. Termina na moldura, já em espanhol.
+ */
+export async function reopenInSpanish(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    Object.defineProperty(Navigator.prototype, 'language', { configurable: true, get: () => 'es' });
+  });
+  await page.reload();
+  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
+  // "Continuar" is the same word in Spanish.
+  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'Navegación principal' })).toBeVisible();
+}
