@@ -40,6 +40,8 @@ Seis posições, uma natural por jogador:
 
 Na tela: 1,00 sem marca; 0,85 a 0,90 "improvisado" (ícone amarelo + texto); abaixo de 0,85 "fora de posição" (ícone vermelho + texto). Nunca só por cor.
 
+**Posição secundária (projetada em 2026-11-08, ainda não implementada):** cerca de 1 em 3 jogadores de linha terá uma secundária, vizinha da natural (`FIT ≥ 0,85`), onde rende 0,95 em vez da célula da tabela; goleiro nunca. Vem junto a escalação automática "natural primeiro". Regra completa, geração, migração, parâmetro e casos de borda em [posicao-secundaria.md](posicao-secundaria.md); até a implementação, vale a tabela acima para todos.
+
 ## Atributos e nota geral
 
 Linha: `speed` (velocidade), `technique` (técnica), `passing` (passe), `finishing` (finalização), `marking` (marcação), `physical` (físico). Goleiro: `reflexes` (reflexos), `positioning` (posicionamento), `aerial` (jogo aéreo), `rushing` (saída do gol), `distribution` (reposição), `physical` (físico).
@@ -172,7 +174,7 @@ idade = idade + 1
 | `round`             | `Math.round` (meio para cima: 2,5 → 3 e −2,5 → −2), como no resto do motor                                                                                                                                                                                                                                               |
 | teto                | `potential − overall`, que é sempre ≥ 0; só corta Δ positivo                                                                                                                                                                                                                                                             |
 | atributos           | `fitAttributesToOverall(attributes, position, alvo)` ("Ajuste ao alvo"); com `alvo = overall`, os atributos não mudam                                                                                                                                                                                                    |
-| o que não muda      | `potential`, `peakAge`, `growth`, posição, traço, camisa                                                                                                                                                                                                                                                                 |
+| o que não muda      | `potential`, `peakAge`, `growth`, posição (e a secundária, quando existir; [posicao-secundaria.md](posicao-secundaria.md)), traço, camisa                                                                                                                                                                                |
 
 - Cada jogador tem a própria curva (`PROJETO.md`): `peakAge` sorteado entre 26 e 29 e `growth` entre `players.growthMin = 0.8` e `players.growthMax = 1.2`.
 - Minutos (1,0 a 1,2) e moral (0,9 a 1,1) são os multiplicadores da fórmula das Brasilidades; CT e auxiliar entram na Etapa 3 como mais dois multiplicadores. A referência dos minutos (60% de 38 jogos de 90 minutos, 2.052 minutos) é constante.
@@ -243,6 +245,8 @@ Com a escada anterior, o protótipo deu campeão com 73,7 pontos e 17º com 40,7
 | `players.growthMax`         | 1,2           | 1,0–1,5 | idem                                            |
 | `generation.clubStrengthSd` | 1,5           | 0–4     | cada carreira com favoritos um pouco diferentes |
 
+Projetado, ainda fora do `players.json`: `players.secondaryChance` = 0,33 (faixa 0–0,5), em [posicao-secundaria.md](posicao-secundaria.md), "Parâmetros e limites".
+
 A evolução não tem outro parâmetro: `growthMin` e `growthMax` são o botão do quanto os jovens crescem (e da inflação da liga, decisão 11 de `balance-targets.md`). Curva, ruído de 1, multiplicadores de minutos e de moral e a referência de minutos são constantes.
 
 **Constantes:** tabelas de posição, pesos, curva de idade, chances de traço, efeitos de moral, composição do elenco (3/5/4/4/4/5 = 25, com os grupos titulares 11, reservas 7, elenco 4, jovens 3), faixas de overall por grupo, limiar de "promessa" (até 23 anos e `potential − overall ≥ 10`) e a regra de suspensão (3 amarelos ou 1 vermelho, em `partida.md`). Ficam no código, documentados aqui, porque são regra do jogo e não botão do `/balance`; viram parâmetro só se uma rodada do `/balance` precisar mexer neles.
@@ -274,6 +278,8 @@ A evolução não tem outro parâmetro: `growthMin` e `growthMax` são o botão 
 | `yellowCount`    | 0 a 2                   | inteiro | o 3º amarelo zera o contador e gera suspensão                                                                                                                                                                               |
 | lesão, suspensão | ≥ 0                     | inteiro | contadores                                                                                                                                                                                                                  |
 
+Projetado (com o ADR do save): `secondaryPosition`, uma posição de linha diferente da natural, ou nenhuma; goleiro nunca. Regra do validador em [posicao-secundaria.md](posicao-secundaria.md), "Parâmetros e limites".
+
 ## Casos de borda
 
 | Caso                                                     | Regra                                                                                                                                                                                  |
@@ -292,3 +298,5 @@ A evolução não tem outro parâmetro: `growthMin` e `growthMax` são o botão 
 | Clube sem titular ≥ 29 para ídolo                        | ídolo é o titular de maior overall                                                                                                                                                     |
 | Dois jogadores gerados com o mesmo nome no clube         | o gerador de nomes resolve (fora do motor); o motor usa IDs                                                                                                                            |
 | Lista de clubes sem `strength` ou com porte inválido     | `strength` ausente vira 70; porte inválido vira médio; registra aviso                                                                                                                  |
+
+Casos de borda da posição secundária (goleiro, save antigo, tabela que muda, escalação com natural e secundário empatados): [posicao-secundaria.md](posicao-secundaria.md), "Casos de borda".
