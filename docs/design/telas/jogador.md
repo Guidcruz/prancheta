@@ -45,6 +45,30 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 - **Exemplo** (o atacante de `jogadores.md`, nota 76): velocidade 80 e finalização 81 são pontos fortes; técnica 72 e físico 70 ficam sem cor; passe 60 e marcação 30 são pontos fracos.
 - **Leitura:** o número visível fica `aria-hidden` e o texto escondido usa `level.reading` com a palavra do estado ("81, ponto forte"); sem estado, sem `srText`, e o leitor lê só o número.
 
+### Posição secundária
+
+Decisão do CEO de 2026-11-08 (especificado na T-080; entra com a T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
+
+- **Onde:** um bloco logo abaixo do cabeçalho, antes dos selos, com a largura toda, só quando o jogador tem secundária. É um `dl` com um par: o `dt` é `player.secondaryPosition` ("Posição secundária", rascunho), em `caption` e `ink-muted`; o `dd` tem a sigla na PositionTag `size="sm"` neutra (sem `sector`, `hidden`) e a posição por extenso (`position.<P>`, "Volante") em `body-strong`. O `dt` e o `dd` ficam na mesma linha, com `flex-wrap`: em es e en, a 360px, o `dd` desce para a linha de baixo sem rolar.
+- **Embaixo do par:** `player.secondaryPosition.hint`, em `caption` e `ink-muted`. É uma frase curta sobre o que é a posição secundária e sobre ele render um pouco menos ali que na natural.
+- **Por que fora da coluna do cabeçalho:** a 360px, a coluna ao lado do avatar tem cerca de 200px. "Posição secundária" mais a sigla e o nome já quebrariam ali, e duas linhas a mais deixariam o cabeçalho mais alto que o avatar.
+- **A sigla secundária é neutra**, como no Elenco ([elenco.md](elenco.md#posição-secundária)): a cor do setor fica só na sigla natural do cabeçalho.
+- **Sem secundária, e sempre no goleiro:** o bloco não existe (nem "—").
+- **Nenhum número calculado:** a tela não lê `SECONDARY_FIT` nem `fit` (ADR-0022: ler em `ui/` é BLOCKER, e `fit` não está no contrato), então "rende ~N" não entra. Se a ajuda citar "95%", o número é texto fixo do conteúdo (ver "Decisões pendentes", na T-080, em [componentes.md](componentes.md#casca-da-t-080-posição-secundária)).
+- **Atributos e nota:** continuam os da posição natural; nada muda nas seções de baixo.
+- **Duas colunas (folha ≥ 480px):** o bloco fica acima da grade, com a largura toda, como os selos.
+- **Leitor de tela:** "Posição secundária, Volante", depois a frase de ajuda. A sigla é `aria-hidden`.
+- **Contraste:** `ink-muted` e `ink` sobre `surface-1`, pares já conferidos.
+
+Textos: `player.secondaryPosition` (rótulo, `dt`) e `player.secondaryPosition.hint` (ajuda curta).
+
+Medidas para o E2E (T-081):
+
+1. No card de um volante forçado com secundária ZAG, há um `dt` com o texto de `player.secondaryPosition`, e o `dd` dele tem "Zagueiro" e uma caixinha `aria-hidden` sem classe `sector-*`. A frase de `player.secondaryPosition.hint` está visível.
+2. No card de um jogador sem secundária e no de um goleiro, não há `dt` com esse texto.
+3. A 360×740 e a 844×390, nos três idiomas, o card não rola na horizontal (`scrollWidth <= clientWidth` no corpo da folha). O `dd` fica inteiro dentro da folha.
+4. A sigla do cabeçalho continua com a classe de setor da posição natural (medida 12).
+
 Sem contrato, salário, valor nem potencial na 1a. Não há botão primário: a folha é de leitura, e o primário da tela continua sendo o "Jogar rodada" que fica por baixo.
 
 ## Ao alcance do polegar
