@@ -14,6 +14,7 @@
   import { t } from '@lib/i18n';
   import LineupChip from '../components/LineupChip.svelte';
   import type { StatusBarAction } from '../components/LineupStatusBar.svelte';
+  import { SECTOR_OF } from '../components/sectors';
   import {
     cardOrder,
     nameList,
@@ -355,6 +356,7 @@
       x: drag.x,
       y: drag.y,
       code: t(`position.${player.position}.short`, lang),
+      sector: SECTOR_OF[player.position],
       name: player.name.display,
       overall: player.overall,
     };
@@ -469,7 +471,8 @@
   <div class="ghost" style="left: {ghost.x}px; top: {ghost.y}px" aria-hidden="true">
     <LineupChip
       ghost
-      slotCode={ghost.code}
+      positionCode={ghost.code}
+      sector={ghost.sector}
       a11yLabel=""
       name={ghost.name}
       overall={ghost.overall}

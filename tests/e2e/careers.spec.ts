@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { careerActions, nextRound, startCareer } from './career.ts';
+import { careerActions, nextRound, saveSettled, startCareer } from './career.ts';
 import { expect, playButton, test } from './fixtures.ts';
 
 /*
@@ -77,6 +77,7 @@ test.describe('US-034: várias carreiras', () => {
     const before = await nextRound(page);
     await playButton(page).click();
     await expect.poll(() => nextRound(page)).toBe(before + 1);
+    await saveSettled(page);
 
     await page.goto('/jogo/');
     // The first is now the most recent: featured. The second is the row and still on round 1.

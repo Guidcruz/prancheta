@@ -21,6 +21,7 @@ import { t, tPlural } from '@lib/i18n';
 import type { ChipMark } from './components/LineupChip.svelte';
 import type { LineupIssue } from './components/LineupIssues.svelte';
 import type { PitchSlot } from './components/LineupPitch.svelte';
+import { SECTOR_OF } from './components/sectors';
 import type { StatusBadgeItem } from './components/StatusBadge.svelte';
 import type { StrengthItem } from './components/StrengthBars.svelte';
 import { playerBadges, shownCondition, sortPlayers, squadPlayers, type Realism } from './squad';
@@ -72,7 +73,10 @@ export function playerAt(sheet: DraftSheet, place: Place): PlayerId | null {
  * The sheet the screen shows and edits: the coach's draft reconciled with the squad (an id that
  * left is a free slot, the bench has its 7 places), or, while the coach never touched it, the
  * engine's suggestion for the coach (`suggestSheet` with `controller: 'human'`; ADR-0021,
- * "Ausente": the round plays that same sheet).
+ * "Ausente": the round plays that same sheet) with the role lists empty (CEO decision 5 of
+ * T-029: they start as "Automático"). The suggestion's lists hold one name each, the one the
+ * automatic rule picks (`pickCaptainAndTakers`, the rule of `sheetRoles`), so the holders shown
+ * are the ones the round plays.
  */
 export function coachSheet(
   game: GameState,
@@ -80,9 +84,14 @@ export function coachSheet(
   draft: DraftSheet | undefined,
   params: Pick<GameParams, 'ai'>,
 ): DraftSheet {
-  const sheet =
-    draft ?? draftFromSheet(suggestSheet(game, params, clubId, undefined, { controller: 'human' }));
-  return reconcileDraft(game, clubId, sheet);
+  if (draft !== undefined) return reconcileDraft(game, clubId, draft);
+  const suggested = draftFromSheet(
+    suggestSheet(game, params, clubId, undefined, { controller: 'human' }),
+  );
+  return reconcileDraft(game, clubId, {
+    lineup: { ...suggested.lineup, captains: [], penaltyTakers: [], freeKickTakers: [] },
+    tactic: suggested.tactic,
+  });
 }
 
 /**
@@ -173,7 +182,7 @@ export function cardOrder(game: GameState, clubId: ClubId, sheet: DraftSheet): P
 
 export type RoleName = 'captain' | 'penalty' | 'freeKick';
 
-const ROLE_LISTS = {
+export const ROLE_LISTS = {
   captain: 'captains',
   penalty: 'penaltyTakers',
   freeKick: 'freeKickTakers',
@@ -399,7 +408,11 @@ function stateOf(place: Place, states: PlaceStates): PitchSlot['state'] {
   return 'idle';
 }
 
-/** The 11 slots of the pitch, in the order of the formation (the engine's). */
+/**
+ * The 11 slots of the pitch, in the order of the formation (the engine's). Each filled slot shows
+ * the player's natural position code painted by his sector (escalacao.md, "Cor de setor no
+ * LineupChip"); the slot's own position is in the accessible name and the mark.
+ */
 export function pitchSlots(
   game: GameState,
   clubId: ClubId,
@@ -413,7 +426,7 @@ export function pitchSlots(
     const id = sheet.lineup.starters[index] ?? null;
     const player = id === null ? undefined : game.players[id];
     const place: Place = { part: 'starters', index };
-    const base = { slotCode: code(slot, lang), state: stateOf(place, states) };
+    const base = { state: stateOf(place, states) };
     if (player === undefined) {
       return {
         ...base,
@@ -440,6 +453,8 @@ export function pitchSlots(
     const mark = slotMark(player, slot, lang);
     return {
       ...base,
+      positionCode: code(player.position, lang),
+      sector: SECTOR_OF[player.position],
       a11yLabel: [label, ...extra].join(', '),
       name: player.name.display,
       overall: player.overall,

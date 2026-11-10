@@ -4,7 +4,7 @@ import type { ClubState, GameState } from './game.ts';
 import { BENCH_SIZE, emptySheet, type Lineup, type Tactic, type TeamSheet } from './lineup.ts';
 import { MARKERS } from './match/rules.ts';
 import type { AiParams, GameParams } from './params.ts';
-import { attributeOf, fit, type Player } from './players.ts';
+import { fit, takerValue, type Player } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
 import { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
 import {
@@ -256,7 +256,7 @@ export function pickBench(rest: readonly Player[]): Player[] {
 /**
  * Captain and takers among the starters (ia-clubes.md, "Escalação", step 6; partida.md, "Capitão
  * e cobradores", for the ties): captain = the leader of highest overall, else the oldest; penalty
- * = highest `finishing`; free kick = highest `technique` (attributes through `attributeOf`). Ties
+ * = highest `finishing`; free kick = highest `technique` (through `takerValue`). Ties
  * keep the first in slot order. Each list has one player (none without starters): when he leaves
  * the pitch the match applies the same rule to who is there.
  */
@@ -272,15 +272,12 @@ export function pickCaptainAndTakers(
       leader = player;
     }
     if (oldest === undefined || player.age > oldest.age) oldest = player;
-    if (
-      penalty === undefined ||
-      attributeOf(player, 'finishing') > attributeOf(penalty, 'finishing')
-    ) {
+    if (penalty === undefined || takerValue(player, 'penalty') > takerValue(penalty, 'penalty')) {
       penalty = player;
     }
     if (
       freeKick === undefined ||
-      attributeOf(player, 'technique') > attributeOf(freeKick, 'technique')
+      takerValue(player, 'freeKick') > takerValue(freeKick, 'freeKick')
     ) {
       freeKick = player;
     }

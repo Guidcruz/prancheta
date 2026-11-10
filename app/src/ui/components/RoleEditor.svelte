@@ -1,5 +1,6 @@
 <script lang="ts" module>
   import type { StatusBadgeItem } from './StatusBadge.svelte';
+  import type { Sector } from './sectors';
 
   /** A starter as the role sheet shows him. */
   export interface RoleEntry {
@@ -7,6 +8,8 @@
     name: string;
     /** "ATA". */
     positionCode: string;
+    /** `SECTOR_OF[player.position]`: the colour of the position tag (design-system.md). */
+    sector?: Sector;
     /** The attribute that decides the role: "Finalização 84", "Técnica 77", "31 anos". */
     detail: string;
     /** "Líder" on the captain sheet (StatusBadge `leader`). */
@@ -21,6 +24,7 @@
 
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import PositionTag from './PositionTag.svelte';
   import StatusBadge from './StatusBadge.svelte';
 
   /**
@@ -30,7 +34,8 @@
    * applies when nobody of it is on the pitch, and who that is now. At most `max` names; when
    * the list is full, the add buttons are disabled and a line says why. Every change is the
    * screen's and takes effect at once (no "Salvar"); the screen keeps the focus on the moved
-   * entry and announces the new order.
+   * entry and announces the new order. The buttons carry `data-role-tool` (`up`, `down`,
+   * `remove`) inside `data-role-entry`, and the add lines `data-role-add`, for that focus.
    */
   interface Props {
     /** "Vale o primeiro da lista que estiver em campo." */
@@ -47,6 +52,8 @@
     nowText?: string;
     /** "A lista tem no máximo 3. Tire alguém para pôr outro." */
     fullText: string;
+    /** "Ainda não há titulares escalados.": shown instead of the other starters, with none. */
+    noStartersText?: string;
     max: number;
     list: readonly RoleEntry[];
     others: readonly RoleEntry[];
@@ -63,6 +70,7 @@
     autoText,
     nowText,
     fullText,
+    noStartersText,
     max,
     list,
     others,
@@ -76,7 +84,7 @@
 </script>
 
 {#snippet who(entry: RoleEntry)}
-  <span class="rotulo pos">{entry.positionCode}</span>
+  <PositionTag code={entry.positionCode} sector={entry.sector} />
   <span class="who">
     <span class="body-strong name">{entry.name}</span>
     <span class="caption detail">
@@ -103,6 +111,7 @@
               <button
                 type="button"
                 class="tool"
+                data-role-tool="up"
                 aria-label={entry.upLabel}
                 disabled={i === 0}
                 onclick={() => onup(entry.id)}><Icon name="arrow-up" size={20} /></button
@@ -110,6 +119,7 @@
               <button
                 type="button"
                 class="tool"
+                data-role-tool="down"
                 aria-label={entry.downLabel}
                 disabled={i === list.length - 1}
                 onclick={() => ondown(entry.id)}><Icon name="arrow-down" size={20} /></button
@@ -117,6 +127,7 @@
               <button
                 type="button"
                 class="tool"
+                data-role-tool="remove"
                 aria-label={entry.removeLabel}
                 onclick={() => onremove(entry.id)}><Icon name="close" size={20} /></button
               >
@@ -134,6 +145,7 @@
 
   <section aria-labelledby="{id}-others">
     <h3 class="body-strong heading" id="{id}-others">{othersTitle}</h3>
+    {#if noStartersText}<p class="body muted">{noStartersText}</p>{/if}
     {#if full}<p class="caption muted" id="{id}-full">{fullText}</p>{/if}
     <ul class="entries">
       {#each others as entry (entry.id)}
@@ -141,6 +153,7 @@
           <button
             type="button"
             class="entry add"
+            data-role-add={entry.id}
             aria-label={entry.addLabel}
             disabled={full}
             aria-describedby={full ? `${id}-full` : undefined}
@@ -197,16 +210,6 @@
     flex: none;
     inline-size: var(--space-4);
     text-align: center;
-  }
-  .pos {
-    display: inline-grid;
-    place-items: center;
-    flex: none;
-    min-inline-size: calc(var(--space-8) + var(--space-1));
-    padding: calc(var(--space-1) / 2) var(--space-1);
-    border: 1px solid var(--line);
-    border-radius: var(--radius-sm);
-    color: var(--ink-muted);
   }
   .who {
     display: flex;

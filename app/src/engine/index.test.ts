@@ -47,6 +47,7 @@ const CONTRACT = [
   'completeSheet',
   'sheetRoles',
   'sheetProblems',
+  'takerValue',
   // closed lists and field ranges
   'PARAM_RANGES',
   'SEASON_ROUNDS',
@@ -68,6 +69,7 @@ const CONTRACT = [
   'RECENT_RATINGS_MAX',
   'SHIRT_RANGE',
   'SQUAD_SIZE',
+  'TAKER_ATTRIBUTE',
   'TRAITS',
   'FORMATIONS',
   'FORMATION_SLOTS',

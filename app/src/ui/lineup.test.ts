@@ -6,6 +6,7 @@ import {
   draftFromSheet,
   fitLevel,
   sheetProblems,
+  sheetRoles,
   playRound,
   prepareRound,
   sheetStrength,
@@ -14,7 +15,9 @@ import {
   type GameState,
   type TeamSheet,
 } from '@engine';
+import { t } from '@lib/i18n';
 import { loadGameParams } from '@lib/params';
+import { SECTOR_OF } from './components/sectors';
 import {
   benchLines,
   benchRows,
@@ -81,8 +84,21 @@ describe('the sheet shown (coachSheet; ADR-0021)', () => {
 
 describe('the untouched sheet is the one the round plays (ADR-0021, "Ausente")', () => {
   // Without a draft the frame plays without a sheet, so the engine's own suggestion goes to the
-  // match: the screen must show exactly that one, lineup and tactic.
-  const asDraft = (s: TeamSheet) => draftFromSheet(s);
+  // match: the screen must show exactly that one, lineup and tactic. Its role lists start empty
+  // (CEO decision 5 of T-029, "Automático"), and the automatic rule gives the very holders of the
+  // suggestion's one-name lists.
+  const asDraft = (s: TeamSheet): DraftSheet => {
+    const draft = draftFromSheet(s);
+    return {
+      ...draft,
+      lineup: { ...draft.lineup, captains: [], penaltyTakers: [], freeKickTakers: [] },
+    };
+  };
+  /** Captain, penalty and free-kick taker of a sheet, as `sheetRoles` reads them. */
+  const holders = (state: GameState, lineup: DraftSheet['lineup']) => {
+    const roles = sheetRoles(state, TEST_CLUB, lineup);
+    return [roles.captain.player, roles.penalty.player, roles.freeKick.player];
+  };
   for (const round of [1, 5, 20]) {
     for (const mode of MATCH_MODES) {
       it(`round ${round}, ${mode}: prepareRound's suggestion and the lastSheets of a round played`, () => {
@@ -91,7 +107,17 @@ describe('the untouched sheet is the one the round plays (ADR-0021, "Ausente")',
         const shown = coachSheet(state, TEST_CLUB, undefined, params);
         const plan = prepareRound(state, params, { coaches });
         if (!plan.ok) throw new Error(plan.error);
-        expect(shown).toEqual(asDraft(plan.value.suggested[TEST_CLUB]!));
+        const suggested = plan.value.suggested[TEST_CLUB]!;
+        expect(shown).toEqual(asDraft(suggested));
+        // "Automático: {nome}" names the one the suggestion's list holds.
+        const listed = draftFromSheet(suggested).lineup;
+        expect(listed.captains).toHaveLength(1);
+        expect(holders(state, shown.lineup)).toEqual([
+          listed.captains[0],
+          listed.penaltyTakers[0],
+          listed.freeKickTakers[0],
+        ]);
+        expect(holders(state, shown.lineup)).toEqual(holders(state, listed));
         const played = playRound(state, params, {
           round: state.round,
           sheets: {},
@@ -381,7 +407,10 @@ describe('the slots and rows read by screen readers (CEO: positions in full)', (
     const slots = pitchSlots(game, TEST_CLUB, sheet, {}, 'pt-BR');
     expect(slots).toHaveLength(11);
     const misplaced = slots[9]!;
-    expect(misplaced.slotCode).toBe('ATA');
+    // The tag is the player's natural position and sector, not the slot's (escalacao.md, "Cor de
+    // setor no LineupChip"): a centre-back on the striker's slot keeps ZAG, in the defence colour.
+    expect(misplaced.positionCode).toBe('ZAG');
+    expect(misplaced.sector).toBe('def');
     expect(misplaced.a11yLabel).toBe(
       `Atacante: ${fx.misplaced.name.full}, nota ${fx.misplaced.overall}, condição 100, fora de posição`,
     );
@@ -389,6 +418,25 @@ describe('the slots and rows read by screen readers (CEO: positions in full)', (
     // The captain by the engine's rule, once.
     expect(slots.filter((s) => s.captain)).toHaveLength(1);
     expect(slots.find((s) => s.captain)!.a11yLabel).toMatch(/, capitão/);
+  });
+
+  it('every filled slot has the code and sector of its player; an empty slot has neither', () => {
+    const slots = pitchSlots(game, TEST_CLUB, sheet, {}, 'pt-BR');
+    slots.forEach((s, i) => {
+      const player = game.players[sheet.lineup.starters[i]!]!;
+      expect(s.positionCode).toBe(t(`position.${player.position}.short`, 'pt-BR'));
+      expect(s.sector).toBe(SECTOR_OF[player.position]);
+    });
+    const empty: DraftSheet = {
+      ...sheet,
+      lineup: {
+        ...sheet.lineup,
+        starters: sheet.lineup.starters.map((id, i) => (i === 1 ? null : id)),
+      },
+    };
+    const free = pitchSlots(game, TEST_CLUB, empty, {}, 'pt-BR')[1]!;
+    expect(free).not.toHaveProperty('positionCode');
+    expect(free).not.toHaveProperty('sector');
   });
 
   it('an injured starter: the mark of the injury wins, and the name says both', () => {

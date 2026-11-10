@@ -33,18 +33,28 @@
 
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import PositionTag from './PositionTag.svelte';
+  import type { Sector } from './sectors';
 
   /**
    * LineupChip: one slot of the lineup pitch (escalacao.md). A button: a tap picks the player
    * (first step of the swap) or receives the picked one (second step); the screen does the swap.
-   * Shows the slot's position code, the player's overall and short name, at most one mark (icon
-   * plus text, never colour alone), the captain's "C" and, in Realismo completo, a thin condition
-   * bar. Without `name` it is an empty slot. The same component, with `ghost`, is the copy that
-   * follows the finger while dragging. Every text comes by prop.
+   * Shows the player's position code in a PositionTag painted by his sector (escalacao.md, "Cor de
+   * setor no LineupChip": the natural position, the same tag as the Elenco, never the slot's; the
+   * slot is said by its place on the pitch and by the accessible name), the player's overall and
+   * short name, at most one mark (icon plus text, never colour alone), the captain's "C" and, in
+   * Realismo completo, a thin condition bar. Without `name` it is an empty slot: no tag, no
+   * sector. The same component, with `ghost`, is the copy that follows the finger while dragging.
+   * Every text comes by prop.
    */
   interface Props {
-    /** Position code of the slot ("ZAG"), from the content (`position.<P>.short`). */
-    slotCode: string;
+    /**
+     * The player's natural position code ("ZAG", `position.<P>.short`); absent for an empty slot,
+     * which shows no tag.
+     */
+    positionCode?: string;
+    /** `SECTOR_OF[player.position]`: the colour of the tag's background and border. */
+    sector?: Sector;
     /** Full accessible name of the button, built by the screen (`lineup.slot.a11y`). */
     a11yLabel: string;
     /** Display name; absent for an empty slot. */
@@ -68,7 +78,8 @@
     describedby?: string;
   }
   const {
-    slotCode,
+    positionCode,
+    sector,
     a11yLabel,
     name,
     overall,
@@ -88,7 +99,9 @@
 
 {#snippet inner()}
   <span class="top">
-    <span class="rotulo code">{slotCode}</span>
+    <!-- Hidden: the accessible name of the chip already says the position. -->
+    {#if positionCode}<span class="code"><PositionTag code={positionCode} {sector} hidden /></span
+      >{/if}
     {#if captainShort}<span class="rotulo captain" aria-hidden="true">{captainShort}</span>{/if}
     {#if overall !== undefined}<span class="numero overall">{overall}</span>{/if}
   </span>
@@ -163,8 +176,15 @@
     align-items: baseline;
     gap: var(--space-1);
   }
+  /* The tag inside a chip: no inner block padding and the width of its code, so the top line
+     (tag, "C", overall) still fits a 75px slot and the chip its 88px. */
   .code {
-    color: var(--ink-muted);
+    display: inline-flex;
+    min-inline-size: 0;
+  }
+  .code :global(.tag) {
+    min-inline-size: 0;
+    padding-block: 0;
   }
   .captain {
     display: inline-grid;
@@ -245,8 +265,9 @@
     border-color: var(--grass);
     background: var(--grass-soft);
   }
-  /* ink-muted is not a checked pair on grass-soft: the code goes to ink there. */
-  .target .code {
+  /* ink-muted is not a checked pair on grass-soft: the code goes to ink there (a tag without a
+     sector is muted; with one it is already ink). */
+  .target .code :global(.tag) {
     color: var(--ink);
   }
   .origin {

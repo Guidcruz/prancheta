@@ -8,7 +8,7 @@ import {
   type GameState,
   type Player,
 } from '../../app/src/engine/index.ts';
-import { playUntil, startCareer } from './career.ts';
+import { playUntil, reopenInSpanish, startCareer } from './career.ts';
 import { expect, test } from './fixtures.ts';
 import { changePlayer, patchSave, readSave, type SaveJson } from './save.ts';
 
@@ -324,6 +324,43 @@ test.describe('Clube (clube.md; US-015, US-026)', () => {
     await expect(line).toBeVisible();
     await line.click();
     await expect(page).toHaveURL(/#\/squad$/);
+  });
+
+  test('a linha de desfalques com lesionados e um suspenso cabe na linha e no card a 360 px, em pt-BR e es', async ({
+    page,
+  }) => {
+    test.skip(page.viewportSize()!.width >= SIDE_FROM, 'medida do celular');
+    await startCareer(page);
+    await patchSave(page, (save) => {
+      const [a, b, c] = squadOf(save);
+      changePlayer(save, a!.id, { injuryRounds: 2, suspendedGames: 0 });
+      changePlayer(save, b!.id, { injuryRounds: 3, suspendedGames: 0 });
+      changePlayer(save, c!.id, { injuryRounds: 0, suspendedGames: 1 });
+    });
+    await page.setViewportSize({ width: 360, height: 740 });
+    const fits = async (text: RegExp) => {
+      const line = block(page, 'next').locator('a[href="#/squad"]');
+      await expect(line).toHaveText(text);
+      const box = await line.evaluate((row) => {
+        const card = row.closest('section.card')!.getBoundingClientRect();
+        const r = row.getBoundingClientRect();
+        const parts = [...row.children].map((el) => el.getBoundingClientRect());
+        return {
+          spill: row.scrollWidth > row.clientWidth + 1,
+          rowRight: r.right,
+          partsRight: Math.max(...parts.map((p) => p.right)),
+          cardRight: card.right,
+        };
+      });
+      expect(box.spill, 'conteúdo passa da linha').toBe(false);
+      expect(box.partsRight).toBeLessThanOrEqual(box.rowRight + 0.5);
+      expect(box.rowRight).toBeLessThanOrEqual(box.cardRight + 0.5);
+      await noPageScroll(page);
+    };
+    await fits(/Desfalques: 2 lesionados, 1 suspenso/);
+    await reopenInSpanish(page);
+    await page.setViewportSize({ width: 360, height: 740 });
+    await fits(/Bajas: 2 lesionados, 1 suspendido/);
   });
 
   test('Simplificado: nunca a linha de desfalques', async ({ page }) => {

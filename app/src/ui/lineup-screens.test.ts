@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import {
+  FORMATION_SLOTS,
   completeSheet,
   draftFromSheet,
   sheetProblems,
@@ -13,6 +14,7 @@ import type { ErrorLog } from '@lib/errors';
 import { loadGameParams } from '@lib/params';
 import { t } from '@lib/i18n';
 import CareerFrame from './CareerFrame.svelte';
+import { SECTOR_OF } from './components/sectors';
 import { swapPlaces } from './lineup';
 import LineupView from './screens/LineupView.svelte';
 import SquadTab, { type SquadViewId } from './screens/SquadTab.svelte';
@@ -117,24 +119,29 @@ describe('the Escalação (escalacao.md; US-017)', () => {
     const body = view(fx.game, fx.sheet);
     expect(body).toContain('role="group" aria-label="Campo, formação 4-4-2"');
     expect(body).toMatch(/<ol class="slots/);
-    const codes = [
+    // The slot order, read from each slot's accessible name (the position of the slot in full).
+    const order = [...body.matchAll(/data-slot="(\d+)"[^>]*aria-label="([^":]+):/g)];
+    expect(order.map((m) => Number(m[1]))).toEqual([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(order.map((m) => m[2])).toEqual(
+      FORMATION_SLOTS['4-4-2'].map((p) => t(`position.${p}`, 'pt-BR')),
+    );
+    // Each chip's tag is its player's natural position, painted by his sector (escalacao.md, "Cor
+    // de setor no LineupChip"), hidden from screen readers: the centre-back on the striker's slot
+    // keeps ZAG in the defence colour, the attacking midfielder on a defensive one keeps MEI.
+    const tags = [
       ...body.matchAll(
-        /data-slot="(\d+)"[^>]*>\s*<span class="top[^"]*"><span class="rotulo code[^"]*">(\w+)</g,
+        /data-slot="(\d+)"[^]*?<span class="code[^"]*"><span class="rotulo tag ([^"]*)" aria-hidden="true">(\w+)</g,
       ),
     ];
-    expect(codes.map((m) => m[2])).toEqual([
-      'GOL',
-      'ZAG',
-      'ZAG',
-      'LAT',
-      'LAT',
-      'VOL',
-      'VOL',
-      'MEI',
-      'MEI',
-      'ATA',
-      'ATA',
-    ]);
+    expect(tags).toHaveLength(11);
+    tags.forEach((m, i) => {
+      const player = fx.starters[i]!;
+      expect(m[1]).toBe(String(i));
+      expect(m[3]).toBe(t(`position.${player.position}.short`, 'pt-BR'));
+      expect(m[2]).toContain(`sector-${SECTOR_OF[player.position]}`);
+    });
+    expect(tags[9]![3]).toBe('ZAG');
+    expect(tags[6]![3]).toBe('MEI');
     expect(body).toContain('Formação <strong');
     expect(body).toContain(t('lineup.formation.change', 'pt-BR'));
     expect(body).toContain(t('lineup.suggest', 'pt-BR'));
@@ -196,6 +203,10 @@ describe('the Escalação (escalacao.md; US-017)', () => {
     const body = view(fx.game, freed(1));
     expect(body).toContain(t('lineup.slot.empty', 'pt-BR'));
     expect(body).toContain('aria-label="Zagueiro: vaga livre"');
+    // An empty slot has no tag and no sector colour.
+    const freeChip = /<button[^>]*data-slot="1"[^]*?<\/button>/.exec(body)![0];
+    expect(freeChip).not.toContain('class="code');
+    expect(freeChip).not.toMatch(/sector-/);
     expect(body).toMatch(/<section class="banner warning/);
     expect(body).toContain(t('lineup.invalid.title', 'pt-BR'));
     expect(body).toContain('Falta 1 titular.');
@@ -281,9 +292,10 @@ describe('the selector of the Elenco tab (escalacao.md, "Navegação")', () => {
     expect(squad).toContain('<table');
     expect(squad).not.toContain('data-slot=');
     expect(tab('lineup')).toContain('data-slot="10"');
-    // Tática comes with T-077: until then it says so.
+    // The Tática (T-077): the formations, no pitch of its own (CEO decision 2).
     const tactic = tab('tactic');
-    expect(tactic).toContain(t('screen.soon', 'pt-BR'));
+    expect(tactic).not.toContain(t('screen.soon', 'pt-BR'));
+    expect(tactic).toContain(t('tactic.formation.legend', 'pt-BR'));
     expect(tactic).not.toContain('data-slot=');
   });
 });

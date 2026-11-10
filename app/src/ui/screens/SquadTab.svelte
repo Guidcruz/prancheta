@@ -11,15 +11,15 @@
   import SegmentedControl from '../components/SegmentedControl.svelte';
   import type { SquadSort } from '../squad';
   import Lineup from './Lineup.svelte';
-  import Placeholder from './Placeholder.svelte';
   import Squad from './Squad.svelte';
+  import Tactic from './Tactic.svelte';
 
   /**
    * The Elenco tab with the selector Elenco | Escalação | Tática on top (escalacao.md,
    * "Navegação"; elenco.md). Changing the view adds no entry to the history: the phone's back
    * leaves the tab as before. The view chosen lives in the frame while the career is open, as the
-   * order of the Elenco does. The Tática view comes with T-077: until then it says so, as the
-   * other destinations whose task has not landed (docs/02-architecture.md, 7, T-029).
+   * order of the Elenco does. The Escalação (T-029) and the Tática (T-077) edit the same coach's
+   * sheet through `onedit`.
    */
   interface Props {
     lang: Lang;
@@ -64,7 +64,7 @@
       {onerror}
     />
   {:else if view === 'tactic'}
-    <Placeholder message={t('screen.soon', lang)} />
+    <Tactic {lang} {game} {clubId} {sheet} {onedit} />
   {:else}
     <Squad {lang} {game} {clubId} {sort} {onsort} {onerror} />
   {/if}

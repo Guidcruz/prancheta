@@ -30,13 +30,14 @@
 {#if href}
   <a
     class="row"
+    class:with-value={!!value}
     {href}
     target={external ? '_blank' : undefined}
     rel={external ? 'noopener noreferrer' : undefined}
     {onclick}>{@render inner()}</a
   >
 {:else}
-  <button type="button" class="row" {onclick}>{@render inner()}</button>
+  <button type="button" class="row" class:with-value={!!value} {onclick}>{@render inner()}</button>
 {/if}
 
 <style>
@@ -58,12 +59,30 @@
   .row:hover {
     background: var(--surface-2);
   }
+  /* Without a value the label takes the row and wraps inside it ("Desfalques: 2 lesionados, 1
+     suspenso" at 360px). */
   .label {
     flex: 1;
     min-width: 0;
   }
+  /* With a value, the value takes the cut, with an ellipsis ("Automático: Ildo Albuque…",
+     tatica.md): its shrink factor dwarfs the label's, so the label keeps its line ("Tiros
+     libres" at 360px). A label longer than the row still shrinks, down to its longest word, once
+     the value is gone. */
+  .with-value .label {
+    flex: 1 1 auto;
+    min-width: auto;
+  }
   .value {
+    flex: 0 100000 auto;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     color: var(--ink-muted);
+  }
+  .row > :global(svg) {
+    flex: none;
   }
   .row > :global(svg:last-child) {
     color: var(--ink-muted);

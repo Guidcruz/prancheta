@@ -1,7 +1,7 @@
 import { elevenStrength } from '../generation.ts';
 import { clamp, normal } from '../math.ts';
 import type { GameParams, MatchParams } from '../params.ts';
-import type { Player } from '../players.ts';
+import { TAKER_ATTRIBUTE, type Player } from '../players.ts';
 import { Rng } from '../rng.ts';
 import { GOALKEEPER_SLOT, homeAdvantage, type TeamStrengths } from '../strength.ts';
 import type { EngineWarning, PlayerId, Posture, Pressure, Side } from '../types.ts';
@@ -367,8 +367,8 @@ export function simulateMatch(
     const { lineup } = team.input.sheet;
     const takerIndex =
       kind === 'penalty'
-        ? setPieceTaker(team, lineup.penaltyTakers, 'finishing')
-        : setPieceTaker(team, lineup.freeKickTakers, 'technique');
+        ? setPieceTaker(team, lineup.penaltyTakers, TAKER_ATTRIBUTE.penalty)
+        : setPieceTaker(team, lineup.freeKickTakers, TAKER_ATTRIBUTE.freeKick);
     if (takerIndex === undefined) return; // nobody on the pitch (never with 7 or more)
     const slot = team.slots[takerIndex]!;
     if (kind === 'penalty') {

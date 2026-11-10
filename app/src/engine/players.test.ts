@@ -10,6 +10,7 @@ import {
   POTENTIAL_MAX,
   SQUAD_COMPOSITION,
   SQUAD_SIZE,
+  TAKER_ATTRIBUTE,
   attributeKeysFor,
   attributeOf,
   computeOverall,
@@ -22,6 +23,7 @@ import {
   isProspect,
   overallWeight,
   playerForm,
+  takerValue,
   validatePlayer,
   type AttributeKey,
   type PlayerIssue,
@@ -337,6 +339,21 @@ describe('attributeOf', () => {
       const value = attributeOf({ attributes: {}, overall }, 'marking');
       expect(value, String(overall)).toBe(Math.max(1, Math.round(0.4 * overall)));
     }
+  });
+});
+
+describe('takerValue', () => {
+  it('is attributeOf of finishing for penalties and technique for free kicks', () => {
+    const striker = testPlayer();
+    expect(TAKER_ATTRIBUTE).toEqual({ penalty: 'finishing', freeKick: 'technique' });
+    expect(takerValue(striker, 'penalty')).toBe(attributeOf(striker, 'finishing'));
+    expect(takerValue(striker, 'freeKick')).toBe(attributeOf(striker, 'technique'));
+  });
+
+  it('gives a goalkeeper the derived value the match uses (70 takes as 28)', () => {
+    const keeper = { attributes: EXAMPLE_GOALKEEPER_ATTRIBUTES, overall: 70 };
+    expect(takerValue(keeper, 'penalty')).toBe(28);
+    expect(takerValue(keeper, 'freeKick')).toBe(28);
   });
 });
 
