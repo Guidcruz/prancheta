@@ -48,6 +48,18 @@ Pedido do CEO em 2026-11-07, depois da primeira captura ("melhore as imagens de 
 - Trocar para a formação atual não muda nada.
 - O campo com os 11 redistribuídos está na Escalação (o critério da US-018 "o campo mostra 4-3-3 com os mesmos 11" se confere lá). Não há uma segunda prévia de campo nesta tela (decisão 2 do CEO, aprovada em 2026-11-07).
 
+## Posição secundária
+
+Decisão do CEO de 2026-11-08 (especificado na T-080; entra com a T-079). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
+
+- **"Nesta formação" não muda:** lista só fora de posição e improvisados (e vaga livre e inaptos). Quem a troca de formação põe na posição secundária não aparece: é uma boa escolha, não um problema.
+- **A mensagem da região viva** ("Formação 4-3-3. Ataque 67, subiu 3. 1 jogador fora de posição.") não conta a secundária.
+- **A marca na vaga** (`secondary`, neutra, com ícone e texto) aparece na Escalação, onde está o campo ([escalacao.md](escalacao.md#posição-secundária)). A Tática não tem campo.
+- **Força:** sem mudança de tela; o número já conta o `fit` de 0,95.
+- **Folhas de funções (RoleEditor):** sem mudança. Capitão e cobradores não dependem da posição.
+
+Medida para o E2E (T-079): com a fixture da Escalação (o volante com secundária ZAG na vaga de ZAG), "Nesta formação" não tem linha com o nome dele.
+
 ## Ao alcance do polegar
 
 Postura, pressão e funções, as escolhas mais frequentes, ficam na metade de baixo depois da rolagem; a formação, que muda pouco, fica em cima. Cada carta é inteira tocável.

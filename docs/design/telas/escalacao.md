@@ -198,6 +198,81 @@ Decisão do CEO de 2026-11-07 (regra em [design-system.md](../design-system.md#c
 - **Reservas** abaixo do campo usam a `PlayerRow`, que já recebe `sector`.
 - Só fundo e borda da sigla; o nome, o número e o selo do chip não levam cor de setor.
 
+## Posição secundária
+
+Decisões do CEO de 2026-11-08: marca própria e neutra na vaga, com ícone e texto, mais leve que "improvisado"; fora da lista de avisos. A regra de jogo está em [posicao-secundaria.md](../posicao-secundaria.md), e o save, no ADR-0022. A especificação é da T-080, e a tela entra com a T-079. Esta seção vale sobre "A vaga" e "Níveis de posição", acima: a lista de marcas ganha um nível.
+
+### Marca da vaga `secondary`
+
+- **Quando:** `fitLevel(jogador, vaga)` devolve `secondary` (T-079): o jogador está na vaga da sua posição secundária. A tela lê o nível do motor; nunca compara `secondaryPosition` com a vaga por conta própria nem lê `FIT` ou `SECONDARY_FIT` (ADR-0022).
+- **Como:** ícone `secondary` mais o texto `lineup.fit.secondary` ("Posição secundária"; textos aprovados pelo CEO em 2026-11-10), com a mesma forma das outras marcas: face condensada do `rotulo` sem caixa alta, até duas linhas, ícone no fluxo do texto.
+- **Cores:** `ink` sobre `surface-2`, borda `draw` e ícone em `ink`. Sem token novo (proposta 26 de [componentes.md](componentes.md#casca-da-t-080-posição-secundária), aprovada pelo CEO em 2026-11-10).
+- **Gravidade** (uma marca por vaga, a mais grave vence): lesionado > suspenso > fora de posição > improvisado > **posição secundária** > nenhuma. O lesionado que está na secundária mostra só "Lesionado, 2 rodadas"; o nome acessível diz as duas coisas.
+- **A sigla não muda:** continua a da posição natural, na cor do setor dele. Um volante na vaga de zagueiro mostra "VOL" em violeta, e a marca diz o resto.
+- **Não é aviso:** não entra no LineupIssues, não abre Banner, não bloqueia nem muda "Jogar rodada". Também não entra em "Nesta formação" da Tática ([tatica.md](tatica.md#posição-secundária)).
+
+**Por que esse par.** Cinza neutro (`draw` é o token de "estados neutros"), só contorno, sem fundo de cor. Assim a escala visual das marcas fica clara: nada, contorno cinza, amarelo cheio (improvisado) e vermelho (fora de posição, inapto). Um matiz novo competiria com as quatro cores de setor das siglas (âmbar, azul, violeta, magenta), que ficam no mesmo chip, e com o verde e o vermelho das faixas. Contraste conferido: `ink` sobre `surface-2` dá 11,74 (noite) e 13,84 (dia), par já conferido pelo `npm run tokens`. A borda `draw` dá pelo menos 5,26:1 sobre `surface-1`, `surface-2` e `grass-soft`, os fundos do chip parado, selecionado e destino. Com o chip selecionado (fundo `surface-2`), a marca se separa dele pela borda.
+
+### Nome acessível da vaga
+
+O nível entra no fim, em minúsculas, como "improvisado" hoje (`slotSituations`):
+
+- "Zagueiro: Quirino Bastos, nota 68, condição 92, posição secundária";
+- com outra situação, todas aparecem, embora a marca visível seja só a mais grave: "Zagueiro: Quirino Bastos, nota 68, condição 92, capitão, lesionado, 2 rodadas, posição secundária".
+
+Sem chave nova: é `lineup.fit.secondary` passado por `toLocaleLowerCase`.
+
+### Candidato à vaga
+
+Na escolha de quem entra numa vaga, o candidato que a teria como secundária mostra a mesma marca.
+
+- **Quando aparece:** quando há uma **vaga ocupada do campo** selecionada (o primeiro toque, ou Enter pelo teclado) ou servindo de origem de um arrasto. Toda linha do Banco e dos Não relacionados cujo jogador teria `fitLevel(jogador, posição da vaga) === 'secondary'` ganha o StatusBadge `secondary`, com o mesmo texto (`lineup.fit.secondary`), por último na lista de selos da linha. O nível vem da posição da vaga (`FORMATION_SLOTS`), não da posição de quem a ocupa.
+- **Quando some:** quando a seleção acaba (troca, "Cancelar", Esc, outro toque na vaga) ou quando o arrasto termina.
+- **Só a secundária.** Improvisado e fora de posição não aparecem nos candidatos. A sigla da posição natural, na linha, já mostra que ele não é da posição da vaga. Já a secundária é a única boa opção que a sigla não mostra. E uma marca vermelha em metade da lista, a cada toque, seria ruído.
+- **Nome acessível da linha:** enquanto o selo está na linha, o nome dela termina com ", posição secundária", como os outros selos (`lineup.row.a11y` mais os selos em minúsculas).
+- **Deslocamento aceito:** a linha que ganha o selo cresce a altura de uma linha de selos (cerca de 22px) e empurra as de baixo. Isso só acontece no primeiro toque ou no começo do arrasto, antes de o técnico mirar a linha. No celular em pé, as listas ficam abaixo do campo, então a vaga selecionada e tudo acima dela não se mexem. Nada se mexe durante o arrasto. A alternativa sem deslocamento, um ícone na ponta da linha, mostraria a marca sem o texto, e a decisão pede ícone e texto.
+- **Reverso, não.** Com um reserva selecionado, as vagas do campo não mudam de marca, porque cada vaga tem uma só marca e ela é de quem está nela. A sigla secundária na linha dele (abaixo) já diz onde ele também joga.
+- **Mesma regra em toda escolha de quem entra numa vaga:** quando a folha "Substituir" da Partida (T-033) for especificada, a linha do reserva usa o mesmo selo para a vaga de quem sai.
+
+### Sigla secundária nas linhas do Banco e dos Não relacionados
+
+A LineupRow mostra a secundária como o Elenco ([elenco.md](elenco.md#posição-secundária)). Embaixo da sigla natural, vai a sigla secundária, menor e neutra (PositionTag `size="sm"`, sem `sector`, `aria-hidden`), com a mesma largura. A coluna da sigla não alarga, e a linha continua com pelo menos 44px.
+
+- No destino do arrasto (fundo `grass-soft`), o texto da sigla secundária passa a `ink`, como o `.pos` de hoje: `ink-muted` sobre `grass-soft` não é par conferido.
+- **Nome acessível:** o `{position}` de `lineup.row.a11y` passa a ser `squad.secondaryPosition.a11y`: "Brenno Sá, Volante, também joga de zagueiro, nota 63, condição 100".
+
+### Textos
+
+| Chave                          | Contexto                                                                                                                                                             |
+| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lineup.fit.secondary`         | Marca da vaga e selo do candidato (par de `lineup.fit.improvised`). Também vai em minúsculas no fim do nome acessível da vaga e da linha. Cabe em 2 linhas de ~60px. |
+| `squad.secondaryPosition.a11y` | Reusada no nome acessível da LineupRow, no lugar de `{position}` ([elenco.md](elenco.md#posição-secundária)).                                                        |
+
+Limite para o `content-writer`: o mesmo de "Fora de posição". São no máximo 2 linhas de cerca de 60px na face condensada (12px), e nenhuma palavra passa de cerca de 11 letras nos três idiomas ("secundária", "secundaria" e "Secondary" cabem). Em minúsculas, o texto tem de soar natural no fim do nome acessível ("…, posição secundária").
+
+### Medidas para o E2E (T-079)
+
+Fixture do Completo, em 4-4-2, com estes casos forçados (a T-078 já grava `secondaryPosition` no save):
+
+- (a) um volante com secundária ZAG numa vaga de ZAG;
+- (b) um lateral com secundária ZAG no banco;
+- (c) um meia sem secundária no banco;
+- (d) um jogador com secundária VOL numa vaga de VOL e lesionado (gravidade);
+- (e) o zagueiro na vaga de atacante dos itens 1 e 7 de "Medidas para o E2E".
+
+1. **Marca:** a vaga de (a) tem um `svg` e o texto visível de `lineup.fit.secondary`, e nenhum texto de "Improvisado" ou "Fora de posição". A sigla visível é "VOL", com a classe `sector-mid`.
+2. **Cores, nos dois temas:** a marca de (a) tem fundo, borda e texto computados iguais aos tokens `surface-2`, `draw` e `ink`, e o `svg` tem a cor de `ink`. A marca de (e) continua com o par de "fora de posição".
+3. **Nome acessível:** o botão da vaga de (a) termina com o texto de `lineup.fit.secondary` em minúsculas. O de (d) contém o texto do lesionado e o da secundária, e a marca visível de (d) é só a do lesionado (gravidade).
+4. **Fora dos avisos:** a lista "Atenção na escalação" não tem nenhuma linha com o nome de (a), e tem a de (e). Na Tática, "Nesta formação" também não tem (a).
+5. **Candidato:**
+   - Toque na vaga de ZAG ocupada por um zagueiro natural: a linha de (b) passa a ter um StatusBadge com `svg` e o texto de `lineup.fit.secondary`, e o nome acessível dela termina com esse texto em minúsculas. A linha de (c) não tem o selo.
+   - Esc: o selo some.
+   - O `y` do retângulo da vaga selecionada é o mesmo (±1px) antes e depois do toque.
+   - O mesmo vale ao segurar 400ms a vaga no Chromium celular (início do arrasto).
+6. **Sigla secundária na linha:** a linha de (b) tem duas siglas, e a segunda é `aria-hidden`, não tem classe `sector-*` e tem a largura da primeira (±1px). A linha de (c) tem uma sigla só. As duas linhas têm pelo menos 44px de altura.
+7. **Alvos e largura:** a 360×740, nas 6 formações e com (a) na vaga de ZAG mais à esquerda, todas as vagas medem pelo menos 44 × 44px e nenhuma se sobrepõe. A marca de (a) tem no máximo 2 linhas (altura ≤ 2 × a altura de linha do `rotulo` + respiro), e o chip tem no máximo 88px de altura. O mesmo vale com o jogo em `es` e em `en`. Não há rolagem lateral em 360, 390, 844 e 1280.
+8. **Movimento:** com `reducedMotion: 'reduce'`, selecionar a vaga e ver o selo do candidato não cria animação (`document.getAnimations().length === 0`).
+
 ## Acessibilidade
 
 - **Alvos:** cada vaga ≥ 75 × 52px a 360px; linhas das listas ≥ 44px; ações da barra 44 × 44px; link "Mudar na Tática" ≥ 44px de altura.
