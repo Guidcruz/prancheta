@@ -49,12 +49,12 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 
 Decisão do CEO de 2026-11-08 (especificado na T-080; entra com a T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
 
-- **Onde:** um bloco logo abaixo do cabeçalho, antes dos selos, com a largura toda, só quando o jogador tem secundária. É um `dl` com um par: o `dt` é `player.secondaryPosition` ("Posição secundária", rascunho), em `caption` e `ink-muted`; o `dd` tem a sigla na PositionTag `size="sm"` neutra (sem `sector`, `hidden`) e a posição por extenso (`position.<P>`, "Volante") em `body-strong`. O `dt` e o `dd` ficam na mesma linha, com `flex-wrap`: em es e en, a 360px, o `dd` desce para a linha de baixo sem rolar.
-- **Embaixo do par:** `player.secondaryPosition.hint`, em `caption` e `ink-muted`. É uma frase curta sobre o que é a posição secundária e sobre ele render um pouco menos ali que na natural.
+- **Onde:** um bloco logo abaixo do cabeçalho, antes dos selos, com a largura toda, só quando o jogador tem secundária. É um `dl` com um par: o `dt` é `player.secondaryPosition` ("Posição secundária", aprovado), em `caption` e `ink-muted`; o `dd` tem a sigla na PositionTag `size="sm"` neutra (sem `sector`, `hidden`) e a posição por extenso (`position.<P>`, "Volante") em `body-strong`. O `dt` e o `dd` ficam na mesma linha, com `flex-wrap`: em es e en, a 360px, o `dd` desce para a linha de baixo sem rolar.
+- **Embaixo do par:** `player.secondaryPosition.hint`, em `caption` e `ink-muted`: "Outra posição em que ele joga bem. Ali rende um pouco menos que na natural." (texto aprovado pelo CEO em 2026-11-10).
 - **Por que fora da coluna do cabeçalho:** a 360px, a coluna ao lado do avatar tem cerca de 200px. "Posição secundária" mais a sigla e o nome já quebrariam ali, e duas linhas a mais deixariam o cabeçalho mais alto que o avatar.
 - **A sigla secundária é neutra**, como no Elenco ([elenco.md](elenco.md#posição-secundária)): a cor do setor fica só na sigla natural do cabeçalho.
 - **Sem secundária, e sempre no goleiro:** o bloco não existe (nem "—").
-- **Nenhum número calculado:** a tela não lê `SECONDARY_FIT` nem `fit` (ADR-0022: ler em `ui/` é BLOCKER, e `fit` não está no contrato), então "rende ~N" não entra. Se a ajuda citar "95%", o número é texto fixo do conteúdo (ver "Decisões pendentes", na T-080, em [componentes.md](componentes.md#casca-da-t-080-posição-secundária)).
+- **Nenhum número na ajuda** (decisão do CEO de 2026-11-10, variante B): a tela não lê `SECONDARY_FIT` nem `fit` (ADR-0022: ler em `ui/` é BLOCKER, e `fit` não está no contrato), então "rende ~N" não entra; e um "95%" fixo no texto ficaria errado se o balanceamento mudasse o valor.
 - **Atributos e nota:** continuam os da posição natural; nada muda nas seções de baixo.
 - **Duas colunas (folha ≥ 480px):** o bloco fica acima da grade, com a largura toda, como os selos.
 - **Leitor de tela:** "Posição secundária, Volante", depois a frase de ajuda. A sigla é `aria-hidden`.

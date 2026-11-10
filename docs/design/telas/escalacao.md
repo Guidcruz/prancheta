@@ -205,8 +205,8 @@ Decisões do CEO de 2026-11-08: marca própria e neutra na vaga, com ícone e te
 ### Marca da vaga `secondary`
 
 - **Quando:** `fitLevel(jogador, vaga)` devolve `secondary` (T-079): o jogador está na vaga da sua posição secundária. A tela lê o nível do motor; nunca compara `secondaryPosition` com a vaga por conta própria nem lê `FIT` ou `SECONDARY_FIT` (ADR-0022).
-- **Como:** ícone `secondary` mais o texto `lineup.fit.secondary` ("Posição secundária", rascunho), com a mesma forma das outras marcas: face condensada do `rotulo` sem caixa alta, até duas linhas, ícone no fluxo do texto.
-- **Cores:** `ink` sobre `surface-2`, borda `draw` e ícone em `ink`. Sem token novo (ver [componentes.md](componentes.md#casca-da-t-080-posição-secundária), proposta 26).
+- **Como:** ícone `secondary` mais o texto `lineup.fit.secondary` ("Posição secundária"; textos aprovados pelo CEO em 2026-11-10), com a mesma forma das outras marcas: face condensada do `rotulo` sem caixa alta, até duas linhas, ícone no fluxo do texto.
+- **Cores:** `ink` sobre `surface-2`, borda `draw` e ícone em `ink`. Sem token novo (proposta 26 de [componentes.md](componentes.md#casca-da-t-080-posição-secundária), aprovada pelo CEO em 2026-11-10).
 - **Gravidade** (uma marca por vaga, a mais grave vence): lesionado > suspenso > fora de posição > improvisado > **posição secundária** > nenhuma. O lesionado que está na secundária mostra só "Lesionado, 2 rodadas"; o nome acessível diz as duas coisas.
 - **A sigla não muda:** continua a da posição natural, na cor do setor dele. Um volante na vaga de zagueiro mostra "VOL" em violeta, e a marca diz o resto.
 - **Não é aviso:** não entra no LineupIssues, não abre Banner, não bloqueia nem muda "Jogar rodada". Também não entra em "Nesta formação" da Tática ([tatica.md](tatica.md#posição-secundária)).

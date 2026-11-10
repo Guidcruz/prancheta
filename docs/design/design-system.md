@@ -144,7 +144,7 @@ O anel de foco (`focus`, 2px sólido) aparece para quem navega pelo teclado e nu
 
 ## Selos (aprovado pelo CEO em 2026-11-07)
 
-Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qualquer selo de situação, resultado ou marca, também a marca da vaga no campo da escalação (LineupChip). Improvisado, fora de posição e líder entraram na T-029 (aprovados pelo CEO em 2026-11-07).
+Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qualquer selo de situação, resultado ou marca, também a marca da vaga no campo da escalação (LineupChip). Improvisado, fora de posição e líder entraram na T-029 (aprovados pelo CEO em 2026-11-07). Posição secundária entrou na T-080 (aprovada pelo CEO em 2026-11-10): marca neutra, mais leve que improvisado; na marca da vaga, a gravidade é lesionado > suspenso > fora de posição > improvisado > posição secundária > nenhuma, e ela nunca entra nos avisos.
 
 | Tipo                                                          | Texto e fundo                      | Borda e ícone                     |
 | ------------------------------------------------------------- | ---------------------------------- | --------------------------------- |
@@ -154,6 +154,7 @@ Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qual
 | Promessa, clássico (`prospect`, `derby`)                      | `on-floodlight` sobre `floodlight` | —                                 |
 | Improvisado (`improvised`)                                    | `on-floodlight` sobre `floodlight` | —                                 |
 | Fora de posição (`outOfPosition`)                             | `ink` sobre `danger-soft`          | borda `danger`; ícone em `danger` |
+| Posição secundária (`secondary`)                              | `ink` sobre `surface-2`            | borda `draw`; ícone em `ink`      |
 | Líder (`leader`)                                              | `ink` sobre `surface-2`            | borda `line`                      |
 
 - Todo selo tem letra ou ícone **e** texto (no selo só de letra, V/E/D, a palavra inteira vai para o leitor de tela); a cor só reforça.
@@ -209,6 +210,7 @@ Valores na ordem noite / dia. Âmbar, azul, violeta e magenta. O azul, o violeta
 - **Só o fundo e a borda da sigla.** O texto da sigla é sempre `ink`; nenhum número, nome, linha ou ícone leva cor de setor.
 - **Contraste:** `ink` sobre os quatro `sector-*-soft` é conferido pelo `npm run tokens` (≥ 4,5:1 nos dois temas). A borda é reforço, não informação (a sigla está escrita); mesmo assim passa de 3:1 sobre `surface-1` e `surface-2` (conferido à mão, tabela acima).
 - **Nunca só por cor:** a sigla está sempre escrita, e a posição inteira vai para o leitor de tela onde a linha a diz.
+- **Só a sigla natural** (aprovado pelo CEO em 2026-11-10, T-080): a cor de setor pinta só a sigla da posição natural; a sigla secundária é sempre neutra (PositionTag `size="sm"` sem `sector`: borda `line`, texto `ink-muted`).
 - **Mapa único:** `SECTOR_OF` em `app/src/ui/components/sectors.ts` leva a posição natural ao setor (GK → `gk`; CB, FB → `def`; DM, AM → `mid`; ST → `atk`), a mesma divisão das linhas do banco no motor. Nenhuma tela escreve um setor.
 - **Implementação de referência:** `PositionTag` (`code`, `sector`, `hidden?`), usado pela `PlayerRow` e pelo `PlayerCard`; a Escalação o usa no `LineupChip` ([escalacao.md](telas/escalacao.md#cor-de-setor-no-lineupchip)).
 

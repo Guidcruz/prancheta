@@ -191,11 +191,13 @@ Regras:
 - **A sigla secundária nunca leva cor de setor** (proposta 27). A cor continua dizendo a linha natural do jogador.
 - **Sem animação:** o selo do candidato aparece e some de uma vez; nada a reduzir sob `prefers-reduced-motion`.
 
-### Decisões pendentes (T-080)
+### Decisões do CEO (T-080)
 
-Para o CEO, junto das propostas 26 a 28 abaixo:
+Aprovadas pelo CEO em 2026-11-10 ("ok recomendado"):
 
-1. **A ajuda do card cita "95%"?** Recomendação: **sim, como texto fixo** do conteúdo, porque o CEO fixou "95%", é uma constante de regra, e o design aprovado pede o número. Se um dia `SECONDARY_FIT` virar parâmetro do `/balance`, a chave muda junto: o `game-designer` põe isso na lista de conferência da mudança. A outra opção é uma frase sem número ("rende um pouco menos").
+1. **Propostas 26, 27 e 28 aprovadas:** o par de cores da marca e do selo (sem token novo), a sigla secundária sempre neutra e o ícone `secondary`.
+2. **A ajuda do card não cita número** (variante B): um "95%" fixo no texto ficaria errado se o balanceamento mudasse o valor. Texto aprovado em `player.secondaryPosition.hint`.
+3. **Textos aprovados** das 4 chaves (pt-BR, es, en). Entram em `app/src/content/<idioma>/ui.json` só nas tarefas que os usam (T-079 e T-081).
 
 ## Zoom no celular
 
@@ -254,6 +256,6 @@ Para o CEO aprovar antes de o `developer` usar; nenhuma muda cor existente.
 23. **Campo da escalação (T-029). Aprovado pelo CEO em 2026-11-07.** O campo da escalação em grade de 8 × 10 meias células, cada vaga em 2 × 2 (`PITCH_LAYOUT`), para caber a linha de 5 a 360px sem vagas menores que 44px; gol embaixo, ataque em cima; arrastar nunca é o único caminho. Regra em [design-system.md](../design-system.md), "Campo da escalação" e "Arrastar e soltar".
 24. **Altura baixa (T-029). Aprovado pelo CEO em 2026-11-07.** `breakpoint-short` = 480px de altura, para o celular deitado (`@media (max-height: 480px)`); variável não vale em `@media`, então o valor fica escrito no componente, com comentário, até a exportação de constantes (itens 1 e 14). Hoje só a LineupStatusBar usa; a moldura vai usar no ajuste de tela da decisão 3 de [funcoes.md](funcoes.md#decisões-do-ceo-t-029), fora da T-029. Regra em [design-system.md](../design-system.md), "Altura baixa".
 25. **Face condensada sem caixa alta (T-029). Aprovado pelo CEO em 2026-11-07.** Texto curto que precisa caber em cerca de 60px (a marca da vaga) usa `font: var(--type-rotulo)`, sem a caixa alta e o espaçamento da classe `rotulo`. Sem token novo. Regra em [design-system.md](../design-system.md), "Tipografia".
-26. **Selo da posição secundária (T-080). Proposta.** O tipo `secondary` do StatusBadge e a marca `secondary` da vaga ficam em `ink` sobre `surface-2`, com borda `draw` e ícone em `ink`. É a "marca própria e neutra" que o CEO decidiu em 2026-11-08. **Sem token novo:** o `npm run tokens` já confere `ink` sobre `surface-2` (11,74 / 13,84), e a borda `draw` dá pelo menos 5,26:1 sobre `surface-1`, `surface-2` e `grass-soft` (conferido à mão). `draw` já é o token de "estados neutros". O cinza só em contorno fica abaixo do amarelo cheio do improvisado e do vermelho do fora de posição, e nenhum matiz novo disputa com as cores de setor do mesmo chip. Ao aprovar, entra na tabela "Selos" do design-system.md (linha "Posição secundária (`secondary`)") e na ordem de gravidade da marca da vaga.
-27. **Sigla secundária neutra e empilhada (T-080). Proposta.** A segunda sigla (Elenco, linhas da Escalação, card) é a PositionTag `size="sm"` sem cor de setor (borda `line`, texto `ink-muted`). Na linha, ela fica embaixo da natural, com a mesma largura. Ao aprovar, entra em "Cor de setor" do design-system.md uma frase: "a cor de setor pinta só a sigla da posição natural; a sigla secundária é sempre neutra". Sem token novo.
-28. **Ícone `secondary` (T-080). Proposta.** Um nome novo no `Icon` (duas caixinhas sobrepostas), para a marca e o selo. Entra na lista do `art-director`.
+26. **Selo da posição secundária (T-080). Aprovado pelo CEO em 2026-11-10.** O tipo `secondary` do StatusBadge e a marca `secondary` da vaga ficam em `ink` sobre `surface-2`, com borda `draw` e ícone em `ink`. É a "marca própria e neutra" que o CEO decidiu em 2026-11-08. **Sem token novo:** o `npm run tokens` já confere `ink` sobre `surface-2` (11,74 / 13,84), e a borda `draw` dá pelo menos 5,26:1 sobre `surface-1`, `surface-2` e `grass-soft` (conferido à mão). `draw` já é o token de "estados neutros". O cinza só em contorno fica abaixo do amarelo cheio do improvisado e do vermelho do fora de posição, e nenhum matiz novo disputa com as cores de setor do mesmo chip. Registrado na tabela "Selos" do design-system.md (linha "Posição secundária (`secondary`)") e na ordem de gravidade da marca da vaga.
+27. **Sigla secundária neutra e empilhada (T-080). Aprovado pelo CEO em 2026-11-10.** A segunda sigla (Elenco, linhas da Escalação, card) é a PositionTag `size="sm"` sem cor de setor (borda `line`, texto `ink-muted`). Na linha, ela fica embaixo da natural, com a mesma largura. Registrado em "Cor de setor" do design-system.md: "a cor de setor pinta só a sigla da posição natural; a sigla secundária é sempre neutra". Sem token novo.
+28. **Ícone `secondary` (T-080). Aprovado pelo CEO em 2026-11-10.** Um nome novo no `Icon` (duas caixinhas sobrepostas), para a marca e o selo. Entra na lista do `art-director`.
