@@ -1,27 +1,36 @@
 import { describe, expect, it } from 'vitest';
 import { SAVE_SCHEMA_VERSION } from '../schema.ts';
 import { coachDraft } from './0001-coach-draft.ts';
+import { secondaryPosition } from './0002-secondary-position.ts';
 import { MIGRATIONS, migrateSave, schemaVersionOf, type Migration } from './index.ts';
 
 describe('migration entry point (ADR-0006)', () => {
-  it('is at format 2 with one step per older version (T-019, T-075)', () => {
-    expect(SAVE_SCHEMA_VERSION).toBe(2);
-    expect(MIGRATIONS).toEqual([coachDraft]);
-    expect(MIGRATIONS.map((step) => step.from)).toEqual([1]);
+  it('is at format 3 with one step per older version (T-019, T-075, T-078)', () => {
+    expect(SAVE_SCHEMA_VERSION).toBe(3);
+    expect(MIGRATIONS).toEqual([coachDraft, secondaryPosition]);
+    expect(MIGRATIONS.map((step) => step.from)).toEqual([1, 2]);
   });
 
   it('returns a save of the current version as it is', () => {
-    const save = { schemaVersion: 2, careerId: 'x' };
+    const save = { schemaVersion: 3, careerId: 'x' };
     const result = migrateSave(save);
     expect(result).toEqual({ ok: true, value: save });
   });
 
   it('refuses a save newer than this build, and one without a valid version', () => {
-    expect(migrateSave({ schemaVersion: 3 })).toEqual({
+    expect(migrateSave({ schemaVersion: 4 })).toEqual({
+      ok: false,
+      error: 'save-too-new',
+      detail: { version: 4, supported: 3 },
+    });
+    // A build of format 2 (the chain up to 2) refuses a v3 save, unchanged (ADR-0022).
+    const v3 = Object.freeze({ schemaVersion: 3, careerId: 'x' });
+    expect(migrateSave(v3, [coachDraft], 2)).toEqual({
       ok: false,
       error: 'save-too-new',
       detail: { version: 3, supported: 2 },
     });
+    expect(v3).toEqual({ schemaVersion: 3, careerId: 'x' });
     // A build of format 1 (an empty chain up to 1) refuses a v2 save, unchanged (ADR-0021).
     const v2 = Object.freeze({ schemaVersion: 2, careerId: 'x' });
     expect(migrateSave(v2, [], 1)).toEqual({

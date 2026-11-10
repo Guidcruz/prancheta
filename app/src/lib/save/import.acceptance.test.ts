@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
+import { secondaryPositionFor } from '../../engine/index.ts';
+import { MIGRATION_SECONDARY_CHANCE } from './migrations/0002-secondary-position.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
 import { SAVE_LIMITS, parseCareerSave } from './validate.ts';
 import {
@@ -251,11 +253,28 @@ describe('US-033: a save of the previous format (the v1 fixture, stored as an ol
     expect(save.game.fixtures).toEqual(fixture.game.fixtures);
     expect(save.game.clubs).toEqual(fixture.game.clubs);
     // The whole save, field by field (its sheets were not stored here): only the version changes,
-    // and a v1 save has no draft sheet (ADR-0021, item 4).
+    // a v1 save has no draft sheet (ADR-0021, item 4), and each player gains the secondary
+    // position of his own draw (ADR-0022, item 4).
+    const { seed } = fixture.game;
+    const players = Object.fromEntries(
+      Object.entries(fixture.game.players).map(([id, p]) => [
+        id,
+        {
+          ...p,
+          secondaryPosition: secondaryPositionFor(
+            seed,
+            p.id,
+            p.position,
+            MIGRATION_SECONDARY_CHANCE,
+          ),
+        },
+      ]),
+    );
     expect(save).toEqual({
       ...fixture,
       schemaVersion: SAVE_SCHEMA_VERSION,
       career: { ...fixture.career, matchSheets: {} },
+      game: { ...fixture.game, players },
     });
     expect(save.career.draft).toBeUndefined();
     expect(opened.value.fromVersion).toBe(1);

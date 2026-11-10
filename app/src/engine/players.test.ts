@@ -255,7 +255,7 @@ describe('drawPotential', () => {
 });
 
 describe('drawGrowthCurve', () => {
-  const players = { growthMin: 0.8, growthMax: 1.2 };
+  const players = { growthMin: 0.8, growthMax: 1.2, secondaryChance: 0.33 };
 
   it('draws peakAge in 26..29 and growth in [growthMin, growthMax), in two draws', () => {
     const low = scriptedRng(0, 0);

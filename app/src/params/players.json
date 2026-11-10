@@ -1,1 +1,1 @@
-{ "growthMin": 0.8, "growthMax": 1.2 }
+{ "growthMin": 0.8, "growthMax": 1.2, "secondaryChance": 0.33 }

@@ -83,7 +83,7 @@ describe('formatParamIssues', () => {
  * value. The tables are parsed straight from the documents, so a drift in either side fails here.
  */
 describe('app/src/params against docs/design', () => {
-  const docs = ['partida', 'jogadores', 'ia-clubes', 'temporada', 'torcida'];
+  const docs = ['partida', 'jogadores', 'ia-clubes', 'temporada', 'torcida', 'posicao-secundaria'];
   const pt = (s: string) => Number(s.replace(',', '.'));
   const rows: { name: string; value: string; range: string }[] = [];
   for (const doc of docs) {
@@ -94,7 +94,11 @@ describe('app/src/params against docs/design', () => {
         /^`((?:match|players|generation|ai|season|fans|fatigue|injury|cards)\.[\w.]+)`$/.exec(
           cells[1] ?? '',
         );
-      if (m) rows.push({ name: m[1]!, value: cells[2]!, range: cells[3]! });
+      if (!m) continue;
+      // posicao-secundaria.md has a column with the file before the value, and "0 a 0,5" ranges.
+      const at = /^`app\/src\/params\//.test(cells[2] ?? '') ? 3 : 2;
+      const range = cells[at + 1]!.replace(/^([\d,]+) a ([\d,]+)$/, '$1–$2');
+      rows.push({ name: m[1]!, value: cells[at]!, range });
     }
   }
   const lookup = (root: unknown, path: string): unknown =>

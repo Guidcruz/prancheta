@@ -66,4 +66,11 @@
 //    the digests of the states that hold `engineVersion` (new-game, round-first, season-full,
 //    season-human-simplified, season-turn) and the version field of every golden. New golden:
 //    exp-table (the bits of exp on 4,096 inputs).
-export const ENGINE_VERSION = 16;
+// 17: the secondary position (T-078, ADR-0022): `Player.secondaryPosition` is drawn when a player
+//    is created (generateSquad, before the squad shift, and generateAcademy), from his own
+//    stream `${seed}-secondary-${playerId}` (secondaryPositionFor), with
+//    players.secondaryChance 0.33. No other stream moved and `fit` does not read the field yet,
+//    so no score, point, strength nor rating changed: new-game gains the field in each player,
+//    and the digests of the states changed (the players and `engineVersion`); the other goldens
+//    only carry the version.
+export const ENGINE_VERSION = 17;

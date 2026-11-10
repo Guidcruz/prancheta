@@ -6,7 +6,9 @@
  */
 import type { GameParams } from '../params.ts';
 
-export function testParams(overrides: { clubStrengthSd?: number } = {}): GameParams {
+export function testParams(
+  overrides: { clubStrengthSd?: number; secondaryChance?: number } = {},
+): GameParams {
   return {
     match: {
       baseChance: 0.087,
@@ -29,7 +31,11 @@ export function testParams(overrides: { clubStrengthSd?: number } = {}): GamePar
       injury: { basePerMinute: 0.00012 },
       cards: { yellowPerMinute: 0.002, redPerMinute: 0.00003, derbyMult: 1.2, bookedMult: 0.2 },
     },
-    players: { growthMin: 0.8, growthMax: 1.2 },
+    players: {
+      growthMin: 0.8,
+      growthMax: 1.2,
+      secondaryChance: overrides.secondaryChance ?? 0.33,
+    },
     generation: { clubStrengthSd: overrides.clubStrengthSd ?? 1.5 },
     ai: { rotationCondition: 85, rotationMinRatio: 0.9, subEnergy: 85, tiredTeamCondition: 85 },
     season: { fifaWeeks: [9, 21, 25, 30], midweekWeeks: [3, 7, 12, 16, 19, 23, 28, 32] },

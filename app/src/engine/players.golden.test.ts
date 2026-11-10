@@ -31,7 +31,7 @@ describe('golden: player model', () => {
       potential: drawPotential(rng, 65, age),
     }));
     const curves = Array.from({ length: 4 }, () =>
-      drawGrowthCurve(rng, { growthMin: 0.8, growthMax: 1.2 }),
+      drawGrowthCurve(rng, { growthMin: 0.8, growthMax: 1.2, secondaryChance: 0.33 }),
     );
     const identities = fixedIdentitySource().squad({
       seed: seedFromString('1-identities-clube-teste-01'),

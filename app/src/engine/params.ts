@@ -58,6 +58,11 @@ export interface MatchParams {
 export interface PlayersParams {
   readonly growthMin: number;
   readonly growthMax: number;
+  /**
+   * Chance of an outfield player having a secondary position when created
+   * (docs/design/posicao-secundaria.md, "Parâmetros e limites"; ADR-0022).
+   */
+  readonly secondaryChance: number;
 }
 
 /** app/src/params/generation.json (docs/design/jogadores.md, "Parâmetros"). */
@@ -182,7 +187,7 @@ export const PARAM_RANGES: ParamRanges<GameParams> = {
       bookedMult: num(0, 1), // partida.md, "Calibragem dos vermelhos" (T-016)
     },
   },
-  players: { growthMin: num(0.5, 1), growthMax: num(1, 1.5) },
+  players: { growthMin: num(0.5, 1), growthMax: num(1, 1.5), secondaryChance: num(0, 0.5) },
   generation: { clubStrengthSd: num(0, 4) },
   ai: {
     rotationCondition: num(50, 95),

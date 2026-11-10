@@ -15,6 +15,7 @@ import {
   fit,
   fitAttributesToOverall,
   overallWeight,
+  secondaryPositionFor,
   validatePlayer,
   type AttributeKey,
   type IdentitySource,
@@ -42,7 +43,10 @@ import type {
  * - `${seed}-profile-${clubId}`:  the AI profile (always drawn; used only when the data has none)
  *   and the formations;
  * - `${seed}-squad-${clubId}`:    positions, then every player, then the potentials;
- * - `${seed}-names-${clubId}-${nationality}`: the seed handed to the IdentitySource.
+ * - `${seed}-names-${clubId}-${nationality}`: the seed handed to the IdentitySource;
+ * - `${seed}-secondary-${playerId}`: the secondary position of each player, one stream per player
+ *   (players.ts, `secondaryPositionFor`; ADR-0022), drawn when the player is created, before the
+ *   squad shift. It never touches the squad stream, so the draws below are those of before it.
  * A squad generated for season 2 or later (`SquadRequest.season`, T-048) puts the season in the
  * last two labels (`${seed}-s${season}-squad-${clubId}`, `${seed}-s${season}-names-…`), so the
  * same club and seed give another squad, with ids that never meet those of season 1.
@@ -624,11 +628,14 @@ export function generateSquad(
     const { peakAge, growth } = drawGrowthCurve(rng, params.players);
     const nationality = drawNationality(rng);
     const morale = rng.int(START_MORALE.min, START_MORALE.max);
+    const id = idOf(index);
     return {
-      id: idOf(index),
+      id,
       clubId,
       nationality,
       position,
+      // Its own stream (ADR-0022): before the squad shift, so the shift already counts it.
+      secondaryPosition: secondaryPositionFor(seed, id, position, params.players.secondaryChance),
       attributes,
       overall: computeOverall(position, attributes),
       potential: 0,
@@ -707,7 +714,8 @@ export interface AcademyRequest {
  * growth), nationality, initial morale and the potential by the rule up to 23 (cap 95, no joia
  * floor). Age ACADEMY_AGE, `clubAppearances` 0 (he has not debuted), condition 100, no form;
  * shirt, the lowest free from 30 in `squad` and the youth before him; id
- * {@link turnPlayerId}`(clubId, season + 1, k)`.
+ * {@link turnPlayerId}`(clubId, season + 1, k)`; the secondary position from the player's own
+ * stream, `secondaryPositionFor(seed, id, position, players.secondaryChance)` (ADR-0022).
  *
  * Names and faces come from `identities`, once each (ADR-0012), with the seed
  * ``${seed}-s${season}-academy-names-${clubId}-${nationality}`` and the names of `squad` as
@@ -737,11 +745,13 @@ export function generateAcademy(
     let shirt = YOUTH_SHIRTS_FROM;
     while (used.has(shirt)) shirt++;
     used.add(shirt);
+    const id = turnPlayerId(clubId, season + 1, k);
     return {
-      id: turnPlayerId(clubId, season + 1, k),
+      id,
       clubId,
       nationality,
       position,
+      secondaryPosition: secondaryPositionFor(seed, id, position, params.players.secondaryChance),
       attributes,
       overall,
       potential,

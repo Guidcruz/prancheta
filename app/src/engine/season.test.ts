@@ -536,6 +536,7 @@ describe('endSeason', () => {
         'trait',
         'shirt',
         'position',
+        'secondaryPosition',
         'morale',
         'condition',
         'clubAppearances',

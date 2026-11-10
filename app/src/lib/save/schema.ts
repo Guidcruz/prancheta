@@ -14,12 +14,13 @@ import type {
  * the TypeScript shape; the strict schema of the same format is validate.ts, and a drift between
  * the two fails to compile. Every released format is frozen: the fixtures `__fixtures__/vN.json`
  * and the shape test (fixtures.test.ts). v1 came with T-019; v2 (T-075, ADR-0021) adds the
- * coach's sheet being edited, `career.draft`. Any change to this shape or to `GameState` raises
+ * coach's sheet being edited, `career.draft`; v3 (T-078, ADR-0022) adds the secondary position of
+ * every player, `Player.secondaryPosition` (`null` when he has none). Any change to this shape or to `GameState` raises
  * `SAVE_SCHEMA_VERSION`, with a migration (migrations/) and the new fixture.
  */
 
 /** The current format of `CareerSave` (ADR-0006); every change of the format raises it. */
-export const SAVE_SCHEMA_VERSION = 2;
+export const SAVE_SCHEMA_VERSION = 3;
 
 /** Careers kept on the device at the same time (docs/02-architecture.md, 4.2). */
 export const MAX_CAREERS = 10;
@@ -99,8 +100,16 @@ export interface CareerSaveV2 extends Omit<CareerSaveV1, 'schemaVersion' | 'care
   readonly career: CareerData;
 }
 
+/**
+ * Version 3 of the save (ADR-0022): v2 whose players carry `secondaryPosition` (the `GameState`
+ * of the engine already has it). The envelope and the career do not change.
+ */
+export interface CareerSaveV3 extends Omit<CareerSaveV2, 'schemaVersion'> {
+  readonly schemaVersion: 3;
+}
+
 /** The save in the current format. */
-export type CareerSave = CareerSaveV2;
+export type CareerSave = CareerSaveV3;
 
 /**
  * A row of the `careers` store: what the career list shows without opening a snapshot (US-034),
