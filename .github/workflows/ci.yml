@@ -66,6 +66,11 @@ jobs:
     name: e2e (${{ matrix.browser }})
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    # Imagem oficial com navegadores e dependências do sistema já instalados (sem apt, sem cache de
+    # navegadores). A tag precisa bater com o @playwright/test do package-lock.json (passo abaixo).
+    container:
+      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      options: --ipc=host --init
     strategy:
       fail-fast: false
       matrix:
@@ -76,16 +81,15 @@ jobs:
         with: { node-version-file: '.nvmrc', cache: 'npm' }
       - name: Instalar
         run: npm ci
-      - name: Versão do Playwright (chave do cache dos navegadores)
-        id: pw
-        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
-      - name: Cache dos navegadores do Playwright
-        uses: actions/cache@5a3ec84eff668545956fd18022155c47e93e2684 # v4.2.3
-        with:
-          path: ~/.cache/ms-playwright
-          key: playwright-${{ runner.os }}-${{ steps.pw.outputs.version }}-${{ matrix.browser }}
-      - name: Instalar o navegador e as dependências do sistema
-        run: npx playwright install --with-deps ${{ matrix.browser }}
+      - name: Conferir a versão do Playwright contra a imagem do container
+        env:
+          PW_IMAGE_VERSION: 1.65.0 # manter igual à tag da imagem em `container.image`
+        run: |
+          installed=$(node -p "require('@playwright/test/package.json').version")
+          if [ "$installed" != "$PW_IMAGE_VERSION" ]; then
+            echo "::error::@playwright/test $installed difere da imagem mcr.microsoft.com/playwright:v$PW_IMAGE_VERSION-noble. Atualize a tag da imagem e PW_IMAGE_VERSION em .github/workflows/ci.yml junto com o package-lock.json (os navegadores da imagem só servem para a versão exata)."
+            exit 1
+          fi
       - name: E2E (build de teste em app/dist-e2e)
         env:
           PRANCHETA_ENV: test
