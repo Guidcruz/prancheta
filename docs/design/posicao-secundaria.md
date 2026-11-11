@@ -216,6 +216,8 @@ pt-BR, es e en, em `app/src/content/<idioma>/ui.json`:
 
 As caixinhas usam os códigos de posição que já existem (`position.<P>.short`) e as posições por extenso (`position.<P>`, se existir; senão uma chave nova por posição, a confirmar com o `ux-designer`).
 
+**Revisto pelo `ux-designer` na T-080:** ficam 4 chaves. `squad.secondaryPosition.short` sai, porque o Elenco mostra só a segunda caixinha. `position.<P>` já existe, e nenhuma chave nova por posição é necessária. O contexto de cada chave está em [escalacao.md](telas/escalacao.md#posição-secundária), [elenco.md](telas/elenco.md#posição-secundária) e [jogador.md](telas/jogador.md#posição-secundária).
+
 ## Pedido ao `developer` (`/feature`; mexe em `app/src/engine/` e no save)
 
 Depende do ADR do save do `architect` (campo `secondaryPosition`, versão nova e migração).

@@ -57,6 +57,29 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 - **Com a ordem "Posição"**, a cor repete o agrupamento (os grupos já são por posição); com "Nota" e "Condição", é ela que deixa ver de relance quem é de que linha na lista corrida.
 - A caixinha tem o mesmo tamanho de antes; a largura da coluna fixa não muda.
 
+### Posição secundária
+
+Decisão do CEO de 2026-11-08: "No Elenco e no card do jogador, mostrar quem tem duas utilidades" (especificado na T-080; entra com a T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
+
+- **Na coluna fixa, empilhada:** a sigla natural fica em cima, como hoje (PositionTag com a cor do setor). Embaixo dela, com respiro de `space-1 / 2`, vem a **sigla secundária**: PositionTag `size="sm"`, **sem `sector`** (a caixinha neutra: borda `line`, texto `ink-muted`, sem fundo) e `hidden`. Exemplo: "VOL" em violeta e, embaixo, "ZAG" neutro.
+- **A coluna não alarga.** As duas caixinhas têm a mesma largura mínima (3 letras). A `sm` só perde o respiro vertical: 18px de altura contra 22px. A pilha tem cerca de 42px, e a linha desses jogadores passa de 44px para cerca de 50px, sem mudar a largura. A 360px, o nome continua com os mesmos cerca de 100px de hoje.
+- **Por que neutra, sem a cor do setor:** a cor diz a linha do time do jogador, uma por jogador. Uma segunda caixinha colorida faria o volante parecer da defesa e do meio na lista corrida (ordem "Nota"), que é onde a cor mais ajuda. A hierarquia vem do tamanho e do lugar (em cima e maior é a natural), e a sigla está escrita: nada depende de cor. É também a "marca neutra" da decisão do CEO para a vaga.
+- **Leitor de tela:** o texto escondido da linha passa de `position.<P>` ("Volante") para `squad.secondaryPosition.a11y`, com `{natural}` e `{secondary}` vindos de `position.<P>`: "Volante, também joga de zagueiro". O `{secondary}` vai em minúsculas pela tela (`toLocaleLowerCase`, como `lineup.fit.*`), sem chave nova por posição. As duas caixinhas são `aria-hidden`.
+- **Sem texto visível:** a forma curta (`squad.secondaryPosition.short`, "também ZAG") não entra. Ela custaria cerca de 60px dos cerca de 143px da coluna fixa a 360px, e o nome perderia quase tudo. A caixinha basta, e o card, a um toque, explica o que ela é ([jogador.md](jogador.md#posição-secundária)).
+- **Goleiro e quem não tem secundária:** uma caixinha só, como hoje.
+- **Ordem "Posição":** agrupa pela natural, como hoje. A secundária não abre grupo nem muda a ordem.
+- **Linha com o ponteiro em cima** (`surface-2`): `ink-muted` sobre `surface-2` dá 5,98 (noite) e 5,36 (dia), par já conferido.
+
+Textos: `squad.secondaryPosition.a11y` (nome da posição na linha, para leitor de tela, com `{natural}` e `{secondary}`). Reusado pela LineupRow da Escalação.
+
+Medidas para o E2E (T-081), com dois jogadores forçados na fixture, um volante com secundária ZAG e um meia sem secundária:
+
+1. A primeira célula do volante tem duas caixinhas. A segunda é `aria-hidden`, não tem classe `sector-*`, e tem borda e texto computados iguais a `line` e `ink-muted` nos dois temas. O meia e os goleiros têm uma caixinha só.
+2. O texto escondido da linha do volante é o de `squad.secondaryPosition.a11y`, com "Volante" e "zagueiro" em pt-BR.
+3. A 360×740, a largura das duas caixinhas do volante é igual (±1px) à da caixinha do meia. A medida 3 de "Medidas para o E2E" (coluna fixa ≤ 50% e `x` fixo ao rolar) continua valendo. O botão do nome continua com pelo menos 44 × 44px, e a linha tem no máximo 56px sem selo.
+4. Na ordem "Posição", o volante está no grupo "Volantes".
+5. Não há rolagem lateral da página em 360, 390, 844 e 1280, nos três idiomas.
+
 O número do potencial não aparece em lugar nenhum. O selo "Promessa" (decisão do CEO na US-016) aparece para quem se enquadra na regra de `jogadores.md`, "Potencial", e a tela recebe do motor só o booleano (ver "Pedidos ao motor" em [jogador.md](jogador.md#pedidos-ao-motor)).
 
 ## Ao alcance do polegar
