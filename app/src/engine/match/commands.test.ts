@@ -204,8 +204,10 @@ describe('US-021: the limit of 5 substitutions', () => {
     let checked = 0;
     for (let seed = 0; seed < 3_000 && checked < 5; seed++) {
       const r = simulateMatch(withSeed(coached, seed), params, six.slice(0, MAX_SUBS));
-      const injury = ofType(r, 'injury').find((e) => e.side === 'home' && e.minute > 50);
-      if (injury === undefined) continue;
+      const injuries = ofType(r, 'injury').filter((e) => e.side === 'home');
+      const injury = injuries.find((e) => e.minute > 50);
+      // An injury before the 5 commands of minute 50 takes a substitution of its own.
+      if (injury === undefined || injuries.some((e) => e.minute <= 50)) continue;
       checked++;
       const subs = ofType(r, 'substitution').filter((e) => e.side === 'home');
       expect(subs).toHaveLength(MAX_SUBS);

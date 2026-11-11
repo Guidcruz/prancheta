@@ -73,4 +73,15 @@
 //    so no score, point, strength nor rating changed: new-game gains the field in each player,
 //    and the digests of the states changed (the players and `engineVersion`); the other goldens
 //    only carry the version.
-export const ENGINE_VERSION = 17;
+// 18: the automatic XI is "natural primeiro" (T-082, ADR-0022 item 5;
+//    docs/design/posicao-secundaria.md): naturalFirstEleven puts the best of each position in
+//    its slot first, and a player left out takes an outfield slot only when he is worth strictly
+//    more there; a goalkeeper is never swapped. The AI's XI and the "Sugerir escalação"
+//    (pickEleven) and the best XI (bestEleven) follow it, so the squad shift `d` of part of the
+//    clubs, the AI's lineups and every match after them changed. In new-game, 5 of the 20 clubs
+//    got another `d` (77 players with other overalls and attributes, none of the two detailed
+//    squads), so only its digest moved; strengths (the starters come from bestEleven), the round,
+//    season and turn goldens, and the match goldens whose lineups come from bestEleven
+//    (match-round, match-ai-sheets) changed; the other goldens only carry the version. `fit`
+//    still does not read the secondary position (T-079).
+export const ENGINE_VERSION = 18;

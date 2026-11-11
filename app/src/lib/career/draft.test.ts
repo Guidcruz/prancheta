@@ -190,6 +190,13 @@ describe('the season turn (ADR-0021, item 5; option A of the CEO)', () => {
       if (i % 2 === 0) starters[i] = p;
       else bench[i] = p;
     });
+    // At least one of them on the pitch, so the first screen of season 2 has a free slot.
+    if (!club.gone.some((p) => starters.includes(p))) {
+      const retiree = club.gone[0]!;
+      const onBench = bench.indexOf(retiree);
+      if (onBench >= 0) bench[onBench] = null;
+      starters[starters.length - 1] = retiree;
+    }
     const onPitch = starters.filter((p): p is PlayerId => p !== null);
     const retiredOnPitch = club.gone.filter((p) => onPitch.includes(p));
     return {

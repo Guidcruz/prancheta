@@ -1,9 +1,9 @@
 {
-  "engineVersion": 17,
+  "engineVersion": 18,
   "name": "new-game",
   "data": {
     "header": {
-      "engineVersion": 17,
+      "engineVersion": 18,
       "retiredNamesRev": 0,
       "seed": 20261104,
       "year": 2026,
@@ -2194,6 +2194,6 @@
         "s1-r20-clube-teste-11-clube-teste-17"
       ]
     },
-    "digest": "80e27430"
+    "digest": "bd467af7"
   }
 }

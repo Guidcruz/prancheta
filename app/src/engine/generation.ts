@@ -24,6 +24,7 @@ import {
   type PlayerNameText,
 } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
+import { naturalFirstEleven, type ElevenCandidate } from './selection.ts';
 import type {
   AiProfile,
   ClubId,
@@ -369,15 +370,18 @@ function clampGenerated(overall: number): number {
  * the candidates around `round(target − strength)` are measured on the shifted overalls and the
  * closest wins (ties: the smallest |d|, then the lower d).
  *
- * In the rare squad where no common `d` lands within 0.5 (about 2 in 1,000: the best XI jumps
- * over the window), the members of the best XI move one point at a time, slot by slot, toward the
- * target until it does (each point moves the mean by about 0.09).
+ * In the rare squad where no common `d` lands within 0.5 (the best XI jumps over the window, or
+ * clipped starters slow it down), the members of the best XI move one point at a time, slot by
+ * slot, toward the target until it does (each point moves the mean by about 0.09). With the
+ * "natural primeiro" best XI (T-082) the XI hardly changes with `d`, and no generated squad of
+ * strength 45 to 92 needed it in 60,000 tried (it was about 2 in 1,000 with the greedy fill); it
+ * stays for the clipped ones. Exported for the engine's tests only (not in `index.ts`).
  *
  * Only then each player reaches the new overall by the coarse shift and the fine adjustment
  * (fitAttributesToOverall). Returns the final distance (target − strength), the common shift and
  * how many single-point moves the fallback made.
  */
-function shiftSquad(
+export function shiftSquad(
   players: DraftBase[],
   formation: Formation,
   target: number,
@@ -452,43 +456,28 @@ export function idNumber(player: { readonly id?: PlayerId }, index: number): num
 
 /**
  * Best XI of a squad in a formation, as the AI would pick it with everyone fresh
- * (ia-clubes.md, "Escalação", steps 2 and 3 at condition 100): slot by slot in formation order,
- * the player not yet chosen with the highest `overall × fit`; ties by higher overall, then
- * younger, then lower id. "Lower id" compares the number N of `${clubId}#N` numerically (a text
- * comparison would put `#10` before `#2`); players without an id fall back to their order in the
- * list. Used to measure the generated squad; the match lineup with
- * condition, injuries and rotation is the AI's (T-010). Returns the chosen player of each slot
- * (fewer than 11 only if the squad is smaller).
+ * (ia-clubes.md, "Escalação", steps 2 and 3 at condition 100): "natural primeiro"
+ * ({@link naturalFirstEleven}; docs/design/posicao-secundaria.md) with the value
+ * `overall × fit`: each slot first gets the best of its natural position, then a player left out
+ * takes an outfield slot only with a strictly higher `overall × fit`. Ties by higher overall,
+ * then younger, then lower id. "Lower id" compares the number N of `${clubId}#N` numerically (a
+ * text comparison would put `#10` before `#2`); players without an id fall back to their order in
+ * the list. Used to measure the generated squad (the squad shift), the strength at the turn and
+ * the new idol; the match lineup with condition, injuries and rotation is the AI's (T-010).
+ * Returns the chosen player of each slot, in slot order (fewer than 11 only if the squad is
+ * smaller: then the last slots, never the goal).
  */
-export function bestEleven<
-  T extends Pick<Player, 'position' | 'overall' | 'age'> & { readonly id?: PlayerId },
->(players: readonly T[], formation: Formation): { player: T; slot: Position }[] {
-  const taken = new Set<number>();
+export function bestEleven<T extends ElevenCandidate>(
+  players: readonly T[],
+  formation: Formation,
+): { player: T; slot: Position }[] {
+  const slots = FORMATION_SLOTS[formation];
   const chosen: { player: T; slot: Position }[] = [];
-  for (const slot of FORMATION_SLOTS[formation]) {
-    let best = -1;
-    let bestValue = -1;
-    for (let i = 0; i < players.length; i++) {
-      if (taken.has(i)) continue;
-      const p = players[i]!;
-      const value = p.overall * fit(p.position, slot);
-      const b = best >= 0 ? players[best]! : undefined;
-      if (
-        b === undefined ||
-        value > bestValue ||
-        (value === bestValue &&
-          (p.overall > b.overall ||
-            (p.overall === b.overall &&
-              (p.age < b.age || (p.age === b.age && idNumber(p, i) < idNumber(b, best))))))
-      ) {
-        best = i;
-        bestValue = value;
-      }
-    }
-    if (best < 0) break;
-    taken.add(best);
-    chosen.push({ player: players[best]!, slot });
-  }
+  naturalFirstEleven(players, formation, (p, slot) => p.overall * fit(p.position, slot)).forEach(
+    (player, i) => {
+      if (player !== undefined) chosen.push({ player, slot: slots[i]! });
+    },
+  );
   return chosen;
 }
 

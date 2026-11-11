@@ -16,6 +16,7 @@ const TOOLS = new Set([
   'bestForSlot',
   'correctedCondition',
   'isUnavailable',
+  'naturalFirstEleven',
   'pickBench',
   'pickCaptainAndTakers',
   'GOALKEEPER_SLOT',

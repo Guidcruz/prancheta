@@ -6,9 +6,14 @@ import { MARKERS } from './match/rules.ts';
 import type { AiParams, GameParams } from './params.ts';
 import { fit, takerValue, type Player } from './players.ts';
 import { Rng, seedFromString } from './rng.ts';
-import { bestForSlot, correctedCondition, selectionValue, winsTie } from './selection.ts';
 import {
-  GOALKEEPER_SLOT,
+  bestForSlot,
+  correctedCondition,
+  naturalFirstEleven,
+  selectionValue,
+  winsTie,
+} from './selection.ts';
+import {
   STARTERS_COUNT,
   effectiveRating,
   isAvailable,
@@ -135,18 +140,19 @@ function availablePlayers(state: Pick<GameState, 'players' | 'squads'>, clubId: 
 
 /**
  * The XI of a formation (ia-clubes.md, "Escalação", steps 3 and 4):
- * 1. slot by slot in formation order (GOL, ZAG, LAT, VOL, MEI, ATA), the available player not yet
- *    chosen with the highest selection value (ties: higher overall, younger, lower ID); a slot
- *    with no natural player takes the best of any position, with the fit. **Without an available
- *    goalkeeper** the goal is filled last: first the 10 outfield slots, then the goal takes the
- *    best for goal (`fit` 0.40) of those left, so the best outfield player is not sent to goal;
+ * 1. "natural primeiro" ({@link naturalFirstEleven}, docs/design/posicao-secundaria.md) with the
+ *    selection value: each slot first gets the best available player of its natural position,
+ *    then, slot by slot over the 10 outfield slots, a player left out takes it only with a
+ *    strictly higher value; a goalkeeper is never swapped, and without an available goalkeeper
+ *    the goal is filled last, so the best outfield player is not sent to goal. Ties: higher
+ *    overall, younger, lower ID;
  * 2. rotation, in slot order: a starter with condition below `ai.rotationCondition` gives way to
  *    the best player left for his slot **among those with condition of at least
  *    `ai.rotationCondition`**, when that one's selection value is at least `ai.rotationMinRatio`
  *    of his. A rested player is not picked again for another slot (he may go to the bench).
- * With fewer than 11 available the last slots stay empty (`partida.md`, "Casos de borda"); without
- * a goalkeeper the goal still gets one of them (the last left), so the goal is never the empty
- * slot and `starters` stays in slot order.
+ * With fewer than 11 available the last slots stay empty (`partida.md`, "Casos de borda"), by the
+ * greedy fill of {@link naturalFirstEleven}; without a goalkeeper the goal still gets one of them
+ * (the last left), so the goal is never the empty slot and `starters` stays in slot order.
  */
 export function pickEleven(
   available: readonly Player[],
@@ -154,28 +160,12 @@ export function pickEleven(
   ai: Pick<AiParams, 'rotationCondition' | 'rotationMinRatio'>,
 ): { starters: Player[]; rested: Player[] } {
   const slots = FORMATION_SLOTS[formation];
-  const chosen = new Set<PlayerId>();
-  const placed: (Player | undefined)[] = slots.map(() => undefined);
-  const take = (index: number): boolean => {
-    const best = bestForSlot(available, slots[index]!, (p) => chosen.has(p.id));
-    if (best === undefined) return false;
-    chosen.add(best.id);
-    placed[index] = best;
-    return true;
-  };
-  if (available.some((p) => p.position === 'GK')) {
-    for (let i = 0; i < slots.length; i++) if (!take(i)) break;
-  } else {
-    // Goal last; with 10 or fewer available, one is kept for the goal.
-    const outfield = Math.min(slots.length - 1, available.length - 1);
-    for (let i = 0; i < outfield; i++) take(i + 1);
-    take(GOALKEEPER_SLOT);
-  }
   const starters: Player[] = [];
-  for (const player of placed) {
+  for (const player of naturalFirstEleven(available, formation, selectionValue)) {
     if (player === undefined) break;
     starters.push(player);
   }
+  const chosen = new Set<PlayerId>(starters.map((p) => p.id));
 
   const rested: Player[] = [];
   const restedIds = new Set<PlayerId>();

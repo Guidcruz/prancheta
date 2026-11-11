@@ -115,8 +115,18 @@ describe('US-010: fatigue goes up when playing and down when resting', () => {
         const fatigueBefore = 100 - before.players[id]!.condition;
         const fatigue = 100 - p.condition;
         // An outfield player who played 90 minutes with only 3 days to the next round: more
-        // tired than before (a goalkeeper spends 30% of it, and 3 days give it back).
-        if (minutes[id] === 90 && gap === 3 && fatigueBefore === 0 && p.position !== 'GK') {
+        // tired than before (a goalkeeper spends 30% of it, and 3 days give it back). Not on a
+        // side whose starting goalkeeper left early (a red card or an injury): an outfield
+        // player may have gone in goal there (partida.md, "Casos de borda").
+        const keeper = after.lastSheets[p.clubId]?.lineup.starters[0];
+        const keeperLeft = keeper !== undefined && minutes[keeper] !== 90;
+        if (
+          minutes[id] === 90 &&
+          gap === 3 &&
+          fatigueBefore === 0 &&
+          p.position !== 'GK' &&
+          !keeperLeft
+        ) {
           expect(fatigue, `round ${r}, ${id}`).toBeGreaterThan(fatigueBefore);
           rose++;
         }

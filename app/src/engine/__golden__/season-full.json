@@ -1,171 +1,182 @@
 {
-  "engineVersion": 17,
+  "engineVersion": 18,
   "name": "season-full",
   "data": {
     "table": [
       [
-        "clube-teste-04",
+        "clube-teste-09",
+        82,
+        24,
+        10,
+        4,
+        64,
+        35,
+        75,
+        3
+      ],
+      [
+        "clube-teste-01",
         75,
         22,
         9,
         7,
-        67,
-        37,
-        66,
+        70,
+        35,
+        76,
         1
-      ],
-      [
-        "clube-teste-09",
-        73,
-        21,
-        10,
-        7,
-        53,
-        38,
-        79,
-        4
       ],
       [
         "clube-teste-06",
-        72,
-        22,
-        6,
-        10,
         66,
-        37,
-        87,
-        1
+        20,
+        6,
+        12,
+        68,
+        48,
+        90,
+        3
       ],
       [
-        "clube-teste-01",
-        66,
+        "clube-teste-04",
+        65,
         19,
-        9,
-        10,
-        58,
-        39,
-        74,
+        8,
+        11,
+        66,
+        42,
+        60,
         2
       ],
       [
-        "clube-teste-03",
-        64,
+        "clube-teste-02",
+        63,
         19,
-        7,
-        12,
+        6,
+        13,
         54,
-        36,
-        80,
+        47,
+        72,
         1
       ],
       [
         "clube-teste-11",
-        60,
-        16,
-        12,
-        10,
-        47,
-        38,
-        65,
+        59,
+        15,
+        14,
+        9,
+        53,
+        44,
+        67,
         0
       ],
       [
-        "clube-teste-02",
-        59,
-        18,
-        5,
-        15,
-        52,
-        50,
-        72,
-        1
-      ],
-      [
-        "clube-teste-12",
-        58,
-        14,
-        16,
-        8,
-        42,
-        32,
-        83,
-        6
-      ],
-      [
-        "clube-teste-05",
-        55,
-        16,
-        7,
-        15,
-        53,
-        44,
-        89,
-        2
-      ],
-      [
-        "clube-teste-10",
+        "clube-teste-08",
         55,
         15,
         10,
         13,
-        43,
-        37,
-        89,
+        67,
+        55,
+        74,
         2
       ],
       [
         "clube-teste-07",
-        49,
-        13,
-        10,
+        53,
+        15,
+        8,
         15,
         49,
-        51,
-        71,
-        3
-      ],
-      [
-        "clube-teste-13",
-        48,
-        13,
-        9,
-        16,
-        49,
-        54,
-        73,
-        4
-      ],
-      [
-        "clube-teste-20",
-        47,
-        13,
-        8,
-        17,
-        41,
-        55,
-        81,
-        0
+        50,
+        75,
+        2
       ],
       [
         "clube-teste-17",
-        45,
+        53,
+        14,
         11,
+        13,
+        45,
+        42,
+        77,
+        1
+      ],
+      [
+        "clube-teste-03",
+        52,
+        14,
+        10,
+        14,
+        49,
+        40,
+        83,
+        3
+      ],
+      [
+        "clube-teste-12",
+        52,
+        13,
+        13,
         12,
-        15,
-        36,
-        41,
-        80,
+        50,
+        48,
+        86,
+        4
+      ],
+      [
+        "clube-teste-10",
+        49,
+        11,
+        16,
+        11,
+        45,
+        38,
+        83,
+        3
+      ],
+      [
+        "clube-teste-05",
+        48,
+        14,
+        6,
+        18,
+        47,
+        49,
+        90,
         2
       ],
       [
         "clube-teste-15",
+        48,
+        13,
+        9,
+        16,
+        39,
+        51,
+        73,
+        2
+      ],
+      [
+        "clube-teste-13",
+        46,
+        13,
+        7,
+        18,
+        48,
+        58,
+        69,
+        4
+      ],
+      [
+        "clube-teste-20",
         43,
         11,
         10,
         17,
-        38,
-        53,
-        69,
+        42,
+        58,
+        77,
         1
       ],
       [
@@ -175,72 +186,69 @@
         6,
         20,
         31,
-        54,
-        85,
-        5
-      ],
-      [
-        "clube-teste-08",
-        41,
-        10,
-        11,
-        17,
         53,
-        57,
-        72,
+        84,
         4
       ],
       [
         "clube-teste-14",
-        35,
-        7,
-        14,
-        17,
-        41,
-        60,
-        64,
-        3
+        38,
+        9,
+        11,
+        18,
+        37,
+        62,
+        67,
+        4
       ],
       [
         "clube-teste-19",
-        33,
-        7,
-        12,
-        19,
+        29,
+        6,
+        11,
+        21,
         41,
-        64,
-        84,
+        69,
+        88,
         0
       ],
       [
         "clube-teste-18",
-        25,
-        6,
+        28,
         7,
-        25,
-        32,
-        69,
-        81,
-        0
+        7,
+        24,
+        35,
+        76,
+        82,
+        2
       ]
     ],
     "kinds": {
       "championClinched": 1,
-      "decisiveLastRound": 2,
-      "enteredZ4": 24,
-      "injured": 124,
+      "decisiveLastRound": 1,
+      "enteredZ4": 22,
+      "injured": 115,
       "leadership": 22,
-      "leftZ4": 24,
+      "leftZ4": 22,
       "relegatedClinched": 4,
-      "suspended": 440,
-      "topScorerOfRound": 77,
-      "unbeaten": 30,
+      "suspended": 438,
+      "topScorerOfRound": 66,
+      "unbeaten": 28,
       "unbeatenEnded": 20,
-      "winless": 47,
-      "winlessEnded": 34
+      "winless": 43,
+      "winlessEnded": 32
     },
     "lastFacts": [
       [
+        {
+          "kind": "enteredZ4",
+          "clubId": "clube-teste-16"
+        },
+        {
+          "kind": "leftZ4",
+          "clubId": "clube-teste-20"
+        },
         {
           "kind": "winlessEnded",
           "clubId": "clube-teste-17",
@@ -249,13 +257,17 @@
           "opponentId": "clube-teste-12"
         },
         {
+          "kind": "relegatedClinched",
+          "clubId": "clube-teste-14"
+        },
+        {
           "kind": "topScorerOfRound",
-          "playerId": "clube-teste-03#10",
+          "playerId": "clube-teste-03#11",
           "goals": 2
         },
         {
           "kind": "topScorerOfRound",
-          "playerId": "clube-teste-09#4",
+          "playerId": "clube-teste-09#7",
           "goals": 2
         },
         {
@@ -265,15 +277,11 @@
         },
         {
           "kind": "decisiveLastRound",
-          "stakes": "title"
-        },
-        {
-          "kind": "decisiveLastRound",
           "stakes": "relegation"
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-20#11",
+          "playerId": "clube-teste-13#2",
           "games": 1
         },
         {
@@ -283,32 +291,32 @@
         },
         {
           "kind": "injured",
-          "playerId": "clube-teste-02#15",
+          "playerId": "clube-teste-02#7",
           "games": 7
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-03#7",
+          "playerId": "clube-teste-05#11",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-03#11",
+          "playerId": "clube-teste-03#16",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-08#15",
+          "playerId": "clube-teste-10#8",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-08#10",
+          "playerId": "clube-teste-08#4",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-18#15",
+          "playerId": "clube-teste-12#13",
           "games": 1
         },
         {
@@ -324,34 +332,34 @@
       ],
       [
         {
+          "kind": "leadership",
+          "clubId": "clube-teste-09",
+          "change": "kept",
+          "rounds": 25
+        },
+        {
+          "kind": "unbeaten",
+          "clubId": "clube-teste-11",
+          "games": 5
+        },
+        {
+          "kind": "winless",
+          "clubId": "clube-teste-10",
+          "games": 4
+        },
+        {
           "kind": "winless",
           "clubId": "clube-teste-05",
           "games": 4
         },
         {
           "kind": "winless",
-          "clubId": "clube-teste-13",
-          "games": 4
-        },
-        {
-          "kind": "winless",
-          "clubId": "clube-teste-15",
-          "games": 4
-        },
-        {
-          "kind": "winlessEnded",
           "clubId": "clube-teste-18",
-          "games": 13,
-          "round": 38,
-          "opponentId": "clube-teste-16"
-        },
-        {
-          "kind": "championClinched",
-          "clubId": "clube-teste-04"
+          "games": 4
         },
         {
           "kind": "relegatedClinched",
-          "clubId": "clube-teste-08"
+          "clubId": "clube-teste-16"
         },
         {
           "kind": "topScorerOfRound",
@@ -360,22 +368,27 @@
         },
         {
           "kind": "suspended",
+          "playerId": "clube-teste-20#5",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-20#14",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
           "playerId": "clube-teste-02#4",
           "games": 1
         },
         {
           "kind": "suspended",
+          "playerId": "clube-teste-02#15",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
           "playerId": "clube-teste-02#10",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-06#2",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-06#4",
           "games": 1
         },
         {
@@ -390,12 +403,22 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-19#8",
+          "playerId": "clube-teste-19#15",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-10#11",
+          "playerId": "clube-teste-05#4",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-10#7",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-10#14",
           "games": 1
         },
         {
@@ -410,32 +433,7 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-04#2",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-04#8",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-04#10",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-04#17",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-09#9",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-16#6",
+          "playerId": "clube-teste-12#17",
           "games": 1
         },
         {
@@ -450,21 +448,31 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-01#2",
+          "playerId": "clube-teste-17#5",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-01#5",
+          "playerId": "clube-teste-17#9",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-17#18",
           "games": 1
         },
         {
           "kind": "suspended",
           "playerId": "clube-teste-01#8",
           "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-14#3",
+          "games": 1
         }
       ]
     ],
-    "digest": "dc791528"
+    "digest": "f16565a1"
   }
 }
