@@ -1,6 +1,6 @@
 # Status
 
-Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-07 (A exponencial que todo navegador calcula igual, mergeado; o anterior, de 2026-11-06, também). Última atualização: 2026-11-11 (T-077 mergeada, PR #64; T-080 mergeada, PR #65; T-078 em PR; T-074 mergeada, PR #52; ADR-0021 aceito, PR #55; ajuste de foco e cores mergeado, PR #56; T-075 mergeada, PR #57; T-076 mergeada, PR #58; correção do nome no card mergeada, PR #59; T-028 e T-029 feitas, aguardando merge (T-029 no PR #61); cores nos atributos e na posição mergeadas, PR #60).
+Atualizado pelo Orquestrador e pelo `tech-writer` a cada merge. Último post do devlog: 2026-11-11 (Escalação, tática e a posição secundária, mergeado no PR #66; o anterior, de 2026-11-07, também). Última atualização: 2026-11-11 (T-077 mergeada, PR #64; T-080 mergeada, PR #65; devlog mergeado, PR #66; CI do E2E no container do Playwright mergeado, PR #68; T-078 em PR; T-074 mergeada, PR #52; ADR-0021 aceito, PR #55; ajuste de foco e cores mergeado, PR #56; T-075 mergeada, PR #57; T-076 mergeada, PR #58; correção do nome no card mergeada, PR #59; T-028 mergeada, PR #54; T-029 mergeada, PR #61; cores nos atributos e na posição mergeadas, PR #60).
 
 ## Etapa atual: 1a — Série A (em andamento, motor completo)
 
