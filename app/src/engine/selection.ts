@@ -1,5 +1,4 @@
 import { FORMATION_SLOTS } from './formations.ts';
-import { idNumber } from './generation.ts';
 import { BENCH_SIZE } from './lineup.ts';
 import { clamp } from './math.ts';
 import { fit, type Player } from './players.ts';
@@ -32,6 +31,14 @@ export function selectionValue(
   return (
     player.overall * fit(player.position, slot) * conditionMultiplier(correctedCondition(player))
   );
+}
+
+/** N of `${clubId}#N`, for the "lower id" tie-break; the list position when there is no id. */
+export function idNumber(player: { readonly id?: PlayerId }, index: number): number {
+  const hash = player.id?.lastIndexOf('#') ?? -1;
+  if (player.id === undefined || hash < 0) return index;
+  const n = Number(player.id.slice(hash + 1));
+  return Number.isInteger(n) ? n : index;
 }
 
 /** What {@link winsTie} reads; the id is optional because `bestEleven` also measures draft players. */

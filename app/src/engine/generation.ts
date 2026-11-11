@@ -373,9 +373,12 @@ function clampGenerated(overall: number): number {
  * In the rare squad where no common `d` lands within 0.5 (the best XI jumps over the window, or
  * clipped starters slow it down), the members of the best XI move one point at a time, slot by
  * slot, toward the target until it does (each point moves the mean by about 0.09). With the
- * "natural primeiro" best XI (T-082) the XI hardly changes with `d`, and no generated squad of
- * strength 45 to 92 needed it in 60,000 tried (it was about 2 in 1,000 with the greedy fill); it
- * stays for the clipped ones. Exported for the engine's tests only (not in `index.ts`).
+ * "natural primeiro" best XI (T-082) the XI hardly changes with `d`: measured apart in T-082 (a
+ * one-off script, not a test), `generateSquad` of `clube-teste-01` with the test parameters, the
+ * six formations, strengths 45 to 92 and seeds from 0 (about 66,800 squads), never needed it,
+ * while with the greedy fill it was about 2 in 1,000. It stays for squads with clipped
+ * starters (the test builds one by hand). Exported for the engine's tests only (not in
+ * `index.ts`).
  *
  * Only then each player reaches the new overall by the coarse shift and the fine adjustment
  * (fitAttributesToOverall). Returns the final distance (target − strength), the common shift and
@@ -444,14 +447,6 @@ export const TURN_ID_STRIDE = 100;
 /** The id of the `k`-th player (1, 2, …) created by a club for season `season` (≥ 2). */
 export function turnPlayerId(clubId: ClubId, season: number, k: number): PlayerId {
   return `${clubId}#${TURN_ID_STRIDE * season + k}`;
-}
-
-/** N of `${clubId}#N`, for the "lower id" tie-break; the list position when there is no id. */
-export function idNumber(player: { readonly id?: PlayerId }, index: number): number {
-  const hash = player.id?.lastIndexOf('#') ?? -1;
-  if (player.id === undefined || hash < 0) return index;
-  const n = Number(player.id.slice(hash + 1));
-  return Number.isInteger(n) ? n : index;
 }
 
 /**
