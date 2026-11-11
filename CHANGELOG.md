@@ -7,7 +7,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 ### Adicionado
 
 - Posição secundária no jogador e no save, formato v3 (T-078, ADR-0022):
-  - O jogador ainda não vê a mudança, e nenhuma partida muda: o rendimento na secundária (95%) entra na T-079, e a marca na tela na T-080 e na T-081.
+  - O jogador ainda não vê a mudança, e nenhuma partida muda: o rendimento na secundária (95%) entra na T-079, e a marca na tela na T-079 e na T-081.
   - Motor: `Player.secondaryPosition` (`null` quando não tem; goleiro sempre `null`). Cerca de 1 em 3 jogadores de linha tem uma, sorteada entre as vizinhas da tabela de posições (`FIT` ≥ 0,85), com chances iguais, por `secondaryPositionFor`, no contrato. Cada jogador tem o próprio sorteio, pela semente da carreira e pelo id, então os sorteios do elenco não mudam: nomes, idades, atributos e forças são os mesmos de antes.
   - A geração do novo jogo (antes do ajuste de força do elenco) e a base sorteiam a secundária. Parâmetro novo `players.secondaryChance` = 0,33 (faixa 0 a 0,5). Constante `SECONDARY_FIT` = 0,95, ainda sem uso.
   - `validatePlayer` exige o campo e aceita `null` ou uma posição de linha diferente da natural; o problema novo é `invalid-secondary-position`.
