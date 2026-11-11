@@ -2,6 +2,7 @@ import type { Locator, Page } from '@playwright/test';
 import {
   FORMATIONS,
   FORMATION_SLOTS,
+  effectiveRating,
   fitLevel,
   isAvailable,
   sheetStrength,
@@ -18,6 +19,7 @@ import {
   openLineup,
   pitch,
   sizesOf,
+  squadOf,
   withFixture,
 } from './lineup-fixture.ts';
 import {
@@ -496,6 +498,64 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     await expect(bar(page)).toContainText('A escalação anterior voltou.');
     expect(await places(page)).toEqual(before);
     await expect(bar(page).getByRole('button', { name: 'Desfazer' })).toHaveCount(0);
+  });
+
+  test('sugerir com desfalques (T-082): cada titular na posição natural; a vaga sem natural fica com o melhor que sobrou', async ({
+    page,
+  }) => {
+    const fixture = await withFixture(page, (save) => {
+      // Same condition and morale for the whole squad, so the value is overall x fit alone.
+      for (const p of squadOf(save)) {
+        changePlayer(save, p.id, { condition: 100, morale: 50 });
+      }
+      // Only one AM left available: the second AM slot has no natural.
+      const ams = squadOf(save)
+        .filter((p) => p.position === 'AM' && isAvailable(p))
+        .sort((a, b) => b.overall - a.overall);
+      expect(ams.length).toBeGreaterThanOrEqual(2);
+      for (const am of ams.slice(1)) changePlayer(save, am.id, { injuryRounds: 2 });
+    });
+    // The fixture starts with a CB at striker and an AM at DM: the suggestion must move them.
+    expect(fixture.misplaced.position).toBe('CB');
+    await main(page).getByRole('button', { name: 'Sugerir escalação' }).click();
+    await expect(bar(page)).toContainText('Escalação sugerida.');
+    const draft = await expectStored(page, (d) =>
+      d.lineup.starters.some((id, i) => id !== fixture.draft.lineup.starters[i]),
+    );
+    const save = await readSave(page);
+    const squad = squadOf(save);
+    const byId = new Map(squad.map((p) => [p.id, p]));
+    const slots = FORMATION_SLOTS['4-4-2'];
+    const starters = draft!.lineup.starters.map((id) => byId.get(id!)!);
+    expect(new Set(starters.map((p) => p.id)).size).toBe(11);
+    expect(starters.every(isAvailable)).toBe(true);
+
+    const off = starters.filter((p, i) => p.position !== slots[i]);
+    // AM is short by one: exactly one starter is off his natural position, and it is on an AM slot.
+    expect(off).toHaveLength(1);
+    const offIndex = starters.indexOf(off[0]!);
+    expect(slots[offIndex]).toBe('AM');
+    // Everyone else is natural, and no available natural of any other position was left out for it.
+    for (const position of ['GK', 'CB', 'FB', 'DM', 'ST'] as const) {
+      const needed = slots.filter((s) => s === position).length;
+      const playing = starters.filter(
+        (p, i) => p.position === position && slots[i] === position,
+      ).length;
+      const available = squad.filter((p) => p.position === position && isAvailable(p)).length;
+      expect(playing, position).toBe(Math.min(needed, available));
+    }
+    // The vacancy got the best of those left (value: overall x fit x morale x condition, equal here).
+    const rating = (p: Player) => effectiveRating(p, 'AM');
+    const leftovers = squad.filter(
+      (p) => isAvailable(p) && !starters.some((s) => s.id === p.id) && p.position !== 'GK',
+    );
+    for (const other of leftovers) {
+      expect(rating(off[0]!)).toBeGreaterThanOrEqual(rating(other));
+    }
+    // And the screen shows it: each slot names the player stored for it.
+    for (const [i, p] of starters.entries()) {
+      await expect(slot(page, i)).toHaveAttribute('aria-label', new RegExp(p.name.full));
+    }
   });
 
   test('recarregar a página mantém a ficha (medida 11)', async ({ page }) => {

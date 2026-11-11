@@ -33,6 +33,9 @@ const stable = (save: SaveJson) => {
 test('a v2 career opens migrated: same round and table, same secondaries, stable after reload', async ({
   page,
 }) => {
+  const errors: string[] = [];
+  page.on('pageerror', (e) => errors.push(e.message));
+  page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   await startCareer(page);
   for (let i = 0; i < 2; i++) {
     const next = await nextRound(page);
@@ -84,4 +87,11 @@ test('a v2 career opens migrated: same round and table, same secondaries, stable
   const after = await readSave(page);
   expect(after.schemaVersion).toBe(3);
   expect(secondaries(after)).toEqual(secondaries(original));
+  // The AI played the whole round with the natural-first XI: every fixture of it has a result.
+  const roundFixtures = after.game.fixtures.filter((f) => f.round === original.game.round);
+  expect(roundFixtures.length).toBeGreaterThan(1);
+  for (const f of roundFixtures) {
+    expect((f as { result?: unknown }).result, `${f.homeId} x ${f.awayId}`).toBeTruthy();
+  }
+  expect(errors).toEqual([]);
 });
