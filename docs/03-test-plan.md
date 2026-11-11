@@ -615,6 +615,21 @@ Critérios: trocar por arrasto, por dois toques e por teclado; fora de posição
 - Totais: `test:all` com 2210 testes; E2E Chromium 93/7; `--repeat-each=3` 135/135.
 - Manual (CEO): as quatro cores de setor nos dois temas, no celular real; o âmbar do GOL ao lado de um número "regular" no tema noite; magenta contra violeta.
 
+### QA da T-078 (posição secundária e save v3, ADR-0022)
+
+Cenários cobertos (todos automatizados):
+
+- Sorteio (`engine/players.secondary.test.ts`): `secondaryNeighbours` vem da tabela `FIT` (posições de linha, `FIT` >= 0,85, na ordem de `POSITIONS`, nunca `GK` nem a natural, lista nova a cada chamada); `SECONDARY_FIT` = 0,95; `secondaryPositionFor` segue a ordem dos sorteios do design em 30.000 entradas, é determinística e tem **valores fixos gravados** (mudar o sorteio ou as vizinhas falha aqui).
+- Propriedades: goleiro nunca tem secundária, qualquer que seja a chance; só vizinhas; de 31% a 35% dos jogadores de linha com secundária, vizinhas com chances iguais; chance 0 não dá nenhuma e chance 1 dá sempre; **monotonia** (0,33 para 0,40 nunca tira nem troca a secundária de ninguém); depende da semente e do id, não da ordem das chamadas; nunca lança com chance ou posição inválida (devolve `null`).
+- Geração (`engine/generation.secondary.test.ts`, 200 carreiras): toda secundária é a de `secondaryPositionFor`, vizinha, nunca de goleiro; de 31% a 35% dos jogadores de linha, repartidas por posição, vizinha, número e clube; com `secondaryChance` 0 ninguém tem secundária e o resto do elenco é igual ao de 0,33 (o fluxo do elenco não se move); 0,33 para 0,40 não tira nem troca nenhuma; o elenco de uma temporada seguinte e a base sorteiam pelo id do jogador. `properties.test.ts` confere a secundária dos jovens da virada.
+- `validatePlayer`: chave ausente é `missing`; `'GK'`, a natural, texto fora de `POSITIONS` e número são `invalid-secondary-position`; goleiro com secundária idem; `null` e qualquer posição de linha diferente da natural passam.
+- Migração `0002-secondary-position` (`save/migrations/0002-secondary-position.test.ts`): é o passo `from: 2` com a chance congelada em 0,33 e **não lê os parâmetros**; a `v2.json` migrada sai com a **lista `[id, secundária]` congelada** no teste (a saída congelada da v2 para a v3); só mudam `schemaVersion` e a chave nova, e a entrada não é alterada; passa no `full` (toda secundária vizinha, nunca a natural nem `GK`); idempotente; independe da ordem das chaves de `game.players` e de quantas vezes o save é aberto; bate com o `newGame` da mesma semente nos jogadores `#1` a `#25` e com a `v3.json` (geração e base); troca uma secundária de arquivo editado; copia sem a chave o que não consegue ler, para o `full` recusar; a cadeia sobe um v1 até a v3.
+- Formato: `SAVE_SCHEMA_VERSION` 3; fixtures `v3.json` e `shape-v3.json` (`save/fixtures.test.ts`), com as da v1 e da v2 intactas; `import.acceptance.test.ts` e `renewal.acceptance.test.ts` com o v3; `params.test.ts` recusa `players.secondaryChance` fora de 0 a 0,5.
+- Goldens: `new-game.json` muda só pelo campo novo; os outros mudam só em `engineVersion` (17) e nos digests. Nenhum placar, ponto ou força muda.
+- Desempenho (`npm run measure:save`, snapshot de 697 KB e 99 KB em gzip): p90 de gravação de 84 a 105 ms (meta <= 130 ms); p90 da abertura de 141 a 170 ms (meta <= 400 ms).
+
+Pendente: `PROPERTY_FULL=1` com o volume de release, antes do release; E2E da secundária na tela (T-081). Não há E2E de tela nesta tarefa, e a secundária ainda não aparece.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

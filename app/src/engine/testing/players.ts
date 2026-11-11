@@ -47,6 +47,7 @@ export function testPlayer(overrides: Partial<MutablePlayer> = {}): MutablePlaye
     face: 't-br-abc',
     nationality: 'BR',
     position,
+    secondaryPosition: null,
     attributes: { ...attributes },
     overall,
     potential: overall + 2,

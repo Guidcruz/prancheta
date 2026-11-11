@@ -1,6 +1,6 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { suggestSheet } from '../../engine/index.ts';
+import { suggestSheet, type Position } from '../../engine/index.ts';
 import { loadGameParams } from '../params.ts';
 import { migrateSave } from './migrations/index.ts';
 import { SAVE_SCHEMA_VERSION, type CareerSave } from './schema.ts';
@@ -32,6 +32,16 @@ import { careerSaveSchema, parseCareerSave } from './validate.ts';
  * `npm run save:fixtures -w app` writes `vN.json` and `shape-vN.json` of the new version only. It
  * never overwrites a file: the fixtures of the versions already released stay as they were.
  */
+
+/** The neighbours of docs/design/posicao-secundaria.md, "Quem recebe e qual posição". */
+const NEIGHBOURS: Readonly<Record<Position, readonly Position[]>> = {
+  GK: [],
+  CB: ['FB', 'DM'],
+  FB: ['CB', 'DM', 'AM'],
+  DM: ['CB', 'FB', 'AM'],
+  AM: ['DM', 'ST'],
+  ST: ['AM'],
+};
 
 const dir = new URL('./__fixtures__/', import.meta.url);
 const file = (name: string) => new URL(name, dir);
@@ -103,6 +113,14 @@ describe('the frozen save format (US-033, T-019)', () => {
       if (version === SAVE_SCHEMA_VERSION) expect(save).toEqual(raw);
       // v1 had no draft sheet, and the step to v2 never builds one (ADR-0021, item 4).
       if (version < 2) expect(save.career.draft).toBeUndefined();
+      // Every player has the secondary position of v3 (ADR-0022): none for a goalkeeper, else
+      // `null` or a neighbour of the natural, never the natural nor the goal.
+      for (const p of Object.values(save.game.players)) {
+        if (p.position === 'GK') expect(p.secondaryPosition, p.id).toBeNull();
+        else if (p.secondaryPosition !== null) {
+          expect(NEIGHBOURS[p.position], p.id).toContain(p.secondaryPosition);
+        }
+      }
     },
   );
 
@@ -157,6 +175,7 @@ describe('the frozen save format (US-033, T-019)', () => {
     'career.draft?.lineup.bench.[].nullable',
     'career.draft?.lineup.captains.[]',
     'career.draft?.tactic.posture',
+    'game.players.{}.secondaryPosition',
   ])('the shape has %s', (path) => {
     expect(shapePaths(freshShape)).toContain(path);
   });
@@ -177,6 +196,27 @@ describe('the frozen save format (US-033, T-019)', () => {
     const players = Object.values(v1.game.players);
     expect(players.length).toBeGreaterThanOrEqual(500);
     expect(players.every((p) => p.name.display !== '' && p.face !== '')).toBe(true);
+  });
+
+  it('the v3 fixture has players with and without a secondary position (ADR-0022)', () => {
+    const v3 = readJson('v3.json') as CareerSave;
+    const v2 = readJson('v2.json') as CareerSave;
+    // The same career as the v1 and v2 fixtures: season 2, round 2 played, club 7.
+    expect([v3.game.season, v3.game.round, v3.career.clubId]).toEqual([
+      v2.game.season,
+      v2.game.round,
+      v2.career.clubId,
+    ]);
+    const players = Object.values(v3.game.players);
+    expect(players.some((p) => p.position === 'GK')).toBe(true);
+    expect(players.some((p) => p.position !== 'GK' && p.secondaryPosition === null)).toBe(true);
+    expect(players.some((p) => p.secondaryPosition !== null)).toBe(true);
+    // The shape records the field as text or null (testing/shape.ts reads the samples there).
+    const frozen = readJson('shape-v3.json') as { game: { players: { '{}': Shape } } };
+    expect((frozen.game.players['{}'] as Record<string, Shape>).secondaryPosition).toEqual([
+      'null',
+      'string',
+    ]);
   });
 
   it('the v2 fixture has a draft sheet with free slots, a list of 2 and its own tactic', () => {

@@ -28,6 +28,7 @@ export {
   fitLevel,
   isProspect,
   playerForm,
+  secondaryPositionFor,
   takerValue,
   validatePlayer,
 } from './players.ts';

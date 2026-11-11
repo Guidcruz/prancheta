@@ -139,9 +139,9 @@ beforeAll(() => {
 }, 300_000);
 
 describe('T-048: a career of several seasons through the real path', () => {
-  it('runs on engine 15 or later; T-048 changed no format (v2 is the draft sheet of T-075)', () => {
+  it('runs on engine 15 or later; T-048 changed no format (v2 and v3 came with T-075, T-078)', () => {
     expect(ENGINE_VERSION).toBeGreaterThanOrEqual(15);
-    expect(SAVE_SCHEMA_VERSION).toBe(2);
+    expect(SAVE_SCHEMA_VERSION).toBe(3);
     expect(career.turns.at(-1)!.next.engineVersion).toBe(ENGINE_VERSION);
   });
 

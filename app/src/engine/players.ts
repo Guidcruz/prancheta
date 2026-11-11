@@ -1,6 +1,6 @@
 import type { PlayersParams } from './params.ts';
 import { clamp } from './math.ts';
-import type { Rng } from './rng.ts';
+import { Rng, seedFromString } from './rng.ts';
 import type { ClubId, PlayerId, Position, Result, Trait } from './types.ts';
 
 /*
@@ -88,6 +88,13 @@ export interface Player {
   readonly nationality: string;
   /** Natural position. */
   readonly position: Position;
+  /**
+   * Secondary position (ADR-0022; docs/design/posicao-secundaria.md): `null` when the player has
+   * none. Never 'GK', never equal to `position`, always `null` for a goalkeeper. Drawn once, when
+   * the player is created (or by the save migration 0002), by {@link secondaryPositionFor};
+   * never changes.
+   */
+  readonly secondaryPosition: Position | null;
   readonly attributes: PlayerAttributes;
   /** Always `computeOverall(position, attributes)`. */
   readonly overall: number;
@@ -173,6 +180,13 @@ export const FIT: { readonly [N in Position]: { readonly [S in Position]: number
 
 /** Smallest `fit` still shown as "improvisado" (0.85 to 0.90); below it, "fora de posição". */
 export const IMPROVISED_MIN_FIT = 0.85;
+
+/**
+ * `fit` of a player in his secondary position, `max(FIT[natural][secondary], SECONDARY_FIT)`
+ * (docs/design/posicao-secundaria.md, "`fit` com a secundária"; ADR-0022). A rule, like
+ * {@link FIT}, not a /balance knob. Not read by the match yet: `fit` reads it from T-079 on.
+ */
+export const SECONDARY_FIT = 0.95;
 
 /**
  * Chance of each trait drawn at generation (docs/design/jogadores.md, "Traço de personalidade").
@@ -293,6 +307,56 @@ export function fitLevel(natural: Position, slot: Position): FitLevel {
   const value = fit(natural, slot);
   if (value >= 1) return 'natural';
   return value >= IMPROVISED_MIN_FIT ? 'improvised' : 'outOfPosition';
+}
+
+/**
+ * The positions a player of `position` may get as secondary (docs/design/posicao-secundaria.md,
+ * "Quem recebe e qual posição"; ADR-0022): the outfield positions `s` with
+ * `FIT[position][s] ≥ IMPROVISED_MIN_FIT`, other than `position`, in the order of
+ * {@link POSITIONS}. Always computed from the table, never listed by hand. Empty for a goalkeeper
+ * (and for a value that is not a position); no list holds the goal.
+ *
+ * Internal to the engine (ADR-0022, "Conformidade"): ui/ and lib/ never read it.
+ */
+export function secondaryNeighbours(position: Position): Position[] {
+  if (position === 'GK' || !Object.hasOwn(FIT, position)) return [];
+  const row = FIT[position];
+  return POSITIONS.filter((s) => s !== 'GK' && s !== position && row[s] >= IMPROVISED_MIN_FIT);
+}
+
+/**
+ * The secondary position of a player (docs/design/posicao-secundaria.md, "Sorteio e
+ * determinismo"; ADR-0022, item 2), from his own stream
+ * ``new Rng(seedFromString(`${seed}-secondary-${playerId}`))``, created here: it never receives
+ * nor consumes another `Rng`, so the order in which players are created or migrated never
+ * matters. Order of the draws (part of the determinism contract):
+ * - a goalkeeper, or a position without neighbours: `null`, with no draw;
+ * - else `u = rng.next()`; with `u ≥ chance`, `null`;
+ * - else `neighbours[rng.int(0, neighbours.length − 1)]` ({@link secondaryNeighbours}).
+ *
+ * `u` does not depend on `chance`, so the result is monotonic in it: a player with a secondary
+ * at 0.33 keeps the same one at 0.40. Pure and total: never throws, reads no clock.
+ *
+ * Used by the generation (`players.secondaryChance`) and by the save migration 0002 (its own
+ * frozen chance). While that migration calls it, its output must not change for any input,
+ * neighbours included (ADR-0022, "Conformidade").
+ *
+ * @param seed `GameState.seed`, an unsigned 32-bit integer.
+ * @param position The natural position.
+ * @param chance `players.secondaryChance` in the generation; the migration's constant there.
+ */
+export function secondaryPositionFor(
+  seed: number,
+  playerId: PlayerId,
+  position: Position,
+  chance: number,
+): Position | null {
+  const neighbours = secondaryNeighbours(position);
+  if (neighbours.length === 0) return null;
+  const rng = new Rng(seedFromString(`${seed}-secondary-${playerId}`));
+  // `!(u < chance)` and not `u >= chance`: a chance that is not a number gives no secondary.
+  if (!(rng.next() < chance)) return null;
+  return neighbours[rng.int(0, neighbours.length - 1)]!;
 }
 
 /**
@@ -472,6 +536,8 @@ export type PlayerProblem =
   | 'invalid-id'
   | 'invalid-nationality'
   | 'invalid-position'
+  /** A secondary position that is not `null` nor an outfield position other than the natural. */
+  | 'invalid-secondary-position'
   | 'invalid-trait'
   | 'overall-mismatch'
   | 'potential-below-overall'
@@ -504,6 +570,7 @@ const PLAYER_KEYS = [
   'face',
   'nationality',
   'position',
+  'secondaryPosition',
   'attributes',
   'overall',
   'potential',
@@ -709,6 +776,25 @@ function checkPlayer(raw: unknown): PlayerResult {
     if (POSITIONS.includes(raw.position as Position)) position = raw.position as Position;
     else issues.add({ field: 'position', problem: 'invalid-position', value: raw.position });
   }
+  // `null` (none), or an outfield position other than the natural; a goalkeeper has none. The
+  // neighbours are not checked: they are a rule of the generation, and a change of the FIT table
+  // must never invalidate a legitimate save (ADR-0022, item 6; the widest range, as `growth`).
+  let secondaryPosition: Position | null | undefined;
+  if (has('secondaryPosition')) {
+    const value = raw.secondaryPosition;
+    if (value === null) {
+      secondaryPosition = null;
+    } else if (
+      POSITIONS.includes(value as Position) &&
+      value !== 'GK' &&
+      value !== position &&
+      position !== 'GK'
+    ) {
+      secondaryPosition = value as Position;
+    } else {
+      issues.add({ field: 'secondaryPosition', problem: 'invalid-secondary-position', value });
+    }
+  }
   const attributes = has('attributes')
     ? checkAttributes(issues, raw.attributes, position)
     : undefined;
@@ -780,6 +866,7 @@ function checkPlayer(raw: unknown): PlayerResult {
       face: face!,
       nationality: nationality!,
       position: position!,
+      secondaryPosition: secondaryPosition as Position | null,
       attributes: attributes!,
       overall: overall!,
       potential: potential!,

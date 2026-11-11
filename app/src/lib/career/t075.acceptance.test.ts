@@ -38,9 +38,9 @@ function service(): CareerService {
 }
 
 describe('T-075 versions', () => {
-  it('ENGINE_VERSION stays at 16 and the save schema is 2', () => {
-    expect(ENGINE_VERSION).toBe(16);
-    expect(SAVE_SCHEMA_VERSION).toBe(2);
+  it('ENGINE_VERSION stayed at 16 and the save schema went to 2 (T-078 raised both later)', () => {
+    expect(ENGINE_VERSION).toBeGreaterThanOrEqual(16);
+    expect(SAVE_SCHEMA_VERSION).toBeGreaterThanOrEqual(2);
   });
 
   it('the v1 fixtures are still v1, with no draft; the v2 one has a draft with free slots', () => {

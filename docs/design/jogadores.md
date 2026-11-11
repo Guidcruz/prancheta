@@ -245,7 +245,7 @@ Com a escada anterior, o protótipo deu campeão com 73,7 pontos e 17º com 40,7
 | `players.growthMax`         | 1,2           | 1,0–1,5 | idem                                            |
 | `generation.clubStrengthSd` | 1,5           | 0–4     | cada carreira com favoritos um pouco diferentes |
 
-Projetado, ainda fora do `players.json`: `players.secondaryChance` = 0,33 (faixa 0–0,5), em [posicao-secundaria.md](posicao-secundaria.md), "Parâmetros e limites".
+Em `players.json` (T-078): `players.secondaryChance` = 0,33 (faixa 0–0,5), em [posicao-secundaria.md](posicao-secundaria.md), "Parâmetros e limites".
 
 A evolução não tem outro parâmetro: `growthMin` e `growthMax` são o botão do quanto os jovens crescem (e da inflação da liga, decisão 11 de `balance-targets.md`). Curva, ruído de 1, multiplicadores de minutos e de moral e a referência de minutos são constantes.
 

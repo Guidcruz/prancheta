@@ -23,8 +23,8 @@ function read(file: string): string {
 }
 
 describe('T-076 acceptance', () => {
-  it('keeps ENGINE_VERSION at 16 (no golden depends on the readings)', () => {
-    expect(ENGINE_VERSION).toBe(16);
+  it('did not raise ENGINE_VERSION past 16 (no golden depends on the readings; T-078 did)', () => {
+    expect(ENGINE_VERSION).toBeGreaterThanOrEqual(16);
   });
 
   it('exports the seven functions of the contract from index.ts', () => {

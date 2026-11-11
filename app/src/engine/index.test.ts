@@ -48,6 +48,7 @@ const CONTRACT = [
   'sheetRoles',
   'sheetProblems',
   'takerValue',
+  'secondaryPositionFor',
   // closed lists and field ranges
   'PARAM_RANGES',
   'SEASON_ROUNDS',
@@ -112,7 +113,18 @@ describe('engine public API', () => {
   it('exports exactly the contract and the tools API, nothing internal', () => {
     expect(new Set([...CONTRACT, ...TOOLS]).size).toBe(CONTRACT.length + TOOLS.length);
     expect(Object.keys(engine).sort()).toEqual([...CONTRACT, ...TOOLS].sort());
-    for (const internal of ['summarizeMatch', 'roundFacts', 'roundTables', 'matchSeed', 'fit']) {
+    for (const internal of [
+      'summarizeMatch',
+      'roundFacts',
+      'roundTables',
+      'matchSeed',
+      'fit',
+      // ADR-0022, "Conformidade": the screen reads the level by fitLevel, never these.
+      'FIT',
+      'IMPROVISED_MIN_FIT',
+      'SECONDARY_FIT',
+      'secondaryNeighbours',
+    ]) {
       expect(internal in engine, internal).toBe(false);
     }
   });

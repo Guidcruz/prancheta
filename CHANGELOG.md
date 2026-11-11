@@ -6,6 +6,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Posição secundária no jogador e no save, formato v3 (T-078, ADR-0022):
+  - O jogador ainda não vê a mudança, e nenhuma partida muda: o rendimento na secundária (95%) entra na T-079, e a marca na tela na T-079 e na T-081.
+  - Motor: `Player.secondaryPosition` (`null` quando não tem; goleiro sempre `null`). Cerca de 1 em 3 jogadores de linha tem uma, sorteada entre as vizinhas da tabela de posições (`FIT` ≥ 0,85), com chances iguais, por `secondaryPositionFor`, no contrato. Cada jogador tem o próprio sorteio, pela semente da carreira e pelo id, então os sorteios do elenco não mudam: nomes, idades, atributos e forças são os mesmos de antes.
+  - A geração do novo jogo (antes do ajuste de força do elenco) e a base sorteiam a secundária. Parâmetro novo `players.secondaryChance` = 0,33 (faixa 0 a 0,5). Constante `SECONDARY_FIT` = 0,95, ainda sem uso.
+  - `validatePlayer` exige o campo e aceita `null` ou uma posição de linha diferente da natural; o problema novo é `invalid-secondary-position`.
+  - Save v3: migração `0002-secondary-position` (v2 → v3), que dá a cada jogador das carreiras salvas a mesma secundária que um jogo novo da mesma semente daria, com a chance congelada em 0,33, sem mexer em mais nada. Fixtures `v3.json` e `shape-v3.json`; as da v1 e da v2 não mudaram.
+  - `ENGINE_VERSION` 17: no `new-game.json` só entra o campo novo; nos outros goldens mudam só a versão e os digests.
+
 - Telas de Tática e Funções (T-077; US-018):
   - A vista Tática da aba Elenco substitui o "Esta tela chega numa próxima versão.": formação em cartas com a miniatura do esquema (6 formações), força do time com seta e sinal depois da troca, avisos "Nesta formação", postura (3 opções, sem "Tudo no ataque") e pressão, cada uma com a frase de efeito.
   - Trocar a formação mantém os mesmos 11 titulares, redistribuídos pela posição de cada um (regra do motor); o banco e as listas não mudam, e a região viva resume a troca ("Formação 4-3-3. Ataque 67, subiu 3. 1 jogador fora de posição.").

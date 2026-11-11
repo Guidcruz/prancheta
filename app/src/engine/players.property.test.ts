@@ -26,7 +26,7 @@ function generated(seed: number, growthMin: number, growthMax: number) {
   const attributes = fitAttributesToOverall(start, position, target);
   const overall = computeOverall(position, attributes);
   const potential = drawPotential(rng, overall, age);
-  const { peakAge, growth } = drawGrowthCurve(rng, { growthMin, growthMax });
+  const { peakAge, growth } = drawGrowthCurve(rng, { growthMin, growthMax, secondaryChance: 0.33 });
   const trait = drawTrait(rng);
   return {
     ...testPlayer({ position, attributes, overall, potential, age, peakAge, growth, trait }),

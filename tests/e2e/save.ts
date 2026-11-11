@@ -148,3 +148,96 @@ export async function patchSave(page: Page, change: (save: SaveJson) => void): P
   await continueCareer(page);
   return save;
 }
+
+/**
+ * Writes `json` as the head snapshot of the newest career, labelled as format `schemaVersion` in
+ * the snapshot record and in the career row, like a build of that format would have left it. No
+ * validation: it is how a career saved by an older build is put into the test database (T-078).
+ */
+export async function writeRawSnapshot(
+  page: Page,
+  json: string,
+  schemaVersion: number,
+): Promise<void> {
+  await page.evaluate(
+    async ({ text, version }) => {
+      const db = await new Promise<IDBDatabase>((resolve, reject) => {
+        const open = indexedDB.open('prancheta-test');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => resolve(open.result);
+      });
+      const ask = <T>(request: IDBRequest<T>) =>
+        new Promise<T>((resolve, reject) => {
+          request.onsuccess = () => resolve(request.result);
+          request.onerror = () => reject(request.error);
+        });
+      const careers = (await ask(db.transaction('careers').objectStore('careers').getAll())) as {
+        id: string;
+        headSeq: number;
+        updatedAt: string;
+        schemaVersion?: number;
+      }[];
+      const newest = careers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
+      const record = (await ask(
+        db.transaction('snapshots').objectStore('snapshots').get([newest.id, newest.headSeq]),
+      )) as Record<string, unknown>;
+      const blob = new TextEncoder().encode(text);
+      const digest = new Uint8Array(await crypto.subtle.digest('SHA-256', blob));
+      const sha256 = Array.from(digest, (b) => b.toString(16).padStart(2, '0')).join('');
+      const tx = db.transaction(['snapshots', 'careers'], 'readwrite');
+      tx.objectStore('snapshots').put({
+        ...record,
+        blob,
+        sha256,
+        bytes: blob.byteLength,
+        schemaVersion: version,
+      });
+      if ('schemaVersion' in newest) {
+        tx.objectStore('careers').put({ ...newest, schemaVersion: version });
+      }
+      await new Promise<void>((resolve, reject) => {
+        tx.oncomplete = () => resolve();
+        tx.onerror = () => reject(tx.error);
+        tx.onabort = () => reject(tx.error);
+      });
+      db.close();
+    },
+    { text: json, version: schemaVersion },
+  );
+}
+
+/** The newest career's row and head snapshot record, as the store keeps them. */
+export async function readHeadRecord(page: Page): Promise<{
+  careerSchemaVersion: number | undefined;
+  recordSchemaVersion: number;
+  headSeq: number;
+}> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open('prancheta-test');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => resolve(open.result);
+    });
+    const ask = <T>(request: IDBRequest<T>) =>
+      new Promise<T>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    const careers = (await ask(db.transaction('careers').objectStore('careers').getAll())) as {
+      id: string;
+      headSeq: number;
+      updatedAt: string;
+      schemaVersion?: number;
+    }[];
+    const newest = careers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
+    const record = (await ask(
+      db.transaction('snapshots').objectStore('snapshots').get([newest.id, newest.headSeq]),
+    )) as { schemaVersion: number };
+    db.close();
+    return {
+      careerSchemaVersion: newest.schemaVersion,
+      recordSchemaVersion: record.schemaVersion,
+      headSeq: newest.headSeq,
+    };
+  });
+}

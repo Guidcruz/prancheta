@@ -71,8 +71,8 @@ describe('a hostile or broken save is refused, never thrown', () => {
   const player = `game.players.${playerId}`;
   const cases: [string, () => unknown, string, string][] = [
     ['not an object', () => 'save', '', 'strict_object'],
-    ['a newer format', () => set('schemaVersion', 3), 'schemaVersion', 'literal'],
-    ['an older format', () => set('schemaVersion', 1), 'schemaVersion', 'literal'],
+    ['a newer format', () => set('schemaVersion', 4), 'schemaVersion', 'literal'],
+    ['an older format', () => set('schemaVersion', 2), 'schemaVersion', 'literal'],
     ['an unknown key at the top', () => set('extra', 1), 'extra', 'strict_object'],
     [
       'an unknown key in the career',
@@ -165,6 +165,18 @@ describe('a hostile or broken save is refused, never thrown', () => {
       'custom',
     ],
     ['a face past its bound', () => set(`${player}.face`, 'x'.repeat(1000)), player, 'custom'],
+    [
+      'a player without the secondary position of v3 (ADR-0022)',
+      () => set(`${player}.secondaryPosition`, REMOVE),
+      player,
+      'custom',
+    ],
+    [
+      'a player whose secondary position is the goal',
+      () => set(`${player}.secondaryPosition`, 'GK'),
+      player,
+      'custom',
+    ],
     [
       'a club list the engine refuses (a club missing)',
       () => set(`game.clubs.${otherClub}`, REMOVE),

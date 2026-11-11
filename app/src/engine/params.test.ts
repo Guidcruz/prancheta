@@ -141,6 +141,31 @@ describe('validateParams', () => {
     });
   });
 
+  describe('players.secondaryChance (ADR-0022)', () => {
+    it('accepts 0 to 0.5', () => {
+      for (const value of [0, 0.33, 0.5]) {
+        expect(validateParams(withValue('players.secondaryChance', value)).ok).toBe(true);
+      }
+    });
+
+    it('refuses values out of 0..0.5, and a missing key', () => {
+      for (const value of [-0.01, 0.51, 1]) {
+        expect(issuesOf(withValue('players.secondaryChance', value))).toEqual([
+          {
+            path: 'players.secondaryChance',
+            problem: 'out-of-range',
+            value,
+            range: { min: 0, max: 0.5 },
+          },
+        ]);
+      }
+      const raw = withValue('players', { growthMin: 0.8, growthMax: 1.2 });
+      expect(issuesOf(raw).map((i) => `${i.path}:${i.problem}`)).toEqual([
+        'players.secondaryChance:missing',
+      ]);
+    });
+  });
+
   it.each(numberLeaves())('checks the range of %s (%s..%s)', (path, min, max, integer) => {
     expect(validateParams(withValue(path, min)).ok).toBe(true);
     expect(validateParams(withValue(path, max)).ok).toBe(true);
@@ -198,8 +223,15 @@ describe('validateParams', () => {
   );
 
   it('treats an inherited key as missing', () => {
-    const raw = withValue('players', Object.create({ growthMin: 0.8, growthMax: 1.2 }));
-    expect(issuesOf(raw).map((i) => i.path)).toEqual(['players.growthMin', 'players.growthMax']);
+    const raw = withValue(
+      'players',
+      Object.create({ growthMin: 0.8, growthMax: 1.2, secondaryChance: 0.33 }),
+    );
+    expect(issuesOf(raw).map((i) => i.path)).toEqual([
+      'players.growthMin',
+      'players.growthMax',
+      'players.secondaryChance',
+    ]);
   });
 
   it.each([

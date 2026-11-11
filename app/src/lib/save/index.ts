@@ -13,6 +13,7 @@ export {
   type CareerSave,
   type CareerSaveV1,
   type CareerSaveV2,
+  type CareerSaveV3,
   type CareerSummary,
   type MatchSheetRecord,
   type NewsRef,

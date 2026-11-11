@@ -27,6 +27,7 @@ import {
   SQUAD_COMPOSITION,
   SQUAD_SIZE,
   computeOverall,
+  secondaryPositionFor,
   validatePlayer,
   type Player,
 } from './players.ts';
@@ -1093,7 +1094,8 @@ function newIdols(before: GameState, after: GameState): Set<PlayerId> {
 /**
  * The invariants of one evolution (jogadores.md, "Evolução"): age exactly + 1, the overall by the
  * formula and never above the potential, inside 1..99, and potential, peakAge, growth, position,
- * trait and shirt untouched (but the trait of a new idol of the renewal, T-048).
+ * secondary position (ADR-0022), trait and shirt untouched (but the trait of a new idol of the
+ * renewal, T-048).
  */
 function evolutionProblems(before: GameState, after: GameState): string[] {
   const out: string[] = [];
@@ -1111,7 +1113,15 @@ function evolutionProblems(before: GameState, after: GameState): string[] {
     if (b.overall <= b.potential && a.overall > b.overall && a.overall > b.potential) {
       out.push(`${id}: passed the potential`);
     }
-    for (const key of ['potential', 'peakAge', 'growth', 'position', 'trait', 'shirt'] as const) {
+    for (const key of [
+      'potential',
+      'peakAge',
+      'growth',
+      'position',
+      'secondaryPosition',
+      'trait',
+      'shirt',
+    ] as const) {
       if (key === 'trait' && idols.has(id)) continue;
       if (a[key] !== b[key]) out.push(`${id}: ${key} changed`);
     }
@@ -1126,7 +1136,7 @@ function evolutionProblems(before: GameState, after: GameState): string[] {
  * birthday (`retires`: 40 always, 33 to 39 by his draw, below 33 never) leaves the squad and stays
  * in `players`; the rest keep their order; one youth of 17
  * per retired player, of his position, at the end, with the turn's ids, 0 appearances and a valid
- * player; 25 per squad, 3/5/4/4/4/5 and one idol (the same one unless he retired); and the
+ * player whose secondary position is `secondaryPositionFor` of his id; 25 per squad, 3/5/4/4/4/5 and one idol (the same one unless he retired); and the
  * campaigns list the farewells and the academy.
  */
 function renewalProblems(before: GameState, closed: GameState, summary: SeasonSummary): string[] {
@@ -1151,6 +1161,14 @@ function renewalProblems(before: GameState, closed: GameState, summary: SeasonSu
       if (id !== turnPlayerId(clubId, before.season + 1, k)) out.push(`${id}: id`);
       if (p.age !== ACADEMY_AGE || p.clubAppearances !== 0) out.push(`${id}: age or apps`);
       if (p.position !== before.players[gone[i]!]?.position) out.push(`${id}: position`);
+      // The secondary position comes from the youth's own stream (ADR-0022), as in the migration.
+      const secondary = secondaryPositionFor(
+        before.seed,
+        id,
+        p.position,
+        params.players.secondaryChance,
+      );
+      if (p.secondaryPosition !== secondary) out.push(`${id}: secondary position`);
       if (!validatePlayer(p).ok) out.push(`${id}: invalid`);
     });
     out.push(...squadProblems(closed, clubId));

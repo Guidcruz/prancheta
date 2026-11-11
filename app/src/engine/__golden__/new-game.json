@@ -1,9 +1,9 @@
 {
-  "engineVersion": 16,
+  "engineVersion": 17,
   "name": "new-game",
   "data": {
     "header": {
-      "engineVersion": 16,
+      "engineVersion": 17,
       "retiredNamesRev": 0,
       "seed": 20261104,
       "year": 2026,
@@ -234,6 +234,7 @@
         "face": "t-br-lthm8z",
         "nationality": "BR",
         "position": "GK",
+        "secondaryPosition": null,
         "attributes": {
           "reflexes": 78,
           "positioning": 87,
@@ -271,6 +272,7 @@
         "face": "t-br-1on9kco",
         "nationality": "BR",
         "position": "CB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 74,
           "technique": 72,
@@ -308,6 +310,7 @@
         "face": "t-br-gyjuem",
         "nationality": "BR",
         "position": "CB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 82,
           "technique": 72,
@@ -345,6 +348,7 @@
         "face": "t-br-1j634vm",
         "nationality": "BR",
         "position": "FB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 76,
           "technique": 72,
@@ -382,6 +386,7 @@
         "face": "t-br-aa326f",
         "nationality": "BR",
         "position": "FB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 69,
           "technique": 77,
@@ -419,6 +424,7 @@
         "face": "t-br-1an30l2",
         "nationality": "BR",
         "position": "DM",
+        "secondaryPosition": "CB",
         "attributes": {
           "speed": 76,
           "technique": 82,
@@ -456,6 +462,7 @@
         "face": "t-br-9oz50t",
         "nationality": "BR",
         "position": "DM",
+        "secondaryPosition": "AM",
         "attributes": {
           "speed": 79,
           "technique": 80,
@@ -493,6 +500,7 @@
         "face": "t-br-vn0m05",
         "nationality": "BR",
         "position": "AM",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 78,
           "technique": 84,
@@ -530,6 +538,7 @@
         "face": "t-br-1l8jcs6",
         "nationality": "BR",
         "position": "AM",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 64,
           "technique": 85,
@@ -567,6 +576,7 @@
         "face": "t-br-1pzlolk",
         "nationality": "BR",
         "position": "ST",
+        "secondaryPosition": "AM",
         "attributes": {
           "speed": 85,
           "technique": 71,
@@ -604,6 +614,7 @@
         "face": "t-br-b3gy45",
         "nationality": "BR",
         "position": "ST",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 71,
           "technique": 74,
@@ -641,6 +652,7 @@
         "face": "t-br-6ooiti",
         "nationality": "BR",
         "position": "GK",
+        "secondaryPosition": null,
         "attributes": {
           "reflexes": 76,
           "positioning": 59,
@@ -678,6 +690,7 @@
         "face": "t-br-hhhnza",
         "nationality": "BR",
         "position": "CB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 68,
           "technique": 77,
@@ -715,6 +728,7 @@
         "face": "t-br-1cwwohj",
         "nationality": "BR",
         "position": "FB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 63,
           "technique": 71,
@@ -752,6 +766,7 @@
         "face": "t-br-ji82li",
         "nationality": "BR",
         "position": "DM",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 76,
           "technique": 66,
@@ -789,6 +804,7 @@
         "face": "t-br-1mdagxv",
         "nationality": "BR",
         "position": "AM",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 64,
           "technique": 73,
@@ -826,6 +842,7 @@
         "face": "t-br-14uswz8",
         "nationality": "BR",
         "position": "ST",
+        "secondaryPosition": "AM",
         "attributes": {
           "speed": 71,
           "technique": 61,
@@ -863,6 +880,7 @@
         "face": "t-br-1lipgmm",
         "nationality": "BR",
         "position": "CB",
+        "secondaryPosition": "FB",
         "attributes": {
           "speed": 75,
           "technique": 66,
@@ -900,6 +918,7 @@
         "face": "t-br-19cq9q1",
         "nationality": "BR",
         "position": "FB",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 64,
           "technique": 63,
@@ -937,6 +956,7 @@
         "face": "t-br-esvfs1",
         "nationality": "BR",
         "position": "CB",
+        "secondaryPosition": "DM",
         "attributes": {
           "speed": 63,
           "technique": 55,
@@ -974,6 +994,7 @@
         "face": "t-br-r0ai1t",
         "nationality": "BR",
         "position": "AM",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 76,
           "technique": 79,
@@ -1011,6 +1032,7 @@
         "face": "t-br-oavern",
         "nationality": "BR",
         "position": "GK",
+        "secondaryPosition": null,
         "attributes": {
           "reflexes": 54,
           "positioning": 60,
@@ -1048,6 +1070,7 @@
         "face": "t-br-1shf40g",
         "nationality": "BR",
         "position": "DM",
+        "secondaryPosition": "FB",
         "attributes": {
           "speed": 64,
           "technique": 66,
@@ -1085,6 +1108,7 @@
         "face": "t-br-bte0v2",
         "nationality": "BR",
         "position": "ST",
+        "secondaryPosition": null,
         "attributes": {
           "speed": 64,
           "technique": 74,
@@ -1122,6 +1146,7 @@
         "face": "t-br-10ylf7y",
         "nationality": "BR",
         "position": "ST",
+        "secondaryPosition": "AM",
         "attributes": {
           "speed": 53,
           "technique": 74,
@@ -1163,6 +1188,7 @@
           "face": "t-br-dqrykf",
           "nationality": "BR",
           "position": "GK",
+          "secondaryPosition": null,
           "attributes": {
             "reflexes": 69,
             "positioning": 80,
@@ -1200,6 +1226,7 @@
           "face": "t-br-30iod6",
           "nationality": "BR",
           "position": "CB",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 65,
             "technique": 64,
@@ -1237,6 +1264,7 @@
           "face": "t-br-19yxrb3",
           "nationality": "BR",
           "position": "CB",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 82,
             "technique": 71,
@@ -1274,6 +1302,7 @@
           "face": "t-br-1lq8ilz",
           "nationality": "BR",
           "position": "FB",
+          "secondaryPosition": "DM",
           "attributes": {
             "speed": 67,
             "technique": 84,
@@ -1311,6 +1340,7 @@
           "face": "t-br-4lq6el",
           "nationality": "BR",
           "position": "FB",
+          "secondaryPosition": "CB",
           "attributes": {
             "speed": 68,
             "technique": 77,
@@ -1348,6 +1378,7 @@
           "face": "t-br-1ldhre2",
           "nationality": "BR",
           "position": "DM",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 68,
             "technique": 70,
@@ -1385,6 +1416,7 @@
           "face": "t-br-hjadvz",
           "nationality": "BR",
           "position": "AM",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 78,
             "technique": 71,
@@ -1422,6 +1454,7 @@
           "face": "t-br-1646mgh",
           "nationality": "BR",
           "position": "AM",
+          "secondaryPosition": "DM",
           "attributes": {
             "speed": 68,
             "technique": 83,
@@ -1459,6 +1492,7 @@
           "face": "t-br-1xiigo5",
           "nationality": "BR",
           "position": "ST",
+          "secondaryPosition": "AM",
           "attributes": {
             "speed": 75,
             "technique": 67,
@@ -1496,6 +1530,7 @@
           "face": "t-br-1631kzg",
           "nationality": "BR",
           "position": "ST",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 71,
             "technique": 79,
@@ -1533,6 +1568,7 @@
           "face": "t-br-15wbkus",
           "nationality": "BR",
           "position": "ST",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 80,
             "technique": 72,
@@ -1570,6 +1606,7 @@
           "face": "t-br-1wmunwn",
           "nationality": "BR",
           "position": "GK",
+          "secondaryPosition": null,
           "attributes": {
             "reflexes": 73,
             "positioning": 61,
@@ -1607,6 +1644,7 @@
           "face": "t-br-9mv1c4",
           "nationality": "BR",
           "position": "CB",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 62,
             "technique": 71,
@@ -1644,6 +1682,7 @@
           "face": "t-br-54m5fr",
           "nationality": "BR",
           "position": "FB",
+          "secondaryPosition": "CB",
           "attributes": {
             "speed": 69,
             "technique": 61,
@@ -1681,6 +1720,7 @@
           "face": "t-br-oc6ju4",
           "nationality": "BR",
           "position": "DM",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 74,
             "technique": 82,
@@ -1718,6 +1758,7 @@
           "face": "t-br-6j1tgg",
           "nationality": "BR",
           "position": "AM",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 65,
             "technique": 71,
@@ -1755,6 +1796,7 @@
           "face": "t-br-u1ubbd",
           "nationality": "BR",
           "position": "ST",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 63,
             "technique": 78,
@@ -1792,6 +1834,7 @@
           "face": "t-br-1cdqzav",
           "nationality": "BR",
           "position": "FB",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 72,
             "technique": 63,
@@ -1829,6 +1872,7 @@
           "face": "t-br-1yc86rp",
           "nationality": "BR",
           "position": "DM",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 55,
             "technique": 63,
@@ -1866,6 +1910,7 @@
           "face": "t-br-y8ctk9",
           "nationality": "BR",
           "position": "DM",
+          "secondaryPosition": "CB",
           "attributes": {
             "speed": 68,
             "technique": 68,
@@ -1903,6 +1948,7 @@
           "face": "t-br-1gm2hj7",
           "nationality": "BR",
           "position": "ST",
+          "secondaryPosition": "AM",
           "attributes": {
             "speed": 66,
             "technique": 78,
@@ -1940,6 +1986,7 @@
           "face": "t-br-emw035",
           "nationality": "BR",
           "position": "GK",
+          "secondaryPosition": null,
           "attributes": {
             "reflexes": 58,
             "positioning": 66,
@@ -1977,6 +2024,7 @@
           "face": "t-br-11r2bsl",
           "nationality": "BR",
           "position": "CB",
+          "secondaryPosition": "FB",
           "attributes": {
             "speed": 50,
             "technique": 52,
@@ -2014,6 +2062,7 @@
           "face": "t-br-afssk7",
           "nationality": "BR",
           "position": "CB",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 59,
             "technique": 65,
@@ -2051,6 +2100,7 @@
           "face": "t-br-10jozp7",
           "nationality": "BR",
           "position": "AM",
+          "secondaryPosition": null,
           "attributes": {
             "speed": 73,
             "technique": 72,
@@ -2144,6 +2194,6 @@
         "s1-r20-clube-teste-11-clube-teste-17"
       ]
     },
-    "digest": "8ce5aa5a"
+    "digest": "80e27430"
   }
 }
