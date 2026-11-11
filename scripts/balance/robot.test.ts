@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FORMATION_SLOTS,
   HALF_MINUTES,
+  correctedCondition,
+  effectiveRating,
+  isUnavailable,
+  naturalFirstEleven,
   playRound,
   prepareRound,
   validateLineup,
@@ -59,6 +64,22 @@ describe('expectedPoints', () => {
 
 describe('robotRoundInput', () => {
   const start = seasonStart(ctx, 1);
+
+  it('picks its XI by "natural primeiro" with the eff, as the AI does with its value (T-082)', () => {
+    // Everyone is fresh at the start, so the rotation of a congested week changes nobody.
+    const sheet = robotRoundInput(start, params, CLUB).sheets[CLUB]!;
+    const { formation } = sheet.lineup;
+    const available = start.squads[CLUB]!.map((id) => start.players[id]!).filter(
+      (p) => !isUnavailable(p),
+    );
+    const xi = naturalFirstEleven(available, formation, (p, slot) =>
+      effectiveRating(p, slot, correctedCondition(p)),
+    );
+    expect(sheet.lineup.starters).toEqual(xi.map((p) => p!.id));
+    const slots = FORMATION_SLOTS[formation];
+    const offPosition = xi.filter((p, i) => p!.position !== slots[i]);
+    expect(offPosition).toEqual([]);
+  });
 
   it('gives a valid sheet, the "full" mode, commands for its match and the fans cap', () => {
     const input = robotRoundInput(start, params, CLUB);
