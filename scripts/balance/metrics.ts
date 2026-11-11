@@ -691,6 +691,18 @@ export function buildReport(
       { max: 0.05 },
       false,
     ),
+    row(
+      'offPosition',
+      'Titulares fora da posição natural por ficha da IA',
+      ratio(
+        sumOf((s) => s.sheets.offPosition),
+        sheets,
+      ),
+      rate2,
+      'informativa (posicao-secundaria.md)',
+      () => true,
+      false,
+    ),
     // Metas futuras: "n/a" until their stage, never counted.
     ...FUTURE_TARGETS.map((f) =>
       row(
