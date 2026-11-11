@@ -2,6 +2,36 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-11: escalação automática "natural primeiro" (T-082; exceção da zebra na semente 2)
+
+**Como foi medido.** Motor da T-082 (`ENGINE_VERSION` 18): `pickEleven` (IA e "Sugerir escalação"), `bestEleven` e o robô do `/balance` escalam pelo "natural primeiro" de [posicao-secundaria.md](posicao-secundaria.md); o `fit` ainda ignora a secundária (T-079). Nenhum parâmetro mudou. Duas rodadas, na `main` (base da branch, T-078) e na branch: `npm run balance -- --seasons 200 --seed 1,2,3` (robô no Coritibom) e o de release, `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (robô no Chapecão). Saídas em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/` (`before-200.txt`, `after-200.txt`, `before-1000.txt`, `after-1000.txt`; comparação em `compare-200.md`).
+
+**Resultado.** Release: 39 de 39 metas obrigatórias, antes e depois. Com 200 temporadas: sementes 1 e 3, 36 de 36; semente 2, 35 de 36 (zebra em 7,9%, fora). Metas raras na soma das 3 sementes: dentro, antes e depois.
+
+| Métrica (main → branch)                   | Semente 1   | Semente 2          | Semente 3   | Release (1.000, semente 1) | Meta             |
+| ----------------------------------------- | ----------- | ------------------ | ----------- | -------------------------- | ---------------- |
+| Gols por partida                          | 2,64 → 2,66 | 2,65 → 2,67        | 2,62 → 2,64 | 2,63 → 2,65                | 2,65 (2,50–2,80) |
+| Vitória do time 20 pontos mais forte      | 62,8 → 62,9 | 62,6 → 62,9        | 62,4 → 62,6 | 62,8 → 62,9                | 65% (62–68%)     |
+| Zebra: time 30 pontos mais fraco vence    | 8,3 → 8,3   | 8,1 → **7,9** fora | 8,4 → 8,3   | 8,3 → 8,3                  | 10% (8–12%)      |
+| Empates                                   | 26,3 → 26,1 | 26,0 → 26,1        | 26,4 → 26,4 | 26,2 → 26,0                | 26% (24–28%)     |
+| Vitórias do mandante                      | 45,9 → 46,2 | 45,9 → 45,8        | 45,6 → 45,8 | 45,8 → 45,9                | 47,5% (45–50%)   |
+| Pontos do campeão                         | 75,0 → 74,9 | 75,8 → 75,4        | 74,6 → 74,5 | 75,0 → 75,1                | 77 (72–82)       |
+| Pontos do 17º colocado                    | 40,8 → 40,6 | 40,4 → 40,6        | 40,4 → 40,4 | 40,6 → 40,6                | 42 (39–45)       |
+| Campeão grande                            | 86,0 → 84,0 | 85,5 → 84,5        | 78,0 → 83,0 | 80,0 → 81,6                | 50% a 90%        |
+| Técnico-robô bom: ganho por temporada     | +4,4 → +4,3 | +4,9 → +4,8        | +3,9 → +3,3 | +2,3 → +2,5 (Chapecão)     | +2 a +8 pontos   |
+| Titulares fora da posição natural (ficha) | 0,53 → 0,06 | 0,52 → 0,06        | 0,51 → 0,06 | 0,51 → 0,06                | informativa      |
+
+Metas raras (soma das 3 sementes, 600 temporadas), main → branch: campeão pequeno 2,2% → 1,2% (0,5% a 4%); clube fraco no G4 7,3% → 6,2% (5% a 15%); fuga do Z4 de 6 a 8 pontos 6,7% → 7,3% (ao menos 3%).
+
+**Métrica nova: titulares fora da posição natural por ficha da IA** (informativa, `posicao-secundaria.md`). Cai de cerca de 0,52 para 0,06: o guloso punha meio titular fora da posição em toda ficha (o volante de 78 na zaga); o "natural primeiro" só tira alguém da posição quando falta gente dela (lesão, suspensão, rotação). Na medição estática do developer, 4.000 elencos completos: 0,40 → 0,002 por XI, força do XI +0,28. É a métrica que vai mostrar a secundária quando a T-079 ligar o `fit` dela.
+
+**Leitura.**
+
+- **O placar quase não mexe, como `posicao-secundaria.md` previu** (menos de ±0,01 gol e de ±0,3 p.p. no 20 pontos e na zebra, estimados): gols +0,02 nas quatro rodadas, 20 pontos mais forte de +0,1 a +0,3 p.p., zebra de 0,0 a −0,2 p.p. O deslocamento do elenco traz o melhor XI de volta à escada, então a força em campo dos duelos calibrados é a mesma. A tabela e o robô ficam no ruído (o robô cai 0,6 na semente 3 e sobe 0,2 no release; o IC 95% de cada semente tem cerca de ±1).
+- **A exceção: zebra em 7,9% na semente 2**, 0,1 p.p. abaixo do piso. Nessa semente a `main` já dava 8,1%; a diferença de 0,2 p.p. é do tamanho do erro padrão da métrica (cerca de 0,19 p.p. com taxa de 8% em 20.000 duelos), as sementes 1 e 3 ficam em 8,3% e o release de 1.000 temporadas dá 8,3%, igual à `main`. Não há mecanismo novo puxando a zebra para baixo: os duelos usam elencos com força exata e o algoritmo é o mesmo nos dois lados.
+- **Decisão do CEO (2026-11-11, "ok recomendado"):** aceitar como ruído, sem mexer em parâmetro, e seguir com o merge. Fica registrado como exceção ao critério 6 de `posicao-secundaria.md` ("todas as metas da 1a dentro" com as sementes 1, 2 e 3) e à regra do ADR-0022 de ajustar antes do merge.
+- **Para olhar com calma nas próximas tarefas:** a zebra está encostada no piso desde a calibragem (8,1% a 8,4% em todas as rodadas da `main`, contra o centro de 10%), e qualquer mudança pequena pode tirá-la da faixa numa semente. A T-079 mexe no `fit` (a secundária a 0,95): se a zebra voltar a sair, ou ficar abaixo de 8,2% em duas sementes, não é mais ruído; aí cabe uma proposta de ajuste (um parâmetro, com a métrica que sobe e a que não pode piorar, que é o 20 pontos mais forte, também perto do piso de 62%).
+
 ## 2026-11-06: renovação mínima dos elencos (decisão 14; T-048)
 
 **Como foi medido.** Motor da T-048 (commit `52618ee`, `ENGINE_VERSION` 15): na virada, quem completa 35 anos se aposenta e o clube promove da base um jovem de 17 da mesma posição, ancorado em `def.strength`. Quatro rodadas, IA nos 20 clubes, parâmetros do repositório, nenhum parâmetro mudou:
