@@ -62,6 +62,7 @@ jobs:
   # E2E em Chromium e WebKit (docs/03-test-plan.md, 3 e 4). Roda em paralelo ao `ci`: o build de teste
   # sai em app/dist-e2e/ e nunca toca o dist/ publicado. PRANCHETA_ENV=test vale só nos passos do
   # E2E (nunca no nível do job: scripts/build.mjs se recusa a montar dist/ com ela).
+  # O job roda como root no container (padrão da imagem), por isso não usa `--user`.
   e2e:
     name: e2e (${{ matrix.browser }})
     runs-on: ubuntu-latest
@@ -69,7 +70,7 @@ jobs:
     # Imagem oficial com navegadores e dependências do sistema já instalados (sem apt, sem cache de
     # navegadores). A tag precisa bater com o @playwright/test do package-lock.json (passo abaixo).
     container:
-      image: mcr.microsoft.com/playwright:v1.65.0-noble
+      image: mcr.microsoft.com/playwright:v1.65.0-noble@sha256:6e3fb709361521eb27161606e6da6d2674e5e89fa16516cb37d6fdd91372273d
       options: --ipc=host --init
     strategy:
       fail-fast: false
@@ -87,7 +88,7 @@ jobs:
         run: |
           installed=$(node -p "require('@playwright/test/package.json').version")
           if [ "$installed" != "$PW_IMAGE_VERSION" ]; then
-            echo "::error::@playwright/test $installed difere da imagem mcr.microsoft.com/playwright:v$PW_IMAGE_VERSION-noble. Atualize a tag da imagem e PW_IMAGE_VERSION em .github/workflows/ci.yml junto com o package-lock.json (os navegadores da imagem só servem para a versão exata)."
+            echo "::error::@playwright/test $installed difere da imagem mcr.microsoft.com/playwright:v$PW_IMAGE_VERSION-noble. Atualize a tag e o digest da imagem e PW_IMAGE_VERSION em .github/workflows/ci.yml junto com o digest e o package-lock.json (os navegadores da imagem só servem para a versão exata)."
             exit 1
           fi
       - name: E2E (build de teste em app/dist-e2e)
