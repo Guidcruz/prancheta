@@ -861,7 +861,7 @@ test.describe('Escalação no Simplificado (medida 12)', () => {
 const IN_LANG = {
   'pt-BR': { secondary: 'Posição secundária', tab: 'Elenco', view: 'Escalação' },
   es: { secondary: 'Posición secundaria', tab: 'Plantel', view: 'Alineación' },
-  en: { secondary: 'Secondary position', tab: 'Squad', view: 'Lineup' },
+  en: { secondary: 'Second position', tab: 'Squad', view: 'Lineup' },
 } as const;
 
 /**

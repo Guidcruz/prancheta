@@ -243,12 +243,12 @@ A LineupRow mostra a secundária como o Elenco ([elenco.md](elenco.md#posição-
 
 ### Textos
 
-| Chave                          | Contexto                                                                                                                                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lineup.fit.secondary`         | Marca da vaga e selo do candidato (par de `lineup.fit.improvised`). Também vai em minúsculas no fim do nome acessível da vaga e da linha. Cabe em 2 linhas de ~60px. |
-| `squad.secondaryPosition.a11y` | Reusada no nome acessível da LineupRow, no lugar de `{position}` ([elenco.md](elenco.md#posição-secundária)).                                                        |
+| Chave                          | Contexto                                                                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lineup.fit.secondary`         | Marca da vaga e selo do candidato (par de `lineup.fit.improvised`). Também vai em minúsculas no fim do nome acessível da vaga e da linha. Cabe no limite abaixo. |
+| `squad.secondaryPosition.a11y` | Reusada no nome acessível da LineupRow, no lugar de `{position}` ([elenco.md](elenco.md#posição-secundária)).                                                    |
 
-Limite para o `content-writer`: o mesmo de "Fora de posição". São no máximo 2 linhas de cerca de 60px na face condensada (12px), e nenhuma palavra passa de cerca de 11 letras nos três idiomas ("secundária", "secundaria" e "Secondary" cabem). Em minúsculas, o texto tem de soar natural no fim do nome acessível ("…, posição secundária").
+Limite para o `content-writer`: no máximo 2 linhas na face condensada (Barlow Condensed 700 a 12px), nos três idiomas. A primeira linha divide espaço com o ícone, então vale uma destas: a primeira palavra cabe ao lado do ícone (até cerca de 40px) e o resto cabe numa linha de cerca de 57px; ou o texto inteiro tem até cerca de 57px. Contar letras não basta, porque a largura de cada letra muda. O item 7 das medidas abaixo confere isso com "Posição secundária", "Posición secundaria" e "Second position". Em minúsculas, o texto tem de soar natural no fim do nome acessível ("…, posição secundária").
 
 ### Medidas para o E2E (T-079)
 

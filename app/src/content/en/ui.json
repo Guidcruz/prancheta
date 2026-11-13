@@ -268,7 +268,7 @@
   "lineup.captain.a11y": "captain",
   "lineup.fit.improvised": "Improvised",
   "lineup.fit.outOfPosition": "Out of position",
-  "lineup.fit.secondary": "Secondary position",
+  "lineup.fit.secondary": "Second position",
   "lineup.issues.title": "Lineup warnings",
   "lineup.issue.empty": "No player at {position}",
   "lineup.issue.injured": "{name} ({position}) is {status}",

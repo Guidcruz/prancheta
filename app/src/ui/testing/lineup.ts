@@ -44,7 +44,7 @@ export function lineupFixture(base: GameState): LineupFixture {
   const injured = take('DM');
   const suspended = take('ST');
   let game = base;
-  for (const p of [...starters, ...bench, ...left]) {
+  for (const p of [...starters, ...bench, injured, suspended, ...left]) {
     game = withPlayer(game, p.id, {
       injuryRounds: 0,
       suspendedGames: 0,

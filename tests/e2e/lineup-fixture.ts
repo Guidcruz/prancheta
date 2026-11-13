@@ -57,7 +57,7 @@ export function buildFixture(save: SaveJson): Fixture {
   const bench = [take('GK'), take('CB'), take('FB'), take('DM'), take('ST'), take('ST')];
   const injured = take('DM');
   const suspended = take('ST');
-  for (const p of [...starters, ...bench, ...left]) {
+  for (const p of [...starters, ...bench, injured, suspended, ...left]) {
     changePlayer(save, p.id, { injuryRounds: 0, suspendedGames: 0, secondaryPosition: null });
   }
   changePlayer(save, tired.id, { condition: 79 });
