@@ -605,9 +605,9 @@ export function benchCount(sheet: DraftSheet): number {
  * The warnings of the lineup (escalacao.md, "Avisos da escalação" and "Estados"), in this order:
  * what blocks the round, as `sheetProblems` gives it (free slots, injured or suspended starters
  * and reserves); then, for the starters in slot order, out of position and improvised (from
- * `fitLevel`; never the secondary position); the tired starters (condition shown below `tiredBelow`, Realismo completo only);
- * and the club's idol out of the team. Positions are the short codes the player reads on the
- * pitch ("(ZAG) jogando de ATA").
+ * `fitLevel`; never the secondary position); the tired starters (condition shown below
+ * `tiredBelow`, Realismo completo only); and the club's idol out of the team. Positions are the
+ * short codes the player reads on the pitch ("(ZAG) jogando de ATA").
  */
 export function lineupIssues(
   game: GameState,
