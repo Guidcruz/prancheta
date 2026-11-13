@@ -9,6 +9,7 @@ import {
   type Player,
 } from '../../app/src/engine/index.ts';
 import { playUntil, reopenInSpanish, startCareer } from './career.ts';
+import { setTheme, tokenColor } from './css.ts';
 import { expect, test } from './fixtures.ts';
 import { changePlayer, patchSave, readSave, type SaveJson } from './save.ts';
 
@@ -32,10 +33,6 @@ function sizesOf(page: Page) {
         { width: 360, height: 740 },
         { width: 844, height: 390 },
       ];
-}
-
-async function setTheme(page: Page, theme: 'noite' | 'dia'): Promise<void> {
-  await page.evaluate((name) => (document.documentElement.dataset.theme = name), theme);
 }
 
 async function noPageScroll(page: Page): Promise<void> {
@@ -72,18 +69,6 @@ async function smallTargets(scope: Locator) {
       })
       .filter((t) => t.width < 44 || t.height < 44);
   });
-}
-
-/** A cor computada de um token no tema atual (resolvida por um elemento de prova). */
-async function tokenColor(page: Page, token: string): Promise<string> {
-  return page.evaluate((name) => {
-    const probe = document.createElement('span');
-    probe.style.color = `var(--${name})`;
-    document.body.append(probe);
-    const color = getComputedStyle(probe).color;
-    probe.remove();
-    return color;
-  }, token);
 }
 
 const SECTOR_OF_CODE: Record<string, string> = {

@@ -10,7 +10,8 @@ import {
   type Player,
   type Position,
 } from '../../app/src/engine/index.ts';
-import { startCareer } from './career.ts';
+import { continueIn, reopenIn, startCareer } from './career.ts';
+import { setTheme, tokenColor } from './css.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
   SIDE_FROM,
@@ -21,6 +22,7 @@ import {
   sizesOf,
   squadOf,
   withFixture,
+  withSecondaryFixture,
 } from './lineup-fixture.ts';
 import {
   changePlayer,
@@ -123,6 +125,16 @@ async function expectSwapped(
 }
 
 const box = async (locator: Locator) => (await locator.boundingBox())!;
+
+/** Touch events through CDP (Chromium only), with the points in CSS pixels. */
+async function touchScreen(page: Page) {
+  const cdp = await page.context().newCDPSession(page);
+  return (type: 'touchStart' | 'touchMove' | 'touchEnd', points: { x: number; y: number }[]) =>
+    cdp.send('Input.dispatchTouchEvent', {
+      type,
+      touchPoints: points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })),
+    });
+}
 
 test.describe('Escalação (escalacao.md; US-017)', () => {
   test('seletor de 44 px; o campo em 4-4-2 com 11 vagas na ordem do motor; sem entrada no histórico (medida 1)', async ({
@@ -314,7 +326,7 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
       return;
     }
     // Phone: the goalkeeper's slot and the first reserve (GOL) in the window, above the dock.
-    const cdp = await page.context().newCDPSession(page);
+    const touch = await touchScreen(page);
     await slot(page, 0).scrollIntoViewIfNeeded();
     const gk = await box(slot(page, 0));
     await page.evaluate((y) => window.scrollBy(0, y - 120), gk.y);
@@ -322,15 +334,6 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     const to = await box(slot(page, 0));
     const start = { x: from.x + from.width / 2, y: from.y + from.height / 2 };
     const end = { x: to.x + to.width / 2, y: to.y + to.height / 2 };
-
-    const touch = (
-      type: 'touchStart' | 'touchMove' | 'touchEnd',
-      points: { x: number; y: number }[],
-    ) =>
-      cdp.send('Input.dispatchTouchEvent', {
-        type,
-        touchPoints: points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })),
-      });
 
     // A swipe on the reserve without holding scrolls the page and changes nothing.
     const before = await places(page);
@@ -409,7 +412,7 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     page,
   }) => {
     const fixture = await withFixture(page);
-    expect(fitLevel('CB', FORMATION_SLOTS['4-4-2'][9]!)).toBe('outOfPosition');
+    expect(fitLevel(fixture.misplaced, FORMATION_SLOTS['4-4-2'][9]!)).toBe('outOfPosition');
     const mark = slot(page, 9).locator('.mark');
     await expect(mark).toHaveText('Fora de posição');
     await expect(mark.locator('svg')).toHaveCount(1);
@@ -764,15 +767,7 @@ test.describe('Mudar sem troca: "Deixar de fora" e a vaga livre (medida 16)', ()
       await page.mouse.up();
     } else {
       // The free place is far below the pitch: the drag scrolls the page near the bottom edge.
-      const cdp = await page.context().newCDPSession(page);
-      const touch = (
-        type: 'touchStart' | 'touchMove' | 'touchEnd',
-        points: { x: number; y: number }[],
-      ) =>
-        cdp.send('Input.dispatchTouchEvent', {
-          type,
-          touchPoints: points.map((p) => ({ x: Math.round(p.x), y: Math.round(p.y) })),
-        });
+      const touch = await touchScreen(page);
       await slot(page, 0).scrollIntoViewIfNeeded();
       const gk = await box(slot(page, 0));
       await page.evaluate((y) => window.scrollBy(0, y - 120), gk.y);
@@ -859,5 +854,243 @@ test.describe('Escalação no Simplificado (medida 12)', () => {
     for (const id of save.game.squads[save.career.clubId]!) {
       expect(isAvailable(save.game.players[id] as unknown as Player)).toBe(true);
     }
+  });
+});
+
+/** The texts of the secondary position's measures, per language (content/<idioma>/ui.json). */
+const IN_LANG = {
+  'pt-BR': { secondary: 'Posição secundária', tab: 'Elenco', view: 'Escalação' },
+  es: { secondary: 'Posición secundaria', tab: 'Plantel', view: 'Alineación' },
+  en: { secondary: 'Secondary position', tab: 'Squad', view: 'Lineup' },
+} as const;
+
+/**
+ * The Escalação through the tab bar and the view selector, with the game in `lang` (the slots by
+ * their data attribute: the pitch's name is in the language too).
+ */
+async function openLineupIn(page: Page, lang: keyof typeof IN_LANG): Promise<void> {
+  await page.getByRole('navigation').getByRole('link', { name: IN_LANG[lang].tab }).first().click();
+  await main(page).locator('fieldset label', { hasText: IN_LANG[lang].view }).click();
+  await expect(main(page).locator('button[data-slot]')).toHaveCount(11);
+}
+
+test.describe('Posição secundária na Escalação (escalacao.md, "Posição secundária"; T-079)', () => {
+  // The cases of the fixture (lineup-fixture.ts, addSecondaryCases): (a) the DM with secondary
+  // CB in slot 1; (b) the FB with secondary CB on bench 2; (c) the AM without one on bench 4;
+  // (d) the AM with secondary DM in slot 6, injured; (e) the CB in the striker's slot 9.
+  const candidate = (page: Page) => place(page, 'bench-2').locator('.badge.secondary');
+  /** The top of a place on the page (not in the window, which a tap may scroll). */
+  const pageY = (locator: Locator) =>
+    locator.evaluate((el) => el.getBoundingClientRect().top + window.scrollY);
+
+  test('marca: ícone e texto na vaga de (a), a sigla VOL em violeta; nome acessível; gravidade em (d) (medidas 1 e 3)', async ({
+    page,
+  }) => {
+    const { cases } = await withSecondaryFixture(page);
+    const a = slot(page, 1);
+    const mark = a.locator('.mark');
+    await expect(mark).toHaveCount(1);
+    await expect(mark).toHaveText('Posição secundária');
+    await expect(mark.locator('svg')).toHaveCount(1);
+    await expect(a).not.toContainText('Improvisado');
+    await expect(a).not.toContainText('Fora de posição');
+    const tag = a.locator('.code .tag');
+    await expect(tag).toHaveText('VOL');
+    await expect(tag).toHaveClass(/\bsector-mid\b/);
+    await expect(a).toHaveAttribute('aria-label', /, posição secundária$/);
+    await expect(a).toHaveAttribute(
+      'aria-label',
+      new RegExp(`^Zagueiro: ${cases.onSecondary.name.full}`),
+    );
+    // (d): only the injury is seen; the name says both.
+    const d = slot(page, 6);
+    await expect(d.locator('.mark')).toHaveCount(1);
+    await expect(d.locator('.mark')).toHaveText('Lesionado, 2 rodadas');
+    await expect(d).toHaveAttribute('aria-label', /lesionado, 2 rodadas, posição secundária$/);
+  });
+
+  test('cores nos dois temas: a marca neutra de (a); a de (e) continua a de fora de posição (medida 2)', async ({
+    page,
+  }) => {
+    await withSecondaryFixture(page);
+    const a = slot(page, 1).locator('.mark');
+    const e = slot(page, 9).locator('.mark');
+    for (const theme of ['noite', 'dia'] as const) {
+      await setTheme(page, theme);
+      await expect(a).toHaveCSS('background-color', await tokenColor(page, 'surface-2'));
+      await expect(a).toHaveCSS('border-top-color', await tokenColor(page, 'draw'));
+      await expect(a).toHaveCSS('color', await tokenColor(page, 'ink'));
+      await expect(a.locator('svg')).toHaveCSS('color', await tokenColor(page, 'ink'));
+      await expect(e).toHaveCSS('background-color', await tokenColor(page, 'danger-soft'));
+      await expect(e).toHaveCSS('border-top-color', await tokenColor(page, 'danger'));
+      await expect(e).toHaveCSS('color', await tokenColor(page, 'ink'));
+      await expect(e.locator('svg')).toHaveCSS('color', await tokenColor(page, 'danger'));
+    }
+  });
+
+  test('fora dos avisos: "Atenção na escalação" não tem (a) e tem (e) (medida 4)', async ({
+    page,
+  }) => {
+    const { cases } = await withSecondaryFixture(page);
+    const issues = main(page).locator('section.issues');
+    await expect(issues).toContainText(`${cases.misplaced.name.full} (ZAG) jogando de ATA`);
+    await expect(issues).not.toContainText(cases.onSecondary.name.full);
+  });
+
+  test('candidato: tocar a vaga de um zagueiro natural marca (b) e não (c); Esc tira; a vaga não se mexe (medida 5)', async ({
+    page,
+  }) => {
+    const { cases } = await withSecondaryFixture(page);
+    await expect(slot(page, 2)).toHaveAttribute(
+      'aria-label',
+      new RegExp(cases.naturalCb.name.full),
+    );
+    await expect(candidate(page)).toHaveCount(0);
+    const before = await pageY(slot(page, 2));
+    await slot(page, 2).click();
+    await expect(slot(page, 2)).toHaveAttribute('aria-pressed', 'true');
+    await expect(candidate(page)).toHaveCount(1);
+    await expect(candidate(page)).toHaveText('Posição secundária');
+    await expect(candidate(page).locator('svg')).toHaveCount(1);
+    await expect(place(page, 'bench-2')).toHaveAttribute('aria-label', /, posição secundária$/);
+    await expect(place(page, 'bench-2')).toHaveAttribute(
+      'aria-label',
+      new RegExp(`^${cases.benchSecondary.name.full}`),
+    );
+    await expect(place(page, 'bench-4')).toHaveAttribute(
+      'aria-label',
+      new RegExp(`^${cases.benchPlain.name.full}`),
+    );
+    await expect(place(page, 'bench-4').locator('.badge.secondary')).toHaveCount(0);
+    expect(Math.abs((await pageY(slot(page, 2))) - before)).toBeLessThanOrEqual(1);
+    await page.keyboard.press('Escape');
+    await expect(slot(page, 2)).toHaveAttribute('aria-pressed', 'false');
+    await expect(candidate(page)).toHaveCount(0);
+  });
+
+  test('candidato no arrasto: segurar 400 ms a vaga no celular marca (b); a vaga não se mexe (medida 5)', async ({
+    page,
+    browserName,
+  }) => {
+    const mobile = page.viewportSize()!.width < SIDE_FROM;
+    test.skip(
+      !mobile || browserName !== 'chromium',
+      'toque segurado só pelo CDP (Chromium celular)',
+    );
+    await withSecondaryFixture(page);
+    const touch = await touchScreen(page);
+    // The slot in the window, above the dock, as in the drag of measure 6.
+    await slot(page, 2).scrollIntoViewIfNeeded();
+    await page.evaluate((y) => window.scrollBy(0, y - 160), (await box(slot(page, 2))).y);
+    const before = await pageY(slot(page, 2));
+    const b = await box(slot(page, 2));
+    const at = { x: b.x + b.width / 2, y: b.y + b.height / 2 };
+    await touch('touchStart', [at]);
+    await page.waitForTimeout(400);
+    await touch('touchMove', [{ x: at.x + 4, y: at.y + 4 }]);
+    await expect(slot(page, 2)).toHaveClass(/origin/);
+    await expect(candidate(page)).toHaveCount(1);
+    await expect(candidate(page)).toHaveText('Posição secundária');
+    expect(Math.abs((await pageY(slot(page, 2))) - before)).toBeLessThanOrEqual(1);
+    await expect(place(page, 'bench-4').locator('.badge.secondary')).toHaveCount(0);
+    // Dropped where it started: a tap, the slot picked; Esc ends it and the badge goes.
+    await touch('touchEnd', []);
+    await page.keyboard.press('Escape');
+    await expect(candidate(page)).toHaveCount(0);
+  });
+
+  for (const lang of ['pt-BR', 'es', 'en'] as const) {
+    test(`${lang}: alvos de 44 px nas 6 formações com (a) na vaga de ZAG mais à esquerda; a marca em até 2 linhas; sem rolagem lateral (medida 7)`, async ({
+      page,
+    }) => {
+      test.setTimeout(180_000);
+      const { fixture } = await withSecondaryFixture(page);
+      if (lang !== 'pt-BR') {
+        await reopenIn(page, lang);
+        await openLineupIn(page, lang);
+      }
+      for (const formation of FORMATIONS) {
+        if (formation !== '4-4-2') {
+          await patchSave(
+            page,
+            (save) => {
+              (save.career as Record<string, unknown>).draft = {
+                ...fixture.draft,
+                lineup: { ...fixture.draft.lineup, formation },
+              };
+            },
+            lang === 'pt-BR'
+              ? undefined
+              : async (p) => {
+                  await p.goto('/jogo/');
+                  await continueIn(p, lang);
+                },
+          );
+          await openLineupIn(page, lang);
+        }
+        await expect(slot(page, 1).locator('.mark')).toHaveText(IN_LANG[lang].secondary);
+        for (const size of sizesOf(page)) {
+          await page.setViewportSize(size);
+          await noPageScroll(page);
+          if (size.width !== 360) continue;
+          const at = `${lang} ${formation}`;
+          const boxes = await main(page)
+            .locator('button[data-slot]')
+            .evaluateAll((els) =>
+              els.map((el) => {
+                const r = el.getBoundingClientRect();
+                return { x: r.x, y: r.y, w: r.width, h: r.height };
+              }),
+            );
+          expect(boxes).toHaveLength(11);
+          for (const [i, b] of boxes.entries()) {
+            expect(b.w, `${at}: vaga ${i}`).toBeGreaterThanOrEqual(44);
+            expect(b.h, `${at}: vaga ${i}`).toBeGreaterThanOrEqual(44);
+            for (const [j, o] of boxes.entries()) {
+              if (j <= i) continue;
+              const apart =
+                b.x + b.w <= o.x + 0.5 ||
+                o.x + o.w <= b.x + 0.5 ||
+                b.y + b.h <= o.y + 0.5 ||
+                o.y + o.h <= b.y + 0.5;
+              expect(apart, `${at}: vagas ${i} e ${j} se sobrepõem`).toBe(true);
+            }
+          }
+          // (a) sits in the leftmost centre-back slot.
+          const cbs = FORMATION_SLOTS[formation].flatMap((p, i) => (p === 'CB' ? [i] : []));
+          expect(Math.min(...cbs.map((i) => boxes[i]!.x)), at).toBe(boxes[1]!.x);
+          const mark = await slot(page, 1)
+            .locator('.mark')
+            .evaluate((el) => {
+              const css = getComputedStyle(el);
+              const px = (v: string) => parseFloat(v) || 0;
+              return {
+                height: el.getBoundingClientRect().height,
+                line: px(css.lineHeight),
+                extra:
+                  px(css.paddingTop) +
+                  px(css.paddingBottom) +
+                  px(css.borderTopWidth) +
+                  px(css.borderBottomWidth),
+              };
+            });
+          expect(mark.line, `${at}: altura de linha do rótulo`).toBeGreaterThan(0);
+          expect(mark.height, `${at}: a marca em até 2 linhas`).toBeLessThanOrEqual(
+            2 * mark.line + mark.extra + 1,
+          );
+          expect(boxes[1]!.h, `${at}: a vaga de (a)`).toBeLessThanOrEqual(88);
+        }
+      }
+    });
+  }
+
+  test('movimento reduzido: selecionar a vaga e ver o selo do candidato não cria animação (medida 8)', async ({
+    page,
+  }) => {
+    await withSecondaryFixture(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await slot(page, 2).click();
+    await expect(candidate(page)).toHaveCount(1);
+    expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   });
 });
