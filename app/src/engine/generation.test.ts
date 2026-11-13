@@ -17,6 +17,7 @@ import {
   drawPreferredFormations,
   elevenStrength,
   generateSquad,
+  shiftSquad,
   turnPlayerId,
 } from './generation.ts';
 import {
@@ -414,22 +415,38 @@ describe('bestEleven', () => {
       { ...twin, id: 'c#10' },
       { ...twin, id: 'c#2' },
     ];
-    // Identical players: the first slot (GK) must take the lower id, c#2.
-    expect(bestEleven(squad, '4-4-2')[0]!.player.id).toBe('c#2');
+    // Identical players, no goalkeeper: the goal is filled last, so the first outfield slot (CB)
+    // takes the lower id, c#2, and the goal the other one.
+    expect(bestEleven(squad, '4-4-2').map(({ player, slot }) => [player.id, slot])).toEqual([
+      ['c#10', 'GK'],
+      ['c#2', 'CB'],
+    ]);
   });
 });
 
 describe('squad shift fallback', () => {
-  it('reaches the window by single-point moves when no common shift does (seed 81, 4-4-2)', () => {
+  it('reaches the window by single-point moves when no common shift does (clipped starters)', () => {
+    // With the "natural primeiro" best XI no generated squad needs the fallback (T-082), so the
+    // squad is made by hand: ten starters at the cap and one at 72. A common shift only moves
+    // the one at 72 (1/11 per point), so no d in the search lands within 0.5 of a target 1.0
+    // above; the single-point moves raise him until it does.
+    const { max } = GENERATED_OVERALL_RANGE;
     const squad = generateSquad(
       { clubId: 'clube-teste-01', seed: 81, strength: 70, formation: '4-4-2' },
       params,
       identities,
+    ).players.map((p, i) => ({
+      ...p,
+      attributes: { ...p.attributes },
+      overall: i < 10 ? max : i === 10 ? 72 : Math.min(p.overall, 60),
+    }));
+    const target = elevenStrength(bestEleven(squad, '4-4-2')) + 1;
+    const result = shiftSquad(squad, '4-4-2', target);
+    expect(result.fineSteps).toBeGreaterThan(0);
+    expect(Math.abs(result.diff)).toBeLessThanOrEqual(STRENGTH_TOLERANCE);
+    expect(Math.abs(target - elevenStrength(bestEleven(squad, '4-4-2')))).toBeLessThanOrEqual(
+      STRENGTH_TOLERANCE,
     );
-    expect(squad.adjustment.fineSteps).toBeGreaterThan(0);
-    expect(squad.warnings).toEqual([]);
-    expect(Math.abs(squad.elevenStrength - 70)).toBeLessThanOrEqual(STRENGTH_TOLERANCE);
-    expect(checkGeneratedSquad(squad.players, 'clube-teste-01', 70)).toEqual([]);
   });
 });
 

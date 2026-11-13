@@ -94,6 +94,7 @@ const TOOLS = [
   'bestForSlot',
   'correctedCondition',
   'isUnavailable',
+  'naturalFirstEleven',
   'pickBench',
   'pickCaptainAndTakers',
   'GOALKEEPER_SLOT',

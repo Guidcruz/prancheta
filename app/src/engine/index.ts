@@ -201,7 +201,7 @@ export { exp } from './math.ts';
 export { daysBetween } from './fixtures.ts';
 export { attributeOf } from './players.ts';
 export { bestEleven, generateSquad } from './generation.ts';
-export { bestForSlot, correctedCondition, isUnavailable } from './selection.ts';
+export { bestForSlot, correctedCondition, isUnavailable, naturalFirstEleven } from './selection.ts';
 export { pickBench, pickCaptainAndTakers } from './ai.ts';
 export {
   GOALKEEPER_SLOT,

@@ -275,6 +275,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- Escalação automática "natural primeiro" (T-082, ADR-0022):
+  - Para quem joga: a IA e o "Sugerir escalação" põem cada jogador na posição de origem antes de improvisar. Um time deixa de escalar, por exemplo, um volante na zaga com um zagueiro bom no banco.
+  - A IA, o "Sugerir escalação", o melhor XI da geração e da virada e o técnico-robô do `/balance` escalam pela mesma função (`naturalFirstEleven`): cada vaga recebe primeiro o melhor da posição, e quem ficou de fora só toma uma vaga de linha se render estritamente mais nela. O goleiro nunca é trocado; sem goleiro, o gol é o último. Com menos de 11 disponíveis, o preenchimento de antes.
+  - Um volante de 78 não vai mais para a zaga no lugar de um zagueiro de 68. Titulares fora da posição natural: de 0,40 para 0,002 por XI em 4.000 elencos completos, e de 0,52 para 0,06 por ficha da IA nas temporadas do `/balance`.
+  - "Completar automaticamente" e a troca de uma vaga só não mudam. O rendimento na secundária ainda não conta (T-079).
+  - `ENGINE_VERSION` 18. Mudam o ajuste de força de parte dos elencos, as escalações da IA e as partidas; goldens regravados. Métrica nova, só informativa, no `/balance`: titulares fora da posição natural por ficha da IA.
 - Fadiga e condição valem só no realismo Completo (T-028; US-016 e US-010).
 - Determinismo entre motores JavaScript (T-074, ADR-0020):
   - `ENGINE_VERSION` 16. Nos goldens só mudaram a versão e os digests; os saves continuam válidos sem migração (`engineVersion` é só diagnóstico; `schemaVersion` segue 1).

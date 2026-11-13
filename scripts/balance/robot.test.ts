@@ -1,13 +1,22 @@
 import { describe, expect, it } from 'vitest';
 import {
+  FORMATION_SLOTS,
   HALF_MINUTES,
+  correctedCondition,
+  effectiveRating,
+  isUnavailable,
+  naturalFirstEleven,
   playRound,
   prepareRound,
   validateLineup,
 } from '../../app/src/engine/index.ts';
 import type {
+  Formation,
   GameState,
   MatchCommand,
+  Player,
+  PlayerId,
+  Position,
   TeamSheet,
   TeamStrengths,
 } from '../../app/src/engine/index.ts';
@@ -59,6 +68,38 @@ describe('expectedPoints', () => {
 
 describe('robotRoundInput', () => {
   const start = seasonStart(ctx, 1);
+
+  it('picks its XI by "natural primeiro" with the eff, as the AI does with its value (T-082)', () => {
+    // Everyone is fresh at the start, so the rotation of a congested week changes nobody.
+    const eff = (p: Player, slot: Position) => effectiveRating(p, slot, correctedCondition(p));
+    /** The greedy fill of before T-082 (strictly higher eff, slot by slot): only a reference. */
+    const greedy = (available: readonly Player[], formation: Formation): PlayerId[] => {
+      const taken = new Set<PlayerId>();
+      for (const slot of FORMATION_SLOTS[formation]) {
+        let best: Player | undefined;
+        for (const p of available) {
+          if (!taken.has(p.id) && (best === undefined || eff(p, slot) > eff(best, slot))) best = p;
+        }
+        taken.add(best!.id);
+      }
+      return [...taken];
+    };
+    const differ: string[] = [];
+    for (const clubId of Object.keys(start.squads)) {
+      const { lineup } = robotRoundInput(start, params, clubId).sheets[clubId]!;
+      const available = start.squads[clubId]!.map((id) => start.players[id]!).filter(
+        (p) => !isUnavailable(p),
+      );
+      const xi = naturalFirstEleven(available, lineup.formation, eff).map((p) => p!.id);
+      expect(lineup.starters, clubId).toEqual(xi);
+      if (JSON.stringify(greedy(available, lineup.formation)) !== JSON.stringify(xi)) {
+        differ.push(clubId);
+      }
+    }
+    // Precondition: in the formation the robot picks, the greedy fill gives another XI for some
+    // clubs (11 of the 20 when this was written), so a greedy robot fails the check above.
+    expect(differ.length).toBeGreaterThan(0);
+  });
 
   it('gives a valid sheet, the "full" mode, commands for its match and the fans cap', () => {
     const input = robotRoundInput(start, params, CLUB);

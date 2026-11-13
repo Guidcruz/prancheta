@@ -1,14 +1,14 @@
 {
-  "engineVersion": 17,
+  "engineVersion": 18,
   "name": "season-turn",
   "data": {
     "summary": {
       "season": 1,
       "year": 2026,
-      "championId": "clube-teste-04",
-      "championPoints": 75,
+      "championId": "clube-teste-09",
+      "championPoints": 82,
       "relegationZone": [
-        "clube-teste-08",
+        "clube-teste-16",
         "clube-teste-14",
         "clube-teste-19",
         "clube-teste-18"
@@ -16,32 +16,32 @@
       "awards": {
         "topScorers": [
           {
-            "playerId": "clube-teste-20#10",
-            "clubId": "clube-teste-20",
-            "goals": 20
+            "playerId": "clube-teste-09#18",
+            "clubId": "clube-teste-09",
+            "goals": 24
           }
         ],
         "topAssists": [
           {
-            "playerId": "clube-teste-03#9",
-            "clubId": "clube-teste-03",
-            "assists": 10
+            "playerId": "clube-teste-07#9",
+            "clubId": "clube-teste-07",
+            "assists": 11
           }
         ],
         "bestPlayer": {
           "playerId": "clube-teste-11#1",
           "clubId": "clube-teste-11",
-          "rating": 6.989473684210524
+          "rating": 6.989473684210526
         },
         "revelation": {
-          "playerId": "clube-teste-06#17",
-          "clubId": "clube-teste-06",
-          "rating": 6.578378378378378
+          "playerId": "clube-teste-15#12",
+          "clubId": "clube-teste-15",
+          "rating": 6.565714285714283
         },
         "bestGoalkeeper": {
-          "playerId": "clube-teste-12#1",
-          "clubId": "clube-teste-12",
-          "concededPerGame": 0.8421052631578947
+          "playerId": "clube-teste-09#1",
+          "clubId": "clube-teste-09",
+          "concededPerGame": 0.918918918918919
         },
         "teamOfSeason": [
           {
@@ -56,8 +56,8 @@
           },
           {
             "slot": "CB",
-            "playerId": "clube-teste-04#4",
-            "clubId": "clube-teste-04"
+            "playerId": "clube-teste-09#2",
+            "clubId": "clube-teste-09"
           },
           {
             "slot": "FB",
@@ -66,8 +66,8 @@
           },
           {
             "slot": "FB",
-            "playerId": "clube-teste-04#6",
-            "clubId": "clube-teste-04"
+            "playerId": "clube-teste-09#14",
+            "clubId": "clube-teste-09"
           },
           {
             "slot": "DM",
@@ -76,18 +76,13 @@
           },
           {
             "slot": "AM",
-            "playerId": "clube-teste-06#16",
-            "clubId": "clube-teste-06"
+            "playerId": "clube-teste-09#9",
+            "clubId": "clube-teste-09"
           },
           {
             "slot": "AM",
-            "playerId": "clube-teste-06#8",
-            "clubId": "clube-teste-06"
-          },
-          {
-            "slot": "ST",
-            "playerId": "clube-teste-04#11",
-            "clubId": "clube-teste-04"
+            "playerId": "clube-teste-01#9",
+            "clubId": "clube-teste-01"
           },
           {
             "slot": "ST",
@@ -96,15 +91,20 @@
           },
           {
             "slot": "ST",
-            "playerId": "clube-teste-04#10",
+            "playerId": "clube-teste-01#10",
+            "clubId": "clube-teste-01"
+          },
+          {
+            "slot": "ST",
+            "playerId": "clube-teste-04#11",
             "clubId": "clube-teste-04"
           }
         ]
       },
       "campaigns": {
         "clube-teste-01": {
-          "position": 4,
-          "points": 66,
+          "position": 2,
+          "points": 75,
           "target": 4,
           "targetMet": true,
           "biggestWin": {
@@ -115,16 +115,16 @@
             "conceded": 1
           },
           "biggestDefeat": {
-            "round": 35,
-            "opponentId": "clube-teste-04",
-            "home": true,
-            "scored": 1,
-            "conceded": 4
+            "round": 14,
+            "opponentId": "clube-teste-06",
+            "home": false,
+            "scored": 0,
+            "conceded": 2
           },
           "topScorers": [
             {
               "playerId": "clube-teste-01#10",
-              "goals": 16
+              "goals": 20
             }
           ],
           "evolved": [
@@ -134,14 +134,14 @@
               "after": 74
             },
             {
-              "playerId": "clube-teste-01#23",
+              "playerId": "clube-teste-01#18",
               "before": 68,
               "after": 73
             },
             {
-              "playerId": "clube-teste-01#18",
+              "playerId": "clube-teste-01#23",
               "before": 68,
-              "after": 72
+              "after": 73
             },
             {
               "playerId": "clube-teste-01#24",
@@ -202,11 +202,11 @@
     "evolution": {
       "a-21": {
         "n": 86,
-        "mean": 3.7791
+        "mean": 3.814
       },
       "b-22-26": {
         "n": 151,
-        "mean": 1.5497
+        "mean": 1.5364
       },
       "c-27-30": {
         "n": 187,
@@ -306,7 +306,7 @@
       ],
       "clube-teste-03": [
         72.988,
-        73.7455
+        73.8182
       ],
       "clube-teste-04": [
         73.4491,
@@ -314,23 +314,23 @@
       ],
       "clube-teste-05": [
         77.0549,
-        77.9091
+        77.8182
       ],
       "clube-teste-06": [
         76.4068,
-        75.6818
+        77
       ],
       "clube-teste-07": [
         70.0918,
-        69.7727
+        70.6364
       ],
       "clube-teste-08": [
         69.5683,
-        68.4545
+        68.5455
       ],
       "clube-teste-09": [
         70.1389,
-        70.3909
+        71
       ],
       "clube-teste-10": [
         69.5473,
@@ -338,11 +338,11 @@
       ],
       "clube-teste-11": [
         71.0301,
-        70.9818
+        71.1818
       ],
       "clube-teste-12": [
         70.4844,
-        71.3
+        71.2727
       ],
       "clube-teste-13": [
         71.3829,
@@ -358,15 +358,15 @@
       ],
       "clube-teste-16": [
         65.6894,
-        66.9091
+        66.8182
       ],
       "clube-teste-17": [
         66.4983,
-        66.6
+        67.3636
       ],
       "clube-teste-18": [
         64.4164,
-        63.5909
+        64.9091
       ],
       "clube-teste-19": [
         64.7599,
@@ -374,7 +374,7 @@
       ],
       "clube-teste-20": [
         63.9999,
-        63.3636
+        63.9091
       ]
     },
     "header": {
@@ -396,6 +396,6 @@
         "s2-r1-clube-teste-09-clube-teste-15"
       ]
     },
-    "digest": "3ce41f2"
+    "digest": "cbdb49fe"
   }
 }

@@ -18,6 +18,7 @@ import {
   goalProbability,
   homeAdvantage,
   isUnavailable,
+  naturalFirstEleven,
   pickBench,
   pickCaptainAndTakers,
   prepareRound,
@@ -136,24 +137,19 @@ export function expectedPoints(own: TeamStrengths, theirs: TeamStrengths, params
   return 3 * win + draw;
 }
 
-/** The XI of `formation` by `eff` in slot order, from `available` (fewer only if they run out). */
+/**
+ * The XI of `formation` by `eff` at the corrected condition, by the engine's "natural primeiro"
+ * (`naturalFirstEleven`; ADR-0022, item 5): the same algorithm and tie-break as the AI, so the
+ * "robô vence a IA" target measures the robot's decisions, not the lineup algorithm. In slot
+ * order; fewer only if they run out.
+ */
 function elevenByEff(available: readonly Player[], formation: Formation): Player[] {
-  const chosen = new Set<PlayerId>();
   const eleven: Player[] = [];
-  for (const slot of FORMATION_SLOTS[formation]) {
-    let best: Player | undefined;
-    let bestEff = -1;
-    for (const player of available) {
-      if (chosen.has(player.id)) continue;
-      const eff = effectiveRating(player, slot, correctedCondition(player));
-      if (eff > bestEff) {
-        best = player;
-        bestEff = eff;
-      }
-    }
-    if (best === undefined) break;
-    chosen.add(best.id);
-    eleven.push(best);
+  for (const player of naturalFirstEleven(available, formation, (p, slot) =>
+    effectiveRating(p, slot, correctedCondition(p)),
+  )) {
+    if (player === undefined) break;
+    eleven.push(player);
   }
   return eleven;
 }

@@ -8,7 +8,6 @@ import {
   bestEleven,
   elevenStrength,
   generateAcademy,
-  idNumber,
 } from './generation.ts';
 import { clamp, normal } from './math.ts';
 import { SEASON_ROUNDS, type GameParams } from './params.ts';
@@ -22,6 +21,7 @@ import {
 import { fail, ok } from './result.ts';
 import { Rng, seedFromString } from './rng.ts';
 import type { PlayerSeasonStats } from './round.ts';
+import { idNumber } from './selection.ts';
 import { RELEGATION_SPOTS, getStandings, type StandingRow } from './standings.ts';
 import type { ClubId, EngineWarning, Formation, PlayerId, Position, Result } from './types.ts';
 import { ENGINE_VERSION } from './version.ts';

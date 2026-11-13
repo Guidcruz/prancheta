@@ -185,11 +185,14 @@ describe('US-011 "escalação válida": suggestSheet', () => {
     const { state } = build(specs, { formations: ['4-4-2', '4-4-2'] });
     const xi = playersOf(state, suggestSheet(state, params, 'c').lineup.starters);
     const slots = FORMATION_SLOTS['4-4-2'];
-    // FB slots (3 and 4): DM 72 × 0.85 = 61.2 beats CB 66 × 0.90 = 59.4 for the first; for the
-    // second, DM 70 × 0.85 = 59.5 beats CB 66 × 0.90 = 59.4.
+    // "Natural primeiro" (T-082): the DMs of 72 and 70 keep their DM slots, and the FB slots (3
+    // and 4) go to those left: CB 66 × 0.90 = 59.4 beats DM 69 × 0.85 = 58.65 for the first; the
+    // second gets the DM of 69 (ST 60 × 0.75 = 45).
     expect(slots[3]).toBe('FB');
-    expect(xi[3]!.id).toBe('c#5');
-    expect(xi[4]!.position).toBe('DM');
+    expect(xi[3]!.id).toBe('c#4');
+    expect(xi[4]!.id).toBe('c#7');
+    expect(xi[5]!.id).toBe('c#5');
+    expect(xi[6]!.id).toBe('c#6');
     expect(xi).toHaveLength(11);
   });
 });
@@ -364,8 +367,9 @@ describe('US-011 "elenco sem reservas aptos"', () => {
 
   it('with no goalkeeper available fills the goal last, with the best of those left', () => {
     // Both goalkeepers out. The DM of 82 is the best outfield player: he stays in an outfield
-    // slot (the first CB slot: 82 × 0.90 = 73.8), and the goal goes to the best for goal (× 0.40)
-    // of those left after the 10 outfield slots: the AM of 65 among the reserves of 60.
+    // slot (his own, the first DM slot, by "natural primeiro"), and the goal goes to the best
+    // for goal (× 0.40) of those left after the 10 outfield slots: the AM of 65 among the
+    // reserves of 60.
     const specs = fullSquad('c').map(([p, o]): Spec => [
       p,
       o,
@@ -376,7 +380,7 @@ describe('US-011 "elenco sem reservas aptos"', () => {
     const { state } = build(specs, { formations: ['4-4-2', '4-4-2'] });
     const sheet = suggestSheet(state, params, 'c');
     expect(sheet.lineup.starters).toHaveLength(11);
-    expect(sheet.lineup.starters.indexOf('c#6')).toBe(1);
+    expect(sheet.lineup.starters.indexOf('c#6')).toBe(5);
     expect(sheet.lineup.starters[0]).toBe('c#16');
     // "Banco sem goleiro": the outfield players left (5 here).
     expect(playersOf(state, sheet.lineup.bench).every((p) => p.position !== 'GK')).toBe(true);

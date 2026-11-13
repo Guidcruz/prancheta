@@ -630,6 +630,18 @@ Cenários cobertos (todos automatizados):
 
 Pendente: `PROPERTY_FULL=1` com o volume de release, antes do release; E2E da secundária na tela (T-081). Não há E2E de tela nesta tarefa, e a secundária ainda não aparece.
 
+### QA da T-082 (escalação automática "natural primeiro", ADR-0022)
+
+Cenários cobertos (todos automatizados):
+
+- `engine/selection.natural-first.test.ts` (`naturalFirstEleven`): os exemplos do design (volante de 78 não vai à zaga no lugar de um zagueiro de 68); cada vaga recebe o melhor da própria posição; quem ficou de fora só toma vaga de linha com valor estritamente maior; empate de valor decidido por `winsTie` (overall, idade, id); o goleiro nunca é trocado; sem goleiro, o gol é o último; menos de 11 disponíveis dá o preenchimento guloso, com as últimas vagas `undefined`; lista vazia; sem repetir jogador; só a ordem de `available` em empate total; o `value` passado entra no lugar do padrão (tipo genérico `T extends ElevenCandidate`).
+- Robô do `/balance` (`scripts/balance/robot.test.ts`): o XI do `robotRoundInput` é exatamente o `naturalFirstEleven` com o `eff`, nos 20 clubes. **Pré-condição** do teste: na formação que o robô escolhe, o preenchimento guloso de antes dá outro XI em parte dos clubes (11 dos 20 quando foi escrito); sem isso, um robô guloso passaria sem ser pego.
+- E2E (`tests/e2e/lineup.spec.ts`, "sugerir com desfalques"): com condição e moral iguais e todos os meias menos um lesionados, "Sugerir escalação" tira o zagueiro da vaga de atacante e o meia da de volante; para cada posição, titulares naturais = min(vagas, aptos); um só titular fora da natural, na vaga de meia, e é o de maior valor entre as sobras; o nome acessível de cada vaga bate com a ficha gravada.
+- E2E (`tests/e2e/migrated-save.spec.ts`): a carreira v2 migrada joga mais uma rodada com o XI novo da IA; todos os jogos têm resultado e não há erro de página nem de console.
+- API: `naturalFirstEleven` em `TOOLS` de `engine/index.test.ts` e em `data/tools-api.boundary.test.ts`; fora do `CONTRACT`.
+- Goldens: `ENGINE_VERSION` 18; regravados `strengths`, `match-round`, `match-ai-sheets`, `round-first`, `season-*`, `season-turn`, `new-game` (só o digest); os demais mudam só a versão. Os testes de IA, geração, moral e comandos de partida foram ajustados ao novo XI.
+- Métrica nova, só informativa, no `/balance`: "Titulares fora da posição natural por ficha da IA" (`scripts/balance/metrics.ts`, `offPosition`; nunca entra na contagem de metas). Caiu de 0,52 para 0,06. Registro em `docs/design/balance-log.md`: release de 1.000 temporadas com 39 de 39 metas; na semente 2 de 200 temporadas a zebra deu 7,9%, aceita pelo CEO como ruído.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.

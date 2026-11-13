@@ -1,6 +1,8 @@
 import {
+  FORMATION_SLOTS,
   SEASON_ROUNDS,
   endSeason,
+  fitLevel,
   getStandings,
   newGame,
   playRound,
@@ -97,6 +99,12 @@ export interface SheetTally {
   highPressure: number;
   /** Sheets with at least one starter below {@link TIRED_STARTER_CONDITION} of condition. */
   tiredStarter: number;
+  /**
+   * Starters of those sheets out of their natural position, improvised or out of position
+   * (`fitLevel` not `natural`; posicao-secundaria.md, "Efeito esperado no balanceamento",
+   * informative metric 2). Divided by `sheets`, the mean per sheet.
+   */
+  offPosition: number;
   byProfile: Partial<Record<AiProfile, Record<string, number>>>;
 }
 
@@ -479,7 +487,13 @@ export function playSeason(
   const sizes: Record<ClubId, ClubSize> = {};
   for (const [id, club] of Object.entries(state.clubs)) sizes[id] = club.def.size;
   const matches = emptyMatchTally();
-  const sheets: SheetTally = { sheets: 0, highPressure: 0, tiredStarter: 0, byProfile: {} };
+  const sheets: SheetTally = {
+    sheets: 0,
+    highPressure: 0,
+    tiredStarter: 0,
+    offPosition: 0,
+    byProfile: {},
+  };
   const fans: FansTally = { n: 0, sum: 0, sumSq: 0, below20: 0, above90: 0 };
   let afterZ4Round: StandingRow[] | undefined;
 
@@ -507,6 +521,18 @@ export function playSeason(
         (id) => (before.players[id]?.condition ?? 100) < TIRED_STARTER_CONDITION,
       );
       if (tired) sheets.tiredStarter += 1;
+      const slots = FORMATION_SLOTS[sheet.lineup.formation];
+      sheet.lineup.starters.forEach((id, i) => {
+        const player = before.players[id];
+        const slot = slots[i];
+        if (
+          player !== undefined &&
+          slot !== undefined &&
+          fitLevel(player.position, slot) !== 'natural'
+        ) {
+          sheets.offPosition += 1;
+        }
+      });
     }
     for (const club of Object.values(state.clubs)) addFans(fans, club.fans);
     if (played.value.report.round === Z4_ROUND) afterZ4Round = getStandings(state);
