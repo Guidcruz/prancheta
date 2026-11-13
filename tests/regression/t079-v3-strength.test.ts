@@ -9,10 +9,10 @@ import {
   type Formation,
   type GameState,
   type Player,
-} from '../../engine/index.ts';
-import { migrateSave } from './migrations/index.ts';
-import type { CareerSave } from './schema.ts';
-import { parseCareerSave } from './validate.ts';
+} from '../../app/src/engine/index.ts';
+import { migrateSave } from '../../app/src/lib/save/migrations/index.ts';
+import type { CareerSave } from '../../app/src/lib/save/schema.ts';
+import { parseCareerSave } from '../../app/src/lib/save/validate.ts';
 
 /*
  * T-079, acceptance 7 of posicao-secundaria.md on an old save: the v3 fixture was written by an
@@ -24,7 +24,7 @@ import { parseCareerSave } from './validate.ts';
  */
 
 const raw = JSON.parse(
-  readFileSync(new URL('./__fixtures__/v3.json', import.meta.url), 'utf8'),
+  readFileSync(new URL('../../app/src/lib/save/__fixtures__/v3.json', import.meta.url), 'utf8'),
 ) as unknown;
 
 function open(): CareerSave {
