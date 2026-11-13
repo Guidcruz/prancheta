@@ -117,18 +117,18 @@ export function conditionMultiplier(energy: number): number {
 
 /**
  * Effective rating of a player in a slot (partida.md, "Nota efetiva"):
- * `eff = overall × fit(natural, slot) × moraleMult × condMult`. `energy` is the energy on the
+ * `eff = overall × fit(player, slot) × moraleMult × condMult`. `energy` is the energy on the
  * pitch: before the kick-off it is the player's condition (the default); the match lowers it
  * minute by minute (T-009).
  */
 export function effectiveRating(
-  player: Pick<Player, 'position' | 'overall' | 'morale' | 'condition'>,
+  player: Pick<Player, 'position' | 'secondaryPosition' | 'overall' | 'morale' | 'condition'>,
   slot: Position,
   energy: number = player.condition,
 ): number {
   return (
     player.overall *
-    fit(player.position, slot) *
+    fit(player, slot) *
     moraleMultiplier(player.morale) *
     conditionMultiplier(energy)
   );

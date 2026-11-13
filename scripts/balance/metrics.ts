@@ -692,8 +692,20 @@ export function buildReport(
       false,
     ),
     row(
+      'onSecondary',
+      'Titulares na posição secundária por ficha da IA',
+      ratio(
+        sumOf((s) => s.sheets.onSecondary),
+        sheets,
+      ),
+      rate2,
+      'informativa (posicao-secundaria.md)',
+      () => true,
+      false,
+    ),
+    row(
       'offPosition',
-      'Titulares fora da posição natural por ficha da IA',
+      'Titulares improvisados ou fora de posição por ficha da IA',
       ratio(
         sumOf((s) => s.sheets.offPosition),
         sheets,

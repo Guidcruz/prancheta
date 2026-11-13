@@ -341,8 +341,8 @@ describe('the warnings (escalacao.md, "Avisos" and "Estados")', () => {
   const code = (index: number) => FORMATION_SLOTS['4-4-2'][index]!;
 
   it('out of position and improvised from fitLevel, with both positions in short codes', () => {
-    expect(fitLevel(fx.misplaced.position, code(9))).toBe('outOfPosition');
-    expect(fitLevel(fx.improvised.position, code(6))).toBe('improvised');
+    expect(fitLevel(fx.misplaced, code(9))).toBe('outOfPosition');
+    expect(fitLevel(fx.improvised, code(6))).toBe('improvised');
     const list = issues(game, sheet);
     expect(list).toContainEqual({
       kind: 'outOfPosition',

@@ -268,6 +268,7 @@
   "lineup.captain.a11y": "capitán",
   "lineup.fit.improvised": "Improvisado",
   "lineup.fit.outOfPosition": "Fuera de posición",
+  "lineup.fit.secondary": "Posición secundaria",
   "lineup.issues.title": "Ojo con la alineación",
   "lineup.issue.empty": "Sin jugador en {position}",
   "lineup.issue.injured": "{name} ({position}) está {status}",

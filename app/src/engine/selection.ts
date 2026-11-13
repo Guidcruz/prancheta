@@ -25,12 +25,10 @@ export function correctedCondition(player: Pick<Player, 'condition'>): number {
  * `overall × fit × (0.80 + 0.20 × condition / 100)`, with the corrected condition.
  */
 export function selectionValue(
-  player: Pick<Player, 'position' | 'overall' | 'condition'>,
+  player: Pick<Player, 'position' | 'secondaryPosition' | 'overall' | 'condition'>,
   slot: Position,
 ): number {
-  return (
-    player.overall * fit(player.position, slot) * conditionMultiplier(correctedCondition(player))
-  );
+  return player.overall * fit(player, slot) * conditionMultiplier(correctedCondition(player));
 }
 
 /** N of `${clubId}#N`, for the "lower id" tie-break; the list position when there is no id. */

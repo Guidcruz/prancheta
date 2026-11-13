@@ -4,6 +4,8 @@ import {
   IMPROVISED_MIN_FIT,
   POSITIONS,
   SECONDARY_FIT,
+  fit,
+  fitLevel,
   secondaryNeighbours,
   secondaryPositionFor,
   validatePlayer,
@@ -14,8 +16,9 @@ import { testPlayer } from './testing/players.ts';
 import type { Position } from './types.ts';
 
 /*
- * The secondary position (docs/design/posicao-secundaria.md; ADR-0022, items 2 and 6; T-078):
- * the neighbours from the FIT table, the draw of `secondaryPositionFor` and the validator. The
+ * The secondary position (docs/design/posicao-secundaria.md; ADR-0022, items 2 and 6; T-078 and
+ * T-079): the neighbours from the FIT table, the draw of `secondaryPositionFor`, the validator,
+ * and how `fit` and `fitLevel` read it. The
  * generation, the academy and the property over whole careers are in
  * generation.secondary.test.ts; the save migration in lib/save/migrations/.
  */
@@ -290,5 +293,96 @@ describe('validatePlayer: secondaryPosition (ADR-0022, item 6)', () => {
     expect(result.ok ? [] : result.detail).toEqual([
       { field: 'secondaryPosition', problem: 'invalid-secondary-position', value: 'GK' },
     ]);
+  });
+});
+
+/** The table level of a cell, written again from jogadores.md (not read from `fitLevel`). */
+const tableLevel = (natural: Position, slot: Position) =>
+  natural === slot ? 'natural' : FIT[natural][slot] >= 0.85 ? 'improvised' : 'outOfPosition';
+
+describe('fit and fitLevel read the secondary position (ADR-0022, item 6; acceptance 4; T-079)', () => {
+  it('without a secondary: the table cell, bit for bit, and the levels of before, in the 36 pairs', () => {
+    for (const natural of POSITIONS) {
+      for (const slot of POSITIONS) {
+        const player = { position: natural, secondaryPosition: null };
+        expect(Object.is(fit(player, slot), FIT[natural][slot]), `${natural}→${slot}`).toBe(true);
+        expect(fitLevel(player, slot), `${natural}→${slot}`).toBe(tableLevel(natural, slot));
+      }
+    }
+  });
+
+  it('in the secondary: max(FIT, 0.95), which is 0.95 in every neighbour, and the level secondary', () => {
+    for (const natural of OUTFIELD) {
+      for (const secondary of DESIGN_NEIGHBOURS[natural]) {
+        const player = { position: natural, secondaryPosition: secondary };
+        expect(fit(player, secondary), `${natural}/${secondary}`).toBe(
+          Math.max(FIT[natural][secondary], SECONDARY_FIT),
+        );
+        expect(fit(player, secondary), `${natural}/${secondary}`).toBe(0.95);
+        expect(fitLevel(player, secondary), `${natural}/${secondary}`).toBe('secondary');
+      }
+    }
+  });
+
+  it('every other slot stays on the table, the other neighbours too (a DM with secondary CB)', () => {
+    const dm = { position: 'DM' as const, secondaryPosition: 'CB' as const };
+    expect(fit(dm, 'CB')).toBe(0.95);
+    expect(fit(dm, 'FB')).toBe(0.85); // a neighbour that is not his secondary
+    expect(fit(dm, 'AM')).toBe(0.9); // another neighbour
+    expect(fit(dm, 'DM')).toBe(1);
+    expect(fit(dm, 'ST')).toBe(0.75);
+    expect(fit(dm, 'GK')).toBe(0.4);
+    expect(fitLevel(dm, 'DM')).toBe('natural');
+    expect(fitLevel(dm, 'FB')).toBe('improvised');
+    expect(fitLevel(dm, 'AM')).toBe('improvised');
+    expect(fitLevel(dm, 'ST')).toBe('outOfPosition');
+    for (const natural of OUTFIELD) {
+      for (const secondary of DESIGN_NEIGHBOURS[natural]) {
+        const player = { position: natural, secondaryPosition: secondary };
+        for (const slot of POSITIONS.filter((s) => s !== secondary)) {
+          expect(fit(player, slot), `${natural}/${secondary}→${slot}`).toBe(FIT[natural][slot]);
+          expect(fitLevel(player, slot), `${natural}/${secondary}→${slot}`).toBe(
+            tableLevel(natural, slot),
+          );
+        }
+      }
+    }
+  });
+
+  it('a goalkeeper (always without one): 1 in the goal, 0.40 and out of position elsewhere', () => {
+    const gk = { position: 'GK' as const, secondaryPosition: null };
+    expect(fit(gk, 'GK')).toBe(1);
+    expect(fitLevel(gk, 'GK')).toBe('natural');
+    for (const slot of OUTFIELD) {
+      expect(fit(gk, slot), slot).toBe(0.4);
+      expect(fitLevel(gk, slot), slot).toBe('outOfPosition');
+    }
+    // Nobody plays in goal by a secondary position: the validator never lets it be 'GK'.
+    for (const natural of OUTFIELD) {
+      expect(fit({ position: natural, secondaryPosition: null }, 'GK')).toBe(0.4);
+    }
+  });
+
+  it('a secondary that is not a neighbour (a valid save, the table changed) still gives 0.95', () => {
+    // The validator takes any outfield position other than the natural (ADR-0022, item 6).
+    const cb = { position: 'CB' as const, secondaryPosition: 'ST' as const };
+    expect(validatePlayer(testPlayer(cb)).ok).toBe(true);
+    expect(fit(cb, 'ST')).toBe(0.95);
+    expect(fitLevel(cb, 'ST')).toBe('secondary');
+    expect(fit(cb, 'FB')).toBe(0.9);
+  });
+
+  it('the secondary sits between the natural and the improvised: 1 > 0.95 > every neighbour', () => {
+    for (const natural of OUTFIELD) {
+      for (const secondary of DESIGN_NEIGHBOURS[natural]) {
+        const player = { position: natural, secondaryPosition: secondary };
+        expect(fit(player, secondary)).toBeLessThan(fit(player, natural));
+        for (const other of DESIGN_NEIGHBOURS[natural]) {
+          if (other !== secondary) {
+            expect(fit(player, secondary)).toBeGreaterThan(fit(player, other));
+          }
+        }
+      }
+    }
   });
 });

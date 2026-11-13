@@ -2,7 +2,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import { FORMATIONS, FORMATION_SLOTS } from './formations.ts';
 import { newGame, type GameState } from './game.ts';
 import { bestEleven, elevenStrength } from './generation.ts';
-import { FIT, type Player } from './players.ts';
+import { FIT, SECONDARY_FIT, type Player } from './players.ts';
 import {
   FORMATION_MULTIPLIERS,
   FORMATION_SECTORS,
@@ -565,10 +565,17 @@ describe('teamStrength: força exibida', () => {
     const lineup = { formation: '4-3-3' as const, starters };
     const slots = FORMATION_SLOTS['4-3-3'];
     let sum = 0;
+    let onSecondary = 0;
     starters.forEach((id, i) => {
       const p = state.players[id]!;
-      sum += p.overall * FIT[p.position][slots[i]!];
+      const slot = slots[i]!;
+      // posicao-secundaria.md, "`fit` com a secundária", written again (not read from `fit`).
+      const cell = FIT[p.position][slot];
+      if (slot === p.secondaryPosition) onSecondary++;
+      sum += p.overall * (slot === p.secondaryPosition ? Math.max(cell, SECONDARY_FIT) : cell);
     });
+    // The squad order in a 4-3-3 puts at least one starter in his secondary position (T-079).
+    expect(onSecondary).toBeGreaterThan(0);
     expect(teamStrength(state, clubId, lineup)).toBeCloseTo(sum / 11, 12);
 
     const players = { ...state.players };

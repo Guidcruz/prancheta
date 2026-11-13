@@ -287,10 +287,13 @@ export function pickCaptainAndTakers(
  * is the displayed strength, `teamStrength`, to the bit.
  */
 function shownStrength(
-  eleven: readonly { player: Pick<Player, 'position' | 'overall'>; slot: Position }[],
+  eleven: readonly {
+    player: Pick<Player, 'position' | 'secondaryPosition' | 'overall'>;
+    slot: Position;
+  }[],
 ): number {
   let sum = 0;
-  for (const { player, slot } of eleven) sum += player.overall * fit(player.position, slot);
+  for (const { player, slot } of eleven) sum += player.overall * fit(player, slot);
   return sum / STARTERS_COUNT;
 }
 

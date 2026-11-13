@@ -16,6 +16,7 @@
     | 'derby'
     | 'improvised'
     | 'outOfPosition'
+    | 'secondary'
     | 'leader';
 
   export const STATUS_ICONS: Readonly<Record<StatusKind, IconName | undefined>> = {
@@ -28,6 +29,7 @@
     derby: 'derby',
     improvised: 'improvised',
     outOfPosition: 'warning',
+    secondary: 'secondary',
     leader: 'captain',
   };
 
@@ -119,6 +121,11 @@
   .suspended :global(svg),
   .outOfPosition :global(svg) {
     color: var(--danger);
+  }
+  /* Secondary position (escalacao.md, "Candidato à vaga"): ink on surface-2 with the neutral
+     draw border, the icon in ink; a neutral mark, lighter than improvised (T-080, proposal 26). */
+  .secondary {
+    border-color: var(--draw);
   }
   /* Leader (captain sheet): ink on surface-2 like the draw, with the plain line border. */
   .leader {

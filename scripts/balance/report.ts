@@ -106,7 +106,10 @@ const SECTIONS: readonly { readonly title: string; readonly ids: (id: string) =>
   { title: 'Técnico-robô', ids: (id) => id.startsWith('robot') },
   {
     title: 'Referências (não bloqueiam)',
-    ids: (id) => ['strong10', 'draws0', 'highPressure', 'tiredStarter', 'offPosition'].includes(id),
+    ids: (id) =>
+      ['strong10', 'draws0', 'highPressure', 'tiredStarter', 'onSecondary', 'offPosition'].includes(
+        id,
+      ),
   },
   {
     title: 'Metas futuras (n/a até a etapa delas; não contam)',

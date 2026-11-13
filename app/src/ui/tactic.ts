@@ -131,12 +131,18 @@ export function tacticIssues(
   );
 }
 
-/** The starters out of their position in the sheet's formation (improvised or out of position). */
+/**
+ * The starters out of their position in the sheet's formation (improvised or out of position).
+ * A starter in his secondary position does not count: it is a good choice, not a problem
+ * (tatica.md, "Posição secundária").
+ */
 export function misplacedCount(game: GameState, sheet: DraftSheet): number {
   const slots = FORMATION_SLOTS[sheet.lineup.formation];
   return sheet.lineup.starters.filter((id, i) => {
     const player = id === null ? undefined : game.players[id];
-    return player !== undefined && fitLevel(player.position, slots[i]!) !== 'natural';
+    if (player === undefined) return false;
+    const level = fitLevel(player, slots[i]!);
+    return level === 'improvised' || level === 'outOfPosition';
   }).length;
 }
 

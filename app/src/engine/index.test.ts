@@ -1,7 +1,7 @@
 import { execFileSync } from 'node:child_process';
 import { describe, expect, it } from 'vitest';
 import * as engine from './index.ts';
-import { ENGINE_VERSION, Rng, seedFromString } from './index.ts';
+import { ENGINE_VERSION, Rng, seedFromString, type FitLevel } from './index.ts';
 import { normal } from './math.ts';
 
 /*
@@ -128,6 +128,18 @@ describe('engine public API', () => {
     ]) {
       expect(internal in engine, internal).toBe(false);
     }
+  });
+
+  it('FitLevel has the four levels of ADR-0022, the secondary one included (T-079)', () => {
+    // A Record over the type: a level added or removed fails to compile here.
+    const levels: Record<FitLevel, true> = {
+      natural: true,
+      secondary: true,
+      improvised: true,
+      outOfPosition: true,
+    };
+    expect(Object.keys(levels)).toHaveLength(4);
+    expect(engine.fitLevel({ position: 'DM', secondaryPosition: 'CB' }, 'CB')).toBe('secondary');
   });
 
   it('exposes the foundations', () => {

@@ -1,18 +1,18 @@
 {
-  "engineVersion": 18,
+  "engineVersion": 19,
   "name": "season-full",
   "data": {
     "table": [
       [
         "clube-teste-09",
-        82,
-        24,
+        79,
+        23,
         10,
-        4,
-        64,
+        5,
+        59,
         35,
-        75,
-        3
+        77,
+        4
       ],
       [
         "clube-teste-01",
@@ -20,130 +20,119 @@
         22,
         9,
         7,
-        70,
+        68,
         35,
-        76,
+        75,
         1
       ],
       [
         "clube-teste-06",
-        66,
-        20,
-        6,
-        12,
-        68,
-        48,
-        90,
-        3
-      ],
-      [
-        "clube-teste-04",
-        65,
-        19,
-        8,
+        71,
+        22,
+        5,
         11,
-        66,
-        42,
-        60,
-        2
+        71,
+        44,
+        89,
+        4
       ],
       [
         "clube-teste-02",
-        63,
-        19,
-        6,
+        65,
+        20,
+        5,
         13,
-        54,
+        55,
         47,
-        72,
+        71,
         1
       ],
       [
+        "clube-teste-04",
+        64,
+        19,
+        7,
+        12,
+        63,
+        42,
+        62,
+        2
+      ],
+      [
         "clube-teste-11",
-        59,
-        15,
-        14,
-        9,
-        53,
-        44,
+        60,
+        16,
+        12,
+        10,
+        52,
+        42,
         67,
         0
       ],
       [
-        "clube-teste-08",
-        55,
-        15,
-        10,
-        13,
-        67,
-        55,
-        74,
-        2
-      ],
-      [
-        "clube-teste-07",
-        53,
-        15,
-        8,
-        15,
-        49,
-        50,
-        75,
-        2
-      ],
-      [
-        "clube-teste-17",
-        53,
-        14,
-        11,
-        13,
-        45,
-        42,
-        77,
-        1
-      ],
-      [
-        "clube-teste-03",
-        52,
-        14,
-        10,
-        14,
-        49,
-        40,
-        83,
-        3
-      ],
-      [
-        "clube-teste-12",
-        52,
-        13,
-        13,
-        12,
-        50,
-        48,
-        86,
-        4
-      ],
-      [
         "clube-teste-10",
-        49,
-        11,
-        16,
-        11,
-        45,
-        38,
-        83,
+        59,
+        15,
+        14,
+        9,
+        51,
+        35,
+        82,
         3
       ],
       [
         "clube-teste-05",
-        48,
+        55,
+        16,
+        7,
+        15,
+        50,
+        45,
+        89,
+        2
+      ],
+      [
+        "clube-teste-12",
+        53,
+        13,
         14,
-        6,
-        18,
-        47,
+        11,
+        54,
+        50,
+        84,
+        5
+      ],
+      [
+        "clube-teste-17",
+        52,
+        14,
+        10,
+        14,
+        43,
+        43,
+        75,
+        1
+      ],
+      [
+        "clube-teste-07",
         49,
-        90,
+        14,
+        7,
+        17,
+        45,
+        52,
+        74,
+        2
+      ],
+      [
+        "clube-teste-08",
+        48,
+        13,
+        9,
+        16,
+        63,
+        57,
+        76,
         2
       ],
       [
@@ -158,26 +147,26 @@
         2
       ],
       [
-        "clube-teste-13",
-        46,
-        13,
-        7,
-        18,
-        48,
-        58,
-        69,
-        4
+        "clube-teste-03",
+        47,
+        12,
+        11,
+        15,
+        49,
+        44,
+        79,
+        3
       ],
       [
-        "clube-teste-20",
+        "clube-teste-13",
         43,
         11,
         10,
         17,
-        42,
-        58,
-        77,
-        1
+        47,
+        57,
+        70,
+        4
       ],
       [
         "clube-teste-16",
@@ -186,9 +175,20 @@
         6,
         20,
         31,
-        53,
-        84,
+        54,
+        82,
         4
+      ],
+      [
+        "clube-teste-20",
+        41,
+        10,
+        11,
+        17,
+        42,
+        59,
+        77,
+        0
       ],
       [
         "clube-teste-14",
@@ -196,19 +196,19 @@
         9,
         11,
         18,
-        37,
-        62,
-        67,
+        38,
+        59,
+        65,
         4
       ],
       [
         "clube-teste-19",
-        29,
-        6,
-        11,
+        31,
+        7,
+        10,
         21,
-        41,
-        69,
+        43,
+        71,
         88,
         0
       ],
@@ -227,34 +227,35 @@
     "kinds": {
       "championClinched": 1,
       "decisiveLastRound": 1,
-      "enteredZ4": 22,
+      "enteredZ4": 25,
       "injured": 115,
       "leadership": 22,
-      "leftZ4": 22,
+      "leftZ4": 25,
       "relegatedClinched": 4,
-      "suspended": 438,
-      "topScorerOfRound": 66,
-      "unbeaten": 28,
+      "suspended": 441,
+      "topScorerOfRound": 74,
+      "unbeaten": 27,
       "unbeatenEnded": 20,
-      "winless": 43,
-      "winlessEnded": 32
+      "winless": 44,
+      "winlessEnded": 31
     },
     "lastFacts": [
       [
-        {
-          "kind": "enteredZ4",
-          "clubId": "clube-teste-16"
-        },
-        {
-          "kind": "leftZ4",
-          "clubId": "clube-teste-20"
-        },
         {
           "kind": "winlessEnded",
           "clubId": "clube-teste-17",
           "games": 4,
           "round": 37,
           "opponentId": "clube-teste-12"
+        },
+        {
+          "kind": "winless",
+          "clubId": "clube-teste-13",
+          "games": 4
+        },
+        {
+          "kind": "championClinched",
+          "clubId": "clube-teste-09"
         },
         {
           "kind": "relegatedClinched",
@@ -286,6 +287,11 @@
         },
         {
           "kind": "suspended",
+          "playerId": "clube-teste-20#17",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
           "playerId": "clube-teste-15#7",
           "games": 1
         },
@@ -296,37 +302,32 @@
         },
         {
           "kind": "suspended",
+          "playerId": "clube-teste-05#8",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
           "playerId": "clube-teste-05#11",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-03#16",
+          "playerId": "clube-teste-06#25",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-10#8",
+          "playerId": "clube-teste-03#2",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-08#4",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-12#13",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-11#9",
+          "playerId": "clube-teste-03#9",
           "games": 1
         },
         {
           "kind": "injured",
-          "playerId": "clube-teste-11#2",
+          "playerId": "clube-teste-11#4",
           "games": 2
         }
       ],
@@ -338,14 +339,11 @@
           "rounds": 25
         },
         {
-          "kind": "unbeaten",
-          "clubId": "clube-teste-11",
-          "games": 5
-        },
-        {
-          "kind": "winless",
+          "kind": "unbeatenEnded",
           "clubId": "clube-teste-10",
-          "games": 4
+          "games": 6,
+          "round": 38,
+          "opponentId": "clube-teste-07"
         },
         {
           "kind": "winless",
@@ -359,7 +357,7 @@
         },
         {
           "kind": "relegatedClinched",
-          "clubId": "clube-teste-16"
+          "clubId": "clube-teste-20"
         },
         {
           "kind": "topScorerOfRound",
@@ -368,17 +366,7 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-20#5",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-20#14",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
-          "playerId": "clube-teste-02#4",
+          "playerId": "clube-teste-20#4",
           "games": 1
         },
         {
@@ -388,12 +376,17 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-02#10",
+          "playerId": "clube-teste-06#2",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-13#7",
+          "playerId": "clube-teste-13#21",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-03#6",
           "games": 1
         },
         {
@@ -403,17 +396,27 @@
         },
         {
           "kind": "suspended",
+          "playerId": "clube-teste-19#8",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
           "playerId": "clube-teste-19#15",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-05#4",
+          "playerId": "clube-teste-05#2",
           "games": 1
         },
         {
           "kind": "suspended",
           "playerId": "clube-teste-10#7",
+          "games": 1
+        },
+        {
+          "kind": "suspended",
+          "playerId": "clube-teste-10#11",
           "games": 1
         },
         {
@@ -433,11 +436,6 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-12#17",
-          "games": 1
-        },
-        {
-          "kind": "suspended",
           "playerId": "clube-teste-18#2",
           "games": 1
         },
@@ -453,12 +451,12 @@
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-17#9",
+          "playerId": "clube-teste-17#11",
           "games": 1
         },
         {
           "kind": "suspended",
-          "playerId": "clube-teste-17#18",
+          "playerId": "clube-teste-17#15",
           "games": 1
         },
         {
@@ -473,6 +471,6 @@
         }
       ]
     ],
-    "digest": "f16565a1"
+    "digest": "59a2f8bd"
   }
 }

@@ -371,13 +371,18 @@ function unavailableLabel(player: Player, lang: Lang): string | undefined {
   return undefined;
 }
 
-/** The one mark of a slot (escalacao.md, "Marca da vaga"): the most serious wins. */
+/**
+ * The one mark of a slot (escalacao.md, "Marca da vaga" and "Posição secundária"): the most
+ * serious wins, in this order: injured, suspended, out of position, improvised, secondary
+ * position, none. The position levels come from the engine's `fitLevel`, already in that order of
+ * gravity once the player is available.
+ */
 function slotMark(player: Player, slot: Position, lang: Lang): ChipMark | undefined {
   const out = unavailableLabel(player, lang);
   if (out !== undefined) {
     return { kind: player.injuryRounds > 0 ? 'injured' : 'suspended', label: out };
   }
-  const level = fitLevel(player.position, slot);
+  const level = fitLevel(player, slot);
   if (level === 'natural') return undefined;
   return { kind: level, label: t(`lineup.fit.${level}`, lang) };
 }
@@ -387,7 +392,7 @@ function slotSituations(player: Player, slot: Position, lang: Lang): string[] {
   const out: string[] = [];
   const unavailable = unavailableLabel(player, lang);
   if (unavailable !== undefined) out.push(lower(unavailable, lang));
-  const level = fitLevel(player.position, slot);
+  const level = fitLevel(player, slot);
   if (level !== 'natural') out.push(lower(t(`lineup.fit.${level}`, lang), lang));
   return out;
 }
@@ -478,12 +483,32 @@ export interface RowView {
   readonly state: PitchSlot['state'];
 }
 
+/**
+ * The position of the pitch slot a reserve would enter (escalacao.md, "Candidato à vaga"): the
+ * slot of the formation (`FORMATION_SLOTS`, not the position of its occupant) while a filled slot
+ * of the pitch is the origin of a drag or is picked; else undefined. A free slot, a reserve or a
+ * player left out picked gives none: the marks of the pitch are of who is there ("Reverso, não").
+ */
+export function candidateSlot(sheet: DraftSheet, states: PlaceStates): Position | undefined {
+  const place = states.origin ?? states.selected;
+  if (place?.part !== 'starters' || playerAt(sheet, place) === null) return undefined;
+  return FORMATION_SLOTS[sheet.lineup.formation][place.index];
+}
+
+/**
+ * One row of a reserve or of a player left out. With `candidateFor` (the slot picked or dragged,
+ * {@link candidateSlot}), a player who has that slot as his secondary position gets the
+ * `secondary` badge, last, and its text at the end of the accessible name: the only good option
+ * that the code of his natural position does not show. Improvised and out of position are not
+ * marked here (escalacao.md, "Só a secundária").
+ */
 function playerRow(
   player: Player,
   place: Place,
   dataPlace: string,
   realism: Realism,
   states: PlaceStates,
+  candidateFor: Position | undefined,
   lang: Lang,
 ): RowView {
   const condition = shownCondition(player);
@@ -494,7 +519,12 @@ function playerRow(
     condition,
   };
   const label = t(realism === 'full' ? 'lineup.row.a11yCondition' : 'lineup.row.a11y', lang, vars);
-  const badges = playerBadges(player, realism, lang);
+  const badges = [
+    ...playerBadges(player, realism, lang),
+    ...(candidateFor !== undefined && fitLevel(player, candidateFor) === 'secondary'
+      ? [{ kind: 'secondary' as const, label: t('lineup.fit.secondary', lang) }]
+      : []),
+  ];
   return {
     place,
     dataPlace,
@@ -514,6 +544,7 @@ export function benchRows(
   lang: Lang,
 ): RowView[] {
   const realism = game.rules.realism;
+  const candidateFor = candidateSlot(sheet, states);
   return benchLines(game, sheet).map(({ index, player }) => {
     const place: Place = { part: 'bench', index };
     const dataPlace = `bench-${index}`;
@@ -527,7 +558,7 @@ export function benchRows(
         state: stateOf(place, states),
       };
     }
-    return playerRow(player, place, dataPlace, realism, states, lang);
+    return playerRow(player, place, dataPlace, realism, states, candidateFor, lang);
   });
 }
 
@@ -539,8 +570,17 @@ export function outRows(
   lang: Lang,
 ): RowView[] {
   const realism = game.rules.realism;
+  const candidateFor = candidateSlot(sheet, states);
   return outPlayers(game, clubId, sheet).map((player, n) =>
-    playerRow(player, { part: 'out', id: player.id }, `out-${n}`, realism, states, lang),
+    playerRow(
+      player,
+      { part: 'out', id: player.id },
+      `out-${n}`,
+      realism,
+      states,
+      candidateFor,
+      lang,
+    ),
   );
 }
 
@@ -565,7 +605,7 @@ export function benchCount(sheet: DraftSheet): number {
  * The warnings of the lineup (escalacao.md, "Avisos da escalação" and "Estados"), in this order:
  * what blocks the round, as `sheetProblems` gives it (free slots, injured or suspended starters
  * and reserves); then, for the starters in slot order, out of position and improvised (from
- * `fitLevel`); the tired starters (condition shown below `tiredBelow`, Realismo completo only);
+ * `fitLevel`; never the secondary position); the tired starters (condition shown below `tiredBelow`, Realismo completo only);
  * and the club's idol out of the team. Positions are the short codes the player reads on the
  * pitch ("(ZAG) jogando de ATA").
  */
@@ -606,8 +646,9 @@ export function lineupIssues(
     if (player === undefined) return;
     starters.push(player);
     const slot = slots[index]!;
-    const level = fitLevel(player.position, slot);
-    if (level === 'natural') return;
+    const level = fitLevel(player, slot);
+    // The secondary position is a good choice, not a warning (escalacao.md, "Não é aviso").
+    if (level !== 'improvised' && level !== 'outOfPosition') return;
     issues.push({
       kind: level,
       text: t(`lineup.issue.${level}`, lang, {

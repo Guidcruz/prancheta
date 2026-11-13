@@ -66,8 +66,8 @@ function greedyEleven<T extends Player>(
   return eleven;
 }
 
-const fresh = (p: Pick<Player, 'overall' | 'position'>, slot: Position) =>
-  p.overall * fit(p.position, slot);
+const fresh = (p: Pick<Player, 'overall' | 'position' | 'secondaryPosition'>, slot: Position) =>
+  p.overall * fit(p, slot);
 
 describe('naturalFirstEleven: the design examples', () => {
   it('keeps the DM of 78 in midfield and the CBs of 68 in defence (acceptance 5)', () => {
