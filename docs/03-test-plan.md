@@ -628,7 +628,7 @@ Cenários cobertos (todos automatizados):
 - Goldens: `new-game.json` muda só pelo campo novo; os outros mudam só em `engineVersion` (17) e nos digests. Nenhum placar, ponto ou força muda.
 - Desempenho (`npm run measure:save`, snapshot de 697 KB e 99 KB em gzip): p90 de gravação de 84 a 105 ms (meta <= 130 ms); p90 da abertura de 141 a 170 ms (meta <= 400 ms).
 
-Pendente: `PROPERTY_FULL=1` com o volume de release, antes do release; E2E da secundária na tela (T-081). Não há E2E de tela nesta tarefa, e a secundária ainda não aparece.
+Pendente: `PROPERTY_FULL=1` com o volume de release, antes do release. O E2E da secundária na tela entrou com a T-081.
 
 ### QA da T-082 (escalação automática "natural primeiro", ADR-0022)
 
@@ -653,7 +653,16 @@ Cenários cobertos (todos automatizados):
 - Goldens: `ENGINE_VERSION` 19; mudam nos dados `match-ai-sheets`, `match-commands`, `season-full`, `season-human-simplified` e `season-turn`; `new-game` e `round-first` só no digest; os demais só na versão. Nenhum `d` do novo jogo mudou na semente do golden.
 - `/balance`: com `players.secondaryChance` 0 a saída é idêntica à da `main`; métricas informativas novas `onSecondary` e `offPosition` (improvisados ou fora de posição).
 
-Pendente: a medida 6 (sigla secundária na LineupRow) entra com a T-081, junto do nome acessível `squad.secondaryPosition.a11y`.
+Pendente: nada. A medida 6 (sigla secundária na LineupRow) e o nome acessível `squad.secondaryPosition.a11y` entraram com a T-081 (abaixo).
+
+### QA da T-081 (a secundária no card, no Elenco e na linha do banco, ADR-0022)
+
+Cenários cobertos (todos automatizados), na fixture da T-079: um volante com secundária ZAG, um lateral com secundária ZAG no banco, um meia sem secundária e os goleiros.
+
+- `ui/squad.secondary.test.ts` (Vitest, três idiomas): `shownSecondary` (nunca no goleiro, mesmo com a secundária forçada) e `positionReading` ("Volante, também joga de zagueiro", a secundária em minúsculas); o card do volante tem o `dl` com o `dt` `player.secondaryPosition`, a caixinha `sm` neutra e `aria-hidden`, a posição por extenso e a ajuda; o card do meia, do goleiro e do goleiro forçado não tem o bloco; a linha do Elenco tem duas caixinhas escondidas (a segunda sem setor, `sm`), o texto escondido é a frase aprovada e não há forma curta; o meia e o goleiro têm uma só; o grupo da ordem "Posição" é o da natural; a linha do banco da Escalação tem `secondaryCode`, o nome acessível com a frase e a sigla `second` escondida e sem setor.
+- E2E (`tests/e2e/secondary-card.spec.ts`, Chromium celular e desktop): as medidas 1 a 5 de `elenco.md` (duas caixinhas, a segunda `aria-hidden`, sem `sector-*`, borda `line` e texto `ink-muted` nos dois temas; texto escondido; larguras iguais ±1px a 360 px, coluna fixa até 50%, botão do nome de 44 × 44 px e linha de até 56 px sem selo; grupo "Volantes"; sem rolagem lateral em 360, 390, 844 e 1280), as medidas 1 a 4 de `jogador.md` (o `dt` e o `dd` do volante, a ajuda visível, nenhum `dt` no meia e no goleiro, o corpo da folha sem rolagem lateral e o `dd` dentro da folha, a sigla do cabeçalho com a classe do setor) e a medida 6 de `escalacao.md` (duas siglas na linha de (b), a segunda neutra e escondida, da largura da primeira ±1px; uma na de (c); linhas de pelo menos 44px; nome acessível), nos três idiomas. Cada teste cria a carreira, assenta a gravação (`saveSettled`) e só depois recarrega no idioma.
+
+Pendente: WebKit só no CI; o conferir a olho do card em es e en a 360 px fica no checklist manual do CEO.
 
 ### Ritual de release (`test:release`, manual)
 

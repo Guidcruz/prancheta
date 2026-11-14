@@ -529,7 +529,8 @@ test.describe('Cor de setor no Elenco (elenco.md, medida 12)', () => {
     await openSquad(page);
     for (const theme of ['noite', 'dia'] as const) {
       await setTheme(page, theme);
-      const tags = main(page).locator('tbody th[scope="row"] .tag');
+      // The natural tag only: a secondary position's tag is neutral (secondary-card.spec.ts).
+      const tags = main(page).locator('tbody th[scope="row"] .tag:not(.sm)');
       const seen = new Set<string>();
       for (let i = 0; i < (await tags.count()); i++) {
         const tag = tags.nth(i);
