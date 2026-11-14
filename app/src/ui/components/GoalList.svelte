@@ -23,8 +23,9 @@
   /**
    * GoalList (componentes.md, "Casca da T-030"): the goals of one match in two lists side by side,
    * home on the left, each in the order of the minute, one goal per line that wraps. The minute in
-   * `numero` and the kind in `caption`, both hidden from screen readers, which read the full
-   * texts. With no goal at all, `emptyText` in place of the lists. Nothing is tappable.
+   * `numero` and the kind in `caption`. The visible parts are hidden from screen readers, which
+   * read one sentence per goal, with a pause between its parts ("minuto 23, Fulano, de
+   * pênalti"). With no goal at all, `emptyText` in place of the lists. Nothing is tappable.
    */
   interface Props {
     columns: readonly [GoalColumn, GoalColumn];
@@ -32,6 +33,11 @@
   }
   const { columns, emptyText }: Props = $props();
   const empty = $derived(columns.every((column) => column.goals.length === 0));
+  /** What a screen reader reads of a goal: the full texts, in the order they are shown. */
+  const spoken = (goal: GoalItem) =>
+    [goal.minuteA11y, goal.name, goal.kind === undefined ? undefined : (goal.kindA11y ?? goal.kind)]
+      .filter((part) => part !== undefined)
+      .join(', ');
 </script>
 
 {#if empty}
@@ -43,12 +49,11 @@
         {#each column.goals as goal, j (j)}
           <li class="goal">
             <span class="numero minute" aria-hidden="true">{goal.minute}</span>
-            <span class="visually-hidden">{goal.minuteA11y}</span>
-            <span class="body who"
-              >{goal.name}{#if goal.kind}<span class="caption kind" aria-hidden="true"
-                  >{` ${goal.kind}`}</span
-                ><span class="visually-hidden">{`, ${goal.kindA11y ?? goal.kind}`}</span>{/if}</span
+            <span class="body who" aria-hidden="true"
+              >{goal.name}{#if goal.kind}<span class="caption kind">{` ${goal.kind}`}</span
+                >{/if}</span
             >
+            <span class="visually-hidden">{spoken(goal)}</span>
           </li>
         {/each}
       </ul>

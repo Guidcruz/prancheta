@@ -46,7 +46,7 @@
   import { alertKey, draftActions, hasAlertText, unsavedActions } from './save-alerts';
   import { pushSheet, sheetOnTop } from './sheet-history';
   import { summaryRound } from './round';
-  import { RoundFlow, isRoundHash, playOutcome } from './round-flow';
+  import { RoundFlow, areaErrorOf, isRoundHash, playOutcome } from './round-flow';
   import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
   import ClubView from './screens/ClubView.svelte';
   import Placeholder from './screens/Placeholder.svelte';
@@ -97,15 +97,7 @@
    * The content area shows the unexpected error: a bug while playing (`crash`), or a save the
    * store refused as not of the format (`invalid-save`), with its code.
    */
-  const areaError = $derived(
-    career.crash !== undefined
-      ? ('unexpected' as const)
-      : playError !== undefined
-        ? playError
-        : career.unsaved === 'invalid-save'
-          ? ('invalid-save' as const)
-          : undefined,
-  );
+  const areaError = $derived(areaErrorOf(career, playError));
 
   const item = (d: NavDestination): TabItem => ({
     id: d.id,
@@ -332,8 +324,19 @@
     home: t('round.error.leave', lang),
   });
 
+  /** The round is over while a sheet's entry is on its way out: the summary waits for it. */
+  let summaryWaits = false;
+
   function openSummary(): void {
-    flow.open(current);
+    if (closingSheet || closingCheck) {
+      summaryWaits = true;
+      return;
+    }
+    summaryWaits = false;
+    // A sheet opened while the round was computed closes: its entry becomes the summary's.
+    sheetOpen = false;
+    checkOpen = false;
+    flow.open();
     summaryShown = true;
   }
 
@@ -487,6 +490,7 @@
       closingCheck = false;
       if (sheetOpen && history.state?.sheet !== true) sheetOpen = false;
       if (checkOpen && !sheetOnTop(CHECK)) checkOpen = false;
+      if (summaryWaits) openSummary();
     };
     window.addEventListener('hashchange', onHash);
     window.addEventListener('popstate', onPop);

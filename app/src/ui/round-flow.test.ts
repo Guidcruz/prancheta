@@ -1,9 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render } from 'svelte/server';
+import { t } from '@lib/i18n';
+import ErrorState from './components/ErrorState.svelte';
 import type { PlayError } from '@lib/career';
 import {
   PLAY_GUARD_MS,
   ROUND_HASH,
   RoundFlow,
+  areaErrorOf,
   isRoundHash,
   playOutcome,
   type PlayAnswer,
@@ -35,7 +39,7 @@ describe('the protection window of "Jogar rodada" (CEO decision 2)', () => {
   it('a tap 200 ms after "Continuar" does not play; 600 ms after, it plays', () => {
     const { flow } = setup();
     const play = vi.fn();
-    flow.open('squad');
+    flow.open();
     flow.close('squad');
     vi.advanceTimersByTime(200);
     expect(flow.tap(play)).toBe(false);
@@ -48,7 +52,7 @@ describe('the protection window of "Jogar rodada" (CEO decision 2)', () => {
   it('the window starts again when the address leaves the summary (back gesture)', () => {
     const { flow } = setup();
     const play = vi.fn();
-    flow.open('club');
+    flow.open();
     vi.advanceTimersByTime(5_000);
     flow.left();
     vi.advanceTimersByTime(PLAY_GUARD_MS - 1);
@@ -68,18 +72,39 @@ describe('the protection window of "Jogar rodada" (CEO decision 2)', () => {
 describe('the summary in the history (resumo-rodada.md, "Navegação")', () => {
   it('opens with its own entry, `#/round`, over the tab it came from', () => {
     const { history, flow } = setup();
-    flow.open('squad');
+    flow.open();
     expect(history.length).toBe(2);
     expect(history.location.hash).toBe(ROUND_HASH);
-    expect(history.state).toEqual({ round: true, from: 'squad' });
+    expect(history.state).toEqual({ round: true });
     expect(isRoundHash(history.location.hash)).toBe(true);
+  });
+
+  it('a sheet opened during the round closes with it: its entry becomes the summary’s', () => {
+    // The tab, then the card of a player (sheet-history.ts keeps the state below it).
+    const history = new FakeHistory('/jogo/#/squad');
+    const flow = new RoundFlow(() => history);
+    history.pushState({ sheet: 'player-card', player: 'p1' }, '');
+    flow.open();
+    expect(history.length).toBe(2);
+    expect(history.state).toEqual({ round: true });
+    expect(history.location.hash).toBe(ROUND_HASH);
+    // "Continuar": straight to the tab, with no sheet's entry left behind.
+    flow.close('squad');
+    expect(history.length).toBe(1);
+    expect(history.state).toBeNull();
+    expect(history.location.hash).toBe('#/squad');
+    // The "Mais" sheet of the frame is an entry too.
+    history.pushState({ sheet: true }, '');
+    flow.open();
+    expect(history.length).toBe(2);
+    expect(history.state).toEqual({ round: true });
   });
 
   it('"Continuar" takes its entry away: back to the tab', () => {
     const { history, flow } = setup();
     const popped = vi.fn();
     history.onPop(popped);
-    flow.open('squad');
+    flow.open();
     expect(flow.close('squad')).toBeUndefined();
     expect(popped).toHaveBeenCalledTimes(1);
     expect(history.location.hash).toBe('#/squad');
@@ -89,7 +114,7 @@ describe('the summary in the history (resumo-rodada.md, "Navegação")', () => {
   it('a double tap on "Continuar" goes back once, never out of the career', () => {
     const { history, flow } = setup();
     history.pushState(null, '', '#/club');
-    flow.open('club');
+    flow.open();
     // The browser's back is asynchronous: the second tap comes before the popstate.
     const back = vi.spyOn(history, 'back').mockImplementation(() => undefined);
     flow.close('club');
@@ -164,5 +189,35 @@ describe('what the frame does with the answer of playRound (resumo-rodada.md, "E
         code: error,
       });
     }
+  });
+});
+
+describe('the error of the content area (resumo-rodada.md, "Erro ao jogar")', () => {
+  it('a refusal of playRound becomes the area error with its code; a crash comes first', () => {
+    expect(areaErrorOf({}, undefined)).toBeUndefined();
+    expect(areaErrorOf({}, 'round-not-open')).toBe('round-not-open');
+    expect(areaErrorOf({ crash: 'unexpected' }, 'round-not-open')).toBe('unexpected');
+    expect(areaErrorOf({ unsaved: 'invalid-save' }, undefined)).toBe('invalid-save');
+    expect(areaErrorOf({ unsaved: 'invalid-save' }, 'season-over')).toBe('season-over');
+    // A write refused for lack of room is a banner, not the area's error.
+    expect(areaErrorOf({ unsaved: 'quota-exceeded' }, undefined)).toBeUndefined();
+  });
+
+  it('the answer of playRound reaches the ErrorState of the area, with the code shown', () => {
+    const outcome = playOutcome({ ok: false, error: 'round-already-played' }, 'open');
+    expect(outcome.kind).toBe('error');
+    const code = areaErrorOf({}, outcome.kind === 'error' ? outcome.code : undefined)!;
+    // As the frame draws it (CareerFrame.svelte, `areaError`).
+    const body = render(ErrorState, {
+      props: {
+        layout: 'area',
+        title: t('error.unexpected.title', 'pt-BR'),
+        message: t('error.unexpected.body', 'pt-BR'),
+        code: t('error.code', 'pt-BR', { code }),
+        primary: { label: t('action.retry', 'pt-BR'), onclick: () => undefined },
+      },
+    }).body;
+    expect(body).toContain('error area');
+    expect(body).toContain(t('error.code', 'pt-BR', { code: 'round-already-played' }));
   });
 });

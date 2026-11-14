@@ -195,6 +195,21 @@ test.describe('Resumo da rodada (T-030)', () => {
     await expect(primaries).toHaveCount(1);
     await expect(primaries).toHaveText('Continuar');
 
+    // O placar não é lido de novo (o h1 já diz), mas a linha de mando e estádio é.
+    const meta = mineSection(page).locator('.meta');
+    await expect(meta).toBeVisible();
+    expect(await meta.evaluate((el) => el.closest('[aria-hidden="true"]') === null)).toBe(true);
+    expect(
+      await mineSection(page)
+        .locator('.scoreboard .row')
+        .evaluate((el) => el.getAttribute('aria-hidden')),
+    ).toBe('true');
+    await expect(mineSection(page)).toMatchAriaSnapshot(`
+      - region "Meu jogo":
+        - heading "Meu jogo" [level=2]
+        - paragraph: /(Em casa|Fora de casa) · .+/
+    `);
+
     // (4) Ordem no DOM, alvo de "Continuar" e cards só de leitura.
     const order = await page.evaluate(() => {
       const at = (selector: string) => document.querySelector(selector)!;
@@ -222,6 +237,8 @@ test.describe('Resumo da rodada (T-030)', () => {
   test('"Continuar" e o voltar devolvem à aba de origem, com o foco no "Jogar rodada"; toque duplo não joga outra (medida 5)', async ({
     page,
   }) => {
+    // The page's clock runs as usual until it is paused for the double tap below.
+    await page.clock.install();
     await startCareer(page);
     const nav = page.getByRole('navigation', { name: 'Navegação principal' });
     await nav.getByRole('link', { name: 'Elenco' }).click();
@@ -252,22 +269,90 @@ test.describe('Resumo da rodada (T-030)', () => {
     expect(await nextRound(page)).toBe(3);
 
     // Toque duplo em "Continuar" e um toque logo em seguida no "Jogar rodada": nenhuma rodada nova.
+    // O relógio da página fica parado: o toque chega "no mesmo instante", por mais lento que seja
+    // o CI, e só o `runFor` faz a janela passar.
     await page.waitForTimeout(PLAY_GUARD_MS + 50);
     await playButton(page).click();
     await expect(roundHeading(page)).toHaveAccessibleName(/^Rodada 3\. /);
+    await page.clock.pauseAt((await page.evaluate(() => Date.now())) + 1_000);
     await continueButton(page).evaluate((button: HTMLElement) => {
       button.click();
       button.click();
     });
     await expect(page).toHaveURL(/#\/club$/);
+    await expect(playButton(page)).toBeFocused();
     await playButton(page).click();
-    await page.waitForTimeout(PLAY_GUARD_MS);
+    // Ignored: a round started would leave the button busy (its timers wait for the clock).
+    await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
     await expect(roundHeading(page)).toHaveCount(0);
     expect((await readSave(page)).game.round).toBe(4);
     expect(await nextRound(page)).toBe(4);
-    // Passada a janela, o toque joga.
+    // Um instante antes do fim da janela, ainda não joga; passada a janela, o toque joga.
+    await page.clock.runFor(PLAY_GUARD_MS - 1);
+    await playButton(page).click();
+    await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
+    expect((await readSave(page)).game.round).toBe(4);
+    await page.clock.runFor(1);
+    await page.clock.resume();
     await playButton(page).click();
     await expect(roundHeading(page)).toHaveAccessibleName(/^Rodada 4\. /);
+  });
+
+  test('uma folha aberta durante o cálculo fecha com o resumo, sem deixar entrada no histórico', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'o menu "Mais opções" só existe no celular');
+    // The gzip of the round's sheets waits for a gate: the round stays "computing" meanwhile.
+    await page.addInitScript(() => {
+      const scope = globalThis as unknown as {
+        holdGzip?: Promise<void>;
+        CompressionStream: typeof CompressionStream;
+      };
+      const Original = scope.CompressionStream;
+      scope.CompressionStream = function (format: CompressionFormat) {
+        const gate = scope.holdGzip;
+        const inner = new Original(format);
+        if (gate === undefined) return inner;
+        const writer = inner.writable.getWriter();
+        // A plain writable (a TransformStream nobody reads would never take the input).
+        const held = new WritableStream<Uint8Array>({
+          async write(chunk) {
+            await gate;
+            await writer.write(chunk as Uint8Array<ArrayBuffer>);
+          },
+          async close() {
+            await gate;
+            await writer.close();
+          },
+        });
+        return { writable: held, readable: inner.readable };
+      } as unknown as typeof CompressionStream;
+    });
+    await startCareer(page);
+    const before = await page.evaluate(() => history.length);
+    await page.evaluate(() => {
+      const scope = globalThis as unknown as { holdGzip?: Promise<void>; release?: () => void };
+      scope.holdGzip = new Promise<void>((resolve) => (scope.release = resolve));
+    });
+    await playButton(page).click();
+    await expect(playButton(page)).toHaveAttribute('aria-busy', 'true');
+    // The "Mais" sheet, opened while the round is computed.
+    await page.getByRole('button', { name: 'Mais opções' }).click();
+    const sheet = page.getByRole('dialog', { name: 'Mais opções' });
+    await expect(sheet).toBeVisible();
+    await page.evaluate(() => (globalThis as unknown as { release: () => void }).release());
+
+    // The summary opens alone: the sheet is closed and its entry became the summary's.
+    await expect(roundHeading(page)).toBeVisible();
+    await expect(sheet).toBeHidden();
+    expect(await page.evaluate(() => history.length)).toBe(before + 1);
+    expect(await page.evaluate(() => history.state)).toEqual({ round: true });
+    await closeSummary(page);
+    await expect(page).toHaveURL(/#\/club$/);
+    expect(await page.evaluate(() => history.state?.sheet)).toBeUndefined();
+    await expect(sheet).toBeHidden();
+    // Back on the tab itself, with the round played.
+    expect(await nextRound(page)).toBe(2);
   });
 
   test('classificação: posição do getStandings; sem variação na rodada 1, e a variação do motor depois (medida 6)', async ({

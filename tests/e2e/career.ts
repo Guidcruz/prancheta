@@ -1,3 +1,4 @@
+import { PLAY_GUARD_MS } from '../../app/src/ui/play-guard.ts';
 import { expect, playButton } from './fixtures.ts';
 import type { Page } from '@playwright/test';
 
@@ -67,8 +68,8 @@ export async function saveSettled(page: Page): Promise<void> {
 export const roundHeading = (page: Page) =>
   page.getByRole('heading', { level: 1, name: /^(Rodada|Jornada|Round) \d+\. / });
 
-/** A janela em que o "Jogar rodada" ignora toques depois de o resumo fechar (`round-flow.ts`). */
-export const PLAY_GUARD_MS = 500;
+/** A janela em que o "Jogar rodada" ignora toques depois de o resumo fechar (o valor do jogo). */
+export { PLAY_GUARD_MS } from '../../app/src/ui/play-guard.ts';
 
 /**
  * "Continuar" no resumo da rodada (`label` no idioma da página): volta à aba de origem, com o foco

@@ -128,7 +128,8 @@
   <div class="content">
     <section class="mine" aria-labelledby="round-mine-title" data-fixture={fixture.id}>
       <h2 class="visually-hidden" id="round-mine-title">{t('round.mine.title', lang)}</h2>
-      <!-- The heading already says the result and the score: the board is not read again. -->
+      <!-- The heading already says the result and the score: the board's row is not read again;
+           its line of venue and stadium is. -->
       <Scoreboard
         home={{
           club: game.clubs[fixture.homeId]!.def,

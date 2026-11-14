@@ -1,6 +1,9 @@
 import type { CareerService, CareerState, PlayError } from '@lib/career';
 import type { HistoryLike } from './home-routes';
+import { PLAY_GUARD_MS } from './play-guard';
 import { HOME_DESTINATION, hrefOf, type DestinationId } from './router';
+
+export { PLAY_GUARD_MS };
 
 /*
  * The flow of "Jogar rodada" in the "só resultado" mode (docs/design/telas/resumo-rodada.md,
@@ -14,20 +17,19 @@ import { HOME_DESTINATION, hrefOf, type DestinationId } from './router';
 /** The address of the round summary. */
 export const ROUND_HASH = '#/round';
 
-/** How long "Jogar rodada" ignores taps after the summary closes. */
-export const PLAY_GUARD_MS = 500;
-
 /** The address is the round summary's. */
 export function isRoundHash(hash: string): boolean {
   return hash.replace(/^#\/?/, '') === 'round';
 }
 
-/** The state of the summary's entry in the history. */
+/** The state of the summary's entry in the history (the tab under it is the entry before). */
 interface RoundEntry {
   readonly round: true;
-  /** The tab where "Jogar rodada" was tapped. */
-  readonly from: DestinationId;
 }
+
+/** An entry of a sheet (`sheet-history.ts`, the "Mais" sheet, the card of a player...). */
+const isSheetEntry = (state: unknown): boolean =>
+  typeof state === 'object' && state !== null && Boolean((state as { sheet?: unknown }).sheet);
 
 const isRoundEntry = (state: unknown): state is RoundEntry =>
   typeof state === 'object' && state !== null && (state as { round?: unknown }).round === true;
@@ -40,6 +42,20 @@ export type PlayOutcome =
   | { readonly kind: 'none' }
   /** Any other refusal: the content area shows the unexpected error with its code, never silent. */
   | { readonly kind: 'error'; readonly code: PlayError };
+
+/**
+ * The error the content area of the frame shows, by its code, or none: a bug while playing
+ * (`crash`), a refusal of `playRound` other than busy (`playError`), or a save the store refused
+ * as not of the format (`invalid-save`).
+ */
+export function areaErrorOf(
+  career: Pick<CareerState, 'crash' | 'unsaved'>,
+  playError: PlayError | undefined,
+): PlayError | 'invalid-save' | undefined {
+  if (career.crash !== undefined) return 'unexpected';
+  if (playError !== undefined) return playError;
+  return career.unsaved === 'invalid-save' ? 'invalid-save' : undefined;
+}
 
 /** What `CareerService.playRound` answers. */
 export type PlayAnswer = Awaited<ReturnType<CareerService['playRound']>>;
@@ -82,10 +98,16 @@ export class RoundFlow {
     return true;
   }
 
-  /** The summary opens over `from`: its own entry, so the back gesture closes it. */
-  open(from: DestinationId): void {
+  /**
+   * The summary opens over the tab: its own entry, so the back gesture closes it. A sheet opened
+   * while the round was computed (the "Mais" menu, a player's card) closes with it: its entry
+   * becomes the summary's, so no entry of a sheet is left behind and back returns to the tab.
+   */
+  open(): void {
     this.closing = false;
-    this.history.pushState({ round: true, from } satisfies RoundEntry, '', ROUND_HASH);
+    const entry: RoundEntry = { round: true };
+    if (isSheetEntry(this.history.state)) this.history.replaceState(entry, '', ROUND_HASH);
+    else this.history.pushState(entry, '', ROUND_HASH);
   }
 
   /**

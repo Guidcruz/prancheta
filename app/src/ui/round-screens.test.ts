@@ -100,7 +100,10 @@ describe('the round summary (resumo-rodada.md, "Conteúdo")', () => {
     expect(mine).toBeGreaterThan(0);
     expect(table).toBeGreaterThan(mine);
     expect(others).toBeGreaterThan(table);
-    expect(body).toMatch(/class="scoreboard lg[^"]*"[^>]*aria-hidden="true"/);
+    // The row is hidden; the line of venue and stadium is still read, after "Meu jogo".
+    expect(body).toMatch(/class="row[^"]*" aria-hidden="true"/);
+    expect(body).not.toMatch(/class="scoreboard lg[^"]*"[^>]*aria-hidden/);
+    expect(body).toMatch(/<p class="caption meta[^"]*">/);
     expect(body).toContain(
       shown(
         t('round.mine.meta', 'pt-BR', {
@@ -232,13 +235,17 @@ describe('Scoreboard, GoalList and MatchCard (componentes.md, "Casca da T-030")'
     expect(board({ size: 'md' })).toContain('class="score display-lg');
   });
 
-  it('with a name it is a group and its parts are hidden; `hidden` hides it all', () => {
-    const named = board({ a11yLabel: 'Leões 2, Tubarões 1' });
+  it('with a name it is a group and its parts are hidden; `hidden` hides the row only', () => {
+    const named = board({ a11yLabel: 'Leões 2, Tubarões 1', meta: 'Em casa · Estádio' });
     expect(named).toMatch(/role="group" aria-label="Leões 2, Tubarões 1"/);
     expect(named).toMatch(/class="row[^"]*" aria-hidden="true"/);
-    const hidden = board({ hidden: true, a11yLabel: 'x' });
-    expect(hidden).toMatch(/class="scoreboard lg[^"]*"[^>]*aria-hidden="true"/);
+    expect(named).toMatch(/<p class="caption meta[^"]*" aria-hidden="true">/);
+    const hidden = board({ hidden: true, a11yLabel: 'x', meta: 'Em casa · Estádio' });
+    expect(hidden).toMatch(/class="row[^"]*" aria-hidden="true"/);
+    expect(hidden).toMatch(/<p class="caption meta[^"]*">Em casa · Estádio<\/p>/);
+    expect(hidden).not.toMatch(/class="scoreboard lg[^"]*"[^>]*aria-hidden/);
     expect(hidden).not.toContain('role="group"');
+    expect(hidden).not.toContain('aria-label="x"');
   });
 
   it('the goal list: two named lists; the minute and the kind are read in full', () => {
@@ -265,8 +272,11 @@ describe('Scoreboard, GoalList and MatchCard (componentes.md, "Casca da T-030")'
     expect(body).toContain('aria-label="Gols de Leões"');
     expect(body).toContain('aria-label="Gols de Tubarões"');
     expect(body).toMatch(/class="numero minute[^"]*" aria-hidden="true">23'<\/span>/);
-    expect(body).toContain('minuto 23');
-    expect(body).toContain('de pênalti');
+    // One sentence per goal for screen readers; every visible part is hidden from them.
+    expect(body).toMatch(
+      /<span class="visually-hidden[^"]*">minuto 23, Fulano, de pênalti<\/span>/,
+    );
+    expect(body).toMatch(/class="body who[^"]*" aria-hidden="true">Fulano/);
     expect(body).not.toContain('Sem gols');
   });
 

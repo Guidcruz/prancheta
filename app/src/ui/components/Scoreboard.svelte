@@ -12,8 +12,9 @@
    * `breakpoint-short`. Names break into up to two lines, never cut. Nothing moves.
    *
    * With `a11yLabel` the board is a group with that name and its visible parts are hidden from
-   * screen readers; with `hidden` the whole board is, when another element already says the
-   * result (the summary's heading).
+   * screen readers. With `hidden` the row (crests, names, goals and badge) is hidden, when another
+   * element already says the result (the summary's heading); the `meta` line above it (venue and
+   * stadium) is still read, since nothing else says it.
    */
   interface Props {
     home: MatchSide;
@@ -44,7 +45,10 @@
     hidden = false,
     instance,
   }: Props = $props();
-  const partsHidden = $derived(a11yLabel !== undefined && !hidden ? 'true' : undefined);
+  /** A group named by `a11yLabel` (not with `hidden`, which leaves the meta line to be read). */
+  const named = $derived(a11yLabel !== undefined && !hidden);
+  const metaHidden = $derived(named ? 'true' : undefined);
+  const rowHidden = $derived(named || hidden ? 'true' : undefined);
 </script>
 
 {#snippet side(team: MatchSide, which: 'home' | 'away')}
@@ -60,12 +64,11 @@
 
 <div
   class="scoreboard {size}"
-  role={a11yLabel !== undefined && !hidden ? 'group' : undefined}
-  aria-label={hidden ? undefined : a11yLabel}
-  aria-hidden={hidden ? 'true' : undefined}
+  role={named ? 'group' : undefined}
+  aria-label={named ? a11yLabel : undefined}
 >
-  {#if meta}<p class="caption meta" aria-hidden={partsHidden}>{meta}</p>{/if}
-  <div class="row" aria-hidden={partsHidden}>
+  {#if meta}<p class="caption meta" aria-hidden={metaHidden}>{meta}</p>{/if}
+  <div class="row" aria-hidden={rowHidden}>
     {@render side(home, 'home')}
     <div class="center">
       <p class="score {size === 'lg' ? 'placar-xl' : 'display-lg'}">
