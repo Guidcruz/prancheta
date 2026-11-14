@@ -9,7 +9,7 @@ Regras que o `ux-designer` cobra:
 - Tema `noite` padrão e `dia` opcional; contraste ≥ 4,5:1 nos dois.
 - Resultado nunca só por cor (V/E/D ou ícone); `prefers-reduced-motion`.
 - A cor de faixa só pinta números; a cor de setor só pinta o fundo da sigla da posição ("Onde cada cor pinta").
-- Componentes base: Escudo, CardPartida, LinhaTabela, CardJogador, BarraAbas, Botao, Noticia.
+- Componentes base: Escudo, CardPartida, LinhaTabela, CardJogador, BarraAbas, Botao, Noticia, Placar (Scoreboard; aprovado pelo CEO em 2026-11-14).
 - Textos em `app/src/content/<idioma>/`; nome, logo e cores em `config/prancheta.config.ts`.
 
 ## Tipografia
@@ -66,6 +66,17 @@ A escala completa (família, tamanho, entrelinha, peso e uso de cada estilo) est
 - Escudo e avatar dividem a mesma escala: um medalhão de 48px tem o mesmo tamanho seja clube ou jogador.
 - Os geradores (`shield.ts`, `avatar.ts`) recebem a largura em número; por isso `CREST_SIZES` e `AVATAR_SIZES` repetem os valores, com comentário apontando para cá, até o gerador de tokens exportar também constantes TypeScript.
 - Nenhuma barra nem medalhão declara altura ou largura à mão fora dessas medidas.
+
+## Placar (Scoreboard) (aprovado pelo CEO em 2026-11-14)
+
+O placar é componente base do PROJETO ("Componentes base") e agora também do design system. Implementação: `Scoreboard` em `app/src/ui/components/` (T-030); props em [componentes.md](telas/componentes.md#casca-da-t-030-e-da-t-083-resumo-da-rodada-e-súmula).
+
+- **Desenho:** mandante à esquerda, visitante à direita, cada um com escudo e nome curto; os gols no meio, com o separador do conteúdo (`match.score.versus`). Fundo `surface-1`, texto em `ink`; nenhuma cor de resultado no placar.
+- **Dois tamanhos:** `lg` (escudo `size-medallion-md`, gols em `placar-xl`), no resumo da rodada; `md` (escudo `size-medallion-sm`, gols em `display-lg`), na súmula e abaixo de `breakpoint-short` (480px de altura).
+- **Números** em `tabular-nums`. O nome do meu clube em `body-strong`; o outro em `body`. Nomes quebram em até 2 linhas, nunca cortam.
+- **Resultado nunca só por cor:** o selo do resultado (StatusBadge com a palavra inteira) vai embaixo do placar, e o placar tem um nome acessível em frase, ou fica `aria-hidden` quando um título já diz o resultado.
+- **Depois:** o minuto, a fase, o anúncio ao vivo (`aria-live`) e a faixa de marca do cenário (BrandSlot `scoreboard`, decorativa) entram com a partida (T-032) e as marcas (T-040).
+- Sem token novo.
 
 ## Padrões de layout
 

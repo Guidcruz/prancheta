@@ -49,7 +49,7 @@ O `CareerService` recebe o código do `SaveStore` e a tela mostra o aviso da tab
 - Ação: **Entendi** (fecha). Sem "tentar recuperar": as cópias puladas já foram descartadas pela abertura.
 - Chaves: `save.roundsLost.title`, `save.roundsLost.body.one`, `save.roundsLost.body.other` (plural pelo número; o `content-writer` confere as formas em es e en), `save.roundsLost.action.ok`.
 - Texto: **Recuperamos a sua carreira.** A última cópia salva estava danificada, então voltamos para a anterior. {count} rodada foi perdida. / {count} rodadas foram perdidas.
-- `missingSheetRounds` (súmulas que faltam) não tem aviso global: a súmula daquele jogo mostra o placar, os gols, o melhor em campo (sem a nota) e as estatísticas, que vêm do `Fixture.result`, e um EmptyState curto no lugar dos lances (T-030; [resumo-rodada.md](resumo-rodada.md#súmula-folha), item 6).
+- `missingSheetRounds` (súmulas que faltam) não tem aviso global: a súmula daquele jogo mostra o placar, os gols, o melhor em campo (sem a nota) e as estatísticas, que vêm do `Fixture.result`, e um EmptyState curto no lugar dos lances (T-083; [resumo-rodada.md](resumo-rodada.md#súmula-folha), item 6).
 
 ### Códigos que já existiam
 
