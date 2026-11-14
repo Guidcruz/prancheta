@@ -28,14 +28,26 @@
     caption: string;
     showCaption?: boolean;
     columns: readonly TableColumn[];
+    /**
+     * The most the fixed column may take of the box, in % (design-system.md, "Coluna fixa das
+     * tabelas que rolam"): 50 by default (Elenco), 60 in the Tabela. The box exposes it as
+     * `--fixed-max` in `cqi`, and the rows read their limit from it.
+     */
+    fixedMax?: number;
     children: Snippet;
   }
-  const { caption, showCaption = false, columns, children }: Props = $props();
+  const { caption, showCaption = false, columns, fixedMax = 50, children }: Props = $props();
   const id = $props.id();
 </script>
 
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
-<div class="box scroll-table" role="region" aria-labelledby="{id}-caption" tabindex="0">
+<div
+  class="box scroll-table"
+  role="region"
+  aria-labelledby="{id}-caption"
+  tabindex="0"
+  style:--fixed-max="{fixedMax}cqi"
+>
   <table>
     <caption id="{id}-caption" class="caption" class:visually-hidden={!showCaption}>
       {caption}

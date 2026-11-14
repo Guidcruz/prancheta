@@ -138,12 +138,12 @@
     gap: var(--space-2);
     min-width: 0;
   }
-  /* Inside a ScrollTable the fixed column never takes more than half the table's box, the
-     cell's padding and the fold line included (componentes.md, "Coluna fixa das tabelas que
-     rolam"; elenco.md, E2E measure 3). Long names end in an ellipsis; the card shows them
-     whole. */
+  /* Inside a ScrollTable the fixed column never takes more than the box's limit (`--fixed-max`,
+     half the box by default), the cell's padding and the fold line included (componentes.md,
+     "Coluna fixa das tabelas que rolam"; elenco.md, E2E measure 3). Long names end in an
+     ellipsis; the card shows them whole. */
   :global(.scroll-table) .cell {
-    max-inline-size: calc(50cqi - var(--space-3) - var(--space-2) - 1px);
+    max-inline-size: calc(var(--fixed-max, 50cqi) - var(--space-3) - var(--space-2) - 1px);
   }
   /* The natural tag over the secondary one; the column keeps the width of one tag. */
   .tags {

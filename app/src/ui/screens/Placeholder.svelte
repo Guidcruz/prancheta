@@ -1,7 +1,7 @@
 <script lang="ts">
   /**
-   * A destination whose screen comes with its own task (Clube T-028, Elenco T-028, Tabela and
-   * Calendário T-031, Notícias T-034...). It only says so, and where the career stands, so the
+   * A destination whose screen comes with its own task (Clube T-028, Elenco T-028, Tabela T-031,
+   * Calendário T-084, Notícias T-034...). It only says so, and where the career stands, so the
    * frame can be tried end to end.
    */
   interface Props {
