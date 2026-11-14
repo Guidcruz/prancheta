@@ -118,6 +118,22 @@ function gameParams(): GameParams {
   return checked.value;
 }
 
+/**
+ * Faz o resumo da rodada falhar ao desenhar, só depois de ligado (`failSummary`): o foco no `h1`
+ * do resumo, ao montar, lança, e a fronteira de erro do resumo mostra o ErrorState `screen`.
+ */
+async function failSummaryDraw(page: Page): Promise<void> {
+  await page.addInitScript(() => {
+    const focus = HTMLElement.prototype.focus;
+    HTMLElement.prototype.focus = function (this: HTMLElement, ...args) {
+      if ((globalThis as { failSummary?: boolean }).failSummary && this.id === 'round-title') {
+        throw new Error('summary draw failed (test)');
+      }
+      return focus.apply(this, args);
+    } as HTMLElement['focus'];
+  });
+}
+
 /** Cria uma carreira com o clube de nome curto `club` (Novo jogo, opções padrão). */
 async function startWith(page: Page, club: string): Promise<void> {
   await page.goto('/jogo/');
@@ -210,7 +226,8 @@ test.describe('Resumo da rodada (T-030)', () => {
         - paragraph: /(Em casa|Fora de casa) · .+/
     `);
 
-    // (4) Ordem no DOM, alvo de "Continuar" e cards só de leitura.
+    // (4) Ordem no DOM e alvo de "Continuar". Com a T-083, os cards são botões que abrem a súmula
+    // (match-report.spec.ts); nenhum é link.
     const order = await page.evaluate(() => {
       const at = (selector: string) => document.querySelector(selector)!;
       const mineEl = at('section.mine');
@@ -231,7 +248,8 @@ test.describe('Resumo da rodada (T-030)', () => {
     const box = (await continueButton(page).boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
-    await expect(othersList(page).locator('a, button')).toHaveCount(0);
+    await expect(othersList(page).locator('a')).toHaveCount(0);
+    await expect(othersList(page).locator('button')).toHaveCount(9);
   });
 
   test('"Continuar" e o voltar devolvem à aba de origem, com o foco no "Jogar rodada"; toque duplo não joga outra (medida 5)', async ({
@@ -434,6 +452,62 @@ test.describe('Resumo da rodada (T-030)', () => {
       expect((await readHeadRecord(page)).round).toBe(1);
       await continueButton(page).click();
       await expect(page).toHaveURL(/#\/club$/);
+      await expect(playButton(page)).toContainText(ui('pt-BR', 'play.blocked.unsaved'));
+    });
+
+    test('o resumo falha ao desenhar: "Sair do resumo" volta à aba, e a moldura mantém o aviso de rodada não salva', async ({
+      page,
+    }) => {
+      // round.error.body (revisão do lote da T-083) promete que, ao sair, o jogo avisa se a rodada
+      // não foi salva: o aviso fica na faixa da moldura e o "Jogar rodada" fica bloqueado.
+      await failSummaryDraw(page);
+      await startCareer(page);
+      await page.evaluate(() => {
+        const scope = globalThis as { failSnapshots?: boolean; failSummary?: boolean };
+        scope.failSnapshots = true;
+        scope.failSummary = true;
+      });
+      await playButton(page).click();
+      const error = page.getByRole('heading', { name: 'Algo deu errado nesta tela.' });
+      await expect(error).toBeVisible();
+      await expect(page.getByText(ui('pt-BR', 'round.error.body'))).toBeVisible();
+      await expect(roundHeading(page)).toHaveCount(0);
+      await page.getByRole('button', { name: ui('pt-BR', 'round.error.leave') }).click();
+      await expect(page).toHaveURL(/#\/club$/);
+      await expect(error).toHaveCount(0);
+      const banner = page.locator('.band .banner.danger');
+      await expect(banner).toBeVisible();
+      await expect(banner).toContainText(
+        ERRORS_PT['save.quota-exceeded.title'] ?? 'save.quota-exceeded.title',
+      );
+      await expect(playButton(page)).toContainText(ui('pt-BR', 'play.blocked.unsaved'));
+      expect((await readHeadRecord(page)).round).toBe(1);
+    });
+
+    test('o resumo falha ao desenhar: "Tentar de novo" remonta o resumo, com o aviso e "Rodada não salva"', async ({
+      page,
+    }) => {
+      test.skip(!onPhone(page), 'uma vez por navegador');
+      await failSummaryDraw(page);
+      await startCareer(page);
+      await page.evaluate(() => {
+        const scope = globalThis as { failSnapshots?: boolean; failSummary?: boolean };
+        scope.failSnapshots = true;
+        scope.failSummary = true;
+      });
+      await playButton(page).click();
+      await expect(page.getByText(ui('pt-BR', 'round.error.body'))).toBeVisible();
+      await page.evaluate(() => ((globalThis as { failSummary?: boolean }).failSummary = false));
+      await page.getByRole('button', { name: 'Tentar de novo' }).click();
+      await expect(roundHeading(page)).toBeVisible();
+      await expect(summary(page).locator('.banner.danger')).toContainText(
+        ERRORS_PT['save.quota-exceeded.title'] ?? 'save.quota-exceeded.title',
+      );
+      await expect(summary(page).locator('#round-bar-state')).toHaveText(
+        ui('pt-BR', 'round.unsaved'),
+      );
+      await continueButton(page).click();
+      await expect(page.locator('.band .banner.danger')).toBeVisible();
       await expect(playButton(page)).toContainText(ui('pt-BR', 'play.blocked.unsaved'));
     });
 

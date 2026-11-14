@@ -285,6 +285,34 @@ export async function countSnapshots(page: Page): Promise<number> {
  * when the round has no row.
  */
 export async function readSheetFixtures(page: Page, round: number): Promise<string[]> {
+  return Object.keys(await readMatchSheets(page, round));
+}
+
+/** One event of a stored match sheet, as the report reads it (`MatchSheetEvent`). */
+export interface SheetEventJson {
+  type: 'goal' | 'penaltyMissed' | 'yellow' | 'red' | 'injury' | 'substitution';
+  minute: number;
+  added?: number;
+  side: 'home' | 'away';
+  triggersSuspension?: boolean;
+  reason?: string;
+}
+
+/** A stored match sheet (`MatchSheet`). */
+export interface SheetJson {
+  fixtureId: string;
+  events: SheetEventJson[];
+  motmRating?: number;
+}
+
+/**
+ * The match sheets stored for one round of the newest career, by fixture id (the row of
+ * `matchSheets`, decompressed), or `{}` when the round has no row.
+ */
+export async function readMatchSheets(
+  page: Page,
+  round: number,
+): Promise<Record<string, SheetJson>> {
   return page.evaluate(async (wanted) => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
       const open = indexedDB.open('prancheta-test');
@@ -308,11 +336,10 @@ export async function readSheetFixtures(page: Page, round: number): Promise<stri
     }[];
     db.close();
     const row = rows.find((r) => r.careerId === newest.id && r.round === wanted);
-    if (row === undefined) return [];
+    if (row === undefined) return {};
     const stream = new Blob([row.blob as Uint8Array<ArrayBuffer>])
       .stream()
       .pipeThrough(new DecompressionStream('gzip'));
-    const json = JSON.parse(await new Response(stream).text()) as Record<string, unknown>;
-    return Object.keys(json);
+    return JSON.parse(await new Response(stream).text()) as Record<string, SheetJson>;
   }, round);
 }
