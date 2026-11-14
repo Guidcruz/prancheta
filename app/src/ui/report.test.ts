@@ -78,6 +78,41 @@ describe('the report of a played match (resumo-rodada.md, "Súmula")', () => {
     expect(report('en')).toEqual({ name, rating: 'rating 7.3' });
   });
 
+  it('a match ended early: the note names the club left short of players (the loser)', () => {
+    const fixture = playedFixture(game, mine.id)!;
+    const lost = fixture.homeId === TEST_CLUB ? ([0, 3] as const) : ([3, 0] as const);
+    const ended = {
+      ...game,
+      fixtures: game.fixtures.map((f) =>
+        f.id === mine.id ? { ...f, result: { ...f.result!, score: lost, abandoned: true } } : f,
+      ),
+    } as GameState;
+    const report = matchReport(ended, mine.id, sheets[mine.id], TEST_CLUB, 'pt-BR')!;
+    expect(report.abandoned).toBe(
+      t('match.abandoned', 'pt-BR', { club: game.clubs[TEST_CLUB]!.def.shortName }),
+    );
+    // The board shows the awarded score.
+    expect([report.home.goals, report.away.goals]).toEqual([...lost]);
+  });
+
+  it('a match played to the end: no note', () => {
+    const fixture = playedFixture(game, mine.id)!;
+    expect(fixture.result.abandoned).toBe(false);
+    const report = matchReport(game, mine.id, sheets[mine.id], TEST_CLUB, 'pt-BR')!;
+    expect(report.abandoned).toBeUndefined();
+    expect(report.home).toMatchObject({
+      name: game.clubs[fixture.homeId]!.def.shortName,
+      goals: fixture.result.score[0],
+    });
+  });
+
+  it('a club of the fixture missing from the state fails the report, for the sheet to catch', () => {
+    const clubs = { ...game.clubs };
+    delete clubs[mine.homeId];
+    const broken = { ...game, clubs } as GameState;
+    expect(() => matchReport(broken, mine.id, sheets[mine.id], TEST_CLUB, 'pt-BR')).toThrow();
+  });
+
   it('a fixture not played, or unknown, has no report', () => {
     const next = game.fixtures.find((f) => f.round === 6)!;
     expect(matchReport(game, next.id, undefined, TEST_CLUB, 'pt-BR')).toBeUndefined();

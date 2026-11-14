@@ -52,11 +52,6 @@
   $effect(() => {
     if (read !== undefined && !read.ok) onerror?.(read.error);
   });
-  const side = (id: ClubId, goals: number) => ({
-    club: game.clubs[id]!.def,
-    name: game.clubs[id]!.def.shortName,
-    goals,
-  });
 </script>
 
 {#snippet missingNotice()}
@@ -88,8 +83,8 @@
     <div class="report" data-fixture={fixture.id}>
       <p class="caption muted meta">{report.meta}</p>
       <Scoreboard
-        home={side(fixture.homeId, fixture.result.score[0])}
-        away={side(fixture.awayId, fixture.result.score[1])}
+        home={report.home}
+        away={report.away}
         versus={t('match.score.versus', lang)}
         mine={report.mine}
         badge={report.result === undefined

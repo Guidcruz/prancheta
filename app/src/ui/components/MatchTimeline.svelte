@@ -114,20 +114,19 @@
     list-style: none;
   }
   /* Minute, icon, text: the minute column fits "90+7'" in `numero` (no token for it: the width of
-     a touch target, 44px); the icon column is the size the icon is drawn at (20). */
+     a touch target, 44px); the icon column is the size the icon is drawn at (20). The three sit
+     on the baseline of the first line, as in the GoalList: the icon's base on the text's. */
   .line {
     display: grid;
     grid-template-columns: var(--touch) 20px minmax(0, 1fr);
     column-gap: var(--space-2);
-    align-items: start;
+    align-items: baseline;
   }
   .minute {
     font-variant-numeric: tabular-nums;
-    line-height: 22px;
   }
   .icon {
     display: inline-flex;
-    padding-top: 1px;
     color: var(--ink-muted);
   }
   /* The colour only reinforces the word of the kind (componentes.md, "Cor do cartão"). */

@@ -529,6 +529,45 @@ test.describe('Resumo da rodada (T-030)', () => {
     });
   });
 
+  test('o resumo falha ao desenhar com a entrada da súmula por cima: "Sair do resumo" tira as duas entradas (T-083)', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'uma vez por navegador');
+    // O ramo `go(-2)` do RoundFlow.close: a entrada da súmula guarda a do resumo por baixo, e sair
+    // do resumo pela fronteira de erro não pode deixar nenhuma das duas no histórico.
+    await failSummaryDraw(page);
+    await startCareer(page);
+    await playButton(page).click();
+    await expect(roundHeading(page)).toBeVisible();
+    await summary(page)
+      .getByRole('button', { name: ui('pt-BR', 'round.sheet.open') })
+      .click();
+    await expect(page.getByRole('dialog', { name: ui('pt-BR', 'report.title') })).toBeVisible();
+    // Volta à aba e avança de novo até a entrada da súmula, agora com o resumo falhando.
+    await page.goBack();
+    await expect(page.getByRole('dialog')).toBeHidden();
+    await page.goBack();
+    await expect(page).toHaveURL(/#\/club$/);
+    await page.evaluate(() => ((globalThis as { failSummary?: boolean }).failSummary = true));
+    await page.evaluate(() => history.go(2));
+    const error = page.getByRole('heading', { name: 'Algo deu errado nesta tela.' });
+    await expect(error).toBeVisible();
+    expect(await page.evaluate(() => history.state)).toMatchObject({
+      round: true,
+      sheet: 'report',
+    });
+    await page.getByRole('button', { name: ui('pt-BR', 'round.error.leave') }).click();
+    await expect(page).toHaveURL(/#\/club$/);
+    await expect(error).toHaveCount(0);
+    await expect(playButton(page)).toBeVisible();
+    expect(await page.evaluate(() => history.state?.sheet)).toBeUndefined();
+    // O voltar seguinte sai da aba, sem passar por um resumo nem por uma súmula.
+    await page.goBack();
+    await expect(page).not.toHaveURL(/#\/round$/);
+    await expect(roundHeading(page)).toHaveCount(0);
+    await expect(error).toHaveCount(0);
+  });
+
   test('fechar no meio: antes da gravação, nada aplicado; depois, tudo aplicado e abre no Clube (medida 9)', async ({
     page,
     context,

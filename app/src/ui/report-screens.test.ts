@@ -133,6 +133,16 @@ describe('the match report (resumo-rodada.md, "Súmula")', () => {
     expect(body).toContain(`aria-label="${t('nav.close', 'pt-BR')}"`);
   });
 
+  it('a club missing from the state: the error of a block inside the sheet, never a throw', () => {
+    const clubs = { ...game.clubs };
+    delete clubs[mine.awayId];
+    const body = dialog(
+      report(mine.id, sheets[mine.id], { state: { ...game, clubs } as GameState }),
+    );
+    expect(body).toContain(t('club.error.block.title', 'pt-BR'));
+    expect(body).not.toContain('class="report');
+  });
+
   it.each(LANGS)('%s: every text from the content, no raw key', (lang) => {
     expectNoRawKey(report(mine.id, sheets[mine.id], { lang }), `${lang} report`);
     expectNoRawKey(report(mine.id, undefined, { lang }), `${lang} missing`);

@@ -148,7 +148,9 @@
 
   onMount(() => {
     // The result is announced as the screen opens: the heading says it all (resumo-rodada.md,
-    // "Acessibilidade").
+    // "Acessibilidade"). The E2E makes the summary fail to draw through this very call, on the id
+    // `round-title` (`failSummaryDraw`, tests/e2e/round-summary.spec.ts): keep both, or move that
+    // hook along.
     document.getElementById(titleId)?.focus();
     // Mounted again on the report's entry ("Tentar de novo" of the boundary): the report too.
     reportId = sheetField(REPORT, 'fixture');

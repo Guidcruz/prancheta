@@ -10,6 +10,7 @@ import type {
 } from '@engine';
 import type { Lang } from '@lib/config';
 import { t } from '@lib/i18n';
+import type { MatchSide } from './components/MatchCard.svelte';
 import type { StatsRow } from './components/MatchStatsTable.svelte';
 import type { TimelineItem } from './components/MatchTimeline.svelte';
 import { matchDate } from './club';
@@ -35,6 +36,9 @@ import {
 /** Everything the report of one played match shows, already translated and formatted. */
 export interface MatchReport {
   readonly fixture: PlayedFixture;
+  /** The two sides of the board: crest, short name and goals of the awarded score. */
+  readonly home: MatchSide;
+  readonly away: MatchSide;
   /** "Rodada 5 · dom., 10 de mai." */
   readonly meta: string;
   /** The board's accessible name: "Placar: Leões 2, Tubarões 1". */
@@ -204,6 +208,14 @@ export function matchReport(
   const { result } = fixture;
   const home = shortNameOf(game, fixture.homeId);
   const away = shortNameOf(game, fixture.awayId);
+  // A club of the fixture missing from the state is a bug: it fails the report alone (the sheet
+  // shows the error of a block), never the screen that opened it.
+  const side = (id: ClubId, goals: number): MatchSide => {
+    const def = game.clubs[id]?.def;
+    if (def === undefined)
+      throw new Error(`the club ${id} of fixture ${fixture.id} is not in the state`);
+    return { club: def, name: def.shortName, goals };
+  };
   const mine: Side | undefined =
     fixture.homeId === clubId ? 'home' : fixture.awayId === clubId ? 'away' : undefined;
   const shortHanded = shortHandedClub(fixture);
@@ -220,6 +232,8 @@ export function matchReport(
   const stored = sheet?.fixtureId === fixture.id ? sheet : undefined;
   return {
     fixture,
+    home: side(fixture.homeId, result.score[0]),
+    away: side(fixture.awayId, result.score[1]),
     meta: t('report.meta', lang, { round: fixture.round, date: matchDate(fixture.date, lang) }),
     scoreA11y: t('match.score.a11y', lang, {
       home,
