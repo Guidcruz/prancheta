@@ -29,8 +29,8 @@ Prioridade herdada das histórias (Must, Should, Could). A ordem é a sugerida p
 | 7     | [Escalação](escalacao.md)                   | US-017                         | Must       | LineupPitch, LineupRow, StrengthBars, LineupStatusBar              |
 | 8     | [Tática](tatica.md) e [Funções](funcoes.md) | US-018                         | Must       | FormationPicker, OptionGroup, RoleEditor, BottomSheet              |
 | 9     | [Resumo da rodada](resumo-rodada.md)        | US-019, US-032, US-041         | Must       | Scoreboard, GoalList, MatchTimeline, MatchCard, ActionBar          |
-| 10    | [Tabela](tabela.md)                         | US-023                         | Must       | ScrollTable, TableRow, StatusBadge                                 |
-| 11    | [Calendário](calendario.md)                 | US-024                         | Must       | MatchCard, StatusBadge                                             |
+| 10    | [Tabela](tabela.md)                         | US-023                         | Must       | ScrollTable, TableRow, PositionMark, TableLegend                   |
+| 11    | [Calendário](calendario.md)                 | US-024                         | Must       | MatchCard, StatusBadge, MatchReport (súmula)                       |
 | 12    | [Partida](partida.md)                       | US-020, US-021, US-041         | Must       | MatchPitch, Scoreboard, CommentaryFeed, GoalCelebration, BrandSlot |
 | 13    | [Intervalo](intervalo.md)                   | US-022                         | Should     | OptionGroup, Scoreboard                                            |
 | 14    | [Notícias](noticias.md)                     | US-028                         | Must       | NewsCard, EmptyState                                               |
@@ -59,6 +59,7 @@ Dentro da carreira: barra de abas embaixo + botão "Jogar rodada" flutuante
   [Clube]        [Elenco]                     [Tabela]      [Calendário]
   Clube          Elenco | Escalação | Tática  Tabela        Calendário
    ├─ Notícias    └─ Jogador (folha)                         └─ Rodada (10 resultados)
+   │                                                             └─ Súmula (folha)
    ├─ Rede social
    └─ Mais: Carreiras e backup · Preferências · Sobre · Rever tutorial
    (o mesmo "Mais" abre pelo ícone de menu do cabeçalho em qualquer aba)

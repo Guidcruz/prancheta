@@ -14,7 +14,7 @@ Lê os três blocos, toca no próximo jogo (vai ao Calendário), nos desfalques 
 
 - É a aba **Clube** da moldura ([navegacao.md](navegacao.md)) e o destino de abertura da carreira (`#/club`). Cabeçalho com o título "Clube" (`nav.tab.club`) e o ícone "Mais"; "Jogar rodada" flutuante e TabBar, como em toda aba.
 - Saídas: o card do próximo jogo e o link "Calendário" do bloco vão a `#/calendar`; a linha de desfalques vai a `#/squad`; o link "Tabela" vai a `#/table`; as linhas do pé vão aos destinos do "Mais". Todas trocam a aba pelo mesmo caminho da TabBar (entrada nova no histórico; o voltar do celular volta ao Clube).
-- Enquanto Calendário e Tabela não existem (T-031), os links levam ao Placeholder dessas abas, como a TabBar já faz.
+- Enquanto Calendário e Tabela não existem, os links levam ao Placeholder dessas abas, como a TabBar já faz. Com a T-031, o link "Tabela" abre a Tabela já mostrando a linha do meu clube ([tabela.md](tabela.md#navegação)); com a T-084, o card do próximo jogo e o link "Calendário" abrem o Calendário na próxima rodada ([calendario.md](calendario.md#conteúdo-da-lista-de-cima-para-baixo-no-celular-em-pé)). Nada muda no Clube.
 
 ## Conteúdo (de cima para baixo, no celular)
 
