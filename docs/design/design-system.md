@@ -98,6 +98,14 @@ Vale para o site e para as telas futuras do jogo.
 
 **Implementação de referência.** No site, `site/src/components/TableScroll.astro` com a prop `stack`. No jogo, quando aparecer a primeira tabela desse tipo, a casca entra em `app/src/ui/components/` com o mesmo comportamento e as mesmas classes (`.col-state`, `.inline-state`).
 
+### Coluna fixa das tabelas que rolam (aprovado pelo CEO em 2026-11-14)
+
+- Numa tabela com rolagem lateral (ScrollTable), a coluna fixa inteira (conteúdo, respiro e a linha de 1px da borda) ocupa **no máximo 50% da caixa** da tabela, para os números terem lugar. É o padrão (Elenco, T-028).
+- Uma tabela pode pedir outro limite (`fixedMax` da ScrollTable), justificado na spec da tela. A **Tabela** (classificação, T-031) pede **60%**, para o nome curto de clube mais largo caber inteiro a 360px ao lado da posição, da mudança e do escudo, com Pts, J e V ainda à vista.
+- O limite é em `cqi` da caixa (consulta de contêiner); as linhas o leem de uma variável que a caixa expõe, nunca de um número escrito na linha.
+- Reticências só como último recurso, quando o texto não cabe nem no limite.
+- Sem token novo. Especificação: [tabela.md](telas/tabela.md#celular-em-pé-360px-deitado-e-desktop) e [componentes.md](telas/componentes.md#casca-da-t-031-tabela-e-da-t-084-calendário).
+
 ### Card em duas colunas (aprovado pelo CEO em 2026-11-07)
 
 - Um card de leitura dentro de uma folha (hoje, o card do jogador) passa a duas colunas quando a folha tem **480px** ou mais de largura (`breakpoint-card`): o celular em pé (390px) fica com uma coluna; a folha do celular deitado (720px) e o diálogo do desktop (540px) ficam com duas.
@@ -171,6 +179,21 @@ Vale para o StatusBadge (`app/src/ui/components/StatusBadge.svelte`) e para qual
 - Todo selo tem letra ou ícone **e** texto (no selo só de letra, V/E/D, a palavra inteira vai para o leitor de tela); a cor só reforça.
 - Texto em `rotulo`. Os tipos formam uma lista fechada no componente.
 - **Um tipo novo de selo só entra com o seu par de texto e fundo conferido pelo `npm run tokens`** (a lista de pares de `scripts/tokens-to-css.mjs`); cor solta num selo é correção na revisão.
+
+## Marca de zona da tabela (aprovado pelo CEO em 2026-11-14)
+
+Vale para toda tabela de classificação inteira: a Tabela (T-031), a classificação final do Fim de temporada (T-037) e a tabela ao vivo (T-045). A mini tabela do Clube não leva marca.
+
+| Zona              | Linhas (Etapa 1)                              | Marca na posição (PositionMark)           | Palavra embaixo do nome          |
+| ----------------- | --------------------------------------------- | ----------------------------------------- | -------------------------------- |
+| Líder (e Campeão) | 1º                                            | `on-floodlight` sobre `floodlight`        | "Líder" ou, encerrada, "Campeão" |
+| Rebaixamento      | os `RELEGATION_SPOTS` últimos (do 17º ao 20º) | `ink` sobre `danger-soft`, borda `danger` | "Rebaixamento"                   |
+
+- **Forma, cor e palavra:** o número da posição fica numa caixinha (`radius-sm`, borda de 1px) com o par de um Selo; a palavra da zona vai escrita na linha, e a legenda na tela explica as marcas. A cor nunca é a única pista.
+- **Pares dos Selos, sem cor nova:** líder com o par de `derby` e `prospect`; rebaixamento com o de `loss`. Os dois já são conferidos pelo `npm run tokens`.
+- **Zona nova só com o seu par conferido**, como um selo novo (as de copas, na Etapa 2).
+- Na Etapa 1, só essas duas zonas (US-023): nada de Libertadores ou Sul-Americana enquanto as copas não existem.
+- Sem token novo. Implementação de referência: `PositionMark` e `TableLegend`, usados pela `TableRow` `layout="full"`; especificação em [tabela.md](telas/tabela.md#zonas-decisões-2-e-3-do-ceo).
 
 ## Cores por faixa (aprovado pelo CEO em 2026-11-07)
 

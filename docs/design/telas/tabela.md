@@ -1,6 +1,6 @@
 # Tabela
 
-**Histórias:** US-023 (e, em tarefas seguintes, US-025, US-071, US-073) · **Prioridade:** Must · **Ordem:** 10 · **Tarefas:** T-031 (Tabela) e T-084 (Calendário, proposta; ver [calendario.md](calendario.md))
+**Histórias:** US-023 (e, em tarefas seguintes, US-025, US-071, US-073) · **Prioridade:** Must · **Ordem:** 10 · **Tarefas:** T-031 (Tabela) e T-084 (Calendário; ver [calendario.md](calendario.md))
 
 ## Objetivo
 
@@ -12,7 +12,7 @@ Abre a aba Tabela, vê de cara onde o clube dele está, quantos pontos tem e se 
 
 ## Divisão em duas tarefas
 
-Proposta do `ux-designer` (decisão 1 do CEO, abaixo): a T-031 planejada (M) junta duas telas, cada uma com um conjunto de medidas do tamanho do da T-030. Como na T-030 e na T-083, ela vira dois PRs de tamanho M. Cada item desta spec é da T-031; o Calendário inteiro está em [calendario.md](calendario.md).
+Decisão do CEO de 2026-11-14 (decisão 1, abaixo): a T-031 planejada (M) juntava duas telas, cada uma com um conjunto de medidas do tamanho do da T-030. Como na T-030 e na T-083, ela foi dividida em dois PRs de tamanho M, e a Tabela vem primeiro. Cada item desta spec é da T-031; o Calendário inteiro está em [calendario.md](calendario.md).
 
 | Tarefa                               | O que entra                                                                                                                                                                                                                                                                                                                                  |
 | ------------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +36,7 @@ O número T-084 é o primeiro livre que encontrei em `docs/02-architecture.md`; 
    - durante a temporada: `table.caption` ("Depois da rodada 12");
    - antes da rodada 1: `club.table.preseason` (já existe: "Antes da 1ª rodada, todos com 0 ponto.");
    - temporada encerrada (`game.round` 39): `table.caption.final`.
-   - Colunas, nesta ordem (US-023 e [temporada.md](../temporada.md#pontos-e-tabela)): **Clube** (fixa) · **Pts** · **J** · **V** · **E** · **D** · **GP** · **GC** · **SG** · **%** · **Últimos 5**. As duas últimas dependem da decisão 4 do CEO; sem elas, a tabela acaba no SG.
+   - Colunas, nesta ordem (US-023 e [temporada.md](../temporada.md#pontos-e-tabela)): **Clube** (fixa) · **Pts** · **J** · **V** · **E** · **D** · **GP** · **GC** · **SG** · **%** · **Últimos 5**. As duas últimas vêm de temporada.md (decisão 4 do CEO).
    - 20 linhas (TableRow `layout="full"`), na ordem do `getStandings(game)`.
 4. **Legenda** (TableLegend), abaixo da tabela, a partir da rodada 1 (na pré-temporada não há zona nem seta, então não há o que explicar).
 
@@ -136,7 +136,7 @@ Props em [componentes.md](componentes.md#casca-da-t-031-tabela-e-da-t-084-calend
 | -------------------------------------------------------------------------------------------------------- | ------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | ScreenHeader e moldura, Crest, StatusBadge (letra V/E/D), Icon (`arrow-up`, `arrow-down`), ErrorBoundary | PositionMark, TableLegend | ScrollTable: `fixedMax`. TableRow: `layout="full"`, `movement`, `zone`, células com texto para leitor de tela, `form`, `animate` |
 
-Nenhum ícone novo, nenhum token novo, nenhum tipo novo de selo. A marca de zona usa os pares dos Selos e entra no design system como proposta (decisão 3 do CEO; [componentes.md](componentes.md#propostas-ao-design-system), item 29).
+Nenhum ícone novo, nenhum token novo, nenhum tipo novo de selo. A marca de zona usa os pares dos Selos e está no design system ([design-system.md](../design-system.md#marca-de-zona-da-tabela-aprovado-pelo-ceo-em-2026-11-14); decisão 3 do CEO, proposta 29 de [componentes.md](componentes.md#propostas-ao-design-system)).
 
 ## O que a tela lê (para o `developer`)
 
@@ -209,13 +209,13 @@ Para o `content-writer`; os textos vão ao CEO no próximo lote. Todas em `app/s
 | `table.legend.relegation`     | item da legenda                                                 | idem                                                                             | `{count}`    |
 | `table.legend.movement`       | item da legenda, depois das duas setas (~32px + `space-2`)      | idem, em ~256px                                                                  | —            |
 
-São 24 chaves novas (20 sem as colunas % e Últimos 5). A mudança visível ("+2") e o % não têm chave: são números formatados pelo `Intl.NumberFormat` do idioma.
+São 24 chaves novas. A mudança visível ("+2") e o % não têm chave: são números formatados pelo `Intl.NumberFormat` do idioma.
 
 ## Medidas para o E2E
 
 `tests/e2e/standings.spec.ts`, com `PRANCHETA_ENV=test`, numa carreira de teste com fixture conhecida (Completo, "só resultado"). Larguras 360×740, 390×844, 844×390 (deitado) e 1280×800; temas `noite` e `dia`. O teste importa o motor por `index.ts` para conferir com o `getStandings` do save.
 
-1. **Coluna fixa (US-023, cenário 1):** a 360×740, a caixa da tabela rola (`scrollWidth > clientWidth`); depois de rolar até o fim, o `x` do primeiro `th[scope="row"]` não muda (±1 px) e a largura dele, com o respiro e a linha da borda, é no máximo 60% da caixa. Os cabeçalhos estão na ordem Clube, Pts, J, V, E, D, GP, GC, SG (e %, Últimos 5, se a decisão 4 for sim), cada sigla com o nome completo como texto acessível.
+1. **Coluna fixa (US-023, cenário 1):** a 360×740, a caixa da tabela rola (`scrollWidth > clientWidth`); depois de rolar até o fim, o `x` do primeiro `th[scope="row"]` não muda (±1 px) e a largura dele, com o respiro e a linha da borda, é no máximo 60% da caixa. Os cabeçalhos estão na ordem Clube, Pts, J, V, E, D, GP, GC, SG, %, Últimos 5, cada sigla com o nome completo como texto acessível.
 2. **Ordem e números:** as 20 linhas estão na ordem do `getStandings` do save; em cada linha, os números visíveis são os da `StandingRow` (SG com sinal); % e Últimos 5 conferem com `points`, `played` e `form`. Os números têm `font-variant-numeric: tabular-nums`.
 3. **Mudança (cenário 2):** depois de 3 rodadas, para cada clube, a mudança visível confere com `getStandings(game, 2)` contra `getStandings(game, 3)`: quem subiu tem `arrow-up` e "+n", quem caiu `arrow-down` e "−n" (ou o sinal de menos do idioma), quem ficou não tem nem ícone nem número; o texto acessível da célula do clube contém a frase de `round.table.up.*` ou `round.table.down.*`. Há pelo menos um clube que subiu 2 ou mais na fixture (se não houver, o teste escolhe outra rodada da fixture e diz qual).
 4. **Movimento:** com `reducedMotion: 'reduce'`, `document.getAnimations().length === 0` com a Tabela aberta; sem ele, toda animação da página tem `iterations` 1 e `duration` ≤ 400 ms, e `getAnimations()` fica vazio 1 s depois de abrir.
@@ -241,13 +241,13 @@ Nenhuma. A competição não tem nome nem marca na tela: o título é "Tabela", 
 
 ## Decisões do CEO (T-031)
 
-Pendentes. As de [calendario.md](calendario.md#decisões-do-ceo-t-084) são da T-084.
+Aprovadas pelo CEO em 2026-11-14 ("ok recomendado"), todas pela recomendação do `ux-designer`, junto das propostas 29 e 30 ao design system. As de [calendario.md](calendario.md#decisões-do-ceo-t-084) são da T-084.
 
-1. **Dividir a T-031 em duas M:** T-031 (Tabela) e T-084 (Calendário e rodada, nova). **Recomendo sim:** juntas passam de M (duas telas novas, uma subtela com endereço próprio e cerca de 30 medidas de E2E, o dobro da T-083). As duas não dependem uma da outra.
-2. **Zonas da 1a: só o 1º e os 4 últimos** (US-023), sem as zonas de Libertadores (2º a 6º) e Sul-Americana (7º a 12º) que [temporada.md](../temporada.md#pontos-e-tabela) lista com o aviso "as copas chegam numa próxima versão". **Recomendo sim:** as copas não existem na 1a, e o aviso é uma promessa (P3). Se aprovado, o `game-designer` alinha a linha "Zonas na tela" de temporada.md com a US-023.
-3. **Marca de zona:** a posição numa caixinha com os pares dos Selos (líder em `floodlight`, rebaixamento em `danger-soft` com borda `danger`), a palavra da zona embaixo do nome e a legenda. **Recomendo sim:** é forma, cor e palavra, sem cor nova, e serve também à T-037 e à T-045. Registro no design system como "Marca de zona da tabela" (proposta 29 de componentes.md). Alternativa mais simples: só a palavra, sem a caixinha (perde a leitura rápida das pontas da tabela).
-4. **Colunas % e Últimos 5** no fim da tabela, além das 8 da US-023 (temporada.md lista as duas). **Recomendo sim:** o motor já dá a forma (o Clube mostra), o % é uma conta, e no celular as duas ficam no fim da rolagem, sem tirar nada da primeira tela. Custa 4 chaves.
-5. **Coluna fixa da Tabela com até 60% da caixa** (o Elenco continua com 50%). **Recomendo sim:** com 50%, a 360px sobram 70px para o nome, e cinco clubes cortam ("Fluminário" no meu clube, "São Paulão", "Vasconcelos", "Botafogueira", "Inter-Regional"). Com 60%, todos cabem e Pts, J e V continuam à vista. Alternativa: a sigla de 3 letras (`abbreviation`) a 360px, que é o que a TV faz, mas é menos legível que o nome.
-6. **Seta com um movimento curto** (300 ms, uma vez, ao abrir a aba; parada com movimento reduzido). **Recomendo sim:** é o que o PROJETO pede ("tabela com setas animadas") e o critério da US-023 supõe, no mínimo possível. Alternativa: seta sempre parada.
-7. **Sem atalho "ir para o meu clube":** a Tabela abre já mostrando a linha do meu clube (e o Calendário, a próxima rodada; decisão 4 da T-084). **Recomendo sim:** um botão flutuante a mais disputaria o lugar do "Jogar rodada".
-8. **O aviso de que ninguém cai nesta versão (P2) fica só no Fim de temporada** (T-037), como a US-025 pede, e não na legenda da Tabela. **Recomendo sim:** a legenda diz só o que a marca é ("os 4 últimos"); o aviso tem lugar e hora certos na classificação final. Alternativa: uma linha a mais na legenda, a temporada inteira.
+1. **T-031 dividida em duas M:** T-031 (Tabela) e T-084 (Calendário, rodada e súmula de rodada antiga). A Tabela vem primeiro; as duas não dependem uma da outra.
+2. **Zonas da 1a: só o 1º e os 4 últimos** (US-023), sem as zonas de Libertadores e Sul-Americana nem o aviso "as copas chegam numa próxima versão" de [temporada.md](../temporada.md#pontos-e-tabela) (P3). O `game-designer` alinha a linha "Zonas na tela" de temporada.md com a US-023.
+3. **Marca de zona:** a posição numa caixinha com os pares dos Selos, a palavra da zona embaixo do nome e a legenda. Registrada em [design-system.md](../design-system.md#marca-de-zona-da-tabela-aprovado-pelo-ceo-em-2026-11-14).
+4. **Colunas % e Últimos 5** no fim da tabela, além das 8 da US-023 (24 chaves novas, com as 4 delas).
+5. **Coluna fixa da Tabela com até 60% da caixa** (o Elenco continua com 50%), para nenhum nome de clube cortar a 360px. Registrada em [design-system.md](../design-system.md#coluna-fixa-das-tabelas-que-rolam-aprovado-pelo-ceo-em-2026-11-14).
+6. **Seta com um movimento curto:** 300 ms, uma vez, ao abrir a aba; parada com movimento reduzido.
+7. **Sem atalho "ir para o meu clube":** a Tabela abre já mostrando a linha do meu clube (e o Calendário, a próxima rodada; decisão 4 da T-084).
+8. **O aviso de que ninguém cai nesta versão (P2) fica só no Fim de temporada** (T-037), como a US-025 pede, e não na legenda da Tabela.

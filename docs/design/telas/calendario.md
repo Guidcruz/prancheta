@@ -1,6 +1,6 @@
 # Calendário
 
-**Histórias:** US-024 (e a súmula de jogo já jogado da US-019) · **Prioridade:** Must · **Ordem:** 11 · **Tarefa:** T-084 (proposta; parte 2 da T-031 planejada, ver "Divisão" em [tabela.md](tabela.md#divisão-em-duas-tarefas))
+**Histórias:** US-024 (e a súmula de jogo já jogado da US-019) · **Prioridade:** Must · **Ordem:** 11 · **Tarefa:** T-084 (parte 2 da T-031 planejada, ver "Divisão" em [tabela.md](tabela.md#divisão-em-duas-tarefas))
 
 ## Objetivo
 
@@ -12,7 +12,7 @@ Abre a aba Calendário, que já mostra a próxima rodada; rola para trás para r
 
 ## Divisão
 
-Se o CEO aprovar a divisão (decisão 1 de [tabela.md](tabela.md#decisões-do-ceo-t-031)), tudo nesta spec é da T-084, que depende da T-083 (a folha da súmula) e não da T-031. Se não aprovar, esta spec volta a ser parte da T-031, sem mudar nada além do número.
+Decisão do CEO de 2026-11-14 (decisão 1 de [tabela.md](tabela.md#decisões-do-ceo-t-031)): a T-031 planejada foi dividida em duas M. Tudo nesta spec é da T-084, que vem depois da T-031 e depende da T-083 (a folha da súmula), não da T-031.
 
 ## Navegação
 
@@ -198,11 +198,11 @@ Nenhuma.
 
 ## Decisões do CEO (T-084)
 
-Pendentes. A divisão da T-031 em duas é a decisão 1 de [tabela.md](tabela.md#decisões-do-ceo-t-031).
+Aprovadas pelo CEO em 2026-11-14 ("ok recomendado"), todas pela recomendação do `ux-designer`. A divisão da T-031 em duas é a decisão 1 de [tabela.md](tabela.md#decisões-do-ceo-t-031).
 
-1. **Rodada como subtela da aba, com endereço próprio** (`#/calendar/round/N`), e não como folha. **Recomendo sim:** a súmula abre por cima como folha; folha sobre folha deixaria o voltar confuso.
-2. **Os autores dos gols da rodada ficam na súmula**, a um toque, e não em cada card da Rodada. A US-024 diz "vê os 10 resultados com os autores dos gols". **Recomendo sim,** pela mesma razão da decisão 4 da T-030 (aprovada): os cards ficam do mesmo tamanho, a Rodada cabe em duas telas, e a súmula já mostra autores, minuto e tipo. Se o CEO quiser os autores no próprio card, é uma lista de gols compacta por card, e a T-084 passa de M.
-3. **Calendário com o MatchCard inteiro** (o mesmo do Clube; cerca de 150px por card, 38 cards) e o selo do resultado com a palavra inteira ("Vitória"), não só a letra. **Recomendo sim:** nenhum componente novo, a mesma leitura do Clube e do resumo, e a lista abre na próxima rodada. Alternativa: uma linha compacta nova (só o adversário, o mando e o placar, cerca de 64px), que encurta a lista pela metade e custa um componente e as medidas dele.
-4. **Abre na próxima rodada, sem atalho flutuante** "ir para a próxima rodada" (como a decisão 7 da Tabela). **Recomendo sim.**
-5. **Na Rodada, o meu jogo primeiro**, depois os outros 9 na ordem do calendário, todos com a mesma forma (sem selo de resultado nem mando). **Recomendo sim:** é a ordem do resumo, e o card da lista já tem o resultado.
-6. **Rodadas futuras não abrem** (o card é só leitura). **Recomendo sim:** a US-024 pede a rodada inteira só das jogadas; ver os 10 confrontos de uma rodada futura fica para depois, se fizer falta.
+1. **Rodada como subtela da aba, com endereço próprio** (`#/calendar/round/N`), e não como folha: a súmula abre por cima como folha.
+2. **Os autores dos gols da rodada ficam na súmula**, a um toque, e não em cada card da Rodada (a mesma escolha da decisão 4 da T-030). É assim que a T-084 cumpre o "vê os 10 resultados com os autores dos gols" da US-024.
+3. **Calendário com o MatchCard inteiro** (o mesmo do Clube, 38 cards) e o selo do resultado com a palavra inteira ("Vitória"), não só a letra. Sem componente novo.
+4. **Abre na próxima rodada, sem atalho flutuante** "ir para a próxima rodada" (como a decisão 7 da Tabela).
+5. **Na Rodada, o meu jogo primeiro**, depois os outros 9 na ordem do calendário, todos com a mesma forma (sem selo de resultado nem mando).
+6. **Rodadas futuras não abrem** (o card é só leitura).
