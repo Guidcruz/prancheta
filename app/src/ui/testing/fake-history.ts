@@ -47,8 +47,14 @@ export class FakeHistory {
   }
 
   back(): void {
-    if (this.index === 0) return;
-    this.index--;
+    this.go(-1);
+  }
+
+  /** Moves `delta` entries (only within the stack) and calls the `popstate` listeners once. */
+  go(delta = 0): void {
+    const to = Math.min(Math.max(this.index + delta, 0), this.entries.length - 1);
+    if (to === this.index) return;
+    this.index = to;
     for (const listener of this.listeners) listener();
   }
 

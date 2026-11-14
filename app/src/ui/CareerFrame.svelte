@@ -542,7 +542,10 @@
       clubId={save.career.clubId}
       save={summarySave}
       notices={summaryNotices}
+      sheets={save.career.matchSheets}
       oncontinue={closeSummary}
+      onerror={(error) =>
+        void log.record({ kind: 'programming', code: 'unexpected', screen: 'round', error })}
     />
   </ErrorBoundary>
 {:else}

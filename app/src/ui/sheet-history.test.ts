@@ -3,7 +3,7 @@ import type { CareerSummary } from '@lib/career';
 import { latestClubSet } from '../data/club-sets.ts';
 import { DeleteFlow } from './delete-flow';
 import { FakeHistory } from './testing/fake-history';
-import { popSheet, pushSheet, sheetOnTop } from './sheet-history';
+import { popSheet, pushSheet, sheetField, sheetOnTop } from './sheet-history';
 
 /*
  * The sheets in the history (inicio.md): one entry for the whole delete flow, so the back gesture
@@ -88,5 +88,18 @@ describe('sheets in the history', () => {
   it('without a history (server rendering) no sheet is on top', () => {
     vi.stubGlobal('history', undefined);
     expect(sheetOnTop(SHEET)).toBe(false);
+    expect(sheetField(SHEET, 'fixture')).toBeUndefined();
+  });
+
+  it('a sheet keeps what it shows in its entry, read only while that entry is on top', () => {
+    const { history } = setup();
+    history.replaceState({ round: true }, '');
+    pushSheet('report', { fixture: 's1-r1-a-b' });
+    expect(history.state).toEqual({ round: true, fixture: 's1-r1-a-b', sheet: 'report' });
+    expect(sheetField('report', 'fixture')).toBe('s1-r1-a-b');
+    expect(sheetField(SHEET, 'fixture')).toBeUndefined();
+    expect(sheetField('report', 'player')).toBeUndefined();
+    history.back();
+    expect(sheetField('report', 'fixture')).toBeUndefined();
   });
 });

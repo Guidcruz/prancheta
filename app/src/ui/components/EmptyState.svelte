@@ -5,19 +5,22 @@
   /**
    * EmptyState: an empty list (no careers, no news...). Icon, title, a sentence and the action,
    * which the caller passes (on the home screen it is the screen's primary, "Nova carreira").
+   * `level` is the title's heading level (2 by default; deeper inside a section, as the notice of
+   * a match report without its events).
    */
   interface Props {
     icon?: IconName;
     title: string;
+    level?: 2 | 3 | 4;
     message?: string;
     children?: Snippet;
   }
-  const { icon = 'club', title, message, children }: Props = $props();
+  const { icon = 'club', title, level = 2, message, children }: Props = $props();
 </script>
 
 <section class="empty">
   <span class="badge"><Icon name={icon} size={32} /></span>
-  <h2 class="subtitulo">{title}</h2>
+  <svelte:element this={`h${level}`} class="subtitulo title">{title}</svelte:element>
   {#if message}<p class="body message">{message}</p>{/if}
   {#if children}<div class="actions">{@render children()}</div>{/if}
 </section>
@@ -40,7 +43,7 @@
     background: var(--surface-2);
     color: var(--grass);
   }
-  h2,
+  .title,
   p {
     margin: 0;
   }
