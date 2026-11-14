@@ -371,9 +371,10 @@ export function gameParams(): GameParams {
 
 /**
  * Joga no motor, no Node, as rodadas do save até a próxima ser `round` (39: a temporada
- * encerrada), com o técnico no modo dele, como o CareerService faria; devolve o jogo, sem gravar.
- * Para chegar depressa a uma rodada adiante: quem chama grava com {@link patchSave}. As súmulas
- * dessas rodadas não vão para o banco (nenhuma tela da medida as lê).
+ * encerrada), com o técnico no modo dele; devolve o jogo, sem gravar. Diferente do CareerService,
+ * não passa a ficha do técnico (`sheets: {}`): o clube dele joga com a escalação automática do
+ * motor. Para chegar depressa a uma rodada adiante: quem chama grava com {@link patchSave}. As
+ * súmulas dessas rodadas não vão para o banco (nenhuma tela da medida as lê).
  */
 export function playInEngine(save: SaveJson, round: number): SaveJson['game'] {
   const params = gameParams();

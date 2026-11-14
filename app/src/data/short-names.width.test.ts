@@ -19,7 +19,14 @@ import { CLUB_SETS } from './club-sets.ts';
 const NAME_COLUMN_PX = 95;
 /** `body-strong` (design/tokens.json): Barlow 600, 15px. */
 const FONT_PX = 15;
-const FONT_FILE = '@fontsource/barlow/files/barlow-latin-600-normal.woff';
+/**
+ * The subsets the game loads, in the order the browser tries them (`unicode-range` of
+ * @fontsource): a letter not in `latin` (ő, ł, ș...) comes from `latin-ext`.
+ */
+const FONT_FILES = [
+  '@fontsource/barlow/files/barlow-latin-600-normal.woff',
+  '@fontsource/barlow/files/barlow-latin-ext-600-normal.woff',
+];
 
 /** The tables of a WOFF 1 file, uncompressed. */
 function woffTables(file: Uint8Array): Map<string, DataView> {
@@ -70,33 +77,54 @@ function glyphLookup(cmap: DataView): (code: number) => number {
   };
 }
 
-/** Measures a text in the font file at `px`, by the advance widths (no kerning). */
-function measurer(path: string, px: number): (text: string) => number {
+/** The advance of each character in one font file, in em (`undefined`: not in the file). */
+function advances(path: string): (code: number) => number | undefined {
   const tables = woffTables(new Uint8Array(readFileSync(path)));
-  const head = tables.get('head')!;
-  const hhea = tables.get('hhea')!;
+  const unitsPerEm = tables.get('head')!.getUint16(18);
+  const metrics = tables.get('hhea')!.getUint16(34);
   const hmtx = tables.get('hmtx')!;
-  const unitsPerEm = head.getUint16(18);
-  const metrics = hhea.getUint16(34);
   const glyphOf = glyphLookup(tables.get('cmap')!);
-  const advance = (glyph: number) => hmtx.getUint16(Math.min(glyph, metrics - 1) * 4);
-  return (text) => {
-    let units = 0;
-    for (const char of text.normalize('NFC')) {
-      const glyph = glyphOf(char.codePointAt(0)!);
-      if (glyph === 0) throw new Error(`"${char}" is not in ${path}`);
-      units += advance(glyph);
-    }
-    return (units / unitsPerEm) * px;
+  return (code) => {
+    const glyph = glyphOf(code);
+    if (glyph === 0) return undefined;
+    return hmtx.getUint16(Math.min(glyph, metrics - 1) * 4) / unitsPerEm;
   };
 }
 
-const measure = measurer(createRequire(import.meta.url).resolve(FONT_FILE), FONT_PX);
+/**
+ * Measures a text at `px` by the advance widths (no kerning), each character from the first
+ * font file that has it, as the browser picks among the subsets.
+ */
+function measurer(paths: readonly string[], px: number): (text: string) => number {
+  const fonts = paths.map(advances);
+  return (text) => {
+    let em = 0;
+    for (const char of text.normalize('NFC')) {
+      const code = char.codePointAt(0)!;
+      const width = fonts.map((font) => font(code)).find((w) => w !== undefined);
+      if (width === undefined) throw new Error(`"${char}" is in no subset of ${paths.join(', ')}`);
+      em += width;
+    }
+    return em * px;
+  };
+}
+
+const resolver = createRequire(import.meta.url);
+const measure = measurer(
+  FONT_FILES.map((file) => resolver.resolve(file)),
+  FONT_PX,
+);
 
 describe('short names of the clubs in the Tabela (T-031)', () => {
   it('measures like the text batches ("Inter-Regional" is about 94.8px)', () => {
     expect(measure('Inter-Regional')).toBeGreaterThan(93);
     expect(measure('Inter-Regional')).toBeLessThan(96);
+  });
+
+  it('measures a letter outside latin from latin-ext, as the browser does', () => {
+    // "ő" and "ł" are only in latin-ext: measured, never refused.
+    expect(measure('Győr')).toBeGreaterThan(measure('Gyr'));
+    expect(measure('Łódź')).toBeGreaterThan(0);
   });
 
   for (const set of CLUB_SETS) {
