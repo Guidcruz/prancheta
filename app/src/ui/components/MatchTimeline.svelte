@@ -114,8 +114,9 @@
     list-style: none;
   }
   /* Minute, icon, text: the minute column fits "90+7'" in `numero` (no token for it: the width of
-     a touch target, 44px); the icon column is the size the icon is drawn at (20). The three sit
-     on the baseline of the first line, as in the GoalList: the icon's base on the text's. */
+     a touch target, 44px); the icon column is the size the icon is drawn at (20). The minute and
+     the text sit on the baseline of the first line, as in the GoalList; the icon stays at the top
+     of the line (on the baseline, a 20px icon would rise above the word of the kind). */
   .line {
     display: grid;
     grid-template-columns: var(--touch) 20px minmax(0, 1fr);
@@ -127,6 +128,7 @@
   }
   .icon {
     display: inline-flex;
+    align-self: start;
     color: var(--ink-muted);
   }
   /* The colour only reinforces the word of the kind (componentes.md, "Cor do cartão"). */

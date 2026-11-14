@@ -110,7 +110,9 @@ describe('the report of a played match (resumo-rodada.md, "Súmula")', () => {
     const clubs = { ...game.clubs };
     delete clubs[mine.homeId];
     const broken = { ...game, clubs } as GameState;
-    expect(() => matchReport(broken, mine.id, sheets[mine.id], TEST_CLUB, 'pt-BR')).toThrow();
+    expect(() => matchReport(broken, mine.id, sheets[mine.id], TEST_CLUB, 'pt-BR')).toThrow(
+      new RegExp(`the club ${mine.homeId} of fixture ${mine.id} is not in the state`),
+    );
   });
 
   it('a fixture not played, or unknown, has no report', () => {
