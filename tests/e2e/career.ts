@@ -68,17 +68,36 @@ export async function playUntil(page: Page, round: number): Promise<void> {
   }
 }
 
+/** Os textos da abertura da carreira em cada idioma do navegador (content/<idioma>/ui.json). */
+const OPEN_TEXTS = {
+  es: { continue: 'Continuar', nav: 'Navegación principal' },
+  en: { continue: 'Continue', nav: 'Main navigation' },
+} as const;
+
 /**
- * Reabre a carreira mais recente com o navegador em espanhol: o jogo lê `navigator.language` ao
- * carregar (`detectLang`), e a carreira continua a mesma. Termina na moldura, já em espanhol.
+ * Reabre a carreira mais recente com o navegador em `lang`: o jogo lê `navigator.language` ao
+ * carregar (`detectLang`), e a carreira continua a mesma. Termina na moldura, já no idioma. O
+ * idioma fica para as próximas cargas da página (`addInitScript`).
  */
-export async function reopenInSpanish(page: Page): Promise<void> {
-  await page.addInitScript(() => {
-    Object.defineProperty(Navigator.prototype, 'language', { configurable: true, get: () => 'es' });
-  });
+export async function reopenIn(page: Page, lang: keyof typeof OPEN_TEXTS): Promise<void> {
+  await page.addInitScript((language) => {
+    Object.defineProperty(Navigator.prototype, 'language', {
+      configurable: true,
+      get: () => language,
+    });
+  }, lang);
   await page.reload();
-  await expect(page.locator('html')).toHaveAttribute('lang', 'es');
-  // "Continuar" is the same word in Spanish.
-  await page.getByRole('button', { name: 'Continuar', exact: true }).click();
-  await expect(page.getByRole('navigation', { name: 'Navegación principal' })).toBeVisible();
+  await expect(page.locator('html')).toHaveAttribute('lang', lang);
+  await continueIn(page, lang);
+}
+
+/** "Continuar" na tela inicial, com o jogo em `lang` (a página já carregada nesse idioma). */
+export async function continueIn(page: Page, lang: keyof typeof OPEN_TEXTS): Promise<void> {
+  await page.getByRole('button', { name: OPEN_TEXTS[lang].continue, exact: true }).click();
+  await expect(page.getByRole('navigation', { name: OPEN_TEXTS[lang].nav })).toBeVisible();
+}
+
+/** {@link reopenIn} em espanhol ("Continuar" é a mesma palavra). */
+export async function reopenInSpanish(page: Page): Promise<void> {
+  await reopenIn(page, 'es');
 }

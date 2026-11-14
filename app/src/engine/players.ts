@@ -184,7 +184,7 @@ export const IMPROVISED_MIN_FIT = 0.85;
 /**
  * `fit` of a player in his secondary position, `max(FIT[natural][secondary], SECONDARY_FIT)`
  * (docs/design/posicao-secundaria.md, "`fit` com a secundária"; ADR-0022). A rule, like
- * {@link FIT}, not a /balance knob. Not read by the match yet: `fit` reads it from T-079 on.
+ * {@link FIT}, not a /balance knob. Read only by {@link fit}.
  */
 export const SECONDARY_FIT = 0.95;
 
@@ -292,21 +292,42 @@ export function computeOverall(position: Position, attributes: PlayerAttributes)
   return Math.floor((hundredths + 50) / 100);
 }
 
-/** How well a player of `natural` position performs in a `slot`: `overall × fit`. */
-export function fit(natural: Position, slot: Position): number {
-  return FIT[natural][slot];
+/**
+ * How well a player performs in a `slot`, as the factor of `overall × fit`
+ * (docs/design/posicao-secundaria.md, "`fit` com a secundária"; ADR-0022, item 6):
+ * - 1 in his natural position;
+ * - `max(FIT[natural][slot], SECONDARY_FIT)` in his secondary position;
+ * - `FIT[natural][slot]` anywhere else.
+ * With `secondaryPosition: null` it is the table cell, bit for bit. The `max` keeps 0.95 in a
+ * secondary that stops being a neighbour if the table ever changes. The only place that turns a
+ * position into a performance factor (ADR-0022, "Conformidade").
+ */
+export function fit(
+  player: Pick<Player, 'position' | 'secondaryPosition'>,
+  slot: Position,
+): number {
+  const value = FIT[player.position][slot];
+  if (slot === player.secondaryPosition && slot !== player.position) {
+    return Math.max(value, SECONDARY_FIT);
+  }
+  return value;
 }
 
-export type FitLevel = 'natural' | 'improvised' | 'outOfPosition';
+export type FitLevel = 'natural' | 'secondary' | 'improvised' | 'outOfPosition';
 
 /**
- * Label of a fit in the UI: 1.00 no mark; 0.85 to 0.90 "improvisado"; below 0.85 "fora de
- * posição". The UI always pairs it with an icon and text, never colour alone.
+ * Label of a player in a slot for the UI, decided by the slot, not by the number (ADR-0022,
+ * item 6): his natural position, then his secondary one, then the table (0.85 to 0.90
+ * "improvisado"; below 0.85 "fora de posição"). The UI always pairs it with an icon and text,
+ * never colour alone; `secondary` is not a warning (posicao-secundaria.md, "Nível na tela").
  */
-export function fitLevel(natural: Position, slot: Position): FitLevel {
-  const value = fit(natural, slot);
-  if (value >= 1) return 'natural';
-  return value >= IMPROVISED_MIN_FIT ? 'improvised' : 'outOfPosition';
+export function fitLevel(
+  player: Pick<Player, 'position' | 'secondaryPosition'>,
+  slot: Position,
+): FitLevel {
+  if (slot === player.position) return 'natural';
+  if (slot === player.secondaryPosition) return 'secondary';
+  return FIT[player.position][slot] >= IMPROVISED_MIN_FIT ? 'improvised' : 'outOfPosition';
 }
 
 /**

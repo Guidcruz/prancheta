@@ -11,6 +11,9 @@ import { changePlayer, patchSave, type DraftJson, type SaveJson } from './save.t
  * uma vaga livre no banco, e entre os não relacionados um lesionado (3 rodadas) e um suspenso. Ela
  * entra como a ficha do snapshot (`career.draft`), que a abertura usa enquanto o registro não tem
  * ficha. Mais os passos e as medidas que os dois specs dividem.
+ *
+ * Ninguém do elenco tem posição secundária na fixture (o sorteio poria uma por acaso, por exemplo
+ * no meia improvisado): os casos de "Posição secundária" (T-079) entram por `addSecondaryCases`.
  */
 
 /** Largura a partir da qual a moldura tem a barra lateral (desktop). */
@@ -54,8 +57,8 @@ export function buildFixture(save: SaveJson): Fixture {
   const bench = [take('GK'), take('CB'), take('FB'), take('DM'), take('ST'), take('ST')];
   const injured = take('DM');
   const suspended = take('ST');
-  for (const p of [...starters, ...bench, ...left]) {
-    changePlayer(save, p.id, { injuryRounds: 0, suspendedGames: 0 });
+  for (const p of [...starters, ...bench, injured, suspended, ...left]) {
+    changePlayer(save, p.id, { injuryRounds: 0, suspendedGames: 0, secondaryPosition: null });
   }
   changePlayer(save, tired.id, { condition: 79 });
   changePlayer(save, injured.id, { injuryRounds: 3, suspendedGames: 0 });
@@ -82,6 +85,68 @@ export function buildFixture(save: SaveJson): Fixture {
     tired: fresh(tired),
     draft,
   };
+}
+
+/**
+ * The cases of escalacao.md, "Posição secundária" › "Medidas para o E2E (T-079)", on top of the
+ * fixture (the same rule as `secondaryFixture` in app/src/ui/testing/lineup.ts):
+ * - (a) `onSecondary`: the bench's defensive midfielder, with secondary CB, in the leftmost CB
+ *   slot (index 1); the centre-back of that slot goes to his bench place (3);
+ * - (b) `benchSecondary`: the bench's full-back (bench 2), with secondary CB;
+ * - (c) `benchPlain`: the attacking midfielder left out, without one, on the bench (4) in place
+ *   of a striker, who is left out;
+ * - (d) `injuredOnSecondary`: the attacking midfielder of the DM slot (index 6), with secondary
+ *   DM and injured for 2 rounds;
+ * - (e) `misplaced`: the centre-back on the striker's slot (index 9), as in the fixture.
+ * `naturalCb` is the centre-back of slot 2. Changes `save` and the fixture's draft.
+ */
+export interface SecondaryCases {
+  readonly onSecondary: Player;
+  readonly benchSecondary: Player;
+  readonly benchPlain: Player;
+  readonly injuredOnSecondary: Player;
+  readonly misplaced: Player;
+  readonly naturalCb: Player;
+}
+
+export function addSecondaryCases(save: SaveJson, fixture: Fixture): SecondaryCases {
+  const { starters, bench } = fixture.draft.lineup;
+  const used = new Set([...starters, ...bench]);
+  const spareAm = squadOf(save).find((p) => p.position === 'AM' && !used.has(p.id));
+  if (spareAm === undefined) throw new Error('fixture: sem MEI fora da ficha');
+  const dm = fixture.bench[3]!;
+  const fb = fixture.bench[2]!;
+  const cb = fixture.starters[1]!;
+  const am = fixture.starters[6]!;
+  changePlayer(save, dm.id, { secondaryPosition: 'CB' });
+  changePlayer(save, fb.id, { secondaryPosition: 'CB' });
+  changePlayer(save, am.id, { secondaryPosition: 'DM', injuryRounds: 2 });
+  starters[1] = dm.id;
+  bench[3] = cb.id;
+  bench[4] = spareAm.id;
+  const fresh = (p: Player) => save.game.players[p.id] as unknown as Player;
+  return {
+    onSecondary: fresh(dm),
+    benchSecondary: fresh(fb),
+    benchPlain: fresh(spareAm),
+    injuredOnSecondary: fresh(am),
+    misplaced: fresh(fixture.misplaced),
+    naturalCb: fresh(fixture.starters[2]!),
+  };
+}
+
+/** A new career in Realismo completo with the fixture and the secondary cases, on the Escalação. */
+export async function withSecondaryFixture(
+  page: Page,
+): Promise<{ fixture: Fixture; cases: SecondaryCases }> {
+  await startCareer(page);
+  let built: { fixture: Fixture; cases: SecondaryCases } | undefined;
+  await patchSave(page, (save) => {
+    const fixture = buildFixture(save);
+    built = { fixture, cases: addSecondaryCases(save, fixture) };
+  });
+  await openLineup(page);
+  return built!;
 }
 
 /** A new career in Realismo completo with the fixture, opened on the Escalação. */

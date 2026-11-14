@@ -186,7 +186,14 @@ function season(
     index,
     ...(robot ? { robot } : {}),
     matches,
-    sheets: { sheets: 10, highPressure: 4, tiredStarter: 0, offPosition: 3, byProfile: {} },
+    sheets: {
+      sheets: 10,
+      highPressure: 4,
+      tiredStarter: 0,
+      onSecondary: 1,
+      offPosition: 3,
+      byProfile: {},
+    },
     fans: f,
     table: {
       champion: 'big1',

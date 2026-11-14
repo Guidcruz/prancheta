@@ -243,12 +243,12 @@ A LineupRow mostra a secundária como o Elenco ([elenco.md](elenco.md#posição-
 
 ### Textos
 
-| Chave                          | Contexto                                                                                                                                                             |
-| ------------------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `lineup.fit.secondary`         | Marca da vaga e selo do candidato (par de `lineup.fit.improvised`). Também vai em minúsculas no fim do nome acessível da vaga e da linha. Cabe em 2 linhas de ~60px. |
-| `squad.secondaryPosition.a11y` | Reusada no nome acessível da LineupRow, no lugar de `{position}` ([elenco.md](elenco.md#posição-secundária)).                                                        |
+| Chave                          | Contexto                                                                                                                                                         |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lineup.fit.secondary`         | Marca da vaga e selo do candidato (par de `lineup.fit.improvised`). Também vai em minúsculas no fim do nome acessível da vaga e da linha. Cabe no limite abaixo. |
+| `squad.secondaryPosition.a11y` | Reusada no nome acessível da LineupRow, no lugar de `{position}` ([elenco.md](elenco.md#posição-secundária)).                                                    |
 
-Limite para o `content-writer`: o mesmo de "Fora de posição". São no máximo 2 linhas de cerca de 60px na face condensada (12px), e nenhuma palavra passa de cerca de 11 letras nos três idiomas ("secundária", "secundaria" e "Secondary" cabem). Em minúsculas, o texto tem de soar natural no fim do nome acessível ("…, posição secundária").
+Limite para o `content-writer`: no máximo 2 linhas na face condensada (Barlow Condensed 700 a 12px), nos três idiomas. A primeira linha divide espaço com o ícone, então vale uma destas: a primeira palavra cabe ao lado do ícone (até cerca de 40px) e o resto cabe numa linha de cerca de 57px; ou o texto inteiro tem até cerca de 57px. Contar letras não basta, porque a largura de cada letra muda. O item 7 das medidas abaixo confere isso com "Posição secundária", "Posición secundaria" e "Second position". Em minúsculas, o texto tem de soar natural no fim do nome acessível ("…, posição secundária").
 
 ### Medidas para o E2E (T-079)
 
@@ -269,7 +269,7 @@ Fixture do Completo, em 4-4-2, com estes casos forçados (a T-078 já grava `sec
    - Esc: o selo some.
    - O `y` do retângulo da vaga selecionada é o mesmo (±1px) antes e depois do toque.
    - O mesmo vale ao segurar 400ms a vaga no Chromium celular (início do arrasto).
-6. **Sigla secundária na linha:** a linha de (b) tem duas siglas, e a segunda é `aria-hidden`, não tem classe `sector-*` e tem a largura da primeira (±1px). A linha de (c) tem uma sigla só. As duas linhas têm pelo menos 44px de altura.
+6. **Sigla secundária na linha (adiada para a T-081; não entrou na T-079):** a linha de (b) tem duas siglas, e a segunda é `aria-hidden`, não tem classe `sector-*` e tem a largura da primeira (±1px). A linha de (c) tem uma sigla só. As duas linhas têm pelo menos 44px de altura.
 7. **Alvos e largura:** a 360×740, nas 6 formações e com (a) na vaga de ZAG mais à esquerda, todas as vagas medem pelo menos 44 × 44px e nenhuma se sobrepõe. A marca de (a) tem no máximo 2 linhas (altura ≤ 2 × a altura de linha do `rotulo` + respiro), e o chip tem no máximo 88px de altura. O mesmo vale com o jogo em `es` e em `en`. Não há rolagem lateral em 360, 390, 844 e 1280.
 8. **Movimento:** com `reducedMotion: 'reduce'`, selecionar a vaga e ver o selo do candidato não cria animação (`document.getAnimations().length === 0`).
 

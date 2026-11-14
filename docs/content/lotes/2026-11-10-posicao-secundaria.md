@@ -10,8 +10,8 @@ Regra do jogo em `docs/design/posicao-secundaria.md`; telas em `docs/design/tela
 
 | Chave                           | pt-BR                                                                       | es                                                                          | en                                                                                     |
 | ------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------- |
-| `lineup.fit.secondary`          | Posição secundária                                                          | Posición secundaria                                                         | Secondary position                                                                     |
-| `player.secondaryPosition`      | Posição secundária                                                          | Posición secundaria                                                         | Secondary position                                                                     |
+| `lineup.fit.secondary`          | Posição secundária                                                          | Posición secundaria                                                         | Second position                                                                        |
+| `player.secondaryPosition`      | Posição secundária                                                          | Posición secundaria                                                         | Second position                                                                        |
 | `player.secondaryPosition.hint` | Outra posição em que ele joga bem. Ali rende um pouco menos que na natural. | Otra posición donde juega bien. Allí rinde un poco menos que en la natural. | Another position he plays well in. There he performs a little below his natural level. |
 | `squad.secondaryPosition.a11y`  | {natural}, também joga de {secondary}                                       | {natural}, también juega de {secondary}                                     | {natural}, also plays as {secondary}                                                   |
 
@@ -21,6 +21,10 @@ Regra do jogo em `docs/design/posicao-secundaria.md`; telas em `docs/design/tela
 - `player.secondaryPosition` (T-081): rótulo (`dt`) do campo no card do jogador.
 - `player.secondaryPosition.hint` (T-081): ajuda curta embaixo do par no card.
 - `squad.secondaryPosition.a11y` (T-081): nome acessível da posição na linha do Elenco e da Escalação. O `{natural}` é `position.<P>` e o `{secondary}` chega em minúsculas. Concordância: "joga de" (pt-BR e es) e "plays as" (en) servem às cinco posições de linha; goleiro não tem secundária.
+
+## Alteração de 2026-11-13 (en)
+
+Em en, `lineup.fit.secondary` e `player.secondaryPosition` passam de "Secondary position" para "Second position". Motivo: a 360 px, a palavra "Secondary" (46,1 px) não cabe ao lado do ícone na marca da vaga da Escalação, e a marca quebra em 3 linhas; o teto é 2. Aprovado pelo CEO em 2026-11-13. pt-BR e es não mudam.
 
 ## Decisão: a ajuda não cita número
 

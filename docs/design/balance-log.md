@@ -2,6 +2,42 @@
 
 > Mantido pelo `game-designer`. Cada rodada do `/balance` entra aqui: o que foi medido, o que foi proposto, o que o CEO decidiu. As metas estão em `balance-targets.md`; os parâmetros, em `app/src/params/`.
 
+## 2026-11-13: o motor lê a posição secundária (T-079; zebra na semente 2 de novo)
+
+**Como foi medido.** Motor da T-079 (`ENGINE_VERSION` 19): `fit(player, slot)` passa a `max(FIT, SECONDARY_FIT)`, com `SECONDARY_FIT = 0,95` (constante, [posicao-secundaria.md](posicao-secundaria.md)), e a geração sorteia a secundária com `players.secondaryChance` 0,33. Nenhum parâmetro mudou de valor. Três rodadas: na `main` (base da branch, T-082), na branch e na branch com `secondaryChance` 0 (sobrescrita só no `/balance`). Comandos: `npm run balance -- --seasons 200 --seed 1,2,3` (robô no Coritibom) e o de release, `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (robô no Chapecão). Saídas em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/t079/` (`before-200.txt`, `after-200.txt`, `after-200-chance0.txt`, `before-1000.txt`, `after-1000.txt`; zebra exata da semente 2 em `duels2-before.json` e `duels2-after.json`).
+
+**Resultado.** Release: 39 de 39 metas obrigatórias, antes e depois; G4 do robô no mais fraco 3,0% (meta: ao menos 2%); os 20 clubes campeões. Com 200 temporadas: sementes 1 e 3, 36 de 36; semente 2, 35 de 36 (zebra em 7,95%, fora), igual à `main`. Metas raras na soma das 3 sementes: dentro, antes e depois. A branch com `secondaryChance` 0 dá exatamente a `main` (mesmos números e os mesmos títulos por clube nas 3 sementes): a secundária desligada não muda nada.
+
+| Métrica (main → branch)                   | Semente 1   | Semente 2             | Semente 3   | Release (1.000, semente 1) | Meta             |
+| ----------------------------------------- | ----------- | --------------------- | ----------- | -------------------------- | ---------------- |
+| Gols por partida                          | 2,66 → 2,66 | 2,67 → 2,67           | 2,64 → 2,64 | 2,65 → 2,65                | 2,65 (2,50–2,80) |
+| Vitória do time 20 pontos mais forte      | 62,9 → 63,0 | 62,9 → 62,9           | 62,6 → 62,6 | 62,9 → 63,0                | 65% (62–68%)     |
+| Zebra: time 30 pontos mais fraco vence    | 8,3 → 8,3   | 7,945 → **7,95** fora | 8,3 → 8,3   | 8,3 → 8,3                  | 10% (8–12%)      |
+| Empates                                   | 26,1 → 26,0 | 26,1 → 25,9           | 26,4 → 26,3 | 26,0 → 26,1                | 26% (24–28%)     |
+| Vitórias do mandante                      | 46,2 → 46,2 | 45,8 → 46,0           | 45,8 → 45,8 | 45,9 → 45,9                | 47,5% (45–50%)   |
+| Pontos do campeão                         | 74,9 → 74,8 | 75,4 → 75,7           | 74,5 → 74,7 | 75,1 → 75,2                | 77 (72–82)       |
+| Pontos do 17º colocado                    | 40,6 → 40,6 | 40,6 → 40,5           | 40,4 → 40,5 | 40,6 → 40,6                | 42 (39–45)       |
+| Campeão grande                            | 84,0 → 82,0 | 84,5 → 83,0           | 83,0 → 82,0 | 81,6 → 79,7                | 50% a 90%        |
+| Técnico-robô bom: ganho por temporada     | +4,3 → +3,6 | +4,8 → +4,6           | +3,3 → +3,9 | +2,5 → +2,4 (Chapecão)     | +2 a +8 pontos   |
+| Titulares na posição secundária (ficha)   | — → 0,07    | — → 0,07              | — → 0,07    | — → 0,08                   | informativa      |
+| Titulares improvisados ou fora de posição | 0,06 → 0,04 | 0,06 → 0,04           | 0,06 → 0,04 | 0,06 → 0,04                | informativa      |
+
+Na `main` a métrica informativa era uma só, "titulares fora da posição natural por ficha" (0,06); ela aparece na linha dos improvisados, porque lá não existia secundária.
+
+Metas raras (soma das 3 sementes, 600 temporadas), main → branch: campeão pequeno 1,2% → 1,8% (0,5% a 4%); clube fraco no G4 6,2% → 8,5% (5% a 15%); fuga do Z4 de 6 a 8 pontos 7,3% → 7,2% (ao menos 3%). No release: campeão pequeno 2,8% → 3,5%, fraco no G4 6,3% → 7,0%, fuga do Z4 7,3% → 8,1%.
+
+**Critério 6 de `posicao-secundaria.md`** (mesma semente, `secondaryChance` 0 contra 0,33: gols a ±0,02 e 20 pontos mais forte a ±1 p.p.): gols com diferença de 0,00 nas 3 sementes e o 20 pontos mais forte com no máximo 0,1 p.p. Passa. A parte "todas as metas da 1a dentro" cai na zebra da semente 2, decidida abaixo.
+
+**Leitura.**
+
+- **O placar não mexe, como a estimativa previa** (menos de ±0,01 gol e de ±0,3 p.p. no 20 pontos e na zebra): gols iguais nas quatro rodadas, 20 pontos mais forte de 0,0 a +0,1 p.p., zebra de 0,0 a +0,005 p.p. Os duelos calibrados usam elencos completos e com força exata, onde quase ninguém precisa da secundária.
+- **A secundária existe no jogo:** 0,07 titular na secundária por ficha da IA (0,08 no release), dentro do esperado (menos de 0,1), e os improvisados ou fora de posição caem de 0,06 para 0,04 por ficha, um terço a menos. Somando os dois, 0,11 titular fora da natural por ficha contra 0,06 na `main`: com a secundária a 0,95, um titular secundário às vezes vale mais que o reserva natural, e a IA o escolhe. É o efeito pedido (o volante que "também joga de zagueiro" entra no lugar do zagueiro reserva fraco), não um desvio.
+- **A tabela abre um pouco para os de baixo, ao contrário do que a estimativa supunha** (ela previa o forte aproveitando mais): campeão grande cai nas quatro rodadas (de 1,0 a 2,0 p.p.; no release, 1,9 p.p., mais que o erro padrão de cerca de 1,2 p.p.), e o campeão pequeno e o fraco no G4 sobem para perto do centro das metas. Mecanismo provável: o elenco curto do pequeno improvisa mais quando desfalcado, então ganha mais com a secundária a 0,95 do que o grande, que já tinha reserva natural. Para a diversão é bom (as metas raras vão para o centro, e a zebra de campeonato fica mais viva sem tocar na zebra de jogo). Ponto de atenção: o campeão pequeno no release está em 3,5%, a 0,5 p.p. do teto de 4%.
+- **O robô fica no ruído:** −0,7 na semente 1, +0,6 na semente 3, −0,1 no release; o IC 95% de cada semente tem cerca de ±1 ponto.
+- **A zebra da semente 2: 7,95%**, 0,05 p.p. abaixo do piso. Na `main` era 7,945% (a mesma exceção da T-082); a T-079 a subiu em 0,005 p.p. As sementes 1 e 3 e o release ficam em 8,3%. Não há mecanismo novo puxando a zebra para baixo.
+- **Decisão do CEO (2026-11-13):** aceitar como ruído, a mesma exceção da T-082, sem mexer em parâmetro. A regra continua valendo para as próximas tarefas: se a zebra ficar abaixo de 8,2% em duas sementes, ou sair da faixa em outra semente que não a 2, o `game-designer` propõe ajuste (um parâmetro, com a métrica que sobe e a que não pode piorar, o 20 pontos mais forte, também perto do piso de 62%). Nesta rodada, só a semente 2 está abaixo de 8,2%.
+- **Sem proposta de ajuste de parâmetro.**
+
 ## 2026-11-11: escalação automática "natural primeiro" (T-082; exceção da zebra na semente 2)
 
 **Como foi medido.** Motor da T-082 (`ENGINE_VERSION` 18): `pickEleven` (IA e "Sugerir escalação"), `bestEleven` e o robô do `/balance` escalam pelo "natural primeiro" de [posicao-secundaria.md](posicao-secundaria.md); o `fit` ainda ignora a secundária (T-079). Nenhum parâmetro mudou. Duas rodadas, na `main` (base da branch, T-078) e na branch: `npm run balance -- --seasons 200 --seed 1,2,3` (robô no Coritibom) e o de release, `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (robô no Chapecão). Saídas em `/tmp/claude-0/-home-user-prancheta/633297f9-57fe-584d-9ab1-43de735afb10/scratchpad/` (`before-200.txt`, `after-200.txt`, `before-1000.txt`, `after-1000.txt`; comparação em `compare-200.md`).

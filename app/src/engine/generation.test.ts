@@ -410,7 +410,7 @@ describe('shirts (jogadores.md, "Camisas")', () => {
 
 describe('bestEleven', () => {
   it('breaks a full tie by the number of the id, not its text', () => {
-    const twin = { position: 'ST' as const, overall: 70, age: 25 };
+    const twin = { position: 'ST' as const, secondaryPosition: null, overall: 70, age: 25 };
     const squad = [
       { ...twin, id: 'c#10' },
       { ...twin, id: 'c#2' },

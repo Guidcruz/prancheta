@@ -41,6 +41,7 @@
     | 'arrow-up'
     | 'arrow-down'
     | 'improvised'
+    | 'secondary'
     | 'captain'
     | 'suggest'
     | 'undo';
@@ -91,6 +92,9 @@
     'arrow-down': '<path d="M12 5v14M6 13l6 6 6-6"/>',
     improvised:
       '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
+    // Two position boxes, the front one half a step ahead of the other (componentes.md, T-080).
+    secondary:
+      '<path d="M9 13H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v4"/><rect x="9" y="11" width="12" height="8" rx="2"/>',
     captain: '<circle cx="12" cy="12" r="8.5"/><path d="M15.2 9.3a4.2 4.2 0 1 0 0 5.4"/>',
     suggest:
       '<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>',

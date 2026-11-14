@@ -1,5 +1,5 @@
 {
-  "engineVersion": 18,
+  "engineVersion": 19,
   "name": "season-human-simplified",
   "data": {
     "human": "clube-teste-01",
@@ -34,7 +34,7 @@
         8,
         66,
         37,
-        63,
+        64,
         2
       ],
       [
@@ -122,7 +122,7 @@
         14,
         47,
         42,
-        75,
+        77,
         1
       ],
       [
@@ -177,7 +177,7 @@
         18,
         41,
         59,
-        77,
+        78,
         1
       ],
       [
@@ -188,7 +188,7 @@
         19,
         32,
         55,
-        79,
+        80,
         4
       ],
       [
@@ -251,24 +251,24 @@
     "morale": {
       "clube-teste-01": 70.0708,
       "clube-teste-02": 65.015,
-      "clube-teste-03": 56.2546,
-      "clube-teste-04": 78.6827,
-      "clube-teste-05": 41.8804,
+      "clube-teste-03": 56.1203,
+      "clube-teste-04": 78.5833,
+      "clube-teste-05": 41.8519,
       "clube-teste-06": 87.0863,
-      "clube-teste-07": 33.9772,
+      "clube-teste-07": 33.9148,
       "clube-teste-08": 44.2298,
       "clube-teste-09": 82.6262,
       "clube-teste-10": 53.6306,
       "clube-teste-11": 63.6145,
       "clube-teste-12": 52.3032,
-      "clube-teste-13": 40.6348,
+      "clube-teste-13": 40.6429,
       "clube-teste-14": 33.0461,
       "clube-teste-15": 56.2363,
-      "clube-teste-16": 30.4184,
-      "clube-teste-17": 53.0282,
-      "clube-teste-18": 22.1275,
+      "clube-teste-16": 30.2597,
+      "clube-teste-17": 53.285,
+      "clube-teste-18": 22.1432,
       "clube-teste-19": 23.8581,
-      "clube-teste-20": 34.7762
+      "clube-teste-20": 35.0102
     },
     "kinds": {
       "championClinched": 1,
@@ -277,12 +277,12 @@
       "leadership": 15,
       "leftZ4": 24,
       "relegatedClinched": 4,
-      "topScorerOfRound": 78,
+      "topScorerOfRound": 79,
       "unbeaten": 28,
       "unbeatenEnded": 21,
       "winless": 52,
       "winlessEnded": 39
     },
-    "digest": "4d91409a"
+    "digest": "ee12d2d1"
   }
 }

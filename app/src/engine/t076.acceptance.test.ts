@@ -49,11 +49,11 @@ describe('T-076 acceptance', () => {
     expect(isAvailable({ injuryRounds: 3, suspendedGames: 2 })).toBe(false);
   });
 
-  it('fitLevel: the three levels, including the 0.90 and 0.85 edges', () => {
-    expect(fitLevel('CB', 'CB')).toBe('natural');
-    expect(fitLevel('CB', 'FB')).toBe('improvised');
-    expect(fitLevel('FB', 'DM')).toBe('improvised');
-    expect(fitLevel('GK', 'ST')).toBe('outOfPosition');
+  it('fitLevel: the levels of a player without a secondary, including the 0.90 and 0.85 edges', () => {
+    expect(fitLevel({ position: 'CB', secondaryPosition: null }, 'CB')).toBe('natural');
+    expect(fitLevel({ position: 'CB', secondaryPosition: null }, 'FB')).toBe('improvised');
+    expect(fitLevel({ position: 'FB', secondaryPosition: null }, 'DM')).toBe('improvised');
+    expect(fitLevel({ position: 'GK', secondaryPosition: null }, 'ST')).toBe('outOfPosition');
   });
 
   it('strength.ts and draft.ts are free of Rng, Math.random and Date.now', () => {

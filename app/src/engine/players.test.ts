@@ -127,6 +127,9 @@ describe('overall', () => {
 });
 
 describe('fit', () => {
+  /** A player of `natural` position without a secondary one: the table, as before T-079. */
+  const only = (natural: Position) => ({ position: natural, secondaryPosition: null });
+
   it('copies the out-of-position table of jogadores.md', () => {
     const table: Record<Position, number[]> = {
       GK: [1, 0.4, 0.4, 0.4, 0.4, 0.4],
@@ -138,26 +141,26 @@ describe('fit', () => {
     };
     for (const natural of POSITIONS) {
       expect(
-        POSITIONS.map((slot) => fit(natural, slot)),
+        POSITIONS.map((slot) => fit(only(natural), slot)),
         natural,
       ).toEqual(table[natural]);
     }
   });
 
   it('is read natural → slot, not symmetric', () => {
-    expect(fit('CB', 'ST')).toBe(0.7);
-    expect(fit('ST', 'CB')).toBe(0.65);
-    expect(fit('AM', 'FB')).toBe(0.8);
-    expect(fit('FB', 'AM')).toBe(0.85);
+    expect(fit(only('CB'), 'ST')).toBe(0.7);
+    expect(fit(only('ST'), 'CB')).toBe(0.65);
+    expect(fit(only('AM'), 'FB')).toBe(0.8);
+    expect(fit(only('FB'), 'AM')).toBe(0.85);
     expect(FIT.GK.GK).toBe(1);
   });
 
   it('labels 1.00 natural, 0.85–0.90 improvised and below 0.85 out of position', () => {
-    expect(fitLevel('ST', 'ST')).toBe('natural');
-    expect(fitLevel('CB', 'FB')).toBe('improvised'); // 0.90
-    expect(fitLevel('FB', 'DM')).toBe('improvised'); // 0.85
-    expect(fitLevel('AM', 'FB')).toBe('outOfPosition'); // 0.80
-    expect(fitLevel('GK', 'ST')).toBe('outOfPosition'); // 0.40
+    expect(fitLevel(only('ST'), 'ST')).toBe('natural');
+    expect(fitLevel(only('CB'), 'FB')).toBe('improvised'); // 0.90
+    expect(fitLevel(only('FB'), 'DM')).toBe('improvised'); // 0.85
+    expect(fitLevel(only('AM'), 'FB')).toBe('outOfPosition'); // 0.80
+    expect(fitLevel(only('GK'), 'ST')).toBe('outOfPosition'); // 0.40
   });
 });
 

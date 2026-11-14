@@ -84,4 +84,11 @@
 //    season and turn goldens, and the match goldens whose lineups come from bestEleven
 //    (match-round, match-ai-sheets) changed; the other goldens only carry the version. `fit`
 //    still does not read the secondary position (T-079).
-export const ENGINE_VERSION = 18;
+// 19: `fit` reads the secondary position (T-079, ADR-0022 item 6;
+//    docs/design/posicao-secundaria.md): `fit(player, slot)` is 1 in the natural position,
+//    max(FIT[natural][slot], SECONDARY_FIT = 0.95) in the secondary one and the table elsewhere;
+//    with `secondaryPosition: null` it is the table, bit for bit. `fitLevel(player, slot)` gains
+//    the level `secondary`. Every reader of `fit` follows (selection value, displayed strength,
+//    the AI's Δ, bestEleven and elevenStrength, the squad shift, the match), so the shift `d` of
+//    some clubs, the AI's lineups and the matches after them changed.
+export const ENGINE_VERSION = 19;

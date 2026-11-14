@@ -149,8 +149,8 @@ describe('the formation change (US-018, "trocar a formação reposiciona os titu
 
   it('misplacedCount counts the improvised and the out of position, by the engine', () => {
     const slots = FORMATION_SLOTS[sheet.lineup.formation];
-    const expected = starterIds.filter(
-      (id, i) => fitLevel(player(id).position, slots[i]!) !== 'natural',
+    const expected = starterIds.filter((id, i) =>
+      ['improvised', 'outOfPosition'].includes(fitLevel(player(id), slots[i]!)),
     ).length;
     expect(misplacedCount(game, sheet)).toBe(expected);
     expect(expected).toBeGreaterThanOrEqual(2);

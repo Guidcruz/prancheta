@@ -133,8 +133,15 @@ export function changePlayer(save: SaveJson, id: string, change: Record<string, 
   save.game.players[id] = next;
 }
 
-/** Ajusta o save da carreira mais recente e a reabre pela tela inicial. */
-export async function patchSave(page: Page, change: (save: SaveJson) => void): Promise<SaveJson> {
+/**
+ * Ajusta o save da carreira mais recente e a reabre pela tela inicial (`reopen`: em pt-BR,
+ * `continueCareer`; noutro idioma, quem chama passa o caminho dele).
+ */
+export async function patchSave(
+  page: Page,
+  change: (save: SaveJson) => void,
+  reopen: (page: Page) => Promise<void> = continueCareer,
+): Promise<SaveJson> {
   const save = await readSave(page);
   change(save);
   // Every player still valid, whatever the change touched (the opening checks them all).
@@ -145,7 +152,7 @@ export async function patchSave(page: Page, change: (save: SaveJson) => void): P
     }
   }
   await writeSave(page, save);
-  await continueCareer(page);
+  await reopen(page);
   return save;
 }
 

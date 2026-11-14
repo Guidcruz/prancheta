@@ -79,7 +79,7 @@ export interface Slot {
   readonly sector: Sector;
   app: Appearance | undefined;
   /**
-   * `overall × fit(natural, slot) × moraleMult` of the occupant (0 when empty): the part of the
+   * `overall × fit(player, slot) × moraleMult` of the occupant (0 when empty): the part of the
    * effective rating that does not change during the match. Times `condMult(energy)` it is
    * `effectiveRating` bit for bit (same operations, same order). Set it with {@link occupy}.
    */
@@ -211,9 +211,7 @@ export function occupy(slot: Slot, app: Appearance | undefined): void {
   slot.ratingBase =
     app === undefined
       ? 0
-      : app.player.overall *
-        fit(app.player.position, slot.position) *
-        moraleMultiplier(app.player.morale);
+      : app.player.overall * fit(app.player, slot.position) * moraleMultiplier(app.player.morale);
 }
 
 /**
@@ -359,7 +357,7 @@ export function kickoffTeam(side: Side, input: TeamInput, warnings: EngineWarnin
 export function slotEff(player: Player, position: Position, energy: number): number {
   return (
     player.overall *
-    fit(player.position, position) *
+    fit(player, position) *
     moraleMultiplier(player.morale) *
     conditionMultiplier(energy)
   );
@@ -475,7 +473,7 @@ export function openPlayGoalProbability(
   const shooter = slot.app!;
   const shot =
     shooter.finishing *
-    fit(shooter.player.position, slot.position) *
+    fit(shooter.player, slot.position) *
     moraleMultiplier(shooter.player.morale) *
     conditionMultiplier(shooter.energy) *
     (1 + team.home);
@@ -593,7 +591,7 @@ export function freeKickGoalProbability(
   const taker = slot.app!;
   const shot =
     taker.technique *
-    fit(taker.player.position, slot.position) *
+    fit(taker.player, slot.position) *
     moraleMultiplier(taker.player.morale) *
     conditionMultiplier(taker.energy) *
     (1 + team.home);

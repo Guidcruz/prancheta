@@ -275,6 +275,11 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- A posição secundária passa a render em campo (T-079, ADR-0022):
+  - Para quem joga: o jogador que "também joga de" outra posição rende 95% nela, mais que o improvisado (85% a 90%). Na Escalação, a vaga mostra a marca "Posição secundária", neutra, com ícone e texto; ela não entra nos avisos nem em "Nesta formação" da Tática. Ao selecionar ou arrastar uma vaga ocupada, os reservas que a têm como secundária ganham o mesmo selo.
+  - `fit(player, slot)` e `fitLevel(player, slot)` recebem o jogador: na secundária, `max(FIT[natural][vaga], 0,95)`; quem não tem secundária rende o mesmo de antes, bit a bit. `FitLevel` ganha `'secondary'`. A força exibida, a IA, a geração e a partida leem o mesmo número.
+  - `ENGINE_VERSION` 19. Mudam as escalações da IA e as partidas depois delas; goldens regravados. No `/balance`, a métrica informativa de titulares fora da posição natural vira duas: na secundária (0,07 por ficha) e improvisados ou fora de posição (0,04 por ficha).
+  - Ícone novo `secondary` (duas caixinhas), provisório até o conjunto do `art-director`.
 - Escalação automática "natural primeiro" (T-082, ADR-0022):
   - Para quem joga: a IA e o "Sugerir escalação" põem cada jogador na posição de origem antes de improvisar. Um time deixa de escalar, por exemplo, um volante na zaga com um zagueiro bom no banco.
   - A IA, o "Sugerir escalação", o melhor XI da geração e da virada e o técnico-robô do `/balance` escalam pela mesma função (`naturalFirstEleven`): cada vaga recebe primeiro o melhor da posição, e quem ficou de fora só toma uma vaga de linha se render estritamente mais nela. O goleiro nunca é trocado; sem goleiro, o gol é o último. Com menos de 11 disponíveis, o preenchimento de antes.

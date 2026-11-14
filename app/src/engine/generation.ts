@@ -392,6 +392,7 @@ export function shiftSquad(
   const base = players.map((p, index) => ({
     id: p.id,
     position: p.position,
+    secondaryPosition: p.secondaryPosition,
     age: p.age,
     overall: p.overall,
     index,
@@ -462,13 +463,13 @@ export function turnPlayerId(clubId: ClubId, season: number, k: number): PlayerI
  * Returns the chosen player of each slot, in slot order (fewer than 11 only if the squad is
  * smaller: then the last slots, never the goal).
  */
-export function bestEleven<T extends ElevenCandidate>(
+export function bestEleven<T extends ElevenCandidate & Pick<Player, 'secondaryPosition'>>(
   players: readonly T[],
   formation: Formation,
 ): { player: T; slot: Position }[] {
   const slots = FORMATION_SLOTS[formation];
   const chosen: { player: T; slot: Position }[] = [];
-  naturalFirstEleven(players, formation, (p, slot) => p.overall * fit(p.position, slot)).forEach(
+  naturalFirstEleven(players, formation, (p, slot) => p.overall * fit(p, slot)).forEach(
     (player, i) => {
       if (player !== undefined) chosen.push({ player, slot: slots[i]! });
     },
@@ -481,11 +482,14 @@ export function bestEleven<T extends ElevenCandidate>(
  * condition, morale nor home advantage. 0 for an empty XI.
  */
 export function elevenStrength(
-  eleven: readonly { player: Pick<Player, 'position' | 'overall'>; slot: Position }[],
+  eleven: readonly {
+    player: Pick<Player, 'position' | 'secondaryPosition' | 'overall'>;
+    slot: Position;
+  }[],
 ): number {
   if (eleven.length === 0) return 0;
   let sum = 0;
-  for (const { player, slot } of eleven) sum += player.overall * fit(player.position, slot);
+  for (const { player, slot } of eleven) sum += player.overall * fit(player, slot);
   return sum / eleven.length;
 }
 

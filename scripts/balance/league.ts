@@ -100,9 +100,15 @@ export interface SheetTally {
   /** Sheets with at least one starter below {@link TIRED_STARTER_CONDITION} of condition. */
   tiredStarter: number;
   /**
-   * Starters of those sheets out of their natural position, improvised or out of position
-   * (`fitLevel` not `natural`; posicao-secundaria.md, "Efeito esperado no balanceamento",
-   * informative metric 2). Divided by `sheets`, the mean per sheet.
+   * Starters of those sheets in their secondary position (`fitLevel` `secondary`;
+   * posicao-secundaria.md, "Efeito esperado no balanceamento", informative metric 1). Divided by
+   * `sheets`, the mean per sheet.
+   */
+  onSecondary: number;
+  /**
+   * Starters of those sheets improvised or out of position (`fitLevel` `improvised` or
+   * `outOfPosition`; informative metric 2): out of the natural position and not in the
+   * secondary one. Divided by `sheets`, the mean per sheet.
    */
   offPosition: number;
   byProfile: Partial<Record<AiProfile, Record<string, number>>>;
@@ -491,6 +497,7 @@ export function playSeason(
     sheets: 0,
     highPressure: 0,
     tiredStarter: 0,
+    onSecondary: 0,
     offPosition: 0,
     byProfile: {},
   };
@@ -525,13 +532,10 @@ export function playSeason(
       sheet.lineup.starters.forEach((id, i) => {
         const player = before.players[id];
         const slot = slots[i];
-        if (
-          player !== undefined &&
-          slot !== undefined &&
-          fitLevel(player.position, slot) !== 'natural'
-        ) {
-          sheets.offPosition += 1;
-        }
+        if (player === undefined || slot === undefined) return;
+        const level = fitLevel(player, slot);
+        if (level === 'secondary') sheets.onSecondary += 1;
+        else if (level !== 'natural') sheets.offPosition += 1;
       });
     }
     for (const club of Object.values(state.clubs)) addFans(fans, club.fans);

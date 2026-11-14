@@ -2,15 +2,16 @@
   import type { IconName } from './Icon.svelte';
 
   /**
-   * The one mark a slot shows on the pitch (escalacao.md, "Marca da vaga"): the most serious
-   * wins (unavailable, then out of position, then improvised); the others go to the accessible
-   * name and to the list of warnings under the pitch.
+   * The one mark a slot shows on the pitch (escalacao.md, "Marca da vaga" and "Posição
+   * secundária"): the most serious wins (unavailable, then out of position, then improvised, then
+   * secondary position); the others go to the accessible name and, but for the secondary
+   * position, to the list of warnings under the pitch.
    */
-  export type ChipMarkKind = 'injured' | 'suspended' | 'outOfPosition' | 'improvised';
+  export type ChipMarkKind = 'injured' | 'suspended' | 'outOfPosition' | 'improvised' | 'secondary';
 
   export interface ChipMark {
     kind: ChipMarkKind;
-    /** "Fora de posição", "Improvisado", "Lesionado, 3 rodadas", already translated. */
+    /** "Fora de posição", "Posição secundária", "Lesionado, 3 rodadas", already translated. */
     label: string;
   }
 
@@ -19,6 +20,7 @@
     suspended: 'card',
     outOfPosition: 'warning',
     improvised: 'improvised',
+    secondary: 'secondary',
   };
 
   /**
@@ -243,6 +245,13 @@
   .improvised {
     background: var(--floodlight);
     color: var(--on-floodlight);
+  }
+  /* Neutral: only the draw outline on surface-2, ink text and icon (escalacao.md, "Marca da vaga
+     secondary"); the border sets it apart from the selected chip, also on surface-2. */
+  .secondary {
+    background: var(--surface-2);
+    border-color: var(--draw);
+    color: var(--ink);
   }
   .cond {
     display: block;

@@ -697,7 +697,7 @@ describe('edge cases (partida.md, "Casos de borda")', () => {
     expect(warnings.map((w) => w.detail?.player)).toEqual([keeper, out]);
     const slot = FORMATION_SLOTS[base.home.sheet.lineup.formation];
     const value = (p: Player, i: number) =>
-      p.overall * fit(p.position, slot[i]!) * conditionMultiplier(p.condition);
+      p.overall * fit(p, slot[i]!) * conditionMultiplier(p.condition);
     const keeperIn = warnings[0]!.detail!.replacement as string;
     const outIn = warnings[1]!.detail!.replacement as string;
     const bestFor = (i: number, pool: Player[]) => Math.max(...pool.map((p) => value(p, i)));

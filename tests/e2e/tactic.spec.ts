@@ -16,6 +16,7 @@ import {
   pitch,
   sizesOf,
   withFixture,
+  withSecondaryFixture,
   type Fixture,
 } from './lineup-fixture.ts';
 import { changePlayer, readDraft, readSave, type DraftJson, type SaveJson } from './save.ts';
@@ -201,6 +202,18 @@ test.describe('Tática (tatica.md; US-018)', () => {
       // Two columns on the phone standing; three once the group has 480px (lying down, desktop).
       expect(columns, `${size.width}`).toBe(size.width < 480 ? 2 : 3);
     }
+  });
+
+  test('posição secundária: "Nesta formação" não tem o volante na vaga de ZAG e tem o zagueiro no ataque (T-079)', async ({
+    page,
+  }) => {
+    // tatica.md, "Posição secundária": the fixture of the Escalação with (a), the DM with
+    // secondary CB in the CB slot, and (e), the CB in the striker's slot.
+    const { cases } = await withSecondaryFixture(page);
+    await openTactic(page);
+    const issues = main(page).locator('section.issues');
+    await expect(issues).toContainText(cases.misplaced.name.full);
+    await expect(issues).not.toContainText(cases.onSecondary.name.full);
   });
 
   test('teclado: seta para baixo na Postura marca a opção seguinte (medida 5)', async ({
