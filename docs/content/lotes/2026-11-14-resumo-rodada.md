@@ -1,6 +1,6 @@
 # Lote T-030: Resumo da rodada (pt-BR, es, en)
 
-Status: **aguardando o ok do CEO**. Total: **30 chaves** (com `.one` e `.other` em `round.table.up` e `round.table.down`), todas para `ui.json` dos três idiomas, mesmas chaves e mesmos placeholders. Nenhum nome real e nenhuma marca. Os textos **não** estão em `app/src/content/`: entram na T-030 depois do ok.
+Status: aprovado pelo CEO em 2026-11-14 ("ok recomendado"), como está: separador "×", tipo do gol por extenso com "FK" só em en, "Encerrado antes do fim" e "Sair do resumo". O acréscimo nunca passa de 90+7 no motor, então "90+10'" não acontece. Total: **30 chaves** (com `.one` e `.other` em `round.table.up` e `round.table.down`), todas para `ui.json` dos três idiomas, mesmas chaves e mesmos placeholders. Nenhum nome real e nenhuma marca. Os textos **não** estão em `app/src/content/`: entram na T-030 depois do ok.
 
 Tela em `docs/design/telas/resumo-rodada.md` (conteúdo, estados e acessibilidade). Termo da rodada: pt "rodada", es "jornada", en "round", como no resto do `ui.json`.
 
