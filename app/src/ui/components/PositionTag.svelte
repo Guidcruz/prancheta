@@ -19,12 +19,18 @@
      * ("Atacante" in the row's hidden text, in the card's header): the code would be read twice.
      */
     hidden?: boolean;
+    /**
+     * `sm`: the second tag of a player with a secondary position (elenco.md, "Posição
+     * secundária"), 18px tall instead of 22px; always without `sector`.
+     */
+    size?: 'md' | 'sm';
   }
-  const { code, sector, hidden = false }: Props = $props();
+  const { code, sector, hidden = false, size = 'md' }: Props = $props();
 </script>
 
 <span
   class="rotulo tag"
+  class:sm={size === 'sm'}
   class:sector-gk={sector === 'gk'}
   class:sector-def={sector === 'def'}
   class:sector-mid={sector === 'mid'}
@@ -44,6 +50,10 @@
     color: var(--ink-muted);
     text-align: center;
     white-space: nowrap;
+  }
+  /* Same width, less air above and below: 16px line plus the 2px of border. */
+  .sm {
+    padding-block: 0;
   }
   /* The sector paints only the background and the border; the code stays in ink. */
   .sector-gk {

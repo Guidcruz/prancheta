@@ -1,5 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import PositionTag from './PositionTag.svelte';
   import StatusBadge, { type StatusBadgeItem } from './StatusBadge.svelte';
   import type { ChipState } from './LineupChip.svelte';
 
@@ -13,6 +14,12 @@
   interface Props {
     /** "ATA"; for an empty bench place, nothing. */
     positionCode?: string;
+    /**
+     * "ZAG": the secondary position's code, a neutral small tag under the natural one, with the
+     * same width and no visible text; the accessible name says it (escalacao.md, "Sigla
+     * secundária nas linhas do Banco e dos Não relacionados").
+     */
+    secondaryCode?: string;
     /** Built by the screen (`lineup.row.a11y` or `lineup.bench.emptyA11y`). */
     a11yLabel: string;
     /**
@@ -36,6 +43,7 @@
   }
   const {
     positionCode,
+    secondaryCode,
     a11yLabel,
     name,
     emptyLabel,
@@ -64,7 +72,12 @@
     {onclick}
     {onpointerdown}
   >
-    <span class="rotulo pos">{positionCode ?? ''}</span>
+    <span class="tags">
+      <span class="rotulo pos">{positionCode ?? ''}</span>
+      {#if secondaryCode !== undefined}
+        <span class="second"><PositionTag code={secondaryCode} size="sm" hidden /></span>
+      {/if}
+    </span>
     <span class="main">
       <span class="body-strong name">{empty ? emptyLabel : name}</span>
       {#if badges.length > 0}
@@ -115,6 +128,22 @@
   .row:focus-visible {
     outline: 2px solid var(--focus);
     outline-offset: 2px;
+  }
+  /* The natural code over the secondary one; the column keeps the width of one tag. */
+  .tags {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(var(--space-1) / 2);
+  }
+  .second {
+    display: grid;
+  }
+  /* On the drop target the neutral code takes ink, like .pos: ink-muted on grass-soft is not a
+     checked pair. */
+  .target .second :global(.tag) {
+    color: var(--ink);
   }
   .pos {
     display: inline-grid;

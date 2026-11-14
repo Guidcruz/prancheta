@@ -7,6 +7,7 @@ import {
   type GameState,
   type Player,
   type PlayerId,
+  type Position,
 } from '@engine';
 import type { Lang } from '@lib/config';
 import { normalizeNameKey } from '@lib/generators/names';
@@ -91,6 +92,31 @@ export function playerBadges(player: Player, realism: Realism, lang: Lang): Stat
   return out;
 }
 
+/**
+ * The secondary position to show (ADR-0022; elenco.md, jogador.md): never for a goalkeeper, and
+ * `undefined` for a player without one. The screens show it, they never compare it with a slot
+ * (that is `fitLevel`'s job).
+ */
+export function shownSecondary(player: Player): Position | undefined {
+  if (player.position === 'GK') return undefined;
+  return player.secondaryPosition ?? undefined;
+}
+
+/**
+ * The position of a player as screen readers read it in the squad row and in the lineup's rows:
+ * "Volante", or "Volante, também joga de zagueiro" with a secondary position (`{secondary}` in
+ * lower case, as `lineup.fit.*`).
+ */
+export function positionReading(player: Player, lang: Lang): string {
+  const natural = t(`position.${player.position}`, lang);
+  const secondary = shownSecondary(player);
+  if (secondary === undefined) return natural;
+  return t('squad.secondaryPosition.a11y', lang, {
+    natural,
+    secondary: t(`position.${secondary}`, lang).toLocaleLowerCase(lang),
+  });
+}
+
 /** The form with one decimal in the language ("6,8"), or `undefined` with no game. */
 export function formText(player: Player, lang: Lang): string | undefined {
   const form = playerForm(player);
@@ -146,6 +172,8 @@ export interface PlayerCardView {
   /** "ATA", for the PositionTag. */
   readonly positionCode: string;
   readonly sector: Sector;
+  /** The secondary position block of the card; absent without one and for goalkeepers. */
+  readonly secondary: { readonly code: string; readonly name: string } | undefined;
   readonly facts: readonly CardFact[];
   readonly overall: number;
   readonly badges: readonly StatusBadgeItem[];
@@ -153,6 +181,12 @@ export interface PlayerCardView {
   readonly attributes: readonly CardAttribute[];
   readonly trait: { readonly name: string; readonly description: string };
   readonly season: readonly CardFact[];
+}
+
+function secondaryView(player: Player, lang: Lang): PlayerCardView['secondary'] {
+  const position = shownSecondary(player);
+  if (position === undefined) return undefined;
+  return { code: t(`position.${position}.short`, lang), name: t(`position.${position}`, lang) };
 }
 
 /**
@@ -219,6 +253,7 @@ export function playerCard(
     positionLabel: t(`position.${player.position}`, lang),
     positionCode: t(`position.${player.position}.short`, lang),
     sector: SECTOR_OF[player.position],
+    secondary: secondaryView(player, lang),
     // The label names the fact ("Idade", "Camisa"); the card shows only the value.
     facts: [
       { label: t('squad.col.age', lang), value: age },

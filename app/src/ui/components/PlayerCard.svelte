@@ -65,6 +65,17 @@
      */
     positionCode: string;
     sector: Sector;
+    /**
+     * The secondary position (jogador.md, "Posição secundária"): a block under the header with
+     * the label, the neutral tag and the written position, then the hint. Absent without one and
+     * for goalkeepers: then the block does not exist.
+     */
+    secondary?: {
+      label: string;
+      code: string;
+      name: string;
+      hint: string;
+    };
     /** "23 anos", "Camisa 9". */
     facts: readonly CardFact[];
     overall: number;
@@ -89,6 +100,7 @@
     positionLabel,
     positionCode,
     sector,
+    secondary,
     facts,
     overall,
     overallLabel,
@@ -126,6 +138,18 @@
       </p>
     </div>
   </div>
+  {#if secondary !== undefined}
+    <div class="secondary">
+      <dl class="pair">
+        <dt class="caption muted">{secondary.label}</dt>
+        <dd class="body-strong">
+          <PositionTag code={secondary.code} size="sm" hidden />
+          <span>{secondary.name}</span>
+        </dd>
+      </dl>
+      <p class="caption muted">{secondary.hint}</p>
+    </div>
+  {/if}
   {#if badges.length > 0}
     <p class="badges">
       {#each badges as badge (badge.kind)}
@@ -215,6 +239,23 @@
   .position {
     display: flex;
     flex-wrap: wrap;
+    align-items: center;
+    gap: var(--space-2);
+  }
+  .secondary {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-1);
+  }
+  /* Label and value on one line; in es and en at 360px the value drops to the next line. */
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    column-gap: var(--space-2);
+  }
+  .pair dd {
+    display: flex;
     align-items: center;
     gap: var(--space-2);
   }
