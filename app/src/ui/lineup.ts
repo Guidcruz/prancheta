@@ -24,7 +24,15 @@ import type { PitchSlot } from './components/LineupPitch.svelte';
 import { SECTOR_OF } from './components/sectors';
 import type { StatusBadgeItem } from './components/StatusBadge.svelte';
 import type { StrengthItem } from './components/StrengthBars.svelte';
-import { playerBadges, shownCondition, sortPlayers, squadPlayers, type Realism } from './squad';
+import {
+  playerBadges,
+  positionReading,
+  shownCondition,
+  shownSecondaryCode,
+  sortPlayers,
+  squadPlayers,
+  type Realism,
+} from './squad';
 
 /*
  * What the Escalação view reads of the coach's sheet and how a swap changes it
@@ -477,6 +485,8 @@ export interface RowView {
   readonly dataPlace: string;
   readonly a11yLabel: string;
   readonly positionCode?: string;
+  /** The secondary position's code ("ZAG"), a small neutral tag under the natural one. */
+  readonly secondaryCode?: string;
   readonly name?: string;
   readonly badges: readonly StatusBadgeItem[];
   readonly cells: readonly number[];
@@ -514,10 +524,11 @@ function playerRow(
   const condition = shownCondition(player);
   const vars = {
     name: player.name.full,
-    position: positionName(player.position, lang),
+    position: positionReading(player, lang),
     overall: player.overall,
     condition,
   };
+  const secondaryCode = shownSecondaryCode(player, lang);
   const label = t(realism === 'full' ? 'lineup.row.a11yCondition' : 'lineup.row.a11y', lang, vars);
   const badges = [
     ...playerBadges(player, realism, lang),
@@ -530,6 +541,7 @@ function playerRow(
     dataPlace,
     a11yLabel: [label, ...badges.map((b) => lower(b.label, lang))].join(', '),
     positionCode: code(player.position, lang),
+    ...(secondaryCode === undefined ? {} : { secondaryCode }),
     name: player.name.display,
     badges,
     cells: realism === 'full' ? [player.overall, condition] : [player.overall],

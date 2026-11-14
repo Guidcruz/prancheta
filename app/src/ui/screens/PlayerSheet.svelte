@@ -108,6 +108,14 @@
       positionLabel={card.positionLabel}
       positionCode={card.positionCode}
       sector={card.sector}
+      secondary={card.secondary === undefined
+        ? undefined
+        : {
+            label: t('player.secondaryPosition', lang),
+            code: card.secondary.code,
+            name: card.secondary.name,
+            hint: t('player.secondaryPosition.hint', lang),
+          }}
       facts={card.facts}
       overall={card.overall}
       overallLabel={t('player.overall', lang)}

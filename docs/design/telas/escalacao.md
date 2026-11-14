@@ -269,7 +269,7 @@ Fixture do Completo, em 4-4-2, com estes casos forçados (a T-078 já grava `sec
    - Esc: o selo some.
    - O `y` do retângulo da vaga selecionada é o mesmo (±1px) antes e depois do toque.
    - O mesmo vale ao segurar 400ms a vaga no Chromium celular (início do arrasto).
-6. **Sigla secundária na linha (adiada para a T-081; não entrou na T-079):** a linha de (b) tem duas siglas, e a segunda é `aria-hidden`, não tem classe `sector-*` e tem a largura da primeira (±1px). A linha de (c) tem uma sigla só. As duas linhas têm pelo menos 44px de altura.
+6. **Sigla secundária na linha (adiada da T-079; implementada na T-081):** a linha de (b) tem duas siglas, e a segunda é `aria-hidden`, não tem classe `sector-*` e tem a largura da primeira (±1px). A linha de (c) tem uma sigla só. As duas linhas têm pelo menos 44px de altura.
 7. **Alvos e largura:** a 360×740, nas 6 formações e com (a) na vaga de ZAG mais à esquerda, todas as vagas medem pelo menos 44 × 44px e nenhuma se sobrepõe. A marca de (a) tem no máximo 2 linhas (altura ≤ 2 × a altura de linha do `rotulo` + respiro), e o chip tem no máximo 88px de altura. O mesmo vale com o jogo em `es` e em `en`. Não há rolagem lateral em 360, 390, 844 e 1280.
 8. **Movimento:** com `reducedMotion: 'reduce'`, selecionar a vaga e ver o selo do candidato não cria animação (`document.getAnimations().length === 0`).
 

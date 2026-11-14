@@ -171,6 +171,7 @@
           {#each bench as row (row.dataPlace)}
             <LineupRow
               positionCode={row.positionCode}
+              secondaryCode={row.secondaryCode}
               a11yLabel={row.a11yLabel}
               name={row.name}
               emptyLabel={t('lineup.bench.empty', lang)}
@@ -199,6 +200,7 @@
           {#each out as row (row.dataPlace)}
             <LineupRow
               positionCode={row.positionCode}
+              secondaryCode={row.secondaryCode}
               a11yLabel={row.a11yLabel}
               name={row.name}
               badges={row.badges}

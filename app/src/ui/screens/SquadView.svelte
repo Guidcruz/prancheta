@@ -11,8 +11,10 @@
   import {
     formText,
     playerBadges,
+    positionReading,
     shownCondition,
     shownMorale,
+    shownSecondaryCode,
     sortOrDefault,
     stateLevel,
     sortsFor,
@@ -138,7 +140,8 @@
           <PlayerRow
             name={player.name.display}
             positionCode={t(`position.${player.position}.short`, lang)}
-            positionLabel={t(`position.${player.position}`, lang)}
+            positionLabel={positionReading(player, lang)}
+            secondaryCode={shownSecondaryCode(player, lang)}
             sector={SECTOR_OF[player.position]}
             badges={playerBadges(player, realism, lang)}
             cells={cells(player)}

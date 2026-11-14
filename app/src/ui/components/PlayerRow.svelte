@@ -28,8 +28,17 @@
     name: string;
     /** "ATA", already translated (position.ST.short). */
     positionCode: string;
-    /** "Atacante" (position.ST), for screen readers. */
+    /**
+     * The position for screen readers: "Atacante" (position.ST), or with a secondary position
+     * `squad.secondaryPosition.a11y` ("Volante, também joga de zagueiro").
+     */
     positionLabel: string;
+    /**
+     * "ZAG": the secondary position's code, a neutral small tag stacked under the natural one,
+     * with no visible text (elenco.md, "Posição secundária"). Absent without one and for
+     * goalkeepers.
+     */
+    secondaryCode?: string;
     /**
      * `SECTOR_OF[player.position]` (sectors.ts): the tag's background and border. The screens
      * always pass it.
@@ -41,7 +50,16 @@
     /** Opens the full card; the screen gives it its own entry in the history. */
     onopen: () => void;
   }
-  const { name, positionCode, positionLabel, sector, badges = [], cells, onopen }: Props = $props();
+  const {
+    name,
+    positionCode,
+    positionLabel,
+    secondaryCode,
+    sector,
+    badges = [],
+    cells,
+    onopen,
+  }: Props = $props();
   const text = (cell: PlayerCell) => (typeof cell === 'object' ? cell.text : String(cell));
 </script>
 
@@ -49,7 +67,12 @@
 <tr class="row" onclick={onopen}>
   <th scope="row" class="player">
     <span class="cell">
-      <PositionTag code={positionCode} {sector} hidden />
+      <span class="tags">
+        <PositionTag code={positionCode} {sector} hidden />
+        {#if secondaryCode !== undefined}
+          <PositionTag code={secondaryCode} size="sm" hidden />
+        {/if}
+      </span>
       <span class="who">
         <span class="visually-hidden">{positionLabel}</span>
         <button
@@ -121,6 +144,14 @@
      whole. */
   :global(.scroll-table) .cell {
     max-inline-size: calc(50cqi - var(--space-3) - var(--space-2) - 1px);
+  }
+  /* The natural tag over the secondary one; the column keeps the width of one tag. */
+  .tags {
+    display: flex;
+    flex: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: calc(var(--space-1) / 2);
   }
   .who {
     display: flex;

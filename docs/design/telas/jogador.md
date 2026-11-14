@@ -47,7 +47,7 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 
 ### Posição secundária
 
-Decisão do CEO de 2026-11-08 (especificado na T-080; entra com a T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
+Decisão do CEO de 2026-11-08 (especificado na T-080; implementado na T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
 
 - **Onde:** um bloco logo abaixo do cabeçalho, antes dos selos, com a largura toda, só quando o jogador tem secundária. É um `dl` com um par: o `dt` é `player.secondaryPosition` ("Posição secundária", aprovado), em `caption` e `ink-muted`; o `dd` tem a sigla na PositionTag `size="sm"` neutra (sem `sector`, `hidden`) e a posição por extenso (`position.<P>`, "Volante") em `body-strong`. O `dt` e o `dd` ficam na mesma linha, com `flex-wrap`: em es e en, a 360px, o `dd` desce para a linha de baixo sem rolar.
 - **Embaixo do par:** `player.secondaryPosition.hint`, em `caption` e `ink-muted`: "Outra posição em que ele joga bem. Ali rende um pouco menos que na natural." (texto aprovado pelo CEO em 2026-11-10).
@@ -62,7 +62,7 @@ Decisão do CEO de 2026-11-08 (especificado na T-080; entra com a T-081). A regr
 
 Textos: `player.secondaryPosition` (rótulo, `dt`) e `player.secondaryPosition.hint` (ajuda curta).
 
-Medidas para o E2E (T-081):
+Medidas para o E2E (T-081, implementadas em `tests/e2e/secondary-card.spec.ts`):
 
 1. No card de um volante forçado com secundária ZAG, há um `dt` com o texto de `player.secondaryPosition`, e o `dd` dele tem "Zagueiro" e uma caixinha `aria-hidden` sem classe `sector-*`. A frase de `player.secondaryPosition.hint` está visível.
 2. No card de um jogador sem secundária e no de um goleiro, não há `dt` com esse texto.
