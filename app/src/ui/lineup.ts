@@ -28,7 +28,7 @@ import {
   playerBadges,
   positionReading,
   shownCondition,
-  shownSecondary,
+  shownSecondaryCode,
   sortPlayers,
   squadPlayers,
   type Realism,
@@ -528,7 +528,7 @@ function playerRow(
     overall: player.overall,
     condition,
   };
-  const secondary = shownSecondary(player);
+  const secondaryCode = shownSecondaryCode(player, lang);
   const label = t(realism === 'full' ? 'lineup.row.a11yCondition' : 'lineup.row.a11y', lang, vars);
   const badges = [
     ...playerBadges(player, realism, lang),
@@ -541,7 +541,7 @@ function playerRow(
     dataPlace,
     a11yLabel: [label, ...badges.map((b) => lower(b.label, lang))].join(', '),
     positionCode: code(player.position, lang),
-    ...(secondary === undefined ? {} : { secondaryCode: code(secondary, lang) }),
+    ...(secondaryCode === undefined ? {} : { secondaryCode }),
     name: player.name.display,
     badges,
     cells: realism === 'full' ? [player.overall, condition] : [player.overall],

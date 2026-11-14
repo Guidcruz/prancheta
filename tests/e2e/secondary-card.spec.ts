@@ -61,6 +61,8 @@ const IN_LANG = {
   },
 } as const;
 
+const escapeRe = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
 const LANGS = Object.keys(IN_LANG) as Lang[];
 
 /** O jogo na fixture, no idioma pedido, na aba do Elenco (a lista), com o save já assentado. */
@@ -258,7 +260,7 @@ test.describe('Sigla secundária na linha do banco (escalacao.md, medida 6; T-08
       await expect(b).toHaveAttribute(
         'aria-label',
         new RegExp(
-          `^${cases.benchSecondary.name.full}, [^,]+, ${
+          `^${escapeRe(cases.benchSecondary.name.full)}, [^,]+, ${
             {
               'pt-BR': 'também joga de zagueiro',
               es: 'también juega de defensa central',
@@ -269,9 +271,16 @@ test.describe('Sigla secundária na linha do banco (escalacao.md, medida 6; T-08
       );
       await expect(c).toHaveAttribute(
         'aria-label',
-        new RegExp(`^${cases.benchPlain.name.full}, [^,]+, [^,]+`),
+        new RegExp(`^${escapeRe(cases.benchPlain.name.full)}, [^,]+, [^,]+`),
       );
       await expect(c).not.toHaveAttribute('aria-label', /também|también|also/);
+
+      // On the drop target (grass-soft) the secondary code takes ink, not ink-muted. The drag
+      // itself is covered in lineup.spec.ts; here the class it sets is put on the row by hand.
+      await expect(second).toHaveCSS('color', await tokenColor(page, 'ink-muted'));
+      await b.evaluate((el) => el.classList.add('target'));
+      await expect(second).toHaveCSS('color', await tokenColor(page, 'ink'));
+      await b.evaluate((el) => el.classList.remove('target'));
 
       for (const size of sizesOf(page)) {
         await page.setViewportSize(size);

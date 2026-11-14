@@ -102,6 +102,12 @@ export function shownSecondary(player: Player): Position | undefined {
   return player.secondaryPosition ?? undefined;
 }
 
+/** The code of the secondary position ("ZAG"), or `undefined` (see {@link shownSecondary}). */
+export function shownSecondaryCode(player: Player, lang: Lang): string | undefined {
+  const position = shownSecondary(player);
+  return position === undefined ? undefined : t(`position.${position}.short`, lang);
+}
+
 /**
  * The position of a player as screen readers read it in the squad row and in the lineup's rows:
  * "Volante", or "Volante, também joga de zagueiro" with a secondary position (`{secondary}` in

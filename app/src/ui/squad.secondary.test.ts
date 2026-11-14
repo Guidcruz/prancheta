@@ -8,9 +8,8 @@ import LineupView from './screens/LineupView.svelte';
 import PlayerSheet from './screens/PlayerSheet.svelte';
 import SquadView from './screens/SquadView.svelte';
 import { playerCard, positionReading, shownSecondary, sortPlayers, squadPlayers } from './squad';
-import { TEST_CLUB, withPlayer } from './testing/game';
+import { TEST_CLUB, testCareer, withPlayer } from './testing/game';
 import { lineupFixture, secondaryFixture, type SecondaryFixture } from './testing/lineup';
-import { testCareer } from './testing/game';
 
 /*
  * The secondary position on the card, in the Elenco and in the lineup's rows (T-081; jogador.md,
@@ -206,11 +205,13 @@ describe('the lineup row (escalacao.md, "Sigla secundária nas linhas")', () => 
         const at = body.indexOf(`data-place="${key}"`);
         return body.slice(at, body.indexOf('</button>', at));
       };
-      const second = /<span class="second[^"]*">(.*?)<!----><\/span>/s.exec(placeHtml('bench-2'));
-      expect(second).not.toBeNull();
-      expect(second![1]).toContain('aria-hidden="true"');
-      expect(second![1]).not.toContain('sector-');
-      expect(second![1]).toContain(`>${t('position.CB.short', lang)}<`);
+      const b = placeHtml('bench-2');
+      const inSecond = b.slice(b.indexOf('class="second'));
+      const tag = /<span class="rotulo tag[^"]*"[^>]*>(.*?)<\/span>/s.exec(inSecond);
+      expect(tag).not.toBeNull();
+      expect(tag![0]).toContain('aria-hidden="true"');
+      expect(tag![0]).not.toContain('sector-');
+      expect(tag![1]).toBe(t('position.CB.short', lang));
       expect(placeHtml('bench-4')).not.toContain('class="second');
     });
   }

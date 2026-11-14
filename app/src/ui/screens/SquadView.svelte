@@ -14,7 +14,7 @@
     positionReading,
     shownCondition,
     shownMorale,
-    shownSecondary,
+    shownSecondaryCode,
     sortOrDefault,
     stateLevel,
     sortsFor,
@@ -87,11 +87,6 @@
     }),
   );
 
-  function secondaryCode(player: Player): string | undefined {
-    const position = shownSecondary(player);
-    return position === undefined ? undefined : t(`position.${position}.short`, lang);
-  }
-
   /** A state's number painted by its band, with the band in words for screen readers. */
   function banded(
     measure: 'condition' | 'morale' | 'form',
@@ -146,7 +141,7 @@
             name={player.name.display}
             positionCode={t(`position.${player.position}.short`, lang)}
             positionLabel={positionReading(player, lang)}
-            secondaryCode={secondaryCode(player)}
+            secondaryCode={shownSecondaryCode(player, lang)}
             sector={SECTOR_OF[player.position]}
             badges={playerBadges(player, realism, lang)}
             cells={cells(player)}
