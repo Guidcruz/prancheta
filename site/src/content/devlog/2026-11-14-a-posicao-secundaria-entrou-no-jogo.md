@@ -40,13 +40,13 @@ Rodamos o balanceamento duas vezes: 600 temporadas, e depois as **1.000 temporad
 
 O que **mexeu**, pouco, e para o lado da abertura da tabela:
 
-| Medida                               | Antes | Depois |
-| ------------------------------------ | ----- | ------ |
-| Campeão pequeno (% das temporadas)   | 1,2%  | 1,8%   |
-| Clube fraco no G4 (% das temporadas) | 6,2%  | 8,5%   |
-| Campeão grande, 1.000 temporadas     | 81,6% | 79,7%  |
+| Medida                            | Antes | Depois |
+| --------------------------------- | ----- | ------ |
+| Campeão pequeno, 600 temporadas   | 1,2%  | 1,8%   |
+| Clube fraco no G4, 600 temporadas | 6,2%  | 8,5%   |
+| Campeão grande, 1.000 temporadas  | 81,6% | 79,7%  |
 
-A causa provável: um elenco curto, quando perde titulares por lesão ou suspensão, passa a cobrir o buraco com a secundária a 95% em vez de improvisar a 85% ou 90%. Quem tem elenco curto é, em geral, o clube menor, então ele sente mais o ganho. É uma hipótese coerente com os números, não uma prova; não isolamos o efeito rodando sem a secundária.
+Que a diferença vem da secundária, sabemos: rodando o mesmo código com a chance de secundária em zero, os números voltam a ser exatamente os de antes. O **porquê** ainda é hipótese. Todos os clubes têm elencos do mesmo tamanho, mas o reserva do clube pequeno é bem mais fraco que o do grande. Quando perde um titular por lesão ou suspensão, o pequeno agora pode cobrir a vaga com outro titular na secundária, a 95%, em vez de pôr um reserva fraco ou improvisar alguém a 85% ou 90%. O grande, com reservas melhores, ganha menos com isso.
 
 Também medimos quanto a secundária aparece em jogo: cerca de **0,07 titular por time** joga na posição secundária. Ou seja, ela é rara em campo, e é isso que se espera de uma regra que só entra quando falta alguém.
 
@@ -68,7 +68,7 @@ Uma queda do repositório de pacotes do Ubuntu derrubou o CI, porque os testes d
 
 ## O que vem a seguir
 
-- Seguir com as telas da carreira que faltam, a começar por calendário e tabela.
+- Seguir com as telas da carreira que faltam: jogar a rodada e ver o resumo com os outros resultados, e depois a tabela e o calendário.
 - Observar, nas próximas rodadas de balanceamento, se a tabela mais aberta se mantém ou se era ruído.
 
 Uma pergunta para quem acompanha: um campeão grande em 79,7% das temporadas, contra 81,6%, é pouca coisa ou já é o campeonato que você queria jogar? Queremos saber que grau de surpresa a Série A deve ter.
