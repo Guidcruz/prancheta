@@ -6,6 +6,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Jogar rodada no modo só resultado, parte 1 (T-030; US-019 e US-032):
+  - Ao tocar "Jogar rodada", o botão fica ocupado e, só depois de a gravação terminar, abre o resumo em tela cheia (`#/round`): placar, gols, selo do resultado, classificação com a variação de posição e os outros 9 resultados (só leitura).
+  - A barra do resumo mostra o estado da gravação (salva ou recusada) e o botão "Continuar", que volta à tela de origem já na rodada seguinte. O "Jogar rodada" ignora toques por 500 ms depois de o resumo fechar, então um toque duplo nunca joga a rodada seguinte.
+  - Fechar o jogo no meio não deixa estado intermediário; ao reabrir, o jogador cai no Clube.
+  - 30 chaves de texto em pt-BR, es e en (aprovadas pelo CEO em 2026-11-14) e dois componentes novos: Scoreboard (Placar, registrado no design system) e GoalList.
+  - A súmula (folha com lances, melhor em campo, estatísticas, estádio e público, e o toque nos outros jogos) ficou para a T-083, e a T-031 passa a depender dela.
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - A posição secundária aparece no card, no Elenco e no banco (T-081, ADR-0022):
   - Para quem joga: o card do jogador que "também joga de" outra posição ganha o bloco "Posição secundária" (sigla neutra e nome), com a ajuda "Outra posição em que ele joga bem. Ali rende um pouco menos que na natural."; sem número, para não ficar errado se o balanceamento mudar. Na lista do Elenco, uma segunda sigla neutra aparece embaixo da natural; goleiros e quem não tem secundária ficam como antes.
   - Na linha do banco da Escalação entra a sigla secundária (medida 6, adiada da T-079). A ordem "Posição" do Elenco continua agrupando pela natural.
