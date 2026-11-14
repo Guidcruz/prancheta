@@ -59,7 +59,7 @@ Aprovado pelo CEO em 2026-11-07 (regra geral em [design-system.md](../design-sys
 
 ### Posição secundária
 
-Decisão do CEO de 2026-11-08: "No Elenco e no card do jogador, mostrar quem tem duas utilidades" (especificado na T-080; entra com a T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
+Decisão do CEO de 2026-11-08: "No Elenco e no card do jogador, mostrar quem tem duas utilidades" (especificado na T-080; implementado na T-081). A regra está em [posicao-secundaria.md](../posicao-secundaria.md).
 
 - **Na coluna fixa, empilhada:** a sigla natural fica em cima, como hoje (PositionTag com a cor do setor). Embaixo dela, com respiro de `space-1 / 2`, vem a **sigla secundária**: PositionTag `size="sm"`, **sem `sector`** (a caixinha neutra: borda `line`, texto `ink-muted`, sem fundo) e `hidden`. Exemplo: "VOL" em violeta e, embaixo, "ZAG" neutro.
 - **A coluna não alarga.** As duas caixinhas têm a mesma largura mínima (3 letras). A `sm` só perde o respiro vertical: 18px de altura contra 22px. A pilha tem cerca de 42px, e a linha desses jogadores passa de 44px para cerca de 50px, sem mudar a largura. A 360px, o nome continua com os mesmos cerca de 100px de hoje.
@@ -72,7 +72,7 @@ Decisão do CEO de 2026-11-08: "No Elenco e no card do jogador, mostrar quem tem
 
 Textos: `squad.secondaryPosition.a11y` (nome da posição na linha, para leitor de tela, com `{natural}` e `{secondary}`). Reusado pela LineupRow da Escalação.
 
-Medidas para o E2E (T-081), com dois jogadores forçados na fixture, um volante com secundária ZAG e um meia sem secundária:
+Medidas para o E2E (T-081, implementadas em `tests/e2e/secondary-card.spec.ts`), com dois jogadores forçados na fixture, um volante com secundária ZAG e um meia sem secundária:
 
 1. A primeira célula do volante tem duas caixinhas. A segunda é `aria-hidden`, não tem classe `sector-*`, e tem borda e texto computados iguais a `line` e `ink-muted` nos dois temas. O meia e os goleiros têm uma caixinha só.
 2. O texto escondido da linha do volante é o de `squad.secondaryPosition.a11y`, com "Volante" e "zagueiro" em pt-BR.

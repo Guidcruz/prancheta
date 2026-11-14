@@ -6,6 +6,13 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- A posição secundária aparece no card, no Elenco e no banco (T-081, ADR-0022):
+  - Para quem joga: o card do jogador que "também joga de" outra posição ganha o bloco "Posição secundária" (sigla neutra e nome), com a ajuda "Outra posição em que ele joga bem. Ali rende um pouco menos que na natural."; sem número, para não ficar errado se o balanceamento mudar. Na lista do Elenco, uma segunda sigla neutra aparece embaixo da natural; goleiros e quem não tem secundária ficam como antes.
+  - Na linha do banco da Escalação entra a sigla secundária (medida 6, adiada da T-079). A ordem "Posição" do Elenco continua agrupando pela natural.
+  - Leitor de tela: a posição da linha lê "Volante, também joga de zagueiro" (`squad.secondaryPosition.a11y`); a sigla secundária é `aria-hidden`.
+  - Textos novos em pt-BR, es e en: `player.secondaryPosition`, `player.secondaryPosition.hint` e `squad.secondaryPosition.a11y`. Só a tela muda: nenhuma partida, nem o save, nem o `ENGINE_VERSION` mudam.
+  - E2E `secondary-card.spec.ts`: card, Elenco e banco, nos dois temas, nos três idiomas e sem rolagem lateral.
+  - Fecha a série da posição secundária (T-078, T-082, T-079 e T-081, com a T-080 de desenho).
 - Posição secundária no jogador e no save, formato v3 (T-078, ADR-0022):
   - O jogador ainda não vê a mudança, e nenhuma partida muda: o rendimento na secundária (95%) entra na T-079, e a marca na tela na T-079 e na T-081.
   - Motor: `Player.secondaryPosition` (`null` quando não tem; goleiro sempre `null`). Cerca de 1 em 3 jogadores de linha tem uma, sorteada entre as vizinhas da tabela de posições (`FIT` ≥ 0,85), com chances iguais, por `secondaryPositionFor`, no contrato. Cada jogador tem o próprio sorteio, pela semente da carreira e pelo id, então os sorteios do elenco não mudam: nomes, idades, atributos e forças são os mesmos de antes.
