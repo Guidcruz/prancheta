@@ -29,6 +29,7 @@ TabBar, "Jogar rodada" e o conteúdo de baixo. O menu "Mais" fica no topo de pro
 - **Erro inesperado numa aba:** a fronteira de erro troca só o conteúdo da aba pelo ErrorState em tela cheia da área de conteúdo; cabeçalho, abas e "Jogar rodada" continuam, para o jogador poder sair por outra aba.
 - **Rodada bloqueada** (escalação incompleta): o botão continua tocável, com a linha de motivo embaixo do rótulo; ao tocar, abre a folha de US-017 com "Completar automaticamente". Nunca some nem fica cinza sem explicação.
 - **Rodada anterior não salva** (gravação recusada, ver erros-e-avisos): o botão fica em `blocked` com o motivo "a última rodada não foi salva"; ao tocar, leva ao aviso com as saídas. Proposta, depende do CEO (ver o fim de erros-e-avisos).
+- **Rodada jogada (T-030):** só depois de a gravação terminar, o Resumo da rodada abre em tela cheia (`#/round`, sem abas nem botão); "Continuar" ou o voltar do celular voltam à tela de origem, com o foco no "Jogar rodada", que ignora toques por cerca de 500 ms. Ver [resumo-rodada.md](resumo-rodada.md#fluxo-da-rodada-modo-só-resultado).
 - **Avisos ativos:** aparecem na faixa abaixo do cabeçalho, nunca por cima das abas nem do botão.
 - **Vazio:** não existe; a moldura só aparece com carreira aberta.
 - **Offline:** nada muda.

@@ -1,39 +1,315 @@
 # Resumo da rodada
 
-**Histórias:** US-019, US-041 (e saída para US-030, US-037, US-025) · **Prioridade:** Must · **Ordem:** 9
+**Histórias:** US-019, US-032 (e, em tarefas seguintes, US-030, US-037, US-039, US-041, US-071) · **Prioridade:** Must · **Ordem:** 9 · **Tarefa:** T-030
 
 ## Objetivo
 
-Dizer em segundos como foi o jogo do clube e o que mudou na rodada.
+Dizer em segundos como foi o jogo do clube e o que mudou na rodada, com a rodada já salva.
 
-## Conteúdo (de cima para baixo)
+## O que o jogador faz
 
-1. Scoreboard do jogo do clube, com StatusBadge de resultado (V, E ou D com texto) e autores dos gols com minuto.
-2. BrandSlot (faixa de marca do cenário do resumo da rodada; decorativa, sem rótulo de publicidade e sem link).
-3. Mudança na tabela: posição atual e variação em texto e seta.
-4. Os outros 9 resultados (MatchCard `compact`), com autores dos gols ao tocar.
-5. "Continuar" (primário) fixo embaixo: segue para a Entrevista (quando sorteada), o lembrete de exportar e o Fim de temporada (na rodada 38), ou volta à aba de origem.
+Toca "Jogar rodada", lê o placar do seu jogo e os autores dos gols, vê a posição na tabela e os outros 9 resultados, e toca "Continuar". Se quiser, abre a súmula do seu jogo ou de qualquer outro jogo da rodada.
+
+## Fluxo da rodada (modo "só resultado")
+
+| Passo | O que acontece                                                                                                                                                                                                                                                                                                             |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | O jogador toca "Jogar rodada" em qualquer aba (ou "Completar e jogar" na folha "Escalação incompleta", [escalacao.md](escalacao.md#jogar-rodada-com-a-escalação-que-não-pode-ir)). Sem confirmação (decisão 2 para o CEO).                                                                                                 |
+| 2     | O botão passa a `busy` ("Calculando a rodada..." para o leitor de tela; o rótulo continua visível). Toques repetidos não fazem nada. A aba continua na tela; não há tela de carregamento na T-030 (a de marca é da T-040).                                                                                                 |
+| 3     | O `CareerService.playRound` joga e grava (snapshot + súmulas da rodada, uma transação; §4.2 da arquitetura).                                                                                                                                                                                                               |
+| 4     | **Só depois de a gravação terminar** (salva ou recusada), o Resumo abre em tela cheia, com entrada própria no histórico (`#/round`). Assim, quem vê o resumo com "Rodada salva" pode fechar o jogo sem perder nada. Se a gravação foi recusada, o resumo abre igual, com o aviso (ver "Estados").                          |
+| 5     | "Continuar" (ou o voltar do celular) fecha o resumo e volta à tela de onde o jogador tocou "Jogar rodada", já na rodada seguinte. O foco volta ao "Jogar rodada".                                                                                                                                                          |
+| 6     | **Janela de proteção:** o "Jogar rodada" ignora toques por cerca de 500 ms depois de o resumo fechar (a mesma janela das confirmações em passos, [design-system.md](../design-system.md#confirmação-em-passos-o-passo-final-aprovado-pelo-ceo-em-2026-11-07)). Um toque duplo em "Continuar" nunca joga a rodada seguinte. |
+
+Entre o passo 5 e o próximo "Jogar rodada", as tarefas seguintes encaixam a entrevista (T-035), o lembrete de exportar e o fim de temporada na rodada 38 (T-037). Na T-030, "Continuar" sempre volta à tela de origem.
+
+## Navegação
+
+- **Tela cheia:** sem TabBar, sem barra lateral e sem o "Jogar rodada" flutuante, nas três larguras (README, "Mapa de navegação"). Não há como jogar outra rodada daqui (nada de reprodução automática).
+- **Endereço:** `#/round`, empurrado no histórico quando o resumo abre. "Continuar" faz `history.back()` se a entrada do resumo estiver no topo; se não estiver (o jogador chegou pelo "avançar" do navegador), troca o endereço pelo da aba de origem com `replaceState`, ou pelo Clube se não houver origem.
+- **`#/round` sempre mostra a última rodada jogada** (`game.round − 1`). Sem rodada jogada na temporada (antes da rodada 1), o endereço vira `#/club` com `replaceState`. Um "avançar" do navegador até `#/round` depois de outra rodada mostra o resumo da rodada mais nova, nunca o de uma antiga (rodadas antigas ficam no Calendário, T-031).
+- **Súmula:** BottomSheet sobre o resumo, com entrada no histórico (`pushSheet`, como o card do jogador): o voltar do celular fecha a folha e fica no resumo. No desktop, o diálogo ancorado pela base da T-025, com 540px.
+- **Abrir a carreira** continua sempre no Clube (`#/club`), também quando o jogo fechou com o resumo na tela (decisão 3 para o CEO).
+- O resumo não tem links para Tabela nem Calendário: a única saída é "Continuar" (e o voltar). A tabela completa e o calendário são da T-031.
+
+## Conteúdo (de cima para baixo, no celular em pé)
+
+1. **Cabeçalho** (ScreenHeader só com o título, sem voltar e sem "Mais"): `round.title` ("Rodada 5"). O `h1` leva, escondida na tela e lida pelo leitor de tela, a frase do resultado (`round.result.a11y`: resultado em palavra e o placar).
+2. **Faixa de avisos** logo abaixo do cabeçalho, a mesma da moldura ([erros-e-avisos.md](erros-e-avisos.md)): na T-030, só o aviso da gravação recusada. Vazia, não ocupa espaço.
+3. **Meu jogo** (card em `surface-1`, sem título visível; `section` com o nome `round.mine.title` para o leitor de tela):
+   - linha de cima em `caption` `ink-muted`: mando e estádio (`round.mine.meta`, com `match.venue.home` ou `match.venue.away` e o nome do estádio do mandante);
+   - **Scoreboard** `size="lg"`: escudo `md` (48px) e nome curto de cada clube, mandante à esquerda, visitante à direita, o meu clube em `body-strong` e o outro em `body`; no meio, os gols em `placar-xl` com o separador `match.score.versus`. Números em `tabular-nums`;
+   - **StatusBadge** do resultado com a palavra inteira visível (`win`/`draw`/`loss` com `result.W`, `result.D` ou `result.L`; não o selo só de letra), centralizado embaixo do placar. O resultado é o do placar dado (`Fixture.result.score`), do lado do meu clube;
+   - **jogo encerrado** (só com `abandoned`): `match.abandoned` em `body`, com o ícone `info`, entre o selo e os gols;
+   - **gols** (GoalList): duas colunas, gols do mandante à esquerda e do visitante à direita, cada uma em ordem de minuto; cada gol é "23' Nome" com o minuto em `numero` e, quando houver, o tipo curto (`match.goal.penalty` ou `match.goal.freeKick`) em `caption`. Cada coluna é uma lista com o nome `round.goals.of` (o clube). Com 0 × 0, no lugar das colunas, `round.goals.none`. No jogo encerrado, a lista mostra os gols reais (`Fixture.result.goals`), que podem não bater com o placar dado; a nota do item anterior explica;
+   - **"Súmula do jogo"** (`round.sheet.open`, Button secundário, largura toda, sem ícone): abre a súmula do meu jogo.
+4. **Classificação** (SectionCard `club.table.title`, sem link):
+   - posição em `titulo` (`club.table.position`) e, na mesma linha ou embaixo se não couber, a variação: ícone `arrow-up` com `round.table.up.*`, `arrow-down` com `round.table.down.*`, ou só o texto `round.table.same`, sem ícone. A variação compara a tabela depois desta rodada com a de depois da anterior. **Na rodada 1 não há variação** (a tabela antes dela é toda zerada; [tabela.md](tabela.md), "Vazio"): só a posição;
+   - linha "6 pontos em 5 jogos" (`club.table.points.*` + `club.table.played.*`, como no Clube).
+   - A tabela "como ficou", com as setas e o meu clube destacado, entra aqui com a T-045 (US-071, D10), abaixo dessa linha.
+5. **Outros resultados** (SectionCard `round.others.title`): os 9 outros jogos da rodada, na ordem do calendário, cada um num MatchCard sem a linha de cima (`meta` vazio), mandante em cima e visitante embaixo com os gols, o selo "Clássico" (`match.derby`) quando o visitante está nos `rivals` do mandante, e a nota curta `match.abandoned.short` no jogo encerrado. Cada card é um botão (≥ 44px) que abre a súmula daquele jogo, com o nome acessível `round.others.open`. Os autores dos gols desses jogos estão na súmula (decisão 4 para o CEO).
+6. **Barra de ação** (ActionBar, fixa embaixo no celular): à esquerda, o estado da gravação, com ícone e texto (`check` + `round.saved`; `warning` + `round.unsaved`; enquanto o "Tentar de novo" do aviso grava, `round.saving`, sem ícone); à direita, **"Continuar"** (`round.continue`, Button primário, o único primário da tela).
+
+## Súmula (folha)
+
+Abre do "Súmula do jogo" (meu jogo) ou de um card de "Outros resultados". É a súmula de jogo já jogado da US-019: `Fixture.result` + `career.matchSheets[fixture.id]` (§4.1, "Relatório da rodada fora do estado"). A mesma folha serve ao Calendário na T-031, para qualquer rodada da temporada.
+
+1. **Título** da folha: `report.title`.
+2. **Linha de cima** em `caption`: `report.meta` (rodada e data, data por `Intl.DateTimeFormat` do idioma, como no Clube).
+3. **Scoreboard** `size="md"` (escudo `sm`, gols em `display-lg`), com o nome acessível `match.score.a11y`. Se o meu clube jogou, o StatusBadge do resultado embaixo, como no resumo.
+4. **Jogo encerrado** (`abandoned`): `match.abandoned`, como no resumo.
+5. **Lances** (MatchTimeline, título `report.events.title`): uma lista em ordem de partida com os eventos de súmula (`MATCH_SHEET_EVENTS`: gol, pênalti perdido, amarelo, vermelho, lesão, substituição). Cada linha: minuto (`match.minute` ou `match.minuteAdded`, em `numero`, coluna de largura fixa), ícone, **a palavra do tipo em `body-strong`** e o texto do lance em `body`, e embaixo o nome curto do clube em `caption` `ink-muted`.
+
+   | Evento          | Ícone    | Palavra                                                                           | Texto                                                                |
+   | --------------- | -------- | --------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+   | `goal`          | —        | `report.event.goal`                                                               | nome + tipo curto (pênalti, falta) + `report.event.assist` se houver |
+   | `penaltyMissed` | —        | `report.event.penaltyMissed`                                                      | nome de quem bateu                                                   |
+   | `yellow`        | `card`   | `report.event.yellow` (com `triggersSuspension`, `report.event.yellowSuspended`)  | nome                                                                 |
+   | `red`           | `card`   | `report.event.red` (com `reason: 'secondYellow'`, `report.event.redSecondYellow`) | nome                                                                 |
+   | `injury`        | `injury` | `report.event.injury`                                                             | nome                                                                 |
+   | `substitution`  | `swap`   | `report.event.sub`                                                                | `report.event.subDetail` (entra e sai)                               |
+
+   O ícone do cartão é pintado em `floodlight` (amarelo) ou `danger` (vermelho), mas a cor só reforça: a palavra do tipo está sempre escrita. Sem nenhum lance (0 × 0 sem cartão nem troca), `report.events.none`.
+
+6. **Súmula sem lances** (o `matchSheets` não tem a partida: rodada em `CareerState.missingSheetRounds` ou linha ausente): no lugar da lista de lances, um EmptyState curto com o ícone `info` (`report.missing.title`, `report.missing.body`). Os gols continuam, numa lista igual à de lances só com gols, lidos de `Fixture.result.goals` (minuto, autor, tipo, assistência). O resto da folha (melhor em campo sem a nota, estatísticas e público) continua, porque vem do `Fixture.result`.
+7. **Melhor em campo** (`report.motm.title`): ícone `star`, nome e `report.motm.rating` com a nota (uma casa, `Intl.NumberFormat` do idioma). Sem `motmRating` (súmula sem lances), só o nome. Sem `motm`, o bloco não aparece.
+8. **Estatísticas** (`report.stats.title`): uma `table` simples (não rola), três colunas: número do mandante, nome da estatística, número do visitante; cabeçalho com os nomes curtos dos clubes; `caption` escondida `report.stats.caption`. Linhas: finalizações, no gol, posse (com `report.stats.possessionValue`), amarelos, vermelhos. Números em `tabular-nums`; o maior não ganha cor (simples antes de bonito).
+9. **Local:** `report.place` com o nome do estádio do mandante e o público (`report.attendance`, número por `Intl.NumberFormat`).
+
+Sem pé fixo: a folha fecha pelo X, pelo voltar e pelo fundo.
 
 ## Ao alcance do polegar
 
-"Continuar" fixo embaixo; nada mais exige toque.
+"Continuar" fica fixo embaixo, à direita da barra, sempre visível. Os cards de "Outros resultados" ficam na metade de baixo depois de rolar. O placar e a classificação ficam em cima, só para leitura. "Súmula do jogo" fica logo abaixo dos gols, no meio da tela: é usado pouco.
 
 ## Estados
 
-- **Carregando:** tela de carregamento curta com BrandSlot, se o cálculo da rodada demorar; "Jogar rodada" fica em `busy` antes disso, sem toque duplo.
-- **Erro:** a rodada não aplicada mostra ErrorState com "Tentar de novo"; a carreira fica na rodada anterior (US-019, nunca estado intermediário).
-- **Vazio:** não se aplica.
-- **Offline:** nada muda.
-- **Nova versão:** o aviso só aparece aqui, depois do salvamento (US-039).
+| Estado                                                                                 | O que aparece                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| -------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Calculando** (carregando)                                                            | Na aba de origem: "Jogar rodada" em `busy`, com `play.busy` para o leitor de tela; nada mais muda. Sem Skeleton e sem tela de carregamento na T-030 (a meta da rodada inteira é 500 ms com 4× de lentidão de CPU, §5 da arquitetura). Se a medição do E2E passar disso, volta ao `architect`, não vira tela de espera.                                                                                                                                                                                           |
+| **Salva**                                                                              | O resumo como descrito, com `check` + `round.saved` na barra.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| **Gravação recusada** (`quota-exceeded`, `verify-failed`, `write-failed`, `too-large`) | O resumo abre igual (a rodada está na memória), com o Banner `danger` do código na faixa de avisos ([erros-e-avisos.md](erros-e-avisos.md), "Erros do save"), com as ações dele ("Tentar de novo" primário do aviso, "Liberar espaço", "Exportar carreira"). A barra mostra `warning` + `round.unsaved`; durante o "Tentar de novo", `round.saving`; salvo, `round.saved` e o aviso some. "Continuar" funciona: a moldura mantém o aviso e o "Jogar rodada" em `blocked` com `play.blocked.unsaved` (já existe). |
+| **Erro de outra aba ao gravar** (`conflict`, `app-outdated`, `save-too-new`)           | O resumo não abre: o ErrorState `screen` do código, com a linha extra de rodada não salva (`bodyUnsaved`), como já faz o `FatalScreen`.                                                                                                                                                                                                                                                                                                                                                                          |
+| **Erro ao jogar** (o motor ou a camada de carreira lança; `crash`)                     | O resumo não abre e a rodada não foi aplicada (a carreira volta à rodada anterior). A área de conteúdo da aba mostra o ErrorState `area` do erro inesperado, como hoje; "Tentar de novo" limpa o erro, e o jogador toca "Jogar rodada" de novo. Qualquer outra recusa do `playRound` (fora `busy`) é tratada igual, com o código na linha `error.code`: nunca some calada.                                                                                                                                       |
+| **Erro ao desenhar o resumo** (fronteira de erro)                                      | ErrorState `screen` (tela cheia, sem abas): `error.unexpected.title`, `round.error.body` (a rodada já foi jogada; só o resumo não abriu), "Tentar de novo" (primário, remonta o resumo) e `round.error.leave` (secundário, vai à aba de origem como "Continuar"). Registra em `lib/errors` como as outras fronteiras.                                                                                                                                                                                            |
+| **Rodada já jogada**                                                                   | Toque duplo em "Jogar rodada": o segundo não faz nada (`busy`). Voltar ao resumo pelo "avançar" do navegador: mostra a última rodada jogada (ver "Navegação"). Duas abas jogando a mesma rodada: a segunda recebe `conflict` ao gravar (linha acima).                                                                                                                                                                                                                                                            |
+| **Primeira rodada**                                                                    | Classificação sem variação (só a posição e a linha de pontos).                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
+| **Última rodada (38)**                                                                 | O resumo é igual. "Continuar" volta à aba de origem; o Clube já mostra `career.seasonOver` e o "Jogar rodada" fica em `blocked` com `play.blocked.seasonOver` (já existe). O lembrete de exportar e o Fim de temporada entram depois do resumo com a T-037.                                                                                                                                                                                                                                                      |
+| **0 × 0**                                                                              | `round.goals.none` no lugar dos gols.                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Jogo encerrado** (`abandoned`)                                                       | Placar dado no Scoreboard e no card; `match.abandoned` no meu jogo e na súmula; `match.abandoned.short` no card de outro jogo. O clube citado é o que perdeu pelo placar dado (quem fica com menos de 7 sempre perde; `partida.md`, "Jogo encerrado").                                                                                                                                                                                                                                                           |
+| **Súmula sem lances**                                                                  | Ver "Súmula", item 6. Não há aviso global (erros-e-avisos.md, "Rodadas perdidas").                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Realismo simplificado**                                                              | Igual. Cartões e lesões aparecem na súmula porque valem dentro do jogo; `report.event.yellowSuspended` não aparece (ninguém fica suspenso de uma rodada para a outra).                                                                                                                                                                                                                                                                                                                                           |
+| **Vazio**                                                                              | Não existe: o resumo só abre com uma rodada jogada.                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Offline**                                                                            | Nada muda.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       |
+| **Nova versão**                                                                        | Com a T-039, o aviso aparece na faixa do resumo, depois da gravação (US-039); na T-030, nada.                                                                                                                                                                                                                                                                                                                                                                                                                    |
 
-## Componentes
+## Fechar o jogo no meio (US-019, cenário 4; US-032)
 
-Scoreboard, StatusBadge, BrandSlot, MatchCard, Button, Skeleton, ErrorState.
+A gravação é uma transação só (snapshot, súmulas e ponteiro), então não existe meio-termo. A tela só precisa não prometer o que não aconteceu:
+
+| Quando fecha                                               | Ao reabrir                                                                                                                                                                                                                    |
+| ---------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Depois de tocar e antes de a transação terminar            | A carreira está na rodada anterior, sem nada aplicado: Clube com "próxima rodada: N", a mesma escalação gravada antes do toque, "Jogar rodada" pronto. Jogar de novo dá o mesmo placar (motor determinístico, mesma semente). |
+| Depois de a transação terminar, antes de o resumo aparecer | A carreira está na rodada seguinte, com tudo aplicado. Abre no Clube, sem repetir o resumo (decisão 3 para o CEO).                                                                                                            |
+| Com o resumo na tela                                       | Igual à linha acima. Se a barra dizia "Rodada não salva", a rodada se perdeu (estava só na memória) e a carreira reabre na anterior; o aviso já dizia isso.                                                                   |
+
+O resumo só aparece depois da gravação justamente para que "Rodada salva" na barra seja verdade.
+
+## Celular em pé (360px), deitado e desktop
+
+- **360px:** coluna única, margem `space-4`. O Scoreboard divide a largura em três (lado, placar, lado); os nomes quebram em até 2 linhas, centralizados sob o escudo, e nunca cortam (o nome curto mais longo, "Inter-Regional", quebra no hífen). Os gols em duas colunas de cerca de 140px. Os cards de "Outros resultados" um embaixo do outro. A barra de ação fixa, com o estado à esquerda (até 2 linhas) e "Continuar" à direita.
+- **Deitado (844×390):** largura de celular (abaixo de 900px), então a barra continua fixa embaixo. Com a altura abaixo de `breakpoint-short` (480px), o Scoreboard `lg` fica com o tamanho do `md` (escudo de 32px e gols em `display-lg`) e a linha de cima do placar pode quebrar; o resto só rola. "Outros resultados" em duas colunas (a lista passa de 480px; consulta de contêiner, o `breakpoint-card`).
+- **Desktop (a partir de 900px):** tela cheia sem barra lateral, coluna centralizada com `layout-content-max`; a barra de ação presa ao pé da coluna (comportamento que o ActionBar já tem). "Outros resultados" em duas colunas. A súmula abre como diálogo ancorado pela base, 540px.
+
+## Movimento
+
+Nenhum. O placar aparece pronto, sem número que corre, sem confete, sem seta que sobe. A folha da súmula segue o BottomSheet (sem animação de subida com `prefers-reduced-motion`). O único movimento do fluxo é o do botão em `busy`, que já para com movimento reduzido (o texto continua). A animação da tabela (setas) é da T-045, e a da partida, da T-032.
 
 ## Acessibilidade
 
-O resultado é anunciado em texto ("vitória", "empate", "derrota" do conteúdo) ao abrir; nunca só pela cor do placar; sem confete nem animação de número com reduced motion.
+- **Resultado anunciado ao abrir:** o foco vai para o `h1` (`tabindex="-1"`), cujo nome é "Rodada 5" seguido da frase escondida `round.result.a11y` ("Vitória. Leões 2, Tubarões 1."). Como a frase já diz tudo, o bloco do placar e do selo do meu jogo fica `aria-hidden`; a lista de gols e a nota de jogo encerrado continuam lidas.
+- **Nunca só por cor:** resultado em palavra (selo com texto e frase do `h1`); variação da posição em texto, com a seta só de reforço; tipo de cada lance em palavra; meu clube em negrito e citado pela frase.
+- **Minutos:** o "23'" visível é `aria-hidden`, e o leitor de tela lê `match.minute.a11y` ("23 minutos"); o tipo curto ("pên.") idem, com `match.goal.penalty.a11y`.
+- **Estrutura:** `h1` do resumo; "Meu jogo", "Classificação" e "Outros resultados" são `section` com `h2` (os dois últimos visíveis, o primeiro só para o leitor de tela). Na súmula, o título da folha é o nome do diálogo, e Lances, Melhor em campo e Estatísticas são `h3`.
+- **Alvos ≥ 44px:** cada card de "Outros resultados", "Súmula do jogo", "Continuar", o X da folha e as ações do Banner.
+- **Foco ao fechar:** "Continuar" devolve o foco ao "Jogar rodada"; fechar a súmula devolve ao botão ou card que a abriu.
+- **Contraste:** só pares conferidos pelo `npm run tokens` (`ink` e `ink-muted` sobre `surface-0/1/2`, `on-grass` sobre `grass`, `ink` sobre `danger-soft`). O ícone do cartão em `floodlight` não é texto e não carrega a informação sozinho.
+- **Números** (placar, minutos, pontos, estatísticas, público) em `tabular-nums`.
+
+## Componentes
+
+**Reaproveitados:** ScreenHeader (só título), Banner (faixa de avisos), ActionBar, Button, StatusBadge (`win`, `draw`, `loss`, `derby`), SectionCard, MatchCard, Crest, Icon (`check`, `warning`, `info`, `arrow-up`, `arrow-down`, `star`, `card`, `injury`, `swap`), BottomSheet, EmptyState, ErrorState, ErrorBoundary (layout `screen`).
+
+**Novos** (casca em `app/src/ui/components/`; props em [componentes.md](componentes.md#casca-da-t-030-resumo-da-rodada-e-súmula)): Scoreboard (o Placar do PROJETO, na parte que a T-030 usa), GoalList, MatchTimeline, MatchStatsTable.
+
+**Mudanças:** MatchCard ganha o modo botão (`onclick` sem `href`), `meta` opcional e `note?` (texto curto no pé). Nenhum ícone novo, nenhum token novo, nenhum tipo novo de selo.
+
+## O que a tela lê (para o `developer`)
+
+| Dado                   | De onde                                                                                                                            |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| Rodada do resumo       | `game.round − 1` (depois da rodada 38, `game.round` é 39)                                                                          |
+| Meu jogo e os outros 9 | `game.fixtures` da rodada, na ordem do calendário; `Fixture.result` (`score`, `goals`, `abandoned`, `stats`, `motm`, `attendance`) |
+| Nomes                  | `game.players[id].name.display`; clube pelo nome curto, como no MatchCard do Clube; estádio por `clubs[homeId].def.stadium.name`   |
+| Clássico               | `clubs[homeId].def.rivals` contém `awayId`                                                                                         |
+| Posição e variação     | `getStandings(game, r)` e `getStandings(game, r − 1)` (contrato do motor), linha do meu clube; na rodada 1, só a primeira          |
+| Súmula                 | `Fixture.result` + `career.matchSheets[fixture.id]`; ausente = súmula sem lances (o `missingSheetRounds` só explica por quê)       |
+| Estado da gravação     | `CareerState.unsaved` e `busy`                                                                                                     |
+
+O resumo não lê o `career.lastRound` nem o `RoundReport` em memória: tudo o que mostra está no estado gravado, então o resumo de antes e o de depois de recarregar são iguais. O `lastRound` (fatos e marcadores) continua sendo gravado pelo `CareerService` para as notícias (T-034).
+
+## Fronteira com as outras tarefas
+
+| Tarefa | O que é dela, não da T-030                                                                                                                                                                                                                |
+| ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-031  | Abas Tabela e Calendário de verdade; a subtela "Rodada" do Calendário (os 10 resultados, reaproveitando "Outros resultados" e a súmula desta tarefa, sem "Continuar"); a súmula de rodadas antigas, inclusive o E2E da súmula sem lances. |
+| T-032  | Partida animada e "só lances principais", que terminam neste mesmo resumo; o seletor de tipo de partida no "Jogar rodada" (US-019, cenário 2; decisão 5 para o CEO); o minuto e o placar ao vivo no Scoreboard.                           |
+| T-034  | Notícias da rodada a partir dos fatos (`lastRound.facts`).                                                                                                                                                                                |
+| T-035  | Entrevista pós-jogo, em folha sobre o resumo, depois de "Continuar".                                                                                                                                                                      |
+| T-037  | Rodada 38: lembrete de exportar e Fim de temporada depois de "Continuar".                                                                                                                                                                 |
+| T-039  | Aviso de nova versão na faixa do resumo.                                                                                                                                                                                                  |
+| T-040  | BrandSlot `round-summary` abaixo do placar e tela de carregamento com marca, se a espera existir. Na T-030 não há espaço reservado vazio.                                                                                                 |
+| T-045  | Tabela "como ficou" no bloco Classificação (US-071, D10).                                                                                                                                                                                 |
+
+## Textos (chaves)
+
+Para o `content-writer`; os textos vão ao CEO no próximo lote. Todas em `app/src/content/<idioma>/ui.json`. As larguras são a 360px, medidas na fonte de cada lugar, não em letras. Onde há ícone ao lado, a regra é a de [escalacao.md](escalacao.md#textos) adaptada: o ícone (20px) e o espaço (8px) contam na largura, e o E2E confere o texto mais longo dos três idiomas.
+
+### Já existem e são reaproveitadas
+
+| Chave                                                                                               | Onde                                                                |
+| --------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------- |
+| `play.label`, `play.busy`, `play.blocked.lineup`, `play.blocked.unsaved`, `play.blocked.seasonOver` | "Jogar rodada", fora do resumo                                      |
+| `result.W`, `result.D`, `result.L`                                                                  | selo do resultado (palavra inteira) e início de `round.result.a11y` |
+| `match.venue.home`, `match.venue.away`                                                              | dentro de `round.mine.meta`                                         |
+| `match.derby`                                                                                       | selo nos cards de "Outros resultados"                               |
+| `club.table.title`                                                                                  | título do bloco Classificação                                       |
+| `club.table.position`, `club.table.points.one/.other`, `club.table.played.one/.other`               | posição e linha de pontos                                           |
+| `nav.close`                                                                                         | X da súmula                                                         |
+| `action.retry`, `error.unexpected.title`, `error.code`                                              | erros do resumo                                                     |
+| `save.<código>.*` (`errors.json`) e `action.*`                                                      | Banner da gravação recusada na faixa do resumo                      |
+
+### Novas: resumo
+
+| Chave                    | Onde aparece                                           | Limite a 360px                                                                             | Placeholders                                                              |
+| ------------------------ | ------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------- |
+| `round.title`            | `h1` do resumo                                         | 1 linha em `titulo` (28px), até ~240px com rodada de 2 dígitos                             | `{round}`                                                                 |
+| `round.result.a11y`      | frase escondida no fim do `h1` (leitor de tela)        | sem limite visual; uma frase curta                                                         | `{result}` (`result.*`), `{home}`, `{homeGoals}`, `{away}`, `{awayGoals}` |
+| `round.mine.title`       | nome do `section` do meu jogo (só leitor de tela)      | —                                                                                          | —                                                                         |
+| `round.mine.meta`        | linha de cima do placar, em `caption`                  | até 2 linhas em ~296px                                                                     | `{venue}` (`match.venue.*`), `{stadium}`                                  |
+| `round.goals.of`         | nome de cada coluna de gols (só leitor de tela)        | —; evitar artigo que concorde com o nome do clube (nome sem gênero conhecido)              | `{club}`                                                                  |
+| `round.goals.none`       | no lugar dos gols, no 0 × 0                            | 1 linha em `body`, ~296px                                                                  | —                                                                         |
+| `round.sheet.open`       | botão secundário "Súmula do jogo"                      | 1 linha em `botao` (20px, caixa alta) em ~296px; pode quebrar em 2                         | —                                                                         |
+| `round.table.up.one`     | variação da posição, ao lado do ícone `arrow-up`       | 1 linha em `body`, até ~260px (ícone incluído na conta)                                    | `{count}`                                                                 |
+| `round.table.up.other`   | idem                                                   | idem                                                                                       | `{count}`                                                                 |
+| `round.table.down.one`   | variação, ao lado do ícone `arrow-down`                | idem                                                                                       | `{count}`                                                                 |
+| `round.table.down.other` | idem                                                   | idem                                                                                       | `{count}`                                                                 |
+| `round.table.same`       | variação sem mudança (sem ícone)                       | 1 linha em `body`, até ~260px                                                              | —                                                                         |
+| `round.others.title`     | título do bloco                                        | 1 linha em `subtitulo`, ~280px                                                             | —                                                                         |
+| `round.others.open`      | nome acessível de cada card de outro jogo              | —; tem de conter o texto visível do card na mesma ordem (WCAG 2.5.3)                       | `{home}`, `{homeGoals}`, `{away}`, `{awayGoals}`                          |
+| `round.continue`         | botão primário da barra                                | 1 linha em `botao`, até ~130px (para o estado da barra ficar com ~140px)                   | —                                                                         |
+| `round.saved`            | estado da barra, ao lado do ícone `check`              | até 2 linhas em `body` em ~140px, ícone fora da conta (fica à esquerda, em coluna própria) | —                                                                         |
+| `round.unsaved`          | estado da barra, ao lado do ícone `warning`            | idem                                                                                       | —                                                                         |
+| `round.saving`           | estado da barra durante o "Tentar de novo" (sem ícone) | até 2 linhas em `body` em ~168px                                                           | —                                                                         |
+| `round.error.body`       | mensagem do ErrorState `screen` do resumo              | quebra livre (`layout-message-max`)                                                        | —                                                                         |
+| `round.error.leave`      | botão secundário do ErrorState do resumo               | 1 linha em `botao`, quebra em 2 se precisar                                                | —                                                                         |
+
+### Novas: partida (resumo e súmula)
+
+| Chave                      | Onde aparece                                                                                       | Limite a 360px                        | Placeholders                                     |
+| -------------------------- | -------------------------------------------------------------------------------------------------- | ------------------------------------- | ------------------------------------------------ |
+| `match.score.versus`       | separador entre os gols no Scoreboard (`aria-hidden`)                                              | 1 caractere ou sinal, em `placar-xl`  | —                                                |
+| `match.score.a11y`         | nome acessível do Scoreboard na súmula                                                             | —                                     | `{home}`, `{homeGoals}`, `{away}`, `{awayGoals}` |
+| `match.minute`             | minuto visível nos gols e nos lances                                                               | cabe em ~40px em `numero` com "90"    | `{minute}`                                       |
+| `match.minuteAdded`        | minuto de acréscimo visível                                                                        | cabe em ~40px em `numero` com "90+10" | `{minute}`, `{added}`                            |
+| `match.minute.a11y`        | minuto para o leitor de tela                                                                       | —                                     | `{minute}`                                       |
+| `match.minuteAdded.a11y`   | minuto de acréscimo para o leitor de tela                                                          | —                                     | `{minute}`, `{added}`                            |
+| `match.goal.penalty`       | tipo curto do gol de pênalti, depois do nome                                                       | até ~40px em `caption`                | —                                                |
+| `match.goal.penalty.a11y`  | o mesmo, por extenso, para o leitor de tela                                                        | —                                     | —                                                |
+| `match.goal.freeKick`      | tipo curto do gol de falta                                                                         | até ~40px em `caption`                | —                                                |
+| `match.goal.freeKick.a11y` | o mesmo, por extenso                                                                               | —                                     | —                                                |
+| `match.abandoned`          | nota do jogo encerrado (meu jogo e súmula), ao lado do ícone `info`                                | até 3 linhas em `body` em ~268px      | `{club}` (quem ficou com menos de 7)             |
+| `match.abandoned.short`    | nota no pé do card de outro jogo                                                                   | 1 linha em `caption`, ~120px          | —                                                |
+| `match.player.unknown`     | nome de jogador que não está mais no estado (não deve acontecer na temporada; só para não quebrar) | como um nome curto                    | —                                                |
+
+### Novas: súmula
+
+| Chave                          | Onde aparece                                               | Limite a 360px                                                                                                             | Placeholders                |
+| ------------------------------ | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | --------------------------- |
+| `report.title`                 | título da folha                                            | 1 linha em `subtitulo` (20px), até ~260px (o X ocupa o resto)                                                              | —                           |
+| `report.meta`                  | linha de cima da folha, em `caption`                       | 1 linha, ~296px (pode copiar o texto de `club.next.meta`)                                                                  | `{round}`, `{date}`         |
+| `report.events.title`          | título da lista de lances (`h3`)                           | 1 linha em `subtitulo`                                                                                                     | —                           |
+| `report.events.none`           | lista de lances vazia                                      | 1 linha em `body`                                                                                                          | —                           |
+| `report.event.goal`            | palavra do tipo do lance, em `body-strong`                 | **até ~110px** em `body-strong`, para o nome caber na mesma linha (coluna de texto de ~244px, depois do minuto e do ícone) | —                           |
+| `report.event.assist`          | depois do nome do autor do gol                             | quebra livre na coluna de ~244px                                                                                           | `{name}`                    |
+| `report.event.penaltyMissed`   | palavra do tipo                                            | até ~110px em `body-strong`                                                                                                | —                           |
+| `report.event.yellow`          | palavra do tipo, ao lado do ícone `card`                   | até ~110px em `body-strong` (o ícone tem coluna própria)                                                                   | —                           |
+| `report.event.yellowSuspended` | palavra do tipo do amarelo que suspende (só no Completo)   | até 2 linhas de ~110px em `body-strong`                                                                                    | —                           |
+| `report.event.red`             | palavra do tipo, ao lado do ícone `card`                   | até ~110px em `body-strong`                                                                                                | —                           |
+| `report.event.redSecondYellow` | palavra do tipo do vermelho por segundo amarelo            | até 2 linhas de ~110px em `body-strong`                                                                                    | —                           |
+| `report.event.injury`          | palavra do tipo, ao lado do ícone `injury`                 | até ~110px em `body-strong`                                                                                                | —                           |
+| `report.event.sub`             | palavra do tipo, ao lado do ícone `swap`                   | até ~110px em `body-strong`                                                                                                | —                           |
+| `report.event.subDetail`       | texto da substituição                                      | quebra livre na coluna de ~244px                                                                                           | `{in}`, `{out}`             |
+| `report.missing.title`         | título do EmptyState da súmula sem lances                  | quebra livre, `subtitulo`                                                                                                  | —                           |
+| `report.missing.body`          | mensagem do EmptyState: o que falta e o que continua certo | quebra livre, `body`                                                                                                       | —                           |
+| `report.motm.title`            | título do bloco (`h3`)                                     | 1 linha em `subtitulo`                                                                                                     | —                           |
+| `report.motm.rating`           | depois do nome do melhor em campo                          | 1 linha em `body`                                                                                                          | `{rating}` (já formatado)   |
+| `report.stats.title`           | título do bloco (`h3`)                                     | 1 linha em `subtitulo`                                                                                                     | —                           |
+| `report.stats.caption`         | `caption` da tabela (só leitor de tela)                    | —                                                                                                                          | `{home}`, `{away}`          |
+| `report.stats.shots`           | linha da tabela                                            | 1 linha em `body`, até ~200px (coluna do meio)                                                                             | —                           |
+| `report.stats.onTarget`        | linha da tabela                                            | idem                                                                                                                       | —                           |
+| `report.stats.possession`      | linha da tabela                                            | idem                                                                                                                       | —                           |
+| `report.stats.possessionValue` | número da posse nas colunas de número                      | até ~48px em `numero` com "100"                                                                                            | `{value}`                   |
+| `report.stats.yellows`         | linha da tabela                                            | idem a `shots`                                                                                                             | —                           |
+| `report.stats.reds`            | linha da tabela                                            | idem                                                                                                                       | —                           |
+| `report.attendance`            | público, dentro de `report.place`                          | —                                                                                                                          | `{count}` (já formatado)    |
+| `report.place`                 | linha do estádio e do público, em `caption`                | até 2 linhas em ~296px                                                                                                     | `{stadium}`, `{attendance}` |
+
+Plural: `round.table.up.*` e `round.table.down.*` pelo `tPlural` que já existe. Nomes de clube, de estádio e de jogador nunca se traduzem.
+
+## Medidas para o E2E
+
+Com `PRANCHETA_ENV=test`, numa carreira de teste com fixture conhecida (Completo, "só resultado", rodada 1), e outra no Simplificado. Larguras 360×740, 390×844, 844×390 (deitado) e 1280×800; temas `noite` e `dia`.
+
+1. **Rodada em um toque (US-019, cenário 1):** tocar "Jogar rodada" abre o resumo com o `h1` "Rodada 1". O placar do Scoreboard é o `Fixture.result.score` do jogo do meu clube no save; a lista de gols tem `result.goals.length` itens, cada um com o minuto e o `name.display` do autor; "Outros resultados" tem 9 cards, com os placares iguais aos do save e na ordem do calendário; o save tem `game.round` 2 e as 10 súmulas da rodada 1 em `career.matchSheets`.
+2. **Resultado com texto (cenário 3):** o selo do meu jogo tem como texto visível uma das três palavras de `result.*`, coerente com o placar do lado do meu clube, e o nome acessível do `h1` contém a mesma palavra.
+3. **Tela cheia:** com o resumo aberto, não há navegação com o nome `nav.label` visível nem botão "Jogar rodada"; a única ação primária é "Continuar".
+4. **Ordem e alvos:** no DOM, meu jogo antes de Classificação e Classificação antes de Outros resultados; cada card de outro jogo, "Súmula do jogo" e "Continuar" medem pelo menos 44 × 44px.
+5. **Continuar volta à origem:** jogando a partir de `#/squad`, "Continuar" leva a `#/squad`, e o Clube mostra "próxima rodada: 2"; `page.goBack()` no resumo dá o mesmo resultado; depois de fechar, o foco está no "Jogar rodada".
+6. **Classificação:** a posição é a do `getStandings` do save para o meu clube; na rodada 1 não há ícone de seta nem texto de variação; numa rodada seguinte, o texto confere com a comparação entre `getStandings(game, r − 1)` e `getStandings(game, r)` (o teste importa o motor por `index.ts`).
+7. **Súmula (US-019, súmula de jogo já jogado):** "Súmula do jogo" abre o diálogo com o nome `report.title`; a lista de lances tem o mesmo número de itens de `matchSheets[id].events`, na mesma ordem, cada um com a palavra do tipo visível; o melhor em campo mostra o nome do `motm` e a nota de `motmRating` com uma casa; os números da tabela de estatísticas são os de `result.stats`; o voltar do celular fecha a folha e continua no resumo. O mesmo vale ao abrir pelo card de outro jogo.
+8. **Salvamento automático (US-032):** com o resumo aberto, o registro de cabeça (`readHeadRecord`) está na rodada 2 e a barra mostra o texto de `round.saved`; depois de 4 rodadas, a carreira tem no máximo 3 snapshots.
+9. **Gravação recusada:** com um `addInitScript` que faz o `put` no store `snapshots` falhar com `QuotaExceededError` só depois de ligado (para a carreira poder ser criada), o resumo abre com o Banner de `save.quota-exceeded` e a barra com `round.unsaved`; "Continuar" volta à aba, e o "Jogar rodada" mostra `play.blocked.unsaved`.
+10. **Fechar no meio (US-019, cenário 4):** dois casos determinísticos. (a) Antes da gravação: um `addInitScript` deixa o `CompressionStream` pendurado depois de ligado; tocar "Jogar rodada", fechar a página e reabrir a carreira numa página nova do mesmo contexto: `game.round` 1, nenhuma partida da rodada 1 com `result`, nenhuma súmula da rodada 1, Clube com "próxima rodada: 1"; jogar de novo dá o mesmo placar do caso (b). (b) Depois da gravação: esperar o registro de cabeça na rodada 2 e fechar antes de "Continuar": reabre no Clube (`#/club`), sem resumo, na rodada 2, com as 10 partidas da rodada 1 com `result` e as 10 súmulas. Os dois casos conferem que nunca há estado intermediário (rodada avançada sem resultados, ou resultados sem rodada avançada).
+11. **Desempenho (§5 da arquitetura):** no Chromium com 4× de lentidão de CPU, do toque em "Jogar rodada" até o `h1` do resumo visível, p90 de 10 rodadas ≤ 500 ms. Se passar, volta ao `architect`.
+12. **Sem rolagem lateral** da página em 360, 390, 844 e 1280, com o resumo e com a súmula aberta, em pt-BR, es e en.
+13. **Textos cabem:** a 360×740, em es e en: o `h1` em 1 linha; "Continuar" em 1 linha; o estado da barra em até 2 linhas; nenhum nome de clube cortado no Scoreboard e nos cards (`scrollWidth <= clientWidth`), com o meu clube trocado para o de nome curto mais longo ("Inter-Regional").
+14. **Deitado (844×390):** "Continuar" inteiro dentro da janela; o Scoreboard com no máximo ~100px de altura.
+15. **Desktop (1280×800):** sem barra lateral; a coluna do resumo não passa de `layout-content-max`; "Outros resultados" em duas colunas (dois valores de `x` nos cards); a súmula como diálogo ancorado pela base.
+16. **Movimento:** com `reducedMotion: 'reduce'`, `document.getAnimations().length === 0` com o resumo aberto e com a súmula aberta.
+17. **Simplificado:** nenhuma linha de súmula com o texto de `report.event.yellowSuspended`.
+
+**No Vitest (não no E2E), pedidos ao `developer`:**
+
+- a janela de proteção: com relógio falso, um toque em "Jogar rodada" 200 ms depois de "Continuar" não joga; 600 ms depois, joga;
+- a súmula sem lances: com `matchSheets` sem a partida, a folha mostra o EmptyState, os gols de `Fixture.result.goals` e as estatísticas (o E2E com uma rodada antiga sem súmula fica para a T-031, que é quem chega a rodadas antigas);
+- o `CareerService` manda `coaches[clubId]` com o `matchMode` do save em `prepareRound` e em `playRound` (pedido da arquitetura, §4.1, "Decisão do `architect` sobre `coaches`");
+- a variação de posição (subiu, caiu, manteve, rodada 1 sem variação), o minuto com acréscimo e a lista de gols por lado, em funções puras de `app/src/ui/`;
+- qualquer recusa do `playRound` fora `busy` deixa o erro na área de conteúdo (nunca some calada).
+
+**E2E existentes que mudam:** `playUntil` e os testes que jogam uma rodada e esperam a "próxima rodada" no Clube (`careers.spec.ts`, `club-squad.spec.ts`, `migrated-save.spec.ts`, `tactic-round.spec.ts`) passam a esperar o resumo e tocar "Continuar". O `saveSettled` continua valendo, mas o resumo só abre com a gravação terminada.
 
 ## Marcas do cenário
 
-Faixa abaixo do placar; tela de carregamento, se existir. Marcas fictícias de `brandForSlot`.
+Na T-030, nenhuma. Com a T-040: faixa `round-summary` abaixo do placar (BrandSlot, decorativa, `aria-hidden`, sem rótulo de publicidade e sem link) e a tela de carregamento `loading`, se a espera existir. Marcas fictícias de `brandForSlot` (README, "Marcas fictícias no cenário").
+
+## Decisões para o CEO (T-030)
+
+Pendentes. A recomendação vem primeiro.
+
+1. **Ordem do resumo: meu jogo, depois classificação, depois os outros 9.** Recomendo assim: é o que a US-019 pede primeiro ("ver logo o placar e a tabela"). A alternativa, classificação no topo, esconde o placar, que é o que o jogador quer ver.
+2. **"Jogar rodada" sem confirmação.** Recomendo **sem**, com a janela de proteção de 500 ms depois de fechar o resumo: a US-019 é "rodada em um toque", a escalação incompleta já tem a folha própria, e a rodada sempre fica salva. Confirmar toda rodada é um toque a mais 38 vezes por temporada.
+3. **Reabrir depois de a rodada ter sido salva, sem ter visto o resumo: abre no Clube, sem repetir o resumo.** Recomendo **no Clube**: é a regra de toda abertura de carreira, o Clube já mostra o resultado em "Últimos jogos" e na Classificação, e o Calendário (T-031) dá acesso à rodada inteira. A alternativa (reabrir no resumo) pede guardar no aparelho que o resumo não foi visto.
+4. **Outros resultados: tocar abre a súmula** (com autores, cartões, trocas e números), em vez de abrir os autores dentro do próprio card, como dizia o rascunho do kickoff. Recomendo **a súmula**: é a mesma folha que a US-019 já pede para qualquer jogo, e um card que se expande seria um segundo jeito de ver a mesma coisa.
+5. **Seletor de tipo de partida no "Jogar rodada"** (US-019, cenário 2): **fica para a T-032**. Hoje o Novo jogo só oferece "Só resultado" (decisão 3 do [novo-jogo.md](novo-jogo.md)); um seletor com uma opção só promete o que não existe (P3).
+6. **"Rodada salva" visível na barra do resumo.** Recomendo **sim**: é a confirmação discreta do salvamento automático (US-032), e é o mesmo lugar onde o jogador vê "Rodada não salva" quando a gravação falha.
