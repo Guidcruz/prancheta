@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, tick } from 'svelte';
   import { sheetProblems, type DraftSheet } from '@engine';
   import type { Lang } from '@lib/config';
   import {
@@ -7,6 +7,7 @@
     seasonOver,
     type CareerService,
     type CareerState,
+    type PlayError,
     type RoundBlock,
   } from '@lib/career';
   import type { ErrorLog } from '@lib/errors';
@@ -44,6 +45,9 @@
   } from './router';
   import { alertKey, draftActions, hasAlertText, unsavedActions } from './save-alerts';
   import { pushSheet, sheetOnTop } from './sheet-history';
+  import { summaryRound } from './round';
+  import { RoundFlow, isRoundHash, playOutcome } from './round-flow';
+  import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
   import ClubView from './screens/ClubView.svelte';
   import Placeholder from './screens/Placeholder.svelte';
   import Saves from './screens/Saves.svelte';
@@ -61,6 +65,11 @@
    * tab: the draft of the save (or the edit held while a round is played, `draft-writer.ts`), or
    * the engine's suggestion while the coach never touched it. A sheet that cannot go to the round
    * keeps the button tappable with its reason, and the tap opens "Escalação incompleta".
+   *
+   * "Jogar rodada" plays and stores the round, and only then the round summary (T-030;
+   * resumo-rodada.md) takes the whole screen, with its own address (`#/round`, `round-flow.ts`);
+   * "Continuar" or the back gesture returns to the tab, with the focus on "Jogar rodada", which
+   * ignores taps for about 500 ms.
    */
   interface Props {
     career: CareerState;
@@ -74,6 +83,11 @@
   let current: DestinationId = $state(
     destinationOf(typeof location === 'undefined' ? '' : location.hash),
   );
+  /** The round summary takes the screen (`#/round`); `current` stays the tab under it. */
+  let summaryShown = $state(false);
+  /** A refusal of `playRound` other than busy (never silent): the content area shows its code. */
+  let playError: PlayError | undefined = $state();
+  const flow = new RoundFlow(() => history);
   let sheetOpen = $state(false);
   /** The "Mais" sheet asked `history.back()` and its popstate has not come yet. */
   let closingSheet = false;
@@ -86,9 +100,11 @@
   const areaError = $derived(
     career.crash !== undefined
       ? ('unexpected' as const)
-      : career.unsaved === 'invalid-save'
-        ? ('invalid-save' as const)
-        : undefined,
+      : playError !== undefined
+        ? playError
+        : career.unsaved === 'invalid-save'
+          ? ('invalid-save' as const)
+          : undefined,
   );
 
   const item = (d: NavDestination): TabItem => ({
@@ -247,7 +263,22 @@
     void service.retrySave();
   }
 
+  /** "Tentar de novo" of the content area's error. */
+  function retryArea(): void {
+    if (areaError === 'invalid-save') {
+      retry();
+      return;
+    }
+    playError = undefined;
+    service.dismissCrash();
+  }
+
+  /** A tap on "Jogar rodada": ignored for a moment after the summary closes (CEO decision 2). */
   function onplay(): void {
+    flow.tap(handlePlay);
+  }
+
+  function handlePlay(): void {
     if (areaError !== undefined) {
       // The way out is in the error of the content area: take the focus there.
       errorArea?.querySelector<HTMLElement>('h2')?.focus();
@@ -275,7 +306,75 @@
    */
   function play(): void {
     const sent = roundSheet(save.game, save.career.clubId, sheet, untouched, check.ready);
-    void service.playRound(sent === undefined ? {} : { sheet: sent });
+    const careerId = save.careerId;
+    void service.playRound(sent === undefined ? {} : { sheet: sent }).then((answer) => {
+      // The career may have been closed meanwhile (back to the home screen).
+      if (service.snapshot.save?.careerId !== careerId) return;
+      const outcome = playOutcome(answer, service.snapshot.status);
+      if (outcome.kind === 'error') playError = outcome.code;
+      // Only now, with the write over (stored or refused), the summary opens (resumo-rodada.md,
+      // "Fluxo da rodada", step 4).
+      else if (outcome.kind === 'summary') openSummary();
+    });
+  }
+
+  // ------------------------------------------------------- the round summary (T-030; US-019)
+
+  const summarySave: RoundSaveState = $derived(
+    career.unsaved === undefined ? 'saved' : career.busy ? 'saving' : 'unsaved',
+  );
+  /** The summary's band: only the notice of the refused write (resumo-rodada.md, "Estados"). */
+  const summaryNotices = $derived(notices.filter((notice) => notice.key.startsWith('unsaved-')));
+  const summaryCopy = $derived({
+    title: t('error.unexpected.title', lang),
+    message: t('round.error.body', lang),
+    retry: t('action.retry', lang),
+    home: t('round.error.leave', lang),
+  });
+
+  function openSummary(): void {
+    flow.open(current);
+    summaryShown = true;
+  }
+
+  /** "Continuar" (and "Sair do resumo"): back to the tab under the summary. */
+  function closeSummary(): void {
+    const to = flow.close(current);
+    // Without the summary's entry on top, there is no popstate: the tab shows here.
+    if (to !== undefined) leftSummary(to);
+  }
+
+  function leftSummary(to: DestinationId): void {
+    summaryShown = false;
+    current = to;
+    flow.left();
+    void focusPlay();
+  }
+
+  /** The focus back on "Jogar rodada": the one visible at this width (bottom or sidebar). */
+  async function focusPlay(): Promise<void> {
+    await tick();
+    const buttons = document.querySelectorAll<HTMLElement>('button.play');
+    for (const button of buttons) {
+      if (button.getClientRects().length > 0) {
+        button.focus();
+        return;
+      }
+    }
+  }
+
+  /** The address changed (back, forward, a link): the tab, or the summary of the last round. */
+  function followHash(): void {
+    if (isRoundHash(location.hash)) {
+      if (summaryRound(save.game) === undefined) {
+        summaryShown = false;
+        current = flow.toClub();
+      } else summaryShown = true;
+      return;
+    }
+    const next = destinationOf(location.hash);
+    if (summaryShown) leftSummary(next);
+    else current = next;
   }
 
   // ------------------------------------------------- "Escalação incompleta" (escalacao.md; US-017)
@@ -358,8 +457,10 @@
 
   /** "Liberar espaço": Carreiras e backup, with its own entry (back returns to the tab). */
   function openSaves(): void {
-    if (current === SAVES_DESTINATION) return;
+    if (current === SAVES_DESTINATION && !summaryShown) return;
     history.pushState({ saves: true }, '', hrefOf(SAVES_DESTINATION));
+    // From the summary's notice: back returns to the summary.
+    summaryShown = false;
     current = SAVES_DESTINATION;
   }
 
@@ -378,7 +479,9 @@
   }
 
   onMount(() => {
-    const onHash = () => (current = destinationOf(location.hash));
+    // A career always opens on its tab, never on a summary (CEO decision 3 of resumo-rodada.md).
+    if (isRoundHash(location.hash)) current = flow.toClub();
+    const onHash = followHash;
     const onPop = () => {
       closingSheet = false;
       closingCheck = false;
@@ -420,73 +523,93 @@
   </div>
 {/snippet}
 
-<AppShell
-  {tabs}
-  sideExtra={extra}
-  sideSettings={settings}
-  {current}
-  {club}
-  {playRound}
-  navLabel={t('nav.label', lang)}
-  skipLabel={t('nav.skip', lang)}
-  {header}
-  notices={noticeList}
-  wide={current === 'squad' && view === 'lineup'}
->
-  {#if areaError !== undefined}
-    <div bind:this={errorArea}>
-      <ErrorState
-        layout="area"
-        title={boundaryCopy.title}
-        message={boundaryCopy.message}
-        code={t('error.code', lang, { code: areaError })}
-        primary={{
-          label: boundaryCopy.retry,
-          onclick: areaError === 'unexpected' ? () => service.dismissCrash() : retry,
-          icon: 'retry',
-        }}
-        secondary={[{ label: boundaryCopy.home, onclick: onhome }]}
-      />
-    </div>
-  {:else}
-    {#key current}
-      <ErrorBoundary
-        copy={boundaryCopy}
-        code={t('error.code', lang, { code: 'unexpected' })}
-        onerror={onBoundaryError}
-        {onhome}
-      >
-        {#if current === SAVES_DESTINATION}
-          <Saves {service} {lang} currentId={save.careerId} />
-        {:else if current === 'club'}
-          <ClubView
-            {lang}
-            game={save.game}
-            clubId={save.career.clubId}
-            {more}
-            onerror={onBoundaryError}
-          />
-        {:else if current === 'squad'}
-          <SquadTab
-            {lang}
-            game={save.game}
-            clubId={save.career.clubId}
-            {view}
-            onview={setView}
-            {sort}
-            onsort={(next) => (squadSort = { careerId: save.careerId, sort: next })}
-            {sheet}
-            {params}
-            onedit={edit}
-            onerror={onBoundaryError}
-          />
-        {:else}
-          <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
-        {/if}
-      </ErrorBoundary>
-    {/key}
-  {/if}
-</AppShell>
+{#if summaryShown}
+  <ErrorBoundary
+    layout="screen"
+    copy={summaryCopy}
+    code={t('error.code', lang, { code: 'unexpected' })}
+    onerror={(error) =>
+      void log.record({ kind: 'programming', code: 'unexpected', screen: 'round', error })}
+    onhome={closeSummary}
+  >
+    <RoundSummary
+      {lang}
+      game={save.game}
+      clubId={save.career.clubId}
+      save={summarySave}
+      notices={summaryNotices}
+      oncontinue={closeSummary}
+    />
+  </ErrorBoundary>
+{:else}
+  <AppShell
+    {tabs}
+    sideExtra={extra}
+    sideSettings={settings}
+    {current}
+    {club}
+    {playRound}
+    navLabel={t('nav.label', lang)}
+    skipLabel={t('nav.skip', lang)}
+    {header}
+    notices={noticeList}
+    wide={current === 'squad' && view === 'lineup'}
+  >
+    {#if areaError !== undefined}
+      <div bind:this={errorArea}>
+        <ErrorState
+          layout="area"
+          title={boundaryCopy.title}
+          message={boundaryCopy.message}
+          code={t('error.code', lang, { code: areaError })}
+          primary={{
+            label: boundaryCopy.retry,
+            onclick: retryArea,
+            icon: 'retry',
+          }}
+          secondary={[{ label: boundaryCopy.home, onclick: onhome }]}
+        />
+      </div>
+    {:else}
+      {#key current}
+        <ErrorBoundary
+          copy={boundaryCopy}
+          code={t('error.code', lang, { code: 'unexpected' })}
+          onerror={onBoundaryError}
+          {onhome}
+        >
+          {#if current === SAVES_DESTINATION}
+            <Saves {service} {lang} currentId={save.careerId} />
+          {:else if current === 'club'}
+            <ClubView
+              {lang}
+              game={save.game}
+              clubId={save.career.clubId}
+              {more}
+              onerror={onBoundaryError}
+            />
+          {:else if current === 'squad'}
+            <SquadTab
+              {lang}
+              game={save.game}
+              clubId={save.career.clubId}
+              {view}
+              onview={setView}
+              {sort}
+              onsort={(next) => (squadSort = { careerId: save.careerId, sort: next })}
+              {sheet}
+              {params}
+              onedit={edit}
+              onerror={onBoundaryError}
+            />
+          {:else}
+            <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
+          {/if}
+        </ErrorBoundary>
+      {/key}
+    {/if}
+  </AppShell>
+{/if}
 
 <BottomSheet
   open={sheetOpen}
