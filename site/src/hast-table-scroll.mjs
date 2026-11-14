@@ -22,7 +22,6 @@ export const tableScroll = defineHastPlugin({
           tabIndex: 0,
           role: 'region',
           ariaLabel: `Tabela ${count} do post (tabela com rolagem)`,
-          style: '--table-min: 520px',
         },
         children: [node],
       });
