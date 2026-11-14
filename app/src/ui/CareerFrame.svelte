@@ -52,14 +52,15 @@
   import Placeholder from './screens/Placeholder.svelte';
   import Saves from './screens/Saves.svelte';
   import SquadTab, { type SquadViewId } from './screens/SquadTab.svelte';
+  import TableView from './screens/TableView.svelte';
   import type { SquadSort } from './squad';
 
   /**
    * The frame of an open career (docs/design/telas/navegacao.md): tabs at the bottom on the
    * phone, sidebar from 900px, the "Mais" menu, the notice band, "Jogar rodada" and the error
    * boundary around the screen of each destination. Clube and Elenco are the T-028 screens (the
-   * Elenco tab with the Escalação of T-029) and Carreiras e backup the T-025 one; the others are
-   * placeholders until their tasks (T-031, T-034...).
+   * Elenco tab with the Escalação of T-029), Tabela the T-031 one and Carreiras e backup the
+   * T-025 one; the others are placeholders until their tasks (T-084, T-034...).
    *
    * The coach's sheet (ADR-0021; T-029) is read here, because "Jogar rodada" needs it on every
    * tab: the draft of the save (or the edit held while a round is played, `draft-writer.ts`), or
@@ -609,6 +610,8 @@
               onedit={edit}
               onerror={onBoundaryError}
             />
+          {:else if current === 'table'}
+            <TableView {lang} game={save.game} clubId={save.career.clubId} />
           {:else}
             <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
           {/if}

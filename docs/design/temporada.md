@@ -55,7 +55,7 @@ Vitória 3, empate 1, derrota 0. Colunas: posição, clube, P, J, V, E, D, GP, G
 
 Com 3 ou mais clubes empatados até o critério 4, pula o 5 e segue do 6.
 
-**Zonas na tela:** 1º "Campeão"; 2º a 6º "Zona da Libertadores" e 7º a 12º "Zona da Sul-Americana", com o aviso "as copas chegam numa próxima versão"; 17º a 20º "Zona de rebaixamento", com o aviso "o acesso e o rebaixamento entram numa próxima versão" (P2). Sempre com rótulo de texto, não só faixa de cor. Os fatos `enteredZ4`, `leftZ4` e `relegatedClinched` continuam saindo (a briga contra a queda é história), mas o texto do `content-writer` nunca diz que o clube vai jogar a Série B.
+**Zonas na tela (Etapa 1; decisão do CEO de 2026-11-14, na T-031):** só duas. O 1º é "Líder" da rodada 1 à 38 e "Campeão" com a temporada encerrada; do 17º ao 20º (`RELEGATION_SPOTS`), "Rebaixamento", da rodada 1 até o fim. Sempre com rótulo de texto, não só faixa de cor (desenho em `telas/tabela.md`, "Zonas"). Não há zona de Libertadores nem de Sul-Americana: as copas não existem na 1a, e mostrar a zona com o aviso "as copas chegam numa próxima versão" seria promessa (P3). Essas zonas entram com as copas, da Etapa 2 em diante (as vagas valendo na Libertadores e na Sul-Americana, na Etapa 5; tabela acima). O aviso de que ninguém cai nesta versão (P2) não aparece na Tabela: só no Fim de temporada (T-037; "Fim de temporada", abaixo). Os fatos `enteredZ4`, `leftZ4` e `relegatedClinched` continuam saindo (a briga contra a queda é história), mas o texto do `content-writer` nunca diz que o clube vai jogar a Série B.
 
 ## Ordem do processamento de uma rodada
 
@@ -163,7 +163,7 @@ Os 4 últimos aparecem como "zona de rebaixamento", sem efeito: ninguém sai, ni
 
 **`endSeason`** (só com `round` 39 e `phase: 'season'`; em qualquer outro estado devolve o erro e não mexe em nada, então a evolução nunca roda duas vezes):
 
-1. **Tabela final:** campeão (1º) e zona de rebaixamento (17º a 20º), de `getStandings`. A tela mostra a cerimônia do campeão e a classificação final.
+1. **Tabela final:** campeão (1º) e zona de rebaixamento (17º a 20º), de `getStandings`. A tela mostra a cerimônia do campeão e a classificação final, com o aviso de que ninguém cai nesta versão (P2; é o único lugar em que ele aparece).
 2. **Prêmios** (tabela abaixo), do `seasonStats`.
 3. **Campanha** de cada clube humano: posição, pontos, meta da diretoria cumprida ou não, maior vitória, maior derrota, artilheiro do clube.
 4. **Evolução e idade** de todos os jogadores dos 20 clubes (`jogadores.md`, "Evolução"): lê os minutos do `seasonStats` e a moral depois da rodada 38, e guarda o overall de antes para o "quem evoluiu" da campanha.
@@ -367,7 +367,7 @@ Na 1a todos jogam só a Série A, e o favorito nunca divide o elenco: com 1.000 
 | Empate total até os amarelos                    | sorteio determinístico (critério 8)                                                                                                                                                                    |
 | Prêmio sem ninguém com 19 jogos                 | não há o prêmio ("sem vencedor nesta temporada"); na seleção, a vaga fica vazia                                                                                                                        |
 | Artilheiros empatados em tudo                   | dividem o prêmio                                                                                                                                                                                       |
-| Clube do técnico na zona de rebaixamento        | continua na Série A na temporada seguinte (P2); a tela mostra a zona com o aviso de que o acesso e o rebaixamento entram numa próxima versão                                                           |
+| Clube do técnico na zona de rebaixamento        | continua na Série A na temporada seguinte (P2); a Tabela mostra só a zona, e o aviso de que ninguém cai nesta versão aparece no Fim de temporada (T-037)                                               |
 | `endSeason` chamado de novo, ou antes da 38ª    | devolve o erro e não muda o estado; a evolução e o título nunca contam duas vezes                                                                                                                      |
 | `startNextSeason` fora da fase `seasonEnd`      | devolve o erro e não muda o estado                                                                                                                                                                     |
 | App fechado entre `endSeason` e a virada        | o save fica na fase `seasonEnd`; ao abrir, volta ao resumo e o "Próxima temporada" faz a virada (as duas funções são deterministas)                                                                    |

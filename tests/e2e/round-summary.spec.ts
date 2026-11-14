@@ -3,8 +3,6 @@ import type { Page } from '@playwright/test';
 import {
   getStandings,
   playRound as playEngineRound,
-  validateParams,
-  type GameParams,
   type GameState,
 } from '../../app/src/engine/index.ts';
 import {
@@ -23,6 +21,7 @@ import { setTheme } from './css.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
   countSnapshots,
+  gameParams,
   readHeadRecord,
   readSave,
   readSheetFixtures,
@@ -98,24 +97,6 @@ function changeText(change: number): string {
   const n = Math.abs(change);
   const word = n === 1 ? 'posição' : 'posições';
   return change > 0 ? `Subiu ${n} ${word}` : `Caiu ${n} ${word}`;
-}
-
-/** Os parâmetros do jogo como o app os carrega (app/src/params/, validados pelo motor). */
-function gameParams(): GameParams {
-  const read = (name: string) =>
-    JSON.parse(
-      readFileSync(new URL(`../../app/src/params/${name}.json`, import.meta.url), 'utf8'),
-    ) as unknown;
-  const checked = validateParams({
-    match: read('match'),
-    players: read('players'),
-    generation: read('generation'),
-    ai: read('ai'),
-    season: read('season'),
-    fans: read('fans'),
-  });
-  if (!checked.ok) throw new Error(`params: ${JSON.stringify(checked)}`);
-  return checked.value;
 }
 
 /**

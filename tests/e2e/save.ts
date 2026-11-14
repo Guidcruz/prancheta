@@ -1,5 +1,12 @@
+import { readFileSync } from 'node:fs';
 import type { Page } from '@playwright/test';
-import { validatePlayer } from '../../app/src/engine/index.ts';
+import {
+  playRound as playEngineRound,
+  validateParams,
+  validatePlayer,
+  type GameParams,
+  type GameState,
+} from '../../app/src/engine/index.ts';
 import { continueCareer } from './career.ts';
 
 /*
@@ -342,4 +349,47 @@ export async function readMatchSheets(
       .pipeThrough(new DecompressionStream('gzip'));
     return JSON.parse(await new Response(stream).text()) as Record<string, SheetJson>;
   }, round);
+}
+
+/** Os parâmetros do jogo como o app os carrega (app/src/params/, validados pelo motor). */
+export function gameParams(): GameParams {
+  const read = (name: string) =>
+    JSON.parse(
+      readFileSync(new URL(`../../app/src/params/${name}.json`, import.meta.url), 'utf8'),
+    ) as unknown;
+  const checked = validateParams({
+    match: read('match'),
+    players: read('players'),
+    generation: read('generation'),
+    ai: read('ai'),
+    season: read('season'),
+    fans: read('fans'),
+  });
+  if (!checked.ok) throw new Error(`params: ${JSON.stringify(checked)}`);
+  return checked.value;
+}
+
+/**
+ * Joga no motor, no Node, as rodadas do save até a próxima ser `round` (39: a temporada
+ * encerrada), com o técnico no modo dele; devolve o jogo, sem gravar. Diferente do CareerService,
+ * não passa a ficha do técnico (`sheets: {}`): o clube dele joga com a escalação automática do
+ * motor. Para chegar depressa a uma rodada adiante: quem chama grava com {@link patchSave}. As
+ * súmulas dessas rodadas não vão para o banco (nenhuma tela da medida as lê).
+ */
+export function playInEngine(save: SaveJson, round: number): SaveJson['game'] {
+  const params = gameParams();
+  let game = save.game as unknown as GameState;
+  const mode = (save.career as unknown as { matchMode: 'result' }).matchMode;
+  while (game.round < round) {
+    const played = playEngineRound(game, params, {
+      round: game.round,
+      sheets: {},
+      commands: {},
+      fanDecisions: {},
+      coaches: { [save.career.clubId]: mode },
+    });
+    if (!played.ok) throw new Error(`playRound: ${played.error}`);
+    game = played.value.state;
+  }
+  return JSON.parse(JSON.stringify(game)) as SaveJson['game'];
 }
