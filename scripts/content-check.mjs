@@ -1,7 +1,7 @@
 // Content checks of the game (docs/02-architecture.md, 3 "Dados de jogo" and 6 "Conteúdo").
 // Usage: node scripts/content-check.mjs   (or: npm run content:check)
 // For now it runs the club data checks of app/src/data/ (US-001: 20 clubs, fields, derbies,
-// shields, SHA-256 blocklist). They are Vitest suites, so the same checks run in `npm test`;
+// shields, SHA-256 blocklist; T-031: every short name fits whole in the Tabela at 360px). They are Vitest suites, so the same checks run in `npm test`;
 // the template checks join here when app/src/content/ gets them.
 import { spawnSync } from 'node:child_process';
 import { resolve, dirname } from 'node:path';
