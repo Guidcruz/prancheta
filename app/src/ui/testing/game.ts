@@ -1,4 +1,13 @@
-import { newGame, playRound, type ClubId, type GameState, type Player } from '@engine';
+import {
+  matchSheet,
+  newGame,
+  playRound,
+  type ClubId,
+  type FixtureId,
+  type GameState,
+  type MatchSheet,
+  type Player,
+} from '@engine';
 import { gameIdentitySource } from '@lib/generators/identity';
 import { loadGameParams } from '@lib/params';
 import { latestClubSet } from '../../data/club-sets.ts';
@@ -14,6 +23,7 @@ export const TEST_CLUB: ClubId = latestClubSet()!.clubs[0]!.id;
 
 const params = loadGameParams();
 const cache = new Map<string, GameState>();
+const sheetsCache = new Map<string, Readonly<Record<FixtureId, MatchSheet>>>();
 
 /** A career of `TEST_CLUB` whose next round is `round` (1 = pre-season, 39 = season over). */
 export function testCareer(
@@ -33,6 +43,7 @@ export function testCareer(
   );
   if (!created.ok) throw new Error(`newGame failed: ${created.error}`);
   let game = created.value;
+  const sheets: Record<FixtureId, MatchSheet> = {};
   while (game.round < round) {
     const played = playRound(game, params, {
       round: game.round,
@@ -43,9 +54,27 @@ export function testCareer(
     });
     if (!played.ok) throw new Error(`playRound failed: ${played.error}`);
     game = played.value.state;
+    // The match sheets the CareerService keeps outside the state (career.matchSheets).
+    for (const result of played.value.report.results) {
+      sheets[result.fixtureId] = matchSheet(result);
+    }
   }
   cache.set(key, game);
+  sheetsCache.set(key, sheets);
   return game;
+}
+
+/**
+ * The match sheets of every round played in {@link testCareer} with the same arguments, as the
+ * CareerService keeps them (`career.matchSheets`).
+ */
+export function testSheets(
+  realism: 'full' | 'simplified' = 'full',
+  round = 1,
+  seed = 2026,
+): Readonly<Record<FixtureId, MatchSheet>> {
+  testCareer(realism, round, seed);
+  return sheetsCache.get(`${realism}-${round}-${seed}`)!;
 }
 
 /** A copy of `game` with some fields of one player changed (the state itself is never touched). */

@@ -15,8 +15,8 @@
 </script>
 
 <script lang="ts">
-  import { onMount } from 'svelte';
-  import type { ClubId, GameState } from '@engine';
+  import { onMount, tick } from 'svelte';
+  import type { ClubId, FixtureId, GameState, MatchSheet } from '@engine';
   import type { Lang } from '@lib/config';
   import { t, tPlural } from '@lib/i18n';
   import ActionBar from '../components/ActionBar.svelte';
@@ -32,10 +32,13 @@
     changeLine,
     goalColumns,
     isDerby,
+    otherCardLabel,
     roundSummary,
     shortHandedClub,
     shortNameOf,
   } from '../round';
+  import { pushSheet, sheetField, sheetOnTop } from '../sheet-history';
+  import MatchReport from './MatchReport.svelte';
 
   /**
    * The round summary (docs/design/telas/resumo-rodada.md; US-019, US-032), full screen with no
@@ -44,6 +47,11 @@
    * It reads only the stored state of the career (`roundSummary`: the last round played), so it
    * is the same before and after a reload. On mount the focus goes to the heading, whose name is the
    * round followed by the result in words. Nothing moves.
+   *
+   * The match report (T-083) opens from "Súmula do jogo" in my match and from the card of each
+   * other match, over the summary, with its own entry in the history (`pushSheet`): the phone's
+   * back closes it and stays on the summary, forward to that entry opens it again, and closing it
+   * gives the focus back to the button or card that opened it.
    */
   interface Props {
     lang: Lang;
@@ -51,9 +59,22 @@
     clubId: ClubId;
     save: RoundSaveState;
     notices?: readonly RoundNotice[];
+    /** The stored match sheets of the season (`career.matchSheets`), for the match report. */
+    sheets?: Readonly<Record<FixtureId, MatchSheet>>;
     oncontinue: () => void;
+    /** Logs a match report that failed to build (lib/errors, without personal data). */
+    onerror?: (error: unknown) => void;
   }
-  const { lang, game, clubId, save, notices = [], oncontinue }: Props = $props();
+  const {
+    lang,
+    game,
+    clubId,
+    save,
+    notices = [],
+    sheets = {},
+    oncontinue,
+    onerror,
+  }: Props = $props();
 
   const titleId = 'round-title';
   const barId = 'round-bar-state';
@@ -85,10 +106,66 @@
   );
   const row = $derived(summary.standing);
 
+  // ---------------------------------------------------------- the match report (T-083; US-019)
+
+  const REPORT = 'report';
+  let root: HTMLElement | undefined = $state();
+  /** The match whose report is open; `undefined`: closed. */
+  let reportId: FixtureId | undefined = $state();
+  /** `history.back()` was asked and its popstate has not come yet: a second close waits. */
+  let closingReport = false;
+
+  function openReport(id: FixtureId): void {
+    if (reportId !== undefined) return;
+    pushSheet(REPORT, { fixture: id });
+    reportId = id;
+  }
+
+  /** The button or card that opens the report of `id`: the focus returns there. */
+  function openerOf(id: FixtureId): HTMLElement | null | undefined {
+    if (id === fixture.id) return root?.querySelector<HTMLElement>('.sheet-open button');
+    return root?.querySelector<HTMLElement>(`li[data-fixture="${CSS.escape(id)}"] button`);
+  }
+
+  async function reportClosed(): Promise<void> {
+    const id = reportId;
+    reportId = undefined;
+    await tick();
+    // Always to the one that opened it: the native dialog gives the focus back to whatever had it,
+    // and a report opened by forward had none.
+    if (id !== undefined) openerOf(id)?.focus();
+  }
+
+  function closeReport(): void {
+    // A double tap on the X: the first back is on its way; a second one would leave the summary.
+    if (closingReport) return;
+    // Back removes the sheet's entry; the popstate then closes the sheet.
+    if (sheetOnTop(REPORT)) {
+      closingReport = true;
+      history.back();
+    } else void reportClosed();
+  }
+
   onMount(() => {
     // The result is announced as the screen opens: the heading says it all (resumo-rodada.md,
-    // "Acessibilidade").
+    // "Acessibilidade"). The E2E makes the summary fail to draw through this very call, on the id
+    // `round-title` (`failSummaryDraw`, tests/e2e/round-summary.spec.ts): keep both, or move that
+    // hook along.
     document.getElementById(titleId)?.focus();
+    // Mounted again on the report's entry ("Tentar de novo" of the boundary): the report too.
+    reportId = sheetField(REPORT, 'fixture');
+    const onPop = () => {
+      closingReport = false;
+      const id = sheetField(REPORT, 'fixture');
+      if (id === undefined) {
+        if (reportId !== undefined) void reportClosed();
+      } else if (id !== reportId) {
+        // Forward to the report's entry: it opens again on its match.
+        reportId = id;
+      }
+    };
+    window.addEventListener('popstate', onPop);
+    return () => window.removeEventListener('popstate', onPop);
   });
 </script>
 
@@ -106,7 +183,7 @@
   </span>
 {/snippet}
 
-<main class="round" data-round={summary.round}>
+<main class="round" data-round={summary.round} bind:this={root}>
   <ScreenHeader
     title={t('round.title', lang, { round: summary.round })}
     titleA11y={resultA11y}
@@ -158,6 +235,11 @@
         </p>
       {/if}
       <GoalList columns={goals} emptyText={t('round.goals.none', lang)} />
+      <div class="sheet-open">
+        <Button variant="secondary" fullWidth onclick={() => openReport(fixture.id)}
+          >{t('round.sheet.open', lang)}</Button
+        >
+      </div>
     </section>
 
     <SectionCard title={t('club.table.title', lang)}>
@@ -197,6 +279,8 @@
                   ? [{ kind: 'derby', label: t('match.derby', lang) }]
                   : []}
                 note={other.result.abandoned ? t('match.abandoned.short', lang) : undefined}
+                onclick={() => openReport(other.id)}
+                a11yLabel={otherCardLabel(game, other, lang)}
                 instance={`round-${other.id}`}
               />
             </li>
@@ -210,6 +294,16 @@
     <Button variant="primary" onclick={oncontinue}>{t('round.continue', lang)}</Button>
   </ActionBar>
 </main>
+
+<MatchReport
+  {lang}
+  {game}
+  {clubId}
+  fixtureId={reportId}
+  sheet={reportId === undefined ? undefined : sheets[reportId]}
+  onclose={closeReport}
+  {onerror}
+/>
 
 <style>
   .round {

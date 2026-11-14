@@ -20,8 +20,10 @@
    * MatchCard (CardPartida): one match, home on top and away below, the coach's club in bold.
    * Venue in text ("Em casa", "Fora"), never only by order; a derby carries the "Clássico" badge;
    * a played match of the coach's club carries the V/E/D badge. With `href` the whole card is one
-   * link (to the Calendário, from the Clube screen), at least 44px tall; without it, a card only
-   * to read (the other results of the round summary), with no arrow and no focus.
+   * link (to the Calendário, from the Clube screen), at least 44px tall; with `onclick` and no
+   * `href`, the whole card is one button that looks the same (the other results of the round
+   * summary open their match report, T-083), named by `a11yLabel`; with neither, a card only to
+   * read, with no arrow and no focus.
    */
   interface Props {
     home: MatchSide;
@@ -38,7 +40,10 @@
     onclick?: (event: MouseEvent) => void;
     /** A short note at the foot, in `caption` ("Acabou antes do fim"). */
     note?: string;
-    /** Accessible name of the link, when the visible text is not enough. */
+    /**
+     * Accessible name of the link or the button, when the visible text is not enough; it holds the
+     * visible text, in the same order (WCAG 2.5.3).
+     */
     a11yLabel?: string;
     /** Instance suffix for the crests (the same club twice on a page). */
     instance?: string;
@@ -57,6 +62,8 @@
     instance,
   }: Props = $props();
   const played = $derived(home.goals !== undefined && away.goals !== undefined);
+  /** Without `href`, a handler makes the whole card a button. */
+  const button = $derived(href === undefined && onclick !== undefined);
 </script>
 
 {#snippet side(team: MatchSide, which: 'home' | 'away')}
@@ -82,11 +89,15 @@
     </span>
   {/if}
   {#if note}<span class="caption note">{note}</span>{/if}
-  {#if href}<span class="go"><Icon name="chevron-right" size={20} /></span>{/if}
+  {#if href || button}<span class="go"><Icon name="chevron-right" size={20} /></span>{/if}
 {/snippet}
 
 {#if href}
   <a class="match link" {href} {onclick} aria-label={a11yLabel}>{@render inner()}</a>
+{:else if button}
+  <button type="button" class="match link button" {onclick} aria-label={a11yLabel}
+    >{@render inner()}</button
+  >
 {:else}
   <div class="match">{@render inner()}</div>
 {/if}
@@ -108,6 +119,14 @@
   }
   .link:hover {
     border-color: var(--ink-muted);
+  }
+  /* The button looks like the link: the whole card, its text from the start. */
+  .button {
+    width: 100%;
+    margin: 0;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
   }
   .meta,
   .venue,

@@ -34,6 +34,9 @@ const isSheetEntry = (state: unknown): boolean =>
 const isRoundEntry = (state: unknown): state is RoundEntry =>
   typeof state === 'object' && state !== null && (state as { round?: unknown }).round === true;
 
+/** The history the flow moves: `go` takes away the summary's entry with a sheet over it. */
+export type RoundHistory = HistoryLike & Pick<History, 'go'>;
+
 /** What the frame does once `CareerService.playRound` answers. */
 export type PlayOutcome =
   /** The round was played (stored or not): the summary opens. */
@@ -79,15 +82,15 @@ export class RoundFlow {
    * `history` is read on each move (the browser's, or a fake in the tests), so the flow can be
    * built where there is none (rendering on the server).
    */
-  private readonly historyOf: () => HistoryLike;
+  private readonly historyOf: () => RoundHistory;
   private readonly now: () => number;
 
-  constructor(historyOf: () => HistoryLike, now: () => number = () => Date.now()) {
+  constructor(historyOf: () => RoundHistory, now: () => number = () => Date.now()) {
     this.historyOf = historyOf;
     this.now = now;
   }
 
-  private get history(): HistoryLike {
+  private get history(): RoundHistory {
     return this.historyOf();
   }
 
@@ -114,7 +117,9 @@ export class RoundFlow {
    * "Continuar": back to the tab the summary came from. With the summary's entry on top, its entry
    * goes away (`history.back()`, and the popstate shows the tab); otherwise (an address typed or
    * restored) the address is replaced by the tab of origin (`origin`), or the Clube's, and that
-   * tab is returned for the caller to show. A second tap while the first back is on its way does
+   * tab is returned for the caller to show. With the entry of a sheet opened over the summary on
+   * top (its match report, when the summary failed to draw with the sheet open), both entries go
+   * away at once, so none is left behind. A second tap while the first back is on its way does
    * nothing.
    */
   close(origin?: DestinationId): DestinationId | undefined {
@@ -123,7 +128,9 @@ export class RoundFlow {
     const state: unknown = this.history.state;
     if (isRoundEntry(state)) {
       this.closing = true;
-      this.history.back();
+      // A sheet's entry keeps the state below it (`pushSheet`): the summary's is right under it.
+      if (isSheetEntry(state)) this.history.go(-2);
+      else this.history.back();
       return undefined;
     }
     const to = origin ?? HOME_DESTINATION;
