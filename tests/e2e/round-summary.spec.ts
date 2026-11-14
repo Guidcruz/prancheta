@@ -49,7 +49,7 @@ const ERRORS_PT = JSON.parse(
   readFileSync(new URL('../../app/src/content/pt-BR/errors.json', import.meta.url), 'utf8'),
 ) as Record<string, string>;
 
-/** A text of `ui.json` in `lang` (the test fails on a key that does not exist). */
+/** Um texto de `ui.json` em `lang` (o teste falha se a chave não existe). */
 function ui(lang: Lang, key: string): string {
   const text = UI[lang][key];
   if (text === undefined) throw new Error(`no ${key} in ${lang}`);
@@ -237,7 +237,7 @@ test.describe('Resumo da rodada (T-030)', () => {
   test('"Continuar" e o voltar devolvem à aba de origem, com o foco no "Jogar rodada"; toque duplo não joga outra (medida 5)', async ({
     page,
   }) => {
-    // The page's clock runs as usual until it is paused for the double tap below.
+    // O relógio da página corre normalmente até ser parado, para o toque duplo mais abaixo.
     await page.clock.install();
     await startCareer(page);
     const nav = page.getByRole('navigation', { name: 'Navegação principal' });
@@ -282,7 +282,7 @@ test.describe('Resumo da rodada (T-030)', () => {
     await expect(page).toHaveURL(/#\/club$/);
     await expect(playButton(page)).toBeFocused();
     await playButton(page).click();
-    // Ignored: a round started would leave the button busy (its timers wait for the clock).
+    // Ignorado: uma rodada iniciada deixaria o botão ocupado (os temporizadores dela esperam o relógio).
     await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
     await expect(roundHeading(page)).toHaveCount(0);
     expect((await readSave(page)).game.round).toBe(4);
@@ -302,7 +302,7 @@ test.describe('Resumo da rodada (T-030)', () => {
     page,
   }) => {
     test.skip(!onPhone(page), 'o menu "Mais opções" só existe no celular');
-    // The gzip of the round's sheets waits for a gate: the round stays "computing" meanwhile.
+    // O gzip das súmulas da rodada espera um portão: enquanto isso, a rodada fica "calculando".
     await page.addInitScript(() => {
       const scope = globalThis as unknown as {
         holdGzip?: Promise<void>;
@@ -314,7 +314,7 @@ test.describe('Resumo da rodada (T-030)', () => {
         const inner = new Original(format);
         if (gate === undefined) return inner;
         const writer = inner.writable.getWriter();
-        // A plain writable (a TransformStream nobody reads would never take the input).
+        // Um writable simples (um TransformStream que ninguém lê nunca aceitaria a entrada).
         const held = new WritableStream<Uint8Array>({
           async write(chunk) {
             await gate;
@@ -336,13 +336,13 @@ test.describe('Resumo da rodada (T-030)', () => {
     });
     await playButton(page).click();
     await expect(playButton(page)).toHaveAttribute('aria-busy', 'true');
-    // The "Mais" sheet, opened while the round is computed.
+    // A folha "Mais", aberta enquanto a rodada é calculada.
     await page.getByRole('button', { name: 'Mais opções' }).click();
     const sheet = page.getByRole('dialog', { name: 'Mais opções' });
     await expect(sheet).toBeVisible();
     await page.evaluate(() => (globalThis as unknown as { release: () => void }).release());
 
-    // The summary opens alone: the sheet is closed and its entry became the summary's.
+    // O resumo abre sozinho: a folha fecha e a entrada dela no histórico virou a do resumo.
     await expect(roundHeading(page)).toBeVisible();
     await expect(sheet).toBeHidden();
     expect(await page.evaluate(() => history.length)).toBe(before + 1);
@@ -351,7 +351,7 @@ test.describe('Resumo da rodada (T-030)', () => {
     await expect(page).toHaveURL(/#\/club$/);
     expect(await page.evaluate(() => history.state?.sheet)).toBeUndefined();
     await expect(sheet).toBeHidden();
-    // Back on the tab itself, with the round played.
+    // De volta à própria aba, com a rodada jogada.
     expect(await nextRound(page)).toBe(2);
   });
 
@@ -400,7 +400,7 @@ test.describe('Resumo da rodada (T-030)', () => {
 
   test.describe('gravação recusada (medida 8)', () => {
     test.beforeEach(async ({ page }) => {
-      // The `put` of a snapshot fails with no room, only once switched on (the career is created).
+      // O `put` de um snapshot falha por falta de espaço, só depois de ligado (a carreira já foi criada).
       await page.addInitScript(() => {
         const put = IDBObjectStore.prototype.put;
         IDBObjectStore.prototype.put = function (this: IDBObjectStore, ...args) {
@@ -430,7 +430,7 @@ test.describe('Resumo da rodada (T-030)', () => {
       await expect(summary(page).locator('#round-bar-state')).toHaveText(
         ui('pt-BR', 'round.unsaved'),
       );
-      // The head is still round 1: nothing was stored.
+      // A cabeça continua na rodada 1: nada foi gravado.
       expect((await readHeadRecord(page)).round).toBe(1);
       await continueButton(page).click();
       await expect(page).toHaveURL(/#\/club$/);
@@ -460,8 +460,8 @@ test.describe('Resumo da rodada (T-030)', () => {
     context,
   }) => {
     test.skip(!onPhone(page), 'uma vez por navegador');
-    // The gzip of the round's sheets never ends once switched on: the write never reaches its
-    // transaction.
+    // O gzip das súmulas da rodada nunca termina depois de ligado: a gravação nunca chega à
+    // transação.
     await context.addInitScript(() => {
       const Original = globalThis.CompressionStream;
       globalThis.CompressionStream = function (format: CompressionFormat) {
@@ -475,7 +475,7 @@ test.describe('Resumo da rodada (T-030)', () => {
     const before = await readSave(page);
     expect(before.game.round).toBe(1);
 
-    // (a) Closed before the write: round 1, nothing of it anywhere.
+    // (a) Fechado antes da gravação: rodada 1, nada dela em lugar nenhum.
     await page.evaluate(() => ((globalThis as { hangGzip?: boolean }).hangGzip = true));
     await playButton(page).click();
     await expect(playButton(page)).toHaveAttribute('aria-busy', 'true');
@@ -489,7 +489,7 @@ test.describe('Resumo da rodada (T-030)', () => {
     expect(reopened.game).toEqual(before.game);
     expect(await nextRound(second)).toBe(1);
 
-    // (b) Closed after the write, before "Continuar": opens on the Clube, round 2, all applied.
+    // (b) Fechado depois da gravação, antes de "Continuar": abre no Clube, rodada 2, tudo aplicado.
     await playButton(second).click();
     await expect(roundHeading(second)).toBeVisible();
     await expect.poll(async () => (await readHeadRecord(second)).round).toBe(2);
@@ -505,10 +505,10 @@ test.describe('Resumo da rodada (T-030)', () => {
     const round1 = fixturesOf(stored).filter((f) => f.round === 1);
     expect(round1.filter((f) => f.result != null)).toHaveLength(10);
     expect((await readSheetFixtures(third, 1)).sort()).toEqual(round1.map((f) => f.id).sort());
-    // Never an intermediate state: only round 1 has results.
+    // Nunca há estado intermediário: só a rodada 1 tem resultados.
     expect(fixturesOf(stored).filter((f) => f.result != null && f.round !== 1)).toEqual([]);
 
-    // Playing again after (a) gave the score the engine gives that same state (deterministic).
+    // Jogar de novo depois de (a) deu o placar que o motor dá para esse mesmo estado (determinístico).
     const replay = playEngineRound(before.game as unknown as GameState, gameParams(), {
       round: 1,
       sheets: {},
@@ -678,7 +678,7 @@ test.describe('Resumo da rodada (T-030)', () => {
       .locator('li')
       .evaluateAll((items) => items.map((li) => Math.round(li.getBoundingClientRect().x)));
     expect(new Set(xs).size).toBe(2);
-    // The bar at the foot of the column, inside it.
+    // A barra no pé da coluna, dentro dela.
     const bar = (await page.locator('main.round .bar').boundingBox())!;
     const content = (await page.locator('main.round > .content').boundingBox())!;
     expect(bar.x).toBeGreaterThanOrEqual(content.x - 1);
@@ -701,14 +701,14 @@ test.describe('Resumo da rodada (T-030)', () => {
     test.skip(!onPhone(page), 'uma vez por navegador');
     await startCareer(page);
     await playRound(page);
-    // Forward to the summary's entry: the last round played, and nothing is played again.
+    // Avançar até a entrada do resumo: mostra a última rodada jogada, e nada é jogado de novo.
     await page.goForward();
     await expect(roundHeading(page)).toHaveAccessibleName(/^Rodada 1\. /);
     expect((await readSave(page)).game.round).toBe(2);
     await closeSummary(page);
     expect(await nextRound(page)).toBe(2);
     await playRound(page);
-    // Closed with the round stored: opens on the Clube, no summary again.
+    // Fechado com a rodada gravada: abre no Clube, sem repetir o resumo.
     await page.reload();
     await continueCareer(page);
     await expect(page).toHaveURL(/#\/club$/);
