@@ -169,3 +169,22 @@ export function roundSummary(game: GameState, clubId: ClubId): RoundSummary | un
 export function isDerby(game: GameState, fixture: Fixture): boolean {
   return game.clubs[fixture.homeId]?.def.rivals.includes(fixture.awayId) ?? false;
 }
+
+/**
+ * The accessible name of the card of another match, a button that opens its report (T-083):
+ * `round.others.open` holds the visible names and goals in the order shown, and after them, as
+ * on the card, the "Clássico" badge and the note of a match ended early (WCAG 2.5.3).
+ */
+export function otherCardLabel(game: GameState, fixture: PlayedFixture, lang: Lang): string {
+  const parts = [
+    t('round.others.open', lang, {
+      home: shortNameOf(game, fixture.homeId),
+      homeGoals: fixture.result.score[0],
+      away: shortNameOf(game, fixture.awayId),
+      awayGoals: fixture.result.score[1],
+    }),
+  ];
+  if (isDerby(game, fixture)) parts.push(t('match.derby', lang));
+  if (fixture.result.abandoned) parts.push(t('match.abandoned.short', lang));
+  return parts.join(', ');
+}

@@ -4,10 +4,13 @@ import { describe, expect, it } from 'vitest';
 /*
  * T-030: the texts of the round summary in `ui.json` are exactly the batch the CEO approved on
  * 2026-11-14 (docs/content/lotes/2026-11-14-resumo-rodada.md): 30 keys, the same in the three
- * languages, with the same placeholders.
+ * languages, with the same placeholders. `round.error.body` was revised by the batch of the
+ * match report (docs/content/lotes/2026-11-14-sumula.md, T-083), which its own test checks.
  */
 
 const LANGS = ['pt-BR', 'es', 'en'] as const;
+/** Keys whose text a later approved batch replaced (and whose test checks it). */
+const REVISED = new Set(['round.error.body']);
 const lot = readFileSync(
   new URL('../../docs/content/lotes/2026-11-14-resumo-rodada.md', import.meta.url),
   'utf8',
@@ -41,6 +44,10 @@ describe('round summary texts (batch of 2026-11-14)', () => {
     it(`${lang}: every key is in ui.json with the approved text`, () => {
       const texts = ui(lang);
       for (const [key, cells] of rows) {
+        if (REVISED.has(key)) {
+          expect(texts[key], `${lang} ${key}`).toBeDefined();
+          continue;
+        }
         expect(texts[key], `${lang} ${key}`).toBe(cells[index]);
       }
     });

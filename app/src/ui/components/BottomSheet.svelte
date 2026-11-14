@@ -26,8 +26,23 @@
     children: Snippet;
     /** Buttons fixed at the base of the sheet, outside the scrolling body. */
     footer?: Snippet;
+    /**
+     * The body is a long read with nothing to focus inside (a match report): it becomes a named
+     * region that takes the focus, so the keyboard can scroll it, as with a footer.
+     */
+    scrollable?: boolean;
   }
-  const { open, title, closeLabel, onclose, children, footer }: Props = $props();
+  const {
+    open,
+    title,
+    closeLabel,
+    onclose,
+    children,
+    footer,
+    scrollable = false,
+  }: Props = $props();
+  /** The body may scroll on its own and must be reachable by the keyboard. */
+  const region = $derived(footer !== undefined || scrollable);
   const titleId = $props.id();
   let dialog: HTMLDialogElement | undefined = $state();
 
@@ -62,16 +77,17 @@
         <Icon name="close" />
       </button>
     </div>
-    <!-- With a footer, the body may scroll alone (a phone lying down, large text): it is a named
-         region that takes the focus, between close and the footer, so the keyboard can scroll it
-         too (a scrollable region must be focusable; the lint does not know that case). -->
+    <!-- With a footer (or `scrollable`), the body may scroll alone (a phone lying down, large
+         text): it is a named region that takes the focus, between close and the footer, so the
+         keyboard can scroll it too (a scrollable region must be focusable; the lint does not know
+         that case). -->
     <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
     <div
       class="body"
       class:last={!footer}
-      role={footer ? 'region' : undefined}
-      aria-labelledby={footer ? titleId : undefined}
-      tabindex={footer ? 0 : undefined}
+      role={region ? 'region' : undefined}
+      aria-labelledby={region ? titleId : undefined}
+      tabindex={region ? 0 : undefined}
     >
       {@render children()}
     </div>

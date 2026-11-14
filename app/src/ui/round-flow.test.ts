@@ -111,6 +111,19 @@ describe('the summary in the history (resumo-rodada.md, "Navegação")', () => {
     expect(history.length).toBe(1);
   });
 
+  it('"Sair do resumo" with a match report\'s entry over it: both entries go, none is left', () => {
+    const { history, flow } = setup();
+    const popped = vi.fn();
+    history.onPop(popped);
+    flow.open();
+    // The report's entry keeps the summary's state under it (pushSheet).
+    history.pushState({ ...(history.state as object), fixture: 's1-r1-a-b', sheet: 'report' }, '');
+    expect(flow.close('squad')).toBeUndefined();
+    expect(popped).toHaveBeenCalledTimes(1);
+    expect(history.location.hash).toBe('#/squad');
+    expect(history.length).toBe(1);
+  });
+
   it('a double tap on "Continuar" goes back once, never out of the career', () => {
     const { history, flow } = setup();
     history.pushState(null, '', '#/club');

@@ -44,7 +44,7 @@ AppShell, TabBar, PlayRoundButton, ScreenHeader, BottomSheet, LinkRow, Icon, Ban
 | TabBar          | `TabBar.svelte`          | `items` (`id`, `label`, `icon`, `href`), `current`, `orientation` (`bottom`/`side`), `label`, `onselect?`                                                                          |
 | PlayRoundButton | `PlayRoundButton.svelte` | `state` (`ready`/`blocked`/`busy`), `label`, `hint?`, `busyLabel?`, `placement` (`float`/`side`), `onplay`                                                                         |
 | ScreenHeader    | `ScreenHeader.svelte`    | `title`, `backLabel?`, `onback?`, `moreLabel?`, `onmore?`                                                                                                                          |
-| BottomSheet     | `BottomSheet.svelte`     | `open`, `title`, `closeLabel`, `onclose`, snippets `children` e `footer?`                                                                                                          |
+| BottomSheet     | `BottomSheet.svelte`     | `open`, `title`, `closeLabel`, `onclose`, snippets `children` e `footer?`, `scrollable?` (o corpo vira região focável sem `footer`; T-083, súmula)                                 |
 | LinkRow         | `LinkRow.svelte`         | `label`, `icon?`, `value?`, `href?`, `external?`, `externalLabel?`, `onclick?`                                                                                                     |
 | Icon            | `Icon.svelte`            | `name` (lista fechada), `size?`, `label?` (sem `label`, fica `aria-hidden`)                                                                                                        |
 

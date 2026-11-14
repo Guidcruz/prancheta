@@ -114,13 +114,14 @@ describe('the round summary (resumo-rodada.md, "Conteúdo")', () => {
     );
   });
 
-  it('nine other results, read-only: no link, no button, in the order of the calendar', () => {
+  it('nine other results in the order of the calendar, each a button that opens its report (T-083)', () => {
     const body = summary(after5);
     const list = body.slice(body.indexOf('class="others '));
     const ids = [...list.matchAll(/<li[^>]*data-fixture="([^"]+)"/g)].map((m) => m[1]);
     expect(ids).toEqual(read.others.map((f) => f.id));
     const cards = list.slice(0, list.indexOf('</ul>'));
-    expect(cards).not.toMatch(/<a\s|<button/);
+    expect(cards).not.toMatch(/<a\s/);
+    expect(cards.match(/<button type="button" class="match link button/g)).toHaveLength(9);
     // No top line in the cards of the other results.
     expect(cards).not.toContain('class="caption meta');
   });
