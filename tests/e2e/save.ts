@@ -218,6 +218,8 @@ export async function readHeadRecord(page: Page): Promise<{
   careerSchemaVersion: number | undefined;
   recordSchemaVersion: number;
   headSeq: number;
+  /** The `game.round` of the head snapshot (the next round to play). */
+  round: number;
 }> {
   return page.evaluate(async () => {
     const db = await new Promise<IDBDatabase>((resolve, reject) => {
@@ -239,12 +241,78 @@ export async function readHeadRecord(page: Page): Promise<{
     const newest = careers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
     const record = (await ask(
       db.transaction('snapshots').objectStore('snapshots').get([newest.id, newest.headSeq]),
-    )) as { schemaVersion: number };
+    )) as { schemaVersion: number; round: number };
     db.close();
     return {
       careerSchemaVersion: newest.schemaVersion,
       recordSchemaVersion: record.schemaVersion,
       headSeq: newest.headSeq,
+      round: record.round,
     };
   });
+}
+
+/** How many snapshots the newest career has on the device (US-032: at most 3). */
+export async function countSnapshots(page: Page): Promise<number> {
+  return page.evaluate(async () => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open('prancheta-test');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => resolve(open.result);
+    });
+    const ask = <T>(request: IDBRequest<T>) =>
+      new Promise<T>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    const careers = (await ask(db.transaction('careers').objectStore('careers').getAll())) as {
+      id: string;
+      updatedAt: string;
+    }[];
+    const newest = careers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
+    const keys = (await ask(db.transaction('snapshots').objectStore('snapshots').getAllKeys())) as [
+      string,
+      number,
+    ][];
+    db.close();
+    return keys.filter(([careerId]) => careerId === newest.id).length;
+  });
+}
+
+/**
+ * The match sheets stored for one round of the newest career (the row of `matchSheets`, gzip of
+ * the JSON keyed by fixture id; ADR-0006, "Súmulas fora do snapshot"): the fixture ids, or `[]`
+ * when the round has no row.
+ */
+export async function readSheetFixtures(page: Page, round: number): Promise<string[]> {
+  return page.evaluate(async (wanted) => {
+    const db = await new Promise<IDBDatabase>((resolve, reject) => {
+      const open = indexedDB.open('prancheta-test');
+      open.onerror = () => reject(open.error);
+      open.onsuccess = () => resolve(open.result);
+    });
+    const ask = <T>(request: IDBRequest<T>) =>
+      new Promise<T>((resolve, reject) => {
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+    const careers = (await ask(db.transaction('careers').objectStore('careers').getAll())) as {
+      id: string;
+      updatedAt: string;
+    }[];
+    const newest = careers.sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))[0]!;
+    const rows = (await ask(db.transaction('matchSheets').objectStore('matchSheets').getAll())) as {
+      careerId: string;
+      round: number;
+      blob: Uint8Array;
+    }[];
+    db.close();
+    const row = rows.find((r) => r.careerId === newest.id && r.round === wanted);
+    if (row === undefined) return [];
+    const stream = new Blob([row.blob as Uint8Array<ArrayBuffer>])
+      .stream()
+      .pipeThrough(new DecompressionStream('gzip'));
+    const json = JSON.parse(await new Response(stream).text()) as Record<string, unknown>;
+    return Object.keys(json);
+  }, round);
 }

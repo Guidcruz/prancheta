@@ -1,5 +1,5 @@
-import { continueCareer, nextRound, saveSettled, startCareer } from './career.ts';
-import { expect, playButton, test } from './fixtures.ts';
+import { continueCareer, nextRound, playRound, startCareer } from './career.ts';
+import { expect, test } from './fixtures.ts';
 import { readHeadRecord, readSave, writeRawSnapshot, type SaveJson } from './save.ts';
 
 /*
@@ -39,9 +39,8 @@ test('a v2 career opens migrated: same round and table, same secondaries, stable
   await startCareer(page);
   for (let i = 0; i < 2; i++) {
     const next = await nextRound(page);
-    await playButton(page).click();
-    await expect.poll(() => nextRound(page)).toBe(next + 1);
-    await saveSettled(page);
+    await playRound(page);
+    expect(await nextRound(page)).toBe(next + 1);
   }
   const original = await readSave(page);
   expect(original.schemaVersion).toBe(3);
@@ -81,9 +80,8 @@ test('a v2 career opens migrated: same round and table, same secondaries, stable
   expect((await readHeadRecord(page)).headSeq).toBe(record.headSeq);
 
   // And it keeps playing: one more round, still v3, secondaries untouched.
-  await playButton(page).click();
-  await expect.poll(() => nextRound(page)).toBe(original.game.round + 1);
-  await saveSettled(page);
+  await playRound(page);
+  expect(await nextRound(page)).toBe(original.game.round + 1);
   const after = await readSave(page);
   expect(after.schemaVersion).toBe(3);
   expect(secondaries(after)).toEqual(secondaries(original));
