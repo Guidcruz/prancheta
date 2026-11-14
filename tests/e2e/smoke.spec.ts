@@ -1,4 +1,11 @@
-import { continueCareer, nextRound, saveSettled, startCareer } from './career.ts';
+import {
+  closeSummary,
+  continueCareer,
+  nextRound,
+  roundHeading,
+  saveSettled,
+  startCareer,
+} from './career.ts';
 import { expect, playButton, test } from './fixtures.ts';
 
 test('cria uma carreira, joga uma rodada, reabre a página e vê a carreira', async ({ page }) => {
@@ -6,12 +13,14 @@ test('cria uma carreira, joga uma rodada, reabre a página e vê a carreira', as
   const before = await nextRound(page);
 
   await playButton(page).click();
-  await expect.poll(() => nextRound(page)).toBe(before + 1);
+  // O resumo da rodada só abre com a gravação terminada (T-030).
+  await expect(roundHeading(page)).toBeVisible();
 
   // Sem aviso de falha de gravação.
   await expect(page.getByRole('alert')).toHaveCount(0);
 
-  // A rodada nova aparece antes de a gravação acabar; recarregar no meio perde a rodada.
+  await closeSummary(page);
+  await expect.poll(() => nextRound(page)).toBe(before + 1);
   await saveSettled(page);
   await page.reload();
   await continueCareer(page);

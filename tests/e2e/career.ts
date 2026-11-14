@@ -1,3 +1,4 @@
+import { PLAY_GUARD_MS } from '../../app/src/ui/play-guard.ts';
 import { expect, playButton } from './fixtures.ts';
 import type { Page } from '@playwright/test';
 
@@ -51,21 +52,53 @@ export async function nextRound(page: Page): Promise<number> {
 }
 
 /**
- * Espera a gravação da rodada terminar: a tela já mostra a rodada nova com o botão em
- * `aria-busy` enquanto o IndexedDB ainda grava; recarregar ou editar o save nesse intervalo
- * aborta a transação (WebKit).
+ * Espera a gravação terminar: o botão "Jogar rodada" fica em `aria-busy` enquanto o IndexedDB
+ * grava; recarregar ou editar o save nesse intervalo aborta a transação (WebKit). Desde a T-030 o
+ * resumo da rodada só abre depois da gravação, mas o "Tentar de novo" e a ficha ainda gravam com o
+ * botão na tela.
  */
 export async function saveSettled(page: Page): Promise<void> {
   await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
 }
 
+/**
+ * O `h1` do resumo da rodada (resumo-rodada.md), em qualquer idioma: o nome acessível é a rodada
+ * seguida da frase do resultado ("Rodada 5. Vitória. ...").
+ */
+export const roundHeading = (page: Page) =>
+  page.getByRole('heading', { level: 1, name: /^(Rodada|Jornada|Round) \d+\. / });
+
+/** A janela em que o "Jogar rodada" ignora toques depois de o resumo fechar (o valor do jogo). */
+export { PLAY_GUARD_MS } from '../../app/src/ui/play-guard.ts';
+
+/**
+ * "Continuar" no resumo da rodada (`label` no idioma da página): volta à aba de origem, com o foco
+ * no "Jogar rodada", e espera a janela de proteção passar, para o próximo toque valer.
+ */
+export async function closeSummary(page: Page, label = 'Continuar'): Promise<void> {
+  await expect(roundHeading(page)).toBeVisible();
+  await page.getByRole('button', { name: label, exact: true }).click();
+  await expect(roundHeading(page)).toHaveCount(0);
+  await expect(page.locator('button.play:focus')).toHaveCount(1);
+  await page.waitForTimeout(PLAY_GUARD_MS + 50);
+}
+
+/**
+ * Joga uma rodada pelo "Jogar rodada" da aba atual do Clube: espera o resumo dela abrir (só depois
+ * da gravação), toca "Continuar" e confere que o Clube passou à rodada seguinte.
+ */
+export async function playRound(page: Page): Promise<void> {
+  const next = await nextRound(page);
+  await playButton(page).click();
+  await expect(roundHeading(page)).toHaveAccessibleName(new RegExp(`^Rodada ${next}\\. `));
+  await closeSummary(page);
+  await expect.poll(() => nextRound(page)).toBe(next + 1);
+  await saveSettled(page);
+}
+
 /** Joga rodadas pelo "Jogar rodada" até a próxima ser `round` (lida na tela do Clube). */
 export async function playUntil(page: Page, round: number): Promise<void> {
-  for (let next = await nextRound(page); next < round; next++) {
-    await playButton(page).click();
-    await expect.poll(() => nextRound(page)).toBe(next + 1);
-    await saveSettled(page);
-  }
+  for (let next = await nextRound(page); next < round; next++) await playRound(page);
 }
 
 /** Os textos da abertura da carreira em cada idioma do navegador (content/<idioma>/ui.json). */

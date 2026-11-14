@@ -16,8 +16,14 @@
     onmore?: () => void;
     /** Id of the title, so the error boundary or a sheet can point at it. */
     titleId?: string;
+    /**
+     * Read after the title by screen readers only, joined with ". " in the heading's name (the
+     * round summary's result: resumo-rodada.md, "Acessibilidade"). A name rather than a hidden
+     * span: a hidden span is a block for the accessible name, which would read "Rodada 5 . ...".
+     */
+    titleA11y?: string;
   }
-  const { title, backLabel, onback, moreLabel, onmore, titleId }: Props = $props();
+  const { title, backLabel, onback, moreLabel, onmore, titleId, titleA11y }: Props = $props();
 </script>
 
 <header class="header">
@@ -26,7 +32,14 @@
       <Icon name="back" />
     </button>
   {/if}
-  <h1 class="titulo title" id={titleId} tabindex="-1">{title}</h1>
+  <h1
+    class="titulo title"
+    id={titleId}
+    tabindex="-1"
+    aria-label={titleA11y === undefined ? undefined : `${title}. ${titleA11y}`}
+  >
+    {title}
+  </h1>
   {#if onmore}
     <button type="button" class="icon-btn more" aria-label={moreLabel} onclick={onmore}>
       <Icon name="menu" />

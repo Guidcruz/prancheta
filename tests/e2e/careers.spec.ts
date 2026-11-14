@@ -1,5 +1,5 @@
 import type { Page } from '@playwright/test';
-import { careerActions, nextRound, saveSettled, startCareer } from './career.ts';
+import { careerActions, nextRound, playRound, startCareer } from './career.ts';
 import { expect, playButton, test } from './fixtures.ts';
 
 /*
@@ -75,9 +75,8 @@ test.describe('US-034: várias carreiras', () => {
     await page.getByRole('button', { name: `Continuar a carreira de ${first}` }).click();
     await expect(playButton(page)).toBeVisible();
     const before = await nextRound(page);
-    await playButton(page).click();
-    await expect.poll(() => nextRound(page)).toBe(before + 1);
-    await saveSettled(page);
+    await playRound(page);
+    expect(await nextRound(page)).toBe(before + 1);
 
     await page.goto('/jogo/');
     // The first is now the most recent: featured. The second is the row and still on round 1.

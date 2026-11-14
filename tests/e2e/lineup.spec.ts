@@ -10,7 +10,7 @@ import {
   type Player,
   type Position,
 } from '../../app/src/engine/index.ts';
-import { continueIn, reopenIn, startCareer } from './career.ts';
+import { closeSummary, continueIn, reopenIn, startCareer } from './career.ts';
 import { setTheme, tokenColor } from './css.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
@@ -476,6 +476,9 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
     await sheet.getByRole('button', { name: 'Completar e jogar' }).click();
     await expect(sheet).toBeHidden();
     await expect.poll(async () => (await readSave(page)).game.round).toBe(2);
+    // The summary of the round (T-030): "Continuar" back to the Escalação.
+    await closeSummary(page);
+    await expect(page).toHaveURL(/#\/squad$/);
     const save = await readSave(page);
     const draft = (save.career as Record<string, unknown>).draft as DraftJson;
     const starters = draft.lineup.starters.filter((id) => id !== null);
@@ -651,6 +654,7 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
       });
     await expect(sheet).toBeHidden();
     await expect.poll(async () => (await readSave(page)).game.round).toBe(2);
+    await closeSummary(page);
     await expect(playButton(page)).toBeEnabled();
     expect((await readSave(page)).game.round).toBe(2);
   });

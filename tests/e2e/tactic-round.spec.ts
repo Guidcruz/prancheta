@@ -1,5 +1,6 @@
 import type { Locator, Page } from '@playwright/test';
 import { takerValue, type MatchEvent, type Player } from '../../app/src/engine/index.ts';
+import { closeSummary, roundHeading, saveSettled } from './career.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import { main, withFixture } from './lineup-fixture.ts';
 import { readDraft, readSave, type DraftJson } from './save.ts';
@@ -88,6 +89,10 @@ test.describe('Tática e Funções: a rodada e o goleiro (US-018)', () => {
 
     await playButton(page).click();
     await expect.poll(async () => (await readSave(page)).game.round).toBe(2);
+    // The summary of the round (T-030), then "Continuar" back to the Tática.
+    await expect(roundHeading(page)).toBeVisible();
+    await closeSummary(page);
+    await expect(page).toHaveURL(/#\/squad$/);
     const save = await readSave(page);
     const draft = (save.career as Record<string, unknown>).draft as DraftJson;
     expect(draft.lineup.formation).toBe('4-3-3');
@@ -132,7 +137,8 @@ test.describe('Tática e Funções: a rodada e o goleiro (US-018)', () => {
     await putInList(page, 'penalty', [fixture.starters[10]!]);
     await playButton(page).click();
     await expect.poll(async () => (await readSave(page)).game.round).toBe(2);
-    await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
+    await closeSummary(page);
+    await saveSettled(page);
     await page.reload();
     await page.getByRole('button', { name: 'Continuar', exact: true }).click();
     await expect(playButton(page)).toBeVisible();

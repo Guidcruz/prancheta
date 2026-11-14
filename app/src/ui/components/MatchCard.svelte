@@ -20,13 +20,14 @@
    * MatchCard (CardPartida): one match, home on top and away below, the coach's club in bold.
    * Venue in text ("Em casa", "Fora"), never only by order; a derby carries the "Clássico" badge;
    * a played match of the coach's club carries the V/E/D badge. With `href` the whole card is one
-   * link (to the Calendário, from the Clube screen), at least 44px tall.
+   * link (to the Calendário, from the Clube screen), at least 44px tall; without it, a card only
+   * to read (the other results of the round summary), with no arrow and no focus.
    */
   interface Props {
     home: MatchSide;
     away: MatchSide;
-    /** "Rodada 5 · dom., 10 de mai.", already translated and formatted. */
-    meta: string;
+    /** "Rodada 5 · dom., 10 de mai.", already translated and formatted; without it, no top line. */
+    meta?: string;
     /** "Em casa" / "Fora de casa": the coach's venue, in text. */
     venueLabel?: string;
     /** Which side is the coach's club (bold, and the venue refers to it). */
@@ -35,6 +36,8 @@
     badges?: readonly StatusBadgeItem[];
     href?: string;
     onclick?: (event: MouseEvent) => void;
+    /** A short note at the foot, in `caption` ("Acabou antes do fim"). */
+    note?: string;
     /** Accessible name of the link, when the visible text is not enough. */
     a11yLabel?: string;
     /** Instance suffix for the crests (the same club twice on a page). */
@@ -49,6 +52,7 @@
     badges = [],
     href,
     onclick,
+    note,
     a11yLabel,
     instance,
   }: Props = $props();
@@ -64,7 +68,7 @@
 {/snippet}
 
 {#snippet inner()}
-  <span class="caption meta">{meta}</span>
+  {#if meta}<span class="caption meta">{meta}</span>{/if}
   <span class="teams">
     {@render side(home, 'home')}
     {@render side(away, 'away')}
@@ -77,6 +81,7 @@
       {/each}
     </span>
   {/if}
+  {#if note}<span class="caption note">{note}</span>{/if}
   {#if href}<span class="go"><Icon name="chevron-right" size={20} /></span>{/if}
 {/snippet}
 
@@ -105,7 +110,8 @@
     border-color: var(--ink-muted);
   }
   .meta,
-  .venue {
+  .venue,
+  .note {
     color: var(--ink-muted);
   }
   .teams {
