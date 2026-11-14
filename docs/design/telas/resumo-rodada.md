@@ -140,9 +140,9 @@ Nenhum. O placar aparece pronto, sem número que corre, sem confete, sem seta qu
 
 ## Acessibilidade
 
-- **Resultado anunciado ao abrir:** o foco vai para o `h1` (`tabindex="-1"`), cujo nome é "Rodada 5" seguido da frase escondida `round.result.a11y` ("Vitória. Leões 2, Tubarões 1."). Como a frase já diz tudo, o bloco do placar e do selo do meu jogo fica `aria-hidden`; a lista de gols e a nota de jogo encerrado continuam lidas.
+- **Resultado anunciado ao abrir:** o foco vai para o `h1` (`tabindex="-1"`), cujo nome é "Rodada 5" seguido da frase escondida `round.result.a11y` ("Vitória. Leões 2, Tubarões 1."). Como a frase já diz tudo, o placar e o selo do meu jogo ficam `aria-hidden` (Scoreboard com `hidden`); a linha de cima (mando e estádio), a lista de gols e a nota de jogo encerrado continuam lidas.
 - **Nunca só por cor:** resultado em palavra (selo com texto e frase do `h1`); variação da posição em texto, com a seta só de reforço; meu clube em negrito e citado pela frase; na súmula (T-083), tipo de cada lance em palavra.
-- **Minutos:** o "23'" visível é `aria-hidden`, e o leitor de tela lê `match.minute.a11y` ("23 minutos"); o tipo curto ("pên.") idem, com `match.goal.penalty.a11y`.
+- **Gols:** o minuto ("23'"), o nome e o tipo curto visíveis são `aria-hidden`, e o leitor de tela lê cada gol numa frase só, com `match.minute.a11y` e `match.goal.penalty.a11y` (ou `match.goal.freeKick.a11y`): "minuto 23, Fulano, de pênalti".
 - **Estrutura:** `h1` do resumo; "Meu jogo", "Classificação" e "Outros resultados" são `section` com `h2` (os dois últimos visíveis, o primeiro só para o leitor de tela). Na súmula (T-083), o título da folha é o nome do diálogo, e Lances, Melhor em campo e Estatísticas são `h3`.
 - **Alvos ≥ 44px:** "Continuar" e as ações do Banner (T-030); cada card de "Outros resultados", "Súmula do jogo" e o X da folha (T-083).
 - **Foco ao fechar:** "Continuar" devolve o foco ao "Jogar rodada" (T-030); fechar a súmula devolve ao botão ou card que a abriu (T-083).
