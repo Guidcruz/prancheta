@@ -219,6 +219,8 @@ O teste de carga visual (as folhas 20 clubes x 3 tamanhos) fica com o `art-direc
 
 ### 5.2 Decisões do CEO (com a recomendação do `art-director`)
 
+**Decididas pelo CEO em 2026-11-15:** (1) opção A, o padrão vem do `id` e exclui o padrão do escudo; (2) limite de ΔE 30, o visitante troca; (3) a revisão humana contra uniformes reais fica como pendência do CEO, junto com a revisão jurídica dos escudos, antes do lançamento; (4) goleiro com cor própria e estável por clube; (5) clubes verdes mantêm o uniforme, com anel e número. O texto abaixo guarda as opções e a recomendação que levaram à decisão.
+
 1. **Padrão do uniforme: derivado do clube (recomendado) ou campo fixo em `clubs.serie-a.json`?**
    - A: derivado por semente do `id`, excluindo o padrão do escudo (esta proposta). Sem mudança de dados, cabe no P, estável por clube, trocar um uniforme é mudar um rótulo.
    - B: campo `kitPattern` por clube, escolhido à mão como os `crest*` (ADR-0014), com ADR e mudança de `ClubDef`/validador. Controle total, mais trabalho (M, toca `engine/clubs.ts`).
