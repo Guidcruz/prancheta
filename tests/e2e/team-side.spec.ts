@@ -1,4 +1,5 @@
 import type { Locator, Page } from '@playwright/test';
+import { setTheme, tokenColor } from './css.ts';
 import { closeSummary, reopenIn, roundHeading, startCareer } from './career.ts';
 import { expect, test } from './fixtures.ts';
 import {
@@ -259,6 +260,36 @@ test.describe('De qual time é cada lance', () => {
       await closeSummary(page, ui(lang as Lang, 'round.continue'));
     });
   }
+
+  test('o fundo do gol é grass-soft nos dois lados e nos dois temas; as outras linhas sem fundo (o escudo não pinta nada)', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'uma vez por navegador');
+    await page.clock.install();
+    await page.setViewportSize({ width: 360, height: 740 });
+    await careerWith(page, 'full');
+    await freezeClock(page);
+    await openMatch(page);
+    await playToEnd(page);
+    const rows = matchScreen(page).locator('section.feed li.line');
+    for (const theme of ['noite', 'dia'] as const) {
+      await setTheme(page, theme);
+      const soft = await tokenColor(page, 'grass-soft');
+      const colors = await rows.evaluateAll((lis) =>
+        lis.map((li) => ({
+          goal: li.classList.contains('goal'),
+          club: li.querySelector('.club')?.textContent?.trim() ?? '',
+          bg: getComputedStyle(li).backgroundColor,
+        })),
+      );
+      const goals = colors.filter((c) => c.goal);
+      expect(goals.length, `${theme}: has a goal`).toBeGreaterThan(0);
+      for (const g of goals) expect(g.bg, `${theme}: goal of ${g.club}`).toBe(soft);
+      for (const c of colors.filter((x) => !x.goal)) {
+        expect(c.bg, `${theme}: not a goal`).not.toBe(soft);
+      }
+    }
+  });
 
   test('súmula: a mesma linha, escudo do clube certo, frase com o clube depois do minuto, sem id repetido', async ({
     page,

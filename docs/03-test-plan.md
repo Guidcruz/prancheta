@@ -743,6 +743,14 @@ Regra a mais (a levar ao `art-director`): se o uniforme 1 é `sash` ou `sashMirr
 
 Fora do teste automático: a folha visual (`scripts/kit-sheet.mjs`) e a revisão contra uniformes reais ficam com o `art-director` e o CEO antes do lançamento.
 
+### QA de "de qual time é cada lance" (opção A; `partida.md` e `componentes.md`)
+
+Critérios (medidas 1 a 5 de `partida.md`, mais as decisões do CEO): escudo `xs` de 24px, decorativo, logo depois do minuto, do clube certo, em cada lance de time (a mudança tática inclusive); fases sem escudo; nome do clube mantido; frase escondida com o clube logo depois do minuto (a mudança tática sem o clube); fundo do gol igual nos dois lados; altura da linha igual à de antes (54px na narração e 38px na súmula, com uma linha de texto); 244px de texto a 360; nenhum `id` repetido; sem rolagem lateral em 360, 390, 844 e 1280 em pt-BR, es e en com "Inter-Regional"; a súmula igual à narração.
+
+- Matriz critério -> teste: escudo certo, 24px, `aria-hidden`, depois do minuto, fases sem escudo, ordem da frase, altura, 244px e ids: `tests/e2e/team-side.spec.ts` (narração e súmula) e, em unidade, `app/src/ui/match/narration.test.ts` e `app/src/ui/report.test.ts` (o `crest` pelo `side`, as fases sem), `app/src/ui/match-screens.test.ts` e `app/src/ui/report-screens.test.ts` (clube depois do minuto, escudo `aria-hidden`); 54px a 360 × 740 com campo e a rolagem lateral nos quatro tamanhos e três idiomas: `team-side.spec.ts`; fundo do gol igual nos dois lados e nos dois temas, e as outras linhas sem o fundo: `team-side.spec.ts` (novo, "o fundo do gol é grass-soft...").
+- Regressão da triagem: `tests/e2e/pause-board.spec.ts` fixa o clube "Inter-Regional" e confere que o placar e o campo não mudam de lugar ao pausar a 360 × 740. Está como `test.fail` até o bug do placar ser corrigido (a coluna do centro cresce de 66 para 130px com "Pausada", os lados encolhem e o nome longo quebra: +12px). Quando o `developer` corrigir, o Playwright acusa "expected to fail": tirar a linha `test.fail`. Origem: `main` (`Scoreboard.svelte`, T-085); a branch não toca o placar.
+- Manual (CEO): o escudo de relance no celular real (iPhone), os dois temas, o leitor de tela dizendo o clube logo depois do minuto.
+
 ### Ritual de release (`test:release`, manual)
 
 Não há job semanal, para manter o custo zero. O script `npm run test:release` **ainda não existe** (a criar pelo `devops-engineer` junto do PR de CI) e roda, à mão, antes de cada `/release`: `test:all`; `PROPERTY_FULL=1 npm test -w app`; `NAMES_FULL_CHECK=1 npm test -w app`; `npm run balance -- --seasons 1000 --seed 1 --robot weakest` (metas de release da T-070: todo clube campeão e G4 do robô no mais fraco de pelo menos 2%); `npm run balance -- --seasons 200 --seed 1,2,3`; `npm run balance -- --chain 3`; e, quando existir, o E2E com `--repeat-each=3`.
