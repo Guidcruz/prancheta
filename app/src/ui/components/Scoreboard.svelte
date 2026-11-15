@@ -169,8 +169,11 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
-  /* A fixed height, the line of `numero` (20px): "Pausada" (body-strong, 22px) never makes the
-     board grow and push what is under it (the pitch of T-085). */
+  /* The line keeps one height, running and paused, so the board never pushes what is under it
+     (the pitch of T-085). With baseline alignment and the metrics of Barlow (ascender 1.0,
+     descender 0.2), the line is set by the minute (`numero` 18/20: 17.2px above the baseline) and
+     the phase (`caption` 12/16: 3.2px below); "Pausada" (15px) on a 16px line stays inside both
+     (14px above, 2px below), where its own 22px (or even 20px) would add about 0.8px. */
   .live {
     display: flex;
     flex-wrap: wrap;
@@ -181,7 +184,7 @@
     font-variant-numeric: tabular-nums;
   }
   .live .paused {
-    line-height: 20px;
+    line-height: 16px;
   }
   .phase {
     color: var(--ink-muted);
