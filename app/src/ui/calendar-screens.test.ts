@@ -176,11 +176,13 @@ describe('MatchCard highlight (componentes.md, T-084)', () => {
     }
   });
 
-  it('without it (or with an empty word), no word and no border', () => {
-    for (const extra of [{}, { highlight: '' }]) {
-      const body = card(extra);
-      expect(body).not.toContain('highlighted');
-      expect(body).not.toContain('rotulo');
+  it('without it (or with an empty word), no word and no border, in the three forms', () => {
+    for (const highlight of [{}, { highlight: '' }]) {
+      for (const extra of [{}, { href: '#/calendar' }, { onclick: noop }]) {
+        const body = card({ ...highlight, ...extra });
+        expect(body).not.toContain('highlighted');
+        expect(body).not.toContain('rotulo');
+      }
     }
   });
 });
