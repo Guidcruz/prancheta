@@ -1060,6 +1060,13 @@ test.describe('Partida narrada (T-032)', () => {
     await expect(matchScreen(page)).toHaveCount(0);
     await expect(playButton(page)).toBeVisible();
     await expect(page).toHaveURL(/#\/club$/);
+    // Neither the match's entry nor its sheet's is left under the tab.
+    expect(
+      await page.evaluate(() => {
+        const state = history.state as { match?: boolean; sheet?: string } | null;
+        return { match: state?.match, sheet: state?.sheet };
+      }),
+    ).toEqual({ match: undefined, sheet: undefined });
   });
 
   test.describe('erro ao jogar no fim (o playRound lança antes de gravar)', () => {
