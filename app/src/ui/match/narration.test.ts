@@ -126,8 +126,10 @@ describe('every line of real matches, in the three languages', () => {
           expect(item.kind.length, step.line.source.type).toBeGreaterThan(0);
           expect(text).not.toMatch(/\{\w+\}/);
           expect(text).not.toMatch(/\b(match|report|tactic)\.[a-z]/);
-          if (item.tone === 'phase') expect(item.club).toBeUndefined();
-          else expect(item.club).toBeTruthy();
+          // The phases have no club; a tactic change names it in its own text.
+          if (item.tone === 'phase' || step.line.source.type === 'tacticChange') {
+            expect(item.club).toBeUndefined();
+          } else expect(item.club).toBeTruthy();
           if (step.announce !== undefined) {
             const sentence = announcement(step.announce, ctx)!;
             expect(sentence).toBeTruthy();

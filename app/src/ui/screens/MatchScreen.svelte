@@ -327,11 +327,8 @@
       </ActionBar>
     {:else}
       <ActionBar summary={saveState}>
-        <Button
-          variant="primary"
-          busy={stage === 'saving'}
-          busyLabel={t('round.saving', lang)}
-          onclick={toSummary}>{t('match.toSummary', lang)}</Button
+        <Button variant="primary" busy={stage === 'saving'} onclick={toSummary}
+          >{t('match.toSummary', lang)}</Button
         >
       </ActionBar>
     {/if}
@@ -366,7 +363,9 @@
   onclose={() => closeLeave()}
   footer={leaveFooter}
 >
-  <p class="body leave">{t('match.leave.body', lang)}</p>
+  <div class="leave">
+    <p class="body">{t('match.leave.body', lang)}</p>
+  </div>
 </BottomSheet>
 
 <style>
@@ -415,13 +414,18 @@
   .measure span {
     display: inline-flex;
   }
+  /* 16px from the edge, under the title (the pattern of ConfirmSheet and MatchReport). */
   .leave {
+    padding: var(--space-2) var(--space-2) 0;
+  }
+  .leave p {
     margin: 0;
   }
   .leave-foot {
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
+    padding-inline: var(--space-2);
   }
   /* Desktop breakpoint (docs/02-architecture.md, 3). No token yet: componentes.md, proposal 1.
      The column of layout-content-max, and the bar sticks to its foot (ActionBar.svelte). */

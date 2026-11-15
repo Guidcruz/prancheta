@@ -166,7 +166,8 @@
     flex: none;
     align-items: center;
     justify-content: center;
-    width: 48px;
+    /* The 48px segment of proposal 33 (componentes.md): a touch target plus space-1. */
+    width: calc(var(--touch) + var(--space-1));
     min-height: calc(var(--touch) + var(--space-2));
     padding: 0 var(--space-1) 0 0;
     border: 2px solid transparent;

@@ -1073,9 +1073,11 @@
 {/snippet}
 
 {#snippet modeFooter()}
-  <Button variant="primary" fullWidth icon="play" onclick={playFromMode}
-    >{t('play.label', lang)}</Button
-  >
+  <div class="mode-foot">
+    <Button variant="primary" fullWidth icon="play" onclick={playFromMode}
+      >{t('play.label', lang)}</Button
+    >
+  </div>
 {/snippet}
 
 <BottomSheet
@@ -1088,7 +1090,8 @@
   <div class="mode">
     <OptionGroup
       name="play-mode"
-      legend={t('newGame.options.match', lang)}
+      legend={t('play.mode.title', lang)}
+      hideLegend
       options={modeOptions}
       value={modeChoice}
       columns={1}
@@ -1116,6 +1119,16 @@
 </BottomSheet>
 
 <style>
+  /* The body and the foot of the sheets 16px from the edge, under the title (the pattern of
+     ConfirmSheet, CareerSheets and MatchReport: the sheet's own 8px plus these 8px). */
+  .mode,
+  .check {
+    padding: var(--space-2) var(--space-2) 0;
+  }
+  .mode-foot,
+  .check-foot {
+    padding-inline: var(--space-2);
+  }
   .mode {
     display: flex;
     flex-direction: column;

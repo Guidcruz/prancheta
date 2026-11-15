@@ -20,6 +20,8 @@
   interface Props {
     name: string;
     legend: string;
+    /** The legend is read by screen readers but not shown (a title already says it). */
+    hideLegend?: boolean;
     /** A line under the legend ("Não dá para mudar depois de começar."). */
     note?: string;
     options: readonly OptionItem[];
@@ -28,13 +30,22 @@
     columns?: 1 | 2 | 3;
     onchange: (value: string) => void;
   }
-  const { name, legend, note, options, value, columns, onchange }: Props = $props();
+  const {
+    name,
+    legend,
+    hideLegend = false,
+    note,
+    options,
+    value,
+    columns,
+    onchange,
+  }: Props = $props();
   const id = $props.id();
   const cols = $derived(columns ?? (Math.min(options.length, 3) as 1 | 2 | 3));
 </script>
 
 <fieldset class="group" aria-describedby={note ? `${id}-note` : undefined}>
-  <legend class="body-strong">{legend}</legend>
+  <legend class="body-strong" class:visually-hidden={hideLegend}>{legend}</legend>
   {#if note}<p class="caption note" id="{id}-note">{note}</p>{/if}
   <div class="cards cols-{cols}">
     {#each options as option (option.value)}
@@ -137,6 +148,14 @@
   }
   .muted {
     color: var(--ink-muted);
+  }
+  .visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   /* Desktop breakpoint (docs/02-architecture.md, 3). No token yet: componentes.md, proposal 1. */
   @media (min-width: 900px) {

@@ -186,6 +186,7 @@ function lineBody(
         club: clubOf(ctx, source.side),
       };
     case 'tacticChange': {
+      // The text already names the club: no club line under it.
       const club = clubOf(ctx, source.side);
       const preset = source.preset ?? (source.posture === 'allOut' ? 'allOut' : undefined);
       return {
@@ -198,7 +199,6 @@ function lineBody(
                 pressure: t(`tactic.pressure.${source.pressure}`, lang),
               })
             : t(PRESET[preset], lang, { club }),
-        club,
       };
     }
     case 'halftimeTalk':
