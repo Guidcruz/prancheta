@@ -426,7 +426,7 @@
     display: flex;
     flex-direction: column;
     gap: var(--space-2);
-    padding-inline: var(--space-2);
+    padding: var(--space-4) var(--space-2) 0;
   }
   /* Desktop breakpoint (docs/02-architecture.md, 3). No token yet: componentes.md, proposal 1.
      The column of layout-content-max, and the bar sticks to its foot (ActionBar.svelte). */

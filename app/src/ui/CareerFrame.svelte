@@ -1119,15 +1119,16 @@
 </BottomSheet>
 
 <style>
-  /* The body and the foot of the sheets 16px from the edge, under the title (the pattern of
-     ConfirmSheet, CareerSheets and MatchReport: the sheet's own 8px plus these 8px). */
+  /* The body and the foot of the sheets 16px from the edge, under the title, and the foot 16px
+     below the body (the pattern of ConfirmSheet, CareerSheets and MatchReport: the sheet's own
+     8px plus these). */
   .mode,
   .check {
     padding: var(--space-2) var(--space-2) 0;
   }
   .mode-foot,
   .check-foot {
-    padding-inline: var(--space-2);
+    padding: var(--space-4) var(--space-2) 0;
   }
   .mode {
     display: flex;

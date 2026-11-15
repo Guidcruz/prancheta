@@ -47,7 +47,7 @@
 <fieldset class="group" aria-describedby={note ? `${id}-note` : undefined}>
   <legend class="body-strong" class:visually-hidden={hideLegend}>{legend}</legend>
   {#if note}<p class="caption note" id="{id}-note">{note}</p>{/if}
-  <div class="cards cols-{cols}">
+  <div class="cards cols-{cols}" class:first={hideLegend && !note}>
     {#each options as option (option.value)}
       {@const checked = option.value === value}
       <label class="card" class:checked for="{id}-{option.value}">
@@ -93,6 +93,10 @@
     display: grid;
     gap: var(--space-2);
     margin-top: var(--space-2);
+  }
+  /* Nothing shown above the cards: they start where the body does. */
+  .cards.first {
+    margin-top: 0;
   }
   .card {
     position: relative;
