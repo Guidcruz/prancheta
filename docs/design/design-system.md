@@ -189,7 +189,7 @@ O anel de foco (`focus`, 2px sólido) aparece para quem navega pelo teclado e nu
 
 ## Ícones novos (aprovado pelo CEO em 2026-11-15)
 
-- `pause`, `skip` e `chevron-down` entram no `Icon` (lista fechada `IconName`), no estilo do conjunto provisório (24×24, traço de 2px), e na lista que o `art-director` redesenha. "Continuar" usa o `play`; "Rápido" não tem ícone; o estado ligado é o do botão ligado (proposta 38 de [componentes.md](telas/componentes.md#propostas-ao-design-system), pendente), sem o `check`.
+- `pause`, `skip` e `chevron-down` entram no `Icon` (lista fechada `IconName`), no estilo do conjunto provisório (24×24, traço de 2px), e na lista que o `art-director` redesenha. "Continuar" usa o `play`; "Rápido" não tem ícone; o estado ligado é o do botão ligado (proposta 38 de [componentes.md](telas/componentes.md#propostas-ao-design-system), aprovada pelo CEO em 2026-11-15), sem o `check`.
 
 ## Selos (aprovado pelo CEO em 2026-11-07)
 
