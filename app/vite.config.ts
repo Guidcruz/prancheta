@@ -18,6 +18,9 @@ export default defineConfig({
   define: { __PRANCHETA_ENV__: JSON.stringify(process.env.PRANCHETA_ENV ?? '') },
   build: {
     outDir,
+    // The graph of chunks (dist/.vite/manifest.json) for tests/regression/match-chunks.test.ts;
+    // scripts/build.mjs leaves the folder out of the published dist/ (docs/02-architecture.md, 4.7).
+    manifest: true,
     // Vite 8 passes `comments.legal = !minify` to Rolldown, so the minified bundle drops every
     // `/*! @license */` notice. Keep them: the fdlibm port (Sun Microsystems) and MIT dependencies
     // require the notice to ship with the distributed copy. Minification stays on.

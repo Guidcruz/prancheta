@@ -1,7 +1,7 @@
 // Builds the public site (/) and the game (/jogo) into one dist/ folder for Cloudflare Pages.
 import { execSync } from 'node:child_process';
 import { cpSync, rmSync, mkdirSync, existsSync } from 'node:fs';
-import { resolve, dirname } from 'node:path';
+import { resolve, dirname, relative, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -23,6 +23,12 @@ run('npm run build -w site');
 run('npm run build -w app');
 mkdirSync(resolve(root, 'dist'), { recursive: true });
 cpSync(resolve(root, 'site/dist'), resolve(root, 'dist'), { recursive: true });
-cpSync(resolve(root, 'app/dist'), resolve(root, 'dist/jogo'), { recursive: true });
+// Without app/dist/.vite/: the manifest of the chunks serves the tests and is not published
+// (docs/02-architecture.md, 4.7).
+const appDist = resolve(root, 'app/dist');
+cpSync(appDist, resolve(root, 'dist/jogo'), {
+  recursive: true,
+  filter: (source) => !relative(appDist, source).split(sep).includes('.vite'),
+});
 if (!existsSync(resolve(root, 'dist/jogo/index.html'))) throw new Error('game build missing');
 console.log('dist/ ready: site at / and game at /jogo');
