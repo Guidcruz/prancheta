@@ -66,6 +66,7 @@ const nameOf = (save: SaveJson, id: string) => save.game.clubs[id]!.def.shortNam
 
 const table = (page: Page) => page.locator('main table');
 const box = (page: Page) => page.locator('main .scroll-table');
+const label = (page: Page) => page.locator('main [data-scroll-table-label]');
 const rows = (page: Page) => table(page).locator('tbody tr');
 const rowHeader = (page: Page, i: number) => rows(page).nth(i).locator('th[scope="row"]');
 const mineRow = (page: Page) => table(page).locator('tbody tr[aria-current="true"]');
@@ -183,6 +184,43 @@ test.describe('Tabela (T-031)', () => {
       );
       await expect(header).not.toHaveAttribute('aria-sort');
     }
+  });
+
+  test('o rótulo fica à vista ao rolar a caixa até o fim, a 360 px (proposta 31)', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'medida a 360 px');
+    await page.setViewportSize({ width: 360, height: 740 });
+    await startCareer(page);
+    await advance(page, 2);
+    await openTable(page);
+
+    const text = (await label(page).textContent())!.trim();
+    expect(text).toMatch(/^Depois da rodada \d+$/);
+    await expect(label(page)).toHaveText(text);
+    await expect(label(page)).toHaveAttribute('aria-hidden', 'true');
+    // Lido uma vez só: a caption da tabela nomeia a região, e o rótulo fica fora da árvore.
+    await expect(box(page)).toHaveAccessibleName(text);
+    await expect(table(page).locator('caption')).toHaveText(text);
+    await expect(page.getByText(text, { exact: true })).toHaveCount(2);
+
+    const before = await label(page).boundingBox();
+    const scrolled = await box(page).evaluate(async (el) => {
+      el.scrollLeft = el.scrollWidth;
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      return { left: el.scrollLeft, max: el.scrollWidth - el.clientWidth };
+    });
+    expect(scrolled.left).toBeGreaterThan(0);
+    expect(scrolled.left).toBeGreaterThanOrEqual(scrolled.max - 1);
+    await expect(label(page)).toBeVisible();
+    const after = await label(page).boundingBox();
+    expect(after!.x).toBeCloseTo(before!.x, 0);
+    expect(after!.x).toBeGreaterThanOrEqual(0);
+    expect(after!.x + after!.width).toBeLessThanOrEqual(360);
+    // O rótulo está acima da caixa, não dentro dela.
+    const boxTop = (await box(page).boundingBox())!.y;
+    expect(after!.y + after!.height).toBeLessThanOrEqual(boxTop + 1);
+    await noPageScroll(page, '360');
   });
 
   test('ordem e números iguais ao getStandings do save; % e Últimos 5; tabular-nums (medida 2)', async ({
@@ -327,7 +365,9 @@ test.describe('Tabela (T-031)', () => {
     // (8) Pré-temporada: a caption da pré-temporada, todos com 0 ponto, sem zona, sem mudança,
     // sem legenda.
     await expect(table(page).locator('caption')).toHaveText(ui('pt-BR', 'club.table.preseason'));
-    await expect(table(page).locator('caption')).toBeVisible();
+    // O texto visível é o rótulo fora da caixa (aria-hidden); a `caption` da tabela é só do leitor.
+    await expect(label(page)).toHaveText(ui('pt-BR', 'club.table.preseason'));
+    await expect(label(page)).toBeVisible();
     for (let i = 0; i < 20; i++) {
       await expect(rows(page).nth(i).locator('td.stat').first()).toHaveText('0');
     }

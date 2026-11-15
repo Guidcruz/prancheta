@@ -422,7 +422,17 @@ test.describe('Elenco (elenco.md; US-016)', () => {
       expect(before.width).toBeLessThanOrEqual(boxSize.width * 0.5);
       const scrolls = await box.evaluate((el) => el.scrollWidth > el.clientWidth);
       expect(scrolls, 'a 360 px a tabela rola por dentro').toBe(true);
+      // The visible label sits above the box, outside the scroll (aria-hidden); it stays in view.
+      const label = main(page).locator('[data-scroll-table-label]');
+      await expect(label).toBeVisible();
+      await expect(label).toHaveAttribute('aria-hidden', 'true');
+      await expect(box).toHaveAccessibleName((await label.textContent())!);
+      const labelBefore = (await label.boundingBox())!;
       await box.evaluate((el) => (el.scrollLeft = el.scrollWidth));
+      await expect(label).toBeVisible();
+      const labelAfter = (await label.boundingBox())!;
+      expect(Math.abs(labelAfter.x - labelBefore.x)).toBeLessThanOrEqual(1);
+      expect(labelAfter.x + labelAfter.width).toBeLessThanOrEqual(360);
       const after = (await cell.boundingBox())!;
       expect(Math.abs(after.x - before.x)).toBeLessThanOrEqual(1);
       await noPageScroll(page);

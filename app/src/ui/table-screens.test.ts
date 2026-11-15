@@ -52,11 +52,17 @@ describe('Tabela (T-031): every state in the three languages', () => {
       ['season over', over],
       ['simplified', simplified],
     ] as const) {
-      it(`${lang}, ${label}: no raw key, 20 rows, the caption visible`, () => {
+      it(`${lang}, ${label}: no raw key, 20 rows, the caption label outside the box`, () => {
         const body = screen(game, lang);
         expectNoRawKey(body, `${lang} ${label}`);
         expect((body.match(/<th scope="row"/g) ?? []).length).toBe(20);
-        expect(body).not.toMatch(/<caption[^>]*visually-hidden/);
+        // The visible caption is a label above the scrolling box (aria-hidden); the table's own
+        // caption is hidden and is the one read (and the region's name): read once.
+        expect(body).toMatch(
+          /<div class="label caption[^"]*" aria-hidden="true"[^>]*>[^<]+<\/div>/,
+        );
+        expect(body).toMatch(/<caption[^>]*visually-hidden/);
+        expect(body.indexOf('class="label caption')).toBeLessThan(body.indexOf('class="box '));
         // Read only: nothing in the table is a link or a button.
         const table = body.slice(body.indexOf('<table'), body.indexOf('</table>'));
         expect(table).not.toMatch(/<(a|button)\b/);

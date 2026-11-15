@@ -103,7 +103,7 @@ A lista inteira é tocável: cada linha abre o card (o toque em qualquer ponto d
 - Desktop: todas as colunas cabem sem rolagem lateral na coluna normal (`layout-content-max`); a tabela não precisa de `wide`. O card abre como diálogo flutuante ancorado pela base (o BottomSheet da T-025), não como painel lateral (decisão do CEO, 2026-11-07).
 - Celular deitado (844×390): todas as colunas cabem; a tabela só rola na vertical, com a página.
 - Celular a 360px: a coluna fixa ocupa no máximo 50% da caixa da tabela, contando o respiro da célula e a linha da borda (o conteúdo da célula tem `calc(50cqi − respiro − 1px)`; ver [componentes.md](componentes.md#casca-da-t-028-clube-elenco-e-jogador)); Nota, Cond. e Moral ficam visíveis, Forma e Idade rolam por dentro da tabela. A linha da borda da coluna fixa mostra onde a rolagem começa.
-- A `caption` visível ("Elenco do {club}: {count} jogadores") fica dentro da caixa da tabela e rola junto com as colunas: sai de vista quando o jogador rola até Forma e Idade e volta ao rolar para o início. É o comportamento da ScrollTable, igual na Tabela ([tabela.md](tabela.md#celular-em-pé-360px-deitado-e-desktop)); tirá-la da área que rola é a proposta 31 de [componentes.md](componentes.md#propostas-ao-design-system), pendente.
+- A `caption` visível ("Elenco do {club}: {count} jogadores") é um rótulo acima da caixa da tabela, fora da rolagem e `aria-hidden`: fica à vista quando o jogador rola até Forma e Idade (proposta 31 de [componentes.md](componentes.md#propostas-ao-design-system), implementada; igual na [Tabela](tabela.md#celular-em-pé-360px-deitado-e-desktop)). A `caption` da `table` continua escondida, para o leitor de tela e como nome da região.
 - O cabeçalho da tabela não fica fixo ao rolar a página: a caixa da tabela rola na horizontal, e `position: sticky` vertical não atravessa essa caixa. Com 25 linhas e grupos, a legenda dos grupos basta.
 
 ## Componentes
@@ -121,8 +121,8 @@ Rascunho pt-BR para o `content-writer`, em `ui.json`. `status.*` e `position.*` 
 | `squad.sort.position`      | Posição                                    | opção                                                  |
 | `squad.sort.overall`       | Nota                                       | opção                                                  |
 | `squad.sort.condition`     | Condição                                   | opção (só no Completo)                                 |
-| `squad.caption.one`        | Elenco do {club}: {count} jogador          | legenda da tabela                                      |
-| `squad.caption.other`      | Elenco do {club}: {count} jogadores        | legenda da tabela                                      |
+| `squad.caption.one`        | Elenco do {club}: {count} jogador          | rótulo visível acima da caixa e `caption` escondida    |
+| `squad.caption.other`      | Elenco do {club}: {count} jogadores        | rótulo visível acima da caixa e `caption` escondida    |
 | `squad.col.player`         | Jogador                                    | cabeçalho da coluna fixa                               |
 | `squad.col.overall`        | Nota                                       | cabeçalho                                              |
 | `squad.col.overall.full`   | Nota geral                                 | nome completo (leitor de tela)                         |

@@ -338,7 +338,9 @@ describe('the Elenco screen (elenco.md; US-016)', () => {
         tPlural('squad.caption', 25, 'pt-BR', { club: round5.clubs[TEST_CLUB]!.def.shortName }),
       ),
     );
-    expect(body).not.toMatch(/<caption[^>]*visually-hidden/);
+    // Shown as an aria-hidden label above the scrolling box; the table's caption is hidden.
+    expect(body).toMatch(/<div class="label caption[^"]*" aria-hidden="true"/);
+    expect(body).toMatch(/<caption[^>]*visually-hidden/);
   });
 
   it('Realismo simplificado: no "Cond." column and no "Condição" sort', () => {
