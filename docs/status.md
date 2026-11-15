@@ -352,7 +352,7 @@ Implementado e publicado (PR #12; correções no PR #13 e no PR da T-006).
 - T-032 (medida): a "Animada completa" ainda não foi medida; medir de novo com o campo 2D na T-085.
 - T-032 (ícone): o `art-director` avalia um ícone próprio (`resume`) para "Retomar".
 - T-026 (arte): a folha visual dos uniformes (`scripts/kit-sheet.mjs`) fica com o `art-director`; a revisão contra os uniformes reais, pelo CEO, antes do lançamento (também em "Pendências do CEO").
-- T-032 (acessibilidade): bug do "Pular para o conteúdo" e os cards de altura igual (proposta 32), ainda abertos.
+- Fora da T-032 (registrados durante a T-084): o link "Pular para o conteúdo" (`href="#main"`) muda o endereço e troca de aba; e os cards de altura igual em duas colunas (item 32 das propostas em `docs/design/telas/componentes.md`; ver `calendario.md`). Os dois seguem abertos.
 - T-032 (som e vibração): o som (T-047) e a vibração (T-041) vão se inscrever no `onreveal` do player da partida, o ponto único em que cada lance é revelado.
 
 ## Dívida técnica (achados do security-auditor)
