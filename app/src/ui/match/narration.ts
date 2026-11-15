@@ -2,7 +2,7 @@ import type { ClubId, GameState, MatchEvent, PlayerId, Side } from '@engine';
 import type { Lang } from '@lib/config';
 import { t, tPlural } from '@lib/i18n';
 import type { CommentaryItem } from '../components/CommentaryFeed.svelte';
-import { minuteLabel, shortNameOf } from '../round';
+import { crestOf, minuteLabel, shortNameOf } from '../round';
 import type { LineState, MatchClock, MatchPhase } from './steps';
 
 /*
@@ -208,10 +208,35 @@ function lineBody(
   }
 }
 
+/** The side a line is about; none for the phases (and for a talk that is never shown). */
+function sideOf(line: LineState): Side | undefined {
+  const source = line.source;
+  switch (source.type) {
+    case 'kickoff':
+    case 'secondHalf':
+    case 'halftime':
+    case 'stoppage':
+    case 'fulltime':
+    case 'halftimeTalk':
+      return undefined;
+    default:
+      return source.side;
+  }
+}
+
 /** A line of the commentary, ready for the CommentaryFeed. */
 export function commentaryItem(line: LineState, ctx: NarrationContext): CommentaryItem {
   const minute = clockLabel(line.clock, ctx.lang);
-  return { id: line.id, minute: minute.text, minuteA11y: minute.a11y, ...lineBody(line, ctx) };
+  const side = sideOf(line);
+  const crest =
+    side === undefined ? undefined : crestOf(ctx.game, side === 'home' ? ctx.homeId : ctx.awayId);
+  return {
+    id: line.id,
+    minute: minute.text,
+    minuteA11y: minute.a11y,
+    ...lineBody(line, ctx),
+    ...(crest === undefined ? {} : { crest }),
+  };
 }
 
 /** The board's accessible name (`match.score.a11y`), with the score shown. */

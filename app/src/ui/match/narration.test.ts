@@ -112,6 +112,46 @@ describe('the start of a play gives no hint of the outcome', () => {
   });
 });
 
+describe('the club of each line (the crest)', () => {
+  const m = matches[0]!;
+  const ctx = ctxOf(m);
+  const player = m.match.home.sheet.lineup.starters.find((id) => id !== null)!;
+  const def = (side: 'home' | 'away') =>
+    m.game.clubs[side === 'home' ? m.match.home.clubId : m.match.away.clubId]!.def;
+
+  it('a line with a side carries the crest of that club, home or away, tactic change included', () => {
+    for (const side of ['home', 'away'] as const) {
+      const base = { ...at, side, importance: 2 as const };
+      const events: MatchEvent[] = [
+        { ...base, type: 'yellow', player, triggersSuspension: false },
+        { ...base, type: 'injury', player, severity: 'light' },
+        {
+          ...base,
+          type: 'tacticChange',
+          formation: '4-4-2',
+          posture: 'balanced',
+          pressure: 'medium',
+        },
+      ];
+      for (const event of events) {
+        expect(commentaryItem(line(event, 'final'), ctx).crest).toBe(def(side));
+      }
+    }
+  });
+
+  it('the phases have no crest', () => {
+    for (const source of [
+      { type: 'kickoff', minute: 0, half: 1 },
+      { type: 'secondHalf', minute: 46, half: 2 },
+      { type: 'halftime', minute: 45, half: 1, score: [0, 0] },
+      { type: 'stoppage', minute: 45, half: 1, minutes: 2 },
+      { type: 'fulltime', minute: 90, half: 2, score: [0, 0] },
+    ] as unknown as LineState['source'][]) {
+      expect(commentaryItem(line(source, 'final'), ctx).crest).toBeUndefined();
+    }
+  });
+});
+
 describe('every line of real matches, in the three languages', () => {
   it('has the word of its kind, no raw key and no unfilled placeholder', () => {
     for (const m of matches.slice(0, 20)) {

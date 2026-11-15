@@ -1,4 +1,5 @@
 <script lang="ts" module>
+  import type { ShieldClub } from '@lib/generators/shield';
   import type { IconName } from './Icon.svelte';
 
   /** One line of the commentary, its texts already formatted by the screen. */
@@ -27,17 +28,20 @@
     detail?: string;
     /** The short name of the club, in `caption` `ink-muted`; none for the phases. */
     club?: string;
+    /** The club of the play, drawn as a small crest after the minute; none for the phases. */
+    crest?: ShieldClub;
   }
 </script>
 
 <script lang="ts">
+  import Crest from './Crest.svelte';
   import Icon from './Icon.svelte';
 
   /**
    * CommentaryFeed (componentes.md, "Casca da T-032 e da T-085"): the commentary of the match, the
    * most recent line on top, right under the board, in the line of the MatchTimeline (the minute
-   * in a column of fixed width, the icon in its own column, the word of the kind in `body-strong`,
-   * the text and, below, the club). A line with the same `id` is replaced in place, never moved.
+   * in a column of fixed width, the club's crest in its own column, the icon opening the text, the
+   * word of the kind in `body-strong`, the text and, below, the club). A line with the same `id` is replaced in place, never moved.
    * Nothing is tappable and nothing moves: a new line appears on top without sliding, and the list
    * never scrolls by itself. It is not a live region (the board announces); each line is read in
    * one sentence, hidden, as in the MatchTimeline. With `scroll`, the list is its own scrolling
@@ -56,11 +60,11 @@
   const spoken = (item: CommentaryItem) =>
     [
       item.minuteA11y,
+      item.club,
       item.kind,
       item.text,
       item.note === undefined ? undefined : (item.noteA11y ?? item.note),
       item.detail,
-      item.club,
     ]
       .filter((part) => part !== undefined && part !== '')
       .join(', ');
@@ -77,12 +81,14 @@
       {#each items as item (item.id)}
         <li class="line {item.tone ?? ''}" data-line={item.id}>
           <span class="numero minute" aria-hidden="true">{item.minute}</span>
-          <span class="icon {item.tone ?? ''}" aria-hidden="true"
-            >{#if item.icon}<Icon name={item.icon} size={20} />{/if}</span
+          <span class="crest-slot" aria-hidden="true" data-crest-slot
+            >{#if item.crest}<Crest club={item.crest} size="xs" instance={item.id} />{/if}</span
           >
           <span class="what" aria-hidden="true">
             <span class="main"
-              ><span class="body-strong kind">{item.kind}</span>{#if item.text}<span
+              >{#if item.icon}<span class="icon {item.tone ?? ''}"
+                  ><Icon name={item.icon} size={20} /></span
+                >{/if}<span class="body-strong kind">{item.kind}</span>{#if item.text}<span
                   class="body text">{` ${item.text}`}</span
                 >{/if}{#if item.note}<span class="caption note">{` ${item.note}`}</span>{/if}</span
             >
@@ -117,10 +123,10 @@
     list-style: none;
   }
   /* The line of the MatchTimeline: the minute column fits "90+7'" in `numero` (the width of a
-     touch target, 44px, no token for it); the icon column is the size the icon is drawn at. */
+     touch target, 44px, no token for it); the crest column is the `xs` medallion (24px). */
   .line {
     display: grid;
-    grid-template-columns: var(--touch) 20px minmax(0, 1fr);
+    grid-template-columns: var(--touch) var(--size-medallion-xs) minmax(0, 1fr);
     column-gap: var(--space-2);
     align-items: baseline;
     position: relative;
@@ -135,9 +141,23 @@
   .minute {
     font-variant-numeric: tabular-nums;
   }
-  .icon {
-    display: inline-flex;
+  /* The crest (27px) never makes a row taller: a line of one line of text and no club below it
+     (the change of tactics) is 22px tall, so the slot has no height and the crest hangs into the
+     padding under the line. */
+  .crest-slot {
+    display: flex;
+    align-items: flex-start;
     align-self: start;
+    height: 0;
+  }
+  /* The icon of the play opens the text, 20px, and does not make the first line taller. */
+  .icon {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    margin-inline-end: var(--space-1);
+    vertical-align: top;
+    line-height: 0;
     color: var(--ink-muted);
   }
   .icon.yellow {

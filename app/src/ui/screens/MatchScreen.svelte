@@ -558,7 +558,8 @@
             minute: minute.text,
             minuteA11y: minute.a11y,
             phase: phaseLabel(view.phase, lang),
-            ...(run.paused && playing ? { paused: t('match.paused', lang) } : {}),
+            pausedText: t('match.paused', lang),
+            paused: run.paused && playing,
           }}
           announcement={spoken}
           instance="match"
@@ -658,6 +659,10 @@
   .pitch-box {
     order: 3;
     flex: none;
+    /* The size is measured by script and arrives one frame after a resize (WebKit delivers it
+       later than Chromium): until then a width from the old viewport must not push the page
+       sideways. */
+    max-width: 100%;
     position: relative;
     background: var(--pitch);
   }

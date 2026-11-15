@@ -86,9 +86,12 @@ describe('the match screen at the kick-off (partida.md, "Conteúdo")', () => {
           }),
         ),
       );
-      // No primary while the ball rolls; no "Pausada" before a pause; no navigation.
+      // No primary while the ball rolls; "Pausada" only reserved (hidden) before a pause, never read
+      // and never in the place of the phase; no navigation.
       expect(primaries(body.split('<dialog')[0]!)).toBe(0);
-      expect(body).not.toContain(`>${shown(t('match.paused', lang))}<`);
+      expect(body).toMatch(/class="[^"]*\bpaused\b[^"]*\boff\b/);
+      expect(body).not.toMatch(/class="[^"]*\bphase\b[^"]*\boff\b/);
+      expect(body).not.toContain(`, ${shown(t('match.paused', lang))}<`);
       expect(body).not.toContain('<nav');
       expectNoRawKey(body, lang);
     });
@@ -170,16 +173,34 @@ describe('the live Scoreboard (proposal 37)', () => {
           minute: "45+2'",
           minuteA11y: 'minuto 45 mais 2',
           phase: '1º tempo',
-          paused: 'Pausada',
+          pausedText: 'Pausada',
+          paused: true,
         },
         announcement: 'Gol de Leões',
       },
     }).body;
     expect(body).toContain(`>45+2'</span>`);
     expect(body).toContain('>Pausada<');
+    expect(body).toMatch(/\bphase\b[^"]*\boff\b[^>]*>1º tempo</);
     expect(body).not.toContain('Vitória');
     expect(body).toContain('minuto 45 mais 2, 1º tempo, Pausada');
     expect(body).toMatch(/aria-live="polite" aria-atomic="true">Gol de Leões</);
+  });
+
+  it('running, the word stays in the layout, hidden and unread; the phase shows', () => {
+    const body = render(Scoreboard, {
+      props: {
+        home: side(0),
+        away: side(0),
+        versus: '×',
+        size: 'md',
+        a11yLabel: 'Placar',
+        live: { minute: "23'", minuteA11y: 'minuto 23', phase: '1º tempo', pausedText: 'Pausada' },
+      },
+    }).body;
+    expect(body).toMatch(/\bpaused\b[^"]*\boff\b[^>]*>Pausada</);
+    expect(body).not.toMatch(/\bphase\b[^"]*\boff\b/);
+    expect(body).toContain('minuto 23, 1º tempo<');
   });
 });
 
@@ -200,6 +221,18 @@ describe('the CommentaryFeed', () => {
             note: 'pênalti',
             noteA11y: 'de pênalti',
             club: 'Leões',
+            crest: mine.game.clubs[TEST_CLUB]!.def,
+          },
+          {
+            id: 'e3',
+            minute: "10'",
+            minuteA11y: 'minuto 10',
+            icon: 'card',
+            tone: 'yellow',
+            kind: 'Amarelo',
+            text: 'Beltrano',
+            club: 'Leões',
+            crest: mine.game.clubs[TEST_CLUB]!.def,
           },
           { id: 'e0', minute: "0'", minuteA11y: 'minuto 0', tone: 'phase', kind: 'Rola a bola!' },
         ],
@@ -209,8 +242,13 @@ describe('the CommentaryFeed', () => {
     expect(body).toContain('reversed');
     expect(body.indexOf('data-line="e5"')).toBeLessThan(body.indexOf('data-line="e0"'));
     expect(body).toMatch(/class="line goal/);
-    expect(body).toContain('minuto 23, Gol, Fulano, de pênalti, Leões');
+    // The club comes right after the minute; the crest is decorative; the phases have none.
+    expect(body).toContain('minuto 23, Leões, Gol, Fulano, de pênalti<');
+    expect(body).toContain('minuto 10, Leões, Amarelo, Beltrano<');
     expect(body).toContain('minuto 0, Rola a bola!<');
+    expect(body.match(/class="crest xs[^"]*"[^>]*aria-hidden="true"/g)).toHaveLength(2);
+    // The icon opens the text, inside the first line, not in a column of its own.
+    expect(body).toMatch(/class="main[^"]*"[^>]*>(<!--[^>]*-->)*<span class="icon yellow/);
     expect(body).toContain('tabindex="0"');
     expect(body).not.toContain('aria-live');
   });

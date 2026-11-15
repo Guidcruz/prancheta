@@ -54,19 +54,21 @@ A escala completa (família, tamanho, entrelinha, peso e uso de cada estilo) est
 
 ## Tamanhos (aprovado pelo CEO em 2026-11-07)
 
-| Token               | Valor | Uso                                                                |
-| ------------------- | ----- | ------------------------------------------------------------------ |
-| `size-bar`          | 4px   | Altura das barras de atributo, condição e moral (AttributeBar).    |
-| `size-bar-lg`       | 8px   | Altura da barra do termômetro da torcida (FanThermometer).         |
-| `size-medallion-sm` | 32px  | Escudo e avatar pequenos: listas, linhas de tabela, barra lateral. |
-| `size-medallion-md` | 48px  | Escudo e avatar médios: cards.                                     |
-| `size-medallion-lg` | 64px  | Escudo e avatar grandes: cabeçalho da tela Clube.                  |
-| `size-medallion-xl` | 96px  | Escudo e avatar em destaque: card do jogador, comemoração.         |
+| Token               | Valor | Uso                                                                                                                   |
+| ------------------- | ----- | --------------------------------------------------------------------------------------------------------------------- |
+| `size-bar`          | 4px   | Altura das barras de atributo, condição e moral (AttributeBar).                                                       |
+| `size-bar-lg`       | 8px   | Altura da barra do termômetro da torcida (FanThermometer).                                                            |
+| `size-medallion-xs` | 24px  | Só escudo, dentro de uma linha de texto: narração da partida e súmula (proposta 40, aprovada pelo CEO em 2026-11-15). |
+| `size-medallion-sm` | 32px  | Escudo e avatar pequenos: listas, linhas de tabela, barra lateral.                                                    |
+| `size-medallion-md` | 48px  | Escudo e avatar médios: cards.                                                                                        |
+| `size-medallion-lg` | 64px  | Escudo e avatar grandes: cabeçalho da tela Clube.                                                                     |
+| `size-medallion-xl` | 96px  | Escudo e avatar em destaque: card do jogador, comemoração.                                                            |
 
 - Moram em `design/tokens.json`, no grupo de espaçamento ao lado do `touch` (o mesmo caso: tamanho, não espaçamento), e chegam ao CSS por `npm run tokens`.
 - Escudo e avatar dividem a mesma escala: um medalhão de 48px tem o mesmo tamanho seja clube ou jogador.
 - Os geradores (`shield.ts`, `avatar.ts`) recebem a largura em número; por isso `CREST_SIZES` e `AVATAR_SIZES` repetem os valores, com comentário apontando para cá, até o gerador de tokens exportar também constantes TypeScript.
 - Nenhuma barra nem medalhão declara altura ou largura à mão fora dessas medidas.
+- **`xs` (aprovado pelo CEO em 2026-11-15):** só o `Crest` usa, e só dentro de uma linha de texto (a linha de lance da CommentaryFeed e da MatchTimeline); o avatar não tem `xs`. É sempre decorativo, com o nome do clube escrito na mesma linha (o escudo pequeno não tem contraste garantido), e nunca aumenta a altura da linha. Desenho em [componentes.md](telas/componentes.md#o-clube-de-cada-lance-narração-e-súmula-aprovado-pelo-ceo-em-2026-11-15).
 
 ## Placar (Scoreboard) (aprovado pelo CEO em 2026-11-14)
 

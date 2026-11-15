@@ -117,7 +117,9 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
     const sheet = page.getByRole('dialog', { name: ui('pt-BR', 'match.leave.title') });
     await expect(sheet).toBeVisible();
     await expect(page).toHaveURL(/#\/match$/);
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     // Paused at the end of a step: the pitch stops there (no frames, same pixels).
     const still = await pixels(page);
@@ -187,7 +189,9 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
         document.dispatchEvent(new Event('visibilitychange'));
       }, state);
     await visibility('hidden');
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     const minute = await minuteText(page);
     const hidden = await pixels(page);

@@ -332,7 +332,9 @@ test.describe('Partida narrada (T-032)', () => {
     await runToMinute(page, 5);
     await control(page, 'match.pause').click();
     await expect(control(page, 'match.resume')).toBeVisible();
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     const minute = await minuteText(page);
     await page.clock.runFor(10_000);
@@ -420,7 +422,9 @@ test.describe('Partida narrada (T-032)', () => {
     await expect(sheet).toBeVisible();
     await expect(sheet.getByText(ui('pt-BR', 'match.leave.body'))).toBeVisible();
     await expect(page).toHaveURL(/#\/match$/);
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     // No "sair sem jogar": only the two ways of the spec.
     await expect(sheet.getByRole('button')).toHaveText(

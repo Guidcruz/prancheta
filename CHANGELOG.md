@@ -6,6 +6,11 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Escudo do clube em cada lance da narração e da súmula (decisão do CEO de 2026-11-15, opção A):
+  - Cada lance de time mostra um escudo de 24 px (token novo `size-medallion-xs`) logo depois do minuto, e o nome do clube continua na linha; as fases da partida ficam sem escudo. A súmula muda junto.
+  - O escudo é decorativo (`aria-hidden`): o leitor de tela diz o clube logo depois do minuto. Na mudança tática a frase não repete o clube (aceito). O fundo verde do gol é igual nos dois lados.
+  - A altura da linha não muda (54 px na narração e 38 px na súmula, com uma linha de texto); sem rolagem lateral de 360 a 1280 px em pt-BR, es e en.
+  - Nada muda no motor nem no save.
 - Campo 2D, parte 2 da partida assistida (T-085; US-020):
   - Na "Animada completa", o campo visto de cima entra entre o placar e a narração (360 × 240 px a 360 px de largura, com pelo menos 3 linhas de narração; abaixo de 120 px de altura, sem campo); deitado e no desktop, em duas colunas, com o cabeçalho e o campo à esquerda e o placar e a narração à direita. "Só lances principais" continua sem campo, e o código do campo nem é baixado.
   - Bolinhas nas cores dos uniformes da T-026, com anel em `ink`; o visitante tem um ponto no centro (`FieldKit.mark`, novo campo do gerador, aditivo) e o mandante fica sempre à esquerda, então nada depende só da cor. A coreografia é decorativa, com semente própria, e o começo de um gol é igual ao de uma chance do mesmo tipo até o desfecho; a pausa dramática ganha a câmera lenta.

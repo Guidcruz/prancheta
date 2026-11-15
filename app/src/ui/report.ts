@@ -15,6 +15,7 @@ import type { StatsRow } from './components/MatchStatsTable.svelte';
 import type { TimelineItem } from './components/MatchTimeline.svelte';
 import { matchDate } from './club';
 import {
+  crestOf,
   minuteLabel,
   resultOf,
   shortHandedClub,
@@ -85,18 +86,21 @@ function goalKind(kind: MatchGoal['kind'], lang: Lang): Pick<TimelineItem, 'note
   return { note: t(key, lang), noteA11y: t(`${key}.a11y`, lang) };
 }
 
-/** The common part of a line: the minute (shown and read) and the club, by its short name. */
+/** The common part of a line: the minute (shown and read) and the club, by its short name and crest. */
 function lineBase(
   game: GameState,
   fixture: PlayedFixture,
   at: { readonly minute: number; readonly added?: number; readonly side: Side },
   lang: Lang,
-): Pick<TimelineItem, 'minute' | 'minuteA11y' | 'club'> {
+): Pick<TimelineItem, 'minute' | 'minuteA11y' | 'club' | 'crest'> {
   const minute = minuteLabel(at, lang);
+  const clubId = at.side === 'home' ? fixture.homeId : fixture.awayId;
+  const crest = crestOf(game, clubId);
   return {
     minute: minute.text,
     minuteA11y: minute.a11y,
-    club: shortNameOf(game, at.side === 'home' ? fixture.homeId : fixture.awayId),
+    club: shortNameOf(game, clubId),
+    ...(crest === undefined ? {} : { crest }),
   };
 }
 

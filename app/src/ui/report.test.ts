@@ -20,6 +20,24 @@ const someone = Object.keys(game.players)[0]!;
 const another = Object.keys(game.players)[1]!;
 const at = { minute: 30, half: 1, importance: 2, side: 'home' } as const;
 
+describe('the club of each line (the crest)', () => {
+  it('every line carries the crest of the club of its side, in both sides', () => {
+    const fixture = playedFixture(game, mine.id)!;
+    for (const side of ['home', 'away'] as const) {
+      const clubId = side === 'home' ? fixture.homeId : fixture.awayId;
+      const events: MatchSheetEvent[] = [
+        { ...at, side, type: 'yellow', player: someone, triggersSuspension: false },
+        { ...at, side, type: 'injury', player: someone, severity: 'light' },
+        { ...at, side, type: 'substitution', in: someone, out: another, reason: 'tactical' },
+        { ...at, side, type: 'penaltyMissed', taker: someone, outcome: 'saved' },
+      ];
+      for (const event of events) {
+        expect(eventLine(game, fixture, event, 'pt-BR').crest).toBe(game.clubs[clubId]!.def);
+      }
+    }
+  });
+});
+
 describe('the report of a played match (resumo-rodada.md, "Súmula")', () => {
   it('every event of the sheet, in the same order, each with the word of its kind', () => {
     const report = matchReport(game, mine.id, sheets[mine.id], TEST_CLUB, 'pt-BR')!;

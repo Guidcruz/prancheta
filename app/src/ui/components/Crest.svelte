@@ -2,10 +2,11 @@
   /**
    * Crest sizes, in px of width (the generator draws 64x72, so the height is 1.125x): the
    * `size-medallion-*` tokens (design-system.md, "Tamanhos"), repeated here as numbers until the
-   * token script also exports them as TypeScript constants. At 32px or less the generator
-   * switches to its simple version.
+   * token script also exports them as TypeScript constants. `xs` (`size-medallion-xs`, 24px) is
+   * only for a crest inside a line of text (the commentary and the match report). At 32px or
+   * less the generator switches to its simple version.
    */
-  export const CREST_SIZES = { sm: 32, md: 48, lg: 64, xl: 96 } as const;
+  export const CREST_SIZES = { xs: 24, sm: 32, md: 48, lg: 64, xl: 96 } as const;
   export type CrestSize = keyof typeof CREST_SIZES;
 </script>
 
