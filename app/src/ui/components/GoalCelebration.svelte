@@ -63,7 +63,11 @@
   .title {
     white-space: nowrap;
   }
+  /* At most 2 lines (the line height of subtitulo, 24px), cut between lines and with no
+     ellipsis (partida.md, "Comemoração"): a third line is never drawn. */
   .scorer {
+    max-height: calc(2 * 24px);
+    overflow: hidden;
     overflow-wrap: anywhere;
   }
   /* Proposal 39: 200 ms ease-out, only for whoever has not asked for reduced motion. */

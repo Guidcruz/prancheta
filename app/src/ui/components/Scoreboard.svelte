@@ -169,13 +169,19 @@
     font-variant-numeric: tabular-nums;
     white-space: nowrap;
   }
+  /* A fixed height, the line of `numero` (20px): "Pausada" (body-strong, 22px) never makes the
+     board grow and push what is under it (the pitch of T-085). */
   .live {
     display: flex;
     flex-wrap: wrap;
     justify-content: center;
     align-items: baseline;
     column-gap: var(--space-2);
+    min-height: 20px;
     font-variant-numeric: tabular-nums;
+  }
+  .live .paused {
+    line-height: 20px;
   }
   .phase {
     color: var(--ink-muted);
