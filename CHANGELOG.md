@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Partida narrada, parte 1 da partida assistida (T-032; US-020 e US-019, cenário 2):
+  - O "Jogar rodada" ganha um seletor (botão dividido): a folha oferece "Só lances principais" e "Só resultado", e a escolha só vale ao tocar "Jogar rodada" nela; o tipo vai gravado com a rodada e vale para as seguintes. "Só lances principais" volta ao Novo jogo; o padrão continua "Só resultado", e a "Animada completa" entra com o campo 2D (T-085).
+  - Em "Só lances principais", a partida abre em tela cheia (`#/match`): o placar ao vivo com o minuto, a fase e "Pausada", e a narração em texto com a linha mais recente em cima. Gols, chances claras e pênaltis têm a pausa dramática: o começo do lance não dá pista, e o placar só muda no desfecho.
+  - Pausar e Retomar (a pausa termina o minuto), Rápido (lembrado no aparelho) e Pular, compactos e numa linha só a 360 px nos três idiomas. A partida pausa sozinha com a página escondida; o voltar do celular pausa e pergunta, sem "sair sem jogar".
+  - No apito final, a rodada é jogada e gravada sozinha, e "Ver resumo" abre o resumo no lugar da partida; Pular grava e abre o resumo direto. Fechar o jogo no meio deixa a rodada por jogar.
+  - O resultado mostrado é o do motor: a tela pede a partida ao `CareerService.liveMatch`, com a mesma entrada do `playRound`, e só decide quando mostrar cada lance. Até a T-033, o auxiliar comanda o clube do técnico também nos modos assistidos, então os três tipos dão o mesmo jogo.
+  - 50 chaves de texto em pt-BR, es e en e a revisão de 2 textos do Novo jogo (aprovadas pelo CEO em 2026-11-15); componente novo CommentaryFeed; o Scoreboard ganha a linha ao vivo, o Button ganha `compact`, `pressed` e `minWidth`, e o Icon, `pause`, `skip` e `chevron-down`.
+  - Medido com CPU 4×: do toque à partida, p90 de 64 ms; de Pular ao resumo, p90 de 273 ms; nenhuma tarefa longa durante a partida.
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Calendário (T-084; US-024):
   - A aba `#/calendar` mostra as 38 rodadas do clube em dois turnos, um card por rodada com data, mando, "Clássico" e, nas jogadas, o placar e o resultado escrito. A próxima rodada tem "Próximo jogo" e borda verde, e a aba abre nela, sem atalho flutuante.
   - Tocar numa rodada jogada abre a Rodada (`#/calendar/round/N`, com voltar): os 10 jogos, o meu primeiro, e cada um abre a súmula da T-083. Rodadas futuras não abrem; endereço de rodada inválida ou não jogada volta para `#/calendar`. Ao voltar, a lista mostra o card de onde o jogador saiu.
