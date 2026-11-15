@@ -630,3 +630,82 @@ Conferência do `ux-designer` antes de chamar o `developer`. Cada linha diz o qu
    - **Recomendo A,** com o aval do `art-director` (dono do `docs/art/uniformes.md`, que ganha a linha do `mark`) e um teste novo no `kit.test.ts`. Entra no PR da T-085.
 4. **Proposta 39 ao design system: a comemoração de gol** ([componentes.md](componentes.md#propostas-ao-design-system)). Padrão novo: cartão sobre o campo, com escudo, "Gol!" e o nome, entrada de 200 ms e nada de saída animada, `aria-hidden`. **Recomendo aprovar.** Sem token novo.
 5. **Textos:** só uma chave nova (`match.celebration.title`) e o corpo de `newGame.match.full.body`, mais a conferência do título em es. Vão ao `content-writer` e depois ao CEO, no lote da T-085.
+
+## Proposta para o CEO: de qual time é cada lance (2026-11-15)
+
+**Status: proposta, aguardando o CEO.** Nada desta seção vale antes da decisão; o resto da spec continua como está.
+
+**Pedido do CEO** (captura do iPhone, prévia da `main`, "Só lances principais", tema noite, partida terminada): "seria legal diferenciar melhor de qual time é cada lance". Hoje a única pista é o nome curto do clube em `caption` (12px) `ink-muted`, na última linha de cada lance; os dois gols têm o mesmo fundo `grass-soft` e, de relance, parecem iguais. O jogador precisa ler a linha até o fim para saber se o lance foi dele ou do adversário.
+
+**Restrições conferidas em todas as opções:** clube nunca só por cor (forma, posição ou texto junto); texto a 4,5:1 e elemento gráfico a 3:1 nos dois temas; cores só dos tokens ou dos geradores (escudo e uniforme); o leitor de tela continua lendo o clube; 360px em pt-BR, es e en com nomes longos ("Inter-Regional"), deitado e desktop (duas colunas da T-085); nenhuma animação nova; nada no motor nem no save.
+
+**Maquetes** (geradas sem navegador, com os escudos e uniformes dos geradores reais; o texto sai numa fonte de reserva um pouco mais larga que a Barlow, então as quebras de linha são pessimistas): `comparacao-noite.png` (hoje, A, B e C lado a lado, Cruzador × Baião em pt), `a-escudo-noite.png`, `a-escudo-dia.png`, `a2-escudo-sem-nome-noite.png`, `a-escudo-en-nomes-longos-noite.png` e `-dia.png` (Inter-Regional × Botafogueira em en), `b-lados-noite.png`, `b-lados-en-nomes-longos-noite.png` e `c-bolinha-noite.png`, no scratchpad da sessão (`team-side/out/`), com o gerador `team-side/mock.mjs`. O Orquestrador anexa ao PR as que o CEO quiser ver.
+
+### Opção A (recomendada): o escudo do clube na linha
+
+O escudo do clube entra na linha de cada lance que tem lado, na coluna que hoje é do ícone, logo depois do minuto. O ícone do lance (cartão, lesão, troca) passa para dentro do texto, antes da palavra do tipo. O nome do clube continua escrito embaixo, como hoje.
+
+- **Linha:** minuto (coluna de `touch`, 44px) · escudo (coluna de 24px, `align-self: start`) · texto. O escudo é o `Crest` num tamanho novo de 24px de largura (27px de altura), o `xs` (proposta 40 ao design system, em [componentes.md](componentes.md#propostas-ao-design-system)); o gerador já tem a versão simples para até 32px (sem gradiente, padrão grosso, contorno simples). O ícone do lance fica no começo da primeira linha do texto, a 20px, na cor de hoje (`floodlight` ou `danger` no cartão, `ink-muted` nos outros), com `space-1` antes da palavra do tipo.
+- **Quais linhas têm escudo:** todas as que têm lado: gol, finalização, falta, pênalti marcado e perdido, cartões, lesão, troca **e a mudança tática** (que não tem a linha do clube embaixo, porque o texto já o nomeia, mas tem o escudo). As fases (começo, acréscimos, intervalo, 2º tempo, fim, também o fim do jogo encerrado) não têm escudo e deixam a coluna vazia, com o texto alinhado ao das outras.
+- **O nome do clube continua** embaixo, em `caption`, `ink-muted` (em `ink` na linha do gol), como hoje. É ele a pista garantida (texto a 8,18:1 e 5,88:1 sobre `surface-0`); o escudo é reforço para o olho achar o lado de relance, ligado ao escudo do mesmo clube no placar, logo acima.
+- **Gol:** o fundo continua `grass-soft` nos dois lados (o verde diz "gol", não "bom"); o escudo e o nome dizem de quem. Não muda a cor pelo lado: pintar de outra cor o gol do adversário daria a cor um sentido de resultado.
+- **Pausa dramática:** o escudo aparece já no começo do lance. Não entrega nada: o começo já mostra o clube hoje (a linha do clube), e o lado da finalização é igual no gol e na chance. Na troca no lugar, o escudo não muda.
+- **Leitor de tela:** a frase escondida de cada linha passa a dizer o clube logo depois do minuto, na ordem em que o olho vê: "minuto 74, Cruzador, Gol, Cândido, assistência de Teco Cocada" (hoje o clube vem por último). O escudo é decorativo (`Crest` sem `label`), porque o nome está na frase. Muda a expectativa de dois testes de componente (`match-screens.test.ts` e `report-screens.test.ts`).
+- **360px:** a coluna passa de 20px para 24px, e o texto de 248px para 244px, que é a largura que o lote do `content-writer` já usou para medir todas as frases da narração (tabela de "Textos"): nenhuma frase precisa ser medida de novo. A altura não muda: o escudo (27px) é mais baixo que o texto de uma linha com o clube embaixo (38px), então a linha continua com 54px, as 4 linhas de lance a 360×740 com campo continuam, e a conta de `100dvh − 442px` não muda. O nome mais largo, "Inter-Regional", tem cerca de 80px em `caption`. Deitado e no desktop, a coluna da narração ganha a mesma mudança, sem nada novo no leiaute.
+- **Movimento:** nenhum. O escudo aparece com a linha, parado.
+- **Contraste do escudo** (medido nos 20 clubes; a pista garantida continua o nome escrito, por isso o escudo pode ficar abaixo de 3:1, como já fica na Tabela, no MatchCard e no placar): o escudo não tem nenhuma das duas cores do clube a 3:1 sobre `surface-0` em 4 clubes no tema noite (Flamingo, Fluminário, Tufão e Vitorioso, de 2,86 a 2,99:1, clubes de vermelho e preto ou vinho); sobre `grass-soft` (linha do gol, noite), em 7 (de 1,65 a 2,34:1); no tema dia, só o Chapecão (2,92:1 sobre `surface-0` e 2,70:1 sobre `grass-soft`). A forma do escudo continua visível pelo contorno do gerador, mas não a 3:1 garantido. É o motivo de o nome ficar.
+- **Ids do SVG:** com dezenas de escudos iguais na mesma lista, cada `Crest` recebe `instance` com o `id` da linha (o mesmo mecanismo do placar), para os `clipPath` não se repetirem na página. Cada escudo pequeno tem cerca de 1,1 KB; numa "Animada completa", 30 a 45 linhas com escudo. O `developer` pode guardar o SVG por clube e linha, se a medida de tarefas longas pedir; a meta de "Desempenho no celular" não muda.
+
+**Prós:** a pista mais forte e mais rápida de reconhecer (o escudo é o mesmo do placar, logo acima, e o mesmo da Tabela); vale igual nos três tipos de partida, com e sem campo; não muda largura, altura nem leiaute em nenhuma tela; sem texto novo; a mesma linha serve à súmula. **Contras:** precisa de um tamanho novo de medalhão (24px); a 24px dois escudos de cores parecidas se distinguem mais pela forma do que pela cor (Cruzador e Baião têm azul nos dois, um redondo e outro de bico; ver maquete); o ícone do lance sai da coluna própria e vai para o começo do texto; a lista fica um pouco mais carregada.
+
+**Variante A2: o escudo no lugar do nome.** O mesmo escudo, sem a linha do clube embaixo (o nome só na frase escondida). Cada lance perde 16px: a 360×740 com campo cabem 5 linhas de lance em vez de 4. **Não recomendo:** o clube passaria a ser dito, na tela, só pelo escudo de 24px, que não tem contraste garantido e se distingue mal entre clubes de cores parecidas; para quem não reconhece os escudos dos 20 clubes (o jogador novo), a pista sumiria.
+
+### Opção B: mandante à esquerda, visitante à direita (espelhando o campo e o placar)
+
+Cada linha do mandante fica como hoje, com o escudo de 24px na ponta esquerda, antes do minuto; cada linha do visitante é espelhada: texto alinhado à direita, minuto e escudo na ponta direita. As fases ficam centradas, sem escudo. As duas recuam 32px do lado oposto.
+
+**Prós:** a pista é a posição, que não depende de cor nem de contraste, e é a mesma do placar (escudo do mandante à esquerda) e do campo (mandante à esquerda o jogo todo); funciona até para quem não distingue as cores dos dois escudos. **Contras:** o texto cai de 248px para cerca de 212px, e frases que hoje cabem em uma linha passam a duas (as finalizações e as assistências em es e en, ver maquete); cada lance que quebra ganha 22px, e a 360×740 com campo a narração pode cair de 4 para 3 lances à vista (o mínimo da regra); texto de várias linhas alinhado à direita é mais lento de ler; o minuto deixa de estar numa coluna só, e procurar "o que aconteceu aos 60'" fica em zigue-zague; a troca no lugar da pausa dramática fica igual, mas a lista inteira muda de desenho, e a súmula também teria de mudar (ou as duas ficariam diferentes). É o padrão de linha do tempo curta (só gols e cartões), não de narração com frases.
+
+### Opção C: a bolinha do campo na linha
+
+Na coluna do ícone, um disco de 16px igual ao do campo: o `FieldKit.fill` do lado, anel de 2px em `ink` e, no visitante, o ponto central em `FieldKit.mark` (proposta 35). O ícone do lance vai para o texto, como em A. O nome do clube continua.
+
+**Prós:** liga a narração ao campo (a bolinha vermelha com ponto que acabou de marcar é a da lista); a única opção com contraste garantido no desenho: o anel em `ink` tem o contraste de texto sobre qualquer fundo da lista (a forma nunca some) e a marca do visitante tem pelo menos 3:1 sobre o `fill` (regra do gerador); sem tamanho novo. **Contras:** a cor é a do uniforme da partida, não a do clube: quando há choque, o visitante joga de reserva ou de terceiro uniforme (no Corinto × Santões, o Santões, branco e preto, joga de amarelo; no Inter-Regional × Flamingo, o Flamingo, vermelho e preto, joga de preto), e em "Só lances principais", que não tem campo, essa cor não lembra nada; a diferença de forma entre os dois lados é um ponto de 5px; a súmula teria de calcular uniformes só para pintar bolinhas.
+
+### Descartadas
+
+- **Faixa lateral na cor do clube ou fundo do gol na cor do clube:** a cor do uniforme ou do escudo não tem contraste garantido com os fundos (um uniforme `#111417` fica a cerca de 1,1:1 sobre o `surface-0` noturno; texto `ink` sobre um fundo de cor de clube qualquer cai abaixo de 4,5:1), e a faixa seria só cor. Corrigir com contorno vira a opção C.
+- **Cor diferente para o gol do meu clube e o do adversário:** daria à cor um sentido de resultado (verde bom, vermelho ruim), contra a regra de nunca dizer resultado só por cor; o placar já diz quem está ganhando.
+
+### Recomendação
+
+**A**, com o nome mantido. É a mudança mais simples que responde ao pedido: o escudo é o símbolo que o jogador já associa a cada lado (está no placar, logo acima), vale igual com e sem campo, não mexe em largura, altura nem texto, e a pista que não depende de cor (o nome escrito) continua lá. B é a pista mais "à prova de cor", mas custa legibilidade e uma linha de lance a 360px; C é elegante com o campo e fraca sem ele.
+
+### Súmula e resumo da rodada (coerência)
+
+- **Súmula (MatchTimeline, T-083): sim, a mesma mudança.** A linha da narração é, por regra, "a linha da súmula", com as mesmas palavras de tipo, para o jogador reconhecer o lance nos dois lugares; os dois componentes mudam juntos (escudo na coluna do ícone, ícone no texto, nome mantido, clube depois do minuto na frase escondida).
+- **Resumo da rodada (GoalList): não muda.** Os gols já ficam em duas colunas, a do mandante à esquerda e a do visitante à direita, logo embaixo do placar com os dois escudos: a posição já diz o lado.
+- **Outros resultados (MatchCard): não muda.** Cada card já tem os dois escudos e os nomes.
+
+### Textos novos
+
+Nenhum. A única mudança de texto é a ordem da frase escondida de cada linha (minuto, clube, tipo, texto, tipo curto do gol, assistência), montada pelo componente a partir das partes que já existem; nenhuma chave muda.
+
+### Tamanho e alcance
+
+**P**, pelo caminho `/feature` (passa de 5 arquivos): `design/tokens.json` e `app/src/tokens.css` gerado (o tamanho `size-medallion-xs`), `Crest.svelte` (o tamanho `xs`), `CommentaryFeed.svelte` e `MatchTimeline.svelte` (a coluna do escudo, o ícone no texto, a ordem da frase), `app/src/ui/match/narration.ts` e `app/src/ui/report.ts` (passam o clube de cada linha), os testes desses arquivos e esta spec com `componentes.md` e `design-system.md`. **Não toca o motor** (`app/src/engine/`) **nem o formato do save**: o lado de cada lance já vem no `MatchEvent` e o clube já é lido hoje para o nome.
+
+**Medidas para o E2E e o Vitest (se aprovada):**
+
+1. Na narração e na súmula, toda linha com clube tem um escudo `aria-hidden` de 24px de largura na coluna depois do minuto, do clube certo (o mandante nas linhas `side: 'home'`); fases sem escudo.
+2. A frase escondida começa por `minuteA11y` e o nome do clube ("minuto 23, Leões, Gol, Fulano, de pênalti").
+3. A 360×740, com campo, a área da narração continua com 4 linhas de lance (E2E 1 da T-085), e nenhuma linha muda de altura em relação à de hoje com o mesmo texto (±1px).
+4. Nenhum `id` repetido na página durante a partida e na folha da súmula.
+5. Sem rolagem lateral a 360, 390, 844 e 1280, em pt-BR, es e en, com o meu clube trocado para "Inter-Regional".
+
+### Decisões para o CEO
+
+1. **Qual opção:** A (escudo na linha, nome mantido), A2 (escudo no lugar do nome), B (lados espelhados) ou C (bolinha do campo). **Recomendo A.**
+2. **A súmula muda junto?** Sim (recomendado: a linha é a mesma por regra) ou não (só a narração). **Recomendo sim.**
+3. **Proposta 40 ao design system:** o tamanho de medalhão `xs` (24px), só para o escudo dentro de uma linha de texto (narração e súmula). **Recomendo aprovar** se a escolha for A ou A2.
+4. **Ordem da frase do leitor de tela:** o clube logo depois do minuto (recomendado, a mesma ordem do olho) ou por último, como hoje.
