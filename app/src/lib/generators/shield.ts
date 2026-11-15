@@ -45,9 +45,9 @@ export interface ShieldSpec {
 /** A `#rrggbb` colour, any case. */
 export const HEX = /^#[0-9a-f]{6}$/i;
 const FALLBACK = '#777777';
-const INK = '#0b1118';
-const NEUTRAL_DARK = '#111417';
-const NEUTRAL_LIGHT = '#ffffff';
+export const INK = '#0b1118';
+export const NEUTRAL_DARK = '#111417';
+export const NEUTRAL_LIGHT = '#ffffff';
 /** Width in px up to which the simple version is drawn. */
 export const SMALL_SIZE = 32;
 
@@ -76,7 +76,7 @@ export function contrastRatio(a: string, b: string): number {
 }
 
 /** A colour for what is drawn over `bg`: a club colour when it has 3:1, else a neutral. */
-function onColor(bg: string, candidates: readonly string[]): string {
+export function onColor(bg: string, candidates: readonly string[]): string {
   const best = candidates
     .filter((c) => c.toLowerCase() !== bg.toLowerCase())
     .sort((x, y) => contrastRatio(y, bg) - contrastRatio(x, bg))[0];

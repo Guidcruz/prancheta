@@ -15,6 +15,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - 50 chaves de texto em pt-BR, es e en e a revisão de 2 textos do Novo jogo (aprovadas pelo CEO em 2026-11-15); componente novo CommentaryFeed; o Scoreboard ganha a linha ao vivo, o Button ganha `compact`, `pressed` e `minWidth`, e o Icon, `pause`, `skip` e `chevron-down`.
   - Medido com CPU 4× em cinco execuções: do toque à partida, p90 entre 64 e 94 ms (meta 300 ms); de Pular ao resumo, p90 entre 228 e 298 ms (meta 500 ms); nenhuma tarefa longa entre o apito inicial e o final.
   - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
+- Uniformes dos clubes gerados por código (T-026; US-002):
+  - `kit.ts` gera camisa, calção e meias em SVG autocontido, sem texto, a partir de `id`, cores e padrão do escudo. São 10 padrões, 3 golas e os uniformes 1, 2 e 3; o padrão vem do `id` e nunca é do tipo do escudo do clube.
+  - `matchKits` decide quem troca: o mandante usa sempre o 1, e o visitante usa o 1, o 2 ou o 3 até não haver confusão de cor (ΔE 30). Em 380 confrontos, o visitante troca para o 2 em 44 e usa o 3 em 6. O goleiro tem cor própria e estável por clube, trocada só se houver conflito; a bolinha da partida ganha anel e número com contraste de pelo menos 4,5:1, com placa atrás do número em 14 de 80 uniformes.
+  - Nada muda nos dados, no motor nem no save. Não há tela nova. A revisão contra uniformes reais fica para antes do lançamento (`kit.forbidden.json` começa vazio).
 - Calendário (T-084; US-024):
   - A aba `#/calendar` mostra as 38 rodadas do clube em dois turnos, um card por rodada com data, mando, "Clássico" e, nas jogadas, o placar e o resultado escrito. A próxima rodada tem "Próximo jogo" e borda verde, e a aba abre nela, sem atalho flutuante.
   - Tocar numa rodada jogada abre a Rodada (`#/calendar/round/N`, com voltar): os 10 jogos, o meu primeiro, e cada um abre a súmula da T-083. Rodadas futuras não abrem; endereço de rodada inválida ou não jogada volta para `#/calendar`. Ao voltar, a lista mostra o card de onde o jogador saiu.
