@@ -144,6 +144,8 @@ describe('the club of each line (the crest)', () => {
       { type: 'kickoff', minute: 0, half: 1 },
       { type: 'secondHalf', minute: 46, half: 2 },
       { type: 'halftime', minute: 45, half: 1, score: [0, 0] },
+      { type: 'stoppage', minute: 45, half: 1, minutes: 2 },
+      { type: 'fulltime', minute: 90, half: 2, score: [0, 0] },
     ] as unknown as LineState['source'][]) {
       expect(commentaryItem(line(source, 'final'), ctx).crest).toBeUndefined();
     }

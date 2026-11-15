@@ -97,16 +97,15 @@ async function expectLines(
   save: SaveJson,
   instanceOf: (f: LineFacts) => string,
   label: string,
+  singleHeight: number,
 ): Promise<LineFacts[]> {
   const facts = await factsOf(rows);
   expect(facts.length, `${label}: lines`).toBeGreaterThan(3);
-  const clubs = new Map<string, readonly string[]>(
-    Object.values(
-      save.game.clubs as unknown as Record<
-        string,
-        { def: { shortName: string; colors: [string, string] } }
-      >,
-    ).map((c) => [c.def.shortName, c.def.colors]),
+  // Short name -> club id: the generator puts the id of the club in the ids of its SVG.
+  const idOf = new Map<string, string>(
+    Object.entries(
+      save.game.clubs as unknown as Record<string, { def: { shortName: string } }>,
+    ).map(([id, c]) => [c.def.shortName, id]),
   );
   // The same club draws the same crest (the ids of the SVG carry the line, so they are removed).
   const shapeOf = (f: LineFacts) =>
@@ -124,10 +123,9 @@ async function expectLines(
       expect(f.crests, `${where}: one crest`).toBe(1);
       expect(f.crestHidden, `${where}: decorative`).toBe('true');
       expect(Math.round(f.crestWidth), `${where}: 24px`).toBe(24);
-      const html = f.crestHtml.toLowerCase();
-      for (const color of clubs.get(f.club)!) {
-        expect(html, `${where}: the colours of ${f.club}`).toContain(color.toLowerCase());
-      }
+      expect(f.crestHtml, `${where}: the crest of ${f.club}`).toContain(
+        `id="sh-${idOf.get(f.club)!}-s-${instanceOf(f)}`,
+      );
       expect(f.crestHtml, `${where}: the id carries the line`).toContain(instanceOf(f));
       const shape = shapeOf(f);
       expect(byClub.get(f.club) ?? shape, `${where}: the same crest for ${f.club}`).toBe(shape);
@@ -144,8 +142,19 @@ async function expectLines(
       Math.abs(f.rowHeight - f.padding - f.whatHeight),
       `${where}: row height ${f.rowHeight} what ${f.whatHeight}`,
     ).toBeLessThan(1.5);
+    // The icon never makes the first line taller: the text is a whole number of lines.
     const lines = f.mainHeight / f.lineHeight;
-    expect(Math.abs(lines - Math.round(lines)), `${where}: icon keeps the line`).toBeLessThan(0.1);
+    expect(
+      Math.abs(f.mainHeight - Math.round(lines) * f.lineHeight),
+      `${where}: icon keeps the line (${f.mainHeight} of ${f.lineHeight})`,
+    ).toBeLessThanOrEqual(0.5);
+    // A line of one line of text with the club below is exactly 54px (38px of text and 16 of padding).
+    if (f.club !== null && f.whatHeight <= 40) {
+      expect(
+        Math.abs(f.rowHeight - singleHeight),
+        `${where}: row ${f.rowHeight}`,
+      ).toBeLessThanOrEqual(0.5);
+    }
   }
   const shapes = [...byClub.values()];
   expect(new Set(shapes).size, `${label}: two clubs, two crests`).toBe(shapes.length);
@@ -175,7 +184,7 @@ test.describe('De qual time é cada lance', () => {
     await openMatch(page);
     await playToEnd(page);
     const rows = matchScreen(page).locator('section.feed li.line');
-    const facts = await expectLines(page, rows, save, (f) => f.key, 'narration');
+    const facts = await expectLines(page, rows, save, (f) => f.key, 'narration', 54);
     expect(
       facts.some((f) => f.club === null),
       'has phase lines',
@@ -208,7 +217,7 @@ test.describe('De qual time é cada lance', () => {
     // A line of a single line of text and the club below: 2 x 8 of padding and 38 of text.
     const singles = facts.filter((f) => f.club !== null && f.whatHeight <= 40);
     expect(singles.length).toBeGreaterThan(0);
-    for (const f of singles) expect(Math.round(f.rowHeight), f.key).toBeLessThanOrEqual(56);
+    for (const f of singles) expect(Math.abs(f.rowHeight - 54), f.key).toBeLessThanOrEqual(0.5);
   });
 
   for (const lang of ['pt-BR', 'es', 'en'] as const) {
@@ -266,7 +275,7 @@ test.describe('De qual time é cada lance', () => {
     const dialog = page.getByRole('dialog', { name: ui('pt-BR', 'report.title') });
     await expect(dialog).toBeVisible();
     const rows = dialog.locator('li.line');
-    const facts = await expectLines(page, rows, save, (f) => `tl${f.key}`, 'report');
+    const facts = await expectLines(page, rows, save, (f) => `tl${f.key}`, 'report', 38);
     expect(facts.every((f) => f.club !== null && f.crests === 1)).toBe(true);
     if (onPhone(page)) {
       for (const f of facts) expect(Math.round(f.textWidth), f.key).toBe(244);

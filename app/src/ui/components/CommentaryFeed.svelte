@@ -40,8 +40,8 @@
   /**
    * CommentaryFeed (componentes.md, "Casca da T-032 e da T-085"): the commentary of the match, the
    * most recent line on top, right under the board, in the line of the MatchTimeline (the minute
-   * in a column of fixed width, the club's crest in its own column, the icon opening the text, the word of the kind in `body-strong`,
-   * the text and, below, the club). A line with the same `id` is replaced in place, never moved.
+   * in a column of fixed width, the club's crest in its own column, the icon opening the text, the
+   * word of the kind in `body-strong`, the text and, below, the club). A line with the same `id` is replaced in place, never moved.
    * Nothing is tappable and nothing moves: a new line appears on top without sliding, and the list
    * never scrolls by itself. It is not a live region (the board announces); each line is read in
    * one sentence, hidden, as in the MatchTimeline. With `scroll`, the list is its own scrolling
@@ -146,6 +146,7 @@
      padding under the line. */
   .crest-slot {
     display: flex;
+    align-items: flex-start;
     align-self: start;
     height: 0;
   }
@@ -155,7 +156,7 @@
     width: 20px;
     height: 20px;
     margin-inline-end: var(--space-1);
-    vertical-align: middle;
+    vertical-align: top;
     line-height: 0;
     color: var(--ink-muted);
   }

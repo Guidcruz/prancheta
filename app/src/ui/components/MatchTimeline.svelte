@@ -35,8 +35,9 @@
 
   /**
    * MatchTimeline (componentes.md, "Casca da T-030 e da T-083"): the events of a match in order,
-   * one per line: the minute in a column of fixed width, the crest of the club in its own column, the icon opening the text, the word of
-   * the kind in `body-strong` followed by the text, and below the club's short name. The visible
+   * one per line: the minute in a column of fixed width, the crest of the club in its own column,
+   * the icon opening the text, the word of the kind in `body-strong` followed by the text, and
+   * below the club's short name. The visible
    * parts are hidden from screen readers, which read one sentence per line ("minuto 23, Leões,
    * Gol, Fulano, de pênalti"), like the GoalList. With no line, `emptyText`. `notice` comes
    * between the title and the list (the notice of a report without its events). Nothing is
@@ -132,20 +133,21 @@
   .minute {
     font-variant-numeric: tabular-nums;
   }
-  /* The crest (27px) never makes a row taller: a line of one line of text and no club below it
-     (the change of tactics) is 22px tall, so the slot has no height and the crest hangs into the
-     padding under the line. */
+  /* The crest (27px) never makes a row taller: the slot has no height, so the crest only follows
+     the text (every line has the club below its text, 38px, and the crest is shorter). */
   .crest-slot {
     display: flex;
+    align-items: flex-start;
     align-self: start;
     height: 0;
   }
+  /* `top`, not `middle`: the 20px icon must not make the first line taller than its 22px. */
   .icon {
     display: inline-block;
     width: 20px;
     height: 20px;
     margin-inline-end: var(--space-1);
-    vertical-align: middle;
+    vertical-align: top;
     line-height: 0;
     color: var(--ink-muted);
   }
