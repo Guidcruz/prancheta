@@ -694,6 +694,21 @@ test.describe('Calendário (T-084)', () => {
     await expect(playButton(page)).toContainText(ui('pt-BR', 'play.blocked.seasonOver'));
   });
 
+  test('sem atalho flutuante "ir para a próxima rodada" (decisão 4 do CEO)', async ({ page }) => {
+    await startCareer(page);
+    await advance(page, 10);
+    await openCalendar(page);
+    const fixedOutsideFrame = await page.evaluate(() =>
+      [...document.querySelectorAll('main *')]
+        .filter((el) => getComputedStyle(el).position === 'fixed')
+        .map((el) => el.tagName),
+    );
+    expect(fixedOutsideFrame).toEqual([]);
+    await expect(
+      page.getByRole('button', { name: /pr[óo]xima rodada|next round|ir (a|para)|go to/i }),
+    ).toHaveCount(0);
+  });
+
   test('nomes inteiros e turnos em 1 linha a 360 × 740 com Inter-Regional, em pt-BR, es e en (medida 12)', async ({
     page,
   }) => {
