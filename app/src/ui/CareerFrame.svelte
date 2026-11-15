@@ -36,18 +36,24 @@
   import { roundSheet } from './tactic';
   import { noticeActions } from './notice-actions';
   import {
+    CALENDAR_DESTINATION,
     HOME_DESTINATION,
     SAVES_DESTINATION,
+    calendarRoundHref,
+    calendarRoundOf,
     destinationOf,
     hrefOf,
     labelKeyOf,
     type DestinationId,
   } from './router';
+  import { cameFromList, originOf, roundFromAddress } from './calendar';
   import { alertKey, draftActions, hasAlertText, unsavedActions } from './save-alerts';
   import { pushSheet, sheetOnTop } from './sheet-history';
   import { summaryRound } from './round';
   import { RoundFlow, areaErrorOf, isRoundHash, playOutcome } from './round-flow';
   import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
+  import CalendarRound from './screens/CalendarRound.svelte';
+  import CalendarView from './screens/CalendarView.svelte';
   import ClubView from './screens/ClubView.svelte';
   import Placeholder from './screens/Placeholder.svelte';
   import Saves from './screens/Saves.svelte';
@@ -59,8 +65,9 @@
    * The frame of an open career (docs/design/telas/navegacao.md): tabs at the bottom on the
    * phone, sidebar from 900px, the "Mais" menu, the notice band, "Jogar rodada" and the error
    * boundary around the screen of each destination. Clube and Elenco are the T-028 screens (the
-   * Elenco tab with the Escalação of T-029), Tabela the T-031 one and Carreiras e backup the
-   * T-025 one; the others are placeholders until their tasks (T-084, T-034...).
+   * Elenco tab with the Escalação of T-029), Tabela the T-031 one, Calendário the T-084 one (with
+   * its Rodada subscreen, `#/calendar/round/N`) and Carreiras e backup the T-025 one; the others
+   * are placeholders until their tasks (T-034...).
    *
    * The coach's sheet (ADR-0021; T-029) is read here, because "Jogar rodada" needs it on every
    * tab: the draft of the save (or the edit held while a round is played, `draft-writer.ts`), or
@@ -86,6 +93,21 @@
   );
   /** The round summary takes the screen (`#/round`); `current` stays the tab under it. */
   let summaryShown = $state(false);
+  /**
+   * The Rodada subscreen of the Calendário (`#/calendar/round/N`, calendario.md): the round shown,
+   * or `undefined` for the list. Always a round already played (`roundFromAddress`).
+   */
+  let calendarRound: number | undefined = $state();
+  /** The list was reached back from a Rodada: it shows that round's card instead of the next. */
+  let calendarOrigin: number | undefined = $state();
+  /** The back of the Rodada asked `history.back()` and its popstate has not come yet. */
+  let leavingRound = false;
+  /** The frame's title: the Rodada focuses it and names its list with it. */
+  const TITLE_ID = 'frame-title';
+  /** The Rodada shown, only on the Calendário. */
+  const roundShown = $derived(current === CALENDAR_DESTINATION ? calendarRound : undefined);
+  /** Each screen of the content area under its own boundary, the list and each Rodada too. */
+  const screenKey = $derived(roundShown === undefined ? current : `${current}/${roundShown}`);
   /** A refusal of `playRound` other than busy (never silent): the content area shows its code. */
   let playError: PlayError | undefined = $state();
   const flow = new RoundFlow(() => history);
@@ -343,14 +365,16 @@
 
   /** "Continuar" (and "Sair do resumo"): back to the tab under the summary. */
   function closeSummary(): void {
-    const to = flow.close(current);
+    // The Rodada of the Calendário has its own address under the summary (calendario.md).
+    const to = flow.close(roundShown === undefined ? current : `${current}/round/${roundShown}`);
     // Without the summary's entry on top, there is no popstate: the tab shows here.
-    if (to !== undefined) leftSummary(to);
+    if (to !== undefined) leftSummary();
   }
 
-  function leftSummary(to: DestinationId): void {
+  function leftSummary(): void {
     summaryShown = false;
-    current = to;
+    // Back to the address under the summary; a list of the Calendário opens on the new next round.
+    readRoute(false);
     flow.left();
     void focusPlay();
   }
@@ -376,9 +400,62 @@
       } else summaryShown = true;
       return;
     }
+    if (summaryShown) leftSummary();
+    else readRoute(true);
+  }
+
+  // --------------------------------------------- the Calendário and its Rodada (T-084; US-024)
+
+  /**
+   * Shows the destination of the address. An address of the Rodada whose round is not played (or
+   * is not a round) becomes `#/calendar` with no new entry (calendario.md, "Endereço que não
+   * vale"). With `fromHistory`, a list reached back from a Rodada shows that round's card.
+   */
+  function readRoute(fromHistory: boolean): void {
     const next = destinationOf(location.hash);
-    if (summaryShown) leftSummary(next);
-    else current = next;
+    const text = calendarRoundOf(location.hash);
+    const round = text === undefined ? undefined : roundFromAddress(save.game, text);
+    if (text !== undefined && round === undefined) {
+      history.replaceState(null, '', hrefOf(CALENDAR_DESTINATION));
+    }
+    calendarRound = round;
+    calendarOrigin =
+      next === CALENDAR_DESTINATION && round === undefined && fromHistory
+        ? originOf(history.state)
+        : undefined;
+    current = next;
+  }
+
+  /** A tap on a played card of the list: the Rodada, with its own entry (back returns here). */
+  function openRound(round: number): void {
+    // The list's entry keeps the round it was left for, so back shows its card again.
+    history.replaceState({ ...(history.state ?? {}), calendarFrom: round }, '');
+    history.pushState({ calendarList: true }, '', calendarRoundHref(round));
+    leavingRound = false;
+    calendarOrigin = undefined;
+    calendarRound = round;
+  }
+
+  /**
+   * The back of the Rodada's header: `history.back()` when the entry below is the list (the
+   * normal case); otherwise (an address typed) the address becomes the list's, with no new entry,
+   * and the list shows the card of the round.
+   */
+  function leaveRound(): void {
+    if (leavingRound) return;
+    if (cameFromList(history.state)) {
+      leavingRound = true;
+      history.back();
+      return;
+    }
+    const from = calendarRound;
+    history.replaceState(
+      from === undefined ? null : { calendarFrom: from },
+      '',
+      hrefOf(CALENDAR_DESTINATION),
+    );
+    calendarRound = undefined;
+    calendarOrigin = from;
   }
 
   // ------------------------------------------------- "Escalação incompleta" (escalacao.md; US-017)
@@ -456,6 +533,7 @@
     sheetOpen = false;
     // Replaces the sheet's entry: back from the destination returns to the tab before it.
     history.replaceState(null, '', hrefOf(id));
+    calendarRound = undefined;
     current = id;
   }
 
@@ -465,6 +543,7 @@
     history.pushState({ saves: true }, '', hrefOf(SAVES_DESTINATION));
     // From the summary's notice: back returns to the summary.
     summaryShown = false;
+    calendarRound = undefined;
     current = SAVES_DESTINATION;
   }
 
@@ -485,8 +564,10 @@
   onMount(() => {
     // A career always opens on its tab, never on a summary (CEO decision 3 of resumo-rodada.md).
     if (isRoundHash(location.hash)) current = flow.toClub();
+    else readRoute(true);
     const onHash = followHash;
     const onPop = () => {
+      leavingRound = false;
       closingSheet = false;
       closingCheck = false;
       if (sheetOpen && history.state?.sheet !== true) sheetOpen = false;
@@ -504,9 +585,16 @@
 
 {#snippet header()}
   <ScreenHeader
-    title={t(labelKeyOf(current), lang)}
+    title={roundShown === undefined
+      ? t(labelKeyOf(current), lang)
+      : t('round.title', lang, { round: roundShown })}
+    titleId={TITLE_ID}
     backLabel={t('nav.back', lang)}
-    onback={current === SAVES_DESTINATION ? back : undefined}
+    onback={current === SAVES_DESTINATION
+      ? back
+      : roundShown !== undefined
+        ? leaveRound
+        : undefined}
     moreLabel={t('nav.more', lang)}
     onmore={openSheet}
   />
@@ -579,7 +667,7 @@
         />
       </div>
     {:else}
-      {#key current}
+      {#key screenKey}
         <ErrorBoundary
           copy={boundaryCopy}
           code={t('error.code', lang, { code: 'unexpected' })}
@@ -612,6 +700,24 @@
             />
           {:else if current === 'table'}
             <TableView {lang} game={save.game} clubId={save.career.clubId} />
+          {:else if current === CALENDAR_DESTINATION && roundShown !== undefined}
+            <CalendarRound
+              {lang}
+              game={save.game}
+              clubId={save.career.clubId}
+              round={roundShown}
+              sheets={save.career.matchSheets}
+              titleId={TITLE_ID}
+              onerror={onBoundaryError}
+            />
+          {:else if current === CALENDAR_DESTINATION}
+            <CalendarView
+              {lang}
+              game={save.game}
+              clubId={save.career.clubId}
+              origin={calendarOrigin}
+              onopen={openRound}
+            />
           {:else}
             <Placeholder message={t('screen.soon', lang)} lines={placeholderLines} />
           {/if}

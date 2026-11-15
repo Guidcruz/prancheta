@@ -23,7 +23,9 @@
    * link (to the Calendário, from the Clube screen), at least 44px tall; with `onclick` and no
    * `href`, the whole card is one button that looks the same (the other results of the round
    * summary open their match report, T-083), named by `a11yLabel`; with neither, a card only to
-   * read, with no arrow and no focus.
+   * read, with no arrow and no focus. With `highlight` (the next round of the Calendário, T-084),
+   * a word on top of the card and a 2px `grass` border, in any of the three forms: the word is
+   * the cue, the border only reinforces it.
    */
   interface Props {
     home: MatchSide;
@@ -47,6 +49,8 @@
     a11yLabel?: string;
     /** Instance suffix for the crests (the same club twice on a page). */
     instance?: string;
+    /** A word on top of the card, before `meta` ("Próximo jogo"), with the `grass` border. */
+    highlight?: string;
   }
   const {
     home,
@@ -60,6 +64,7 @@
     note,
     a11yLabel,
     instance,
+    highlight,
   }: Props = $props();
   const played = $derived(home.goals !== undefined && away.goals !== undefined);
   /** Without `href`, a handler makes the whole card a button. */
@@ -75,6 +80,7 @@
 {/snippet}
 
 {#snippet inner()}
+  {#if highlight}<span class="rotulo highlight">{highlight}</span>{/if}
   {#if meta}<span class="caption meta">{meta}</span>{/if}
   <span class="teams">
     {@render side(home, 'home')}
@@ -93,13 +99,23 @@
 {/snippet}
 
 {#if href}
-  <a class="match link" {href} {onclick} aria-label={a11yLabel}>{@render inner()}</a>
+  <a
+    class="match link"
+    class:highlighted={highlight !== undefined}
+    {href}
+    {onclick}
+    aria-label={a11yLabel}>{@render inner()}</a
+  >
 {:else if button}
-  <button type="button" class="match link button" {onclick} aria-label={a11yLabel}
-    >{@render inner()}</button
+  <button
+    type="button"
+    class="match link button"
+    class:highlighted={highlight !== undefined}
+    {onclick}
+    aria-label={a11yLabel}>{@render inner()}</button
   >
 {:else}
-  <div class="match">{@render inner()}</div>
+  <div class="match" class:highlighted={highlight !== undefined}>{@render inner()}</div>
 {/if}
 
 <style>
@@ -119,6 +135,16 @@
   }
   .link:hover {
     border-color: var(--ink-muted);
+  }
+  /* The next round (calendario.md): the border reinforces the word on top; 1px less of padding
+     keeps the card the same size as the others. */
+  .match.highlighted {
+    border: 2px solid var(--grass);
+    padding: calc(var(--space-3) - 1px);
+    padding-inline-end: calc(var(--space-3) + var(--space-6) - 1px);
+  }
+  .highlight {
+    color: var(--ink);
   }
   /* The button looks like the link: the whole card, its text from the start. */
   .button {
