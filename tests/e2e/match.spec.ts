@@ -1,15 +1,7 @@
-import { readFileSync } from 'node:fs';
-import type { Locator, Page } from '@playwright/test';
-import {
-  matchSheet,
-  prepareRound,
-  simulateMatch,
-  type GameState,
-  type MatchEvent,
-  type MatchResult,
-} from '../../app/src/engine/index.ts';
-import { matchSteps, type MatchStep, type WatchMode } from '../../app/src/ui/match/steps.ts';
-import { MATCH_TIMING, timingOf } from '../../app/src/ui/match/timing.ts';
+import type { Page } from '@playwright/test';
+import { matchSheet, type MatchEvent } from '../../app/src/engine/index.ts';
+import { matchSteps } from '../../app/src/ui/match/steps.ts';
+import { MATCH_TIMING } from '../../app/src/ui/match/timing.ts';
 import {
   closeSummary,
   continueCareer,
@@ -17,18 +9,31 @@ import {
   playUntil,
   reopenIn,
   roundHeading,
-  startCareer,
 } from './career.ts';
 import { setTheme } from './css.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
-  gameParams,
-  patchSave,
-  readHeadRecord,
-  readMatchSheets,
-  readSave,
-  type SaveJson,
-} from './save.ts';
+  board,
+  careerWith,
+  control,
+  freezeClock,
+  goalsOf,
+  line,
+  lines,
+  liveRegion,
+  lively,
+  matchScreen,
+  minuteText,
+  onPhone,
+  openMatch,
+  playToEnd,
+  runToMinute,
+  runUntil,
+  shownScore,
+  timeTo,
+  ui,
+} from './match-helpers.ts';
+import { readHeadRecord, readMatchSheets, readSave } from './save.ts';
 
 /*
  * A partida narrada (T-032; docs/design/telas/partida.md, "Medidas para o E2E", T-032; US-020 e
@@ -40,106 +45,6 @@ import {
  * como o `CareerService.liveMatch` a calcula (o auxiliar no comando, `'result'`, sem ficha na
  * rodada 1), e os passos do relógio são os da própria tela (`ui/match/steps.ts`).
  */
-
-type Lang = 'pt-BR' | 'es' | 'en';
-const UI: Record<Lang, Record<string, string | undefined>> = Object.fromEntries(
-  (['pt-BR', 'es', 'en'] as const).map((lang) => [
-    lang,
-    JSON.parse(
-      readFileSync(new URL(`../../app/src/content/${lang}/ui.json`, import.meta.url), 'utf8'),
-    ) as Record<string, string>,
-  ]),
-) as Record<Lang, Record<string, string | undefined>>;
-
-/** Um texto de `ui.json` em `lang` (o teste falha se a chave não existe). */
-function ui(lang: Lang, key: string, vars: Record<string, string | number> = {}): string {
-  const text = UI[lang][key];
-  if (text === undefined) throw new Error(`no ${key} in ${lang}`);
-  return text.replace(/\{(\w+)\}/g, (_, k: string) => String(vars[k] ?? `{${k}}`));
-}
-
-const onPhone = (page: Page) => page.viewportSize()!.width < 900;
-const params = gameParams();
-
-/** A partida do técnico na próxima rodada, como o `liveMatch` a calcula. */
-interface Expected {
-  fixtureId: string;
-  homeId: string;
-  awayId: string;
-  side: 'home' | 'away';
-  result: MatchResult;
-}
-
-function expectedMatch(save: SaveJson): Expected {
-  const game = save.game as unknown as GameState;
-  const clubId = save.career.clubId;
-  const plan = prepareRound(game, params, { coaches: { [clubId]: 'result' } });
-  if (!plan.ok) throw new Error(plan.error);
-  const match = plan.value.matches.find(
-    (m) => m.home.clubId === clubId || m.away.clubId === clubId,
-  )!;
-  return {
-    fixtureId: match.fixtureId,
-    homeId: match.home.clubId,
-    awayId: match.away.clubId,
-    side: match.home.clubId === clubId ? 'home' : 'away',
-    result: simulateMatch(match, params),
-  };
-}
-
-/** A semente cuja partida do técnico na rodada 1 satisfaz `wanted` (procurada no motor). */
-function seedFor(save: SaveJson, wanted: (result: MatchResult) => boolean): number {
-  for (let seed = 1; seed < 5_000; seed++) {
-    const tried = { ...save, game: { ...save.game, seed } } as SaveJson;
-    if (wanted(expectedMatch(tried).result)) return seed;
-  }
-  throw new Error('nenhuma semente com a partida pedida');
-}
-
-const goalsOf = (r: MatchResult) =>
-  r.events.filter((e): e is Extract<MatchEvent, { type: 'goal' }> => e.type === 'goal');
-
-/** Uma partida com um gol de jogada e uma chance clara. */
-const lively = (r: MatchResult) =>
-  goalsOf(r).some((g) => g.kind === 'open') &&
-  r.events.some((e) => e.type === 'chance' && e.importance === 2) &&
-  r.events.some((e) => e.type === 'yellow') &&
-  r.events.some((e) => e.type === 'substitution');
-
-/**
- * Cria a carreira (Completo, o clube mais forte, ou `club`), põe no save o tipo de partida e a
- * semente pedida, e reabre. Devolve o save ajustado e a partida esperada da rodada 1.
- */
-async function careerWith(
-  page: Page,
-  mode: 'full' | 'highlights' | 'result',
-  wanted: (result: MatchResult) => boolean = lively,
-  club?: string,
-): Promise<{ save: SaveJson; expected: Expected }> {
-  if (club === undefined) await startCareer(page);
-  else {
-    await page.goto('/jogo/');
-    await page.getByRole('button', { name: 'Nova carreira' }).click();
-    await page.getByRole('radio', { name: new RegExp(club) }).check();
-    await page.getByRole('button', { name: 'Começar' }).click();
-    await expect(playButton(page)).toBeVisible();
-  }
-  const base = await readSave(page);
-  const seed = seedFor(base, wanted);
-  const save = await patchSave(page, (s) => {
-    s.game.seed = seed;
-    (s.career as unknown as { matchMode: string }).matchMode = mode;
-  });
-  return { save, expected: expectedMatch(save) };
-}
-
-// ------------------------------------------------------------------------------- the clock
-
-/** Para o relógio da página (a partida só anda com `runFor`), um pouco à frente do de agora. */
-async function freezeClock(page: Page): Promise<void> {
-  const now = await page.evaluate(() => Date.now());
-  await page.clock.pauseAt(now + 1_000);
-}
 
 /**
  * Estraga o snapshot da cabeça da carreira mais recente (o SHA-256 deixa de bater): ao abrir, a
@@ -173,73 +78,12 @@ async function corruptHead(page: Page): Promise<void> {
   });
 }
 
-/** Avança o relógio em passos de `step` ms até `done` (no máximo `max` ms). */
-async function runUntil(
-  page: Page,
-  done: () => Promise<boolean>,
-  { step = 50, max = 300_000 }: { step?: number; max?: number } = {},
-): Promise<void> {
-  for (let spent = 0; spent <= max; spent += step) {
-    if (await done()) return;
-    await page.clock.runFor(step);
-  }
-  throw new Error('o relógio correu e a condição não veio');
-}
-
-const matchScreen = (page: Page) => page.locator('main.match');
-const board = (page: Page) => matchScreen(page).locator('.scoreboard');
-const minuteText = (page: Page) => board(page).locator('.live .minute').innerText();
-const lines = (page: Page) => matchScreen(page).locator('section.feed li');
-const line = (page: Page, id: string) => matchScreen(page).locator(`li[data-line="${id}"]`);
-const liveRegion = (page: Page) => board(page).locator('[aria-live="polite"]');
-const control = (page: Page, key: string, lang: Lang = 'pt-BR') =>
-  matchScreen(page).getByRole('button', { name: ui(lang, key), exact: true });
-
-/** O placar visível, como números. */
-async function shownScore(page: Page): Promise<[number, number]> {
-  const goals = board(page).locator('.goals');
-  return [Number(await goals.nth(0).innerText()), Number(await goals.nth(1).innerText())];
-}
-
-/** Toca "Jogar rodada" com o relógio parado e espera a partida abrir. */
-async function openMatch(page: Page, lang: Lang = 'pt-BR'): Promise<void> {
-  await page.getByRole('button', { name: ui(lang, 'play.label') }).click();
-  await runUntil(page, async () => (await matchScreen(page).count()) === 1, {
-    step: 20,
-    max: 5_000,
-  });
-}
-
-/** O tempo de relógio de `steps[0..index)` (do apito inicial até o passo `index` aparecer). */
-const timeTo = (steps: readonly MatchStep[], index: number, speed: 'normal' | 'fast' = 'normal') =>
-  steps.slice(0, index).reduce((sum, s) => sum + timingOf(s.timing, speed), 0);
-
-/** Corre a partida até o apito final e a gravação terminar (barra com "Ver resumo" ativo). */
-async function playToEnd(page: Page, lang: Lang = 'pt-BR'): Promise<void> {
-  const summaryButton = control(page, 'match.toSummary', lang);
-  await runUntil(
-    page,
-    async () =>
-      (await summaryButton.count()) === 1 &&
-      (await summaryButton.getAttribute('aria-busy')) === null,
-    { step: 500 },
-  );
-}
-
-/** Corre até o relógio mostrar `minute'` (ou passar dele). */
-async function runToMinute(page: Page, minute: number): Promise<void> {
-  await runUntil(page, async () => {
-    const text = await minuteText(page);
-    return Number(/^(\d+)/.exec(text)?.[1] ?? 0) >= minute;
-  });
-}
-
 test.describe('Partida narrada (T-032)', () => {
   test.beforeEach(async ({ page }) => {
     await page.clock.install();
   });
 
-  test('seletor no "Jogar rodada": o tipo atual, a folha com 2 cartas, a escolha só vale ao jogar (medida 1)', async ({
+  test('seletor no "Jogar rodada": o tipo atual, a folha com 3 cartas, a escolha só vale ao jogar (medida 1; T-085: "Animada completa" primeiro)', async ({
     page,
   }) => {
     await careerWith(page, 'highlights');
@@ -254,7 +98,11 @@ test.describe('Partida narrada (T-032)', () => {
     await segment.click();
     const sheet = page.getByRole('dialog', { name: ui('pt-BR', 'play.mode.title') });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByRole('radio')).toHaveCount(2);
+    // Since T-085 the three modes, "Animada completa" first (partida.md, "Tipos oferecidos").
+    await expect(sheet.getByRole('radio')).toHaveCount(3);
+    await expect(sheet.getByRole('radio').first()).toHaveAccessibleName(
+      new RegExp(`^${ui('pt-BR', 'newGame.match.full')}`),
+    );
     await expect(sheet.getByRole('radio', { name: /Só lances principais/ })).toBeChecked();
     await expect(sheet.getByText(ui('pt-BR', 'play.mode.note'))).toBeVisible();
     await sheet.getByRole('radio', { name: /Só resultado/ }).check();

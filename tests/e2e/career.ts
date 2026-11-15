@@ -7,26 +7,43 @@ import type { Page } from '@playwright/test';
  * mudarem, o ajuste é só aqui.
  */
 
+/** Os títulos das cartas do tipo de partida no Novo jogo (pt-BR). */
+const MATCH_MODE_TITLES = {
+  full: 'Animada completa',
+  highlights: 'Só lances principais',
+  result: 'Só resultado',
+} as const;
+
 /**
- * Abre o jogo e cria uma carreira com as opções padrão: "Nova carreira", o primeiro clube da
- * lista (o mais forte) e "Começar". Com `realism: 'simplified'`, marca "Simplificado" nas opções
- * da carreira antes. Termina na moldura da carreira e devolve o nome curto do clube.
+ * Abre o jogo e cria uma carreira: "Nova carreira", o primeiro clube da lista (o mais forte) ou o
+ * de nome curto `club`, e "Começar". Nas opções da carreira, marca o tipo de partida `matchMode`
+ * (padrão: "Só resultado", para a rodada abrir o resumo direto; desde a T-085 o padrão do jogo é
+ * "Animada completa") e, com `realism: 'simplified'`, "Simplificado". Termina na moldura da
+ * carreira e devolve o nome curto do clube.
  */
 export async function startCareer(
   page: Page,
-  options: { realism?: 'full' | 'simplified' } = {},
+  options: {
+    realism?: 'full' | 'simplified';
+    club?: string;
+    matchMode?: keyof typeof MATCH_MODE_TITLES;
+  } = {},
 ): Promise<string> {
+  const { realism = 'full', club, matchMode = 'result' } = options;
   await page.goto('/jogo/');
   await page.getByRole('button', { name: 'Nova carreira' }).click();
-  if (options.realism === 'simplified') {
-    await page.getByRole('button', { name: /Opções da carreira/ }).click();
-    const sheet = page.getByRole('dialog');
-    await sheet.getByRole('radio', { name: /Simplificado/ }).check();
-    await sheet.getByRole('button', { name: 'Pronto' }).click();
-  }
-  const club = page.getByRole('radio').first();
-  await club.check();
-  const name = (await club.locator('xpath=ancestor::label').locator('.name').innerText()).trim();
+  await page.getByRole('button', { name: /Opções da carreira/ }).click();
+  const sheet = page.getByRole('dialog');
+  if (realism === 'simplified') await sheet.getByRole('radio', { name: /Simplificado/ }).check();
+  await sheet.getByRole('radio', { name: new RegExp(`^${MATCH_MODE_TITLES[matchMode]}`) }).check();
+  await sheet.getByRole('button', { name: 'Pronto' }).click();
+  await expect(sheet).toHaveCount(0);
+  const radio =
+    club === undefined
+      ? page.getByRole('radio').first()
+      : page.getByRole('radio', { name: new RegExp(club) });
+  await radio.check();
+  const name = (await radio.locator('xpath=ancestor::label').locator('.name').innerText()).trim();
   await page.getByRole('button', { name: 'Começar' }).click();
   await expect(playButton(page)).toBeVisible();
   return name;

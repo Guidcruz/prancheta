@@ -115,13 +115,9 @@ async function failSummaryDraw(page: Page): Promise<void> {
   });
 }
 
-/** Cria uma carreira com o clube de nome curto `club` (Novo jogo, opções padrão). */
+/** Cria uma carreira com o clube de nome curto `club` (Novo jogo, em "Só resultado"). */
 async function startWith(page: Page, club: string): Promise<void> {
-  await page.goto('/jogo/');
-  await page.getByRole('button', { name: 'Nova carreira' }).click();
-  await page.getByRole('radio', { name: new RegExp(club) }).check();
-  await page.getByRole('button', { name: 'Começar' }).click();
-  await expect(playButton(page)).toBeVisible();
+  await startCareer(page, { club });
 }
 
 test.describe('Resumo da rodada (T-030)', () => {
