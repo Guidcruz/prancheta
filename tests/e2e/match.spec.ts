@@ -1024,9 +1024,6 @@ test.describe('Partida narrada (T-032)', () => {
   test('erro ao desenhar a partida com "Sair da partida?" aberta e depois erro ao jogar no fim: o endereço volta à aba, sem entrada sobrando', async ({
     page,
   }) => {
-    // BUG-T032-A (open): `leaveMatch` goes back one entry, the sheet's, and the address stays
-    // `#/match` with the tab on screen. Remove `test.fail` when the fix lands.
-    test.fail();
     await page.addInitScript(() => {
       const showModal = HTMLDialogElement.prototype.showModal;
       HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {

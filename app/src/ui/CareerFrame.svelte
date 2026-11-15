@@ -592,9 +592,13 @@
    */
   function leaveMatch(): void {
     if (match === undefined) return;
+    // The entry of "Sair da partida?" left on top by a match that failed to draw goes too, as in
+    // `matchToSummary`: no entry of the match is left behind (BUG-T032-A). A sheet whose own back
+    // is already on its way counts as gone.
+    const sheetLeft = history.state?.sheet !== undefined && !(matchScreen?.sheetClosing() ?? false);
     service.dismissCrash();
     match = undefined;
-    if (isMatchHash(location.hash)) history.back();
+    if (isMatchHash(location.hash)) history.go(sheetLeft ? -2 : -1);
     void focusPlay();
   }
 
