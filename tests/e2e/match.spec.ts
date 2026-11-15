@@ -974,6 +974,53 @@ test.describe('Partida narrada (T-032)', () => {
     });
   });
 
+  test('erro ao desenhar a partida com "Sair da partida?" aberta: "Ir direto ao resultado" grava e abre o resumo', async ({
+    page,
+  }) => {
+    // The sheet fails to open (its `showModal`, in an effect of the match screen): the boundary
+    // of the match shows its error with the sheet's entry left on top of the history.
+    await page.addInitScript(() => {
+      const showModal = HTMLDialogElement.prototype.showModal;
+      HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+        if ((globalThis as { failSheet?: boolean }).failSheet) {
+          throw new Error('sheet draw failed (test)');
+        }
+        return showModal.call(this);
+      };
+    });
+    const { expected } = await careerWith(page, 'highlights');
+    await freezeClock(page);
+    await openMatch(page);
+    await runToMinute(page, 10);
+    await page.evaluate(() => ((globalThis as { failSheet?: boolean }).failSheet = true));
+    await page.goBack();
+    const error = page.getByRole('alert');
+    await expect(error).toBeVisible();
+    await expect(error).toContainText(ui('pt-BR', 'error.unexpected.title'));
+    await expect(error).toContainText(ui('pt-BR', 'match.error.body'));
+    await expect(matchScreen(page)).toHaveCount(0);
+    expect(await page.evaluate(() => (history.state as { sheet?: string } | null)?.sheet)).toBe(
+      'match-leave',
+    );
+    await page.evaluate(() => ((globalThis as { failSheet?: boolean }).failSheet = false));
+    await error.getByRole('button', { name: ui('pt-BR', 'match.error.skip') }).click();
+    await runUntil(page, async () => (await roundHeading(page).count()) === 1);
+    await expect(page).toHaveURL(/#\/round$/);
+    expect((await readHeadRecord(page)).round).toBe(2);
+    const stored = (await readSave(page)).game.fixtures as unknown as {
+      id: string;
+      result?: { score: [number, number] };
+    }[];
+    expect(stored.find((f) => f.id === expected.fixtureId)!.result!.score).toEqual(
+      expected.result.score,
+    );
+    // No entry of the match nor of its sheet left behind: back is the tab.
+    await page.goBack();
+    await expect(page).toHaveURL(/#\/club$/);
+    await expect(roundHeading(page)).toHaveCount(0);
+    await expect(playButton(page)).toBeVisible();
+  });
+
   test.describe('erro ao jogar no fim (o playRound lança antes de gravar)', () => {
     /**
      * Na próxima espera de 0 ms (a do `playRound`, que deixa a tela desenhar antes do motor), um
