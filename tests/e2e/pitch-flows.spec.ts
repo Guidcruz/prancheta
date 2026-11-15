@@ -228,4 +228,47 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
     await playToEnd(page);
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   });
+
+  test('movimento reduzido ligado no meio da partida com a media query parada no valor inicial (como o WebKit com o relógio falso: nem o evento change nem o matches mudam até a próxima atualização da tela; o CSS muda): o passo seguinte já para o campo', async ({
+    page,
+  }) => {
+    // The reduced-motion query of the page stays as it was first read: no `change` reaches the
+    // game, and `matches` keeps its first value (of any MediaQueryList of that query), while the
+    // style follows `emulateMedia`, as in the e2e (webkit) job.
+    await page.addInitScript(() => {
+      const isMotion = (list: MediaQueryList) => list.media.includes('prefers-reduced-motion');
+      const add = MediaQueryList.prototype.addEventListener;
+      MediaQueryList.prototype.addEventListener = function (
+        this: MediaQueryList,
+        ...args: Parameters<MediaQueryList['addEventListener']>
+      ) {
+        if (args[0] === 'change' && isMotion(this)) return;
+        return add.apply(this, args);
+      } as MediaQueryList['addEventListener'];
+      const matches = Object.getOwnPropertyDescriptor(MediaQueryList.prototype, 'matches')!;
+      let first: boolean | undefined;
+      Object.defineProperty(MediaQueryList.prototype, 'matches', {
+        configurable: true,
+        get(this: MediaQueryList) {
+          const now = matches.get!.call(this) as boolean;
+          if (!isMotion(this)) return now;
+          first ??= now;
+          return first;
+        },
+      });
+    });
+    await countFrames(page);
+    await careerWith(page, 'full');
+    await freezeClock(page);
+    await openMatch(page);
+    await expect(canvas(page)).toHaveCount(1);
+    const start = await frames(page);
+    await runToMinute(page, 10);
+    expect(await frames(page)).toBeGreaterThan(start);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.clock.runFor(3_000);
+    const before = await frames(page);
+    await page.clock.runFor(1_500);
+    expect((await frames(page)) - before).toBeLessThanOrEqual(2);
+  });
 });
