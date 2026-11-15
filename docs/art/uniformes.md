@@ -25,7 +25,7 @@ Um uniforme completo tem **camisa, calção e meias**. No SVG do card (viewBox `
 
 - **Uniforme 1 (principal):** `base = colors[0]`, `secondary = colors[1]`.
 - **Uniforme 2 (reserva):** `base = colors[1]`, `secondary = colors[0]` (as cores do clube trocadas). Medido: nos 20 clubes, o uniforme 2 de todos tem ΔE >= 30 contra o uniforme 1 do mesmo clube.
-- **Uniforme 3 (último recurso, só para a regra de contraste da seção 2):** `base` = a mais distante do mandante entre `#ffffff`, `#111417` e `#ffd400`; `secondary` = a mais distante dessa `base` entre as outras duas; padrão `plain`. Medido: nos 380 confrontos ordenados dos 20 clubes ele nunca é necessário, mas existe para clubes futuros e para o editor de uniforme (Etapa 4), e o teste o exercita com cores sintéticas.
+- **Uniforme 3 (último recurso, só para a regra de contraste da seção 2):** `base` = a mais distante do mandante entre `#ffffff`, `#111417` e `#ffd400`; `secondary` = a mais distante dessa `base` entre as outras duas; padrão `plain`. Medido na implementação: em 6 dos 380 confrontos ordenados ele é necessário (seção 2.3); serve também a clubes futuros e ao editor de uniforme (Etapa 4).
 - Cor inválida passa por `safeColor` (cinza `#777777`), igual ao escudo; nada vindo do save vira atributo do SVG sem passar por ela.
 
 ### 1.3 Padrões (10 modelos, índice estável, o catálogo só cresce)
@@ -64,14 +64,14 @@ Rivais e clubes da mesma cidade não podem ter o mesmo par (`base`, `pattern`) n
 
 ### 2.1 Medida
 
-Distância de cor = **ΔE76 em CIE Lab (D65)** entre dois `#rrggbb`, função `colorDistance(a, b)` exportada (a mesma que o `developer` usará em todo o gerador). Escolhida por ser simples, sem dependência e estável entre navegador e Node (só `Math.cbrt` e aritmética, sem `exp`; o motor não a usa, então não entra na restrição do ADR-0020). Limite: **ΔE >= 30** (`KIT_MIN_DISTANCE`). Medidas de apoio: branco x preto 94; azul-escuro x azul-médio 14 a 49 (conflito quando 14); `#C8102E` x `#E4002B` 13 (conflito); `#C8102E` x `#E5050F` 24 (conflito). Em 30 ficam fora vermelhos e azuis "irmãos" e entram preto x vermelho e azul x vermelho.
+Distância de cor = **ΔE76 em CIE Lab (D65)** entre dois `#rrggbb`, função `colorDistance(a, b)` exportada (a mesma que o `developer` usará em todo o gerador). Escolhida por ser simples, sem dependência e estável entre navegador e Node (só `Math.cbrt` e aritmética, sem `exp`; o motor não a usa, então não entra na restrição do ADR-0020). Limite: **ΔE >= 30** (`KIT_MIN_DISTANCE`). Medidas de apoio: branco x preto 100; azul-escuro x azul-médio 14 a 49 (conflito quando 14); `#C8102E` x `#E4002B` 13 (conflito); `#C8102E` x `#E5050F` 24 (conflito). Em 30 ficam fora vermelhos e azuis "irmãos" e entram preto x vermelho e azul x vermelho.
 
 ### 2.2 Massa de cor do uniforme
 
 O que o olho vê em campo, por padrão: `plain`, `sleeves`, `yoke`, `chevron`, `sash`, `band` têm **massa dominante = `base`** (a `secondary` é detalhe); `hoops`, `vstripes` e `halves` têm **massa dupla** (`base` e `secondary` em área parecida). Definições:
 
 - `mass(kit)` = `[base]` para padrão de massa única, `[base, secondary]` para massa dupla.
-- **Conflito entre dois uniformes** quando (a) as `base` estão a menos de 30, **ou** (b) alguma das duas camisas é de massa dupla e todas as cores de `mass` de uma estão a menos de 30 de alguma cor de `mass` da outra. A regra (b) pega "listrado preto e branco contra listrado branco e preto"; não pega "listrado preto e branco contra liso preto" (a `base` do liso é preta e a do listrado também, então já cai em (a)).
+- **Conflito entre dois uniformes** quando (a) as `base` estão a menos de 30, **ou** (b) alguma das duas camisas é de massa dupla e o uniforme com **mais cores em jogo** tem todas as suas cores de `mass` a menos de 30 de alguma cor de `mass` do outro (com o mesmo número de cores, basta um dos dois estar coberto pelo outro). A regra (b) pega "listrado preto e branco contra listrado branco e preto"; não pega "listrado preto e branco contra liso branco" (a listrada tem uma cor que o liso não cobre). A redação original ("todas as cores de uma perto de alguma da outra") era ambígua; esta é a que está implementada e testada.
 
 ### 2.3 Quem usa o reserva
 
@@ -82,7 +82,7 @@ O que o olho vê em campo, por padrão: `plain`, `sleeves`, `yoke`, `chevron`, `
 3. Senão usa o **uniforme 2**.
 4. Se ainda há conflito, o **uniforme 3** calculado contra o mandante (nunca falha: tem sempre uma das três cores com ΔE >= 30 contra qualquer cor, e o teste confere nos 380 confrontos mais um conjunto de cores extremas).
 
-Medido (os 20 clubes, `KIT_MIN_DISTANCE` 30): em 48 dos 380 confrontos ordenados o visitante troca para o uniforme 2; em 0 precisa do 3. Os casos mais comuns são os quatro clubes de preto e branco e os vermelhos.
+Medido (os 20 clubes, `KIT_MIN_DISTANCE` 30): medido na implementação, em 44 dos 380 confrontos ordenados o visitante troca para o uniforme 2 e em 6 (1,6%) precisa do 3. Os 6 são sempre duas camisas de massa dupla com as mesmas duas cores (corinto x botafogueira, corinto x vasconcelos, corinto x santoes, santoes x corinto, cruzador x remador, tufao x sao-paulao): o uniforme 2 do visitante, com as cores trocadas, continua parecendo o do mandante. O uniforme 3 (liso, branco, preto ou amarelo) é aceito para a partida animada: é um uniforme completo e legível, aparece em menos de 2% dos jogos e vem de uma regra que só depende dos dois clubes. O teste fixa essa lista de 6 e falha se ela mudar, para o `art-director` rever.
 
 A decisão é função só dos dois clubes: não depende de rodada, de sorteio nem de quem é o jogador, então a tabela de jogos, o resumo e a animação mostram o mesmo uniforme. A regra de quem troca (visitante) é a do futebol; nenhum clube troca por vontade do jogador na Etapa 1.
 
@@ -125,6 +125,8 @@ export interface KitClub {
 }
 
 /** A full kit: what the card SVG draws. */
+// Implemented additions (additive): `clubId` in `Kit` (ids of the SVG) and `kits` in `MatchKits`
+// (the four full `Kit` objects, for the card SVG next to the dots).
 export interface Kit {
   slot: KitSlot;
   base: string; // #rrggbb
@@ -178,7 +180,7 @@ Regras de cada campo de `FieldKit`:
 - `fill` = `base`; `stripe` = `secondary` só nos padrões de massa dupla, senão `null`.
 - `ring` = `#0b1118` (`ink`), exceto quando o contraste do `ink` contra o gramado ficar abaixo de 3:1 (nunca com os dois gramados do design system; vale para um gramado futuro escuro), caso em que é `#ffffff`.
 - `numberColor` = a de maior contraste entre `secondary` (quando existe contraste), `#ffffff` e `#111417` contra `fill`, **com mínimo 4,5:1**; nos padrões de massa dupla o número cai entre as duas cores, então o mínimo vale contra as duas, e a escolha maximiza o menor dos dois contrastes.
-- `numberPlate` = `null` quando a cor acima cumpre 4,5:1; senão, uma placa lisa `#ffffff` ou `#111417` atrás do número (sempre cumpre 4,5:1 contra o número em preto ou branco). Medido: nos 20 clubes e nos dois uniformes nenhum precisa de placa, mas o campo existe para cor sintética e o teste a cobre.
+- `numberPlate` = `null` quando a cor acima cumpre 4,5:1; senão, uma placa lisa `#ffffff` ou `#111417` atrás do número (sempre cumpre 4,5:1 contra o número em preto ou branco). Medido na implementação: 14 dos 80 uniformes (20 clubes x 2 uniformes x 2 variantes do teste) usam placa, os de listra dupla sem cor que dê 4,5:1 contra as duas cores (preto e branco, por exemplo). É o comportamento desejado: o número lê sempre. A T-032 desenha a placa como um retângulo arredondado pequeno atrás do número.
 - Goleiro: `slot: 'gk'`, `stripe: null`, mesmas regras de `ring` e número.
 
 `kitSvg` desenha camisa, calção e meias (viewBox `0 0 64 72`, gradiente zero). `label` opcional vira `role="img"` + `aria-label` (escapado), como no escudo; sem `label`, o SVG é decorativo (`aria-hidden`). Ids internos de `clipPath` derivam de `id` do clube, `slot` e `instance`, como no escudo, para vários uniformes na mesma página não colidirem. Faixa de `size`: finito entre 16 e 512, fora disso vira 64 (como o avatar).
@@ -193,9 +195,9 @@ Os critérios de aceite da US-002 ficam todos cobertos; os testes de propriedade
 2. **Regra do escudo:** em cada clube, `home.pattern` e `away.pattern` nunca estão no conjunto de padrões que a tabela 1.3 associa ao `crestPattern` dele, e `away.pattern !== home.pattern`; teste negativo com um clube sintético de `crestPattern: 'hoops'` e `id` varrido de 0 a 2.000 (nunca sai `hoops`).
 3. **Cobertura da tabela de exclusão:** todo valor de `CrestPattern` tem entrada em `KIT_PATTERN_OF_CREST` (o teste falha se o escudo ganhar um padrão novo sem decisão para o uniforme).
 4. **Distribuição:** com 5.000 ids sintéticos, cada padrão aparece e a frequência fica dentro de ±30% do peso esperado (como `face.test.ts`); nos 20 clubes reais aparecem pelo menos 5 padrões diferentes no uniforme 1; nenhum par de rivais ou de clubes da mesma cidade tem o mesmo (`base`, `pattern`).
-5. **Distância de cor:** `colorDistance` é simétrica, zero consigo mesma e dá os valores medidos acima (branco x preto entre 93 e 95; `#C8102E` x `#E4002B` abaixo de 15); entrada inválida cai em `safeColor`, nunca em `NaN`.
+5. **Distância de cor:** `colorDistance` é simétrica, zero consigo mesma e dá os valores medidos acima (branco x preto igual a 100 (o rascunho dizia 94; 93 a 95 era a faixa estimada); `#C8102E` x `#E4002B` abaixo de 15); entrada inválida cai em `safeColor`, nunca em `NaN`.
 6. **Uniforme 2:** em todos os clubes reais, `colorDistance(home.base, away.base) >= KIT_MIN_DISTANCE`.
-7. **Reserva (US-002):** para os 380 confrontos ordenados dos 20 clubes, depois de `matchKits`: nenhum `kitConflict` entre o mandante e o visitante; `home` é sempre o uniforme 1; o visitante é o 1 quando não havia conflito, o 2 quando só o 1 conflitava; nenhum caso exige o 3 (hoje) e o teste falha com a lista se isso mudar, para o `art-director` rever. Um clube idêntico contra si mesmo e dois clubes sintéticos de cores iguais devolvem o uniforme 3, e este passa na regra.
+7. **Reserva (US-002):** para os 380 confrontos ordenados dos 20 clubes, depois de `matchKits`: nenhum `kitConflict` entre o mandante e o visitante; `home` é sempre o uniforme 1; o visitante é o 1 quando não havia conflito, o 2 quando só o 1 conflitava; 6 casos exigem o 3 (lista fixa no teste, seção 2.3) e o teste falha se a lista mudar, para o `art-director` rever. Um clube idêntico contra si mesmo e dois clubes sintéticos de cores iguais devolvem o uniforme 3, e este passa na regra.
 8. **Goleiros:** em todos os 380 confrontos, `homeGk.fill` e `awayGk.fill` ficam a >= 30 de `home.fill`, `away.fill` (e de `stripe`, quando houver), do gramado de noite e do de dia e um do outro; `homeGk.fill` e `awayGk.fill` pertencem à paleta de 6; nunca verde (ΔE >= 58 contra os dois gramados). Caso sintético em que mandante e visitante usam seis cores de goleiro cercadas: ainda devolve uma cor da paleta (maior distância mínima), sem lançar.
 9. **Número e anel:** para todo uniforme (os 20 x 2, o 3 e os goleiros), `contrastRatio(numberColor, fill) >= 4.5` e, havendo `stripe`, também contra ela, ou `numberPlate !== null` e o número tem >= 4.5:1 contra a placa; `contrastRatio(ring, pitch) >= 3` para os dois gramados. Cores sintéticas extremas (preto, branco, cinza médio `#808080`, amarelo-floodlight) cobrem as ramificações.
 10. **Determinismo e pureza:** sem `Math.random` nem `Date` (lint já bloqueia no motor; aqui o teste chama 1.000 vezes e compara); `matchKits(a, b)` não muda `a` nem `b` (objetos congelados com `Object.freeze`).
@@ -225,7 +227,7 @@ O teste de carga visual (as folhas 20 clubes x 3 tamanhos) fica com o `art-direc
    - A: derivado por semente do `id`, excluindo o padrão do escudo (esta proposta). Sem mudança de dados, cabe no P, estável por clube, trocar um uniforme é mudar um rótulo.
    - B: campo `kitPattern` por clube, escolhido à mão como os `crest*` (ADR-0014), com ADR e mudança de `ClubDef`/validador. Controle total, mais trabalho (M, toca `engine/clubs.ts`).
    - **Recomendo A**: a regra "nunca igual ao escudo" já é uma barreira verificável, e o `art-director` revisa a folha dos 20 clubes antes do merge; se algum clube ficar feio ou parecido com o real, vira exceção pontual no rótulo do sorteio, sem campo novo.
-2. **Limite de confusão de cor (ΔE >= 30) e quem troca (o visitante).** O limite 30 é um pouco mais exigente que o "bem distinto" (cerca de 25) e faz 48 de 380 confrontos usarem o uniforme 2 (cerca de 13%). **Recomendo 30**; se o CEO achar que o reserva aparece demais, 25 deixa 42 de 380; abaixo disso os dois vermelhos parecidos (ΔE 13 a 24) já não são separados.
+2. **Limite de confusão de cor (ΔE >= 30) e quem troca (o visitante).** O limite 30 é um pouco mais exigente que o "bem distinto" (cerca de 25) e faz 44 de 380 confrontos usarem o uniforme 2 e 6 o uniforme 3 (cerca de 13% no total). **Recomendo 30**; se o CEO achar que o reserva aparece demais, 25 deixa 42 de 380; abaixo disso os dois vermelhos parecidos (ΔE 13 a 24) já não são separados.
 3. **Revisão contra uniformes reais antes do lançamento.** A regra absoluta de "nenhum uniforme imita um real" precisa de um olhar humano: eu (`art-director`) comparo a folha gerada com o que conheço do uniforme típico de cada clube que inspirou o trocadilho, preencho as assinaturas proibidas (teste 12c) e recuo o que ficar parecido, no mesmo padrão da tabela de risco do ADR-0014. **Recomendo** que isso valha como pendência do CEO junto com a revisão jurídica dos escudos (`docs/status.md`): o jurídico olha as duas folhas de uma vez. Cores iguais às do real são aceitas (as cores do clube já são as do trocadilho), padrão e composição não.
 4. **Goleiro em cor própria e fixa por clube (recomendado) ou sempre a cor "do goleiro" mais distante do jogo?** A proposta dá a cada clube uma cor preferida (pela semente) e só a troca se conflitar; assim o jogador reconhece o goleiro do clube, e a cor muda pouco. Alternativa: sempre a cor mais distante; mais simples e mais legível, mas o goleiro muda de cor a cada jogo sem motivo. **Recomendo a proposta.**
 5. **Gramado verde x clubes verdes (Palmeral, Chapecão, Miragol, Coritibom):** mantenho o uniforme do clube e resolvo com anel e número (seção 2.5), em vez de trocar o uniforme ou mudar o tom do gramado. **Recomendo** assim; o `ux-designer` pode ajustar o tom do gramado da partida na T-032 sem refazer o gerador (o `pitch` é parâmetro).
