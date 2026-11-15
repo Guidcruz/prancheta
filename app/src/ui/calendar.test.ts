@@ -11,6 +11,7 @@ import {
   listTarget,
   nextRoundOf,
   originOf,
+  withoutOrigin,
   roundFromAddress,
   roundMatches,
   roundPlayed,
@@ -224,6 +225,12 @@ describe('the address of the Rodada (calendario.md, "Endereço que não vale")',
     expect(originOf({ calendarFrom: 3, sheet: 'x' })).toBe(3);
     for (const state of [null, undefined, {}, { calendarFrom: '3' }, { calendarFrom: 2.5 }, 3]) {
       expect(originOf(state)).toBeUndefined();
+    }
+    // A list shown without its origin forgets it; nothing else of the entry changes.
+    expect(withoutOrigin({ calendarFrom: 3 })).toBeNull();
+    expect(withoutOrigin({ calendarFrom: 3, saves: true })).toEqual({ saves: true });
+    for (const state of [null, undefined, {}, { calendarFrom: 'x' }, { saves: true }]) {
+      expect(withoutOrigin(state)).toBeUndefined();
     }
     expect(cameFromList({ calendarList: true })).toBe(true);
     expect(cameFromList({ calendarList: true, sheet: 'report', fixture: 'f' })).toBe(true);

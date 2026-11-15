@@ -145,6 +145,11 @@ describe('the summary in the history (resumo-rodada.md, "Navegação")', () => {
     history.replaceState(null, '', ROUND_HASH);
     expect(flow.close()).toBe('club');
     expect(history.location.hash).toBe('#/club');
+    // The Rodada of the Calendário: its full address, the tab its destination.
+    history.replaceState(null, '', ROUND_HASH);
+    expect(flow.close('calendar', '#/calendar/round/2')).toBe('calendar');
+    expect(history.location.hash).toBe('#/calendar/round/2');
+    expect(history.length).toBe(1);
   });
 
   it('an address of the summary with nothing to show becomes the Clube, in place', () => {

@@ -101,7 +101,7 @@
 {#if href}
   <a
     class="match link"
-    class:highlighted={highlight !== undefined}
+    class:highlighted={Boolean(highlight)}
     {href}
     {onclick}
     aria-label={a11yLabel}>{@render inner()}</a
@@ -110,12 +110,12 @@
   <button
     type="button"
     class="match link button"
-    class:highlighted={highlight !== undefined}
+    class:highlighted={Boolean(highlight)}
     {onclick}
     aria-label={a11yLabel}>{@render inner()}</button
   >
 {:else}
-  <div class="match" class:highlighted={highlight !== undefined}>{@render inner()}</div>
+  <div class="match" class:highlighted={Boolean(highlight)}>{@render inner()}</div>
 {/if}
 
 <style>

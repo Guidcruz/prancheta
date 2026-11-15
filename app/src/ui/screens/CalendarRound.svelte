@@ -83,7 +83,9 @@
   }
 
   onMount(() => {
-    // Entering the subscreen: the focus on its title, as on every change of screen.
+    // Entering the subscreen: it opens at the top (the list may have been scrolled far down),
+    // with the focus on its title, as on every change of screen.
+    window.scrollTo({ top: 0, behavior: 'instant' });
     document.getElementById(titleId)?.focus();
     // Mounted on the report's entry (forward to it, or "Tentar de novo" of the boundary).
     reportId = sheetField(REPORT, 'fixture');

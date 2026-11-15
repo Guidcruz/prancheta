@@ -46,7 +46,7 @@
     labelKeyOf,
     type DestinationId,
   } from './router';
-  import { cameFromList, originOf, roundFromAddress } from './calendar';
+  import { cameFromList, originOf, roundFromAddress, withoutOrigin } from './calendar';
   import { alertKey, draftActions, hasAlertText, unsavedActions } from './save-alerts';
   import { pushSheet, sheetOnTop } from './sheet-history';
   import { summaryRound } from './round';
@@ -366,7 +366,10 @@
   /** "Continuar" (and "Sair do resumo"): back to the tab under the summary. */
   function closeSummary(): void {
     // The Rodada of the Calendário has its own address under the summary (calendario.md).
-    const to = flow.close(roundShown === undefined ? current : `${current}/round/${roundShown}`);
+    const to = flow.close(
+      current,
+      roundShown === undefined ? undefined : calendarRoundHref(roundShown),
+    );
     // Without the summary's entry on top, there is no popstate: the tab shows here.
     if (to !== undefined) leftSummary();
   }
@@ -419,10 +422,14 @@
       history.replaceState(null, '', hrefOf(CALENDAR_DESTINATION));
     }
     calendarRound = round;
-    calendarOrigin =
-      next === CALENDAR_DESTINATION && round === undefined && fromHistory
-        ? originOf(history.state)
-        : undefined;
+    const list = next === CALENDAR_DESTINATION && round === undefined;
+    calendarOrigin = list && fromHistory ? originOf(history.state) : undefined;
+    // A list shown without its origin forgets it, so coming back to this entry later (from
+    // another tab) opens on the next round, not on an old card.
+    if (list && calendarOrigin === undefined) {
+      const state = withoutOrigin(history.state);
+      if (state !== undefined) history.replaceState(state, '');
+    }
     current = next;
   }
 
@@ -437,9 +444,11 @@
   }
 
   /**
-   * The back of the Rodada's header: `history.back()` when the entry below is the list (the
-   * normal case); otherwise (an address typed) the address becomes the list's, with no new entry,
-   * and the list shows the card of the round.
+   * The back of the Rodada's header: `history.back()` when the entry below is the list;
+   * otherwise (an address typed) the address becomes the list's, with no new entry, and the list
+   * shows the card of the round. An entry with `calendarList` is only ever pushed right on top of
+   * the list's (`openRound`), so the entry below it is always the list, also when the Rodada was
+   * reached by forward: back is right there too, and `replaceState` is only for a typed address.
    */
   function leaveRound(): void {
     if (leavingRound) return;

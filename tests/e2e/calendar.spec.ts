@@ -484,7 +484,18 @@ test.describe('Calendário (T-084)', () => {
     await expectCardInView(page, 3, 'voltar do celular');
     expect(await page.evaluate(() => history.length)).toBe(before);
 
-    // O avançar volta à Rodada 3; pela aba, a lista abre de novo na próxima rodada.
+    // O avançar volta à Rodada 3, e o voltar do cabeçalho volta à lista pelo histórico: a lista
+    // está logo abaixo, então nenhuma entrada nova.
+    await page.goForward();
+    await expect(heading(page, 'Rodada 3')).toBeVisible();
+    const forward = await page.evaluate(() => history.length);
+    await page.getByRole('button', { name: ui('pt-BR', 'nav.back') }).click();
+    await expect(page).toHaveURL(/#\/calendar$/);
+    await expect(cardOf(page, 3).getByRole('button')).toBeFocused();
+    await expectCardInView(page, 3, 'voltar do cabeçalho depois do avançar');
+    expect(await page.evaluate(() => history.length)).toBe(forward);
+
+    // Pela aba, a lista abre de novo na próxima rodada.
     await page.goForward();
     await expect(heading(page, 'Rodada 3')).toBeVisible();
     await openCalendar(page);
@@ -655,6 +666,19 @@ test.describe('Calendário (T-084)', () => {
     await expect(cardOf(page, 5).getByText(ui('pt-BR', 'club.next.title'))).toBeVisible();
     await expectCardInView(page, 5, 'depois do resumo');
     await expect(cardOf(page, 4).getByRole('button')).toHaveCount(1);
+    // A entrada da lista esqueceu a rodada 2: voltando a ela depois de outra aba, a lista abre na
+    // próxima rodada, e não no card antigo.
+    expect(await page.evaluate(() => history.state?.calendarFrom)).toBeUndefined();
+    await page
+      .getByRole('navigation', { name: ui('pt-BR', 'nav.label') })
+      .getByRole('link', { name: ui('pt-BR', 'nav.tab.club'), exact: true })
+      .click();
+    await expect(heading(page, 'Clube')).toBeVisible();
+    await page.goBack();
+    await expect(heading(page, 'Calendário')).toBeVisible();
+    await expect(cards(page)).toHaveCount(38);
+    await expectCardInView(page, 5, 'de volta depois de outra aba');
+    await expect(cardOf(page, 2).getByRole('button')).not.toBeFocused();
   });
 
   test('temporada encerrada: sem destaque, 38 botões e a rodada 38 à vista (medida 11)', async ({

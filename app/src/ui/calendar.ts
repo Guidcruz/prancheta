@@ -205,6 +205,18 @@ export function originOf(state: unknown): number | undefined {
   return typeof from === 'number' && Number.isInteger(from) ? from : undefined;
 }
 
+/**
+ * The state of the list's entry without the round it was left for: a list shown without an
+ * origin (after "Continuar", for example) forgets it, so a later return to that entry opens on
+ * the next round, not on an old card. `undefined` when there is nothing to drop.
+ */
+export function withoutOrigin(state: unknown): Record<string, unknown> | null | undefined {
+  if (originOf(state) === undefined) return undefined;
+  const rest: Record<string, unknown> = { ...(state as Record<string, unknown>) };
+  delete rest.calendarFrom;
+  return Object.keys(rest).length === 0 ? null : rest;
+}
+
 /** The entry of the Rodada was pushed from the list: the entry below it is the list. */
 export function cameFromList(state: unknown): boolean {
   return (
