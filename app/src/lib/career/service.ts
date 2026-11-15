@@ -15,12 +15,18 @@ import {
   type GameState,
   type IdentitySource,
   type MatchCommand,
+  type MatchInput,
   type MatchMode,
+  type MatchResult,
   type MatchSheet,
   type Result,
+  type RoundInput,
   type RoundPlan,
   type RoundReport,
+  type Side,
   type TeamSheet,
+  MATCH_MODES,
+  simulateMatch,
   validateClubs,
 } from '../../engine/index.ts';
 import type { ErrorLog } from '../errors/index.ts';
@@ -44,6 +50,8 @@ import {
 } from '../save/index.ts';
 import { checkCoachName, type CoachNameProblem } from './coach-name.ts';
 import { reconcileDraft } from './draft.ts';
+import { engineMatchMode } from './match-mode.ts';
+import { MATCH_SPEED_KEY, parseMatchSpeed, type MatchSpeed } from './match-speed.ts';
 import { LAST_SETUP_KEY, parseLastSetup, type LastSetup, type NewGameClub } from './new-game.ts';
 import { paramsHash } from './params-hash.ts';
 
@@ -175,10 +183,30 @@ export type CreateError =
 export type PlayError =
   'not-open' | 'busy' | RoundBlock | 'round-already-played' | 'round-not-open' | 'unexpected';
 
-/** What the coach brings to the round (the lineup of T-029, the live commands of T-032). */
+/**
+ * What the coach brings to the round: the sheet of T-029, the live commands (from T-033) and the
+ * match mode chosen at "Jogar rodada" (T-032). The live match and the round it ends with get the
+ * very same object (docs/02-architecture.md, 4.1, "Partida assistida pela camada de carreira").
+ */
 export interface PlayInput {
   readonly sheet?: TeamSheet;
   readonly commands?: Readonly<Partial<Record<FixtureId, readonly MatchCommand[]>>>;
+  /** The match mode chosen for this round and the next ones; absent: the save's `matchMode`. */
+  readonly matchMode?: MatchMode;
+}
+
+/** Why the live match cannot be shown (the same refusals as `playRound` before playing). */
+export type LiveError = 'not-open' | 'busy' | RoundBlock | 'unexpected';
+
+/** The coach's match of the next round, computed whole before the kick-off (T-032). */
+export interface LiveMatch {
+  readonly fixtureId: FixtureId;
+  /** The side of the coach's club. */
+  readonly side: Side;
+  /** The match as `playRound` simulates it: sheets, formations and seed. */
+  readonly match: MatchInput;
+  /** Every event, computed before the kick-off: the same `playRound` will record. */
+  readonly result: MatchResult;
 }
 
 export interface PlayedRound {
@@ -516,11 +544,87 @@ export class CareerService {
   prepareRound(input: PlayInput = {}): Result<RoundPlan, 'season-over'> | undefined {
     const save = this.current.save;
     if (this.current.status !== 'open' || save === undefined) return undefined;
-    const clubId = save.career.clubId;
-    return prepareEngineRound(save.game, this.params, {
-      sheets: input.sheet === undefined ? {} : { [clubId]: input.sheet },
-      coaches: { [clubId]: save.career.matchMode },
-    });
+    const { sheets, coaches } = this.roundInput(save, input);
+    return prepareEngineRound(save.game, this.params, { sheets, coaches });
+  }
+
+  /**
+   * The coach's match of the next round, computed whole before the kick-off (T-032;
+   * docs/02-architecture.md, 4.1, "Partida assistida pela camada de carreira", item 1): the plan of
+   * the round from the same input `playRound` will get, and the coach's fixture simulated with its
+   * commands, as the engine's `playRound` does for each match. So, for the same input and the same
+   * save, the result is the one `playRound(input)` records. Writes nothing, changes nothing in
+   * memory and publishes nothing: calling it twice gives the same match, and closing the game after
+   * it leaves the career on the round before. Refuses as `playRound` does before playing, in the
+   * same order; a bug (the engine throwing, the coach's club without a match) is `unexpected`,
+   * logged as `career.live`, with no crash: nothing was applied.
+   */
+  liveMatch(input: PlayInput = {}): SaveResult<LiveMatch, LiveError> {
+    const state = this.current;
+    const save = state.save;
+    if (state.status !== 'open' || save === undefined) return { ok: false, error: 'not-open' };
+    if (state.busy) return { ok: false, error: 'busy' };
+    if (state.crash !== undefined) return { ok: false, error: 'unexpected' };
+    const blocked = roundBlock(state);
+    if (blocked !== undefined) return { ok: false, error: blocked };
+    if (!this.modeIsKnown(input, 'career.live')) return { ok: false, error: 'unexpected' };
+    try {
+      const round = this.roundInput(save, input);
+      const plan = prepareEngineRound(save.game, this.params, round);
+      if (!plan.ok) {
+        this.logProgramming(plan.error, 'career.live', plan.detail);
+        return { ok: false, error: 'unexpected' };
+      }
+      const clubId = save.career.clubId;
+      const match = plan.value.matches.find(
+        (m) => m.home.clubId === clubId || m.away.clubId === clubId,
+      );
+      if (match === undefined) {
+        this.logProgramming('live-no-match', 'career.live', { round: plan.value.round });
+        return { ok: false, error: 'unexpected' };
+      }
+      const result = simulateMatch(match, this.params, round.commands[match.fixtureId]);
+      return {
+        ok: true,
+        value: {
+          fixtureId: match.fixtureId,
+          side: match.home.clubId === clubId ? 'home' : 'away',
+          match,
+          result,
+        },
+      };
+    } catch (error) {
+      this.logException('career.live', error);
+      return { ok: false, error: 'unexpected' };
+    }
+  }
+
+  /**
+   * The speed of the match clock kept on the device (T-032): `'normal'` the first time, with a
+   * value this build does not know, or when the read fails (logged as storage).
+   */
+  async matchSpeed(): Promise<MatchSpeed> {
+    try {
+      const read = await this.store.readKv(MATCH_SPEED_KEY);
+      if (!read.ok) {
+        this.logStorage(read.error, MATCH_SPEED_KEY, read.detail);
+        return 'normal';
+      }
+      return parseMatchSpeed(read.value) ?? 'normal';
+    } catch (error) {
+      this.logException(MATCH_SPEED_KEY, error);
+      return 'normal';
+    }
+  }
+
+  /** Keeps the speed of the match clock on the device; a failure is only logged. */
+  async rememberMatchSpeed(speed: MatchSpeed): Promise<void> {
+    try {
+      const written = await this.store.writeKv(MATCH_SPEED_KEY, speed);
+      if (!written.ok) this.logStorage(written.error, MATCH_SPEED_KEY, written.detail);
+    } catch (error) {
+      this.logException(MATCH_SPEED_KEY, error);
+    }
   }
 
   /**
@@ -535,6 +639,7 @@ export class CareerService {
     if (state.crash !== undefined) return { ok: false, error: 'unexpected' };
     const blocked = roundBlock(state);
     if (blocked !== undefined) return { ok: false, error: blocked };
+    if (!this.modeIsKnown(input, 'career.play')) return { ok: false, error: 'unexpected' };
     this.set({ busy: true });
     const headSeq = this.headSeq;
     try {
@@ -556,15 +661,7 @@ export class CareerService {
   ): Promise<SaveResult<PlayedRound, PlayError>> {
     // Let the screen show "Calculando a rodada..." before the engine takes the thread.
     await new Promise((resolve) => setTimeout(resolve, 0));
-    const clubId = save.career.clubId;
-    const pending = save.career.pendingFanDecision;
-    const played = playEngineRound(save.game, this.params, {
-      round: save.game.round,
-      sheets: input.sheet === undefined ? {} : { [clubId]: input.sheet },
-      commands: input.commands ?? {},
-      fanDecisions: pending === 0 ? {} : { [clubId]: pending },
-      coaches: { [clubId]: save.career.matchMode },
-    });
+    const played = playEngineRound(save.game, this.params, this.roundInput(save, input));
     if (!played.ok) {
       this.set({ busy: false });
       // The round was checked above: the engine refusing it is a bug of this layer.
@@ -580,6 +677,9 @@ export class CareerService {
       game: played.value.state,
       career: {
         ...save.career,
+        // The mode chosen at "Jogar rodada" goes with the round's snapshot (T-032): it holds for
+        // the next rounds, and is lost with the round when the round is not applied.
+        matchMode: input.matchMode ?? save.career.matchMode,
         pendingFanDecision: 0,
         lastRound: roundRecap(report),
         matchSheets,
@@ -662,6 +762,31 @@ export class CareerService {
   }
 
   // ------------------------------------------------------------------------------- internals
+
+  /**
+   * The input of the next round, built in this one place for `prepareRound`, `liveMatch` and
+   * `playRound`, so the live match never diverges from the recorded one (docs/02-architecture.md,
+   * 4.1, "Entrada única"): the coach's sheet, his commands, the fan decision pending and his mode,
+   * translated for the engine by `engineMatchMode`.
+   */
+  private roundInput(save: CareerSave, input: PlayInput): RoundInput {
+    const clubId = save.career.clubId;
+    const pending = save.career.pendingFanDecision;
+    return {
+      round: save.game.round,
+      sheets: input.sheet === undefined ? {} : { [clubId]: input.sheet },
+      commands: input.commands ?? {},
+      fanDecisions: pending === 0 ? {} : { [clubId]: pending },
+      coaches: { [clubId]: engineMatchMode(input.matchMode ?? save.career.matchMode) },
+    };
+  }
+
+  /** A mode outside `MATCH_MODES` is a bug of the screen (the type already forbids it): logged. */
+  private modeIsKnown(input: PlayInput, screen: string): boolean {
+    if (input.matchMode === undefined || MATCH_MODES.includes(input.matchMode)) return true;
+    this.logProgramming('unknown-match-mode', screen, { matchMode: input.matchMode });
+    return false;
+  }
 
   /** `save` with its draft sheet reconciled with its squad (ADR-0021), before any write. */
   private reconciled(save: CareerSave): CareerSave {

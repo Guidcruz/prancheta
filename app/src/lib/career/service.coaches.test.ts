@@ -8,10 +8,13 @@ import { SAMPLE_CAREER_ID } from '../save/testing/sample.ts';
 import { CareerService } from './service.ts';
 
 /*
- * The CareerService always tells the engine how the coach follows the match (docs/02-architecture.md,
- * 4.1, "Decisão do `architect` sobre `coaches`"; T-030): `coaches[clubId]` with the save's
- * `matchMode`, in `prepareRound` and in `playRound`. Without it, the engine would play the human
- * club as `'full'` with no commands, only the injury substitution, and with no warning.
+ * The CareerService always tells the engine how the coach's club is commanded
+ * (docs/02-architecture.md, 4.1, "Decisão do `architect` sobre `coaches`", revised for T-032):
+ * `coaches[clubId]` in `prepareRound`, `liveMatch` and `playRound`. Until T-033 the screen has no
+ * commands, so the mode goes through `engineMatchMode`, which sends `'result'` for every mode (CEO
+ * decision 2 of docs/design/telas/partida.md): the assistant plays rules 1 to 6 for the coach's
+ * club also when he watches. Without it, with `'full'` or `'highlights'` the engine would play the
+ * club with no commands, only the injury substitution, and with no warning.
  */
 
 vi.mock('../../engine/index.ts', async (importOriginal) => {
@@ -39,10 +42,16 @@ function service(): CareerService {
   });
 }
 
-describe('coaches: the save’s match mode reaches the engine (T-030)', () => {
-  it.each(MATCH_MODES.map((mode) => [mode] as [MatchMode]))(
-    'matchMode %s: prepareRound and playRound get coaches[clubId] = the mode',
-    async (matchMode) => {
+const PAIRS = MATCH_MODES.flatMap((saved) =>
+  [undefined, ...MATCH_MODES].map(
+    (chosen) => [saved, chosen] as [MatchMode, MatchMode | undefined],
+  ),
+);
+
+describe("coaches: the engine gets 'result' for the coach's club in every mode (T-032)", () => {
+  it.each(PAIRS)(
+    'save in %s, input %s: prepareRound, liveMatch and playRound send coaches[clubId] = result',
+    async (matchMode, chosen) => {
       const careers = service();
       const created = await careers.create({
         coachName: 'Zeca',
@@ -51,21 +60,27 @@ describe('coaches: the save’s match mode reaches the engine (T-030)', () => {
         matchMode,
       });
       expect(created.ok).toBe(true);
+      const input = chosen === undefined ? {} : { matchMode: chosen };
       const prepare = vi.mocked(engine.prepareRound);
       const play = vi.mocked(engine.playRound);
       prepare.mockClear();
       play.mockClear();
 
-      expect(careers.prepareRound()?.ok).toBe(true);
+      expect(careers.prepareRound(input)?.ok).toBe(true);
       expect(prepare).toHaveBeenCalledTimes(1);
-      expect(prepare.mock.calls[0]![2]).toMatchObject({ coaches: { flamingo: matchMode } });
+      expect(prepare.mock.calls[0]![2]).toMatchObject({ coaches: { flamingo: 'result' } });
 
-      const played = await careers.playRound();
+      prepare.mockClear();
+      expect(careers.liveMatch(input).ok).toBe(true);
+      expect(prepare).toHaveBeenCalledTimes(1);
+      expect(prepare.mock.calls[0]![2]).toMatchObject({ coaches: { flamingo: 'result' } });
+
+      const played = await careers.playRound(input);
       expect(played.ok).toBe(true);
       expect(play).toHaveBeenCalledTimes(1);
-      const input = play.mock.calls[0]![2];
-      expect(input.coaches).toEqual({ flamingo: matchMode });
-      expect(input.round).toBe(1);
+      const sent = play.mock.calls[0]![2];
+      expect(sent.coaches).toEqual({ flamingo: 'result' });
+      expect(sent.round).toBe(1);
     },
   );
 });

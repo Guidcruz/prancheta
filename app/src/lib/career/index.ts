@@ -12,6 +12,8 @@ export {
 } from './coach-name.ts';
 export { ROLE_LIST_MAX, reconcileDraft } from './draft.ts';
 export { LAST_SETUP_KEY, parseLastSetup, type LastSetup, type NewGameClub } from './new-game.ts';
+export { engineMatchMode } from './match-mode.ts';
+export { MATCH_SPEEDS, MATCH_SPEED_KEY, parseMatchSpeed, type MatchSpeed } from './match-speed.ts';
 export { canonicalJson, paramsHash } from './params-hash.ts';
 export {
   CareerService,
@@ -24,6 +26,8 @@ export {
   type CreateError,
   type DraftUnsaved,
   type FatalCode,
+  type LiveError,
+  type LiveMatch,
   type PlayError,
   type PlayInput,
   type PlayedRound,
