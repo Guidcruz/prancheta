@@ -88,14 +88,22 @@ const pairs = [
   ['chalk', 'board'],
   ['mark', 'board'],
 ];
+// Graphic pairs (WCAG 2, 3:1 for graphic objects): the ring of the discs and the ball of the 2D
+// pitch in ink over the grass (design-system.md, "Campo da partida"; T-085).
+const graphicPairs = [['ink', 'pitch']];
 const failures = [];
-for (const theme of themes)
+for (const theme of themes) {
   for (const [fg, bg] of pairs) {
     const r = ratio(val(byName[fg], theme), val(byName[bg], theme));
-    if (r < 4.5) failures.push(`${theme}: ${fg} on ${bg} = ${r.toFixed(2)}:1`);
+    if (r < 4.5) failures.push(`${theme}: ${fg} on ${bg} = ${r.toFixed(2)}:1 (text, 4.5:1)`);
   }
+  for (const [fg, bg] of graphicPairs) {
+    const r = ratio(val(byName[fg], theme), val(byName[bg], theme));
+    if (r < 3) failures.push(`${theme}: ${fg} on ${bg} = ${r.toFixed(2)}:1 (graphic, 3:1)`);
+  }
+}
 if (failures.length) {
-  console.error('Contrast below 4.5:1:\n  ' + failures.join('\n  '));
+  console.error('Contrast below the minimum:\n  ' + failures.join('\n  '));
   process.exit(1);
 }
 
