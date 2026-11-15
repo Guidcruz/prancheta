@@ -101,9 +101,7 @@
   const view = $derived(viewAt(steps, Math.max(run.index, 0), run.paused));
   const items = $derived(view.lines.map((line) => commentaryItem(line, ctx)));
   const minute = $derived(clockLabel(view.clock, lang));
-  const spoken = $derived(
-    view.announce === undefined ? '' : announcement(view.announce.event, ctx),
-  );
+  const spoken = $derived(view.announce === undefined ? '' : announcement(view.announce, ctx));
   const mine = $derived(live.side);
   const homeId = $derived(live.match.home.clubId);
   const awayId = $derived(live.match.away.clubId);
@@ -132,6 +130,8 @@
   }
 
   async function finish(): Promise<void> {
+    // The final whistle with "Sair da partida?" open: the sheet has nothing left to ask.
+    closeLeave(false);
     stage = wantSummary ? 'skipping' : 'saving';
     const outcome = await onfinish();
     if (outcome === 'failed') {

@@ -209,9 +209,9 @@ describe('viewAt', () => {
     expect(viewAt(steps, lastOfSlot, true).clock.minute).toBe(steps[lastOfSlot]!.clock.minute + 1);
   });
 
-  it('the last announcement carries its step, so a sentence repeated is a new one', () => {
+  it('the last announcement is the event of the last step that announced', () => {
     const at = steps.findIndex((s) => s.announce !== undefined);
-    expect(viewAt(steps, at).announce).toEqual({ event: steps[at]!.announce, step: at });
+    expect(viewAt(steps, at).announce).toBe(steps[at]!.announce);
     expect(viewAt(steps, at - 1).announce).toBeUndefined();
   });
 });

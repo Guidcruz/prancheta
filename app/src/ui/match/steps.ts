@@ -253,8 +253,8 @@ export interface MatchView {
   /** The minute on the clock: with the match paused, the next minute to play. */
   readonly clock: MatchClock;
   readonly phase: MatchPhase;
-  /** The last sentence for the screen reader, with the step that sent it. */
-  readonly announce?: { readonly event: MatchEvent; readonly step: number };
+  /** The event of the last sentence for the screen reader. */
+  readonly announce?: MatchEvent;
   /** The final whistle is shown. */
   readonly ended: boolean;
 }
@@ -273,7 +273,7 @@ export function viewAt(steps: readonly MatchStep[], index: number, paused = fals
       lines.set(step.line.id, step.line);
     }
     if (step.score !== undefined) score = step.score;
-    if (step.announce !== undefined) announce = { event: step.announce, step: i };
+    if (step.announce !== undefined) announce = step.announce;
   }
   const current = steps[last];
   const next = paused ? steps[last + 1] : undefined;

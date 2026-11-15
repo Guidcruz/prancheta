@@ -120,6 +120,8 @@ function lineBody(
         club: clubOf(ctx, source.side),
       };
     case 'goal': {
+      // A goal from the spot never has a start of its own: the start of a penalty is the line of
+      // `penaltyAwarded` (steps.ts), and its goal only ever comes as the outcome.
       if (line.stage === 'build' && source.kind !== 'penalty') {
         return buildLine(ctx, source.kind, source.scorer, source.side);
       }
