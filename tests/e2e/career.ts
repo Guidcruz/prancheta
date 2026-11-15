@@ -85,11 +85,17 @@ export async function closeSummary(page: Page, label = 'Continuar'): Promise<voi
 
 /**
  * Joga uma rodada pelo "Jogar rodada" da aba atual do Clube: espera o resumo dela abrir (só depois
- * da gravação), toca "Continuar" e confere que o Clube passou à rodada seguinte.
+ * da gravação), toca "Continuar" e confere que o Clube passou à rodada seguinte. Numa carreira em
+ * modo assistido (T-032), a partida abre antes: toca "Pular", que joga, grava e abre o resumo.
  */
 export async function playRound(page: Page): Promise<void> {
   const next = await nextRound(page);
   await playButton(page).click();
+  const match = page.locator('main.match');
+  await expect(roundHeading(page).or(match)).toBeVisible();
+  if ((await match.count()) === 1) {
+    await match.getByRole('button', { name: 'Pular', exact: true }).click();
+  }
   await expect(roundHeading(page)).toHaveAccessibleName(new RegExp(`^Rodada ${next}\\. `));
   await closeSummary(page);
   await expect.poll(() => nextRound(page)).toBe(next + 1);
