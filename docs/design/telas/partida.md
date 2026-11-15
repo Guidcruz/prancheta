@@ -78,7 +78,7 @@ O relógio da tela é uma função pura dos eventos, do modo e da velocidade (`a
 
 | Passo                                                                       | Normal | Rápido |
 | --------------------------------------------------------------------------- | ------ | ------ |
-| Minuto sem lance mostrado, "Animada completa"                               | 500 ms | 200 ms |
+| Minuto sem lance mostrado, "Animada completa"                               | 800 ms | 300 ms |
 | Minuto sem lance mostrado, "Só lances principais"                           | 180 ms | 70 ms  |
 | Lance comum (cartão, troca, chance fraca, mudança tática, acréscimo, fases) | 400 ms | 150 ms |
 | Pausa dramática (entre o começo do lance e o desfecho)                      | 1,2 s  | 0,5 s  |
@@ -86,23 +86,23 @@ O relógio da tela é uma função pura dos eventos, do modo e da velocidade (`a
 | Depois de um desfecho que não é gol (defesa, trave, fora, pênalti perdido)  | 600 ms | 250 ms |
 | Intervalo (entre "Intervalo" e "Começa o 2º tempo")                         | 2,0 s  | 0,8 s  |
 
-**Duração medida** (pelo `developer`, em 60 partidas reais do motor, com a tabela acima; revisão da T-032, 2026-11-15):
+**Duração medida** (pelo `developer`, em 60 partidas reais do motor, com a tabela acima: "Só lances principais" na revisão da T-032 e "Animada completa" na T-085, com o minuto sem lance de 800 ms e 300 ms, 2026-11-15):
 
 | Tipo                   | Normal (média, mínimo a máximo) | Rápido (média, mínimo a máximo) | Temporada de 38 rodadas no Normal |
 | ---------------------- | ------------------------------- | ------------------------------- | --------------------------------- |
 | "Só lances principais" | 28,8 s (20,0 a 45,2 s)          | 11,4 s (7,8 a 18,0 s)           | cerca de 18 min de partida        |
-| "Animada completa"     | 58,1 s                          | 23,0 s                          | cerca de 37 min de partida        |
+| "Animada completa"     | 78,7 s (69,4 a 92,8 s)          | 29,9 s (26,1 a 35,7 s)          | cerca de 50 min de partida        |
 
 - **"Só lances principais":** com o minuto sem lance a 80 ms e 40 ms (a primeira versão desta tabela), a partida ficava bem abaixo dos cerca de 30 s e 12 s da decisão 5. O CEO passou o minuto sem lance para **180 ms no Normal e 70 ms no Rápido** (decisão de 2026-11-15, na revisão da T-032; `MATCH_TIMING` em `app/src/ui/match/timing.ts`), e a média medida bate com a decisão.
-- **"Animada completa" (decisão 1 da T-085, para o CEO):** a estimativa da decisão 5 era de cerca de 1min20s no Normal e 30 s no Rápido; medida, ela fica em 58,1 s e 23,0 s. A conta da revisão da T-032 ("700 ms e 280 ms chegam lá") estava errada: medida de novo pelo `ux-designer` em 2026-11-15, nas mesmas 60 partidas, a "Animada completa" tem em média 68,7 minutos sem lance, 31,1 lances comuns, 3,4 pausas dramáticas, 2,3 gols e 1,0 desfecho sem gol por partida, e só o minuto sem lance muda com a proposta. O campo não muda a contagem (ele segue os mesmos passos). Opções medidas:
+- **"Animada completa" (decisão 1 da T-085, decidida pelo CEO em 2026-11-15: opção C):** a estimativa da decisão 5 era de cerca de 1min20s no Normal e 30 s no Rápido; com o minuto sem lance de 500 ms e 200 ms, medida, ela ficava em 58,1 s e 23,0 s. A conta da revisão da T-032 ("700 ms e 280 ms chegam lá") estava errada: medida de novo pelo `ux-designer` em 2026-11-15, nas mesmas 60 partidas, a "Animada completa" tem em média 68,7 minutos sem lance, 31,1 lances comuns, 3,4 pausas dramáticas, 2,3 gols e 1,0 desfecho sem gol por partida, e só o minuto sem lance muda com a proposta. O campo não muda a contagem (ele segue os mesmos passos). Opções medidas:
 
 | Minuto sem lance da "Animada completa" (Normal / Rápido) | Normal: média (mínimo a máximo) | Rápido: média (mínimo a máximo) | Temporada de 38 rodadas no Normal |
 | -------------------------------------------------------- | ------------------------------- | ------------------------------- | --------------------------------- |
-| A. 500 / 200 ms (hoje)                                   | 58,1 s (49,3 a 73,6 s)          | 23,0 s (19,4 a 29,3 s)          | cerca de 37 min                   |
+| A. 500 / 200 ms (antes)                                  | 58,1 s (49,3 a 73,6 s)          | 23,0 s (19,4 a 29,3 s)          | cerca de 37 min                   |
 | B. 700 / 280 ms                                          | 71,8 s (62,8 a 86,4 s)          | 28,5 s (24,8 a 34,4 s)          | cerca de 45 min                   |
-| **C. 800 / 300 ms (recomendada)**                        | 78,7 s (69,4 a 92,8 s)          | 29,9 s (26,1 a 35,7 s)          | cerca de 50 min                   |
+| **C. 800 / 300 ms (escolhida)**                          | 78,7 s (69,4 a 92,8 s)          | 29,9 s (26,1 a 35,7 s)          | cerca de 50 min                   |
 
-Só o minuto sem lance muda; o resto da tabela fica igual nos dois tipos. A recomendação está em "Decisões para o CEO (T-085)", item 1. O teste de duração do `steps.test.ts` passa a conferir a média da "Animada completa" na faixa da opção escolhida (±10%), como já faz com a de "Só lances principais".
+Só o minuto sem lance muda; o resto da tabela fica igual nos dois tipos. O CEO escolheu a opção C ("Decisões para o CEO (T-085)", item 1), e a medida da implementação bate com ela. O teste de duração do `steps.test.ts` passa a conferir a média da "Animada completa" na faixa da opção escolhida (±10%), como já faz com a de "Só lances principais".
 
 **Velocidade:** "Rápido" é um botão que liga e desliga (`aria-pressed`); ligado, ganha o marcador de botão ligado (traço de 3px em `grass` na base e fundo `grass-soft`, proposta 38), sem mudar de largura e sem depender só da cor. A escolha é lembrada no aparelho (`kv`, chave `match.speed`, pelo mesmo caminho do `newGame.last`; falha ao gravar não mostra nada), e vale para todas as carreiras.
 
@@ -329,7 +329,7 @@ Props em [componentes.md](componentes.md#casca-da-t-032-e-da-t-085-partida).
 | T-085  | Crest, Scoreboard, CommentaryFeed                                                                                        | MatchPitch, GoalCelebration | — (no gerador de uniformes, `FieldKit.mark`; decisão 3)                                                                      |
 | T-086  | CommentaryFeed                                                                                                           | —                           | —                                                                                                                            |
 
-Nenhum token novo de cor. Os ícones novos e o botão dividido entram no design system pelas propostas 33 e 34 de componentes.md; a forma das bolinhas, pela 35; as durações, pela 36; o placar ao vivo, pela 37 (todas aprovadas pelo CEO em 2026-11-15; regras em [design-system.md](../design-system.md)). A comemoração de gol entra pela proposta 39 (T-085, para o CEO).
+Nenhum token novo de cor. Os ícones novos e o botão dividido entram no design system pelas propostas 33 e 34 de componentes.md; a forma das bolinhas, pela 35; as durações, pela 36; o placar ao vivo, pela 37 (todas aprovadas pelo CEO em 2026-11-15; regras em [design-system.md](../design-system.md)). A comemoração de gol entra pela proposta 39 (T-085, aprovada pelo CEO em 2026-11-15).
 
 ## O que a tela lê e pedidos ao `architect`
 
