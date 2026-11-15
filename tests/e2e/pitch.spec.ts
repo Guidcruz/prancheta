@@ -173,6 +173,42 @@ test.describe('Campo 2D (T-085)', () => {
       ]);
     });
 
+    test('canvas que falha: o desenho lança depois do primeiro quadro, o leiaute da T-032 sem aviso até o resumo, um registro pitch-draw (item 10)', async ({
+      page,
+    }) => {
+      // `arc` throws once the field and the first frames are drawn (about 60 calls each).
+      await page.addInitScript(() => {
+        const arc = CanvasRenderingContext2D.prototype.arc;
+        let calls = 0;
+        CanvasRenderingContext2D.prototype.arc = function (
+          this: CanvasRenderingContext2D,
+          ...args: Parameters<CanvasRenderingContext2D['arc']>
+        ) {
+          calls++;
+          if (calls > 150) throw new Error('arc failed (test)');
+          return arc.apply(this, args);
+        };
+      });
+      const { expected } = await careerWith(page, 'full');
+      await freezeClock(page);
+      await openMatch(page);
+      await runToMinute(page, 5);
+      await expect(canvas(page)).toHaveCount(0);
+      await expect(pitchBox(page)).toHaveCount(0);
+      await expect(page.getByRole('alert')).toHaveCount(0);
+      await expect(matchScreen(page)).not.toHaveClass(/two/);
+      await runToMinute(page, 20);
+      await expect(page.getByRole('alert')).toHaveCount(0);
+      await control(page, 'match.skip').click();
+      await runUntil(page, async () => (await roundHeading(page).count()) === 1);
+      await expect(roundHeading(page)).toHaveAccessibleName(
+        new RegExp(`${expected.result.score[0]}.*${expected.result.score[1]}`),
+      );
+      expect((await errorCodes(page)).filter((c) => c.startsWith('pitch-'))).toEqual([
+        'pitch-draw',
+      ]);
+    });
+
     test('canvas que falha: o chunk do campo não carrega, o leiaute da T-032 sem aviso até o resumo, registrado (item 10)', async ({
       page,
     }) => {
@@ -258,6 +294,49 @@ test.describe('Campo 2D (T-085)', () => {
     await expect(celebration(page)).toBeVisible();
     await expect(celebration(page)).toContainText(ui('pt-BR', 'match.celebration.title'));
     await expect(celebration(page)).not.toContainText(againName);
+  });
+
+  test('pausada com a página escondida no meio de um passo: ao voltar, o campo está no fim do passo, igual a um redesenho (regressão da revisão)', async ({
+    page,
+  }) => {
+    const { expected } = await careerWith(page, 'full');
+    const steps = matchSteps(expected.result.events, 'full');
+    // A minute with nothing shown, where the ball walks the whole step.
+    const minute = steps.findIndex(
+      (s, i) => i > 3 && s.line === undefined && steps[i - 1]!.timing !== 'afterGoal',
+    );
+    await freezeClock(page);
+    await openMatch(page);
+    await expect(canvas(page)).toHaveCount(1);
+    await page.clock.runFor(timeTo(steps, minute) + MATCH_TIMING.normal.minuteFull / 2);
+    const visibility = (state: 'hidden' | 'visible') =>
+      page.evaluate((value) => {
+        Object.defineProperty(document, 'visibilityState', {
+          configurable: true,
+          get: () => value,
+        });
+        document.dispatchEvent(new Event('visibilitychange'));
+      }, state);
+    // Hidden in the middle of the step: the pause waits for its end, with the pitch already still.
+    await visibility('hidden');
+    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
+    await page.clock.runFor(3_000);
+    await visibility('visible');
+    await expect(paused).toBeVisible();
+    const pixels = () =>
+      canvas(page).evaluate((element) => {
+        const c = element as HTMLCanvasElement;
+        const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+        let hash = 0;
+        for (let i = 0; i < data.length; i++) hash = (Math.imul(hash, 31) + data[i]!) | 0;
+        return hash;
+      });
+    const shown = await pixels();
+    // A forced redraw (the theme there and back) draws the same instant: the end of the step.
+    await setTheme(page, 'dia');
+    await setTheme(page, 'noite');
+    await expect.poll(pixels).toBe(shown);
   });
 
   test('movimento reduzido: nenhum quadro pedido entre os lances, a comemoração parada e nenhuma animação (item 9)', async ({

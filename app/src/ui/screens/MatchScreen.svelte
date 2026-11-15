@@ -29,6 +29,7 @@
   import { matchSteps, viewAt, type MatchStep, type WatchMode } from '../match/steps';
   import { timingOf } from '../match/timing';
   import { loadPitch as loadPitchChunk, type PitchChunk } from '../match/pitch-loader';
+  import type { PitchKits } from '../match/pitch/kits';
   import type { Choreography, PitchScene } from '../match/pitch/scene';
   import {
     announcement,
@@ -127,7 +128,12 @@
   // svelte-ignore state_referenced_locally
   const player = new MatchPlayer(steps, {
     speed,
-    onchange: (next) => (run = next),
+    onchange: (next) => {
+      // Stopped at the end of a step (paused, the final whistle): the still pitch draws that end,
+      // even when the pause came with the page hidden and the pitch already not running.
+      if ((next.paused && !run.paused) || (next.ended && !run.ended)) version++;
+      run = next;
+    },
     onreveal: (step, index) => revealed(step, index),
     onend: () => void finish(),
   });
@@ -255,12 +261,10 @@
       pitchSize.height >= PITCH_MIN_HEIGHT,
   );
   const twoColumns = $derived(pitchShown && wide);
-  const pitchKits = $derived(
-    pitch?.pitchKits(
-      game.clubs[live.match.home.clubId]!.def,
-      game.clubs[live.match.away.clubId]!.def,
-    ),
-  );
+  /** The colours of the discs, from the kit generator, once the chunk is here. */
+  let pitchKits: PitchKits | undefined = $state.raw();
+  /** The screen is gone: a chunk arriving late does nothing (nor logs for the next match). */
+  let destroyed = false;
   const pitchRunning = $derived(
     pitchShown &&
       pitch !== undefined &&
@@ -319,8 +323,12 @@
   function startPitch(): void {
     loadPitch().then(
       (chunk) => {
-        if (pitchFailed) return;
+        if (pitchFailed || destroyed) return;
         try {
+          pitchKits = chunk.pitchKits(
+            game.clubs[live.match.home.clubId]!.def,
+            game.clubs[live.match.away.clubId]!.def,
+          );
           // The steps of "Animada completa" (the only mode with the pitch).
           choreography = chunk.choreograph(
             steps,
@@ -335,7 +343,9 @@
         pitch = chunk;
         version++;
       },
-      (error: unknown) => pitchFail('pitch-chunk', error),
+      (error: unknown) => {
+        if (!destroyed) pitchFail('pitch-chunk', error);
+      },
     );
   }
 
@@ -402,6 +412,8 @@
     player.start();
     const onVisibility = () => {
       pageHidden = document.visibilityState === 'hidden';
+      // Back on screen: one frame of where the match is (the pitch was still while hidden).
+      if (!pageHidden) version++;
       if (pageHidden) player.pause();
     };
     const onPop = () => {
@@ -415,6 +427,7 @@
     document.addEventListener('visibilitychange', onVisibility);
     window.addEventListener('popstate', onPop);
     return () => {
+      destroyed = true;
       player.stop();
       motion.removeEventListener('change', onMotion);
       columns.removeEventListener('change', onColumns);
@@ -675,6 +688,10 @@
   .two .side-col {
     flex: 1;
     min-width: 0;
+  }
+  /* The board off the top of the screen, lying down and on the desktop. */
+  .two .board {
+    padding-top: var(--space-2);
   }
   /* breakpoint-short (design-system.md, "Altura baixa"): lying down, the bar stays fixed. */
   @media (max-height: 480px) {
