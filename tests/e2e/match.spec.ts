@@ -920,6 +920,125 @@ test.describe('Partida narrada (T-032)', () => {
     expect((await readSave(page)).career).toMatchObject({ matchMode: 'highlights' });
   });
 
+  test('o voltar do celular depois de "Rodada salva" abre o resumo; voltar de novo leva à aba', async ({
+    page,
+  }) => {
+    await careerWith(page, 'highlights');
+    await freezeClock(page);
+    await openMatch(page);
+    await playToEnd(page);
+    await expect(matchScreen(page).getByText(ui('pt-BR', 'round.saved'))).toBeVisible();
+    await page.goBack();
+    await expect(roundHeading(page)).toBeVisible();
+    await expect(page).toHaveURL(/#\/round$/);
+    await page.goBack();
+    await expect(page).toHaveURL(/#\/club$/);
+    await expect(roundHeading(page)).toHaveCount(0);
+    await expect(playButton(page)).toBeVisible();
+  });
+
+  test.describe('gravação recusada no apito final', () => {
+    test.beforeEach(async ({ page }) => {
+      // O `put` de um snapshot falha por falta de espaço, só depois de ligado.
+      await page.addInitScript(() => {
+        const put = IDBObjectStore.prototype.put;
+        IDBObjectStore.prototype.put = function (this: IDBObjectStore, ...args) {
+          if (
+            (globalThis as { failSnapshots?: boolean }).failSnapshots &&
+            this.name === 'snapshots'
+          ) {
+            throw new DOMException('no room', 'QuotaExceededError');
+          }
+          return put.apply(this, args as Parameters<IDBObjectStore['put']>);
+        } as IDBObjectStore['put'];
+      });
+    });
+
+    test('a barra mostra "Rodada não salva" e "Ver resumo" fica ativo; o resumo abre com o aviso', async ({
+      page,
+    }) => {
+      await careerWith(page, 'highlights');
+      await page.evaluate(() => ((globalThis as { failSnapshots?: boolean }).failSnapshots = true));
+      await freezeClock(page);
+      await openMatch(page);
+      await playToEnd(page);
+      await expect(matchScreen(page).getByText(ui('pt-BR', 'round.unsaved'))).toBeVisible();
+      await expect(control(page, 'match.toSummary')).toBeEnabled();
+      expect((await readHeadRecord(page)).round).toBe(1);
+      await control(page, 'match.toSummary').click();
+      await expect(roundHeading(page)).toBeVisible();
+      await expect(page.locator('main.round #round-bar-state')).toHaveText(
+        ui('pt-BR', 'round.unsaved'),
+      );
+      await expect(page.locator('main.round .banner.danger')).toBeVisible();
+    });
+  });
+
+  test.describe('erro ao jogar no fim (o playRound lança antes de gravar)', () => {
+    /**
+     * Na próxima espera de 0 ms (a do `playRound`, que deixa a tela desenhar antes do motor), um
+     * erro: a rodada não é aplicada e a carreira continua na anterior.
+     */
+    const failNextPlay = (page: Page) =>
+      page.evaluate(() => {
+        const original = window.setTimeout;
+        let armed = true;
+        window.setTimeout = ((run: TimerHandler, ms?: number, ...rest: unknown[]) => {
+          if (armed && ms === 0) {
+            armed = false;
+            throw new Error('play failed (test)');
+          }
+          return original(run, ms, ...rest);
+        }) as typeof window.setTimeout;
+      });
+
+    test('o ErrorState com "Tentar de novo": joga e grava, sem repetir a partida, e abre o resumo', async ({
+      page,
+    }) => {
+      const { expected } = await careerWith(page, 'highlights');
+      await freezeClock(page);
+      await openMatch(page);
+      await failNextPlay(page);
+      const error = page.getByRole('alert');
+      await runUntil(page, async () => (await error.count()) === 1, { step: 500 });
+      await expect(error).toContainText(ui('pt-BR', 'error.unexpected.title'));
+      await expect(error).toContainText(ui('pt-BR', 'match.error.body'));
+      await expect(matchScreen(page)).toHaveCount(0);
+      expect((await readHeadRecord(page)).round).toBe(1);
+      await error.getByRole('button', { name: ui('pt-BR', 'action.retry') }).click();
+      await runUntil(page, async () => (await roundHeading(page).count()) === 1);
+      expect((await readHeadRecord(page)).round).toBe(2);
+      const stored = (await readSave(page)).game as unknown as {
+        round: number;
+        fixtures: { id: string; round: number; result?: { score: [number, number] } }[];
+      };
+      // Round 1 only, once: the score the match showed.
+      expect(stored.round).toBe(2);
+      expect(stored.fixtures.find((f) => f.id === expected.fixtureId)!.result!.score).toEqual(
+        expected.result.score,
+      );
+      expect(stored.fixtures.filter((f) => f.round === 2 && f.result != null)).toEqual([]);
+    });
+
+    test('"Voltar sem jogar" leva à aba de origem, com a rodada ainda por jogar', async ({
+      page,
+    }) => {
+      await careerWith(page, 'highlights');
+      await freezeClock(page);
+      await openMatch(page);
+      await failNextPlay(page);
+      const error = page.getByRole('alert');
+      await runUntil(page, async () => (await error.count()) === 1, { step: 500 });
+      await error.getByRole('button', { name: ui('pt-BR', 'match.error.leave') }).click();
+      await expect(page).toHaveURL(/#\/club$/);
+      await expect(page.getByRole('alert')).toHaveCount(0);
+      expect(await nextRound(page)).toBe(1);
+      expect((await readHeadRecord(page)).round).toBe(1);
+      await expect(playButton(page)).not.toHaveAttribute('aria-busy', 'true');
+      await expect(playButton(page)).toContainText(ui('pt-BR', 'newGame.match.highlights'));
+    });
+  });
+
   test('duração: do apito inicial ao final no tempo da tabela de "Relógio da partida", ±5% (medida 17, a duração)', async ({
     page,
   }) => {
