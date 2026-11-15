@@ -13,7 +13,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - No apito final, a rodada é jogada e gravada sozinha, e "Ver resumo" abre o resumo no lugar da partida; Pular grava e abre o resumo direto. Fechar o jogo no meio deixa a rodada por jogar.
   - O resultado mostrado é o do motor: a tela pede a partida ao `CareerService.liveMatch`, com a mesma entrada do `playRound`, e só decide quando mostrar cada lance. Até a T-033, o auxiliar comanda o clube do técnico também nos modos assistidos, então os três tipos dão o mesmo jogo.
   - 50 chaves de texto em pt-BR, es e en e a revisão de 2 textos do Novo jogo (aprovadas pelo CEO em 2026-11-15); componente novo CommentaryFeed; o Scoreboard ganha a linha ao vivo, o Button ganha `compact`, `pressed` e `minWidth`, e o Icon, `pause`, `skip` e `chevron-down`.
-  - Medido com CPU 4×: do toque à partida, p90 de 64 ms; de Pular ao resumo, p90 de 273 ms; nenhuma tarefa longa durante a partida.
+  - Medido com CPU 4× em cinco execuções: do toque à partida, p90 entre 64 e 94 ms (meta 300 ms); de Pular ao resumo, p90 entre 228 e 298 ms (meta 500 ms); nenhuma tarefa longa entre o apito inicial e o final.
   - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Calendário (T-084; US-024):
   - A aba `#/calendar` mostra as 38 rodadas do clube em dois turnos, um card por rodada com data, mando, "Clássico" e, nas jogadas, o placar e o resultado escrito. A próxima rodada tem "Próximo jogo" e borda verde, e a aba abre nela, sem atalho flutuante.
