@@ -217,6 +217,7 @@ describe('MatchTimeline, MatchStatsTable and the MatchCard as a button (componen
             note: 'pênalti',
             noteA11y: 'de pênalti',
             club: 'Leões',
+            crest: game.clubs[TEST_CLUB]!.def,
           },
           {
             minute: "40'",
@@ -234,10 +235,13 @@ describe('MatchTimeline, MatchStatsTable and the MatchCard as a button (componen
     expect(body).toMatch(/<h3[^>]*>Lances(<!---->)?<\/h3>/);
     expect(body).toContain('<ol class="lines');
     expect(body).toMatch(/class="numero minute[^"]*" aria-hidden="true">23'<\/span>/);
-    expect(body).toContain('minuto 23, Gol, Fulano, de pênalti, Leões');
-    expect(body).toContain('minuto 40, Amarelo, Beltrano, Tubarões');
+    expect(body).toContain('minuto 23, Leões, Gol, Fulano, de pênalti<');
+    expect(body).toContain('minuto 40, Tubarões, Amarelo, Beltrano<');
+    // One decorative crest, only on the line that has one; the icon opens the text.
+    expect(body.match(/class="crest xs[^"]*"[^>]*aria-hidden="true"/g)).toHaveLength(1);
+    expect(body).toMatch(/class="main[^"]*"[^>]*>(<!--[^>]*-->)*<span class="icon yellow/);
     // The card's colour only reinforces the written word.
-    expect(body).toMatch(/class="icon yellow[^"]*" aria-hidden="true"/);
+    expect(body).toMatch(/class="icon yellow[^"]*"/);
     expect(body).toMatch(/class="body-strong kind[^"]*">Amarelo<\/span>/);
     expect(body).not.toContain('Nenhum lance');
   });

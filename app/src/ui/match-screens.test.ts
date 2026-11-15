@@ -200,6 +200,18 @@ describe('the CommentaryFeed', () => {
             note: 'pênalti',
             noteA11y: 'de pênalti',
             club: 'Leões',
+            crest: mine.game.clubs[TEST_CLUB]!.def,
+          },
+          {
+            id: 'e3',
+            minute: "10'",
+            minuteA11y: 'minuto 10',
+            icon: 'card',
+            tone: 'yellow',
+            kind: 'Amarelo',
+            text: 'Beltrano',
+            club: 'Leões',
+            crest: mine.game.clubs[TEST_CLUB]!.def,
           },
           { id: 'e0', minute: "0'", minuteA11y: 'minuto 0', tone: 'phase', kind: 'Rola a bola!' },
         ],
@@ -209,8 +221,13 @@ describe('the CommentaryFeed', () => {
     expect(body).toContain('reversed');
     expect(body.indexOf('data-line="e5"')).toBeLessThan(body.indexOf('data-line="e0"'));
     expect(body).toMatch(/class="line goal/);
-    expect(body).toContain('minuto 23, Gol, Fulano, de pênalti, Leões');
+    // The club comes right after the minute; the crest is decorative; the phases have none.
+    expect(body).toContain('minuto 23, Leões, Gol, Fulano, de pênalti<');
+    expect(body).toContain('minuto 10, Leões, Amarelo, Beltrano<');
     expect(body).toContain('minuto 0, Rola a bola!<');
+    expect(body.match(/class="crest xs[^"]*"[^>]*aria-hidden="true"/g)).toHaveLength(2);
+    // The icon opens the text, inside the first line, not in a column of its own.
+    expect(body).toMatch(/class="main[^"]*"[^>]*>(<!--[^>]*-->)*<span class="icon yellow/);
     expect(body).toContain('tabindex="0"');
     expect(body).not.toContain('aria-live');
   });

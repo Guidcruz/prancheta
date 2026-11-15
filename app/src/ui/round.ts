@@ -8,6 +8,7 @@ import {
   type StandingRow,
 } from '@engine';
 import type { Lang } from '@lib/config';
+import type { ShieldClub } from '@lib/generators/shield';
 import { t, tPlural } from '@lib/i18n';
 import type { GoalColumn } from './components/GoalList.svelte';
 import type { IconName } from './components/Icon.svelte';
@@ -85,6 +86,9 @@ const KIND_KEYS = { penalty: 'match.goal.penalty', freeKick: 'match.goal.freeKic
 /** The short name of a club, as in every list. */
 export const shortNameOf = (game: GameState, id: ClubId): string =>
   game.clubs[id]?.def.shortName ?? id;
+
+/** The crest fields of a club (its `def`), or `undefined` when it is not in the state. */
+export const crestOf = (game: GameState, id: ClubId): ShieldClub | undefined => game.clubs[id]?.def;
 
 /**
  * The real goals of a played match (`result.goals`; in an abandoned match they may not add up to
