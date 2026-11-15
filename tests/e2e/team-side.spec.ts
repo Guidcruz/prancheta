@@ -174,6 +174,14 @@ const noRepeatedIds = (page: Page) =>
 const sideScroll = (page: Page) =>
   page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
 
+/** The width of `main.match` minus the width of `.pitch-box` (0 once the pitch measure arrived). */
+const pitchGap = (page: Page) =>
+  page.evaluate(
+    () =>
+      document.querySelector('main.match')!.getBoundingClientRect().width -
+      (document.querySelector('.pitch-box')?.getBoundingClientRect().width ?? 0),
+  );
+
 test.describe('De qual time é cada lance', () => {
   test('narração: o escudo do clube certo em cada lance de time, nenhum nas fases; frase com o clube depois do minuto; altura igual', async ({
     page,
@@ -248,11 +256,15 @@ test.describe('De qual time é cada lance', () => {
         await page.setViewportSize({ width, height });
         // The canvas of the pitch redraws on the (fake) clock: give it a few frames to settle.
         let over = await sideScroll(page);
-        for (let tries = 0; over > 0 && tries < 20; tries++) {
+        let gap = await pitchGap(page);
+        for (let tries = 0; (over > 0 || gap !== 0) && tries < 20; tries++) {
           await page.clock.runFor(100);
           over = await sideScroll(page);
+          gap = await pitchGap(page);
         }
         expect(over, `${lang} ${width}`).toBeLessThanOrEqual(0);
+        // In the single column (portrait: 360 and 390) the pitch is as wide as the match column: the measure arrived.
+        if (width < height) expect(gap, `${lang} ${width}: pitch-box vs main.match`).toBe(0);
       }
       await control(page, 'match.skip', lang).click();
       await runUntil(page, async () => (await roundHeading(page).count()) === 1);
