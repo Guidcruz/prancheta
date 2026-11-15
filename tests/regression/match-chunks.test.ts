@@ -75,8 +75,27 @@ run('chunks of the assisted match (published build)', () => {
     );
     expect(askers.length).toBeGreaterThan(0);
     for (const key of askers) expect(screen.has(key), key).toBe(true);
-    // The kit generator comes only with the pitch.
-    expect([...main, ...screen].some((key) => key.endsWith('generators/kit.ts'))).toBe(false);
+  });
+
+  it('the kit generator comes only with the pitch (a literal only kit.ts has)', () => {
+    // A module bundled into a chunk is no key of the manifest: look for its text instead.
+    // `sashMirror` is a kit pattern; nothing else of the game writes it.
+    const marker = 'sashMirror';
+    const text = (keys: Iterable<string>) =>
+      [...keys]
+        .map((key) => manifest[key]!.file)
+        .map((file) => readFileSync(join(game, file), 'utf8'))
+        .join('\n');
+    const inMain = text(main).includes(marker);
+    const inScreen = text([...screen].filter((key) => !main.has(key))).includes(marker);
+    const inPitch = text([...pitch].filter((key) => !main.has(key) && !screen.has(key))).includes(
+      marker,
+    );
+    expect({ inMain, inScreen, inPitch }).toEqual({
+      inMain: false,
+      inScreen: false,
+      inPitch: true,
+    });
   });
 
   it('every file of the main bundle, the screen and the pitch is in the precache of sw.js', () => {
