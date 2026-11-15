@@ -114,6 +114,17 @@ export class RoundFlow {
   }
 
   /**
+   * The summary in place of the match (T-032; partida.md, "Fluxo da rodada nos modos assistidos",
+   * step 6): the match's entry becomes the summary's, so back from the summary returns to the tab
+   * under the match, never to the match.
+   */
+  replace(): void {
+    this.closing = false;
+    const entry: RoundEntry = { round: true };
+    this.history.replaceState(entry, '', ROUND_HASH);
+  }
+
+  /**
    * "Continuar": back to the tab the summary came from. With the summary's entry on top, its entry
    * goes away (`history.back()`, and the popstate shows the tab); otherwise (an address typed or
    * restored) the address is replaced by the tab of origin (`origin`), or the Clube's, and that

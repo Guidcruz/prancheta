@@ -6,6 +6,17 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Partida narrada, parte 1 da partida assistida (T-032; US-020 e US-019, cenário 2):
+  - O "Jogar rodada" ganha um seletor (botão dividido): a folha oferece "Só lances principais" e "Só resultado", e a escolha só vale ao tocar "Jogar rodada" nela; o tipo vai gravado com a rodada e vale para as seguintes. "Só lances principais" volta ao Novo jogo; o padrão continua "Só resultado", e a "Animada completa" entra com o campo 2D (T-085).
+  - Em "Só lances principais", a partida abre em tela cheia (`#/match`): o placar ao vivo com o minuto, a fase e "Pausada", e a narração em texto com a linha mais recente em cima. Gols, chances claras e pênaltis têm a pausa dramática: o começo do lance não dá pista, e o placar só muda no desfecho.
+  - Em "Só lances principais", uma partida dura em média 28,8 s no Normal e 11,4 s no Rápido (medido em 60 partidas do motor), depois de o minuto sem lance passar a 180 ms e 70 ms (decisão do CEO de 2026-11-15, na revisão).
+  - Pausar e Retomar (a pausa termina o minuto), Rápido (lembrado no aparelho) e Pular, compactos e numa linha só a 360 px nos três idiomas. A partida pausa sozinha com a página escondida; o voltar do celular pausa e pergunta, sem "sair sem jogar".
+  - No apito final, a rodada é jogada e gravada sozinha, e "Ver resumo" abre o resumo no lugar da partida; Pular grava e abre o resumo direto. Fechar o jogo no meio deixa a rodada por jogar.
+  - O resultado mostrado é o do motor: a tela pede a partida ao `CareerService.liveMatch`, com a mesma entrada do `playRound`, e só decide quando mostrar cada lance. Até a T-033, o auxiliar comanda o clube do técnico também nos modos assistidos, então os três tipos dão o mesmo jogo.
+  - 50 chaves de texto em pt-BR, es e en e a revisão de 2 textos do Novo jogo (aprovadas pelo CEO em 2026-11-15); componente novo CommentaryFeed; o Scoreboard ganha a linha ao vivo, o Button ganha `compact`, `pressed` e `minWidth`, e o Icon, `pause`, `skip` e `chevron-down`.
+  - Se o `playRound` falha depois de a rodada ser gravada, "Tentar de novo" abre o resumo, sem jogar a rodada outra vez; as folhas novas ficam alinhadas às demais, com 16 px entre o corpo e o rodapé.
+  - Medido com CPU 4× em cinco execuções: do toque à partida, p90 abaixo de 100 ms (meta 300 ms); de Pular ao resumo, p90 entre 237 e 319 ms (meta 500 ms); nenhuma tarefa longa entre o apito inicial e o final.
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Uniformes dos clubes gerados por código (T-026; US-002):
   - `kit.ts` gera camisa, calção e meias em SVG autocontido, sem texto, a partir de `id`, cores e padrão do escudo. São 10 padrões, 3 golas e os uniformes 1, 2 e 3; o padrão vem do `id` e nunca é do tipo do escudo do clube.
   - `matchKits` decide quem troca: o mandante usa sempre o 1, e o visitante usa o 1, o 2 ou o 3 até não haver confusão de cor (ΔE 30). Em 380 confrontos, o visitante troca para o 2 em 44 e usa o 3 em 6. O goleiro tem cor própria e estável por clube, trocada só se houver conflito; a bolinha da partida ganha anel e número com contraste de pelo menos 4,5:1, com placa atrás do número em 14 de 80 uniformes.

@@ -19,6 +19,18 @@
     type?: 'button' | 'submit';
     /** Id of the text that explains the button (e.g. why it is disabled). */
     describedby?: string;
+    /**
+     * 8px side padding instead of 16px, same height and minimum (componentes.md, proposal 38):
+     * only in control bars with three buttons or more (the match's).
+     */
+    compact?: boolean;
+    /**
+     * A button that turns on and off (`aria-pressed`). On, a 3px `grass` line inside its base and
+     * the `grass-soft` background with `ink` text, without changing its width (proposal 38).
+     */
+    pressed?: boolean;
+    /** Minimum width in px, measured by the screen, for two labels that take turns (Pausar/Retomar). */
+    minWidth?: number;
     onclick?: (event: MouseEvent) => void;
     children: Snippet;
   }
@@ -34,9 +46,13 @@
     externalLabel,
     type = 'button',
     describedby,
+    compact = false,
+    pressed,
+    minWidth,
     onclick,
     children,
   }: Props = $props();
+  const width = $derived(minWidth === undefined ? undefined : `${minWidth}px`);
 </script>
 
 {#snippet inner()}
@@ -58,6 +74,8 @@
   <a
     class="btn botao {variant}"
     class:full={fullWidth}
+    class:compact
+    style:min-width={width}
     {href}
     target={external ? '_blank' : undefined}
     rel={external ? 'noopener noreferrer' : undefined}
@@ -69,8 +87,12 @@
   <button
     class="btn botao {variant}"
     class:full={fullWidth}
+    class:compact
+    class:on={pressed === true}
+    style:min-width={width}
     {type}
     {disabled}
+    aria-pressed={pressed === undefined ? undefined : pressed}
     aria-busy={busy || undefined}
     aria-describedby={describedby}
     onclick={busy ? undefined : onclick}
@@ -99,6 +121,9 @@
   .full {
     width: 100%;
   }
+  .compact {
+    padding-inline: var(--space-2);
+  }
   .label {
     min-width: 0;
   }
@@ -119,6 +144,13 @@
     background: transparent;
     color: var(--ink);
     border-color: var(--danger);
+  }
+  /* A button that is on (proposal 38): the line at the base is the cue of shape, as the marker of
+     the active tab (size-marker, 3px: componentes.md, proposal 7); the background reinforces it. */
+  .on {
+    background: var(--grass-soft);
+    color: var(--ink);
+    box-shadow: inset 0 -3px 0 var(--grass);
   }
   .btn:disabled {
     cursor: not-allowed;

@@ -2,7 +2,7 @@
   import type { Snippet } from 'svelte';
   import { config } from '@lib/config';
   import TabBar, { type TabItem } from './TabBar.svelte';
-  import PlayRoundButton from './PlayRoundButton.svelte';
+  import PlayRoundButton, { type PlayMode } from './PlayRoundButton.svelte';
 
   /**
    * Frame of the career (docs/design/telas/navegacao.md). Phone: header, notices, scrolling
@@ -15,6 +15,8 @@
     label: string;
     hint?: string;
     busyLabel?: string;
+    /** The selector of the match mode (T-032). */
+    mode?: PlayMode;
     onplay?: () => void;
   }
   interface Props {

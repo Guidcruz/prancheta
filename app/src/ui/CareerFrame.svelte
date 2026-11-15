@@ -1,13 +1,16 @@
 <script lang="ts">
   import { onMount, tick } from 'svelte';
-  import { sheetProblems, type DraftSheet } from '@engine';
+  import { sheetProblems, type DraftSheet, type GameState, type MatchMode } from '@engine';
   import type { Lang } from '@lib/config';
   import {
     roundBlock,
     seasonOver,
     type CareerService,
     type CareerState,
+    type LiveMatch,
+    type MatchSpeed,
     type PlayError,
+    type PlayInput,
     type RoundBlock,
   } from '@lib/career';
   import type { ErrorLog } from '@lib/errors';
@@ -21,6 +24,7 @@
   import ErrorState from './components/ErrorState.svelte';
   import LineupIssues, { BLOCKING_ISSUES } from './components/LineupIssues.svelte';
   import LinkRow from './components/LinkRow.svelte';
+  import OptionGroup from './components/OptionGroup.svelte';
   import ScreenHeader from './components/ScreenHeader.svelte';
   import type { TabItem } from './components/TabBar.svelte';
   import type { NoticeAction } from './components/actions';
@@ -51,6 +55,16 @@
   import { pushSheet, sheetOnTop } from './sheet-history';
   import { summaryRound } from './round';
   import { RoundFlow, areaErrorOf, isRoundHash, playOutcome } from './round-flow';
+  import {
+    MATCH_ENTRY,
+    MATCH_HASH,
+    isMatchHash,
+    playModeOptions,
+    storedOutcome,
+    watchModeOf,
+  } from './match-flow';
+  import type { WatchMode } from './match/steps';
+  import MatchScreen, { type FinishOutcome } from './screens/MatchScreen.svelte';
   import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
   import CalendarRound from './screens/CalendarRound.svelte';
   import CalendarView from './screens/CalendarView.svelte';
@@ -78,6 +92,13 @@
    * resumo-rodada.md) takes the whole screen, with its own address (`#/round`, `round-flow.ts`);
    * "Continuar" or the back gesture returns to the tab, with the focus on "Jogar rodada", which
    * ignores taps for about 500 ms.
+   *
+   * In the assisted modes (T-032; partida.md, "Fluxo da rodada nos modos assistidos") the coach's
+   * match comes whole from `CareerService.liveMatch` and the narrated match takes the screen
+   * (`#/match`, pushed); at the final whistle (or Pular) the round is played and stored with the
+   * very same input, and the summary replaces the match (`#/round`, `replaceState`). The phone's
+   * back during the match puts `#/match` back and asks "Sair da partida?". "Jogar rodada" has the
+   * selector of the match mode beside it, whose choice holds only when the round is played.
    */
   interface Props {
     career: CareerState;
@@ -93,6 +114,26 @@
   );
   /** The round summary takes the screen (`#/round`); `current` stays the tab under it. */
   let summaryShown = $state(false);
+
+  /** The narrated match of the round being played (T-032), over the tab (`#/match`). */
+  interface MatchSession {
+    readonly careerId: string;
+    /** The very input `playRound` gets at the end. */
+    readonly input: PlayInput;
+    readonly live: LiveMatch;
+    readonly mode: WatchMode;
+    readonly speed: MatchSpeed;
+    /** The career before the round: the names and clubs the match shows. */
+    readonly game: GameState;
+  }
+  let match: MatchSession | undefined = $state.raw();
+  /** The round of the match, once asked: a second ask gets the same answer (no second round). */
+  let finished: Promise<FinishOutcome> | undefined;
+  let matchScreen:
+    { backAnswer: () => string; openLeave: () => void; sheetClosing: () => boolean } | undefined =
+    $state();
+  /** The live match is being computed: "Jogar rodada" is busy ("Calculando a rodada..."). */
+  let computing = $state(false);
   /**
    * The Rodada subscreen of the Calendário (`#/calendar/round/N`, calendario.md): the round shown,
    * or `undefined` for the list. Always a round already played (`roundFromAddress`).
@@ -185,12 +226,14 @@
   const block = $derived(roundBlock(career));
   /** The sheet cannot go to the round (US-017): the button keeps working and says why. */
   const lineupBlocked = $derived(block === undefined && !check.ready);
+  const modeLabel = $derived(t(`newGame.match.${save.career.matchMode}`, lang));
   const playRound = $derived({
-    state: career.busy
-      ? ('busy' as const)
-      : block || lineupBlocked
-        ? ('blocked' as const)
-        : ('ready' as const),
+    state:
+      career.busy || computing
+        ? ('busy' as const)
+        : block || lineupBlocked
+          ? ('blocked' as const)
+          : ('ready' as const),
     label: t('play.label', lang),
     hint:
       block !== undefined
@@ -199,6 +242,17 @@
           ? t('play.blocked.lineup', lang)
           : undefined,
     busyLabel: t('play.busy', lang),
+    // The selector only where there is a round to play (proposal 33): not with the last round
+    // unsaved nor with the season over.
+    ...(block === undefined
+      ? {
+          mode: {
+            label: modeLabel,
+            a11yLabel: t('play.mode.open', lang, { mode: modeLabel }),
+            onopen: openMode,
+          },
+        }
+      : {}),
     onplay,
   });
 
@@ -293,7 +347,7 @@
     flow.tap(handlePlay);
   }
 
-  function handlePlay(): void {
+  function handlePlay(mode?: MatchMode): void {
     if (areaError !== undefined) {
       // The way out is in the error of the content area: take the focus there.
       errorArea?.querySelector<HTMLElement>('h2')?.focus();
@@ -308,21 +362,32 @@
     // The end of the season has its own screens (T-037).
     if (block === 'season-over') return;
     if (!check.ready) {
-      openCheck();
+      openCheck(mode);
       return;
     }
-    play();
+    play(mode);
   }
 
   /**
    * Plays the round with the sheet shown: a ready sheet passes as it is (`completeSheet`, ADR-0021,
    * item 2), an incomplete one gets the best available ("Completar e jogar"). Untouched, the
-   * engine plays its own suggestion and the draft stays absent.
+   * engine plays its own suggestion and the draft stays absent. `mode` is the one chosen in the
+   * sheet of the match mode: it goes with the round (and is stored with it); without it, the
+   * career's. "Só resultado" plays at once; the assisted modes open the match first.
    */
-  function play(): void {
+  function play(mode?: MatchMode): void {
     const sent = roundSheet(save.game, save.career.clubId, sheet, untouched, check.ready);
+    const input: PlayInput = {
+      ...(sent === undefined ? {} : { sheet: sent }),
+      ...(mode === undefined ? {} : { matchMode: mode }),
+    };
+    const watch = watchModeOf(mode ?? save.career.matchMode);
+    if (watch !== undefined) {
+      void startMatch(input, watch);
+      return;
+    }
     const careerId = save.careerId;
-    void service.playRound(sent === undefined ? {} : { sheet: sent }).then((answer) => {
+    void service.playRound(input).then((answer) => {
       // The career may have been closed meanwhile (back to the home screen).
       if (service.snapshot.save?.careerId !== careerId) return;
       const outcome = playOutcome(answer, service.snapshot.status);
@@ -347,15 +412,23 @@
     home: t('round.error.leave', lang),
   });
 
-  /** The round is over while a sheet's entry is on its way out: the summary waits for it. */
-  let summaryWaits = false;
+  /** What waits for a sheet's entry on its way out (the summary, the match). */
+  let afterClose: (() => void) | undefined;
+
+  /** Runs `next` now, or once the entry of a sheet closing has left the history. */
+  function whenClosed(next: () => void): void {
+    if (closingSheet || closingCheck || closingMode) afterClose = next;
+    else {
+      afterClose = undefined;
+      next();
+    }
+  }
 
   function openSummary(): void {
-    if (closingSheet || closingCheck) {
-      summaryWaits = true;
-      return;
-    }
-    summaryWaits = false;
+    whenClosed(showSummary);
+  }
+
+  function showSummary(): void {
     // A sheet opened while the round was computed closes: its entry becomes the summary's.
     sheetOpen = false;
     checkOpen = false;
@@ -396,6 +469,13 @@
 
   /** The address changed (back, forward, a link): the tab, or the summary of the last round. */
   function followHash(): void {
+    // During the match the address is the match's (the popstate handles the back).
+    if (match !== undefined) return;
+    // Forward to a match that is over, or an address typed: the Clube, with no new entry.
+    if (isMatchHash(location.hash)) {
+      current = flow.toClub();
+      return;
+    }
     if (isRoundHash(location.hash)) {
       if (summaryRound(save.game) === undefined) {
         summaryShown = false;
@@ -405,6 +485,207 @@
     }
     if (summaryShown) leftSummary();
     else readRoute(true);
+  }
+
+  // ----------------------------------------------- the narrated match (T-032; US-020, US-019)
+
+  /**
+   * Computes the coach's match and opens it. The button shows "Calculando a rodada..." while the
+   * match is computed: a frame is drawn first, since `liveMatch` takes the thread.
+   */
+  async function startMatch(input: PlayInput, mode: WatchMode): Promise<void> {
+    if (computing) return;
+    computing = true;
+    const careerId = save.careerId;
+    const speed = service.matchSpeed();
+    await new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
+    // The career may have been closed meanwhile (back to the home screen).
+    if (service.snapshot.save?.careerId !== careerId) {
+      computing = false;
+      return;
+    }
+    const live = service.liveMatch(input);
+    const session = live.ok
+      ? { careerId, input, live: live.value, mode, speed: await speed, game: save.game }
+      : undefined;
+    computing = false;
+    if (!live.ok) {
+      // "Erro ao montar a partida": the content area shows the error; nothing was applied.
+      if (live.error !== 'busy') playError = live.error;
+      return;
+    }
+    if (service.snapshot.save?.careerId !== careerId) return;
+    whenClosed(() => openMatch(session!));
+  }
+
+  function openMatch(session: MatchSession): void {
+    // A sheet opened while the match was computed closes: its entry becomes the match's.
+    sheetOpen = false;
+    checkOpen = false;
+    modeOpen = false;
+    const state: unknown = history.state;
+    const sheetEntry =
+      typeof state === 'object' && state !== null && Boolean((state as { sheet?: unknown }).sheet);
+    if (sheetEntry) history.replaceState(MATCH_ENTRY, '', MATCH_HASH);
+    else history.pushState(MATCH_ENTRY, '', MATCH_HASH);
+    finished = undefined;
+    match = session;
+  }
+
+  /** Plays and stores the round of the match, once; a failure can be asked again. */
+  function finishMatch(): Promise<FinishOutcome> {
+    const session = match;
+    if (session === undefined) return Promise.resolve('none');
+    if (finished !== undefined) return finished;
+    /**
+     * The round of the match already applied (the career in memory is past it): `playRound` threw
+     * after the write. Its crash goes, and the round goes to the summary as it was stored;
+     * playing again would play the next round, and "não foi aplicada" would be false.
+     */
+    const applied = (): FinishOutcome | undefined => {
+      const stored = storedOutcome(session.game.round, service.snapshot);
+      if (stored !== undefined) service.dismissCrash();
+      return stored;
+    };
+    const run = (async (): Promise<FinishOutcome> => {
+      // The career may have been closed or changed meanwhile (back to the home screen).
+      if (service.snapshot.save?.careerId !== session.careerId) return 'none';
+      // "Tentar de novo" after a bug at the end: thrown before the write, the career in memory is
+      // the one before it and the round is played again.
+      const before = applied();
+      if (before !== undefined) return before;
+      if (service.snapshot.crash !== undefined) service.dismissCrash();
+      const answer = await service.playRound(session.input);
+      if (service.snapshot.save?.careerId !== session.careerId) return 'none';
+      if (!answer.ok) return applied() ?? 'failed';
+      if (service.snapshot.status !== 'open') return 'none';
+      return answer.value.saved ? 'saved' : 'unsaved';
+    })();
+    finished = run;
+    void run.then((outcome) => {
+      if (outcome === 'failed' && finished === run) finished = undefined;
+    });
+    return run;
+  }
+
+  /** "Ver resumo", or Pular once stored: the summary in place of the match (`replaceState`). */
+  function matchToSummary(): void {
+    if (match === undefined) return;
+    // The sheet of the match closing (Pular from "Sair da partida?"): its entry leaves first. A
+    // sheet left open by a match that failed to draw has no one to close it: back, from here.
+    if (history.state?.sheet !== undefined) {
+      afterMatchSheet = matchToSummary;
+      if (!(matchScreen?.sheetClosing() ?? false)) history.back();
+      return;
+    }
+    match = undefined;
+    flow.replace();
+    summaryShown = true;
+  }
+
+  /** The summary waits for the sheet of the match to leave the history. */
+  let afterMatchSheet: (() => void) | undefined;
+
+  /**
+   * "Voltar sem jogar" after the round failed at the end (partida.md, "Erro ao jogar no fim"): back
+   * to the tab, with the round still to play.
+   */
+  function leaveMatch(): void {
+    if (match === undefined) return;
+    // The entry of "Sair da partida?" left on top by a match that failed to draw goes too, as in
+    // `matchToSummary`: no entry of the match is left behind (BUG-T032-A). A sheet whose own back
+    // is already on its way counts as gone.
+    const sheetLeft = history.state?.sheet !== undefined && !(matchScreen?.sheetClosing() ?? false);
+    service.dismissCrash();
+    match = undefined;
+    if (isMatchHash(location.hash)) history.go(sheetLeft ? -2 : -1);
+    void focusPlay();
+  }
+
+  /** The match drew an error and "Ir direto ao resultado": the round is played and stored. */
+  function skipBrokenMatch(): void {
+    void finishMatch().then((outcome) => {
+      if (outcome === 'saved' || outcome === 'unsaved') matchToSummary();
+      else if (outcome === 'failed') {
+        // The bug at the end: the content area shows the unexpected error, the round to play.
+        service.dismissCrash();
+        playError = 'unexpected';
+        leaveMatch();
+      }
+    });
+  }
+
+  /** The phone's back took the match's entry away (partida.md, "Navegação", decision 6). */
+  function matchBack(): void {
+    const answer = matchScreen?.backAnswer() ?? 'stay';
+    if (answer === 'summary') {
+      // The round is stored: back opens the summary over the tab (back again returns to it).
+      match = undefined;
+      showSummary();
+      return;
+    }
+    if (answer === 'leave') {
+      service.dismissCrash();
+      match = undefined;
+      readRoute(false);
+      void focusPlay();
+      return;
+    }
+    // No way out without playing: the match's entry comes back, and the match asks.
+    history.pushState(MATCH_ENTRY, '', MATCH_HASH);
+    if (answer === 'ask') matchScreen?.openLeave();
+  }
+
+  function rememberSpeed(speed: MatchSpeed): void {
+    void service.rememberMatchSpeed(speed);
+  }
+
+  const matchCopy = $derived({
+    title: t('error.unexpected.title', lang),
+    message: t('match.error.body', lang),
+    retry: t('action.retry', lang),
+    home: t('match.error.skip', lang),
+  });
+
+  // --------------------------------------- the sheet of the match mode (T-032; US-019, scen. 2)
+
+  const MODE = 'play-mode';
+  let modeOpen = $state(false);
+  let closingMode = false;
+  /** The card marked in the sheet: it holds only when "Jogar rodada" is tapped there. */
+  let modeChoice: MatchMode = $state('result');
+  const modeOptions = $derived(playModeOptions(save.career.matchMode, lang));
+
+  function openMode(): void {
+    if (modeOpen || computing || career.busy) return;
+    modeChoice = save.career.matchMode;
+    modeOpen = true;
+    pushSheet(MODE);
+  }
+
+  function closeMode(): void {
+    if (closingMode) return;
+    if (sheetOnTop(MODE)) {
+      closingMode = true;
+      history.back();
+    }
+    modeOpen = false;
+  }
+
+  /** "Jogar rodada" in the sheet: the round with the mode chosen. */
+  function playFromMode(): void {
+    if (!modeOpen) return;
+    const chosen = modeChoice;
+    if (areaError === undefined && block === undefined && !check.ready) {
+      // "Escalação incompleta" takes the place of this sheet, with the mode chosen.
+      if (sheetOnTop(MODE)) history.replaceState({ ...(history.state ?? {}), sheet: CHECK }, '');
+      modeOpen = false;
+      checkMode = chosen;
+      checkOpen = true;
+      return;
+    }
+    closeMode();
+    handlePlay(chosen);
   }
 
   // --------------------------------------------- the Calendário and its Rodada (T-084; US-024)
@@ -472,6 +753,8 @@
   const CHECK = 'lineup-check';
   let checkOpen = $state(false);
   let closingCheck = false;
+  /** The mode chosen in the sheet of the match mode, when "Escalação incompleta" came from it. */
+  let checkMode: MatchMode | undefined;
   const blocking = $derived(
     lineupIssues(
       save.game,
@@ -483,7 +766,8 @@
     ).filter((issue) => BLOCKING_ISSUES.includes(issue.kind)),
   );
 
-  function openCheck(): void {
+  function openCheck(mode?: MatchMode): void {
+    checkMode = mode;
     checkOpen = true;
     pushSheet(CHECK);
   }
@@ -501,7 +785,7 @@
     if (!checkOpen) return;
     closeCheck();
     checkOpen = false;
-    play();
+    play(checkMode);
   }
 
   /** "Ajustar a escalação": closes the sheet and shows the Escalação. */
@@ -571,17 +855,33 @@
   }
 
   onMount(() => {
-    // A career always opens on its tab, never on a summary (CEO decision 3 of resumo-rodada.md).
-    if (isRoundHash(location.hash)) current = flow.toClub();
+    // A career always opens on its tab, never on a summary nor on a match (CEO decision 3 of
+    // resumo-rodada.md; partida.md, "Navegação": the match was not played).
+    if (isRoundHash(location.hash) || isMatchHash(location.hash)) current = flow.toClub();
     else readRoute(true);
     const onHash = followHash;
     const onPop = () => {
+      if (match !== undefined) {
+        if (!isMatchHash(location.hash)) matchBack();
+        else if (afterMatchSheet !== undefined && history.state?.sheet === undefined) {
+          const next = afterMatchSheet;
+          afterMatchSheet = undefined;
+          next();
+        }
+        return;
+      }
       leavingRound = false;
       closingSheet = false;
       closingCheck = false;
+      closingMode = false;
       if (sheetOpen && history.state?.sheet !== true) sheetOpen = false;
       if (checkOpen && !sheetOnTop(CHECK)) checkOpen = false;
-      if (summaryWaits) openSummary();
+      if (modeOpen && !sheetOnTop(MODE)) modeOpen = false;
+      if (afterClose !== undefined) {
+        const next = afterClose;
+        afterClose = undefined;
+        next();
+      }
     };
     window.addEventListener('hashchange', onHash);
     window.addEventListener('popstate', onPop);
@@ -625,7 +925,29 @@
   </div>
 {/snippet}
 
-{#if summaryShown}
+{#if match !== undefined}
+  <ErrorBoundary
+    layout="screen"
+    copy={matchCopy}
+    code={t('error.code', lang, { code: 'unexpected' })}
+    onerror={(error) =>
+      void log.record({ kind: 'programming', code: 'unexpected', screen: 'match', error })}
+    onhome={skipBrokenMatch}
+  >
+    <MatchScreen
+      bind:this={matchScreen}
+      {lang}
+      game={match.game}
+      live={match.live}
+      mode={match.mode}
+      speed={match.speed}
+      onspeed={rememberSpeed}
+      onfinish={finishMatch}
+      onsummary={matchToSummary}
+      onleave={leaveMatch}
+    />
+  </ErrorBoundary>
+{:else if summaryShown}
   <ErrorBoundary
     layout="screen"
     copy={summaryCopy}
@@ -765,6 +1087,38 @@
   </div>
 {/snippet}
 
+{#snippet modeFooter()}
+  <div class="mode-foot">
+    <Button variant="primary" fullWidth icon="play" onclick={playFromMode}
+      >{t('play.label', lang)}</Button
+    >
+  </div>
+{/snippet}
+
+<BottomSheet
+  open={modeOpen}
+  title={t('play.mode.title', lang)}
+  closeLabel={t('nav.close', lang)}
+  onclose={closeMode}
+  footer={modeFooter}
+>
+  <div class="mode">
+    <OptionGroup
+      name="play-mode"
+      legend={t('play.mode.title', lang)}
+      hideLegend
+      options={modeOptions}
+      value={modeChoice}
+      columns={1}
+      onchange={(value) => {
+        const next = modeOptions.find((option) => option.value === value);
+        if (next !== undefined) modeChoice = next.value as MatchMode;
+      }}
+    />
+    <p class="caption hint">{t('play.mode.note', lang)}</p>
+  </div>
+</BottomSheet>
+
 <BottomSheet
   open={checkOpen}
   title={t('lineup.check.title', lang)}
@@ -780,6 +1134,25 @@
 </BottomSheet>
 
 <style>
+  /* The body and the foot of the sheets 16px from the edge, under the title, and the foot 16px
+     below the body (the pattern of ConfirmSheet, CareerSheets and MatchReport: the sheet's own
+     8px plus these). */
+  .mode,
+  .check {
+    padding: var(--space-2) var(--space-2) 0;
+  }
+  .mode-foot,
+  .check-foot {
+    padding: var(--space-4) var(--space-2) 0;
+  }
+  .mode {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-3);
+  }
+  .mode p {
+    margin: 0;
+  }
   .check {
     display: flex;
     flex-direction: column;
