@@ -225,11 +225,10 @@
   let revealSpeed: MatchSpeed = 'normal';
   /** The last step with a line: the one frame with reduced motion. */
   let lineIndex = 0;
-  /** Reduced motion now, and as it was when the step on screen was revealed (it counts from it). */
-  let reducedNow = $state(false);
-  /** The query of reduced motion, read again at each step (see `revealed`). */
-  let motionQuery: MediaQueryList | undefined;
+  /** Reduced motion as it was when the step on screen was revealed (it counts from it). */
   let reduced = $state(false);
+  /** The screen's element, whose computed style says whether motion is reduced. */
+  let screenElement: HTMLElement | undefined = $state();
   /** Each change draws one frame while the pitch is still. */
   let version = $state(0);
   let pageHidden = $state(false);
@@ -295,16 +294,25 @@
     };
   });
 
+  /**
+   * Whether motion is reduced now, read once per step (never per frame) from the computed style of
+   * the screen: `--motion-reduced` is 1 inside `@media (prefers-reduced-motion: reduce)`. Not the
+   * MediaQueryList: in WebKit both its `change` event and its `matches` may stay stale until the
+   * next rendering update, which may not come before the step (seen in the e2e (webkit) job with
+   * the emulated media and a stopped clock), while computing the style evaluates the media at once.
+   * The GoalCelebration follows the same media in its own CSS.
+   */
+  function motionReduced(): boolean {
+    if (!screenElement) return reduced;
+    return getComputedStyle(screenElement).getPropertyValue('--motion-reduced').trim() === '1';
+  }
+
   /** The one point where each step is revealed: the pitch takes its time and speed here. */
   function revealed(step: MatchStep, index: number): void {
     revealIndex = index;
     revealAt = performance.now();
     revealSpeed = player.state.speed;
-    // Read here, once per step: WebKit dispatches the `change` of a media query only at its next
-    // rendering update, which may not come before this step (a page with no frames to draw, a
-    // stopped clock), while `matches` is up to date at once. The listener stays for the rest.
-    if (motionQuery !== undefined) reducedNow = motionQuery.matches;
-    reduced = reducedNow;
+    reduced = motionReduced();
     if (step.line !== undefined) lineIndex = index;
     // With reduced motion, one frame per step with a line, none in the minutes between them.
     if (!reduced || step.line !== undefined) version++;
@@ -404,15 +412,10 @@
 
   onMount(() => {
     void focusTitle();
-    const motion = matchMedia('(prefers-reduced-motion: reduce)');
-    motionQuery = motion;
     const columns = matchMedia('(min-width: 900px), (max-height: 480px)');
-    const onMotion = () => (reducedNow = motion.matches);
     const onColumns = () => (wide = columns.matches);
-    onMotion();
     onColumns();
-    reduced = reducedNow;
-    motion.addEventListener('change', onMotion);
+    reduced = motionReduced();
     columns.addEventListener('change', onColumns);
     pageHidden = document.visibilityState === 'hidden';
     if (mode === 'full') startPitch();
@@ -436,7 +439,6 @@
     return () => {
       destroyed = true;
       player.stop();
-      motion.removeEventListener('change', onMotion);
       columns.removeEventListener('change', onColumns);
       document.removeEventListener('visibilitychange', onVisibility);
       window.removeEventListener('popstate', onPop);
@@ -484,6 +486,7 @@
   />
 {:else}
   <main
+    bind:this={screenElement}
     class="match"
     class:two={twoColumns}
     data-fixture={live.fixtureId}
@@ -624,6 +627,8 @@
   /* Full screen, one column: the board on top, the commentary filling the rest of the height and
      scrolling by itself, the bar fixed at the bottom (the room under the column is its height). */
   .match {
+    /* Read by the screen at each step (`motionReduced`): 1 with reduced motion. */
+    --motion-reduced: 0;
     position: relative;
     display: flex;
     flex-direction: column;
@@ -631,6 +636,11 @@
     max-width: calc(var(--layout-content-max) + 2 * var(--space-4));
     margin: 0 auto;
     padding-bottom: calc(var(--touch) + 2 * var(--space-3) + 1px + env(safe-area-inset-bottom));
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .match {
+      --motion-reduced: 1;
+    }
   }
   /* One column: the two columns dissolve and their parts take the order of partida.md. */
   .col {
