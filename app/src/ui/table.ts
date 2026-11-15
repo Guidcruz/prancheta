@@ -247,8 +247,18 @@ export interface OpeningLayout {
  * scrolled past it), clamped to what the page can scroll. No animation: the caller jumps.
  */
 export function openingScroll(layout: OpeningLayout): number {
-  const { rowTop, rowBottom, headerBottom, viewBottom, maxScroll } = layout;
+  const { rowTop, rowBottom, headerBottom, viewBottom } = layout;
   if (rowTop >= headerBottom && rowBottom <= viewBottom) return 0;
+  return centredScroll(layout);
+}
+
+/**
+ * The scroll of the page that puts the row (or card) in the middle of the area between the header
+ * and "Jogar rodada", clamped to what the page can scroll (so a row near the top leaves the page
+ * at the top, and one near the end at the end). No animation: the caller jumps.
+ */
+export function centredScroll(layout: OpeningLayout): number {
+  const { rowTop, rowBottom, headerBottom, viewBottom, maxScroll } = layout;
   const middle = (rowTop + rowBottom) / 2;
   // Scrolled past the header, the area is [s, s + viewBottom]: its middle is the row's.
   let scroll = middle - viewBottom / 2;

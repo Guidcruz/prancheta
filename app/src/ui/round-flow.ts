@@ -117,12 +117,13 @@ export class RoundFlow {
    * "Continuar": back to the tab the summary came from. With the summary's entry on top, its entry
    * goes away (`history.back()`, and the popstate shows the tab); otherwise (an address typed or
    * restored) the address is replaced by the tab of origin (`origin`), or the Clube's, and that
-   * tab is returned for the caller to show. With the entry of a sheet opened over the summary on
-   * top (its match report, when the summary failed to draw with the sheet open), both entries go
-   * away at once, so none is left behind. A second tap while the first back is on its way does
-   * nothing.
+   * tab is returned for the caller to show. `address` is the full address of the origin when it
+   * is not the tab's own (the Rodada of the Calendário, `#/calendar/round/N`). With the entry of
+   * a sheet opened over the summary on top (its match report, when the summary failed to draw
+   * with the sheet open), both entries go away at once, so none is left behind. A second tap
+   * while the first back is on its way does nothing.
    */
-  close(origin?: DestinationId): DestinationId | undefined {
+  close(origin?: DestinationId, address?: string): DestinationId | undefined {
     if (this.closing) return undefined;
     this.closedAt = this.now();
     const state: unknown = this.history.state;
@@ -134,7 +135,7 @@ export class RoundFlow {
       return undefined;
     }
     const to = origin ?? HOME_DESTINATION;
-    this.history.replaceState(null, '', hrefOf(to));
+    this.history.replaceState(null, '', address ?? hrefOf(to));
     return to;
   }
 
