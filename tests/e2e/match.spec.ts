@@ -1021,6 +1021,50 @@ test.describe('Partida narrada (T-032)', () => {
     await expect(playButton(page)).toBeVisible();
   });
 
+  test('erro ao desenhar a partida com "Sair da partida?" aberta e depois erro ao jogar no fim: o endereço volta à aba, sem entrada sobrando', async ({
+    page,
+  }) => {
+    // BUG-T032-A (open): `leaveMatch` goes back one entry, the sheet's, and the address stays
+    // `#/match` with the tab on screen. Remove `test.fail` when the fix lands.
+    test.fail();
+    await page.addInitScript(() => {
+      const showModal = HTMLDialogElement.prototype.showModal;
+      HTMLDialogElement.prototype.showModal = function (this: HTMLDialogElement) {
+        if ((globalThis as { failSheet?: boolean }).failSheet) {
+          throw new Error('sheet draw failed (test)');
+        }
+        return showModal.call(this);
+      };
+    });
+    await careerWith(page, 'highlights');
+    await freezeClock(page);
+    await openMatch(page);
+    await runToMinute(page, 10);
+    await page.evaluate(() => ((globalThis as { failSheet?: boolean }).failSheet = true));
+    await page.goBack();
+    const error = page.getByRole('alert');
+    await expect(error).toBeVisible();
+    await page.evaluate(() => {
+      (globalThis as { failSheet?: boolean }).failSheet = false;
+      const original = window.setTimeout;
+      let armed = true;
+      window.setTimeout = ((run: TimerHandler, ms?: number, ...rest: unknown[]) => {
+        if (armed && ms === 0) {
+          armed = false;
+          throw new Error('play failed (test)');
+        }
+        return original(run, ms, ...rest);
+      }) as typeof window.setTimeout;
+    });
+    await error.getByRole('button', { name: ui('pt-BR', 'match.error.skip') }).click();
+    await runUntil(page, async () => (await playButton(page).count()) === 1, { step: 100 });
+    // The round was not played; the content area shows the unexpected error.
+    expect((await readHeadRecord(page)).round).toBe(1);
+    await expect(matchScreen(page)).toHaveCount(0);
+    await expect(playButton(page)).toBeVisible();
+    await expect(page).toHaveURL(/#\/club$/);
+  });
+
   test.describe('erro ao jogar no fim (o playRound lança antes de gravar)', () => {
     /**
      * Na próxima espera de 0 ms (a do `playRound`, que deixa a tela desenhar antes do motor), um
