@@ -7,7 +7,7 @@ import Button from './components/Button.svelte';
 import CommentaryFeed from './components/CommentaryFeed.svelte';
 import PlayRoundButton from './components/PlayRoundButton.svelte';
 import Scoreboard from './components/Scoreboard.svelte';
-import { isMatchHash, playModeOptions, watchModeOf } from './match-flow';
+import { isMatchHash, playModeOptions, storedOutcome, watchModeOf } from './match-flow';
 import MatchScreen from './screens/MatchScreen.svelte';
 import { TEST_CLUB } from './testing/game';
 import { testMatches } from './testing/matches';
@@ -224,6 +224,21 @@ describe('the flow helpers (match-flow.ts)', () => {
     expect(watchModeOf('result')).toBeUndefined();
     expect(watchModeOf('highlights')).toBe('highlights');
     expect(watchModeOf('full')).toBe('full');
+  });
+
+  it('a round stored before the failure is never played again (storedOutcome)', () => {
+    const save = mine.game;
+    const at = (round: number) => ({ save: { game: { ...save, round } } }) as never;
+    // Still on the match's round: play it.
+    expect(storedOutcome(5, at(5))).toBeUndefined();
+    expect(storedOutcome(5, {})).toBeUndefined();
+    // Past it: the round is applied, stored or with its write refused.
+    expect(storedOutcome(5, at(6))).toBe('saved');
+    expect(storedOutcome(5, { ...(at(6) as object), unsaved: 'quota-exceeded' } as never)).toBe(
+      'unsaved',
+    );
+    // Round 38, the season over after it.
+    expect(storedOutcome(38, at(39))).toBe('saved');
   });
 
   it('the sheet offers "Só lances principais" and "Só resultado", plus the career’s own mode', () => {

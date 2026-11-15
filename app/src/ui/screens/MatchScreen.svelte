@@ -161,9 +161,14 @@
     if (stage === 'saved' || stage === 'unsaved') onsummary();
   }
 
-  /** "Tentar de novo" of the round that failed at the end: plays and stores again. */
+  /**
+   * "Tentar de novo" of the round that failed at the end: plays and stores again (or, when the
+   * round was stored before the failure, takes it as it is), then the summary.
+   */
   function retry(): void {
-    if (stage === 'failed') void finish();
+    if (stage !== 'failed') return;
+    wantSummary = true;
+    void finish();
   }
 
   // ----------------------------------------------------- "Sair da partida?" (decision 6)
@@ -184,6 +189,11 @@
     player.pause();
     leaveOpen = true;
     pushSheet(LEAVE);
+  }
+
+  /** The back of "Sair da partida?" was asked and its popstate has not come yet. */
+  export function sheetClosing(): boolean {
+    return closingLeave;
   }
 
   /** Closes the sheet; with `focus`, the focus goes back to the heading. */

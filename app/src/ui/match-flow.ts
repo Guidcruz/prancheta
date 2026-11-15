@@ -1,4 +1,5 @@
 import type { MatchMode } from '@engine';
+import type { CareerState } from '@lib/career';
 import type { Lang } from '@lib/config';
 import { t } from '@lib/i18n';
 import type { OptionItem } from './components/OptionGroup.svelte';
@@ -27,6 +28,21 @@ export function isMatchHash(hash: string): boolean {
 /** The mode opens the match screen ("Animada completa" or "Só lances principais"). */
 export function watchModeOf(mode: MatchMode): WatchMode | undefined {
   return mode === 'result' ? undefined : mode;
+}
+
+/**
+ * The round of the match was already stored when `playRound` failed (it threw after the write:
+ * the career in memory is past the match's round, `matchRound`): "Tentar de novo" must not play
+ * again, which would play the next round; the round goes to the summary as stored, or as not
+ * stored when the write was refused. `undefined`: the round is still to play.
+ */
+export function storedOutcome(
+  matchRound: number,
+  career: Pick<CareerState, 'save' | 'unsaved'>,
+): 'saved' | 'unsaved' | undefined {
+  const round = career.save?.game.round;
+  if (round === undefined || round <= matchRound) return undefined;
+  return career.unsaved === undefined ? 'saved' : 'unsaved';
 }
 
 const ORDER: readonly MatchMode[] = ['full', 'highlights', 'result'];

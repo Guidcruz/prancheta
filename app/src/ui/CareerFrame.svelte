@@ -55,7 +55,14 @@
   import { pushSheet, sheetOnTop } from './sheet-history';
   import { summaryRound } from './round';
   import { RoundFlow, areaErrorOf, isRoundHash, playOutcome } from './round-flow';
-  import { MATCH_ENTRY, MATCH_HASH, isMatchHash, playModeOptions, watchModeOf } from './match-flow';
+  import {
+    MATCH_ENTRY,
+    MATCH_HASH,
+    isMatchHash,
+    playModeOptions,
+    storedOutcome,
+    watchModeOf,
+  } from './match-flow';
   import type { WatchMode } from './match/steps';
   import MatchScreen, { type FinishOutcome } from './screens/MatchScreen.svelte';
   import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
@@ -122,7 +129,9 @@
   let match: MatchSession | undefined = $state.raw();
   /** The round of the match, once asked: a second ask gets the same answer (no second round). */
   let finished: Promise<FinishOutcome> | undefined;
-  let matchScreen: { backAnswer: () => string; openLeave: () => void } | undefined = $state();
+  let matchScreen:
+    { backAnswer: () => string; openLeave: () => void; sheetClosing: () => boolean } | undefined =
+    $state();
   /** The live match is being computed: "Jogar rodada" is busy ("Calculando a rodada..."). */
   let computing = $state(false);
   /**
@@ -529,8 +538,12 @@
     if (session === undefined) return Promise.resolve('none');
     if (finished !== undefined) return finished;
     const run = (async (): Promise<FinishOutcome> => {
-      // "Tentar de novo" after a bug at the end: the career in memory is the one before it.
+      // "Tentar de novo" after a bug at the end. Thrown before the write, the career in memory is
+      // the one before it and the round is played again; thrown after it (the head moved), the
+      // round is already applied: playing again would play the next one.
       if (service.snapshot.crash !== undefined) service.dismissCrash();
+      const stored = storedOutcome(session.game.round, service.snapshot);
+      if (stored !== undefined) return stored;
       const answer = await service.playRound(session.input);
       if (service.snapshot.save?.careerId !== session.careerId) return 'none';
       if (!answer.ok) return 'failed';
@@ -547,9 +560,11 @@
   /** "Ver resumo", or Pular once stored: the summary in place of the match (`replaceState`). */
   function matchToSummary(): void {
     if (match === undefined) return;
-    // The sheet of the match closing (Pular from "Sair da partida?"): its entry leaves first.
+    // The sheet of the match closing (Pular from "Sair da partida?"): its entry leaves first. A
+    // sheet left open by a match that failed to draw has no one to close it: back, from here.
     if (history.state?.sheet !== undefined) {
       afterMatchSheet = matchToSummary;
+      if (!(matchScreen?.sheetClosing() ?? false)) history.back();
       return;
     }
     match = undefined;
