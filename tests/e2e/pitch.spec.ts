@@ -173,19 +173,19 @@ test.describe('Campo 2D (T-085)', () => {
       ]);
     });
 
-    test('canvas que falha: o desenho lança depois do primeiro quadro, o leiaute da T-032 sem aviso até o resumo, um registro pitch-draw (item 10)', async ({
+    test('canvas que falha: o desenho lança no meio do jogo, o leiaute da T-032 sem aviso até o resumo, um registro pitch-draw (item 10)', async ({
       page,
     }) => {
-      // `arc` throws once the field and the first frames are drawn (about 60 calls each).
+      // `arc` throws from the moment the test raises the flag, with the pitch already drawn.
       await page.addInitScript(() => {
         const arc = CanvasRenderingContext2D.prototype.arc;
-        let calls = 0;
         CanvasRenderingContext2D.prototype.arc = function (
           this: CanvasRenderingContext2D,
           ...args: Parameters<CanvasRenderingContext2D['arc']>
         ) {
-          calls++;
-          if (calls > 150) throw new Error('arc failed (test)');
+          if ((window as unknown as { failArc?: boolean }).failArc) {
+            throw new Error('arc failed (test)');
+          }
           return arc.apply(this, args);
         };
       });
@@ -193,6 +193,11 @@ test.describe('Campo 2D (T-085)', () => {
       await freezeClock(page);
       await openMatch(page);
       await runToMinute(page, 5);
+      // The pitch is there (two columns on the desktop) until the draw fails.
+      await expect(canvas(page)).toHaveCount(1);
+      if (!onPhone(page)) await expect(matchScreen(page)).toHaveClass(/two/);
+      await page.evaluate(() => ((window as unknown as { failArc: boolean }).failArc = true));
+      await page.clock.runFor(500);
       await expect(canvas(page)).toHaveCount(0);
       await expect(pitchBox(page)).toHaveCount(0);
       await expect(page.getByRole('alert')).toHaveCount(0);
@@ -322,8 +327,6 @@ test.describe('Campo 2D (T-085)', () => {
     const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     await page.clock.runFor(3_000);
-    await visibility('visible');
-    await expect(paused).toBeVisible();
     const pixels = () =>
       canvas(page).evaluate((element) => {
         const c = element as HTMLCanvasElement;
@@ -332,11 +335,36 @@ test.describe('Campo 2D (T-085)', () => {
         for (let i = 0; i < data.length; i++) hash = (Math.imul(hash, 31) + data[i]!) | 0;
         return hash;
       });
+    // Still hidden: the pause itself drew the end of the step (the player's `onchange`).
+    const hidden = await pixels();
+    await visibility('visible');
+    await expect(paused).toBeVisible();
     const shown = await pixels();
+    expect(shown).toBe(hidden);
     // A forced redraw (the theme there and back) draws the same instant: the end of the step.
     await setTheme(page, 'dia');
     await setTheme(page, 'noite');
     await expect.poll(pixels).toBe(shown);
+  });
+
+  test('a linha ao vivo não muda de altura ao pausar: o campo fica no mesmo lugar a 360×740 (revisão)', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'uma vez por navegador');
+    await page.setViewportSize({ width: 360, height: 740 });
+    await careerWith(page, 'full');
+    await freezeClock(page);
+    await openMatch(page);
+    await expect(canvas(page)).toHaveCount(1);
+    await page.clock.runFor(2_000);
+    const running = (await canvas(page).boundingBox())!.y;
+    await control(page, 'match.pause').click();
+    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
+    expect((await canvas(page).boundingBox())!.y).toBe(running);
+    await control(page, 'match.resume').click();
+    await expect(paused).toHaveCount(0);
+    expect((await canvas(page).boundingBox())!.y).toBe(running);
   });
 
   test('movimento reduzido: nenhum quadro pedido entre os lances, a comemoração parada e nenhuma animação (item 9)', async ({
