@@ -537,16 +537,27 @@
     const session = match;
     if (session === undefined) return Promise.resolve('none');
     if (finished !== undefined) return finished;
-    const run = (async (): Promise<FinishOutcome> => {
-      // "Tentar de novo" after a bug at the end. Thrown before the write, the career in memory is
-      // the one before it and the round is played again; thrown after it (the head moved), the
-      // round is already applied: playing again would play the next one.
-      if (service.snapshot.crash !== undefined) service.dismissCrash();
+    /**
+     * The round of the match already applied (the career in memory is past it): `playRound` threw
+     * after the write. Its crash goes, and the round goes to the summary as it was stored;
+     * playing again would play the next round, and "não foi aplicada" would be false.
+     */
+    const applied = (): FinishOutcome | undefined => {
       const stored = storedOutcome(session.game.round, service.snapshot);
-      if (stored !== undefined) return stored;
+      if (stored !== undefined) service.dismissCrash();
+      return stored;
+    };
+    const run = (async (): Promise<FinishOutcome> => {
+      // The career may have been closed or changed meanwhile (back to the home screen).
+      if (service.snapshot.save?.careerId !== session.careerId) return 'none';
+      // "Tentar de novo" after a bug at the end: thrown before the write, the career in memory is
+      // the one before it and the round is played again.
+      const before = applied();
+      if (before !== undefined) return before;
+      if (service.snapshot.crash !== undefined) service.dismissCrash();
       const answer = await service.playRound(session.input);
       if (service.snapshot.save?.careerId !== session.careerId) return 'none';
-      if (!answer.ok) return 'failed';
+      if (!answer.ok) return applied() ?? 'failed';
       if (service.snapshot.status !== 'open') return 'none';
       return answer.value.saved ? 'saved' : 'unsaved';
     })();
