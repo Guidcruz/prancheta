@@ -276,7 +276,7 @@ describe('the duration of a match (MATCH_TIMING)', () => {
   it('the table of partida.md', () => {
     expect(MATCH_TIMING).toEqual({
       normal: {
-        minuteFull: 500,
+        minuteFull: 800,
         minuteHighlights: 180,
         event: 400,
         drama: 1200,
@@ -285,7 +285,7 @@ describe('the duration of a match (MATCH_TIMING)', () => {
         interval: 2000,
       },
       fast: {
-        minuteFull: 200,
+        minuteFull: 300,
         minuteHighlights: 70,
         event: 150,
         drama: 500,
@@ -296,7 +296,7 @@ describe('the duration of a match (MATCH_TIMING)', () => {
     });
   });
 
-  it('on average, “Só lances principais” takes about 30 s and 12 s; the full mode waits for T-085', () => {
+  it('on average, “Animada completa” takes about 79 s and 30 s and “Só lances principais” 30 s and 12 s', () => {
     const mean = (mode: WatchMode, speed: 'normal' | 'fast') =>
       matches.reduce(
         (sum, { result }) =>
@@ -307,9 +307,12 @@ describe('the duration of a match (MATCH_TIMING)', () => {
           ),
         0,
       ) / matches.length;
-    // The estimates are rough (about 40 plays per match): the measured means are in the CHANGELOG.
-    expect(mean('full', 'normal')).toBeGreaterThan(50_000);
-    expect(mean('full', 'normal')).toBeLessThan(100_000);
+    // "Animada completa" after the CEO's decision 1C of T-085 (empty minute 800/300 ms): the
+    // option measured at 78.7 s and 29.9 s on these 60 matches, within ±10%.
+    expect(mean('full', 'normal')).toBeGreaterThan(78_700 * 0.9);
+    expect(mean('full', 'normal')).toBeLessThan(78_700 * 1.1);
+    expect(mean('full', 'fast')).toBeGreaterThan(29_900 * 0.9);
+    expect(mean('full', 'fast')).toBeLessThan(29_900 * 1.1);
     // "Só lances principais" after the CEO's decision of 2026-11-15 (empty minute 180/70 ms):
     // about 30 s in Normal and 12 s in Rápido (measured: 28.8 s and 11.4 s on these 60 matches).
     expect(mean('highlights', 'normal')).toBeGreaterThan(25_000);

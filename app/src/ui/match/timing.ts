@@ -30,11 +30,13 @@ export type TimingKey =
 /**
  * The durations in milliseconds, in Normal and in Rápido (the table of partida.md). The empty
  * minute of "Só lances principais" was lengthened from 80/40 to 180/70 ms by the CEO on
- * 2026-11-15, after the review of T-032, for about 30 s and 12 s per match.
+ * 2026-11-15, after the review of T-032, for about 30 s and 12 s per match; the empty minute of
+ * "Animada completa" from 500/200 to 800/300 ms (CEO decision 1C of T-085, the same day), for
+ * about 1min20s and 30 s, the duration of decision 5.
  */
 export const MATCH_TIMING = {
   normal: {
-    minuteFull: 500,
+    minuteFull: 800,
     minuteHighlights: 180,
     event: 400,
     drama: 1200,
@@ -43,7 +45,7 @@ export const MATCH_TIMING = {
     interval: 2000,
   },
   fast: {
-    minuteFull: 200,
+    minuteFull: 300,
     minuteHighlights: 70,
     event: 150,
     drama: 500,
