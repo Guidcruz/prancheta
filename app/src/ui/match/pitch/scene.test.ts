@@ -106,6 +106,25 @@ describe('the pitch scene: determinism and allocation (item 6)', () => {
   });
 });
 
+describe('the ball stays whole in the canvas', () => {
+  it('never goes further into the strip of grass than the strip less the ball (60 matches)', () => {
+    const room = PITCH_SIZE.margin - PITCH_SIZE.ballRoom;
+    for (const { match, result } of matches) {
+      const choreo = choreoOf(match, result.events);
+      const out = createScene();
+      for (let i = 0; i < choreo.steps.length; i++) {
+        for (const p of POINTS) {
+          sceneAt(choreo, i, p, out);
+          expect(out.ballX).toBeGreaterThanOrEqual(-room - 1e-9);
+          expect(out.ballX).toBeLessThanOrEqual(PITCH_SIZE.length + room + 1e-9);
+          expect(out.ballY).toBeGreaterThanOrEqual(-room - 1e-9);
+          expect(out.ballY).toBeLessThanOrEqual(PITCH_SIZE.width + room + 1e-9);
+        }
+      }
+    }
+  });
+});
+
 describe('nothing runs ahead of the outcome (item 5)', () => {
   /** The events with the goal at `index` turned into a chance of the same kind, side and player. */
   const asChance = (events: readonly MatchEvent[], index: number): MatchEvent[] => {

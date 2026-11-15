@@ -11,6 +11,8 @@ export const PITCH_SIZE = {
   width: 68,
   /** The strip of grass around the pitch (the drawing is 111 × 74). */
   margin: 3,
+  /** The most the ball's radius takes, in metres (its 8px minimum on the smallest pitch). */
+  ballRoom: 1.5,
 } as const;
 
 export const PITCH_MOTION = {
@@ -32,7 +34,12 @@ export const PITCH_MOTION = {
   goal: { depth: 1.5, y: [31, 37] },
   save: { y: [30.5, 37.5], off: 1 },
   post: { halfGoal: 3.66, bounce: 6 },
-  wide: { inside: [29, 39], spread: 7, out: 2 },
+  /**
+   * Wide: beside the goal, and into the strip of grass only as far as the ball stays whole in the
+   * canvas: the 3 m of the strip less the radius of the ball at its smallest size (8px, about
+   * 1.5 m on the smallest pitch, 297px wide).
+   */
+  wide: { inside: [29, 39], spread: 7, out: 1.5 },
   /** A player leaving goes this far past the nearest touchline. */
   leave: 1.5,
   /** Slow motion: the second half of the time at 40% of the speed (v = 1 / 0.7). */
