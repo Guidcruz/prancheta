@@ -446,14 +446,14 @@ describe('the new-game screen (novo-jogo.md, US-014)', () => {
       expect(primaries(body)).toBe(1);
     });
 
-    it(`${lang}: P3, no option of later stages, and only "Só resultado" (CEO decision 3)`, () => {
+    it(`${lang}: P3, no option of later stages: "Só lances principais" and "Só resultado" (T-032)`, () => {
       const body = view({ optionsOpen: true }, lang);
       expect(body).not.toContain(shown(t('newGame.match.full', lang)));
-      expect(body).not.toContain(shown(t('newGame.match.highlights', lang)));
-      expect((body.match(/type="radio" name="match"/g) ?? []).length).toBe(1);
+      expect(body).toContain(shown(t('newGame.match.highlights', lang)));
+      expect((body.match(/type="radio" name="match"/g) ?? []).length).toBe(2);
       expect((body.match(/type="radio" name="realism"/g) ?? []).length).toBe(2);
-      // Nothing to change the mode to yet: no "Dá para trocar depois" (SHOULD 4).
-      expect(body).not.toContain(shown(t('newGame.match.note', lang)));
+      // Two modes to choose from: the note says it can change before each round (SHOULD 4).
+      expect(body).toContain(shown(t('newGame.match.note', lang)));
       expect(body).toContain(shown(t('newGame.realism.note', lang)));
       // The club's whole label is its name; nothing repeated by aria-describedby (NIT 11).
       expect(body).not.toMatch(/name="club"[^>]*aria-describedby/);

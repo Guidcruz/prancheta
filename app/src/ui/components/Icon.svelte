@@ -44,7 +44,10 @@
     | 'secondary'
     | 'captain'
     | 'suggest'
-    | 'undo';
+    | 'undo'
+    | 'pause'
+    | 'skip'
+    | 'chevron-down';
 
   const paths: Record<IconName, string> = {
     club: '<path d="M5 4.5h14v8c0 4-3 6.5-7 8-4-1.5-7-4-7-8z"/>',
@@ -99,6 +102,10 @@
     suggest:
       '<path d="M9.5 18h5M10.5 21h3"/><path d="M12 3a6 6 0 0 0-3.6 10.8c.7.6 1.1 1.3 1.1 2.2h5c0-.9.4-1.6 1.1-2.2A6 6 0 0 0 12 3z"/>',
     undo: '<path d="M9 14L4 9l5-5"/><path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H11"/>',
+    // The match controls and the selector of "Jogar rodada" (componentes.md, proposal 34).
+    pause: '<path d="M9 5.5v13M15 5.5v13"/>',
+    skip: '<path d="M5.5 6l7 6-7 6zM13.5 6l5 6-5 6"/><path d="M19.5 5.5v13"/>',
+    'chevron-down': '<path d="M5 9l7 7 7-7"/>',
   };
 </script>
 

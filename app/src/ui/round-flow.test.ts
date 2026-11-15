@@ -100,6 +100,18 @@ describe('the summary in the history (resumo-rodada.md, "Navegação")', () => {
     expect(history.state).toEqual({ round: true });
   });
 
+  it('in place of the match (T-032): the match’s entry becomes the summary’s; back is the tab', () => {
+    const { history, flow } = setup();
+    history.pushState({ match: true }, '', '#/match');
+    flow.replace();
+    expect(history.length).toBe(2);
+    expect(history.state).toEqual({ round: true });
+    expect(history.location.hash).toBe(ROUND_HASH);
+    flow.close('squad');
+    expect(history.length).toBe(1);
+    expect(history.location.hash).toBe('#/squad');
+  });
+
   it('"Continuar" takes its entry away: back to the tab', () => {
     const { history, flow } = setup();
     const popped = vi.fn();

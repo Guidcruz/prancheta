@@ -67,9 +67,9 @@ describe('clubs in three strength bands (temporada.md)', () => {
 });
 
 describe('the options and their defaults (CEO decision 3)', () => {
-  it('offers only "Só resultado" while the animated match does not exist (P3)', () => {
-    expect(OFFERED_MATCH_MODES).toEqual(['result']);
-    expect(matchOptions('pt-BR').map((o) => o.value)).toEqual(['result']);
+  it('offers "Só lances principais" and "Só resultado" until the pitch exists (P3; T-032)', () => {
+    expect(OFFERED_MATCH_MODES).toEqual(['highlights', 'result']);
+    expect(matchOptions('pt-BR').map((o) => o.value)).toEqual(['highlights', 'result']);
   });
 
   it('the first time: realism "Completo" and "Só resultado"', () => {
@@ -81,6 +81,10 @@ describe('the options and their defaults (CEO decision 3)', () => {
     expect(initialSetup({ realism: 'simplified', matchMode: 'result' })).toEqual({
       realism: 'simplified',
       matchMode: 'result',
+    });
+    expect(initialSetup({ realism: 'simplified', matchMode: 'highlights' })).toEqual({
+      realism: 'simplified',
+      matchMode: 'highlights',
     });
     expect(initialSetup({ realism: 'simplified', matchMode: 'full' })).toEqual({
       realism: 'simplified',

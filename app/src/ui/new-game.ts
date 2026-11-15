@@ -75,15 +75,16 @@ export function clubGroups(clubs: readonly NewGameClub[], lang: Lang): ClubGroup
 }
 
 /**
- * The match modes offered now (CEO decision 3 of T-025): only "Só resultado", while the animated
- * match does not exist (T-031, T-032). The other two are hidden, not disabled (P3); they come
- * back to this list, and "Animada completa" to the default, when the animated match lands.
+ * The match modes offered now (CEO decision 3 of T-025, decision 4 of partida.md): "Só lances
+ * principais" came back with the narrated match (T-032); "Animada completa" stays hidden, not
+ * disabled (P3), until the pitch (T-085), which also makes it the default. "Só resultado" is the
+ * default until then.
  */
-export const OFFERED_MATCH_MODES: readonly LastSetup['matchMode'][] = ['result'];
+export const OFFERED_MATCH_MODES: readonly LastSetup['matchMode'][] = ['highlights', 'result'];
 
 export const REALISMS: readonly LastSetup['realism'][] = ['full', 'simplified'];
 
-/** The first-time options: realism "Completo" and the only match mode offered. */
+/** The first-time options: realism "Completo" and "Só resultado". */
 export const DEFAULT_SETUP: LastSetup = { realism: 'full', matchMode: 'result' };
 
 /** The options the sheet starts with: the last setup, kept only where it is still offered. */
