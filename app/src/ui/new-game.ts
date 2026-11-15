@@ -75,17 +75,22 @@ export function clubGroups(clubs: readonly NewGameClub[], lang: Lang): ClubGroup
 }
 
 /**
- * The match modes offered now (CEO decision 3 of T-025, decision 4 of partida.md): "Só lances
- * principais" came back with the narrated match (T-032); "Animada completa" stays hidden, not
- * disabled (P3), until the pitch (T-085), which also makes it the default. "Só resultado" is the
- * default until then.
+ * The match modes offered (CEO decision 3 of T-025, decision 4 of partida.md): "Animada completa"
+ * first, with the 2D pitch (T-085), then "Só lances principais" (T-032) and "Só resultado".
  */
-export const OFFERED_MATCH_MODES: readonly LastSetup['matchMode'][] = ['highlights', 'result'];
+export const OFFERED_MATCH_MODES: readonly LastSetup['matchMode'][] = [
+  'full',
+  'highlights',
+  'result',
+];
 
 export const REALISMS: readonly LastSetup['realism'][] = ['full', 'simplified'];
 
-/** The first-time options: realism "Completo" and "Só resultado". */
-export const DEFAULT_SETUP: LastSetup = { realism: 'full', matchMode: 'result' };
+/**
+ * The first-time options: realism "Completo" and "Animada completa", the default of a new career
+ * since the pitch (decision 3 of T-025; T-085). A remembered setup keeps its own mode.
+ */
+export const DEFAULT_SETUP: LastSetup = { realism: 'full', matchMode: 'full' };
 
 /** The options the sheet starts with: the last setup, kept only where it is still offered. */
 export function initialSetup(last: LastSetup | undefined): LastSetup {
