@@ -27,11 +27,15 @@ export type TimingKey =
   /** Half time: between "Intervalo" and "Começa o 2º tempo". */
   | 'interval';
 
-/** The durations in milliseconds, in Normal and in Rápido (the table of partida.md). */
+/**
+ * The durations in milliseconds, in Normal and in Rápido (the table of partida.md). The empty
+ * minute of "Só lances principais" was lengthened from 80/40 to 180/70 ms by the CEO on
+ * 2026-11-15, after the review of T-032, for about 30 s and 12 s per match.
+ */
 export const MATCH_TIMING = {
   normal: {
     minuteFull: 500,
-    minuteHighlights: 80,
+    minuteHighlights: 180,
     event: 400,
     drama: 1200,
     afterGoal: 2000,
@@ -40,7 +44,7 @@ export const MATCH_TIMING = {
   },
   fast: {
     minuteFull: 200,
-    minuteHighlights: 40,
+    minuteHighlights: 70,
     event: 150,
     drama: 500,
     afterGoal: 800,

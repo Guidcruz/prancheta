@@ -277,7 +277,7 @@ describe('the duration of a match (MATCH_TIMING)', () => {
     expect(MATCH_TIMING).toEqual({
       normal: {
         minuteFull: 500,
-        minuteHighlights: 80,
+        minuteHighlights: 180,
         event: 400,
         drama: 1200,
         afterGoal: 2000,
@@ -286,7 +286,7 @@ describe('the duration of a match (MATCH_TIMING)', () => {
       },
       fast: {
         minuteFull: 200,
-        minuteHighlights: 40,
+        minuteHighlights: 70,
         event: 150,
         drama: 500,
         afterGoal: 800,
@@ -296,7 +296,7 @@ describe('the duration of a match (MATCH_TIMING)', () => {
     });
   });
 
-  it('on average, close to the estimates of partida.md (1min20s / 30 s and 30 s / 12 s)', () => {
+  it('on average, “Só lances principais” takes about 30 s and 12 s; the full mode waits for T-085', () => {
     const mean = (mode: WatchMode, speed: 'normal' | 'fast') =>
       matches.reduce(
         (sum, { result }) =>
@@ -310,8 +310,12 @@ describe('the duration of a match (MATCH_TIMING)', () => {
     // The estimates are rough (about 40 plays per match): the measured means are in the CHANGELOG.
     expect(mean('full', 'normal')).toBeGreaterThan(50_000);
     expect(mean('full', 'normal')).toBeLessThan(100_000);
-    expect(mean('highlights', 'normal')).toBeGreaterThan(18_000);
-    expect(mean('highlights', 'normal')).toBeLessThan(40_000);
+    // "Só lances principais" after the CEO's decision of 2026-11-15 (empty minute 180/70 ms):
+    // about 30 s in Normal and 12 s in Rápido (measured: 28.8 s and 11.4 s on these 60 matches).
+    expect(mean('highlights', 'normal')).toBeGreaterThan(25_000);
+    expect(mean('highlights', 'normal')).toBeLessThan(35_000);
+    expect(mean('highlights', 'fast')).toBeGreaterThan(9_000);
+    expect(mean('highlights', 'fast')).toBeLessThan(14_000);
     expect(mean('full', 'fast')).toBeLessThan(mean('full', 'normal') / 2);
     expect(mean('highlights', 'fast')).toBeLessThan(mean('highlights', 'normal') / 2);
   });
