@@ -612,6 +612,8 @@ Conferência do `ux-designer` antes de chamar o `developer`. Cada linha diz o qu
 
 ## Decisões para o CEO (T-085)
 
+**Decididas pelo CEO em 2026-11-15:** 1C (800 ms e 300 ms no minuto sem lance da "Animada completa": cerca de 79 s e 30 s); 2A (campo só na "Animada completa"); 3A (`FieldKit.mark` no gerador da T-026, com o aval do `art-director` e teste em `kit.test.ts`); 4 (proposta 39 aprovada). Os textos do item 5 vão ao `content-writer` e ao CEO no lote da T-085.
+
 1. **Duração da "Animada completa"** (tabela em "Relógio da partida"; só o minuto sem lance muda):
    - A: manter 500 ms e 200 ms: 58 s no Normal e 23 s no Rápido; cerca de 37 min de partida por temporada.
    - B: 700 ms e 280 ms: 72 s e 28,5 s; cerca de 45 min.
