@@ -129,7 +129,10 @@ Vale para o site e para as telas futuras do jogo.
 - **O mandante fica sempre à esquerda**, atacando para a direita o jogo todo (o mesmo lado do escudo dele no placar), sem trocar de lado no intervalo.
 - **Bolinhas:** disco na cor principal do uniforme, com anel de 2px em `ink` (5,94:1 sobre `pitch` no tema noite e 4,09:1 no dia, acima de 3:1 para elemento gráfico); **o visitante tem um ponto no centro**, com um terço do diâmetro, na cor de contraste do uniforme; o mandante é liso. A bola é um disco menor em `ink`, sem anel.
 - **Cores dos uniformes são dado** (gerador da T-026, com a regra de choque de cores dentro dele), como as do escudo; só pintam os discos do campo.
+- **De onde vem cada cor (T-085):** o disco é o `FieldKit.fill`, de uma cor só (a segunda cor das camisas listradas não é desenhada); o anel e a bola são o token `ink` do tema, nunca o `FieldKit.ring` do gerador (calculado contra o `grass`, ele fica a 2,92:1 sobre o `pitch` noturno); a marca do visitante é o `FieldKit.mark`, pelo menos 3:1 contra o `fill` (pendente da decisão 3 da T-085 em [partida.md](telas/partida.md#decisões-para-o-ceo-t-085)), nunca o `numberColor`.
+- **Tamanhos (T-085):** o campo em metros, 105 × 68 mais uma faixa de grama de 3 m (1,5:1); disco de 5,5 m (18px a 360px), anel de 2px em qualquer tamanho, marca com um terço do diâmetro, bola de 2,5 m (no mínimo 8px), por cima dos discos.
 - Sem tremor, sem zoom, sem flash; com `prefers-reduced-motion`, o campo fica parado e é redesenhado só a cada lance.
+- **Comemoração de gol (proposta 39, para o CEO):** cartão em `surface-1`, borda de 1px em `line`, `radius-md`, sobre a parte de baixo do campo, com o escudo `md` do clube que marcou, "Gol!" em `display-lg` e o nome do artilheiro em `subtitulo`, tudo em `ink`; entra com escala de 0,92 a 1 e opacidade em 200 ms, parado com `prefers-reduced-motion`, e sai sem animação; `aria-hidden`.
 - Conferência: o par gráfico `ink` sobre `pitch` passa a ser conferido a 3:1 pelo `npm run tokens`, numa lista de pares gráficos ao lado da de texto (a mudança no script é do `developer`, na T-085).
 - Especificação: [partida.md](telas/partida.md#campo-2d-t-085).
 
