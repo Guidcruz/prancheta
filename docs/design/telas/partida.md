@@ -633,7 +633,7 @@ Conferência do `ux-designer` antes de chamar o `developer`. Cada linha diz o qu
 
 ## Proposta para o CEO: de qual time é cada lance (2026-11-15)
 
-**Status: proposta, aguardando o CEO.** Nada desta seção vale antes da decisão; o resto da spec continua como está.
+**Status: decidida pelo CEO em 2026-11-15:** (1) opção **A** (escudo `xs` na linha, com o nome do clube mantido); (2) a súmula muda junto; (3) proposta 40 aprovada (`size-medallion-xs`, 24px); (4) o leitor de tela diz o clube logo depois do minuto. O texto abaixo guarda as opções que levaram à decisão.
 
 **Pedido do CEO** (captura do iPhone, prévia da `main`, "Só lances principais", tema noite, partida terminada): "seria legal diferenciar melhor de qual time é cada lance". Hoje a única pista é o nome curto do clube em `caption` (12px) `ink-muted`, na última linha de cada lance; os dois gols têm o mesmo fundo `grass-soft` e, de relance, parecem iguais. O jogador precisa ler a linha até o fim para saber se o lance foi dele ou do adversário.
 
