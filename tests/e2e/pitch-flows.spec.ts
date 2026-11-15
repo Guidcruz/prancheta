@@ -228,4 +228,33 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
     await playToEnd(page);
     expect(await page.evaluate(() => document.getAnimations().length)).toBe(0);
   });
+
+  test('movimento reduzido ligado no meio da partida sem o evento change da media query (como o WebKit, que só o despacha na próxima atualização da tela): o passo seguinte já para o campo', async ({
+    page,
+  }) => {
+    // The `change` of the reduced-motion query never reaches the game; `matches` is up to date.
+    await page.addInitScript(() => {
+      const add = MediaQueryList.prototype.addEventListener;
+      MediaQueryList.prototype.addEventListener = function (
+        this: MediaQueryList,
+        ...args: Parameters<MediaQueryList['addEventListener']>
+      ) {
+        if (args[0] === 'change' && this.media.includes('prefers-reduced-motion')) return;
+        return add.apply(this, args);
+      } as MediaQueryList['addEventListener'];
+    });
+    await countFrames(page);
+    await careerWith(page, 'full');
+    await freezeClock(page);
+    await openMatch(page);
+    await expect(canvas(page)).toHaveCount(1);
+    const start = await frames(page);
+    await runToMinute(page, 10);
+    expect(await frames(page)).toBeGreaterThan(start);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.clock.runFor(3_000);
+    const before = await frames(page);
+    await page.clock.runFor(1_500);
+    expect((await frames(page)) - before).toBeLessThanOrEqual(2);
+  });
 });

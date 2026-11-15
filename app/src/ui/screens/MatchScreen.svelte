@@ -227,6 +227,8 @@
   let lineIndex = 0;
   /** Reduced motion now, and as it was when the step on screen was revealed (it counts from it). */
   let reducedNow = $state(false);
+  /** The query of reduced motion, read again at each step (see `revealed`). */
+  let motionQuery: MediaQueryList | undefined;
   let reduced = $state(false);
   /** Each change draws one frame while the pitch is still. */
   let version = $state(0);
@@ -298,6 +300,10 @@
     revealIndex = index;
     revealAt = performance.now();
     revealSpeed = player.state.speed;
+    // Read here, once per step: WebKit dispatches the `change` of a media query only at its next
+    // rendering update, which may not come before this step (a page with no frames to draw, a
+    // stopped clock), while `matches` is up to date at once. The listener stays for the rest.
+    if (motionQuery !== undefined) reducedNow = motionQuery.matches;
     reduced = reducedNow;
     if (step.line !== undefined) lineIndex = index;
     // With reduced motion, one frame per step with a line, none in the minutes between them.
@@ -399,6 +405,7 @@
   onMount(() => {
     void focusTitle();
     const motion = matchMedia('(prefers-reduced-motion: reduce)');
+    motionQuery = motion;
     const columns = matchMedia('(min-width: 900px), (max-height: 480px)');
     const onMotion = () => (reducedNow = motion.matches);
     const onColumns = () => (wide = columns.matches);
