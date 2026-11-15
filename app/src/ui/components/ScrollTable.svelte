@@ -21,10 +21,11 @@
    * header has `aria-sort` on the sorted column; sorting itself is the screen's (a
    * SegmentedControl above the table). The box is a named, focusable region only so the keyboard
    * can scroll it; the rows bring their own targets. The rows come as a snippet of `<tr>`
-   * (TableRow, PlayerRow, GroupRow).
+   * (TableRow, PlayerRow, GroupRow). With `showCaption` the name is also shown above the box,
+   * outside the scroll, as an aria-hidden label (the hidden `caption` is what is read).
    */
   interface Props {
-    /** The table's name ("Elenco do Flamingo, 25 jogadores"); shown when `showCaption`. */
+    /** The table's name ("Elenco do Flamingo, 25 jogadores"); also shown above the box when `showCaption`. */
     caption: string;
     showCaption?: boolean;
     columns: readonly TableColumn[];
@@ -40,6 +41,12 @@
   const id = $props.id();
 </script>
 
+<!-- The visible label sits outside the scrolling box, so it stays in view while the columns scroll.
+     It is aria-hidden: the table's own (hidden) caption is the one screen readers read, and the
+     region's name. -->
+{#if showCaption}
+  <div class="label caption" aria-hidden="true" data-scroll-table-label>{caption}</div>
+{/if}
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <div
   class="box scroll-table"
@@ -49,7 +56,7 @@
   style:--fixed-max="{fixedMax}cqi"
 >
   <table>
-    <caption id="{id}-caption" class="caption" class:visually-hidden={!showCaption}>
+    <caption id="{id}-caption" class="visually-hidden">
       {caption}
     </caption>
     <thead>
@@ -101,8 +108,8 @@
     border-collapse: separate;
     border-spacing: 0;
   }
-  caption {
-    padding: var(--space-2) var(--space-3);
+  .label {
+    padding: 0 var(--space-3) var(--space-2);
     text-align: start;
     color: var(--ink-muted);
   }

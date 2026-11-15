@@ -111,7 +111,7 @@ A tela é só leitura: rolar na vertical (a página) e na horizontal (a caixa da
 - **390px:** caixa de 358px; a coluna fixa usa o que precisa (cerca de 192px), e aparecem Pts, J, V e E.
 - **Deitado (844×390):** a coluna de conteúdo ocupa a largura da tela menos as margens (cerca de 810px), porque a moldura só limita a largura a partir de 900px ([navegacao.md](navegacao.md)), como no Elenco. A tabela inteira cabe (cerca de 650px com % e Últimos 5) e a caixa não rola. A linha continua com a mesma altura; na altura baixa (`breakpoint-short`) nada muda, a página só rola.
 - **Desktop (a partir de 900px):** a coluna de conteúdo tem `layout-content-max` (720px), com a barra lateral e a Tabela ativa; a tabela inteira cabe e a caixa não rola.
-- **A `caption` visível rola junto com as colunas:** ela fica dentro da caixa da tabela, com a largura da tabela, então "Depois da rodada N" sai de vista quando o jogador rola até as últimas colunas e volta ao rolar para o início. É o comportamento da ScrollTable (o Elenco faz igual) e fica assim na T-031: a coluna fixa continua no lugar e a rodada não é informação que se perca. Tirar a `caption` visível da área que rola é a proposta 31 de [componentes.md](componentes.md#propostas-ao-design-system), pendente.
+- **A `caption` visível fica fora da área que rola** (proposta 31 de [componentes.md](componentes.md#propostas-ao-design-system), implementada): "Depois da rodada N" é um rótulo acima da caixa da tabela, `aria-hidden`, sempre à vista ao rolar até as últimas colunas. A `caption` da `table` continua, escondida, como o texto lido pelo leitor de tela e o nome da região, sem duplicar a leitura. Sem mudança nas larguras (a coluna fixa segue com 60%).
 
 ## Movimento (decisão 6 do CEO)
 
@@ -122,7 +122,7 @@ A tela é só leitura: rolar na vertical (a página) e na horizontal (a caixa da
 
 ## Acessibilidade
 
-- **Tabela de verdade:** `table` com `caption` (o nome da região que rola, visível); cabeçalhos `th scope="col"` com a sigla visível e o nome completo para o leitor de tela (`table.col.*.full`, pela `abbr` da ScrollTable); a primeira célula de cada linha é `th scope="row"`. O leitor de tela lê cada número com o nome da coluna e o da linha.
+- **Tabela de verdade:** `table` com `caption` (o nome da região que rola, escondida; o texto visível é o rótulo acima da caixa, `aria-hidden`); cabeçalhos `th scope="col"` com a sigla visível e o nome completo para o leitor de tela (`table.col.*.full`, pela `abbr` da ScrollTable); a primeira célula de cada linha é `th scope="row"`. O leitor de tela lê cada número com o nome da coluna e o da linha.
 - **Ordem da leitura da célula do clube:** posição, nome, "seu clube" (só na minha linha), zona e mudança: "3, Flamingo, seu clube, Rebaixamento, Subiu 2 posições". O escudo, o ícone e o "+2" visíveis são `aria-hidden`; a frase da mudança fica escondida no fim da célula.
 - **Nunca só por cor:** zona em palavra na linha e na legenda, com forma além da cor; mudança em número com sinal e frase, com a seta só de reforço; meu clube com negrito, barra, `aria-current` e "seu clube"; Últimos 5 em letra, com a palavra inteira para o leitor de tela.
 - **Sem cabeçalho de ordenação:** a ordem é a classificação; nenhuma coluna tem `aria-sort` nem é tocável.
@@ -184,32 +184,32 @@ Para o `content-writer`; os textos vão ao CEO no próximo lote. Todas em `app/s
 
 ### Novas da T-031
 
-| Chave                         | Onde aparece                                                    | Limite a 360px                                                                   | Placeholders |
-| ----------------------------- | --------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------ |
-| `table.caption`               | `caption` visível acima das colunas (e nome da região que rola) | 1 linha em `caption` em ~300px                                                   | `{round}`    |
-| `table.caption.final`         | `caption` com a temporada encerrada                             | idem                                                                             | `{season}`   |
-| `table.col.wins`              | cabeçalho V                                                     | até ~28px em `rotulo` (caixa alta), a largura de um número de 2 dígitos          | —            |
-| `table.col.wins.full`         | nome completo do cabeçalho (leitor de tela)                     | —                                                                                | —            |
-| `table.col.draws`             | cabeçalho E                                                     | idem a `wins`                                                                    | —            |
-| `table.col.draws.full`        | idem                                                            | —                                                                                | —            |
-| `table.col.losses`            | cabeçalho D                                                     | idem                                                                             | —            |
-| `table.col.losses.full`       | idem                                                            | —                                                                                | —            |
-| `table.col.goalsFor`          | cabeçalho GP                                                    | idem                                                                             | —            |
-| `table.col.goalsFor.full`     | idem ("Gols pró")                                               | —                                                                                | —            |
-| `table.col.goalsAgainst`      | cabeçalho GC                                                    | idem                                                                             | —            |
-| `table.col.goalsAgainst.full` | idem ("Gols contra")                                            | —                                                                                | —            |
-| `table.col.percent`           | cabeçalho % (decisão 4)                                         | até ~40px em `rotulo`                                                            | —            |
-| `table.col.percent.full`      | idem ("Aproveitamento")                                         | —                                                                                | —            |
-| `table.col.form`              | cabeçalho Últimos 5 (decisão 4)                                 | 1 linha em `rotulo`, até ~120px (a largura de 5 selos de letra)                  | —            |
-| `table.col.form.full`         | idem                                                            | —                                                                                | —            |
-| `table.zone.leader`           | palavra embaixo do nome do 1º                                   | **1 linha em `caption`, até ~95px** (a coluna do nome), para a linha não crescer | —            |
-| `table.zone.champion`         | idem, com a temporada encerrada                                 | idem                                                                             | —            |
-| `table.zone.relegation`       | palavra embaixo do nome do 17º ao 20º                           | idem ("Rebaixamento" mede 75px; "Zona de rebaixamento" não cabe)                 | —            |
-| `table.legend.title`          | `h2` escondido da legenda                                       | —                                                                                | —            |
-| `table.legend.leader`         | item da legenda, depois da marca de exemplo (~28px + `space-2`) | até 2 linhas em `caption` em ~260px                                              | —            |
-| `table.legend.champion`       | idem, com a temporada encerrada                                 | idem                                                                             | —            |
-| `table.legend.relegation`     | item da legenda                                                 | idem                                                                             | `{count}`    |
-| `table.legend.movement`       | item da legenda, depois das duas setas (~32px + `space-2`)      | idem, em ~256px                                                                  | —            |
+| Chave                         | Onde aparece                                                                                 | Limite a 360px                                                                   | Placeholders |
+| ----------------------------- | -------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------- | ------------ |
+| `table.caption`               | rótulo visível acima da caixa (`aria-hidden`) e `caption` escondida, nome da região que rola | 1 linha em `caption` em ~300px                                                   | `{round}`    |
+| `table.caption.final`         | `caption` com a temporada encerrada                                                          | idem                                                                             | `{season}`   |
+| `table.col.wins`              | cabeçalho V                                                                                  | até ~28px em `rotulo` (caixa alta), a largura de um número de 2 dígitos          | —            |
+| `table.col.wins.full`         | nome completo do cabeçalho (leitor de tela)                                                  | —                                                                                | —            |
+| `table.col.draws`             | cabeçalho E                                                                                  | idem a `wins`                                                                    | —            |
+| `table.col.draws.full`        | idem                                                                                         | —                                                                                | —            |
+| `table.col.losses`            | cabeçalho D                                                                                  | idem                                                                             | —            |
+| `table.col.losses.full`       | idem                                                                                         | —                                                                                | —            |
+| `table.col.goalsFor`          | cabeçalho GP                                                                                 | idem                                                                             | —            |
+| `table.col.goalsFor.full`     | idem ("Gols pró")                                                                            | —                                                                                | —            |
+| `table.col.goalsAgainst`      | cabeçalho GC                                                                                 | idem                                                                             | —            |
+| `table.col.goalsAgainst.full` | idem ("Gols contra")                                                                         | —                                                                                | —            |
+| `table.col.percent`           | cabeçalho % (decisão 4)                                                                      | até ~40px em `rotulo`                                                            | —            |
+| `table.col.percent.full`      | idem ("Aproveitamento")                                                                      | —                                                                                | —            |
+| `table.col.form`              | cabeçalho Últimos 5 (decisão 4)                                                              | 1 linha em `rotulo`, até ~120px (a largura de 5 selos de letra)                  | —            |
+| `table.col.form.full`         | idem                                                                                         | —                                                                                | —            |
+| `table.zone.leader`           | palavra embaixo do nome do 1º                                                                | **1 linha em `caption`, até ~95px** (a coluna do nome), para a linha não crescer | —            |
+| `table.zone.champion`         | idem, com a temporada encerrada                                                              | idem                                                                             | —            |
+| `table.zone.relegation`       | palavra embaixo do nome do 17º ao 20º                                                        | idem ("Rebaixamento" mede 75px; "Zona de rebaixamento" não cabe)                 | —            |
+| `table.legend.title`          | `h2` escondido da legenda                                                                    | —                                                                                | —            |
+| `table.legend.leader`         | item da legenda, depois da marca de exemplo (~28px + `space-2`)                              | até 2 linhas em `caption` em ~260px                                              | —            |
+| `table.legend.champion`       | idem, com a temporada encerrada                                                              | idem                                                                             | —            |
+| `table.legend.relegation`     | item da legenda                                                                              | idem                                                                             | `{count}`    |
+| `table.legend.movement`       | item da legenda, depois das duas setas (~32px + `space-2`)                                   | idem, em ~256px                                                                  | —            |
 
 São 24 chaves novas. A mudança visível ("+2") e o % não têm chave: são números formatados pelo `Intl.NumberFormat` do idioma.
 
