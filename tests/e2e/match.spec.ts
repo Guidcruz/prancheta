@@ -977,23 +977,23 @@ test.describe('Partida narrada: desempenho (T-032)', () => {
       await closeSummary(page);
     }
 
-    // One whole match, in Rápido: no long task between the kick-off and the final whistle.
+    // One whole match, in Rápido: no long task between the kick-off and the final whistle (the
+    // match is computed before the kick-off, inside the 300 ms above).
     await page.evaluate(() => {
-      const w = window as unknown as { longTasks: number[]; whistle?: number };
+      const w = window as unknown as { longTasks: { start: number; duration: number }[] };
       w.longTasks = [];
       new PerformanceObserver((list) => {
         for (const entry of list.getEntries()) {
-          if (w.whistle === undefined || entry.startTime < w.whistle)
-            w.longTasks.push(entry.duration);
+          w.longTasks.push({ start: entry.startTime, duration: entry.duration });
         }
       }).observe({ type: 'longtask' });
     });
     await playButton(page).click();
     await expect(matchScreen(page)).toBeVisible();
-    await control(page, 'match.fast').click();
     await page.evaluate(
       (word) => {
-        const w = window as unknown as { whistle?: number };
+        const w = window as unknown as { kickoff: number; whistle?: number };
+        w.kickoff = performance.now();
         const phase = document.querySelector('main.match .scoreboard .live .phase')!;
         new MutationObserver(() => {
           if (w.whistle === undefined && phase.textContent === word) w.whistle = performance.now();
@@ -1001,10 +1001,18 @@ test.describe('Partida narrada: desempenho (T-032)', () => {
       },
       ui('pt-BR', 'match.phase.end'),
     );
+    await control(page, 'match.fast').click();
     await expect(control(page, 'match.toSummary')).toBeVisible({ timeout: 60_000 });
-    const longTasks = await page.evaluate(
-      () => (window as unknown as { longTasks: number[] }).longTasks,
-    );
+    const longTasks = await page.evaluate(() => {
+      const w = window as unknown as {
+        longTasks: { start: number; duration: number }[];
+        kickoff: number;
+        whistle?: number;
+      };
+      return w.longTasks
+        .filter((t) => t.start >= w.kickoff && t.start < (w.whistle ?? Infinity))
+        .map((t) => t.duration);
+    });
     await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
 
     const p90 = (list: number[]) =>
