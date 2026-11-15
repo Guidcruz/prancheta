@@ -6,6 +6,10 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Uniformes dos clubes gerados por código (T-026; US-002):
+  - `kit.ts` gera camisa, calção e meias em SVG autocontido, sem texto, a partir de `id`, cores e padrão do escudo. São 10 padrões, 3 golas e os uniformes 1, 2 e 3; o padrão vem do `id` e nunca é do tipo do escudo do clube.
+  - `matchKits` decide quem troca: o mandante usa sempre o 1, e o visitante usa o 1, o 2 ou o 3 até não haver confusão de cor (ΔE 30). Em 380 confrontos, o visitante troca para o 2 em 44 e usa o 3 em 6. O goleiro tem cor própria e estável por clube, trocada só se houver conflito; a bolinha da partida ganha anel e número com contraste de pelo menos 4,5:1, com placa atrás do número em 14 de 80 uniformes.
+  - Nada muda nos dados, no motor nem no save. Não há tela nova. A revisão contra uniformes reais fica para antes do lançamento (`kit.forbidden.json` começa vazio).
 - Calendário (T-084; US-024):
   - A aba `#/calendar` mostra as 38 rodadas do clube em dois turnos, um card por rodada com data, mando, "Clássico" e, nas jogadas, o placar e o resultado escrito. A próxima rodada tem "Próximo jogo" e borda verde, e a aba abre nela, sem atalho flutuante.
   - Tocar numa rodada jogada abre a Rodada (`#/calendar/round/N`, com voltar): os 10 jogos, o meu primeiro, e cada um abre a súmula da T-083. Rodadas futuras não abrem; endereço de rodada inválida ou não jogada volta para `#/calendar`. Ao voltar, a lista mostra o card de onde o jogador saiu.
