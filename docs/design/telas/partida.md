@@ -1,54 +1,506 @@
 # Partida
 
-**Histórias:** US-020, US-021, US-041 · **Prioridade:** Must · **Ordem:** 12
+**Histórias:** US-020, US-019 (cenário 2, o seletor de tipo de partida), US-041 (só o que a 1a já tem) e, na T-033, US-021 · **Prioridade:** Must · **Ordem:** 12 · **Tarefas:** T-032 (parte 1, partida narrada), T-085 (parte 2, campo 2D) e T-086 (parte 3, narração com variantes), pela divisão proposta abaixo (decisão 1 do CEO, pendente)
 
 ## Objetivo
 
-Fazer o jogador sentir a tensão do jogo e mexer no time na hora certa, sem nunca mudar o resultado pela animação.
+Fazer o jogador sentir a tensão do jogo do seu clube, lance a lance, sem nunca mudar o resultado que o motor calculou.
 
 ## O que o jogador faz
 
-Assiste aos lances (todos os visíveis ou só os principais), pausa para dar comandos, substituir ou mudar a tática, e pode pular para o fim.
+Toca "Jogar rodada" (ou escolhe antes como quer acompanhar), assiste aos lances com o relógio correndo, pausa, acelera ou pula para o resultado, e no apito final toca "Ver resumo". Na T-033, também mexe no time durante o jogo e fala com o elenco no intervalo.
 
-## Conteúdo (de cima para baixo, celular)
+## Regra central: a animação nunca muda o resultado
 
-1. Scoreboard: escudos, placar, minuto, faixa de marca do cenário no placar (BrandSlot `scoreboard`, decorativa); nome do estádio, se houver.
-2. MatchPitch (canvas): campo visto de cima, bolinhas nas cores dos uniformes (sem marca na camisa: fica para depois da Etapa 1a, a menos que o CEO decida diferente), placas com marcas fictícias do cenário em volta.
-3. CommentaryFeed: narração com minuto, a mais recente em cima ou embaixo conforme o teste de uso (decidir na casca; recomendação: a mais recente embaixo, perto do polegar).
-4. Barra de controles fixa embaixo: Pausar/continuar, Comandos, Substituir (com o número restante), Tática, Pular.
-5. GoalCelebration sobre o campo quando há gol: escudo e nome do artilheiro.
+- O resultado vem só do motor. A tela recebe a lista de `MatchEvent` da partida do clube do técnico, já calculada por inteiro antes do apito inicial, e só decide **quando** mostrar cada evento. Nada do que a tela faz (velocidade, pausa, pular, campo, narração, vibração, som) entra no motor.
+- A lista mostrada é a mesma que o `playRound` grava no fim: o `prepareRound` devolve as partidas "exatamente como o `playRound` as simula" (§4.1 da arquitetura), e a tela simula a partida do técnico com a mesma entrada e sem comandos (T-032; os comandos são da T-033). Um teste do `CareerService` confere que o `MatchResult` mostrado é idêntico ao gravado (ver "Medidas").
+- "Animada completa" e "Só lances principais" mostram a **mesma** lista do motor; a diferença é só o filtro da tela (o motor trata os dois modos como iguais, §4.1, `RoundInput.coaches`).
+- As posições das bolinhas no campo (T-085) são decorativas, geradas a partir dos eventos, e nunca antecipam o desfecho de um lance.
 
-Folhas (BottomSheet, com a partida pausada): Comandos (pressionar, segurar o resultado, todo mundo no ataque), Substituir (titular sai, reserva entra; recusa com motivo ao passar do limite), Tática (formação, postura, pressão).
+## Divisão proposta em partes M
+
+A T-032 foi planejada como G. A proposta é dividi-la em três PRs, cada um jogável e testável sozinho. Os códigos T-085 e T-086 são os próximos livres; o Orquestrador confirma ao registrar a divisão em `docs/02-architecture.md`.
+
+| Parte                                                 | Tamanho | O que entra                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        | Depende de                                                                                            |
+| ----------------------------------------------------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| **T-032** (parte 1, partida narrada)                  | M       | O seletor de tipo de partida no "Jogar rodada" (US-019, cenário 2; decisão 5 da T-030); "Só lances principais" volta ao Novo jogo; a tela cheia `#/match` com o Scoreboard ao vivo (minuto, fase, pausada, anúncio para o leitor de tela) e a narração em texto (CommentaryFeed, uma frase fixa por tipo de evento); o relógio com duas velocidades; o filtro de "só lances principais"; a **pausa dramática em texto**; Pausar e Continuar; **Pular**; o voltar do celular; a pausa automática com a página escondida; o fim de jogo com a gravação e "Ver resumo"; fechar no meio; erros; movimento reduzido; desktop e deitado sem campo; E2E e medidas de desempenho do fluxo. | T-030, T-083 (o resumo e a gravação da rodada). Nada da T-026.                                        |
+| **T-085** (parte 2, campo 2D)                         | M       | O MatchPitch em canvas (campo visto de cima, bolinhas nas cores dos uniformes, marca de forma do visitante, bola); a coreografia decorativa a partir dos eventos; a **câmera lenta** da pausa dramática no campo; a GoalCelebration (escudo e nome do artilheiro); o leiaute com campo a 360px, deitado e no desktop; o campo parado com movimento reduzido; a volta sem campo se o canvas falhar; "Animada completa" volta ao Novo jogo e ao seletor e passa a ser o padrão da carreira nova; E2E e medidas de quadro por segundo.                                                                                                                                                | T-032 e T-026 (cores dos uniformes pela API do gerador).                                              |
+| **T-086** (parte 3, narração com variantes)           | P       | A narração ganha variantes de texto por tipo de evento e por contexto (gol do meu clube, empate, virada, gol no fim, clássico), em `app/src/content/<idioma>/commentary.json`, no formato de template da T-021, escolhidas de forma determinística pela semente da partida; as regras do `content:check` para a narração; o lote do `content-writer` nos três idiomas.                                                                                                                                                                                                                                                                                                             | T-032 e T-021 (renderizador, catálogo de placeholders e `content:check`). Pode correr junto da T-085. |
+| Vibração (fora da T-032, recomendado ir para a T-041) | —       | Uma vibração curta no gol do clube do técnico, só com a preferência ligada e nunca com movimento reduzido. Recomendação: entra na T-041, junto do Toggle "Vibração" das Preferências, para nada no jogo existir sem o controle de desligar (decisão 9).                                                                                                                                                                                                                                                                                                                                                                                                                            | T-032 (o ponto de revelação do gol).                                                                  |
+
+**Por que essa ordem, e não "campo primeiro":** a parte 1 é o esqueleto que todas as outras usam (o relógio, o ponto de revelação de cada lance, o fluxo até o resumo e a gravação). Pular e a pausa dramática em texto ficam nela porque sem Pular nenhuma partida é testável em tempo razoável nem pode ser abandonada pelo jogador, e a pausa dramática em texto é justamente a versão de movimento reduzido, que tem de existir de qualquer jeito. O campo entra por cima sem mudar o fluxo, e a falta do campo (canvas que falha) cai de volta no leiaute da parte 1.
+
+**O que cada parte deixa jogável:** depois da T-032, uma carreira em "Só lances principais" joga a temporada inteira acompanhando os lances em texto; depois da T-085, a "Animada completa" com o campo; depois da T-086, a mesma partida com narração variada. A T-033 (comandos, substituições e intervalo) depende da T-032 e pode começar antes da T-085.
+
+## Fluxo da rodada nos modos assistidos
+
+| Passo | O que acontece                                                                                                                                                                                                                                                                                                                                                                                                             |
+| ----- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1     | O jogador toca "Jogar rodada" (ou "Jogar rodada" na folha do seletor; ou "Completar e jogar" na folha "Escalação incompleta"). Sem confirmação (decisão 2 da T-030).                                                                                                                                                                                                                                                       |
+| 2     | O botão passa a `busy` ("Calculando a rodada..." para o leitor de tela). O `CareerService` monta a partida do técnico (o `prepareRound` com a ficha e o modo) e a simula do começo ao fim, sem comandos. Nada é gravado e nada é aplicado à carreira.                                                                                                                                                                      |
+| 3     | A Partida abre em tela cheia (`#/match`, empurrado no histórico) e o relógio começa sozinho, no 0', com a linha "Começa o jogo".                                                                                                                                                                                                                                                                                           |
+| 4     | O relógio corre e a narração mostra os lances do modo, cada um no seu minuto ("Relógio da partida"). Pausar, Rápido e Pular ficam na barra de baixo.                                                                                                                                                                                                                                                                       |
+| 5     | **No apito final**, a linha "Fim de jogo" aparece e a tela começa sozinha a jogar e gravar a rodada (`playRound`, o mesmo de T-030, com a mesma ficha e o mesmo modo). A barra troca os controles pelo estado da gravação ("Salvando a rodada...", depois "Rodada salva" ou "Rodada não salva") e por **"Ver resumo"**, o primário da tela, que só fica tocável quando a gravação termina (salva ou recusada) (decisão 8). |
+| 6     | "Ver resumo" abre o Resumo da rodada no lugar da Partida (`#/round` com `replaceState`): o voltar do resumo leva à aba de origem, nunca de volta à partida. Dali em diante vale o fluxo da T-030 ([resumo-rodada.md](resumo-rodada.md#fluxo-da-rodada-modo-só-resultado), passos 5 e 6, com a janela de proteção de cerca de 500 ms no "Jogar rodada").                                                                    |
+| 6'    | **Pular**, em qualquer minuto (também durante a pausa dramática e no intervalo): os controles passam a `busy` ("Indo para o resultado...") e a tela joga e grava a rodada como no passo 5; quando a gravação termina, o Resumo abre direto, no lugar da Partida, sem passar pelo "Ver resumo" (US-020, "pular para o fim"). Sem confirmação: o resultado é o mesmo.                                                        |
+
+No "Só resultado", nada muda em relação à T-030: "Jogar rodada" vai direto ao resumo.
+
+## Seletor de tipo de partida (no "Jogar rodada")
+
+US-019, cenário 2: o tipo pode ser trocado no momento de jogar, e a troca vale para as rodadas seguintes.
+
+- **O botão ganha um segundo segmento** (botão dividido, proposta 33 ao design system): à esquerda, "Jogar rodada" como hoje, com o tipo atual escrito embaixo do rótulo em `caption` (o título da carta do Novo jogo, `newGame.match.*`); à direita, separado por um traço de 1px em `on-grass`, um segmento de 48px de largura com o ícone `chevron-down` (proposta 34), que abre a folha. O segmento tem o nome acessível `play.mode.open` (com o tipo atual) e `aria-haspopup="dialog"`. Os dois alvos têm a altura do botão (`touch` + `space-2`).
+- **O segmento existe** com o botão em `ready` e em `blocked` por escalação incompleta. Em `busy`, em `blocked` por rodada não salva e com a temporada encerrada, ele some (não há rodada para jogar), e o botão volta a ser um só.
+- **A folha** (BottomSheet, título `play.mode.title`, com entrada no histórico como as outras folhas): um OptionGroup de uma coluna com as cartas do Novo jogo (título e frase de efeito de `newGame.match.*`, os mesmos textos), a atual marcada, a nota `play.mode.note` embaixo do grupo e, no pé fixo da folha, "Jogar rodada" (`play.label`, primário). Tocar numa carta só marca; **a escolha só vale ao tocar "Jogar rodada"** na folha, que joga a rodada com o tipo escolhido e grava o tipo novo com a rodada. Fechar a folha (X, voltar, fundo) descarta a escolha.
+- **Com a escalação incompleta,** o "Jogar rodada" da folha faz o mesmo que o botão: abre a folha "Escalação incompleta" (US-017), e "Completar e jogar" joga com o tipo escolhido.
+- **Por que a escolha só vale ao jogar:** assim a troca não precisa de gravação própria (vai no snapshot da rodada) e a folha nunca deixa o jogador em dúvida se "salvou". A troca sem jogar fica nas Preferências (T-041, US-044), que têm gravação própria.
+- **Tipos oferecidos por parte** (decisão 4): na T-032, "Só lances principais" e "Só resultado"; na T-085, os três, com "Animada completa" em primeiro. Um save com um tipo que ainda não é oferecido não acontece (hoje todos estão em "Só resultado"); se acontecer, o tipo do save aparece marcado mesmo assim.
+- **Desktop:** o mesmo botão dividido no pé da barra lateral (`placement="side"`), e a folha vira o diálogo ancorado pela base (540px).
+- **Com a gravação no fim:** se o jogador troca o tipo, começa a partida e fecha o jogo antes do apito final, a troca se perde junto com a rodada (nada foi gravado). Ao reabrir, o tipo antigo continua. É coerente com "Fechar o jogo no meio".
+
+## Navegação
+
+- **Tela cheia:** sem TabBar, sem barra lateral e sem o "Jogar rodada", nas três larguras (README, "Mapa de navegação").
+- **Endereço:** `#/match`, empurrado no histórico quando a partida abre. No fim, o resumo troca o endereço por `#/round` (`replaceState`), então o histórico fica "aba de origem → resumo", como no "Só resultado".
+- **Voltar do celular durante a partida** (decisão 6): a partida pausa e abre a folha "Sair da partida?" (`match.leave.*`, BottomSheet com entrada própria no histórico), que explica que a rodada só é salva no fim do jogo e oferece **"Pular para o resultado"** (secundário, em cima) e **"Continuar a partida"** (primário, embaixo, no lugar de "Cancelar" da regra das confirmações em passos). Voltar de novo, o X ou o fundo fecham a folha e deixam a partida pausada. Para a folha ter para onde voltar, a tela devolve a entrada `#/match` ao histórico quando o voltar a tira (o mesmo mecanismo das folhas, `sheet-history.ts`).
+- **Não existe "Sair sem jogar".** Sair no meio sem aplicar a rodada deixaria o jogador ver o placar, voltar, mudar a escalação e jogar de novo com outro resultado. A única saída é pelo resultado (Pular). Fechar o jogo no meio continua possível (ver "Fechar o jogo no meio" e a decisão 10).
+- **Abrir a carreira** com `#/match` no endereço (recarregar no meio): a carreira abre no Clube, na rodada que não foi jogada, como em "Fechar o jogo no meio"; `#/match` sem partida em andamento troca o endereço por `#/club` (`replaceState`).
+- **Avançar do navegador até `#/match`** depois de a rodada acabar: troca por `#/club`, sem partida.
+
+## Relógio da partida
+
+O relógio da tela é uma função pura dos eventos, do modo e da velocidade (`app/src/ui/match/`, sem DOM, testada no Vitest com relógio falso): dada a lista de eventos, ela monta a sequência de passos, cada um com a sua duração, e diz o que está visível em cada instante. A velocidade muda as durações a partir do passo seguinte.
+
+**Minuto na tela.** O relógio mostra `M'` enquanto o minuto `M` é jogado (com acréscimo, `45+2'` e `90+4'`, pelas chaves `match.minute` e `match.minuteAdded` que já existem). Os eventos do minuto `M` aparecem em ordem durante `M'`. É a convenção da T-033 (§4.1, "Quando o comando vale"): **a pausa só acontece entre dois minutos** (ver Pausar, abaixo), e aí o relógio mostra o próximo minuto a jogar.
+
+**Durações** (decisão 5; ficam numa constante `MATCH_TIMING` em `app/src/ui/match/`, com comentário apontando para cá e para a proposta 2 de durações, até o grupo de movimento existir):
+
+| Passo                                                                       | Normal | Rápido |
+| --------------------------------------------------------------------------- | ------ | ------ |
+| Minuto sem lance mostrado, "Animada completa"                               | 500 ms | 200 ms |
+| Minuto sem lance mostrado, "Só lances principais"                           | 80 ms  | 40 ms  |
+| Lance comum (cartão, troca, chance fraca, mudança tática, acréscimo, fases) | 400 ms | 150 ms |
+| Pausa dramática (entre o começo do lance e o desfecho)                      | 1,2 s  | 0,5 s  |
+| Depois de um gol revelado                                                   | 2,0 s  | 0,8 s  |
+| Depois de um desfecho que não é gol (defesa, trave, fora, pênalti perdido)  | 600 ms | 250 ms |
+| Intervalo (entre "Intervalo" e "Começa o 2º tempo")                         | 2,0 s  | 0,8 s  |
+
+Com cerca de 40 lances por partida na "Animada completa" (cerca de 20 finalizações, 5 cartões, 7 trocas e as fases), a partida dura cerca de **1min20s no Normal e 30 s no Rápido**; na "Só lances principais", cerca de **30 s e 12 s**. Uma temporada de 38 rodadas assistidas no Normal leva cerca de 50 minutos de partida.
+
+**Velocidade:** "Rápido" é um botão que liga e desliga (`aria-pressed`, com o ícone `check` quando ligado, não só a cor). A escolha é lembrada no aparelho (`kv`, chave `match.speed`, pelo mesmo caminho do `newGame.last`; falha ao gravar não mostra nada), e vale para todas as carreiras.
+
+**Pausar:** pedir a pausa no meio de um minuto termina o minuto (com o desfecho da pausa dramática, se houver) e para antes do seguinte. O relógio mostra o próximo minuto a jogar, a linha do placar mostra `match.paused` e o botão vira "Continuar". Assim, quando a T-033 trouxer os comandos, o que o jogador viu é sempre um estado inteiro do jogo, e o comando sai com o minuto certo.
+
+**Pausa automática:** com a página escondida (`visibilitychange` para `hidden`: troca de app, tela apagada, outra aba) e ao abrir a folha "Sair da partida?". Ao voltar, a partida continua pausada, com "Continuar"; nunca recomeça sozinha.
+
+**Intervalo:** depois do último minuto de acréscimo do 1º tempo, a linha "Intervalo", a fase `match.phase.half` e a duração da tabela; depois, "Começa o 2º tempo" e o relógio em 46'. Na T-032 o intervalo não para a partida (a conversa e a pausa do intervalo são da T-033, US-022).
+
+**Fim:** depois do `fulltime`, o relógio para no último minuto jogado e a fase passa a `match.phase.end`. No jogo encerrado (`abandoned`), o placar passa ao placar dado (`fulltime.score`) nesse momento, e a linha `match.live.fulltime.abandoned` explica, como no resumo.
+
+## Narração em texto
+
+A narração é a fonte de tudo o que a partida mostra: o campo (T-085), a vibração e o som (T-047) só reforçam o que já está escrito nela e no placar.
+
+- **Uma linha por lance mostrado**, no formato da linha da súmula (MatchTimeline): minuto em coluna de largura fixa, ícone em coluna própria (quando há), a **palavra do tipo** em `body-strong`, o texto do lance em `body` e, embaixo, o nome curto do clube em `caption` `ink-muted`. Mesma linha, mesmas palavras de tipo da súmula (`report.event.*`) onde o lance é o mesmo, para o jogador reconhecer o gol ou o cartão nos dois lugares.
+- **A mais recente em cima** (decisão 7), logo abaixo do placar (e, na T-085, do campo): o olho sai do campo e cai na linha nova, sem rolagem automática e sem a lista pular quando o jogador está lendo uma linha antiga. As linhas antigas ficam embaixo, roláveis. Muda a recomendação da versão anterior desta spec (a mais recente embaixo, perto do polegar): a narração é lida, não tocada, e o polegar fica com a barra.
+- **Gol:** a linha tem o fundo `grass-soft` (texto só em `ink`) e a palavra "Gol" escrita; o fundo só reforça.
+- **Cartão:** o ícone `card` em `floodlight` ou `danger`, como na súmula; a palavra do tipo é a pista.
+- **Fases** (começo, acréscimos, intervalo, 2º tempo, fim): linha só com a palavra do tipo, sem clube.
+- **Na T-032, uma frase fixa por tipo** (chaves em `ui.json`, abaixo). Na T-086, o texto ganha variantes, e a palavra do tipo e o nome do jogador continuam sempre lá.
+
+| Evento do motor              | Animada completa | Só lances principais | Linha (palavra do tipo · texto)                                                                                                                    | Pausa dramática                        | Anúncio (`aria-live`)           |
+| ---------------------------- | ---------------- | -------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- | ------------------------------- |
+| `kickoff`                    | sim              | sim                  | `match.live.kickoff`                                                                                                                               | —                                      | —                               |
+| `chance`, importância 1      | sim              | não                  | `match.live.shot` ou `match.live.freeKick` · `match.live.outcome.saved`, `.post` ou `.wide`                                                        | —                                      | —                               |
+| `chance`, importância 2      | sim              | sim                  | o começo `match.live.build.shot` ou `.freeKick`, depois o desfecho como acima                                                                      | sim                                    | —                               |
+| `goal` (jogada ou falta)     | sim              | sim                  | o mesmo começo de uma chance do mesmo tipo; no desfecho, `report.event.goal` · nome, tipo curto (`match.goal.*`) e `report.event.assist` se houver | sim                                    | `match.live.goal.a11y`          |
+| `penaltyAwarded`             | sim              | sim                  | `match.live.penalty` · `match.live.penalty.taker` (é o começo do lance)                                                                            | sim, até o `goal` ou o `penaltyMissed` | `match.live.penalty.a11y`       |
+| `goal` de pênalti            | sim              | sim                  | `report.event.goal` · nome e `match.goal.penalty`                                                                                                  | (o desfecho)                           | `match.live.goal.a11y`          |
+| `penaltyMissed`              | sim              | sim                  | `report.event.penaltyMissed` · `match.live.outcome.*`                                                                                              | (o desfecho)                           | `match.live.penaltyMissed.a11y` |
+| `yellow`                     | sim              | não                  | `report.event.yellow` (ou `.yellowSuspended`) · nome; ícone `card` amarelo                                                                         | —                                      | —                               |
+| `red`                        | sim              | sim                  | `report.event.red` (ou `.redSecondYellow`) · nome; ícone `card` vermelho                                                                           | —                                      | `match.live.red.a11y`           |
+| `injury`                     | sim              | sim                  | `report.event.injury` · nome; ícone `injury`                                                                                                       | —                                      | —                               |
+| `substitution`               | sim              | não                  | `report.event.sub` · `report.event.subDetail`; ícone `swap`                                                                                        | —                                      | —                               |
+| `tacticChange`               | sim              | não                  | `match.live.tactic` · `match.live.tactic.press`, `.holdResult`, `.allOut` (pelo `preset`) ou `match.live.tactic.change` (postura e pressão)        | —                                      | —                               |
+| `stoppage`                   | sim              | sim                  | `match.live.stoppage.one`, `.other` ou `.none`                                                                                                     | —                                      | —                               |
+| `halftime`                   | sim              | sim                  | `match.live.halftime`                                                                                                                              | —                                      | `match.live.halftime.a11y`      |
+| `halftimeTalk`               | não              | não                  | — (a conversa do técnico é da T-033; a da IA não é narrada)                                                                                        | —                                      | —                               |
+| começo do 2º tempo (da tela) | sim              | sim                  | `match.live.secondHalf`                                                                                                                            | —                                      | —                               |
+| `fulltime`                   | sim              | sim                  | `match.live.fulltime` (encerrado: `match.live.fulltime.abandoned`)                                                                                 | —                                      | `match.live.fulltime.a11y`      |
+
+- **"Só lances principais"** é a importância do motor (`importance ≥ 2`, [partida.md do jogo](../partida.md#eventos-o-que-a-partida-animada-a-narração-as-notícias-e-a-rede-social-consomem)) mais as fases (começo, acréscimos, 2º tempo), que são marcos do relógio. Isso inclui a lesão (importância 2), além de gols, chances claras, pênaltis e vermelhos da US-020: a lesão interessa ao técnico, que na T-033 vai querer trocar o jogador.
+- **Vários lances no mesmo minuto** aparecem em ordem, um depois do outro, cada um com a sua duração.
+
+## Pausa dramática
+
+- **Quando:** em todo gol, em toda chance clara (`chance` de importância 2: `pGoal ≥ 0,25` ou bola na trave) e em todo pênalti. Chance de importância 1 nunca tem pausa. Assim a pausa sempre anuncia "pode ser gol", e o desfecho fica em aberto (pelos números do motor, cerca de um terço das pausas termina em gol).
+- **Como:** a linha do lance aparece com o **começo** ("Fulano finaliza…"), espera a pausa da tabela e é **trocada no lugar** pelo desfecho ("Gol" com o nome, ou "Finalização" com "o goleiro defende"). O placar só muda no desfecho. Nada se move na lista: a linha muda de texto, não de posição.
+- **Nada antecipa o desfecho.** O começo de um gol e o de uma chance do mesmo tipo (jogada ou falta) são **idênticos**: mesma chave, mesmas variáveis (só `{player}` e `{club}`; a assistência existe só no gol e por isso só aparece no desfecho), mesma duração. No pênalti, o começo é o próprio `penaltyAwarded`. O leitor de tela não ouve o começo; ouve o desfecho. O som (T-047) e a vibração tocam no desfecho, nunca antes (ADR-0016, regra 9). Na T-085, o campo faz o mesmo movimento até o desfecho nos dois casos.
+- **Movimento reduzido:** a pausa continua, só como o atraso do texto, sem nenhum efeito visual (US-020).
+- **Pular** durante a pausa vai ao resultado normalmente; **Pausar** durante a pausa espera o desfecho e para no fim do minuto.
+
+## Conteúdo (de cima para baixo, no celular em pé)
+
+**T-032 (sem campo):**
+
+1. **Cabeçalho** (ScreenHeader só com o título, sem voltar e sem "Mais"): `round.title` ("Rodada 5") como `h1`. Na T-047, o botão de mudo entra à direita do cabeçalho.
+2. **Scoreboard** `size="md"` (escudo `sm`, gols em `display-lg`), com a linha de cima `round.mine.meta` (mando e estádio, como no resumo) e, embaixo dos gols, no lugar do selo, a **linha ao vivo**: o minuto em `numero` e a fase em `caption` (`match.phase.*`), e, com a partida pausada, `match.paused` em `body-strong` ao lado (o texto é a pista; nenhuma cor nova). O meu clube em `body-strong`. Números em `tabular-nums`.
+3. **Narração** (CommentaryFeed, `section` com o `h2` escondido `match.feed.title`): a lista, a mais recente em cima, ocupando o resto da altura, rolável.
+4. **Barra de controles** (ActionBar, fixa embaixo): à esquerda, **Pausar/Continuar** (`match.pause`/`match.resume`, ícone `pause`/`play`, secundário) e **Rápido** (`match.fast`, secundário, `aria-pressed`); à direita, separado pelo espaço livre da barra, **Pular** (`match.skip`, ícone `skip`, secundário). Nenhum primário enquanto a bola rola. No apito final, a barra mostra à esquerda o estado da gravação (ícone e texto, as chaves `round.saving`, `round.saved` e `round.unsaved` do resumo) e à direita **"Ver resumo"** (`match.toSummary`, primário, o único primário da tela).
+
+**T-085 (com campo):** entre o Scoreboard e a narração entra o **MatchPitch**, de borda a borda (sem margem lateral e sem raio), com a **GoalCelebration** sobre a parte de baixo do campo quando há gol. O resto não muda.
+
+## Campo 2D (T-085)
+
+**Desenho.** Campo visto de cima, **deitado** (comprimento na horizontal): a 360px, 360px de largura e cerca de 240px de altura (o campo de 105 × 68 mais uma faixa de grama em volta). Gramado em `pitch`, marcações em `pitch-line` (decorativas), lidos dos tokens em tempo de execução (`getComputedStyle`); com a troca de tema, o campo se redesenha. Nenhum texto é desenhado no canvas (nada para traduzir, nada que só o canvas diga).
+
+**Lados fixos.** O mandante fica à esquerda e ataca para a direita o jogo todo, sem trocar de lado no intervalo: é o mesmo lado do escudo dele no placar, e a posição no campo vira mais uma pista que não depende da cor (decisão 11).
+
+**Bolinhas sem depender da cor** (proposta 35 ao design system):
+
+- cada jogador é um disco no tamanho de 18px a 360px, pintado com a cor principal do uniforme e com um anel de 2px em `ink` (que fica a 5,94:1 sobre `pitch` no tema noite e 4,09:1 no dia, acima de 3:1 para elementos gráficos), para separar qualquer uniforme do gramado, até o verde;
+- **o visitante tem uma marca de forma**: um ponto no centro do disco, com um terço do diâmetro, na cor de contraste do uniforme; o mandante, disco liso. A diferença entre os dois times vale para quem não distingue as cores e quando os uniformes são parecidos;
+- o goleiro usa a cor de goleiro do uniforme, com a mesma marca do seu time;
+- a bola é um disco menor (8px), em `ink`, sem anel;
+- cartões e números não aparecem no campo: ficam na narração.
+
+**O que a T-085 precisa da T-026 (uniformes).** O desenho da API é do `art-director` e do `developer`; a tela precisa de:
+
+1. uma função pura e determinística, a partir dos dois clubes da partida, que devolva para cada lado a **cor principal** (o disco), uma **cor de contraste** (a marca do visitante; pelo menos 3:1 contra a principal) e a **cor do goleiro** (diferente das principais dos dois times);
+2. a **regra de choque** dentro do gerador: se as principais dos dois lados ficarem parecidas demais, o visitante usa o segundo uniforme (o limite é do `art-director`); a tela nunca escolhe cor;
+3. cores como dado (hex), como as do escudo, sem token; nada que imite uniforme real (ADR-0014; só cor, que é permitida);
+4. nenhuma marca na camisa na 1a (README, "Marcas fictícias no cenário").
+
+**Coreografia (decorativa).** As posições saem da formação de cada ficha (a mesma ordem das vagas do `PITCH_LAYOUT`, girada para o campo deitado) e de uma semente própria da tela (`${seed da partida}-pitch`), então a mesma partida desenha sempre igual (bom para o E2E):
+
+- minuto sem lance: a bola anda devagar pelo meio-campo e os times acompanham em bloco;
+- lance (chance, gol, pênalti): a bola vai ao terço de ataque do lado do lance, o finalizador se aproxima e a bola segue para o gol; nos últimos 600 ms (Normal) da pausa dramática, tudo anda a 40% da velocidade (a **câmera lenta**, sem zoom). O movimento até o desfecho é o mesmo para gol e para chance; no desfecho, a bola entra (gol), para no goleiro (defesa), bate na trave e volta (trave) ou sai ao lado do gol (fora);
+- cartão, lesão e troca: a bola para onde está pelo tempo do lance; a bolinha do expulso sai do campo; a troca não muda nada no desenho (a vaga continua ocupada);
+- intervalo e fim: os times voltam às posições da formação e a bola vai ao centro;
+- sem tremor, sem zoom, sem flash.
+
+**Comemoração (GoalCelebration).** No desfecho de qualquer gol, sobre a parte de baixo do campo: um cartão em `surface-1` com o escudo `md` do clube que marcou, a palavra `match.celebration.title` em `display-lg` e o nome do artilheiro em `subtitulo`, durante o "depois de um gol revelado" da tabela. Entra com um aumento de 200 ms; com movimento reduzido, aparece parada. É `aria-hidden` (repete a linha da narração e o anúncio).
+
+**Placas.** Na T-085 não há placas: a faixa de grama em volta do campo é só gramado. As placas com marcas fictícias (`pitch-boards`) entram com a T-040 (US-041), nessa faixa; nenhum espaço fica vazio esperando por elas.
+
+**Canvas que falha.** Sem contexto 2D (ou com erro ao desenhar), o campo some e a partida segue no leiaute da T-032, sem aviso: o campo é decorativo. O erro é registrado em `lib/errors` sem dados pessoais.
 
 ## Ao alcance do polegar
 
-Toda a barra de controles e as folhas. O placar fica em cima, só para leitura.
+Toda a barra de controles e as folhas. "Pular" fica na outra ponta da barra, longe de "Pausar", para não ser tocado sem querer. O placar e o campo ficam em cima, só para leitura; a narração, no meio, só se rola.
 
 ## Estados
 
-- **Carregando:** tela de carregamento com BrandSlot se a simulação demorar.
-- **Erro:** ErrorState com "Tentar de novo"; a rodada não é aplicada pela metade (US-019).
-- **Pausada:** controles visíveis, indicação "pausada" em texto.
-- **Offline:** nada muda.
-- **Nova versão:** aviso suprimido até o Resumo (US-039).
+| Estado                                                       | O que aparece                                                                                                                                                                                                                                                                                                                             |
+| ------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Calculando** (antes de a partida abrir)                    | "Jogar rodada" em `busy`, como na T-030. Sem tela de carregamento (a de marca é da T-040, se a espera existir). Meta em "Desempenho".                                                                                                                                                                                                     |
+| **Em andamento**                                             | O relógio corre; Pausar, Rápido e Pular ativos.                                                                                                                                                                                                                                                                                           |
+| **Pausada**                                                  | `match.paused` na linha ao vivo; "Continuar" no lugar de "Pausar"; Rápido e Pular continuam.                                                                                                                                                                                                                                              |
+| **Pausa dramática**                                          | A linha com o começo do lance; o placar parado. Os controles funcionam (Pausar espera o desfecho).                                                                                                                                                                                                                                        |
+| **Intervalo**                                                | Fase `match.phase.half`; o relógio continua sozinho depois da duração da tabela (T-032). Na T-033, a tela do Intervalo.                                                                                                                                                                                                                   |
+| **Fim de jogo, gravando**                                    | Fase `match.phase.end`; barra com `round.saving` e "Ver resumo" em `busy`.                                                                                                                                                                                                                                                                |
+| **Fim de jogo, salva**                                       | Barra com `check` + `round.saved` e "Ver resumo" ativo.                                                                                                                                                                                                                                                                                   |
+| **Fim de jogo, gravação recusada** (`quota-exceeded` e cia.) | Barra com `warning` + `round.unsaved` e "Ver resumo" ativo; o resumo abre com o Banner do código, como na T-030.                                                                                                                                                                                                                          |
+| **Erro de outra aba ao gravar** (`conflict` e cia.)          | O ErrorState `screen` do código, com a linha de rodada não salva, como na T-030 (`FatalScreen`).                                                                                                                                                                                                                                          |
+| **Pulando**                                                  | Controles em `busy`, `match.skipping` para o leitor de tela; quando a gravação termina, o resumo.                                                                                                                                                                                                                                         |
+| **Erro ao montar a partida** (o motor ou a camada lança)     | A partida não abre; a área da aba mostra o ErrorState `area` do erro inesperado, como o erro ao jogar da T-030. Nada foi aplicado.                                                                                                                                                                                                        |
+| **Erro ao desenhar a partida** (fronteira de erro)           | ErrorState `screen`: `error.unexpected.title`, `match.error.body` (a rodada ainda não foi jogada), "Tentar de novo" (primário, recomeça a partida do 0') e `match.error.skip` (secundário, joga e grava a rodada e abre o resumo, como Pular). Uma animação quebrada nunca impede a rodada. Registra em `lib/errors`.                     |
+| **Erro ao jogar no fim** (o `playRound` lança)               | A rodada não foi aplicada (a carreira volta à anterior, como na T-030). ErrorState `screen` com `error.unexpected.title`, `match.error.body`, "Tentar de novo" (primário: joga e grava de novo, sem repetir a partida) e `match.error.leave` (secundário: volta à aba de origem, com a rodada ainda por jogar). Registra em `lib/errors`. |
+| **Canvas indisponível** (T-085)                              | O leiaute da T-032, sem aviso.                                                                                                                                                                                                                                                                                                            |
+| **0 × 0**                                                    | Nada especial; o resumo mostra `round.goals.none`.                                                                                                                                                                                                                                                                                        |
+| **Jogo encerrado** (`abandoned`)                             | O relógio para no minuto do abandono; o placar passa ao placar dado; a linha `match.live.fulltime.abandoned` e o anúncio de fim.                                                                                                                                                                                                          |
+| **Realismo simplificado**                                    | Igual; `report.event.yellowSuspended` nunca aparece (como na súmula).                                                                                                                                                                                                                                                                     |
+| **Rodada 38**                                                | Igual; depois do resumo, o fluxo da T-037.                                                                                                                                                                                                                                                                                                |
+| **Vazio**                                                    | Não existe: a partida só abre com uma rodada para jogar.                                                                                                                                                                                                                                                                                  |
+| **Offline**                                                  | Nada muda.                                                                                                                                                                                                                                                                                                                                |
+| **Nova versão**                                              | O aviso fica suprimido durante a partida e aparece no resumo (US-039, T-039).                                                                                                                                                                                                                                                             |
 
-## Componentes
+## Fechar o jogo no meio (US-019, cenário 4)
 
-Scoreboard, MatchPitch, CommentaryFeed, GoalCelebration, BrandSlot, BottomSheet, OptionGroup, PlayerCard (`row`), Button, StatusBadge.
+Na partida assistida, a rodada só é jogada e gravada no apito final (ou no Pular). Por isso:
+
+| Quando fecha                                          | Ao reabrir                                                                                                                                                                                                                                 |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| Durante a partida, antes do apito final               | A carreira está na rodada anterior, sem nada aplicado: Clube com "próxima rodada: N" e "Jogar rodada" pronto. Jogar de novo, com a mesma ficha, mostra a mesma partida, lance a lance (motor determinístico, mesma semente, sem comandos). |
+| Depois do apito, antes de a gravação terminar         | Igual à T-030: ou nada aplicado, ou tudo (a gravação é uma transação).                                                                                                                                                                     |
+| Depois de a gravação terminar (antes de "Ver resumo") | A carreira está na rodada seguinte, com tudo aplicado; abre no Clube, sem repetir o resumo (decisão 3 da T-030).                                                                                                                           |
+
+**Limite conhecido** (decisão 10): quem fecha o jogo no meio da partida, muda a escalação e joga de novo pode ter outro resultado. É o mesmo que já dá para fazer importando um backup, numa carreira offline de um jogador só; travar exigiria gravar "partida em andamento" no save (mudança de formato, ADR). Recomendação: aceitar na 1a.
+
+## Celular em pé (360px), deitado e desktop
+
+- **360px (T-032):** coluna única. Cabeçalho, Scoreboard `md` (cerca de 110px com a linha ao vivo), narração com o resto da altura, barra fixa. A 360×740 cabem pelo menos 8 linhas de narração de uma linha. Os três controles numa linha só, nos três idiomas (Pausar/Pausa ~100px, Rápido/Fast ~100px, Pular/Skip ~90px, cada um ≥ 44px); se um rótulo não couber, o botão quebra em duas linhas, nunca corta.
+- **360px (T-085):** o campo de borda a borda (cerca de 240px) entre o placar e a narração; cabem pelo menos 5 linhas de narração a 360×740.
+- **Deitado (844×390):** abaixo de `breakpoint-short`, a barra fica com uma linha (com os rótulos, que cabem nos 844px). T-032: coluna centralizada com `layout-content-max`. T-085: duas colunas, o campo à esquerda com a altura disponível acima da barra (cerca de 330px de altura e 510px de largura) e, à direita, o Scoreboard `md` e a narração (pelo menos 3 linhas visíveis).
+- **Desktop (a partir de 900px):** tela cheia sem barra lateral. T-032: coluna centralizada com `layout-content-max`, a barra presa ao pé da coluna (o ActionBar já faz). T-085: o campo à esquerda, ocupando até 60% da largura útil (dentro de `layout-wide-max`), e uma coluna à direita com o Scoreboard, a narração e a barra no pé da coluna.
+
+## Movimento
+
+- **T-032:** nada se move. A linha nova aparece no topo sem deslizar; a linha da pausa dramática troca de texto no lugar; o placar muda de número sem animação. O único movimento é o do botão em `busy`, que já para com movimento reduzido.
+- **T-085:** o campo (bolinhas e bola), a câmera lenta e a entrada da GoalCelebration. Sem tremor, sem zoom, sem flash (nenhum clarão acima de 3 por segundo, nem perto disso).
+- **`prefers-reduced-motion` (US-020):** o campo fica **parado**, redesenhado só a cada lance (os times nas posições da formação e a bola no ponto do lance); sem câmera lenta; a GoalCelebration aparece parada; a narração e o placar mudam sem movimento; a pausa dramática vira só o atraso do texto. O relógio continua correndo (é um número que muda, não movimento). A vibração (onde quer que entre) não acontece com movimento reduzido (decisão 11 da auditoria de 2026-11-05).
+
+## Vibração
+
+US-020: uma vibração quando o clube do técnico marca, só no Android (onde `navigator.vibrate` existe), só com a preferência ligada e nunca com movimento reduzido; nenhuma vibração em gol do adversário, cartão ou fim de jogo. Um pulso de cerca de 200 ms, no desfecho do gol (nunca no começo do lance).
+
+**Onde entra (decisão 9):** a recomendação é a **T-041**, junto do Toggle "Vibração" das Preferências ([preferencias.md](preferencias.md)), ligado por padrão nos aparelhos que vibram. Assim a vibração nunca existe sem o controle de desligar. A T-032 só deixa o ponto de revelação do gol (o mesmo do som), sem vibrar.
 
 ## Acessibilidade
 
-- Tudo o que o canvas mostra de importante (gol, cartão, substituição, minuto) também está em texto na narração e no placar; o canvas tem `aria-hidden` e um resumo acessível.
-- Gols, cartões e fim de tempo anunciados por `aria-live="polite"`; o resto não, para não inundar o leitor de tela.
-- **Reduced motion:** sem câmera lenta, tremor, comemoração animada nem movimento das bolinhas; a narração e o placar mudam sem movimento (US-020). A pausa dramática vira só o atraso do texto, sem efeito visual.
-- Sem flashes acima de 3 por segundo.
-- Vibração só no gol do próprio clube e só se ligada nas Preferências.
-- Controles ≥ 44px; "Pular" separado dos outros para não ser tocado sem querer.
+- **Tudo em texto:** cada lance mostrado está na narração, com a palavra do tipo; o placar e o minuto estão no Scoreboard. O campo (T-085) é `aria-hidden` e não tem resumo próprio: a narração e o placar já são a versão acessível. A GoalCelebration também é `aria-hidden`.
+- **Anúncios** (`aria-live="polite"`, `aria-atomic`, numa região escondida do Scoreboard): só gol (depois do desfecho), pênalti marcado, pênalti perdido, vermelho, intervalo e fim, com as frases `match.live.*.a11y` (placar em palavras: "Gol de Leões, Fulano, minuto 23. Leões 1, Tubarões 0."). Chances, amarelos, trocas, mudanças táticas e o minuto não são anunciados, para não inundar o leitor. O começo da pausa dramática não é anunciado.
+- **A lista da narração** não é região viva. Cada linha é lida numa frase só, escondida, como na MatchTimeline (`minuteA11y`, palavra do tipo, texto, clube); as partes visíveis ficam `aria-hidden`.
+- **Placar:** `a11yLabel` com `match.score.a11y` (atualizado no desfecho), e a linha ao vivo lida depois dele (minuto por `match.minute.a11y`, fase, pausada).
+- **Foco:** ao abrir a partida, o foco vai para o `h1` (`tabindex="-1"`). "Pausar" e "Continuar" são o mesmo botão (o foco fica nele ao trocar). No apito final, o foco não pula sozinho; "Ver resumo" é o último da ordem de foco. A folha "Sair da partida?" foca o X ao abrir e devolve o foco ao `h1` ao fechar.
+- **Alvos ≥ 44px:** todos os controles, o segmento do seletor e as cartas da folha.
+- **Rápido** com `aria-pressed` e o ícone `check` quando ligado; "Pausada" em texto; nunca só cor.
+- **Contraste:** só pares conferidos pelo `npm run tokens` (`ink` sobre `grass-soft` na linha do gol, `ink` e `ink-muted` sobre `surface-0/1`, `on-grass` sobre `grass`). No campo, o anel `ink` sobre `pitch` (5,94 e 4,09:1) é elemento gráfico (≥ 3:1).
+- **Sem flashes** acima de 3 por segundo; sem contagem regressiva para nada.
 
-## Desktop
+## Desempenho no celular
 
-Campo à esquerda; placar, narração e controles numa coluna à direita.
+| Medida                                                    | Meta (Chromium, 4× de lentidão de CPU)                                                                                                      | Parte |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----- |
+| Do toque em "Jogar rodada" ao `h1` da partida visível     | p90 de 10 rodadas ≤ 300 ms (é o `prepareRound` mais uma partida, cerca de um décimo da rodada)                                              | T-032 |
+| Do toque em Pular (ou do apito) ao `h1` do resumo visível | p90 ≤ 500 ms, a mesma meta da rodada na T-030 (§5 da arquitetura)                                                                           | T-032 |
+| Tarefas longas durante a partida                          | nenhuma acima de 50 ms entre o apito inicial e o final (`PerformanceObserver` de `longtask`)                                                | T-032 |
+| Duração da partida                                        | a soma dos passos bate com a tabela de "Relógio da partida", ±5%, com relógio falso (Vitest)                                                | T-032 |
+| Quadros do campo                                          | p95 do intervalo entre quadros ≤ 34 ms (30 quadros por segundo no pior caso) a 390×844 com densidade 3                                      | T-085 |
+| Desenho de um quadro                                      | mediana ≤ 6 ms; o gramado e as marcações desenhados uma vez num canvas fora da tela e copiados; nenhuma alocação por quadro                 | T-085 |
+| Canvas parado                                             | nenhum `requestAnimationFrame` com a partida pausada, com a página escondida, no fim e, com movimento reduzido, entre um lance e outro      | T-085 |
+| Resolução do canvas                                       | densidade de pixels limitada a 2 (o campo a 360px tem 720 × 480 pixels, não 1080 × 720)                                                     | T-085 |
+| Código                                                    | a tela da partida e o campo num chunk próprio, carregado ao abrir a primeira partida e no precache (funciona offline); o campo ≤ 20 KB gzip | T-085 |
+
+Se uma meta passar, volta ao `architect` antes de a tela virar tela de espera.
+
+## Componentes
+
+Props em [componentes.md](componentes.md#casca-da-t-032-e-da-t-085-partida).
+
+| Tarefa | Reaproveitados                                                                                                           | Novos                       | Mudanças                                                                                                                     |
+| ------ | ------------------------------------------------------------------------------------------------------------------------ | --------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| T-032  | ScreenHeader (só título), ActionBar, Button, BottomSheet, OptionGroup, Icon, ErrorState, ErrorBoundary (`screen`), Crest | CommentaryFeed              | Scoreboard: `live?` e `announcement?`; PlayRoundButton: `mode?` (segmento do seletor); Icon: `pause`, `skip`, `chevron-down` |
+| T-085  | Crest, Scoreboard                                                                                                        | MatchPitch, GoalCelebration | —                                                                                                                            |
+| T-086  | CommentaryFeed                                                                                                           | —                           | —                                                                                                                            |
+
+Nenhum token novo de cor. Os ícones novos e o botão dividido são propostas ao design system (33 e 34 em componentes.md); a forma das bolinhas, a 35; as durações, a 36; o placar ao vivo, a 37.
+
+## O que a tela lê e pedidos ao `architect`
+
+| Dado                          | De onde                                                                                                                                         |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A partida do técnico          | Um método novo do `CareerService` que monta o `prepareRound` (ficha e modo) e devolve o `MatchResult` da partida do clube do técnico (pedido 1) |
+| Nomes                         | `game.players[id].name.display`; clube pelo nome curto; estádio por `clubs[homeId].def.stadium.name`, como no resumo                            |
+| Formação de cada lado (T-085) | `MatchInput.home.sheet.formation` e `.away.sheet.formation` do plano                                                                            |
+| Uniformes (T-085)             | A API do gerador da T-026                                                                                                                       |
+| Fim da rodada                 | `CareerService.playRound` com a mesma ficha e o mesmo modo (passo 5 do fluxo)                                                                   |
+| Velocidade                    | `kv` › `match.speed`                                                                                                                            |
+
+Pedidos ao `architect` (a interface não calcula regra: §3, "Interface"):
+
+1. **A partida ao vivo pela camada de carreira.** A tela não pode chamar o `simulateMatch` direto. Proposta: `CareerService.liveMatch(input)` (nome do `developer`), com o mesmo `PlayInput` do `playRound`, que devolve o `MatchResult` da partida do técnico e, na T-033, aceita os comandos dados até ali. Teste: para a mesma entrada, o resultado é idêntico ao `report.results[i]` do `playRound`.
+2. **O tipo escolhido no seletor:** `PlayInput.matchMode?`, que vale no `liveMatch` e no `playRound` daquela rodada e é gravado em `career.matchMode` no snapshot da rodada. Não muda o formato do save (o campo já existe).
+3. **Até a T-033, o auxiliar comanda o clube do técnico também nos modos assistidos** (decisão 2): sem comandos na tela, com `controller: 'human'` o time só faria a troca por lesão (regra 1), e os reservas perderiam moral e minutos toda rodada ([ia-clubes.md](../ia-clubes.md), "No modo 'só resultado'"). Proposta: na T-032, o `CareerService` passa ao motor `'result'` para o clube do técnico em qualquer modo, e a T-033 passa a mandar `'full'` e `'highlights'` quando os comandos existirem. Muda a decisão do `architect` "repassa o valor do save sem traduzir" (§4.1, `coaches`), por isso é pedido, não escolha da tela.
+4. **Preferência do aparelho:** a chave `match.speed` no `kv`, como o `newGame.last`.
+
+## Fronteira com as outras tarefas
+
+| Tarefa  | O que é dela, não da T-032                                                                                                                                                                                                                                                                                                                           |
+| ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| T-085   | O campo 2D, a câmera lenta, a GoalCelebration, os leiautes com campo, "Animada completa" oferecida e padrão.                                                                                                                                                                                                                                         |
+| T-086   | As variantes da narração (`commentary.json`).                                                                                                                                                                                                                                                                                                        |
+| T-026   | Os uniformes e a regra de choque de cores, pela API do gerador.                                                                                                                                                                                                                                                                                      |
+| T-033   | US-021 e US-022: Comandos, Substituir (com o contador) e Tática na barra e nas folhas, a pausa do intervalo com a conversa (o Intervalo, [intervalo.md](intervalo.md)), a narração da conversa do técnico, o fim do auxiliar nos modos assistidos (pedido 3) e o critério 2 da US-020 reescrito (decisão 3). Ver "O que a T-033 acrescenta", abaixo. |
+| T-040   | As marcas fictícias: placas em volta do campo (`pitch-boards`, desenhadas pelo MatchPitch na faixa de grama), a faixa do placar (`scoreboard`) e a tela de carregamento, se a espera existir.                                                                                                                                                        |
+| T-041   | As Preferências: o tipo de partida sem jogar (US-044) e, pela recomendação da decisão 9, a vibração com o seu Toggle.                                                                                                                                                                                                                                |
+| T-045   | A faixa com o placar ao vivo dos outros 9 jogos (US-070), entre o Scoreboard e o campo, e a tabela ao vivo (US-071). Ela usa o mesmo relógio da T-032 (o minuto da partida assistida) e para quando a partida pausa.                                                                                                                                 |
+| T-046   | O plantão dos outros jogos (US-072 a US-074).                                                                                                                                                                                                                                                                                                        |
+| T-047   | O som (ADR-0016): o diretor de áudio é chamado no **mesmo ponto de revelação** da narração (§4.6, "Quem chama"); a pergunta única "Quer ouvir o estádio?" na primeira partida e o botão de mudo à direita do cabeçalho da Partida. A T-032 deixa um único ponto onde cada lance é revelado, documentado no código, para a T-047 só se inscrever.     |
+| Etapa 4 | Replay, narração em voz (ElevenLabs, só com lote aprovado) e "Tempo real".                                                                                                                                                                                                                                                                           |
+
+## O que a T-033 acrescenta (para não perder o desenho anterior)
+
+- Na barra: Comandos, Substituir (com o número restante) e Tática; abrir qualquer folha pausa a partida no fim do minuto. Como a barra da T-032 já tem três controles, a T-033 decide se agrupa os três novos num "Mexer no time" ou se a barra passa a duas linhas a 360px.
+- Folhas (BottomSheet, com a partida pausada): Comandos (pressionar, segurar o resultado, todo mundo no ataque), Substituir (titular sai, reserva entra; recusa com motivo ao passar do limite) e Tática (formação, postura, pressão).
+- O comando sai com `minute: M − 1` quando o relógio mostra `M'` (a convenção de "Relógio da partida").
+- Depois de um comando, o `liveMatch` recalcula a partida do minuto da mudança em diante; os lances já mostrados não mudam (o motor garante: mesmos eventos até o minuto `M`).
+
+## Textos (chaves)
+
+Para o `content-writer`; os textos vão ao CEO no próximo lote. Todas em `app/src/content/<idioma>/ui.json`, menos as da T-086. As larguras são a 360px, medidas na fonte de cada lugar. Na narração, a coluna de texto tem cerca de 244px (depois do minuto e do ícone), como a da súmula. Plural pelo `tPlural`. Nomes de clube, estádio e jogador nunca se traduzem. Nenhuma chave escreve o resultado só por cor.
+
+### Já existem e são reaproveitadas
+
+| Chave                                                                                                                                        | Onde                                                                      | Parte |
+| -------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------- | ----- |
+| `play.label`, `play.busy`, `play.blocked.*`                                                                                                  | "Jogar rodada" e o primário da folha do seletor                           | T-032 |
+| `newGame.match.full`, `.highlights`, `.result` e os `.body`                                                                                  | as cartas da folha do seletor e a linha do tipo embaixo de "Jogar rodada" | T-032 |
+| `round.title`, `round.mine.meta`, `match.venue.*`                                                                                            | `h1` e linha de cima do placar                                            | T-032 |
+| `match.score.versus`, `match.score.a11y`, `match.minute`, `match.minuteAdded`, `match.minute.a11y`, `match.minuteAdded.a11y`                 | placar e minutos                                                          | T-032 |
+| `match.goal.penalty`, `.freeKick` e os `.a11y`, `match.abandoned`, `match.player.unknown`                                                    | linha do gol, jogo encerrado, nome ausente                                | T-032 |
+| `report.event.goal`, `.assist`, `.penaltyMissed`, `.yellow`, `.yellowSuspended`, `.red`, `.redSecondYellow`, `.injury`, `.sub`, `.subDetail` | palavras do tipo e textos da narração, iguais aos da súmula               | T-032 |
+| `tactic.posture.*`, `tactic.pressure.*`                                                                                                      | dentro de `match.live.tactic.change`                                      | T-032 |
+| `round.saving`, `round.saved`, `round.unsaved`                                                                                               | estado da gravação na barra do fim de jogo                                | T-032 |
+| `nav.close`, `action.retry`, `error.unexpected.title`, `error.code`, `save.<código>.*`                                                       | folhas e erros                                                            | T-032 |
+
+### Textos que mudam (chaves que já existem)
+
+| Chave                           | Por quê                                                                                                                  | Parte |
+| ------------------------------- | ------------------------------------------------------------------------------------------------------------------------ | ----- |
+| `newGame.match.highlights.body` | Hoje promete "você ainda mexe no time": os comandos só chegam na T-033 (P3). Volta a dizer isso na T-033.                | T-032 |
+| `newGame.match.note`            | Hoje cita as Preferências, que só chegam na T-041. Na T-032, só "antes de cada rodada"; a T-041 devolve as Preferências. | T-032 |
+| `newGame.match.full.body`       | Hoje promete "mexa no time ao vivo": na T-085, só o campo; a T-033 devolve os comandos.                                  | T-085 |
+
+### Novas da T-032
+
+| Chave                           | Onde aparece                                                           | Limite a 360px                                                        | Placeholders                                                                                        |
+| ------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `play.mode.open`                | nome acessível do segmento do seletor                                  | —                                                                     | `{mode}` (o título da carta)                                                                        |
+| `play.mode.title`               | título da folha do seletor                                             | 1 linha em `subtitulo`, até ~260px (o X ocupa o resto)                | —                                                                                                   |
+| `play.mode.note`                | nota embaixo das cartas: a escolha vale para esta rodada e as próximas | até 2 linhas em `caption` em ~296px                                   | —                                                                                                   |
+| `match.feed.title`              | `h2` escondido da narração                                             | —                                                                     | —                                                                                                   |
+| `match.phase.first`             | fase na linha ao vivo                                                  | ~90px em `caption`                                                    | —                                                                                                   |
+| `match.phase.half`              | idem                                                                   | idem                                                                  | —                                                                                                   |
+| `match.phase.second`            | idem                                                                   | idem                                                                  | —                                                                                                   |
+| `match.phase.end`               | idem                                                                   | idem                                                                  | —                                                                                                   |
+| `match.paused`                  | "Pausada", ao lado da fase                                             | ~80px em `body-strong`                                                | —                                                                                                   |
+| `match.pause`                   | botão da barra                                                         | 1 linha em `botao` em ~100px, com o ícone                             | —                                                                                                   |
+| `match.resume`                  | o mesmo botão, pausado                                                 | idem                                                                  | —                                                                                                   |
+| `match.fast`                    | botão que liga a velocidade rápida                                     | 1 linha em `botao` em ~100px, com o `check`                           | —                                                                                                   |
+| `match.skip`                    | botão da barra, na outra ponta                                         | 1 linha em `botao` em ~90px, com o ícone                              | —                                                                                                   |
+| `match.skipping`                | leitor de tela, enquanto pula e grava                                  | —                                                                     | —                                                                                                   |
+| `match.toSummary`               | primário do fim de jogo                                                | 1 linha em `botao`, até ~150px (o estado da gravação fica com ~140px) | —                                                                                                   |
+| `match.leave.title`             | título da folha "Sair da partida?"                                     | 1 linha em `subtitulo`, ~260px                                        | —                                                                                                   |
+| `match.leave.body`              | a rodada só é salva no fim do jogo; para sair, pule para o resultado   | quebra livre em `body`                                                | —                                                                                                   |
+| `match.leave.skip`              | botão secundário da folha                                              | 1 linha em `botao` em ~296px                                          | —                                                                                                   |
+| `match.leave.stay`              | botão primário da folha (embaixo)                                      | idem                                                                  | —                                                                                                   |
+| `match.error.body`              | mensagem do ErrorState da partida: a rodada ainda não foi jogada       | quebra livre (`layout-message-max`)                                   | —                                                                                                   |
+| `match.error.skip`              | secundário do ErrorState: ir ao resultado                              | 1 linha em `botao`, quebra em 2 se precisar                           | —                                                                                                   |
+| `match.error.leave`             | secundário do erro ao jogar no fim: voltar sem jogar                   | idem                                                                  | —                                                                                                   |
+| `match.live.kickoff`            | palavra da linha do apito inicial                                      | até 2 linhas de ~244px em `body-strong`                               | —                                                                                                   |
+| `match.live.secondHalf`         | linha do começo do 2º tempo                                            | idem                                                                  | —                                                                                                   |
+| `match.live.halftime`           | linha do intervalo                                                     | idem                                                                  | —                                                                                                   |
+| `match.live.fulltime`           | linha do apito final                                                   | idem                                                                  | —                                                                                                   |
+| `match.live.fulltime.abandoned` | linha do fim do jogo encerrado (pode copiar `match.abandoned`)         | até 3 linhas de ~244px em `body`                                      | `{club}`                                                                                            |
+| `match.live.stoppage.one`       | linha dos acréscimos                                                   | 1 linha de ~244px em `body`                                           | `{count}`                                                                                           |
+| `match.live.stoppage.other`     | idem                                                                   | idem                                                                  | `{count}`                                                                                           |
+| `match.live.stoppage.none`      | sem acréscimo (25% dos primeiros tempos)                               | idem                                                                  | —                                                                                                   |
+| `match.live.shot`               | palavra do tipo da finalização de jogada                               | até ~110px em `body-strong`, como as da súmula                        | —                                                                                                   |
+| `match.live.freeKick`           | palavra do tipo da falta direta                                        | idem                                                                  | —                                                                                                   |
+| `match.live.penalty`            | palavra do tipo do pênalti marcado                                     | idem                                                                  | —                                                                                                   |
+| `match.live.build.shot`         | começo da pausa dramática numa jogada; **igual para gol e chance**     | 1 linha de ~244px em `body`                                           | `{player}` (só ele: nada que só o gol tenha)                                                        |
+| `match.live.build.freeKick`     | começo numa falta direta; igual para gol e chance                      | idem                                                                  | `{player}`                                                                                          |
+| `match.live.penalty.taker`      | texto do pênalti marcado (é o começo do pênalti)                       | idem                                                                  | `{player}`                                                                                          |
+| `match.live.outcome.saved`      | desfecho: o goleiro defende (finalização, falta ou pênalti perdido)    | até 2 linhas de ~244px em `body`                                      | `{player}`                                                                                          |
+| `match.live.outcome.post`       | desfecho: na trave                                                     | idem                                                                  | `{player}`                                                                                          |
+| `match.live.outcome.wide`       | desfecho: para fora                                                    | idem                                                                  | `{player}`                                                                                          |
+| `match.live.tactic`             | palavra do tipo da mudança tática                                      | até ~110px em `body-strong`                                           | —                                                                                                   |
+| `match.live.tactic.press`       | texto da mudança pelo atalho "pressionar"                              | até 2 linhas de ~244px em `body`                                      | `{club}`                                                                                            |
+| `match.live.tactic.holdResult`  | pelo atalho "segurar o resultado"                                      | idem                                                                  | `{club}`                                                                                            |
+| `match.live.tactic.allOut`      | pelo atalho "todo mundo no ataque"                                     | idem                                                                  | `{club}`                                                                                            |
+| `match.live.tactic.change`      | mudança sem atalho (a IA muda a postura)                               | idem                                                                  | `{club}`, `{posture}` (`tactic.posture.*`), `{pressure}` (`tactic.pressure.*`)                      |
+| `match.live.goal.a11y`          | anúncio do gol (leitor de tela)                                        | —                                                                     | `{club}`, `{player}`, `{minute}` (já em palavras), `{home}`, `{homeGoals}`, `{away}`, `{awayGoals}` |
+| `match.live.penalty.a11y`       | anúncio do pênalti marcado                                             | —                                                                     | `{club}`, `{player}`                                                                                |
+| `match.live.penaltyMissed.a11y` | anúncio do pênalti perdido                                             | —                                                                     | `{club}`, `{player}`                                                                                |
+| `match.live.red.a11y`           | anúncio do vermelho                                                    | —                                                                     | `{club}`, `{player}`                                                                                |
+| `match.live.halftime.a11y`      | anúncio do intervalo, com o placar                                     | —                                                                     | `{home}`, `{homeGoals}`, `{away}`, `{awayGoals}`                                                    |
+| `match.live.fulltime.a11y`      | anúncio do fim, com o placar                                           | —                                                                     | `{home}`, `{homeGoals}`, `{away}`, `{awayGoals}`                                                    |
+
+Uma regra para o lote: o `match.live.build.*` não pode dar pista do desfecho (nada de "bonito", "que perigo", "na cara do gol" que só caberia num gol).
+
+### Novas da T-085
+
+| Chave                     | Onde aparece                                       | Limite a 360px                                       | Placeholders |
+| ------------------------- | -------------------------------------------------- | ---------------------------------------------------- | ------------ |
+| `match.celebration.title` | a palavra grande da comemoração ("Gol!", sem nome) | 1 linha em `display-lg`, até ~200px nos três idiomas | —            |
+
+### T-086: templates da narração (não são chaves de `ui.json`)
+
+A narração com variantes conversa com os templates de notícias da T-021, mas não é a mesma coisa:
+
+- **Igual:** o formato de template (`{ id, event, context?, variants: [{ id, text }] }`), o renderizador, o catálogo de placeholders tipados (`player`, `club` e números) e a conferência do `content:check` (chaves iguais nos três idiomas, placeholders conhecidos, lista bloqueada). O `content-writer` escreve num formato só.
+- **Diferente:** a narração parte do `MatchEvent` (não do `Fact`), não é guardada no save (é montada na hora, então não há referência gravada nem `vars` para conferir na importação) e não usa a memória das últimas 200 frases. A escolha é determinística por `Rng(seedFromString(`${seed da partida}-commentary-${índice do evento}`))`, com uma regra própria: dentro de uma partida, uma variante só se repete depois de todas as do mesmo template terem saído. A mesma partida narra sempre igual (bom para o E2E e para o replay da Etapa 4).
+- **Arquivo:** `app/src/content/<idioma>/commentary.json`. O tom é o do narrador de rádio (presente, curto), diferente do jornalista das notícias; o `content-writer` mantém as duas vozes separadas.
+- **O que muda na tela:** só o texto da linha. A palavra do tipo, o minuto, o clube e o anúncio do leitor de tela continuam os das chaves da T-032; o nome do jogador tem de estar em toda variante de lance de jogador (regra do `content:check`).
+
+| Template                                                      | Evento e contexto                                                                                                          | Limite a 360px                   | Placeholders                                  | Mínimo de variantes |
+| ------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------- | --------------------------------------------- | ------------------- |
+| `commentary.build.shot`, `.build.freeKick`                    | começo da pausa dramática; **sem contexto nenhum** (o contexto de um gol entregaria o desfecho)                            | 1 linha de ~244px em `body`      | `{player}`, `{club}`                          | 6                   |
+| `commentary.goal`                                             | gol; contextos `mine`, `opponent`, `equalizer`, `lead`, `comeback`, `late` (85' ou depois), `derby`, `penalty`, `freeKick` | até 2 linhas de ~244px em `body` | `{player}`, `{club}`, `{assist}`              | 4 por contexto      |
+| `commentary.outcome.saved`, `.post`, `.wide`                  | desfecho sem gol                                                                                                           | até 2 linhas                     | `{player}`, `{club}`                          | 5                   |
+| `commentary.penalty`, `.penaltyMissed`                        | pênalti marcado e perdido                                                                                                  | até 2 linhas                     | `{player}`, `{club}`                          | 3                   |
+| `commentary.yellow`, `.red`, `.injury`, `.sub`                | cartões, lesão e troca (a troca com `reason` `injury`, `fatigue` ou `tactical` como contexto)                              | até 2 linhas                     | `{player}` (troca: `{in}`, `{out}`), `{club}` | 3                   |
+| `commentary.kickoff`, `.halftime`, `.secondHalf`, `.fulltime` | fases; o fim com contexto `win`, `draw` ou `loss` do lado do técnico, e `abandoned`                                        | até 2 linhas                     | `{home}`, `{away}`, gols                      | 3                   |
+
+Linhas de ambiente nos minutos sem lance ("o jogo fica no meio-campo") ficam fora: o motor não tem nada nesses minutos, e a narração inventaria um jogo que não houve (decisão 12).
+
+## Medidas para o E2E
+
+Com `PRANCHETA_ENV=test`, numa carreira de teste com fixture conhecida (Completo, rodada 1) em "Só lances principais" e outra em "Animada completa" (na T-032, a "Animada completa" vem só pela fixture do save, porque ainda não é oferecida). O relógio da partida é acelerado pelo relógio falso do Playwright (`page.clock`), sem nenhuma velocidade especial de teste no código. Larguras 360×740, 390×844, 844×390 e 1280×800; temas `noite` e `dia`.
+
+### T-032
+
+1. **Seletor (US-019, cenário 2):** numa carreira em "Só lances principais", o segmento do "Jogar rodada" tem nome acessível com o tipo atual e abre a folha com 2 cartas (a atual marcada); escolher "Só resultado" e tocar "Jogar rodada" na folha abre direto o resumo; depois de "Continuar", a linha embaixo de "Jogar rodada" diz "Só resultado" e o save tem `career.matchMode` igual a `'result'`. Fechar a folha sem jogar não muda nada.
+2. **Abre a partida:** em "Só lances principais", tocar "Jogar rodada" abre `#/match` com o `h1` "Rodada 1", sem navegação com o nome `nav.label` e sem "Jogar rodada"; o Scoreboard mostra 0 × 0 e o minuto 0'.
+3. **A narração reflete os eventos (US-020, cenário 1):** na "Animada completa", ao fim, cada evento de `career.matchSheets[id].events` (gol, pênalti perdido, cartões, lesão e troca) tem uma linha com o minuto visível de `match.minute`/`match.minuteAdded` e o `name.display` do jogador; o placar final é o `Fixture.result.score`.
+4. **Só lances principais:** a lista tem só linhas de gol, chance clara, pênalti, vermelho, lesão e as fases; nenhuma linha com as palavras de amarelo nem de troca.
+5. **Modos iguais (US-020, cenário 2, como fica pela decisão 3):** a mesma fixture jogada em "Animada completa" e em "Só lances principais" grava súmulas idênticas e o mesmo placar; com o auxiliar da decisão 2, também igual ao "Só resultado".
+6. **Pausa dramática:** num gol conhecido da fixture, a linha do começo aparece e, avançando o relógio menos que a pausa, o placar não muda e não há a palavra "Gol" nessa linha; depois da pausa, a linha mostra "Gol" e o placar muda; a região viva recebe a frase do gol só depois.
+7. **Pausar:** depois de "Pausar", avançar 10 s não muda o minuto; `match.paused` está visível; "Continuar" volta a correr. Esconder a página (`visibilitychange`) pausa, e ao voltar continua pausada.
+8. **Pular (US-020, cenário 3):** no 10', "Pular" abre o resumo com o placar igual ao do save; `page.goBack()` no resumo leva à aba de origem, nunca à partida.
+9. **Fim de jogo:** no apito final, a barra mostra o estado da gravação e "Ver resumo"; o registro de cabeça já está na rodada 2 antes do toque; "Ver resumo" abre o resumo, e o voltar leva à aba de origem.
+10. **Voltar do celular:** `page.goBack()` no 20' abre a folha `match.leave.title` com a partida pausada; "Continuar a partida" fecha a folha e a partida continua em `#/match`; "Pular para o resultado" abre o resumo.
+11. **Fechar no meio (US-019, cenário 4):** fechar a página no 30' e reabrir a carreira: `game.round` 1, nenhum `result` na rodada 1, nenhuma súmula, Clube com "próxima rodada: 1"; jogar de novo mostra o mesmo placar final.
+12. **Leitor de tela:** a região viva recebe exatamente uma frase por gol, pênalti marcado, pênalti perdido, vermelho, intervalo e fim, e nenhuma por chance, amarelo ou troca.
+13. **Movimento (US-020, cenário 4):** com `reducedMotion: 'reduce'`, `document.getAnimations().length === 0` durante a partida, e a pausa dramática continua (o placar só muda depois da pausa).
+14. **Alvos e textos:** Pausar, Rápido, Pular, o segmento do seletor e "Ver resumo" medem pelo menos 44 × 44px; a 360×740, em es e en, os três controles numa linha só (ou com quebra, nunca cortados) e "Ver resumo" em 1 linha; nenhum nome de clube cortado no Scoreboard com o meu clube trocado para "Inter-Regional".
+15. **Sem rolagem lateral** em 360, 390, 844 e 1280, com a partida e com a folha do seletor, em pt-BR, es e en.
+16. **Desktop (1280×800):** sem barra lateral; a coluna da partida não passa de `layout-content-max`; o seletor no pé da barra lateral abre o diálogo de 540px.
+17. **Desempenho:** as quatro medidas da T-032 em "Desempenho no celular".
+
+**No Vitest (T-032), pedidos ao `developer`:** o relógio puro (mesmos eventos, mesmo modo, mesma velocidade → mesmos passos e mesmas durações; o filtro de cada modo; a pausa só entre minutos; o minuto mostrado ao pausar é o próximo a jogar); o começo de um gol e o de uma chance do mesmo tipo dão o mesmo texto e a mesma duração; o `liveMatch` igual ao `report.results[i]` do `playRound`; o modo passado ao motor (pedido 3); a troca de velocidade só vale a partir do passo seguinte.
+
+**E2E existentes que mudam (T-032):** nenhum, se a carreira de teste continuar em "Só resultado" (o padrão continua "Só resultado" até a T-085). O `playUntil` passa a aceitar uma carreira em modo assistido, tocando "Pular".
+
+### T-085
+
+1. **Campo presente:** um `canvas` com `aria-hidden="true"`, de borda a borda, com altura entre 230 e 250px a 360×740; pelo menos 5 linhas de narração visíveis.
+2. **Uniformes:** a cena desenhada (a função pura que monta discos, marca e bola, testada no Vitest) usa as cores da API da T-026; numa partida entre dois clubes de cor principal parecida, o visitante usa o segundo uniforme.
+3. **Sem depender da cor:** na cena, todo disco do visitante tem a marca do centro e nenhum do mandante tem; o mandante sempre do lado esquerdo.
+4. **Nada antecipa o desfecho:** a cena de um gol e a de uma chance do mesmo tipo e no mesmo ponto são iguais quadro a quadro até o instante do desfecho (Vitest).
+5. **Comemoração:** no desfecho de um gol, a GoalCelebration com o escudo do clube que marcou e o nome do artilheiro, pela duração da tabela; `aria-hidden`.
+6. **Movimento reduzido:** nenhum `requestAnimationFrame` entre dois lances (contador no `addInitScript`); a comemoração parada; `getAnimations().length === 0`.
+7. **Canvas que falha:** com `getContext` devolvendo `null` (`addInitScript`), a partida corre no leiaute da T-032, sem ErrorState, até o resumo.
+8. **Deitado (844×390):** campo e coluna lado a lado, a barra inteira dentro da janela, nada cortado. **Desktop (1280×800):** campo à esquerda, coluna à direita com placar, narração e barra.
+9. **"Animada completa"** é a primeira carta do Novo jogo e do seletor, e a marcada numa carreira nova.
+10. **Desempenho:** as medidas da T-085 em "Desempenho no celular".
+
+### T-086
+
+1. **Determinismo:** a mesma fixture narra igual em duas execuções (os textos das linhas são iguais, na mesma ordem).
+2. **Sem repetição antes da hora:** numa partida com mais finalizações do que variantes, nenhuma variante se repete antes de todas terem saído (Vitest).
+3. **Sem pista no começo:** o `content:check` falha se um template `commentary.build.*` tiver contexto ou placeholder além de `{player}` e `{club}`; e se uma variante de lance de jogador não tiver `{player}`.
+4. **Textos cabem:** a 360px, em es e en, nenhuma linha da narração passa de 2 linhas (3 no jogo encerrado).
 
 ## Marcas do cenário
 
-Placas do campo, faixa do placar e tela de carregamento, todas com marcas fictícias de `brandForSlot`, decorativas, sem rótulo de publicidade e sem link (ver [README](README.md#marcas-fictícias-no-cenário-us-041-adr-0015)). O nome do estádio não é espaço de marca. Marca na camisa só depois da Etapa 1a.
+Na T-032, T-085 e T-086, nenhuma. Com a T-040: as placas em volta do campo (`pitch-boards`, desenhadas pelo MatchPitch na faixa de grama; o campo continua `aria-hidden`, e a narração nunca cita marca), a faixa do placar (`scoreboard`, BrandSlot decorativa) e a tela de carregamento (`loading`), se a espera existir. Marcas fictícias de `brandForSlot`, sem rótulo de publicidade e sem link (README, "Marcas fictícias no cenário"). O nome do estádio não é espaço de marca. Marca na camisa só depois da 1a.
+
+## Decisões para o CEO (T-032)
+
+Pendentes. A recomendação do `ux-designer` vem em cada uma.
+
+1. **Divisão da T-032 em três partes:** T-032 (partida narrada, M), T-085 (campo 2D, M, depois da T-026) e T-086 (narração com variantes, P, depois da T-021), com a vibração fora (decisão 9). Recomendo **sim**: cada parte joga a temporada inteira e tem E2E próprio; a T-033 pode começar logo depois da T-032.
+2. **Até a T-033, o auxiliar comanda o clube do técnico também nos modos assistidos** (pedido 3 ao `architect`). Sem isso, nas semanas entre a T-032 e a T-033, quem assiste à partida fica sem trocas por cansaço e sem mudança tática, e os reservas perdem moral toda rodada. Recomendo **sim**. Efeito colateral bom: até a T-033, os três tipos dão exatamente o mesmo resultado.
+3. **O critério 2 da US-020** ("os eventos e os placares são idênticos nos três tipos") não vale depois da T-033 como está escrito: no "Só resultado" o auxiliar faz as trocas, e nos assistidos é o técnico (`ia-clubes.md`, de propósito). Recomendo o `product-owner` reescrever, na T-033: "Animada completa" e "Só lances principais" dão eventos idênticos; o "Só resultado" é o mesmo jogo com o auxiliar no banco.
+4. **Tipos oferecidos em cada parte:** na T-032, "Só lances principais" e "Só resultado" (o padrão da carreira nova continua "Só resultado"); "Animada completa" aparece com o campo, na T-085, e passa a ser o padrão (decisão 3 da T-025). Recomendo **sim**: oferecer "Animada" sem campo prometeria o que não existe (P3).
+5. **Duração e velocidade:** "Animada completa" com cerca de 1min20s no Normal e 30 s no Rápido; "Só lances principais", 30 s e 12 s (tabela de "Relógio da partida"); duas velocidades, Normal e Rápido, lembradas no aparelho. Recomendo **sim**; os números ficam numa constante e podem ser ajustados depois sem mexer no resto.
+6. **Voltar do celular durante a partida:** pausa e abre "Sair da partida?", com "Pular para o resultado" e "Continuar a partida"; não existe "sair sem jogar". Recomendo **sim**: o gesto de voltar do iPhone é fácil de fazer sem querer, e perder um clássico por isso frustra; e "sair sem jogar" deixaria ver o placar e jogar de novo.
+7. **Narração com a mais recente em cima,** logo abaixo do placar e do campo (muda a recomendação anterior, que era embaixo). Recomendo **em cima**: o olho sai do campo e cai na linha nova, sem rolagem automática.
+8. **Fim de jogo:** a gravação começa sozinha no apito final, e o resumo só abre quando o jogador toca "Ver resumo" (Pular vai direto). Recomendo **sim**: o jogador vê o apito final e a última linha, e quem fechar o jogo depois do apito já tem a rodada salva.
+9. **Vibração:** (A) entra na T-041, com o Toggle das Preferências, ligada por padrão nos aparelhos que vibram; (B) entra na T-085, ligada sem como desligar até a T-041. Recomendo **A**: nada no jogo sem o controle de desligar.
+10. **Fechar o jogo no meio da partida deixa jogar a rodada de novo** (e, com outra escalação, ter outro resultado). Recomendo **aceitar na 1a**: é uma carreira offline de um jogador só, o backup já permite o mesmo, e travar exigiria mudar o formato do save.
+11. **Campo:** o mandante sempre à esquerda atacando para a direita (sem trocar de lado no intervalo); o visitante com a marca no centro da bolinha; nenhum cartão, número ou texto no campo. Recomendo **sim** (proposta 35 ao design system).
+12. **Linhas de ambiente** nos minutos sem lance (T-086): não na 1a. Recomendo **não**: inventariam um jogo que o motor não jogou.

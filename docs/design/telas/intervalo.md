@@ -1,6 +1,8 @@
 # Intervalo
 
-**Histórias:** US-022 · **Prioridade:** Should · **Ordem:** 13
+**Histórias:** US-022 · **Prioridade:** Should · **Ordem:** 13 · **Tarefa:** T-033
+
+Na T-032 não há tela de intervalo: a partida mostra a linha "Intervalo", espera cerca de 2 s e segue para o 2º tempo sozinha ([partida.md](partida.md#relógio-da-partida)). A pausa e a conversa entram com a T-033.
 
 ## Objetivo
 
