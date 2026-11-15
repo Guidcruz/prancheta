@@ -27,9 +27,31 @@ export function hrefOf(id: DestinationId): string {
   return `#/${id}`;
 }
 
-/** The destination of an address (`location.hash`); an unknown or empty one is the Clube tab. */
+/** The Calendário tab, which has a subscreen with its own address (calendario.md). */
+export const CALENDAR_DESTINATION: DestinationId = 'calendar';
+
+const CALENDAR_ROUND = /^calendar\/round\/(.*)$/;
+
+/** The address of the Rodada subscreen of the Calendário (`#/calendar/round/5`). */
+export function calendarRoundHref(round: number): string {
+  return `${hrefOf(CALENDAR_DESTINATION)}/round/${round}`;
+}
+
+/**
+ * The text after `#/calendar/round/` of an address of the Rodada subscreen, as typed (it may not
+ * be a round at all: `calendar.ts` decides), or `undefined` for any other address.
+ */
+export function calendarRoundOf(hash: string): string | undefined {
+  return CALENDAR_ROUND.exec(hash.replace(/^#\/?/, ''))?.[1];
+}
+
+/**
+ * The destination of an address (`location.hash`); an unknown or empty one is the Clube tab. Any
+ * address of the Rodada subscreen is the Calendário tab.
+ */
 export function destinationOf(hash: string): DestinationId {
   const id = hash.replace(/^#\/?/, '');
+  if (CALENDAR_ROUND.test(id)) return CALENDAR_DESTINATION;
   return ids.has(id) ? id : HOME_DESTINATION;
 }
 

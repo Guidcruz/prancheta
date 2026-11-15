@@ -6,6 +6,11 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Calendário (T-084; US-024):
+  - A aba `#/calendar` mostra as 38 rodadas do clube em dois turnos, um card por rodada com data, mando, "Clássico" e, nas jogadas, o placar e o resultado escrito. A próxima rodada tem "Próximo jogo" e borda verde, e a aba abre nela, sem atalho flutuante.
+  - Tocar numa rodada jogada abre a Rodada (`#/calendar/round/N`, com voltar): os 10 jogos, o meu primeiro, e cada um abre a súmula da T-083. Rodadas futuras não abrem; endereço de rodada inválida ou não jogada volta para `#/calendar`. Ao voltar, a lista mostra o card de onde o jogador saiu.
+  - 3 chaves de texto em pt-BR, es e en (aprovadas pelo CEO em 2026-11-15); o MatchCard ganha `highlight`.
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Tabela do campeonato (T-031; US-023):
   - A aba `#/table` mostra a classificação completa: Pts, J, V, E, D, GP, GC, SG, % e Últimos 5. A coluna do clube fica fixa, com até 60% da largura, e abre já na linha do meu clube.
   - As zonas são só duas, Líder/Campeão e os 4 últimos (Rebaixamento), cada uma com marca, palavra e legenda (a cor nunca é a única pista). A seta de movimento dura 300 ms e fica parada com movimento reduzido.
