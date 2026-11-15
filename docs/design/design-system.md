@@ -10,6 +10,7 @@ Regras que o `ux-designer` cobra:
 - Resultado nunca só por cor (V/E/D ou ícone); `prefers-reduced-motion`.
 - A cor de faixa só pinta números; a cor de setor só pinta o fundo da sigla da posição ("Onde cada cor pinta").
 - Componentes base: Escudo, CardPartida, LinhaTabela, CardJogador, BarraAbas, Botao, Noticia, Placar (Scoreboard; aprovado pelo CEO em 2026-11-14).
+- Na partida, nada só por cor também no campo: o visitante tem marca de forma, e o canvas não carrega informação que não esteja na narração ("Campo da partida").
 - Textos em `app/src/content/<idioma>/`; nome, logo e cores em `config/prancheta.config.ts`.
 
 ## Tipografia
@@ -75,7 +76,8 @@ O placar é componente base do PROJETO ("Componentes base") e agora também do d
 - **Dois tamanhos:** `lg` (escudo `size-medallion-md`, gols em `placar-xl`), no resumo da rodada; `md` (escudo `size-medallion-sm`, gols em `display-lg`), na súmula e abaixo de `breakpoint-short` (480px de altura).
 - **Números** em `tabular-nums`. O nome do meu clube em `body-strong`; o outro em `body`. Nomes quebram em até 2 linhas, nunca cortam.
 - **Resultado nunca só por cor:** o selo do resultado (StatusBadge com a palavra inteira) vai embaixo do placar, e o placar tem um nome acessível em frase, ou fica `aria-hidden` quando um título já diz o resultado.
-- **Depois:** o minuto, a fase, o anúncio ao vivo (`aria-live`) e a faixa de marca do cenário (BrandSlot `scoreboard`, decorativa) entram com a partida (T-032) e as marcas (T-040).
+- **Ao vivo (aprovado pelo CEO em 2026-11-15, T-032):** na partida, a linha ao vivo fica embaixo dos gols, no lugar do selo do resultado (os dois nunca juntos): o minuto em `numero`, a fase em `caption` e, com a partida pausada, "Pausada" em `body-strong` (o texto é a pista, sem cor nova). Os anúncios para o leitor de tela (gol, pênalti, vermelho, intervalo e fim, só depois do desfecho) ficam numa região escondida `aria-live="polite"` dentro do Placar; o minuto nunca é anunciado. O placar ao vivo usa sempre o tamanho `md`. Especificação: [partida.md](telas/partida.md#conteúdo-de-cima-para-baixo-no-celular-em-pé).
+- **Depois:** a faixa de marca do cenário (BrandSlot `scoreboard`, decorativa) entra com as marcas (T-040).
 - Sem token novo.
 
 ## Padrões de layout
@@ -120,6 +122,23 @@ Vale para o site e para as telas futuras do jogo.
 - Leitor de tela e tabulação seguem a ordem das vagas (do goleiro ao ataque); o desenho é complemento.
 - Especificação: `docs/design/telas/escalacao.md`, "Desenho do campo".
 
+### Campo da partida (aprovado pelo CEO em 2026-11-15)
+
+- O campo da partida é canvas, `aria-hidden`, decorativo: tudo o que ele mostra está na narração e no placar. Nenhum texto, número ou cartão é desenhado nele. Se o canvas falhar, a partida segue só com a narração, sem aviso.
+- Campo **deitado** (comprimento na horizontal), de borda a borda, gramado em `pitch` e marcações em `pitch-line`, lidos dos tokens.
+- **O mandante fica sempre à esquerda**, atacando para a direita o jogo todo (o mesmo lado do escudo dele no placar), sem trocar de lado no intervalo.
+- **Bolinhas:** disco na cor principal do uniforme, com anel de 2px em `ink` (5,94:1 sobre `pitch` no tema noite e 4,09:1 no dia, acima de 3:1 para elemento gráfico); **o visitante tem um ponto no centro**, com um terço do diâmetro, na cor de contraste do uniforme; o mandante é liso. A bola é um disco menor em `ink`, sem anel.
+- **Cores dos uniformes são dado** (gerador da T-026, com a regra de choque de cores dentro dele), como as do escudo; só pintam os discos do campo.
+- Sem tremor, sem zoom, sem flash; com `prefers-reduced-motion`, o campo fica parado e é redesenhado só a cada lance.
+- Conferência: o par gráfico `ink` sobre `pitch` passa a ser conferido a 3:1 pelo `npm run tokens`, numa lista de pares gráficos ao lado da de texto (a mudança no script é do `developer`, na T-085).
+- Especificação: [partida.md](telas/partida.md#campo-2d-t-085).
+
+### Ritmo da partida (aprovado pelo CEO em 2026-11-15)
+
+- As durações da partida assistida (minuto, lance, pausa dramática, depois do gol, intervalo, em Normal e Rápido) ficam na constante `MATCH_TIMING` em `app/src/ui/match/`, com comentário apontando para cá, até o grupo de movimento existir (proposta 2 de [componentes.md](telas/componentes.md#propostas-ao-design-system)).
+- São ritmo de jogo, não animação: com `prefers-reduced-motion` continuam valendo (a pausa dramática vira só o atraso do texto); só o movimento para.
+- Valores na tabela de [partida.md](telas/partida.md#relógio-da-partida).
+
 ### Altura baixa (aprovado pelo CEO em 2026-11-07)
 
 - `breakpoint-short` = **480px de altura** (`@media (max-height: 480px)`): o celular deitado (844×390). Abaixo dele, barras presas ao pé ficam com uma linha só (ações só com ícone, o rótulo como nome acessível).
@@ -160,6 +179,17 @@ O anel de foco (`focus`, 2px sólido) aparece para quem navega pelo teclado e nu
 - **Teclas que não contam:** modificadores sozinhos, atalhos com Ctrl, Alt ou Cmd, composição e o teclado virtual (`Unidentified`, `Process`); dentro de um campo de texto, só o Tab.
 - **O foco não muda de lugar.** Quem usa leitor de tela continua recebendo o foco no X ao abrir e no nome ao fechar; só o desenho do anel depende da modalidade.
 - **Componentes novos** usam `:focus-visible` como sempre; não precisam saber da modalidade. Um anel desenhado num pai (`:has(:focus-visible)`, como nos rádios do SegmentedControl) não é apagado pela regra; hoje isso só acontece com rádios, que nenhum navegador marca como `:focus-visible` depois de um toque.
+
+### "Jogar rodada" com seletor (aprovado pelo CEO em 2026-11-15)
+
+- O "Jogar rodada" (PlayRoundButton) vira **botão dividido** quando há tipo de partida para escolher: à esquerda o rótulo, com o tipo atual escrito embaixo em `caption`; à direita, separado por um traço de 1px em `on-grass`, um segmento de 48px com o ícone `chevron-down` e `aria-haspopup="dialog"`, que abre a folha do tipo de partida. Os dois alvos têm a altura do botão.
+- Continua sendo **um primário só** (o mesmo botão). Em `blocked`, a linha do motivo fica no lugar da do tipo; em `busy`, sem rodada para jogar ou com a temporada encerrada, o segmento some.
+- A escolha na folha só vale ao tocar "Jogar rodada" nela; fechar descarta.
+- Especificação: [partida.md](telas/partida.md#seletor-de-tipo-de-partida-no-jogar-rodada).
+
+## Ícones novos (aprovado pelo CEO em 2026-11-15)
+
+- `pause`, `skip` e `chevron-down` entram no `Icon` (lista fechada `IconName`), no estilo do conjunto provisório (24×24, traço de 2px), e na lista que o `art-director` redesenha. "Continuar" usa o `play`; "Rápido" não tem ícone (texto, com o `check` quando ligado).
 
 ## Selos (aprovado pelo CEO em 2026-11-07)
 

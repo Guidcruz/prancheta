@@ -11,7 +11,7 @@ Deixar o jogador ajustar o jogo ao seu jeito; vale para todas as carreiras do ap
 1. ScreenHeader com voltar.
 2. **Tema:** SegmentedControl noite | dia (noite padrão), com efeito imediato.
 3. **Idioma:** LinkRow com o idioma atual, abrindo BottomSheet com os idiomas liberados pela P4; troca sem reiniciar a carreira.
-4. **Vibração:** Toggle; só aparece se o aparelho suportar vibração. Ligada por padrão; vibra uma vez, cerca de 200 ms, no gol do clube do técnico, no desfecho da pausa dramática, e nunca com `prefers-reduced-motion`. Pela recomendação da decisão 9 de [partida.md](partida.md#vibração), a vibração entra aqui, na T-041, junto do Toggle.
+4. **Vibração:** Toggle; só aparece se o aparelho suportar vibração. Ligada por padrão; vibra uma vez, cerca de 200 ms, no gol do clube do técnico, no desfecho da pausa dramática, e nunca com `prefers-reduced-motion`. Pela decisão 9 do CEO (2026-11-15) em [partida.md](partida.md#vibração), a vibração entra aqui, na T-041, junto do Toggle.
 5. **Rede social:** Toggle para mostrar ou esconder.
 6. **Lembrete de exportar:** Toggle (religa o "Não lembrar mais").
 7. Atalho para Sobre.
