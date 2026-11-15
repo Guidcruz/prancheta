@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { CREST_PATTERNS, Rng, type ClubDef } from '../../engine/index.ts';
+import { CREST_PATTERNS, Rng, seedFromString, type ClubDef } from '../../engine/index.ts';
 import forbidden from './kit.forbidden.json';
 import {
   KIT_COLLARS,
@@ -281,20 +281,31 @@ describe('kit: goalkeepers', () => {
     }
   });
 
-  it('keeps the colour of a club when nothing conflicts, and has no green in the palette', () => {
-    const c = clubs[0]!;
-    const free = goalkeeperKit(c, ['#000000']);
-    expect(goalkeeperKit(c, ['#000000']).base).toBe(free.base);
+  it('starts at palette[seed % 6] when nothing conflicts', () => {
+    for (const c of clubs) {
+      const expected = KIT_GK_PALETTE[seedFromString(`${c.id}-kit-gk`) % KIT_GK_PALETTE.length];
+      expect(goalkeeperKit(c, []).base, c.id).toBe(expected);
+    }
+  });
+
+  it('has no green in the palette', () => {
     for (const p of KIT_GK_PALETTE) {
       expect(colorDistance(p, NIGHT)).toBeGreaterThanOrEqual(58);
       expect(colorDistance(p, DAY)).toBeGreaterThanOrEqual(58);
     }
   });
 
-  it('still returns a palette colour when every colour is surrounded', () => {
-    const gk = goalkeeperKit(clubs[0]!, [...KIT_GK_PALETTE]);
-    expect(KIT_GK_PALETTE).toContain(gk.base);
-    expect(gk.pattern).toBe('plain');
+  it('picks the colour with the largest minimum distance when every colour is surrounded', () => {
+    // Violet is only slightly off one of the avoided colours; the other five are exact.
+    const near = '#8A5FD0';
+    expect(colorDistance(near, KIT_GK_PALETTE[3])).toBeGreaterThan(0);
+    expect(colorDistance(near, KIT_GK_PALETTE[3])).toBeLessThan(KIT_MIN_DISTANCE);
+    const avoid = KIT_GK_PALETTE.map((c, i) => (i === 3 ? near : c));
+    for (const c of clubs) {
+      const gk = goalkeeperKit(c, avoid);
+      expect(gk.base, c.id).toBe(KIT_GK_PALETTE[3]);
+      expect(gk.pattern).toBe('plain');
+    }
   });
 });
 
@@ -516,5 +527,85 @@ describe('kit: the catalogue only grows', () => {
       KIT_PATTERNS.map((p, i) => `${i} ${p}`),
     );
     expect(Object.keys(KIT_WEIGHTS)).toEqual([...KIT_PATTERNS]);
+  });
+});
+
+describe('kitConflict', () => {
+  const kit = (base: string, secondary: string, pattern: KitPattern): Kit => ({
+    clubId: 'x',
+    slot: 'home',
+    base,
+    secondary,
+    pattern,
+    collar: 'round',
+    shorts: base,
+    socks: base,
+  });
+  const bwStripes = kit('#111417', WHITE, 'hoops');
+  const wbStripes = kit(WHITE, '#111417', 'hoops');
+
+  it('flags black-and-white stripes against white-and-black stripes', () => {
+    expect(kitConflict(bwStripes, wbStripes)).toBe(true);
+  });
+
+  it('flags black-and-white stripes against plain black (rule a: same base)', () => {
+    expect(kitConflict(bwStripes, kit('#111417', WHITE, 'plain'))).toBe(true);
+  });
+
+  it('accepts black-and-white stripes against plain white (the accepted choice)', () => {
+    expect(kitConflict(bwStripes, kit(WHITE, '#111417', 'plain'))).toBe(false);
+  });
+
+  it('is symmetric', () => {
+    const list = [
+      bwStripes,
+      wbStripes,
+      kit('#111417', WHITE, 'plain'),
+      kit(WHITE, '#111417', 'plain'),
+      kit('#c8102e', '#111417', 'halves'),
+      kit('#c8102e', '#111417', 'plain'),
+      kit('#111417', '#c8102e', 'vstripes'),
+    ];
+    for (const a of list) for (const b of list) expect(kitConflict(a, b)).toBe(kitConflict(b, a));
+  });
+});
+
+describe('kit 2 after a sash', () => {
+  it('excludes both diagonal sashes from kit 2 when kit 1 is one', () => {
+    let seen = 0;
+    for (let i = 0; i < 2000; i++) {
+      const { home, away } = kitsFor(synth(`s-${i}`, ['#c8102e', '#111417']));
+      if (home.pattern === 'sash' || home.pattern === 'sashMirror') {
+        seen++;
+        expect(['sash', 'sashMirror']).not.toContain(away.pattern);
+      }
+    }
+    expect(seen).toBeGreaterThan(0);
+    for (const c of clubs) {
+      const { home, away } = kitsFor(c);
+      if (home.pattern === 'sash' || home.pattern === 'sashMirror') {
+        expect(['sash', 'sashMirror'], c.id).not.toContain(away.pattern);
+      }
+    }
+  });
+});
+
+describe('kit 3 ids', () => {
+  it('carries the visitor club id, so two visitors never share SVG ids', () => {
+    const corinto = clubs.find((c) => c.id === 'corinto')!;
+    const a = matchKits(
+      corinto,
+      clubs.find((c) => c.id === 'botafogueira')!,
+    );
+    const b = matchKits(
+      corinto,
+      clubs.find((c) => c.id === 'vasconcelos')!,
+    );
+    expect(a.awaySlot).toBe('third');
+    expect(b.awaySlot).toBe('third');
+    expect(a.kits.away.clubId).toBe('botafogueira');
+    expect(b.kits.away.clubId).toBe('vasconcelos');
+    expect(kitSvg(a.kits.away)).toContain('kt-botafogueira-third');
+    expect(kitSvg(a.kits.away)).not.toContain('kt-corinto-third');
   });
 });

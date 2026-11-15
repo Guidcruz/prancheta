@@ -713,6 +713,8 @@ Critérios: a aba Calendário (`#/calendar`) com as 38 rodadas do meu clube em d
 
 Diferenças medidas em relação ao desenho (relatadas ao Orquestrador): o visitante troca para o uniforme 2 em 44 dos 380 confrontos e precisa do 3 em 6 (corinto x botafogueira, corinto x vasconcelos, corinto x santoes, santoes x corinto, cruzador x remador, tufao x sao-paulao), todos entre camisas de massa dupla com as mesmas cores; o desenho previa 48 e nenhum. O teste fixa a lista, e uma mudança vai ao `art-director`. A distância branco x preto em ΔE76 é 100 (o desenho dizia 94). 14 dos 80 uniformes (listrados com duas cores sem contraste de 4,5:1 contra as duas) usam a placa do número; o desenho previa nenhum.
 
+Regra a mais (a levar ao `art-director`): se o uniforme 1 é `sash` ou `sashMirror`, o 2 exclui as duas faixas diagonais (afeta atletico-minerio e remador); o desenho só excluía o padrão do 1. Coberta por teste.
+
 Fora do teste automático: a folha visual (`scripts/kit-sheet.mjs`) e a revisão contra uniformes reais ficam com o `art-director` e o CEO antes do lançamento.
 
 ### Ritual de release (`test:release`, manual)

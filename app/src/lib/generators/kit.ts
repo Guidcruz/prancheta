@@ -1,6 +1,15 @@
 import type { CrestPattern } from '@engine';
 import { Rng, seedFromString } from '../../engine/index.ts';
-import { SMALL_SIZE, contrastRatio, escapeText, safeColor } from './shield';
+import {
+  INK,
+  NEUTRAL_DARK,
+  NEUTRAL_LIGHT,
+  SMALL_SIZE,
+  contrastRatio,
+  escapeText,
+  onColor,
+  safeColor,
+} from './shield.ts';
 
 /*
  * Club kit generator (docs/art/uniformes.md, T-026, US-002).
@@ -72,9 +81,6 @@ export const KIT_MIN_DISTANCE = 30;
 export const KIT_NUMBER_CONTRAST = 4.5;
 export const KIT_RING_CONTRAST = 3;
 
-const INK = '#0b1118';
-const NEUTRAL_DARK = '#111417';
-const NEUTRAL_LIGHT = '#ffffff';
 const YELLOW = '#ffd400';
 /** Night grass, the default pitch. */
 export const KIT_PITCH_NIGHT = '#2fb866';
@@ -167,16 +173,6 @@ function pickPattern(u: number, excluded: ReadonlySet<KitPattern>): KitPattern {
 
 // ------------------------------------------------------------------ colour choices
 
-/** A colour for what is drawn over `bg`: a club colour when it has 3:1, else a neutral. */
-function accent(bg: string, secondary: string): string {
-  if (secondary.toLowerCase() !== bg.toLowerCase() && contrastRatio(secondary, bg) >= 3) {
-    return secondary;
-  }
-  return contrastRatio(NEUTRAL_DARK, bg) >= contrastRatio(NEUTRAL_LIGHT, bg)
-    ? NEUTRAL_DARK
-    : NEUTRAL_LIGHT;
-}
-
 /** Plain shorts: the most contrasting colour that is also >= 30 apart in Lab, else the base. */
 function shortsFor(base: string, secondary: string): string {
   const ok = [base, secondary, NEUTRAL_DARK, NEUTRAL_LIGHT].filter(
@@ -247,7 +243,7 @@ export function kitConflict(a: Kit, b: Kit): boolean {
 }
 
 /** Uniform 3: the colours (white, black, yellow) farthest from the home kit; always plain. */
-export function thirdKit(home: Kit): Kit {
+export function thirdKit(home: Kit, clubId: string = home.clubId): Kit {
   const pool = [NEUTRAL_LIGHT, NEUTRAL_DARK, YELLOW];
   const mass = massOf(home);
   const gap = (c: string, from: string[]) => Math.min(...from.map((x) => colorDistance(c, x)));
@@ -256,7 +252,7 @@ export function thirdKit(home: Kit): Kit {
   const rest = pool.filter((c) => c !== base);
   let secondary = rest[0]!;
   for (const c of rest) if (colorDistance(c, base) > colorDistance(secondary, base)) secondary = c;
-  return makeKit(home.clubId, 'third', base, secondary, 'plain', 'round');
+  return makeKit(String(clubId), 'third', base, secondary, 'plain', 'round');
 }
 
 /** The goalkeeper's kit: first palette colour from the club's own start that is free. */
@@ -281,7 +277,7 @@ export function goalkeeperKit(
     if (gap(c) > gap(best)) best = c;
   }
   const base = chosen ?? best;
-  return makeKit(id, 'gk', base, accent(base, base), 'plain', 'round');
+  return makeKit(id, 'gk', base, onColor(base, [base]), 'plain', 'round');
 }
 
 // ------------------------------------------------------------------ field data
@@ -331,7 +327,7 @@ export function matchKits(
     awayKit = a2;
     awaySlot = 'away';
     if (kitConflict(h, awayKit)) {
-      awayKit = thirdKit(h);
+      awayKit = thirdKit(h, String(away.id));
       awaySlot = 'third';
     }
   }
@@ -415,7 +411,7 @@ export function kitSvg(
   const collar: KitCollar = (KIT_COLLARS as readonly string[]).includes(kit.collar)
     ? kit.collar
     : 'round';
-  const trim = accent(base, secondary);
+  const trim = onColor(base, [secondary]);
   const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9-]/g, '');
   const slot = slug(String(kit.slot));
   const k = `kt-${slug(String(kit.clubId))}-${slot}${small ? '-s' : ''}${options.instance ? `-${slug(options.instance)}` : ''}`;
@@ -433,7 +429,7 @@ export function kitSvg(
           `<rect x="${x}" y="60" width="12" height="11" fill="${socks}" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/>`,
       )
       .join('') +
-    (small ? '' : [16, 36].map((x) => rect(x, 63, 12, 2, trim)).join(''));
+    (small ? '' : [16, 36].map((x) => rect(x, 63, 12, 1, trim)).join(''));
   const detail = small
     ? ''
     : collarSvg(collar, trim) +
