@@ -321,8 +321,9 @@
       (chunk) => {
         if (pitchFailed) return;
         try {
+          // The steps of "Animada completa" (the only mode with the pitch).
           choreography = chunk.choreograph(
-            matchSteps(live.result.events, 'full'),
+            steps,
             { home: live.match.home.sheet.lineup, away: live.match.away.sheet.lineup },
             live.match.seed,
           );
