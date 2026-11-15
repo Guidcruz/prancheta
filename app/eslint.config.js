@@ -166,6 +166,28 @@ const uiPatterns = {
   },
 };
 
+// The chunks of the assisted match (docs/02-architecture.md, 4.7): the match screen and the 2D
+// pitch come only through their `import()` (match-flow.ts and match/pitch-loader.ts); types cross
+// (`allowTypeImports`), values do not. The rule does not look at `import()`, so the loaders pass.
+const chunkPatterns = {
+  matchScreen: {
+    group: ['**/screens/MatchScreen.svelte'],
+    allowTypeImports: true,
+    message:
+      'The match screen is a chunk of its own: only the import() of ui/match-flow.ts loads it (docs/02-architecture.md, 4.7).',
+  },
+  pitch: {
+    group: [
+      '**/match/pitch/**',
+      '**/components/MatchPitch.svelte',
+      '**/components/GoalCelebration.svelte',
+    ],
+    allowTypeImports: true,
+    message:
+      'The 2D pitch is a chunk of its own: only the import() of ui/match/pitch-loader.ts loads it (docs/02-architecture.md, 4.7).',
+  },
+};
+
 // engine/testing/ pulls node:fs and vitest: production code of lib/ and ui/ never imports it.
 const appTestingImports = {
   group: ['**/engine/testing', '**/engine/testing/**', '@engine/testing', '@engine/testing/*'],
@@ -237,7 +259,36 @@ export default [
       'no-restricted-imports': [
         'error',
         {
-          patterns: [uiPatterns.noSave, appTestingImports, appBuildOnlyImports, engineEntryOnly],
+          patterns: [
+            uiPatterns.noSave,
+            appTestingImports,
+            appBuildOnlyImports,
+            engineEntryOnly,
+            chunkPatterns.matchScreen,
+            chunkPatterns.pitch,
+          ],
+        },
+      ],
+    },
+  },
+  {
+    // The files of the chunk of the pitch import each other (the last rule for a file wins).
+    files: [
+      'src/ui/match/pitch/**/*.{ts,svelte}',
+      'src/ui/components/MatchPitch.svelte',
+      'src/ui/components/GoalCelebration.svelte',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            uiPatterns.noSave,
+            appTestingImports,
+            appBuildOnlyImports,
+            engineEntryOnly,
+            chunkPatterns.matchScreen,
+          ],
         },
       ],
     },

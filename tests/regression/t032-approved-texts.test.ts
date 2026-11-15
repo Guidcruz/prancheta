@@ -5,8 +5,10 @@ import { describe, expect, it } from 'vitest';
  * T-032: the texts of the narrated match in `ui.json` are exactly the batch the CEO approved on
  * 2026-11-15 (docs/content/lotes/2026-11-15-partida.md): 50 new keys, the same in the three
  * languages, with the same placeholders, and the review of 2 texts already approved
- * (`newGame.match.highlights.body` and `newGame.match.note`). The keys of T-085
- * (`match.celebration.title`) and of T-086 (`commentary.json`) are not in this task.
+ * (`newGame.match.highlights.body` and `newGame.match.note`). The keys of T-086 (`commentary.json`)
+ * are not in this task. T-085 added `match.celebration.title` and revised
+ * `newGame.match.highlights.body` again (docs/content/lotes/2026-11-15-campo.md): both are checked
+ * by t085-approved-texts.test.ts.
  */
 
 const LANGS = ['pt-BR', 'es', 'en'] as const;
@@ -83,10 +85,9 @@ describe('narrated match texts (batch of 2026-11-15)', () => {
     }
   });
 
-  it('none of the keys of T-085 or T-086 entered ui.json', () => {
+  it('none of the keys of T-086 entered ui.json', () => {
     for (const lang of LANGS) {
       const texts = ui(lang);
-      expect(texts['match.celebration.title'], lang).toBeUndefined();
       expect(
         Object.keys(texts).filter((k) => k.startsWith('commentary.')),
         lang,
@@ -102,12 +103,16 @@ describe('narrated match texts (batch of 2026-11-15)', () => {
       }
     });
 
-    it(`${lang}: the 2 texts already approved carry the revision`, () => {
+    it(`${lang}: the 2 texts already approved carry the revision (or the later one of T-085)`, () => {
       const texts = ui(lang);
       expect([...revised.keys()]).toEqual(['newGame.match.highlights.body', 'newGame.match.note']);
-      for (const [key, byLang] of revised) {
-        expect(texts[key], `${lang} ${key}`).toBe(byLang.get(lang));
-      }
+      // `newGame.match.highlights.body` was revised again by T-085 (t085-approved-texts.test.ts).
+      expect(texts['newGame.match.highlights.body'], lang).not.toBe(
+        revised.get('newGame.match.highlights.body')!.get(lang),
+      );
+      expect(texts['newGame.match.note'], `${lang} newGame.match.note`).toBe(
+        revised.get('newGame.match.note')!.get(lang),
+      );
     });
   }
 

@@ -446,11 +446,18 @@ describe('the new-game screen (novo-jogo.md, US-014)', () => {
       expect(primaries(body)).toBe(1);
     });
 
-    it(`${lang}: P3, no option of later stages: "Só lances principais" and "Só resultado" (T-032)`, () => {
+    it(`${lang}: P3, no option of later stages; the three match modes, "Animada completa" first (T-085)`, () => {
       const body = view({ optionsOpen: true }, lang);
-      expect(body).not.toContain(shown(t('newGame.match.full', lang)));
+      expect(body).toContain(shown(t('newGame.match.full', lang)));
       expect(body).toContain(shown(t('newGame.match.highlights', lang)));
-      expect((body.match(/type="radio" name="match"/g) ?? []).length).toBe(2);
+      expect((body.match(/type="radio" name="match"/g) ?? []).length).toBe(3);
+      // In the cards (the summary above them names the current mode).
+      const cards = body.slice(body.indexOf('name="match"'));
+      const order = ['full', 'highlights', 'result'].map((mode) =>
+        cards.indexOf(shown(t(`newGame.match.${mode}`, lang))),
+      );
+      expect(order).not.toContain(-1);
+      expect(order).toEqual([...order].sort((a, b) => a - b));
       expect((body.match(/type="radio" name="realism"/g) ?? []).length).toBe(2);
       // Two modes to choose from: the note says it can change before each round (SHOULD 4).
       expect(body).toContain(shown(t('newGame.match.note', lang)));

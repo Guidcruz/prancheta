@@ -187,6 +187,44 @@ Regras de cada campo de `FieldKit`:
 
 Acessibilidade: o uniforme nunca é a única informação (nome do clube e escudo sempre ao lado); na partida animada, quem é quem nunca depende só da cor do uniforme (a T-032 mantém nome e número na narração e no placar).
 
+### 3.1 `FieldKit.mark`: a marca do visitante no campo 2D (T-085)
+
+Aval do `art-director` em 2026-11-15, para a opção 3A escolhida pelo CEO. O campo 2D da partida (`docs/design/telas/partida.md`, "Campo 2D (T-085)") precisa distinguir os dois times sem depender só da cor: o mandante tem o disco liso e o visitante (e o goleiro dele) tem um ponto no centro do disco, de um terço do diâmetro (6px a 360px).
+
+**Contrato (aditivo, nenhum campo existente muda):**
+
+```ts
+export interface FieldKit {
+  // ...campos atuais...
+  mark: string; // #rrggbb, >= 3:1 against fill; the dot drawn on the away disc
+}
+```
+
+**Regra.** `mark` = `secondary` do uniforme quando `contrastRatio(secondary, fill) >= 3` (`KIT_MARK_CONTRAST = 3`, constante exportada); senão, o neutro do gerador (`#ffffff` ou `#111417`) de maior contraste contra `fill`. Cores passam por `safeColor`. `fieldKit` calcula `mark` para todos os `slot` (home, away, third, gk), mesmo que a interface só o desenhe no visitante: o dado fica uniforme e a interface decide onde usar. `mark` não depende do `pitch`, de `numberColor` nem de `numberPlate`, e nenhuma função existente muda de resultado.
+
+**Por que.**
+
+- **Identidade.** A `secondary` é a segunda cor do clube e já é a cor da gola e dos punhos (seção 1.4). Um ponto nela faz o visitante parecer "do clube", e não uma marca solta. No uniforme 2 (cores trocadas) o ponto é a cor que era a principal do clube, o que reforça o reconhecimento. O disco não repete as listras (uma cor só), então o ponto devolve ao disco um traço da segunda cor sem virar padrão.
+- **Legibilidade.** 3:1 é o piso para elemento gráfico e é o mesmo limite que a gola usa. O fallback neutro é sempre possível: dos dois neutros, o de maior contraste contra qualquer cor passa de 4,5:1 (o ponto médio de luminância entre branco e preto dá cerca de 4,58:1), então a regra nunca falha e dispensa uma terceira etapa.
+- **Por que não o `numberColor`.** Com `numberPlate`, o `numberColor` pode ter 1:1 contra o `fill` (41 dos 760 discos); ele é pensado para ficar sobre a placa, não sobre o disco.
+- **Goleiro.** O `fill` é da paleta de goleiro (seção 2.4) e a `secondary` do kit de goleiro é a neutra da gola; a marca do goleiro do visitante segue a mesma regra, e o jogador o reconhece pela cor própria e pelo ponto, os dois pistas independentes.
+
+**Números medidos (ux-designer, nos 380 confrontos ordenados, 760 discos de visitante e goleiro do visitante):** contraste mínimo de `mark` contra `fill` de **3,14:1**; a `secondary` do clube vale em **722** dos 760 discos e o neutro nos 38 restantes.
+
+**Decisão sobre o `ring` e o disco de uma cor só (aval do `art-director`).**
+
+- **Não usar `FieldKit.ring`: de acordo.** Ele é calculado contra o `grass` noturno (`KIT_PITCH_NIGHT`), e o `#0b1118` dele fica a 2,92:1 sobre o `pitch` noturno da interface, abaixo de 3:1. O anel e a bola usam o token `ink` do tema, lido do CSS (5,94:1 noite e 4,09:1 dia sobre o `pitch`), que é a mesma cor de contorno do escudo e do uniforme (`ink`) no tema escuro e escuro no dia, então não destoa do resto. O campo `ring` continua no contrato (o SVG e outras telas podem usá-lo), mas não é lido pelo campo 2D; fica registrado que a seção 2.5 ("anel com contraste >= 3:1 contra o gramado") passa a ser cumprida pelo token `ink` da interface, e não pelo `ring` do gerador, na T-085.
+- **Disco de uma cor só, sem `stripe`: de acordo.** A 18px, listras de 5,5 m não leem; a regra de choque (ΔE >= 30 entre os `fill`, seção 2.3) já separa os dois times, e a cor do clube, no disco, é a `base`. O que se perde é a diferença entre camisa lisa e listrada, que o disco de 18px não carregaria de qualquer jeito (o card do uniforme, ao lado do placar e na escalação, mostra o desenho completo).
+- **Ressalva (sem ajuste de regra).** Um disco de `fill` escuro (`#111417`) fica com o anel `ink` claro no tema noite e o ponto da `secondary`; a leitura vem do anel contra o gramado, não do disco, o que é o comportamento desejado. O `developer` deve desenhar o ponto sem contorno próprio e centralizado, e a T-085 deve conferir visualmente, com o CEO, os quatro clubes verdes (seção 2.5) em campo, onde o disco some no gramado e o anel carrega a leitura. **Conferido pelo CEO em 2026-11-15 (T-085), aceito como está:** à noite o Palmeral (1,12:1) e o Coritibom (1,37:1) viram um aro `ink` vazado; de dia o Chapecão (1,27:1) fica com o anel escuro e o ponto branco; o Fluminário só no uniforme 2. A leitura vem do anel e do lado do campo; sem ajuste no gerador.
+
+**Teste esperado em `kit.test.ts`** (novo caso 14, junto do 9):
+
+1. Para todo `FieldKit` (os 20 clubes x uniformes 1, 2 e 3, e os goleiros) e para cores sintéticas extremas (`#000000`, `#ffffff`, `#808080`, `#ffd400`, `#2fb866`): `contrastRatio(mark, fill) >= KIT_MARK_CONTRAST` (3).
+2. `mark === secondary` quando `contrastRatio(secondary, fill) >= 3`; senão, `mark` é `#ffffff` ou `#111417` e é o de maior contraste contra `fill` (empate: `#ffffff`).
+3. Nos 380 confrontos ordenados de `matchKits`: o mínimo de `contrastRatio(mark, fill)` em `away` e `awayGk` é `>= 3,1` (medido 3,14) e a contagem de discos com `mark === secondary` é **722** de 760; o teste fixa os dois números e falha se mudarem, para o `art-director` rever (como a lista dos 6 uniformes 3, seção 2.3).
+4. Aditivo: os campos `fill`, `stripe`, `ring`, `numberColor` e `numberPlate` de todos os 20 x 2 uniformes iguais ao golden atual (o golden do teste 1 não muda, só ganha `mark`).
+5. Entrada hostil (`colors` com `url(javascript:...)`, `#xyz`, vazio e `null`): `mark` sai `#rrggbb` válido (`safeColor`), sem lançar; `mark` não depende do parâmetro `pitch` (mesmo valor com `#2fb866`, `#177a42` e sem a opção); `fieldKit` não muda o kit recebido (`Object.freeze`).
+
 ## 4. Testes que o `developer` escreve (`app/src/lib/generators/kit.test.ts`)
 
 Os critérios de aceite da US-002 ficam todos cobertos; os testes de propriedade rodam sobre os 20 clubes reais e sobre clubes sintéticos.

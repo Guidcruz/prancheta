@@ -350,11 +350,7 @@ test.describe('Súmula do jogo (T-083)', () => {
   }) => {
     test.skip(!onPhone(page), 'uma vez por navegador');
     await page.setViewportSize({ width: 360, height: 740 });
-    await page.goto('/jogo/');
-    await page.getByRole('button', { name: 'Nova carreira' }).click();
-    await page.getByRole('radio', { name: /Inter-Regional/ }).check();
-    await page.getByRole('button', { name: 'Começar' }).click();
-    await expect(playButton(page)).toBeVisible();
+    await startCareer(page, { club: 'Inter-Regional' });
     for (const lang of ['es', 'en'] as const) {
       await reopenIn(page, lang);
       await playAndRead(page, lang);

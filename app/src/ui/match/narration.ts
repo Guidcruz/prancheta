@@ -25,7 +25,8 @@ export interface NarrationContext {
 const clubOf = (ctx: NarrationContext, side: Side) =>
   shortNameOf(ctx.game, side === 'home' ? ctx.homeId : ctx.awayId);
 
-const nameOf = (ctx: NarrationContext, id: PlayerId) =>
+/** The name a player is shown by ("match.player.unknown" without one). */
+export const nameOf = (ctx: NarrationContext, id: PlayerId) =>
   ctx.game.players[id]?.name.display ?? t('match.player.unknown', ctx.lang);
 
 /** The minute as shown ("45+2'") and as read ("minuto 45 mais 2 de acréscimo"). */

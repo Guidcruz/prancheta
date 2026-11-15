@@ -241,17 +241,20 @@ describe('the flow helpers (match-flow.ts)', () => {
     expect(storedOutcome(38, at(39))).toBe('saved');
   });
 
-  it('the sheet offers "Só lances principais" and "Só resultado", plus the career’s own mode', () => {
-    expect(playModeOptions('result', 'pt-BR').map((o) => o.value)).toEqual([
-      'highlights',
-      'result',
-    ]);
+  it('the sheet offers the three modes, "Animada completa" first, whatever the career’s mode (T-085)', () => {
+    for (const mode of ['full', 'highlights', 'result'] as const) {
+      expect(playModeOptions(mode, 'pt-BR').map((o) => o.value)).toEqual([
+        'full',
+        'highlights',
+        'result',
+      ]);
+    }
     expect(playModeOptions('full', 'pt-BR').map((o) => o.value)).toEqual([
       'full',
       'highlights',
       'result',
     ]);
-    expect(playModeOptions('highlights', 'es')[0]).toEqual({
+    expect(playModeOptions('highlights', 'es')[1]).toEqual({
       value: 'highlights',
       title: t('newGame.match.highlights', 'es'),
       description: t('newGame.match.highlights.body', 'es'),

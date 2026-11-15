@@ -65,6 +65,13 @@ export interface FieldKit {
   ring: string; // 2 px outline, >= 3:1 against the pitch
   numberColor: string; // >= 4.5:1 against fill (and stripe, if any)
   numberPlate: string | null; // null unless no colour reaches 4.5:1 on both
+  /**
+   * The dot drawn in the centre of the away disc of the 2D pitch (T-085; docs/art/uniformes.md,
+   * 3.1): the kit's `secondary` when it reaches {@link KIT_MARK_CONTRAST} against `fill`, else the
+   * neutral of the generator with the larger contrast (white on a tie). Computed for every slot;
+   * the screen decides where it is drawn. Independent of the pitch, the number and the plate.
+   */
+  mark: string;
 }
 
 export interface MatchKits {
@@ -80,6 +87,8 @@ export interface MatchKits {
 export const KIT_MIN_DISTANCE = 30;
 export const KIT_NUMBER_CONTRAST = 4.5;
 export const KIT_RING_CONTRAST = 3;
+/** The least contrast of `FieldKit.mark` against `fill` (a graphic element: 3:1). */
+export const KIT_MARK_CONTRAST = 3;
 
 const YELLOW = '#ffd400';
 /** Night grass, the default pitch. */
@@ -299,14 +308,29 @@ function numberFor(fill: string, stripe: string | null, secondary: string) {
   };
 }
 
-/** What the animated match draws for one kit (a dot with ring and number). */
+/** The away mark: the secondary when it stands out of the fill, else the stronger neutral. */
+function markFor(fill: string, secondary: string): string {
+  if (contrastRatio(secondary, fill) >= KIT_MARK_CONTRAST) return secondary;
+  return contrastRatio(NEUTRAL_LIGHT, fill) >= contrastRatio(NEUTRAL_DARK, fill)
+    ? NEUTRAL_LIGHT
+    : NEUTRAL_DARK;
+}
+
+/** What the animated match draws for one kit (a dot with ring, number and away mark). */
 export function fieldKit(kit: Kit, pitch: string = KIT_PITCH_NIGHT): FieldKit {
   const pit = safeColor(pitch, KIT_PITCH_NIGHT);
   const fill = safeColor(kit.base);
   const secondary = safeColor(kit.secondary);
   const stripe = DUAL.has(kit.pattern) ? secondary : null;
   const ring = contrastRatio(INK, pit) >= KIT_RING_CONTRAST ? INK : NEUTRAL_LIGHT;
-  return { slot: kit.slot, fill, stripe, ring, ...numberFor(fill, stripe, secondary) };
+  return {
+    slot: kit.slot,
+    fill,
+    stripe,
+    ring,
+    ...numberFor(fill, stripe, secondary),
+    mark: markFor(fill, secondary),
+  };
 }
 
 /**

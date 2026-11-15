@@ -145,7 +145,8 @@ test.describe('US-014: novo jogo', () => {
     await expect(start(page)).toBeDisabled();
     await expect(optionsButton(page)).toContainText('Técnico');
     await expect(optionsButton(page)).toContainText('Completo');
-    await expect(optionsButton(page)).toContainText('Só resultado');
+    // "Animada completa" is the default of a new career since the pitch (T-085).
+    await expect(optionsButton(page)).toContainText('Animada completa');
     await page.getByRole('radio').first().check();
     await expect(start(page)).toBeEnabled();
   });
@@ -165,10 +166,10 @@ test.describe('US-014: novo jogo', () => {
     await page.goto('/jogo/');
     await page.getByRole('button', { name: 'Nova carreira' }).click();
     await expect(optionsButton(page)).toContainText('Simplificado');
-    await expect(optionsButton(page)).toContainText('Só resultado');
+    await expect(optionsButton(page)).toContainText('Animada completa');
     await optionsButton(page).click();
     await expect(dialog(page).getByRole('radio', { name: /Simplificado/ })).toBeChecked();
-    await expect(dialog(page).getByRole('radio', { name: /Só resultado/ })).toBeChecked();
+    await expect(dialog(page).getByRole('radio', { name: /^Animada completa/ })).toBeChecked();
   });
 
   test('apelido vazio, só com espaços ou longo demais desabilita "Começar" com a mensagem', async ({

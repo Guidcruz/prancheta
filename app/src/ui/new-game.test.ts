@@ -67,17 +67,17 @@ describe('clubs in three strength bands (temporada.md)', () => {
 });
 
 describe('the options and their defaults (CEO decision 3)', () => {
-  it('offers "Só lances principais" and "Só resultado" until the pitch exists (P3; T-032)', () => {
-    expect(OFFERED_MATCH_MODES).toEqual(['highlights', 'result']);
-    expect(matchOptions('pt-BR').map((o) => o.value)).toEqual(['highlights', 'result']);
+  it('offers the three match modes, "Animada completa" first, since the pitch (T-085)', () => {
+    expect(OFFERED_MATCH_MODES).toEqual(['full', 'highlights', 'result']);
+    expect(matchOptions('pt-BR').map((o) => o.value)).toEqual(['full', 'highlights', 'result']);
   });
 
-  it('the first time: realism "Completo" and "Só resultado"', () => {
-    expect(initialSetup(undefined)).toEqual({ realism: 'full', matchMode: 'result' });
-    expect(DEFAULT_SETUP).toEqual({ realism: 'full', matchMode: 'result' });
+  it('the first time: realism "Completo" and "Animada completa" (decision 3 of T-025)', () => {
+    expect(initialSetup(undefined)).toEqual({ realism: 'full', matchMode: 'full' });
+    expect(DEFAULT_SETUP).toEqual({ realism: 'full', matchMode: 'full' });
   });
 
-  it('the last setup comes back, with a mode no longer offered replaced by the default', () => {
+  it('the last setup comes back with its own mode, also one other than the default', () => {
     expect(initialSetup({ realism: 'simplified', matchMode: 'result' })).toEqual({
       realism: 'simplified',
       matchMode: 'result',
@@ -88,8 +88,12 @@ describe('the options and their defaults (CEO decision 3)', () => {
     });
     expect(initialSetup({ realism: 'simplified', matchMode: 'full' })).toEqual({
       realism: 'simplified',
-      matchMode: 'result',
+      matchMode: 'full',
     });
+    // A mode that is not offered (a future one in an old device's memory) falls to the default.
+    expect(
+      initialSetup({ realism: 'simplified', matchMode: 'realTime' as unknown as 'full' }),
+    ).toEqual({ realism: 'simplified', matchMode: 'full' });
   });
 });
 
