@@ -86,9 +86,12 @@ describe('the match screen at the kick-off (partida.md, "Conteúdo")', () => {
           }),
         ),
       );
-      // No primary while the ball rolls; no "Pausada" before a pause; no navigation.
+      // No primary while the ball rolls; "Pausada" only reserved (hidden) before a pause, never read
+      // and never in the place of the phase; no navigation.
       expect(primaries(body.split('<dialog')[0]!)).toBe(0);
-      expect(body).not.toContain(`>${shown(t('match.paused', lang))}<`);
+      expect(body).toMatch(/class="[^"]*\bpaused\b[^"]*\boff\b/);
+      expect(body).not.toMatch(/class="[^"]*\bphase\b[^"]*\boff\b/);
+      expect(body).not.toContain(`, ${shown(t('match.paused', lang))}<`);
       expect(body).not.toContain('<nav');
       expectNoRawKey(body, lang);
     });
@@ -170,16 +173,34 @@ describe('the live Scoreboard (proposal 37)', () => {
           minute: "45+2'",
           minuteA11y: 'minuto 45 mais 2',
           phase: '1º tempo',
-          paused: 'Pausada',
+          pausedText: 'Pausada',
+          paused: true,
         },
         announcement: 'Gol de Leões',
       },
     }).body;
     expect(body).toContain(`>45+2'</span>`);
     expect(body).toContain('>Pausada<');
+    expect(body).toMatch(/\bphase\b[^"]*\boff\b[^>]*>1º tempo</);
     expect(body).not.toContain('Vitória');
     expect(body).toContain('minuto 45 mais 2, 1º tempo, Pausada');
     expect(body).toMatch(/aria-live="polite" aria-atomic="true">Gol de Leões</);
+  });
+
+  it('running, the word stays in the layout, hidden and unread; the phase shows', () => {
+    const body = render(Scoreboard, {
+      props: {
+        home: side(0),
+        away: side(0),
+        versus: '×',
+        size: 'md',
+        a11yLabel: 'Placar',
+        live: { minute: "23'", minuteA11y: 'minuto 23', phase: '1º tempo', pausedText: 'Pausada' },
+      },
+    }).body;
+    expect(body).toMatch(/\bpaused\b[^"]*\boff\b[^>]*>Pausada</);
+    expect(body).not.toMatch(/\bphase\b[^"]*\boff\b/);
+    expect(body).toContain('minuto 23, 1º tempo<');
   });
 });
 

@@ -22,10 +22,6 @@ test.describe('Placar ao pausar com o nome mais longo', () => {
       page,
     }) => {
       test.skip(!onPhone(page), 'uma vez por navegador');
-      // BUG conhecido (docs/bugs): com "Pausada" a coluna do centro do placar passa de 66px para
-      // 130px, os lados encolhem para 91px e "Inter-Regional" quebra em duas linhas (+12px). Quando
-      // o developer corrigir, o Playwright acusa "expected to fail": remova esta linha.
-      test.fail(true, 'o placar cresce 12px ao pausar com "Inter-Regional" a 360px');
       await page.setViewportSize({ width: 360, height: 740 });
       await careerWith(page, 'full', undefined, mine);
       await freezeClock(page);
@@ -35,7 +31,9 @@ test.describe('Placar ao pausar com o nome mais longo', () => {
       const boardBox = async () => (await board(page).boundingBox())!.height;
       const before = { board: await boardBox(), y: (await canvas.boundingBox())!.y };
       await control(page, 'match.pause').click();
-      const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+      const paused = board(page)
+        .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+        .filter({ visible: true });
       await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
       expect(await boardBox(), 'board height').toBe(before.board);
       expect((await canvas.boundingBox())!.y, 'pitch y').toBe(before.y);

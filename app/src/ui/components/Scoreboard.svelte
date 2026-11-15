@@ -11,8 +11,10 @@
     minuteA11y: string;
     /** "1º tempo". */
     phase: string;
-    /** "Pausada", beside the phase, only while the match is paused. */
-    paused?: string;
+    /** "Pausada": the word, always given so its width is reserved in the phase's cell. */
+    pausedText?: string;
+    /** The match is paused: the word takes the place of the phase (the phase stays, hidden). */
+    paused?: boolean;
   }
 
   /**
@@ -30,7 +32,9 @@
    *
    * Live (T-032; design-system.md, "Placar", proposal 37): `live` takes the place of the badge
    * under the goals (never both): the minute in `numero`, the phase in `caption` and, paused, the
-   * word "Pausada" in `body-strong` (the text is the cue, no new colour). It is read after the
+   * word "Pausada" in `body-strong` in the place of the phase, in the same grid cell (the text is the
+   * cue, no new colour; the one that does not apply is `visibility: hidden`, so the width and the
+   * height of the line never change on pause; the line never wraps). It is read after the
    * group's name. `announcement` is the last sentence for screen readers, in a hidden region
    * `aria-live="polite"` that is always there while live; the minute is never announced.
    */
@@ -101,8 +105,12 @@
       {#if live}
         <p class="live">
           <span class="numero minute">{live.minute}</span>
-          <span class="caption phase">{live.phase}</span>
-          {#if live.paused}<span class="body-strong paused">{live.paused}</span>{/if}
+          <span class="cell">
+            <span class="caption phase" class:off={live.paused}>{live.phase}</span>
+            {#if live.pausedText}
+              <span class="body-strong paused" class:off={!live.paused}>{live.pausedText}</span>
+            {/if}
+          </span>
         </p>
       {:else if badge}<StatusBadge {...badge} />{/if}
     </div>
@@ -112,7 +120,9 @@
     {#if named}
       <!-- The live line as read, after the group's name: the visible one is in the hidden row. -->
       <p class="visually-hidden">
-        {[live.minuteA11y, live.phase, live.paused].filter(Boolean).join(', ')}
+        {[live.minuteA11y, live.phase, live.paused ? live.pausedText : undefined]
+          .filter(Boolean)
+          .join(', ')}
       </p>
     {/if}
     <p class="visually-hidden" aria-live="polite" aria-atomic="true">{announcement ?? ''}</p>
@@ -176,15 +186,28 @@
      (14px above, 2px below), where its own 22px (or even 20px) would add about 0.8px. */
   .live {
     display: flex;
-    flex-wrap: wrap;
     justify-content: center;
     align-items: baseline;
     column-gap: var(--space-2);
+    white-space: nowrap;
     min-height: 20px;
     font-variant-numeric: tabular-nums;
   }
+  /* The phase and "Pausada" stacked in one cell: the cell is as wide as the wider word of the
+     language in use; the one that does not apply stays in the layout, hidden. */
+  .cell {
+    display: inline-grid;
+    align-items: baseline;
+    justify-items: center;
+  }
+  .cell > * {
+    grid-area: 1 / 1;
+  }
   .live .paused {
     line-height: 16px;
+  }
+  .off {
+    visibility: hidden;
   }
   .phase {
     color: var(--ink-muted);

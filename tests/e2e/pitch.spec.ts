@@ -324,7 +324,9 @@ test.describe('Campo 2D (T-085)', () => {
       }, state);
     // Hidden in the middle of the step: the pause waits for its end, with the pitch already still.
     await visibility('hidden');
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     await page.clock.runFor(3_000);
     const pixels = () =>
@@ -359,7 +361,9 @@ test.describe('Campo 2D (T-085)', () => {
     await page.clock.runFor(2_000);
     const running = (await canvas(page).boundingBox())!.y;
     await control(page, 'match.pause').click();
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     expect((await canvas(page).boundingBox())!.y).toBe(running);
     await control(page, 'match.resume').click();
@@ -530,7 +534,9 @@ test.describe('Campo 2D (T-085)', () => {
     expect(await frames(page)).toBeGreaterThan(0);
     // Paused: no frame.
     await control(page, 'match.pause').click();
-    const paused = board(page).getByText(ui('pt-BR', 'match.paused'), { exact: true });
+    const paused = board(page)
+      .getByText(ui('pt-BR', 'match.paused'), { exact: true })
+      .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     let before = await frames(page);
     await page.clock.runFor(5_000);
