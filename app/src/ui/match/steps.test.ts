@@ -177,6 +177,59 @@ describe('matchSteps', () => {
   });
 });
 
+describe('a match ended early ("Jogo encerrado": fulltime with `abandoned`)', () => {
+  // The home side falls below 7 at 30': the match ends there, with the awarded score.
+  const events: MatchEvent[] = [
+    { minute: 0, half: 1, importance: 1, type: 'kickoff' },
+    {
+      minute: 10,
+      half: 1,
+      importance: 3,
+      type: 'goal',
+      side: 'home',
+      scorer: 'a#9',
+      kind: 'open',
+      score: [1, 0],
+    },
+    {
+      minute: 30,
+      half: 1,
+      importance: 3,
+      type: 'red',
+      side: 'home',
+      player: 'a#4',
+      reason: 'direct',
+    },
+    { minute: 30, half: 1, importance: 3, type: 'fulltime', score: [0, 3], abandoned: true },
+  ];
+
+  it.each(['full', 'highlights'] as const)(
+    "%s: the minutes stop at 30', the score is the awarded one",
+    (mode) => {
+      const minutes = matchMinutes(events);
+      expect(minutes).toHaveLength(31);
+      expect(minutes.at(-1)).toEqual({ minute: 30, half: 1 });
+      const steps = matchSteps(events, mode);
+      const last = steps.at(-1)!;
+      expect(last.clock).toEqual({ minute: 30, half: 1 });
+      expect(last.line?.source).toBe(events[3]);
+      expect(last.timing).toBeUndefined();
+      expect(last.announce).toBe(events[3]);
+      const end = viewAt(steps, steps.length - 1);
+      expect(end).toMatchObject({
+        score: [0, 3],
+        phase: 'end',
+        ended: true,
+        clock: { minute: 30, half: 1 },
+      });
+      // Before the whistle, the real goal; no half time, no second half, no stoppage.
+      expect(viewAt(steps, steps.length - 2).score).toEqual([1, 0]);
+      expect(steps.some((s) => s.line?.id === 'second-half')).toBe(false);
+      expect(steps.some((s) => s.phase === 'half' || s.phase === 'second')).toBe(false);
+    },
+  );
+});
+
 describe('viewAt', () => {
   const { result } = matches.find((m) => m.result.score[0] + m.result.score[1] >= 2)!;
   const steps = matchSteps(result.events, 'full');

@@ -161,6 +161,51 @@ describe('every line of real matches, in the three languages', () => {
   });
 });
 
+describe('a match ended early ("Jogo encerrado")', () => {
+  const m = matches[0]!;
+  const home = m.game.clubs[m.match.home.clubId]!.def.shortName;
+  const away = m.game.clubs[m.match.away.clubId]!.def.shortName;
+  const end = (score: [number, number]): Extract<MatchEvent, { type: 'fulltime' }> => ({
+    minute: 30,
+    half: 1,
+    importance: 3,
+    type: 'fulltime',
+    score,
+    abandoned: true,
+  });
+
+  it.each(LANGS)(
+    '%s: the line names the club short of players; the announcement has the awarded score',
+    (lang) => {
+      const ctx = ctxOf(m, lang);
+      // The home side ended short (it lost 0 × 3); then the away side (3 × 0).
+      for (const [score, club] of [
+        [[0, 3], home],
+        [[3, 0], away],
+      ] as const) {
+        const item = commentaryItem(line(end([...score]), 'final'), ctx);
+        expect(item).toMatchObject({
+          tone: 'phase',
+          kind: t('match.live.fulltime', lang),
+          text: t('match.live.fulltime.abandoned', lang, { club }),
+        });
+        expect(item.club).toBeUndefined();
+        expect(announcement(end([...score]), ctx)).toBe(
+          t('match.live.fulltime.a11y', lang, {
+            home,
+            homeGoals: score[0],
+            away,
+            awayGoals: score[1],
+          }),
+        );
+      }
+      // A whole match has no such sentence.
+      const whole: MatchEvent = { ...end([1, 1]), abandoned: false };
+      expect(commentaryItem(line(whole, 'final'), ctx).text).toBeUndefined();
+    },
+  );
+});
+
 describe('announcements', () => {
   const m = matches.find((x) => x.result.events.some((e) => e.type === 'goal'))!;
   const ctx = ctxOf(m);
