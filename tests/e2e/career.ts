@@ -16,10 +16,12 @@ const MATCH_MODE_TITLES = {
 
 /**
  * Abre o jogo e cria uma carreira: "Nova carreira", o primeiro clube da lista (o mais forte) ou o
- * de nome curto `club`, e "Começar". Nas opções da carreira, marca o tipo de partida `matchMode`
- * (padrão: "Só resultado", para a rodada abrir o resumo direto; desde a T-085 o padrão do jogo é
- * "Animada completa") e, com `realism: 'simplified'`, "Simplificado". Termina na moldura da
- * carreira e devolve o nome curto do clube.
+ * de nome curto `club`, e "Começar", com o tipo de partida `matchMode` (padrão: "Só resultado",
+ * para a rodada abrir o resumo direto; desde a T-085 o padrão do jogo é "Animada completa"). Com
+ * `realism: 'simplified'`, marca "Simplificado" e o tipo nas opções da carreira, como antes; sem
+ * ele, o tipo vem da última configuração lembrada no aparelho (`kv` › `newGame.last`, escrita
+ * antes de abrir o Novo jogo), para a folha das opções não deixar entrada no histórico. Termina na
+ * moldura da carreira e devolve o nome curto do clube.
  */
 export async function startCareer(
   page: Page,
@@ -31,13 +33,21 @@ export async function startCareer(
 ): Promise<string> {
   const { realism = 'full', club, matchMode = 'result' } = options;
   await page.goto('/jogo/');
-  await page.getByRole('button', { name: 'Nova carreira' }).click();
-  await page.getByRole('button', { name: /Opções da carreira/ }).click();
-  const sheet = page.getByRole('dialog');
-  if (realism === 'simplified') await sheet.getByRole('radio', { name: /Simplificado/ }).check();
-  await sheet.getByRole('radio', { name: new RegExp(`^${MATCH_MODE_TITLES[matchMode]}`) }).check();
-  await sheet.getByRole('button', { name: 'Pronto' }).click();
-  await expect(sheet).toHaveCount(0);
+  const create = page.getByRole('button', { name: 'Nova carreira' });
+  await expect(create).toBeVisible();
+  const title = MATCH_MODE_TITLES[matchMode];
+  if (realism === 'full') await rememberSetup(page, { realism, matchMode });
+  await create.click();
+  const optionsButton = page.getByRole('button', { name: /Opções da carreira/ });
+  if (realism === 'simplified') {
+    await optionsButton.click();
+    const sheet = page.getByRole('dialog');
+    await sheet.getByRole('radio', { name: /Simplificado/ }).check();
+    await sheet.getByRole('radio', { name: new RegExp(`^${title}`) }).check();
+    await sheet.getByRole('button', { name: 'Pronto' }).click();
+    await expect(sheet).toHaveCount(0);
+  }
+  await expect(optionsButton).toContainText(title);
   const radio =
     club === undefined
       ? page.getByRole('radio').first()
@@ -47,6 +57,31 @@ export async function startCareer(
   await page.getByRole('button', { name: 'Começar' }).click();
   await expect(playButton(page)).toBeVisible();
   return name;
+}
+
+/** Grava a última configuração do Novo jogo (`newGame.last` no `kv` do banco de teste). */
+async function rememberSetup(
+  page: Page,
+  setup: { realism: 'full' | 'simplified'; matchMode: keyof typeof MATCH_MODE_TITLES },
+): Promise<void> {
+  await page.evaluate(
+    (value) =>
+      new Promise<void>((resolve, reject) => {
+        const open = indexedDB.open('prancheta-test');
+        open.onerror = () => reject(open.error);
+        open.onsuccess = () => {
+          const db = open.result;
+          const tx = db.transaction('kv', 'readwrite');
+          tx.objectStore('kv').put({ key: 'newGame.last', value });
+          tx.oncomplete = () => {
+            db.close();
+            resolve();
+          };
+          tx.onerror = () => reject(tx.error);
+        };
+      }),
+    setup,
+  );
 }
 
 /** Abre a carreira em destaque (a mais recente) da tela inicial. */
