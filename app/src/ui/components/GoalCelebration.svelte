@@ -63,8 +63,9 @@
   .title {
     white-space: nowrap;
   }
-  /* At most 2 lines (the line height of subtitulo, 24px), cut between lines and with no
-     ellipsis (partida.md, "Comemoração"): a third line is never drawn. */
+  /* At most 2 lines, cut between lines and with no ellipsis (partida.md, "Comemoração"): a third
+     line is never drawn. The 24px is the line height of the token `subtitulo` (--type-subtitulo,
+     600 20px/24px), written here until the token script exports it on its own. */
   .scorer {
     max-height: calc(2 * 24px);
     overflow: hidden;
