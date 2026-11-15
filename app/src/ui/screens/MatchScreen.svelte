@@ -130,8 +130,9 @@
   }
 
   async function finish(): Promise<void> {
-    // The final whistle with "Sair da partida?" open: the sheet has nothing left to ask.
-    closeLeave(false);
+    // The final whistle with "Sair da partida?" open: the sheet has nothing left to ask, and the
+    // focus goes back to the heading, as on any close of the sheet.
+    closeLeave();
     stage = wantSummary ? 'skipping' : 'saving';
     const outcome = await onfinish();
     if (outcome === 'failed') {
