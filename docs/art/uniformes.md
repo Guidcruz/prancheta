@@ -54,7 +54,7 @@ A coluna da direita é a **tabela de exclusão** (`KIT_PATTERN_OF_CREST`): para 
 Tudo derivado de `seedFromString` (`engine/rng.ts`) sobre rótulos fixos, como em `face.ts`, e nunca de ordem de lista, data ou `Math.random`:
 
 1. Uniforme 1: `pattern = pick(seed("${id}-kit1-pattern"), PESOS_PADRAO, exclusão)`. Pesos (soma 100): `plain` 24, `hoops` 14, `vstripes` 14, `halves` 8, `band` 10, `sash` 4, `sashMirror` 4, `chevron` 6, `yoke` 8, `sleeves` 8. O padrão excluído tem peso 0 e a escolha é feita sobre o resto (renormalizado), então a escolha continua uma função só do `id` e do `crestPattern`.
-2. Uniforme 2: `seed("${id}-kit2-pattern")`, mesma tabela, com **dois** excluídos (o do escudo e o do uniforme 1), para o reserva nunca ser igual ao principal no desenho.
+2. Uniforme 2: `seed("${id}-kit2-pattern")`, mesma tabela, com **dois** excluídos (o do escudo e o do uniforme 1), para o reserva nunca ser igual ao principal no desenho. Se o uniforme 1 é `sash` ou `sashMirror`, o 2 exclui as **duas** faixas diagonais (a espelhada parece a mesma camisa); regra a mais do código, aceita pelo `art-director`. Consequência intencional da tabela de exclusão: `crestPattern: none` exclui `plain`, então um clube de escudo sem padrão (hoje o Cruzador) nunca tem camisa lisa, porque a lisa é o que o escudo liso evoca do real.
 3. Gola: `seed("${id}-kit-collar")`, uniforme entre as três, a mesma nos dois uniformes.
 4. Rótulos e pesos são constantes exportadas (`KIT_WEIGHTS`) e entram no teste de golden; mudar um peso muda o uniforme de clubes existentes e exige revisão do `art-director`.
 
