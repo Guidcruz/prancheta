@@ -12,7 +12,7 @@
     /** "1º tempo". */
     phase: string;
     /** "Pausada": the word, always given so its width is reserved in the phase's cell. */
-    pausedText?: string;
+    pausedText: string;
     /** The match is paused: the word takes the place of the phase (the phase stays, hidden). */
     paused?: boolean;
   }
@@ -107,9 +107,7 @@
           <span class="numero minute">{live.minute}</span>
           <span class="cell">
             <span class="caption phase" class:off={live.paused}>{live.phase}</span>
-            {#if live.pausedText}
-              <span class="body-strong paused" class:off={!live.paused}>{live.pausedText}</span>
-            {/if}
+            <span class="body-strong paused" class:off={!live.paused}>{live.pausedText}</span>
           </span>
         </p>
       {:else if badge}<StatusBadge {...badge} />{/if}
