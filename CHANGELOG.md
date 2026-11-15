@@ -396,7 +396,7 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Corrigido
 
-- Campo 2D da partida: ligar "reduzir movimento" no meio da partida passa a parar o campo já no lance seguinte também no Safari (WebKit), que só avisava a mudança na próxima atualização da tela; antes o campo seguia se mexendo.
+- Campo 2D da partida: ligar "reduzir movimento" no meio da partida passa a parar o campo já no lance seguinte também no WebKit. A tela lê a preferência pelo estilo calculado a cada lance, e não mais pela media query, que no WebKit dos testes ficava desatualizada até a próxima atualização da tela.
 - Card do jogador: o título passa a ser o mesmo nome da linha do Elenco (o apelido, quando há), e o nome completo aparece logo abaixo, em letra menor, só quando é diferente. Antes o card mostrava só o nome completo e parecia ser de outro jogador.
 - Toque duplo no X do card do jogador e no "Fechar" do menu "Mais" não fecha duas vezes (T-028).
 - Site: espaços em volta de elementos inline ("eLiga", "oroteiro"), com teste geral em `site/src/lib/dist.test.ts`.
