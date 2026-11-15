@@ -86,8 +86,11 @@
   function drawField(): void {
     if (canvas === undefined || ctx === null || cssWidth === 0) return;
     dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(cssWidth * dpr);
-    canvas.height = Math.round(cssHeight * dpr);
+    const width = Math.round(cssWidth * dpr);
+    const height = Math.round(cssHeight * dpr);
+    // Setting the size clears the canvas, even to the same value: only when it changes.
+    if (canvas.width !== width) canvas.width = width;
+    if (canvas.height !== height) canvas.height = height;
     scale = canvas.width / LENGTH;
     ink = token('--ink');
     field ??= document.createElement('canvas');
@@ -208,7 +211,8 @@
       return;
     }
     ready = true;
-    if (!running) draw(performance.now());
+    // A frame now, also while running: the next one may be a frame away.
+    draw(performance.now());
   }
 
   onMount(() => {
