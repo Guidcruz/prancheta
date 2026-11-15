@@ -511,8 +511,19 @@ test.describe('Escalação (escalacao.md; US-017)', () => {
   }) => {
     const fixture = await withFixture(page, (save) => {
       // Same condition and morale for the whole squad, so the value is overall x fit alone.
-      for (const p of squadOf(save)) {
-        changePlayer(save, p.id, { condition: 100, morale: 50 });
+      // The overalls are drawn per career; a leftover of another position with a much higher
+      // overall can beat a weak natural (value = overall x fit, and the best fit off position is
+      // 0.9). Keep every overall in 70..74 (74 x 0.9 < 70), so a natural always wins its slot.
+      for (const [i, p] of squadOf(save).entries()) {
+        const overall = 70 + (i % 5);
+        changePlayer(save, p.id, {
+          condition: 100,
+          morale: 50,
+          overall,
+          potential: Math.max(p.potential, overall),
+          // The weights of an overall add up to 1: every attribute at `overall` gives exactly it.
+          attributes: Object.fromEntries(Object.keys(p.attributes).map((key) => [key, overall])),
+        });
       }
       // Only one AM left available: the second AM slot has no natural.
       const ams = squadOf(save)
