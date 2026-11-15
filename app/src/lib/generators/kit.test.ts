@@ -5,6 +5,7 @@ import forbidden from './kit.forbidden.json';
 import {
   KIT_COLLARS,
   KIT_GK_PALETTE,
+  KIT_MARK_CONTRAST,
   KIT_MIN_DISTANCE,
   KIT_NUMBER_CONTRAST,
   KIT_PATTERNS,
@@ -378,6 +379,109 @@ describe('kit: number and ring', () => {
   it('uses a white ring on a pitch where the ink ring would vanish', () => {
     expect(fieldKit(allKits(clubs[0]!)[0]!, '#05080c').ring).toBe(WHITE);
     expect(fieldKit(allKits(clubs[0]!)[0]!, NIGHT).ring).toBe(INK);
+  });
+});
+
+// 14 (T-085; docs/art/uniformes.md, 3.1)
+describe('kit: the away mark of the 2D pitch (FieldKit.mark)', () => {
+  const SYNTH = ['#000000', WHITE, '#808080', '#ffd400', '#2fb866'];
+  const base = allKits(clubs[0]!)[0]!;
+  const expectedMark = (f: FieldKit, secondary: string) => {
+    if (contrastRatio(secondary, f.fill) >= KIT_MARK_CONTRAST) return secondary;
+    return contrastRatio(WHITE, f.fill) >= contrastRatio(DARK, f.fill) ? WHITE : DARK;
+  };
+
+  it('reaches 3:1 against the fill, with the secondary when it can (every kit, extreme colours)', () => {
+    expect(KIT_MARK_CONTRAST).toBe(3);
+    const kits = [
+      ...clubs.flatMap(allKits),
+      ...SYNTH.flatMap((a) =>
+        SYNTH.flatMap((b) =>
+          (['plain', 'hoops'] as const).map((pattern) => ({
+            ...base,
+            base: a,
+            secondary: b,
+            pattern,
+          })),
+        ),
+      ),
+    ];
+    for (const k of kits) {
+      const f = fieldKit(k);
+      const name = `${k.clubId} ${k.slot} ${k.base} ${k.secondary}`;
+      expect(contrastRatio(f.mark, f.fill), name).toBeGreaterThanOrEqual(KIT_MARK_CONTRAST);
+      expect(f.mark, name).toBe(expectedMark(f, k.secondary));
+      if (f.mark !== k.secondary) expect([WHITE, DARK], name).toContain(f.mark);
+    }
+    // A tie between the neutrals goes to white (no fill sits exactly in the middle, so the rule
+    // is checked on the rule itself).
+    const mid = fieldKit({ ...base, base: '#777777', secondary: '#787878' });
+    expect(mid.mark).toBe(
+      contrastRatio(WHITE, '#777777') >= contrastRatio(DARK, '#777777') ? WHITE : DARK,
+    );
+  });
+
+  it('pins the 380 matches: least contrast 3.1 and the club colour on 722 of the 760 away discs', () => {
+    let least = Infinity;
+    let secondary = 0;
+    let discs = 0;
+    for (const [h, v] of pairs) {
+      const m = matchKits(h, v);
+      for (const [f, k] of [
+        [m.away, m.kits.away],
+        [m.awayGk, m.kits.awayGk],
+      ] as const) {
+        discs++;
+        least = Math.min(least, contrastRatio(f.mark, f.fill));
+        if (f.mark === k.secondary) secondary++;
+      }
+    }
+    // Measured by the ux-designer (docs/art/uniformes.md, 3.1): 3.14:1 and 722 of 760; a change
+    // goes to the art-director.
+    expect({ discs, secondary }).toEqual({ discs: 760, secondary: 722 });
+    expect(least).toBeGreaterThanOrEqual(3.1);
+    expect(least).toBeCloseTo(3.14, 2);
+  });
+
+  it('is additive: the other fields of the 20 clubs are the ones before T-085', () => {
+    const lines: string[] = [];
+    for (const c of clubs) {
+      for (const k of allKits(c)) {
+        const f = fieldKit(k);
+        lines.push(
+          JSON.stringify([f.slot, f.fill, f.stripe, f.ring, f.numberColor, f.numberPlate]),
+        );
+      }
+    }
+    // The hash of the same lines computed with kit.ts before the mark existed (main, 2026-11-15).
+    expect(hash(lines.join('\n'))).toBe('c362ef06');
+    expect(lines).toHaveLength(80);
+  });
+
+  it('survives hostile colours, ignores the pitch and leaves the kit unchanged', () => {
+    const hostile = [
+      ['url(javascript:alert(1))', '#xyz'],
+      ['', ''],
+      [null, undefined],
+    ] as unknown as [string, string][];
+    for (const colors of hostile) {
+      const club = { id: 'x', colors, crestPattern: 'none' } as unknown as KitClub;
+      const m = matchKits(club, club);
+      for (const f of [m.home, m.away, m.homeGk, m.awayGk])
+        expect(f.mark).toMatch(/^#[0-9a-f]{6}$/);
+    }
+    for (const c of clubs) {
+      for (const k of allKits(c)) {
+        const frozen = Object.freeze({ ...k });
+        const marks = [
+          fieldKit(frozen).mark,
+          fieldKit(frozen, NIGHT).mark,
+          fieldKit(frozen, DAY).mark,
+        ];
+        expect(new Set(marks).size, `${c.id} ${k.slot}`).toBe(1);
+        expect(frozen).toEqual(k);
+      }
+    }
   });
 });
 
