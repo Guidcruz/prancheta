@@ -3,6 +3,7 @@ import type { CareerState } from '@lib/career';
 import type { Lang } from '@lib/config';
 import { t } from '@lib/i18n';
 import type { OptionItem } from './components/OptionGroup.svelte';
+import { lazyChunk } from './lazy-chunk';
 import type { WatchMode } from './match/steps';
 import { OFFERED_MATCH_MODES } from './new-game';
 
@@ -13,6 +14,14 @@ import { OFFERED_MATCH_MODES } from './new-game';
  * with `replaceState`), so the history is "tab → summary", as in "Só resultado". The phone's back
  * during the match pauses it and asks; there is no way out without playing.
  */
+
+/**
+ * The chunk of the match screen (docs/02-architecture.md, 4.7): the MatchScreen and what only it
+ * imports (the clock, the player, the commentary, the loader of the pitch), asked when "Jogar
+ * rodada" opens a match, once per session. This is the only way into it (the lint refuses a static
+ * import of the screen).
+ */
+export const loadMatchScreen = lazyChunk(() => import('./screens/MatchScreen.svelte'));
 
 /** The address of the match. */
 export const MATCH_HASH = '#/match';
@@ -48,9 +57,9 @@ export function storedOutcome(
 const ORDER: readonly MatchMode[] = ['full', 'highlights', 'result'];
 
 /**
- * The cards of the sheet of the match mode: the modes offered (T-032: "Só lances principais" and
- * "Só resultado"), plus the career's own when it is not offered (a save in "Animada completa"
- * shows it checked anyway), in the order of the new game, with the texts of its cards.
+ * The cards of the sheet of the match mode: the modes offered (since T-085 the three, "Animada
+ * completa" first), plus the career's own when it is not offered (it shows checked anyway), in the
+ * order of the new game, with the texts of its cards.
  */
 export function playModeOptions(current: MatchMode, lang: Lang): OptionItem[] {
   const modes = ORDER.filter((mode) => OFFERED_MATCH_MODES.includes(mode) || mode === current);

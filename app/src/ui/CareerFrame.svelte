@@ -59,12 +59,13 @@
     MATCH_ENTRY,
     MATCH_HASH,
     isMatchHash,
+    loadMatchScreen,
     playModeOptions,
     storedOutcome,
     watchModeOf,
   } from './match-flow';
   import type { WatchMode } from './match/steps';
-  import MatchScreen, { type FinishOutcome } from './screens/MatchScreen.svelte';
+  import type { FinishOutcome, PitchFailure } from './screens/MatchScreen.svelte';
   import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
   import CalendarRound from './screens/CalendarRound.svelte';
   import CalendarView from './screens/CalendarView.svelte';
@@ -127,6 +128,14 @@
     readonly game: GameState;
   }
   let match: MatchSession | undefined = $state.raw();
+  /**
+   * The match screen, from its chunk (docs/02-architecture.md, 4.7): asked on the first "Jogar
+   * rodada" of an assisted mode, together with the live match.
+   */
+  let MatchScreenView: typeof import('./screens/MatchScreen.svelte').default | undefined =
+    $state.raw();
+  /** The pitch of this match already fell back (one entry in the error log per match). */
+  let pitchLogged = false;
   /** The round of the match, once asked: a second ask gets the same answer (no second round). */
   let finished: Promise<FinishOutcome> | undefined;
   let matchScreen:
@@ -498,6 +507,9 @@
     computing = true;
     const careerId = save.careerId;
     const speed = service.matchSpeed();
+    // The chunk of the screen is asked first; the match opens when both have come.
+    const screen = loadMatchScreen();
+    screen.catch(() => undefined);
     await new Promise<void>((resolve) => requestAnimationFrame(() => setTimeout(resolve, 0)));
     // The career may have been closed meanwhile (back to the home screen).
     if (service.snapshot.save?.careerId !== careerId) {
@@ -508,14 +520,32 @@
     const session = live.ok
       ? { careerId, input, live: live.value, mode, speed: await speed, game: save.game }
       : undefined;
-    computing = false;
     if (!live.ok) {
+      computing = false;
       // "Erro ao montar a partida": the content area shows the error; nothing was applied.
       if (live.error !== 'busy') playError = live.error;
       return;
     }
+    try {
+      MatchScreenView = (await screen).default;
+    } catch (error) {
+      computing = false;
+      // The chunk of the screen did not load: "Erro ao montar a partida"; nothing was applied,
+      // and the next "Jogar rodada" asks for the chunk again.
+      void log.record({ kind: 'programming', code: 'match-chunk', screen: 'match', error });
+      playError = 'unexpected';
+      return;
+    }
+    computing = false;
     if (service.snapshot.save?.careerId !== careerId) return;
     whenClosed(() => openMatch(session!));
+  }
+
+  /** The pitch fell back to the layout without it: logged once per match. */
+  function pitchFailed(code: PitchFailure, error?: unknown): void {
+    if (pitchLogged) return;
+    pitchLogged = true;
+    void log.record({ kind: 'programming', code, screen: 'match', error });
   }
 
   function openMatch(session: MatchSession): void {
@@ -529,6 +559,7 @@
     if (sheetEntry) history.replaceState(MATCH_ENTRY, '', MATCH_HASH);
     else history.pushState(MATCH_ENTRY, '', MATCH_HASH);
     finished = undefined;
+    pitchLogged = false;
     match = session;
   }
 
@@ -925,7 +956,7 @@
   </div>
 {/snippet}
 
-{#if match !== undefined}
+{#if match !== undefined && MatchScreenView !== undefined}
   <ErrorBoundary
     layout="screen"
     copy={matchCopy}
@@ -934,7 +965,7 @@
       void log.record({ kind: 'programming', code: 'unexpected', screen: 'match', error })}
     onhome={skipBrokenMatch}
   >
-    <MatchScreen
+    <MatchScreenView
       bind:this={matchScreen}
       {lang}
       game={match.game}
@@ -945,6 +976,7 @@
       onfinish={finishMatch}
       onsummary={matchToSummary}
       onleave={leaveMatch}
+      onpitchfail={pitchFailed}
     />
   </ErrorBoundary>
 {:else if summaryShown}
