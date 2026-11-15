@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import type { PitchKit, PitchKits } from '../match/pitch/kits';
+  import { clampBall, pitchGeometry, type PitchGeometry } from '../match/pitch/geometry';
   import { PITCH_SIZE } from '../match/pitch/motion';
   import type { PitchScene } from '../match/pitch/scene';
 
@@ -43,9 +44,6 @@
   const WIDTH = PITCH_SIZE.width + 2 * PITCH_SIZE.margin;
   const RATIO = LENGTH / WIDTH;
   const MARGIN = PITCH_SIZE.margin;
-  const DISC = 5.5;
-  const BALL = 2.5;
-  const BALL_MIN_PX = 8;
   const RING_PX = 2;
   const TAU = Math.PI * 2;
 
@@ -60,6 +58,8 @@
   let ready = $state(false);
   // The values of the frame, set when the size or the theme changes (nothing per frame).
   let scale = 1;
+  /** The sizes in pixels at this size of the canvas (the ball's limits included). */
+  let geometry: PitchGeometry = pitchGeometry(1, 1, 1);
   let dpr = 1;
   let ink = '';
   let raf = 0;
@@ -91,7 +91,8 @@
     // Setting the size clears the canvas, even to the same value: only when it changes.
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
-    scale = canvas.width / LENGTH;
+    geometry = pitchGeometry(width, height, dpr);
+    scale = geometry.scale;
     ink = token('--ink');
     field ??= document.createElement('canvas');
     field.width = canvas.width;
@@ -154,7 +155,8 @@
     try {
       const scene = frame(now);
       const s = scale;
-      const r = (DISC / 2) * s;
+      const g = geometry;
+      const r = g.discRadius;
       const ring = RING_PX * dpr;
       ctx.drawImage(field, 0, 0);
       ctx.lineWidth = ring;
@@ -179,10 +181,12 @@
         }
       }
       ctx.beginPath();
+      // The centre held inside the canvas: at the smallest pitch (180 × 120) the 8px ball would
+      // be cut by the edge when it sits in the net or wide of the goal.
       ctx.arc(
-        (scene.ballX + MARGIN) * s,
-        (scene.ballY + MARGIN) * s,
-        Math.max((BALL / 2) * s, (BALL_MIN_PX / 2) * dpr),
+        clampBall((scene.ballX + MARGIN) * s, g.ballMinX, g.ballMaxX),
+        clampBall((scene.ballY + MARGIN) * s, g.ballMinY, g.ballMaxY),
+        g.ballRadius,
         0,
         TAU,
       );

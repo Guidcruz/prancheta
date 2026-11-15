@@ -11,7 +11,11 @@ export const PITCH_SIZE = {
   width: 68,
   /** The strip of grass around the pitch (the drawing is 111 × 74). */
   margin: 3,
-  /** The most the ball's radius takes, in metres (its 8px minimum on the smallest pitch). */
+  /**
+   * The room the ball keeps from the edge of the drawing, in metres: its 8px minimum on a pitch of
+   * about 297px wide or more. On a smaller pitch (down to 180 × 120, the least height that still
+   * has a pitch) the MatchPitch also holds the centre of the ball inside the canvas.
+   */
   ballRoom: 1.5,
 } as const;
 
@@ -35,9 +39,9 @@ export const PITCH_MOTION = {
   save: { y: [30.5, 37.5], off: 1 },
   post: { halfGoal: 3.66, bounce: 6 },
   /**
-   * Wide: beside the goal, and into the strip of grass only as far as the ball stays whole in the
-   * canvas: the 3 m of the strip less the radius of the ball at its smallest size (8px, about
-   * 1.5 m on the smallest pitch, 297px wide).
+   * Wide: beside the goal, and into the strip of grass no further than `PITCH_SIZE.ballRoom` from
+   * the edge (3 m − 1.5 m). Below about 297px of width the MatchPitch holds the ball inside the
+   * canvas (`geometry.ts`).
    */
   wide: { inside: [29, 39], spread: 7, out: 1.5 },
   /** A player leaving goes this far past the nearest touchline. */
