@@ -342,7 +342,11 @@ test.describe('Partida narrada (T-032)', () => {
     await expect(paused).toBeVisible();
     await control(page, 'match.resume').click();
     await expect(paused).toHaveCount(0);
-    await page.clock.runFor(3_000);
+    // A goal holds the minute still (drama + afterGoal), so wait for it to move.
+    await runUntil(page, async () => (await minuteText(page)) !== minute, {
+      step: 100,
+      max: 8_000,
+    });
     expect(await minuteText(page)).not.toBe(minute);
 
     // The page hidden (another app, the screen off): paused; back, still paused.
@@ -439,7 +443,11 @@ test.describe('Partida narrada (T-032)', () => {
     await expect(page).toHaveURL(/#\/match$/);
     await expect(page.getByRole('heading', { level: 1, name: 'Rodada 1' })).toBeFocused();
     const minute = await minuteText(page);
-    await page.clock.runFor(3_000);
+    // A goal holds the minute still (drama + afterGoal), so wait for it to move.
+    await runUntil(page, async () => (await minuteText(page)) !== minute, {
+      step: 100,
+      max: 8_000,
+    });
     expect(await minuteText(page)).not.toBe(minute);
 
     // Back again, then the back of the sheet itself: the sheet closes, the match stays paused.
