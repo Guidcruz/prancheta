@@ -6,7 +6,7 @@ tags: ['partida', 'campo 2D', 'uniformes', 'telas', 'acessibilidade', 'safari']
 etapa: 1
 ---
 
-Até o post anterior, a rodada era jogada e você via o resultado. Nesta quinzena a partida passou a ser **assistida**: ela roda minuto a minuto na tela, com narração, e na versão completa com um campo visto de cima. O post conta como isso funciona, o que medimos e um bug do Safari que só apareceu porque testamos no WebKit. Antes, as telas de consulta que entraram no caminho: Tabela e Calendário.
+Até o post anterior, a rodada era jogada e você via o resultado. Nesta semana a partida passou a ser **assistida**: ela roda minuto a minuto na tela, com narração, e na versão completa com um campo visto de cima. O post conta como isso funciona, o que medimos e um bug do Safari que só apareceu porque testamos no WebKit. Antes, as telas de consulta que entraram no caminho: Tabela e Calendário.
 
 ## Tabela e Calendário
 
@@ -79,13 +79,15 @@ A correção definitiva troca a fonte: a tela passou a ler o **estilo calculado*
 
 Cada lance de um time na narração e na súmula agora mostra o **escudo do clube** (24 px) logo depois do minuto, e o nome do clube continua escrito na linha. O escudo é decorativo: o leitor de tela fala o nome do clube logo depois do minuto. A altura da linha não mudou, e não há rolagem lateral de 360 a 1280 px nos três idiomas.
 
-Junto com isso, o **placar deixou de se mexer quando a partida pausa**: ao pausar, o placar fica onde está, sem se deslocar.
+Junto com isso, o **placar deixou de se mexer quando a partida pausa**. Antes, a palavra "Pausada" entrava ao lado da fase do jogo, e a linha do meio do placar alargava. Numa tela de 360 px, o nome mais longo da liga ("Inter-Regional", clube fictício) passava a não caber e quebrava em duas linhas: o placar crescia 12 px e o campo descia. Agora "Pausada" ocupa o lugar da fase, numa mesma célula que sempre reserva a largura da maior das duas palavras. Como a célula já tem o tamanho final, nada muda de tamanho ao pausar ou retomar.
+
+O mesmo teste no WebKit pegou um segundo problema: ao estreitar a tela, o campo guardava por um instante a largura antiga e passava da largura da coluna, o que causava 30 px de rolagem lateral. Agora o campo nunca passa da largura da coluna.
 
 ## O que não mudou
 
 Nada disso mexeu no motor, no formato do save ou na versão do motor: nenhuma partida simulada mudou. Todo o trabalho foi nas telas e no que acontece entre o motor e os seus olhos.
 
-A suíte do app está em 2.953 testes de unidade e do motor, mais 140 dos scripts e 25 do build, e 366 testes de ponta a ponta no Chromium (celular e computador), sem falhas. O WebKit roda no servidor de integração, e foi lá que o bug acima apareceu. Dois testes de ponta a ponta também ficaram mais firmes: um da sugestão de escalação com ausências, que agora é determinístico, e outro que esperava pouco depois de um gol.
+A suíte do app está em 2.957 testes de unidade e do motor, mais 140 dos scripts e 25 do build, e 383 testes de ponta a ponta no Chromium (celular e computador), sem falhas. O WebKit roda no servidor de integração, e foi lá que o bug acima apareceu. Dois testes de ponta a ponta também ficaram mais firmes: um da sugestão de escalação com ausências, que agora é determinístico, e outro que esperava pouco depois de um gol.
 
 ## O que vem a seguir
 
