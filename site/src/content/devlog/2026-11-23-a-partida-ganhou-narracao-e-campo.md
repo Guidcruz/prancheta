@@ -81,7 +81,7 @@ Cada lance de um time na narração e na súmula agora mostra o **escudo do club
 
 Junto com isso, o **placar deixou de se mexer quando a partida pausa**. Antes, a palavra "Pausada" entrava ao lado da fase do jogo, e a linha do meio do placar alargava. Numa tela de 360 px, o nome mais longo da liga ("Inter-Regional", clube fictício) passava a não caber e quebrava em duas linhas: o placar crescia 12 px e o campo descia. Agora "Pausada" ocupa o lugar da fase, numa mesma célula que sempre reserva a largura da maior das duas palavras. Como a célula já tem o tamanho final, nada muda de tamanho ao pausar ou retomar.
 
-O mesmo teste no WebKit pegou um segundo problema: ao estreitar a tela, o campo guardava por um instante a largura antiga e passava da largura da coluna, o que causava 30 px de rolagem lateral. Agora o campo nunca passa da largura da coluna.
+Os testes no WebKit pegaram um segundo problema: ao estreitar a tela, o campo guardava por um instante a largura antiga e passava da largura da coluna, o que causava 30 px de rolagem lateral. Agora o campo nunca passa da largura da coluna.
 
 ## O que não mudou
 
