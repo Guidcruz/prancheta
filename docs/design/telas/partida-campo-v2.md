@@ -253,6 +253,17 @@ HTML e canvas estáticos, capturados no Chromium sem janela a densidade 2. Clube
 
 ## 15. Decisões do CEO (2026-11-23)
 
+1. **Fases:** aprovadas como recomendado. Fase 1: rastro, etiqueta e cunha, no campo inclinado (item 6), com os passes anônimos e a posse do `campo-lances.md`. Fase 2: etiqueta em espera e assistência na comemoração.
+2. **Proposta 41 (etiqueta no campo): aprovada.** Fica revogada a parte "nenhum número ou texto no campo" da decisão 11 da T-032; o canvas continua sem texto.
+3. **Proposta 42 (token `pitch-wedge`): aprovada.**
+4. **Etiqueta da defesa:** finalizador e "Defendida" na fase 1.
+5. **Eventos com etiqueta:** só lances com bola (finalização, gol, pênalti) e cartão vermelho.
+6. **Perspectiva (revista pelo CEO no mesmo dia):** o CEO prefere a vista parecida com a referência. Entra a **saída A, campo inclinado por código** (maquetes b e g), já na fase 1, no lugar da vista de cima; sem fundo ilustrado. Muda o "visto de cima" do `docs/PROJETO.md`, então pede ADR antes da implementação. A cunha do ataque continua, por pedido explícito do CEO ("a sombra que indica qual lado está atacando").
+7. **Placas:** com a perspectiva, uma fila de placas no fundo, só com marcas fictícias (ADR-0015); nenhuma na faixa de grama.
+8. **Proposta 44 (assistência na comemoração),** na fase 2. **Recomendo aprovar;** o "replay" da assistência no campo, não.
+
+## 15. Decisões do CEO (2026-11-23)
+
 1. **Fases:** aprovadas como recomendado. Fase 1: rastro, etiqueta e cunha na vista de cima, com os passes anônimos e a posse do `campo-lances.md`. Fase 2: etiqueta em espera e assistência na comemoração.
 2. **Proposta 41 (etiqueta no campo): aprovada.** Fica revogada a parte "nenhum número ou texto no campo" da decisão 11 da T-032; o canvas continua sem texto.
 3. **Proposta 42 (token `pitch-wedge`): aprovada.**
