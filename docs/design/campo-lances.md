@@ -1,6 +1,6 @@
 # Campo: lances, nomes e posse (proposta de regra)
 
-**Estado:** proposta do `game-designer`, sem código, para o CEO decidir. **Parte:** a regra de jogo e a honestidade dos dados. O visual (etiqueta, rastro, sombra, perspectiva, estádio) é do `ux-designer`, no arquivo dele, escrito em paralelo. **Base:** a especificação do campo em [telas/partida.md](telas/partida.md) ("Campo 2D (T-085)"), `app/src/ui/match/pitch/scene.ts`, `app/src/ui/match/steps.ts`, o motor (`app/src/engine/match/simulate.ts` e `types.ts`) e a §4.7 de `docs/02-architecture.md`.
+**Estado:** decidida pelo CEO em 2026-11-23 (ver §9); sem código ainda. **Parte:** a regra de jogo e a honestidade dos dados. O visual (etiqueta, rastro, sombra, perspectiva, estádio) é do `ux-designer`, no arquivo dele, escrito em paralelo. **Base:** a especificação do campo em [telas/partida.md](telas/partida.md) ("Campo 2D (T-085)"), `app/src/ui/match/pitch/scene.ts`, `app/src/ui/match/steps.ts`, o motor (`app/src/engine/match/simulate.ts` e `types.ts`) e a §4.7 de `docs/02-architecture.md`.
 
 **A regra em uma frase:** no campo, só tem nome e número quem está num evento do motor; o resto se move sem identidade, e a posse que o campo mostra bate com a da súmula.
 
@@ -211,3 +211,7 @@ Tudo em `app/src/ui/match/` (`scene.ts` e o que a etiqueta precisar); nada em `a
 4. **Sombra da posse (D4):** só nos lances; moeda por minuto; **cota que bate com a súmula (recomendado)**.
 5. **Revogar a parte "nenhum número ou texto no campo" da decisão 11 da T-032**, se o item 1 ficar com etiqueta.
 6. **Perspectiva (D7):** fica para depois do estudo visual do `ux-designer`; se entrar, o "visto de cima" do `docs/PROJETO.md` vira ADR.
+
+## 9. Decisões do CEO (2026-11-23)
+
+Aprovadas as recomendações: D1-A (só tem nome quem está num evento do motor), D2-B (passes de ligação anônimos), D3-B (passe anônimo no começo, assistência na revelação, sem "replay" no campo), D4-C (posse por cota que bate com a súmula) e D6-A (motor e save intactos). A parte "nenhum número ou texto no campo" da decisão 11 da T-032 fica revogada (a etiqueta fica fora do canvas). D5: a correção do goleiro no campo entra na fase 1; a etiqueta da defesa mostra o finalizador e "Defendida", sem nomear o goleiro. D7: a perspectiva fica para um teste depois da fase 2 (ver [telas/partida-campo-v2.md](telas/partida-campo-v2.md), §15).

@@ -1,6 +1,6 @@
 # Partida: campo v2 (rastro, etiqueta, cunha e perspectiva)
 
-**Estado:** proposta do `ux-designer` para o CEO decidir, sem código de produção. **Parte:** o visual. A regra de jogo e a honestidade dos dados (quem ganha nome, de onde vêm a posse e a direção) são do `game-designer`, em [../campo-lances.md](../campo-lances.md), escrito em paralelo; este arquivo segue as recomendações de lá (D1-A, D2-B, D3-B, D4-C, D6-A) e aponta onde diverge. **Base:** [partida.md](partida.md) ("Campo 2D (T-085)", "Movimento", "Acessibilidade", "Desempenho no celular"), [../design-system.md](../design-system.md) ("Campo da partida"), [../../art/uniformes.md](../../art/uniformes.md) e a §4.7 de [../../02-architecture.md](../../02-architecture.md). **Referência:** prints de um app real de lance a lance, só pela mecânica. Nada do visual, dos escudos, dos nomes ou das marcas daquele app entra no projeto, e nenhuma imagem dele está no repositório.
+**Estado:** decidida pelo CEO em 2026-11-23 (ver §15); sem código de produção ainda. **Parte:** o visual. A regra de jogo e a honestidade dos dados (quem ganha nome, de onde vêm a posse e a direção) são do `game-designer`, em [../campo-lances.md](../campo-lances.md), escrito em paralelo; este arquivo segue as recomendações de lá (D1-A, D2-B, D3-B, D4-C, D6-A) e aponta onde diverge. **Base:** [partida.md](partida.md) ("Campo 2D (T-085)", "Movimento", "Acessibilidade", "Desempenho no celular"), [../design-system.md](../design-system.md) ("Campo da partida"), [../../art/uniformes.md](../../art/uniformes.md) e a §4.7 de [../../02-architecture.md](../../02-architecture.md). **Referência:** prints de um app real de lance a lance, só pela mecânica. Nada do visual, dos escudos, dos nomes ou das marcas daquele app entra no projeto, e nenhuma imagem dele está no repositório.
 
 **Em uma frase:** o campo ganha o caminho da bola (rastro), uma etiqueta com o jogador do lance (só de quem está num evento do motor) e uma cunha que aponta o ataque de quem tem a bola, tudo no campo visto de cima; a perspectiva com estádio fica como estudo, com custo, para depois.
 
@@ -250,3 +250,14 @@ HTML e canvas estáticos, capturados no Chromium sem janela a densidade 2. Clube
 6. **Perspectiva:** C agora e um teste da saída A depois da fase 2 (recomendo); A já; ou B.
 7. **Placas:** nenhuma na vista de cima (o `pitch-boards` sai da T-040 enquanto não houver perspectiva) (recomendo); ou placas na faixa de grama como a T-040 previa.
 8. **Proposta 44 (assistência na comemoração),** na fase 2. **Recomendo aprovar;** o "replay" da assistência no campo, não.
+
+## 15. Decisões do CEO (2026-11-23)
+
+1. **Fases:** aprovadas como recomendado. Fase 1: rastro, etiqueta e cunha na vista de cima, com os passes anônimos e a posse do `campo-lances.md`. Fase 2: etiqueta em espera e assistência na comemoração.
+2. **Proposta 41 (etiqueta no campo): aprovada.** Fica revogada a parte "nenhum número ou texto no campo" da decisão 11 da T-032; o canvas continua sem texto.
+3. **Proposta 42 (token `pitch-wedge`): aprovada.**
+4. **Etiqueta da defesa:** finalizador e "Defendida" na fase 1.
+5. **Eventos com etiqueta:** só lances com bola (finalização, gol, pênalti) e cartão vermelho.
+6. **Perspectiva:** C agora; um teste da saída A (inclinar por código) depois da fase 2, avaliado no celular do CEO. Se aprovado, vira ADR (o "visto de cima" do `docs/PROJETO.md`).
+7. **Placas:** nenhuma na vista de cima; o `pitch-boards` sai da T-040 enquanto não houver perspectiva.
+8. **Proposta 44 (assistência na comemoração): aprovada**, na fase 2; sem "replay" da assistência no campo.
