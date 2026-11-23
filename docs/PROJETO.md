@@ -522,7 +522,7 @@ O jogo prende pela tensão da partida e pela história do clube, não por mecân
 
 **Tela da partida**
 
-- Campo 2D visto de cima, jogadores como bolinhas nas cores do uniforme, mostrando só os lances importantes.
+- Campo 2D inclinado por código, em perspectiva, com arquibancada e uma fila de placas de marcas fictícias no fundo; jogadores como bolinhas nas cores do uniforme, mostrando só os lances importantes. (Alterado em 2026-11-23 pela ADR-0023; antes, "visto de cima".)
 - Narração em texto rolando e voz nos momentos-chave; torcida que cresce no ataque, explode no gol e vaia quando o time vai mal.
 - Câmera lenta e pausa dramática antes de revelar se foi gol.
 - Comemoração com escudo, nome do artilheiro e vibração do celular (Android).
