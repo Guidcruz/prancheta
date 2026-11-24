@@ -84,11 +84,11 @@ k     = s0 × t(v)                                  // px por metro naquele pont
 
 ## 4. Arquibancadas, mureta e placas (PR A)
 
-**Arquibancada de longe** (da borda de cima da caixa até `boardTop`, toda com tokens): gradiente vertical de `surface-0` (no alto) a `surface-2`; fileiras de 1px em `line`, a cada 6px embaixo, apertando até 3px no alto, com opacidade de 0,3 a 0,9 (`globalAlpha`); cobertura de 10px em `surface-0`; quatro refletores de 18 × 3px a 12%, 37%, 63% e 88% da largura, a 5px do alto, em `floodlight` com halo radial de 52px no token `beam` no tema noite (proposta 45), apagados em `line` no tema dia. Sem público, sem pessoas, sem bandeiras, sem nada que lembre um estádio real.
+**Arquibancada de longe** (da borda de cima da caixa até `boardTop`, toda com tokens): gradiente vertical de `surface-0` (no alto) a `surface-2`, pintado em bandas planas de um nível de cor cada (no máximo 64), que dão o mesmo resultado a olho e custam menos; fileiras de 1px em `line`, a cada 6px embaixo, apertando até 3px no alto, com 6 opacidades fixas de 0,35 a 0,85 (`globalAlpha`); cobertura de 10px em `surface-0`; quatro refletores de 18 × 3px a 12%, 37%, 63% e 88% da largura, a 5px do alto, em `floodlight` com halo radial de 52px no token `beam` no tema noite (proposta 45), apagados em `line` no tema dia. Sem público, sem pessoas, sem bandeiras, sem nada que lembre um estádio real.
 
 **Mureta:** de `boardTop` até `yFar`, em `surface-1`, por toda a largura.
 
-**Arquibancadas atrás dos gols:** do lado de fora de cada fila de placas dos fundos até a borda da caixa, um polígono em gradiente de `surface-2` (no alto) a `surface-0`.
+**Arquibancadas atrás dos gols:** do lado de fora de cada fila de placas dos fundos até a borda da caixa, um polígono em gradiente de `surface-2` (no alto) a `surface-0`, pintado em bandas planas como a arquibancada de longe.
 
 **Placas: três filas, no canvas do fundo, só com cores** (recomendação; pendência 2):
 
