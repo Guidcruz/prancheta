@@ -81,8 +81,7 @@ function board(
   by: number,
   bh: number,
   brand: FictionalBrand,
-  outline: string,
-  px: number,
+  outlines: Path2D,
 ): void {
   const at = (t: number, lo: number, hi: number, out: number[]) => {
     const x = ax + (bx - ax) * t;
@@ -111,16 +110,13 @@ function board(
   ctx.lineTo(left[2]!, left[3]!);
   ctx.closePath();
   ctx.fill();
-  // A 1px outline in `line`: the darkest boards stay apart from the stand (lot of brands, 3:1).
-  ctx.lineWidth = px;
-  ctx.strokeStyle = outline;
-  ctx.beginPath();
-  ctx.moveTo(ax, ay);
-  ctx.lineTo(bx, by);
-  ctx.lineTo(bx, by - bh);
-  ctx.lineTo(ax, ay - ah);
-  ctx.closePath();
-  ctx.stroke();
+  // The outline (1px, in `line`: the darkest boards stay apart from the stand) is added to one
+  // path for all the boards, stroked once.
+  outlines.moveTo(ax, ay);
+  outlines.lineTo(bx, by);
+  outlines.lineTo(bx, by - bh);
+  outlines.lineTo(ax, ay - ah);
+  outlines.closePath();
 }
 
 /** The brand of board `index`; never the same as the one before it in its row. */
@@ -130,6 +126,84 @@ function brandAt(context: SlotContext, index: number, before: FictionalBrand | u
   while (brand === before && n < 8)
     brand = brandForSlot('pitch-boards', { ...context, index: index + 100 * ++n });
   return brand;
+}
+
+function addHaloStops(halo: CanvasGradient, color: string): void {
+  halo.addColorStop(0, color);
+  halo.addColorStop(0.35, color);
+  halo.addColorStop(0.75, 'rgba(0,0,0,0)');
+}
+
+let haloCache: { key: string; sprite: OffscreenCanvas } | undefined;
+
+/**
+ * The halo of one floodlight drawn once per size and colour into a small canvas out of the page
+ * (an OffscreenCanvas, so nothing of the DOM), then copied to the four lamps: a radial gradient
+ * is the costliest fill of the background. `undefined` where there is no OffscreenCanvas.
+ */
+function haloSprite(
+  reach: number,
+  top: number,
+  q: number,
+  color: string,
+): OffscreenCanvas | undefined {
+  if (typeof OffscreenCanvas === 'undefined') return undefined;
+  const key = `${reach}|${top}|${q}|${color}`;
+  if (haloCache?.key === key) return haloCache.sprite;
+  const sprite = new OffscreenCanvas(Math.ceil(2 * reach), Math.ceil(top + reach));
+  const g = sprite.getContext('2d');
+  if (g === null) return undefined;
+  const halo = g.createRadialGradient(reach, top, 0, reach, top, 52 * q);
+  addHaloStops(halo, color);
+  g.fillStyle = halo;
+  // Laid twice: the strength of the prototype.
+  for (let pass = 0; pass < 2; pass++) g.fillRect(0, 0, sprite.width, sprite.height);
+  haloCache = { key, sprite };
+  return sprite;
+}
+
+/** `#rrggbb` or `rgb(r, g, b)` as three numbers, or `undefined`. */
+function rgbOf(color: string): [number, number, number] | undefined {
+  const hex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
+  if (hex !== null) return [parseInt(hex[1]!, 16), parseInt(hex[2]!, 16), parseInt(hex[3]!, 16)];
+  const rgb = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(color);
+  return rgb === null ? undefined : [Number(rgb[1]), Number(rgb[2]), Number(rgb[3])];
+}
+
+/**
+ * A vertical gradient from `from` at `top` to `to` at `bottom`, over `[0, end)` of the canvas, as
+ * flat bands one colour step tall: the same pixels a gradient gives in 8 bits, at the cost of a
+ * few flat fills (a gradient is evaluated per pixel). A gradient where a colour is not plain.
+ */
+function fillBands(
+  ctx: Context,
+  from: string,
+  to: string,
+  top: number,
+  bottom: number,
+  end: number,
+  width: number,
+): void {
+  const a = rgbOf(from);
+  const b = rgbOf(to);
+  if (a === undefined || b === undefined) {
+    const gradient = ctx.createLinearGradient(0, top, 0, bottom);
+    gradient.addColorStop(0, from);
+    gradient.addColorStop(1, to);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, top, width, end - top);
+    return;
+  }
+  const steps = Math.max(1, Math.min(64, Math.max(...a.map((v, i) => Math.abs(v - b[i]!)))));
+  let y0 = Math.round(top);
+  for (let i = 0; i < steps; i++) {
+    const t = steps === 1 ? 0 : (i + 0.5) / steps;
+    const y1 = i === steps - 1 ? end : Math.round(top + ((i + 1) / steps) * (bottom - top));
+    const [r, g, bl] = a.map((v, k) => Math.round(v + (b[k]! - v) * t)) as [number, number, number];
+    ctx.fillStyle = `rgb(${r}, ${g}, ${bl})`;
+    ctx.fillRect(0, y0, width, y1 - y0);
+    y0 = y1;
+  }
 }
 
 /** Everything behind the discs, drawn into `ctx` at the size of `g`. */
@@ -145,30 +219,32 @@ export function drawBackdrop(
   const out = new Float64Array(8);
   const p = new Float64Array(3);
 
-  // An opaque base, so no pixel of the background is half transparent where two areas meet at a
-  // fraction of a pixel (the frame is drawn over the previous one without clearing it).
-  ctx.fillStyle = c.surface0;
-  ctx.fillRect(0, 0, Wc, Hc);
+  // The three bands (stand, wall, grass) meet on whole pixels, so no pixel of the background is
+  // half transparent (the frame is drawn over the previous one without clearing it) and no base
+  // fill is needed under them.
+  const standEnd = Math.round(g.boardTop);
+  const wallEnd = Math.round(g.yFar);
 
   // The far stand: from the top of the box to the top of the boards.
-  const stand = ctx.createLinearGradient(0, 0, 0, g.boardTop);
-  stand.addColorStop(0, c.surface0);
-  stand.addColorStop(1, c.surface2);
-  ctx.fillStyle = stand;
-  ctx.fillRect(0, 0, Wc, g.boardTop);
+  fillBands(ctx, c.surface0, c.surface2, 0, g.boardTop, standEnd, Wc);
   // Rows of seats: 6px apart at the bottom to 3px at the top, from 30% to 90% opaque.
   ctx.strokeStyle = c.line;
   ctx.lineWidth = px;
   const roof = 10 * q;
+  // The rows go into 6 paths by opacity (a stroke each, not one per row).
+  const BUCKETS = 6;
   let y = g.boardTop - 3 * q;
+  const rows: Path2D[] = Array.from({ length: BUCKETS }, () => new Path2D());
   for (let step = 6 * q; y > roof; step = Math.max(3 * q, step - 0.4 * q)) {
     const t = Math.min(1, Math.max(0, (g.boardTop - y) / Math.max(1, g.boardTop - roof)));
-    ctx.globalAlpha = 0.3 + 0.6 * t;
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(Wc, y);
-    ctx.stroke();
+    const row = rows[Math.min(BUCKETS - 1, Math.floor(t * BUCKETS))]!;
+    row.moveTo(0, y);
+    row.lineTo(Wc, y);
     y -= step;
+  }
+  for (let i = 0; i < BUCKETS; i++) {
+    ctx.globalAlpha = 0.3 + (0.6 * (i + 0.5)) / BUCKETS;
+    ctx.stroke(rows[i]!);
   }
   ctx.globalAlpha = 1;
   // The roof and the four floodlights.
@@ -178,14 +254,19 @@ export function drawBackdrop(
     const x = Wc * share;
     const top = 5 * q;
     if (c.night) {
-      const halo = ctx.createRadialGradient(x, top, 0, x, top, 52 * q);
       // The beam holds to 35% of the radius and is zero at 75% (so the first lamp stays off the
-      // corner pixel); it is laid twice, which gives the strength of the prototype.
-      halo.addColorStop(0, c.beam);
-      halo.addColorStop(0.35, c.beam);
-      halo.addColorStop(0.75, 'rgba(0,0,0,0)');
-      ctx.fillStyle = halo;
-      for (let pass = 0; pass < 2; pass++) ctx.fillRect(x - 52 * q, 0, 104 * q, top + 52 * q);
+      // corner pixel). Two fills laid over each other (the strength of the prototype), only where the halo
+      // is not zero: the fill of a radial gradient is the costliest part of the background.
+      const reach = 52 * q * 0.75;
+      const sprite = haloSprite(reach, top, q, c.beam);
+      if (sprite !== undefined) {
+        ctx.drawImage(sprite, Math.round(x - reach), 0);
+      } else {
+        const halo = ctx.createRadialGradient(x, top, 0, x, top, 52 * q);
+        addHaloStops(halo, c.beam);
+        ctx.fillStyle = halo;
+        for (let pass = 0; pass < 2; pass++) ctx.fillRect(x - reach, 0, 2 * reach, top + reach);
+      }
     }
     ctx.fillStyle = c.night ? c.floodlight : c.line;
     ctx.fillRect(x - 9 * q, top, 18 * q, 3 * q);
@@ -193,9 +274,9 @@ export function drawBackdrop(
 
   // The low wall, and the grass under it, edge to edge.
   ctx.fillStyle = c.surface1;
-  ctx.fillRect(0, g.boardTop, Wc, g.yFar - g.boardTop);
+  ctx.fillRect(0, standEnd, Wc, wallEnd - standEnd);
   ctx.fillStyle = c.pitch;
-  ctx.fillRect(0, g.yFar, Wc, Hc - g.yFar);
+  ctx.fillRect(0, wallEnd, Wc, Hc - wallEnd);
 
   // The stands behind the goals, outside each row of boards.
   for (const side of [0, 1] as const) {
@@ -222,12 +303,13 @@ export function drawBackdrop(
   }
 
   // The three rows of boards: colours only, no text (the lot of fictional brands).
+  const outlines = new Path2D();
   let before: FictionalBrand | undefined;
   for (let i = 0; i < FAR_BOARDS; i++) {
     const brand = brandAt(boards, i, before);
     before = brand;
     farBoard(g, i, out);
-    board(ctx, out[0]!, g.yFar, g.boardHeight, out[1]!, g.yFar, g.boardHeight, brand, c.line, px);
+    board(ctx, out[0]!, g.yFar, g.boardHeight, out[1]!, g.yFar, g.boardHeight, brand, outlines);
   }
   for (const side of [0, 1] as const) {
     before = undefined;
@@ -237,11 +319,15 @@ export function drawBackdrop(
       goalBoard(g, side, i, out);
       const h0 = out[1]! - out[7]!;
       const h1 = out[3]! - out[5]!;
-      board(ctx, out[0]!, out[1]!, h0, out[2]!, out[3]!, h1, brand, c.line, px);
+      board(ctx, out[0]!, out[1]!, h0, out[2]!, out[3]!, h1, brand, outlines);
     }
   }
+  ctx.lineWidth = px;
+  ctx.strokeStyle = c.line;
+  ctx.stroke(outlines);
 
-  // The markings, projected vertex by vertex, in `pitch-line`.
+  // The markings, projected vertex by vertex, in `pitch-line`; all the lines are one path.
+  const marks = new Path2D();
   ctx.strokeStyle = c.pitchLine;
   ctx.fillStyle = c.pitchLine;
   const stroke = Math.max(1, Wc / px / 360) * px;
@@ -249,23 +335,20 @@ export function drawBackdrop(
   ctx.lineJoin = 'round';
   const moveTo = (x: number, yy: number) => {
     project(g, x, yy, p);
-    ctx.moveTo(p[0]!, p[1]!);
+    marks.moveTo(p[0]!, p[1]!);
   };
   const lineTo = (x: number, yy: number) => {
     project(g, x, yy, p);
-    ctx.lineTo(p[0]!, p[1]!);
+    marks.lineTo(p[0]!, p[1]!);
   };
   const rect = (x: number, yy: number, w: number, h: number) => {
-    ctx.beginPath();
     moveTo(x, yy);
     lineTo(x + w, yy);
     lineTo(x + w, yy + h);
     lineTo(x, yy + h);
-    ctx.closePath();
-    ctx.stroke();
+    marks.closePath();
   };
   const arc = (cx: number, cy: number, r: number, from: number, to: number) => {
-    ctx.beginPath();
     for (let i = 0; i <= 48; i++) {
       const a = from + ((to - from) * i) / 48;
       const x = cx + r * Math.cos(a);
@@ -273,7 +356,6 @@ export function drawBackdrop(
       if (i === 0) moveTo(x, yy);
       else lineTo(x, yy);
     }
-    ctx.stroke();
   };
   const spot = (x: number, yy: number) => {
     project(g, x, yy, p);
@@ -290,11 +372,10 @@ export function drawBackdrop(
     ctx.fill();
   };
   const cy = W / 2;
+  const goals = new Path2D();
   rect(0, 0, L, W);
-  ctx.beginPath();
   moveTo(L / 2, 0);
   lineTo(L / 2, W);
-  ctx.stroke();
   arc(L / 2, cy, 9.15, 0, TAU);
   spot(L / 2, cy);
   for (const side of [0, 1] as const) {
@@ -308,18 +389,17 @@ export function drawBackdrop(
     else arc(L - 11, cy, 9.15, Math.PI - open, Math.PI + open);
     // The goal: the net on the ground, and the posts and bar standing (2.44 m).
     rect(side === 0 ? -2 : L, cy - 3.66, 2, 7.32);
-    ctx.lineWidth = 2 * px;
-    ctx.beginPath();
     for (const post of [cy - 3.66, cy + 3.66]) {
       project(g, line, post, p);
-      ctx.moveTo(p[0]!, p[1]!);
-      ctx.lineTo(p[0]!, p[1]! - 2.44 * p[2]!);
+      goals.moveTo(p[0]!, p[1]!);
+      goals.lineTo(p[0]!, p[1]! - 2.44 * p[2]!);
     }
     project(g, line, cy - 3.66, p);
-    ctx.moveTo(p[0]!, p[1]! - 2.44 * p[2]!);
+    goals.moveTo(p[0]!, p[1]! - 2.44 * p[2]!);
     project(g, line, cy + 3.66, p);
-    ctx.lineTo(p[0]!, p[1]! - 2.44 * p[2]!);
-    ctx.stroke();
-    ctx.lineWidth = stroke;
+    goals.lineTo(p[0]!, p[1]! - 2.44 * p[2]!);
   }
+  ctx.stroke(marks);
+  ctx.lineWidth = 2 * px;
+  ctx.stroke(goals);
 }

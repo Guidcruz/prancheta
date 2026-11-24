@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import type { PitchKit, PitchKits } from '../match/pitch/kits';
-  import { drawBackdrop } from '../match/pitch/backdrop';
+  import { drawBackdrop, type BackdropColors } from '../match/pitch/backdrop';
   import {
     ballRadius,
     discRadius,
@@ -94,7 +94,26 @@
     onfail(reason, error);
   }
 
-  const token = (name: string) => getComputedStyle(box!).getPropertyValue(name).trim();
+  /**
+   * The tokens, read once per theme (one `getComputedStyle`, nine reads): a new size does not read
+   * them again, so it forces no style or layout from inside the redraw.
+   */
+  let colors: BackdropColors | undefined;
+  function readColors(): BackdropColors {
+    const style = getComputedStyle(box!);
+    const token = (name: string) => style.getPropertyValue(name).trim();
+    return {
+      surface0: token('--surface-0'),
+      surface1: token('--surface-1'),
+      surface2: token('--surface-2'),
+      line: token('--line'),
+      floodlight: token('--floodlight'),
+      beam: token('--beam'),
+      pitch: token('--pitch'),
+      pitchLine: token('--pitch-line'),
+      night: document.documentElement.dataset.theme !== 'dia',
+    };
+  }
 
   /** The background, drawn out of the page at the canvas's pixel size. */
   function drawField(): void {
@@ -106,28 +125,17 @@
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
     geometry = pitchGeometry(width, height, dpr);
-    ink = token('--ink');
+    if (colors === undefined) {
+      colors = readColors();
+      ink = getComputedStyle(box!).getPropertyValue('--ink').trim();
+    }
     field ??= document.createElement('canvas');
+    // Set every time: it also clears the canvas, and starts the measure of the redraw of the QA.
     field.width = canvas.width;
     field.height = canvas.height;
     const g = field.getContext('2d');
     if (g === null) throw new Error('no 2D context for the field');
-    drawBackdrop(
-      g,
-      geometry,
-      {
-        surface0: token('--surface-0'),
-        surface1: token('--surface-1'),
-        surface2: token('--surface-2'),
-        line: token('--line'),
-        floodlight: token('--floodlight'),
-        beam: token('--beam'),
-        pitch: token('--pitch'),
-        pitchLine: token('--pitch-line'),
-        night: document.documentElement.dataset.theme !== 'dia',
-      },
-      { round, clubId, stadiumId: clubId },
-    );
+    drawBackdrop(g, geometry, colors, { round, clubId, stadiumId: clubId });
   }
 
   function kitOf(disc: number): PitchKit {
@@ -202,7 +210,24 @@
     raf = requestAnimationFrame(tick);
   }
 
-  /** The field again (size or theme), and the frame over it. */
+  /**
+   * The field again (size or theme) in a task of its own, never inside the callback that saw the
+   * change (the ResizeObserver, the MutationObserver): the page's own style and layout for the new
+   * size or theme are already long, and the redraw of the background must not pile on them (no
+   * task over 50 ms; partida-campo-v2.md, 12). A message channel, not a timer: it is not held by
+   * the fake clock of the tests. Changes that come before it runs are redrawn once.
+   */
+  let channel: MessageChannel | undefined;
+  let scheduled = false;
+  /** Before the first drawing; `later` runs its frame in a task after the background's. */
+  let cold = true;
+  let later: MessageChannel | undefined;
+  function schedule(): void {
+    if (scheduled || channel === undefined) return;
+    scheduled = true;
+    channel.port2.postMessage(0);
+  }
+
   function refresh(): void {
     if (ctx === null || failed || cssWidth === 0) return;
     try {
@@ -212,6 +237,13 @@
       return;
     }
     ready = true;
+    if (cold) {
+      // The very first drawing runs with the code cold: the background and the first frame go in
+      // two tasks, neither over 50 ms.
+      cold = false;
+      later?.port2.postMessage(0);
+      return;
+    }
     // A frame now, also while running: the next one may be a frame away.
     draw(performance.now());
   }
@@ -227,17 +259,33 @@
       fail('context');
       return;
     }
+    channel = new MessageChannel();
+    later = new MessageChannel();
+    later.port1.onmessage = () => {
+      draw(performance.now());
+    };
+    channel.port1.onmessage = () => {
+      scheduled = false;
+      refresh();
+    };
     const sizes = new ResizeObserver(([entry]) => {
       if (entry === undefined) return;
       fit(entry.contentRect.width, entry.contentRect.height);
     });
     sizes.observe(box!);
     // The theme changes the colours of the grass, the lines, the rings and the ball.
-    const theme = new MutationObserver(refresh);
+    const theme = new MutationObserver(() => {
+      colors = undefined;
+      schedule();
+    });
     theme.observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
     return () => {
       sizes.disconnect();
       theme.disconnect();
+      channel?.port1.close();
+      channel = undefined;
+      later?.port1.close();
+      later = undefined;
       if (raf !== 0) cancelAnimationFrame(raf);
       raf = 0;
     };
@@ -245,7 +293,7 @@
 
   // A new size: the canvas, the field and a frame.
   $effect(() => {
-    if (cssWidth > 0 && cssHeight > 0) untrack(refresh);
+    if (cssWidth > 0 && cssHeight > 0) untrack(schedule);
   });
 
   // Running: one frame per requestAnimationFrame, and none when it stops.
