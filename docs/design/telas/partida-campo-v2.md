@@ -248,14 +248,14 @@ O que ela pode cobrir por instantes: a bola que vem de cima do jogador no passe 
 
 ## 12. Desempenho e orçamento
 
-| Item                               | Hoje (medido, T-085) | PR A                                        | PR B                        | PR C                                                           | PR D | Meta                        |
-| ---------------------------------- | -------------------- | ------------------------------------------- | --------------------------- | -------------------------------------------------------------- | ---- | --------------------------- |
-| Chunk do campo (JS + CSS, gzip)    | 7,1 KB               | +3 KB (projeção, fundo, placas, modo, D5-A) | +2 KB (`PitchTag`, posição) | +3 a 4 KB (planejador, rastros por tipo, sombra, cunha)        | +0,3 | ≤ 20 KB                     |
-| Desenho de um quadro (mediana)     | 0,5 ms               | +0,1 ms (projeções, até 3 discos)           | +0,05 ms (fios)             | +0,3 ms (rastros, sombra, cunha)                               | —    | ≤ 6 ms                      |
-| Intervalo entre quadros (p95)      | 16,8 ms              | sem mudança esperada                        | sem mudança esperada        | sem mudança esperada                                           | —    | ≤ 34 ms                     |
-| Redesenho do fundo (tamanho, tema) | não medido           | de 5 a 15 ms com CPU 4×                     | —                           | —                                                              | —    | ≤ 30 ms, nunca tarefa longa |
-| Planejamento                       | —                    | —                                           | —                           | cerca de 0,1 ms por passo, no `onreveal`                       | —    | nenhuma tarefa longa        |
-| Memória do plano                   | poses de hoje        | —                                           | —                           | até cerca de 60 números por passo (cerca de 70 KB por partida) | —    | —                           |
+| Item                               | Hoje (medido, T-085) | PR A                                        | PR B                        | PR C                                                           | PR D | Meta                                                                      |
+| ---------------------------------- | -------------------- | ------------------------------------------- | --------------------------- | -------------------------------------------------------------- | ---- | ------------------------------------------------------------------------- |
+| Chunk do campo (JS + CSS, gzip)    | 7,1 KB               | +3 KB (projeção, fundo, placas, modo, D5-A) | +2 KB (`PitchTag`, posição) | +3 a 4 KB (planejador, rastros por tipo, sombra, cunha)        | +0,3 | ≤ 20 KB                                                                   |
+| Desenho de um quadro (mediana)     | 0,5 ms               | +0,1 ms (projeções, até 3 discos)           | +0,05 ms (fios)             | +0,3 ms (rastros, sombra, cunha)                               | —    | ≤ 6 ms                                                                    |
+| Intervalo entre quadros (p95)      | 16,8 ms              | sem mudança esperada                        | sem mudança esperada        | sem mudança esperada                                           | —    | ≤ 34 ms                                                                   |
+| Redesenho do fundo (tamanho, tema) | não medido           | de 5 a 15 ms com CPU 4×                     | —                           | —                                                              | —    | p95 ≤ 30 ms, máx. 50 ms; nenhuma tarefa longa causada pelo campo (§16, 9) |
+| Planejamento                       | —                    | —                                           | —                           | cerca de 0,1 ms por passo, no `onreveal`                       | —    | nenhuma tarefa longa                                                      |
+| Memória do plano                   | poses de hoje        | —                                           | —                           | até cerca de 60 números por passo (cerca de 70 KB por partida) | —    | —                                                                         |
 
 Total estimado ao fim: de 15,5 a 16,5 KB gzip no chunk do campo e cerca de 1 ms de mediana por quadro; nenhuma imagem nova no precache. Se uma meta passar, volta ao `architect`.
 
@@ -293,7 +293,7 @@ Total estimado ao fim: de 15,5 a 16,5 KB gzip no chunk do campo e cerca de 1 ms 
 **E2E (Playwright, como os da T-085):**
 
 1. **Desempenho:** quadros p95 ≤ 34 ms e desenho mediano ≤ 6 ms a 390×844, densidade 3, CPU 4×, 15 s de "Animada completa" no Normal (PR A e de novo no C).
-2. **Sem tarefa longa** durante a partida inteira, com o planejamento passo a passo e a troca de tema no meio (`PerformanceObserver` de `longtask`).
+2. **Sem tarefa longa causada pelo campo** durante a partida inteira, com o planejamento passo a passo e a troca de tema no meio (`PerformanceObserver` de `longtask` e `long-animation-frame`). Quadros longos só de renderização da página, sem script do campo, são registrados e não reprovam (§16, 9).
 3. **Pixels** (substitui o item 11 da T-085 e o do E2E offline): o pixel do meio da borda de baixo do canvas em `--pitch`; o do canto de cima à esquerda em `--surface-0`. Nos dois temas.
 4. **Etiquetas:** `aria-hidden`; a de gol aparece no desfecho do gol e some no passo seguinte; a do lance nunca num passo `minuteFull`; inteiras dentro da caixa a 360×740, 844×390 e 1280×800; uma linha só a 360×640; o anúncio do gol continua na região viva do placar.
 5. **Camisa sobre a bola:** `aria-hidden`; só em passos `minuteFull`; nunca com movimento reduzido.
@@ -360,6 +360,7 @@ Depois de ver os protótipos v1 a v5, o CEO escolheu o modo "só a bola" (modo 1
 6. **Tokens:** `pitch-shadow` (proposta 49) e `beam` no jogo (proposta 45) aprovados; `pitch-wedge` já aprovado.
 7. **Propostas 45, 46, 47, 48 e 49:** aprovadas.
 8. **D2-B no modo "só a bola":** aprovada a bola entre 10 e 95 m nos minutos sem lance (§6). A confirmação do `game-designer` entra no `campo-lances.md`.
+9. **Medir só o que é do campo (decidido no QA do PR A):** o teste reprova quando o código do campo causa uma tarefa longa (> 50 ms) ou quando o redesenho do fundo passa de 30 ms no p95 das medidas, nunca acima de 50 ms. Os quadros longos só de renderização da página, sem script do campo, são registrados mas não reprovam. Motivo: com CPU 4× sob carga eles aparecem até com a caixa do campo escondida.
 
 ## 17. Protótipos
 
