@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
-  import type { PitchKit, PitchKits } from '../match/pitch/kits';
+  import { kitNameOf, type PitchKit, type PitchKits } from '../match/pitch/kits';
   import { pitchColors } from '../match/pitch/tokens';
   import { drawBackdrop, type BackdropColors } from '../match/pitch/backdrop';
   import {
@@ -9,13 +9,16 @@
     holdBall,
     pitchGeometry,
     project,
-    TAG_TIP,
+    TEAM_TIP_MAX,
     tagPlacement,
+    tagTipOffset,
     type PitchGeometry,
   } from '../match/pitch/geometry';
   import { PITCH_SIZE, PITCH_STAND_END } from '../match/pitch/motion';
   import type { PitchScene } from '../match/pitch/scene';
   import PitchTag, {
+    PITCH_TAG_MOTION,
+    PITCH_TAG_TIP,
     type PitchTagRefs,
     type PitchTagSize,
     type PitchTagView,
@@ -113,8 +116,10 @@
     w: number;
     h: number;
     measured: boolean;
-    /** Placed at least once: no longer hidden. */
-    shown: boolean;
+    /** The pill is visible (not hidden before its first place, nor by the shirt over the ball near a goal). */
+    visible: boolean;
+    /** When the fade of a `leaving` tag began, in the clock of the frames; -1 before. */
+    leaveAt: number;
     place: HTMLElement | undefined;
     pill: HTMLElement | undefined;
     x: number;
@@ -225,7 +230,7 @@
       if (shown) run.seen = true;
       live = shown;
     }
-    if (run.place === undefined || run.pill === undefined || !run.measured) return live;
+    if (run.place === undefined || run.pill === undefined || !run.measured) return false;
     tagPlacement(g, run.ax, run.ay, run.ar, run.w, run.h, slot);
     if (!(Math.abs(slot[0]! - run.x) <= MOVE) || !(Math.abs(slot[1]! - run.y) <= MOVE)) {
       run.x = slot[0]!;
@@ -234,13 +239,16 @@
     }
     if (!(Math.abs(slot[2]! - run.tip) <= MOVE)) {
       run.tip = slot[2]!;
-      run.pill.style.setProperty('--tip-x', `${run.tip}px`);
+      run.pill.style.setProperty('--tip-shift', `${run.tip - run.w / 2}px`);
     }
-    if (!run.shown) {
-      run.shown = true;
-      run.place.style.visibility = '';
+    // The shirt over the ball is decorative: if the goal pushed its tip far from the ball, it is not
+    // there in this frame, so the thread never crosses the mouth of a goal (§16, item 14).
+    const visible = tag.tone !== 'team' || tagTipOffset(g, run.ax, slot) <= TEAM_TIP_MAX;
+    if (visible !== run.visible) {
+      run.visible = visible;
+      run.place.style.visibility = visible ? '' : 'hidden';
     }
-    return live;
+    return live && visible;
   }
 
   /** The tags again over the last scene, outside a frame (a tag just arrived or was measured). */
@@ -260,7 +268,8 @@
         w: GUESS.width,
         h: GUESS.height,
         measured: false,
-        shown: false,
+        visible: false,
+        leaveAt: -1,
         place: undefined,
         pill: undefined,
         x: Number.NaN,
@@ -282,6 +291,8 @@
     run.h = size.height;
     run.measured = true;
     placeAll();
+    // Not running (reduced motion, a pause): no frame is coming, and the thread is in the canvas.
+    if (!running && ready) draw(performance.now());
   }
 
   function registered(key: string, refs: PitchTagRefs | undefined): void {
@@ -293,16 +304,11 @@
     run.place = refs.place;
     run.pill = refs.pill;
     // Hidden until measured and placed: it never shows at the corner for a frame.
-    if (!run.measured) refs.place.style.visibility = 'hidden';
+    if (!run.visible) refs.place.style.visibility = 'hidden';
     placeAll();
   }
 
-  function kitOf(disc: number): PitchKit {
-    if (disc === 0) return kits.homeGk;
-    if (disc < 11) return kits.home;
-    if (disc === 11) return kits.awayGk;
-    return kits.away;
-  }
+  const kitOf = (disc: number): PitchKit => kits[kitNameOf(disc)];
 
   /** One frame; `false` when drawing failed. */
   function draw(now: number): boolean {
@@ -356,11 +362,18 @@
         const run = runs[tag.key];
         if (run === undefined) continue;
         const live = placeTag(tag, run, scene, radius);
-        if (!live || tag.leaving) continue;
-        const tipY = (run.y + run.h + TAG_TIP) * dpr;
+        if (!live) continue;
+        const tipY = (run.y + run.h + PITCH_TAG_TIP.height) * dpr;
         const top = run.ay - run.ar;
         if (tipY >= top) continue;
-        ctx.globalAlpha = tag.disc < 0 ? 1 : scene.alpha[tag.disc]!;
+        // The thread fades with the pill of a tag that leaves.
+        let fade = 1;
+        if (tag.leaving) {
+          if (run.leaveAt < 0) run.leaveAt = now;
+          fade = 1 - (now - run.leaveAt) / PITCH_TAG_MOTION.out;
+          if (fade <= 0) continue;
+        }
+        ctx.globalAlpha = (tag.disc < 0 ? 1 : scene.alpha[tag.disc]!) * fade;
         ctx.beginPath();
         ctx.moveTo((run.x + run.tip) * dpr, tipY);
         ctx.lineTo(run.ax, top);

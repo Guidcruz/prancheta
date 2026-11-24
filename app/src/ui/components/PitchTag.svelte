@@ -12,10 +12,15 @@
    */
   export const PITCH_TAG_MOTION = { playIn: 160, goalIn: 200, out: 120 } as const;
 
-  /** The colours of the number of the kit (`FieldKit.numberColor` and `numberPlate`). */
+  /**
+   * The colours of the number of the kit (`FieldKit.numberColor`, `numberPlate` and `fill`). The
+   * number always sits on a plate (partida-campo-v2.md, 16, item 12): `plate`, or `fill` when the
+   * kit has none, so the contrast of the number holds with any pattern of the shirt.
+   */
   export interface PitchTagNumber {
     color: string;
     plate: string | null;
+    fill: string;
   }
 
   /** The size of the pill in px CSS, without the tip (the tip adds `PITCH_TAG_TIP.height`). */
@@ -30,7 +35,7 @@
   export interface PitchTagRefs {
     /** Takes the `transform` of the position. */
     place: HTMLElement;
-    /** Takes the custom property `--tip-x`. */
+    /** Takes the custom property `--tip-shift`. */
     pill: HTMLElement;
   }
 
@@ -78,9 +83,10 @@
    *
    * Texts arrive already translated (the screen calls `t`); none is written here.
    *
-   * Position: the screen places it (`tagPlacement`, §9). `x` and `y` are the top-left corner of
-   * the pill in px CSS of the pitch box (which must be `position: relative`), and `tipX` is the
-   * centre of the tip from the left edge of the pill; they only go into a `transform` (no layout).
+   * Position: the pitch places it (`tagPlacement`, §9), by `onref`: it writes the `transform` of
+   * the top-left corner of the pill (px CSS of its box, which must be `position: relative`) into
+   * the `place` element, and `--tip-shift` (how far the tip is from the middle of the pill, px)
+   * into the pill; both only move things (no layout).
    * The size of the pill is handed once through `onmeasure` (a ResizeObserver: again only if the
    * text, the fonts or the box change, never per frame; transforms and the entrance scale do not
    * count).
@@ -109,11 +115,6 @@
     waiting?: boolean;
     /** The box under 200px tall: one line only. */
     compact?: boolean;
-    /** Top-left corner of the pill, px CSS of the pitch box. */
-    x?: number;
-    y?: number;
-    /** Centre of the tip from the left edge of the pill, px CSS; absent: the middle. */
-    tipX?: number;
     /** Fading out (`PITCH_TAG_MOTION.out`); the screen removes it afterwards. */
     leaving?: boolean;
     /** No transition at all (the screen's reduced motion, read once per step). */
@@ -121,7 +122,7 @@
     /** The size of the pill without the tip, on mount and whenever it changes. */
     onmeasure?: (size: PitchTagSize) => void;
     /**
-     * The elements the pitch moves each frame (the `transform` of the position and `--tip-x`)
+     * The elements the pitch moves each frame (the `transform` of the position and `--tip-shift`)
      * without going through the props, so no reactive work and no layout per frame; `undefined`
      * when the tag is gone.
      */
@@ -140,9 +141,6 @@
     number,
     waiting = false,
     compact = false,
-    x = 0,
-    y = 0,
-    tipX,
     leaving = false,
     still = false,
     onmeasure,
@@ -186,12 +184,7 @@
   });
 </script>
 
-<div
-  bind:this={place}
-  class="place"
-  style:transform="translate3d({x}px, {y}px, 0)"
-  aria-hidden="true"
->
+<div bind:this={place} class="place" aria-hidden="true">
   <div
     bind:this={pill}
     class="tag {tone}"
@@ -199,7 +192,6 @@
     class:waiting={waiting && tone === 'play'}
     class:leaving
     class:still
-    style:--tip-x={tipX === undefined ? undefined : `${tipX}px`}
     ontransitionend={(event) => {
       if (leaving && event.propertyName === 'opacity') onleft?.();
     }}
@@ -210,9 +202,11 @@
       {#if showNumber}
         <span
           class="numero number"
-          class:plate={(number?.plate ?? null) !== null}
+          class:plate={number !== undefined}
+          class:two={(shirt ?? 0) >= 10}
           style:color={number?.color}
-          style:background={number?.plate ?? undefined}>{shirt}</span
+          style:background={number === undefined ? undefined : (number.plate ?? number.fill)}
+          >{shirt}</span
         >
       {/if}
     </span>
@@ -261,7 +255,6 @@
     --circle: calc(var(--size-medallion-md) - var(--space-2));
     --circle-inset: calc((var(--tag-h) - 2px - var(--circle)) / 2);
     --text-pad: var(--space-1);
-    --tip-x: 50%;
     position: relative;
     display: flex;
     align-items: center;
@@ -275,7 +268,7 @@
     border-radius: var(--radius-pill);
     box-shadow: var(--shadow-card);
     color: var(--ink);
-    transform-origin: var(--tip-x) calc(100% + 7px);
+    transform-origin: calc(50% + var(--tip-shift, 0px)) calc(100% + 7px);
   }
   .goal {
     --tag-h: 50px;
@@ -317,21 +310,50 @@
     width: 34px;
     height: 22px;
   }
+  /* A dark shirt (black, navy) would vanish in the dark circle at night: a hairline of `line`
+     around it. In the day theme the circle is light and the outline of the shirt is enough. */
+  .shirt :global(svg) {
+    filter: drop-shadow(0 0 1px var(--line));
+  }
+  :global([data-theme='dia']) .shirt :global(svg) {
+    filter: none;
+  }
   .compact .shirt :global(svg),
   .team .shirt :global(svg) {
     width: 26px;
     height: 17px;
   }
-  /* The number over the shirt, in the kit's `numberColor` (≥ 4.5:1 on the shirt) or over its
-     plate. The colours come from the kit, never from the screen. */
+  /* The number over the shirt, always on a plate (`numberPlate`, else the `fill` of the kit), in
+     the kit's `numberColor` (≥ 4.5:1 on that plate, with any pattern of the shirt). The colours
+     come from the kit, never from the screen. The plate is small and a little under the middle of
+     the shirt (y about 27 of 42 in its viewBox), so a band of the pattern shows above and below it
+     and it stays about 55% of the width of the body (the shirt is 34px wide in the 40px circle,
+     26px in the 32px one: it never reaches the sleeves). Two digits take a smaller type. The sizes
+     are the art director's review of the shirt, not tokens (the `numero` token is 18px). */
   .number {
     grid-area: 1 / 1;
     color: var(--ink);
     white-space: nowrap;
+    font-size: 12px;
+    line-height: 14px;
+    transform: translateY(3px);
+  }
+  .number.two {
+    font-size: 9px;
+    line-height: 12px;
   }
   .number.plate {
-    padding-inline: calc(var(--space-1) / 2);
+    padding-inline: 1px;
     border-radius: var(--radius-sm);
+  }
+  .compact .number {
+    font-size: 10px;
+    line-height: 12px;
+    transform: translateY(2px);
+  }
+  .compact .number.two {
+    font-size: 8px;
+    line-height: 10px;
   }
 
   .text {
@@ -362,7 +384,8 @@
   .tip {
     position: absolute;
     top: calc(100% - 1px);
-    left: calc(var(--tip-x) - 6px);
+    left: calc(50% - 6px);
+    transform: translateX(var(--tip-shift, 0px));
     display: block;
     overflow: visible;
   }

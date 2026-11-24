@@ -1,4 +1,6 @@
 import type { PlayerId, Side } from '@engine';
+import { t } from '@lib/i18n';
+import { nameOf, type NarrationContext } from './narration';
 import type { MatchStep } from './steps';
 
 /*
@@ -93,4 +95,25 @@ export function tagPlanOf(step: MatchStep): TagPlan | undefined {
     default:
       return undefined;
   }
+}
+
+/** What a tag says of its plan (the texts the screen translates and the number of the shirt). */
+export interface TagFields {
+  readonly kind: string;
+  readonly name: string;
+  /** `Player.shirt` of the same `PlayerId` as the name; none if he is unknown to the game. */
+  readonly shirt?: number;
+}
+
+/**
+ * The kind, the name and the shirt number of the tag of `plan`, all of its `PlayerId`: the same
+ * name the commentary line of the step writes (`nameOf`).
+ */
+export function tagFields(plan: TagPlan, ctx: NarrationContext): TagFields {
+  const shirt = ctx.game.players[plan.player]?.shirt;
+  return {
+    kind: t(TAG_KIND_KEYS[plan.kind], ctx.lang),
+    name: nameOf(ctx, plan.player),
+    ...(shirt === undefined ? {} : { shirt }),
+  };
 }

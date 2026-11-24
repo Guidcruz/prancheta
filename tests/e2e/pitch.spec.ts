@@ -265,7 +265,16 @@ test.describe('Campo 2D (T-085)', () => {
     await expect(celebration(page)).toContainText(ui('pt-BR', 'match.celebration.title'));
     await expect(celebration(page)).toContainText(name);
     expect(await shownScore(page)).toEqual([...goal.score]);
-    // The shirt of the scorer (no crest: the line of the commentary has it).
+    // The shirt of the scorer (no crest: the line of the commentary has it): his number, and the
+    // kit of his own club (the id of the clip of the shirt is made of the club of the kit).
+    const shirt = (save.game.players[goal.scorer] as { shirt: number }).shirt;
+    await expect(celebration(page).locator('.number')).toHaveText(String(shirt));
+    const clip = (id: string) => `id="kt-${id.toLowerCase().replace(/[^a-z0-9-]/g, '')}-`;
+    const scoringClub = goal.side === 'home' ? expected.homeId : expected.awayId;
+    const otherClub = goal.side === 'home' ? expected.awayId : expected.homeId;
+    const svg = await celebration(page).locator('svg[viewBox="0 0 64 42"]').innerHTML();
+    expect(svg).toContain(clip(scoringClub));
+    expect(svg).not.toContain(clip(otherClub));
     await expect(celebration(page).locator('svg[viewBox="0 0 64 42"]')).toHaveCount(1);
     await expect(celebration(page).locator('.crest')).toHaveCount(0);
     expect(await celebration(page).evaluate((el) => getComputedStyle(el).pointerEvents)).toBe(

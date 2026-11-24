@@ -5,9 +5,8 @@ import { t } from '@lib/i18n';
 import PitchTag, { PITCH_TAG_MOTION, PITCH_TAG_TIP } from './PitchTag.svelte';
 
 /*
- * The shell of the PitchTag (partida-campo-v2.md, §9 and §11). The shirt here is a stand-in: the
- * `part: 'shirt'` of `kitSvg` (viewBox 0 0 64 42) is the developer's. The `match.tag.*` keys are
- * still with the CEO, so the outcomes use the kind of a play that already exists.
+ * The PitchTag (partida-campo-v2.md, §9, §11 and §16). The shirt here is a stand-in for the SVG of
+ * `shirtSvg` (viewBox 0 0 64 42).
  */
 const shirtSvg = '<svg viewBox="0 0 64 42" aria-hidden="true"><path d="M0 0H64V42H0Z"/></svg>';
 const source = readFileSync(new URL('./PitchTag.svelte', import.meta.url), 'utf8');
@@ -31,25 +30,38 @@ describe('PitchTag', () => {
       kind: t('match.live.shot', 'pt-BR'),
       name: 'Tavinho Brasa',
       shirt: 9,
-      number: { color: '#ffffff', plate: null },
+      number: { color: '#ffffff', plate: null, fill: '#123456' },
     });
     expect(html).toMatch(/class="rotulo kind[^"]*">Finalização</);
     expect(html).toMatch(/class="body-strong name[^"]*">Tavinho Brasa</);
-    expect(html).toMatch(/class="numero number[^"]*" style="color: #ffffff;">9</);
-    expect(html).not.toMatch(/\bplate\b/);
+    // Always on a plate: with no `numberPlate`, the `fill` of the kit.
+    expect(html).toMatch(/class="numero number[^"]*\bplate\b[^"]*"/);
+    expect(html).toContain('color: #ffffff;');
+    expect(html).toContain('background: #123456');
     expect(html).toContain(shirtSvg);
   });
 
-  it('puts the number over its plate when the kit has one', () => {
+  it('puts the number on the plate of the kit when it has one, in every size', () => {
     const html = body({
       tone: 'play',
       kind: t('report.event.red', 'pt-BR'),
       name: 'Zé',
       shirt: 4,
-      number: { color: '#111417', plate: '#ffffff' },
+      number: { color: '#111417', plate: '#ffffff', fill: '#123456' },
     });
     expect(html).toMatch(/class="numero number[^"]*\bplate\b/);
     expect(html).toContain('background: #ffffff');
+    expect(html).not.toContain('#123456');
+    const compact = body({
+      tone: 'play',
+      kind: 'x',
+      name: 'Zé',
+      shirt: 4,
+      compact: true,
+      number: { color: '#111417', plate: null, fill: '#123456' },
+    });
+    expect(compact).toMatch(/\bplate\b/);
+    expect(compact).toContain('background: #123456');
   });
 
   it('keeps only the shirt and the name when compact', () => {
@@ -99,11 +111,20 @@ describe('PitchTag', () => {
       expect(html).not.toContain(text);
   });
 
-  it('takes its place only by transform, and the tip in the middle unless told', () => {
-    const middle = body({ tone: 'play', name: 'Zé', x: 12.5, y: 30 });
-    expect(middle).toContain('transform: translate3d(12.5px, 30px, 0)');
-    expect(middle).not.toContain('--tip-x');
-    expect(body({ tone: 'play', name: 'Zé', tipX: 20 })).toContain('--tip-x: 20px');
+  it('takes a smaller type for two digits, and a hairline on the shirt only at night', () => {
+    const n = { color: '#fff', plate: null, fill: '#123456' };
+    expect(body({ tone: 'play', name: 'Zé', shirt: 7, number: n })).not.toMatch(
+      /number[^"]*\btwo\b/,
+    );
+    expect(body({ tone: 'play', name: 'Zé', shirt: 10, number: n })).toMatch(/number[^"]*\btwo\b/);
+    expect(style).toContain('filter: drop-shadow(0 0 1px var(--line))');
+    expect(style).toMatch(/\[data-theme='dia'\]\) \.shirt[^{]*\{\s*filter: none/);
+  });
+
+  it('is placed from outside: no position props, the tip moves by transform only', () => {
+    expect(body({ tone: 'play', name: 'Zé' })).not.toMatch(/translate3d|--tip/);
+    expect(style).toContain('translateX(var(--tip-shift, 0px))');
+    expect(style).not.toMatch(/left:\s*calc\(var\(--tip/);
   });
 
   it('has the sizes and the times of §9', () => {

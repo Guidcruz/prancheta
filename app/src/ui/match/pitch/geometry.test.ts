@@ -3,6 +3,8 @@ import { FAR_BOARDS, farBoard, goalBoard } from './backdrop';
 import {
   TAG_GOAL_MARGIN,
   TAG_GAP,
+  TAG_SIDE,
+  TEAM_TIP_MAX,
   TAG_TIP_EDGE,
   TAG_TOP,
   ballRadius,
@@ -12,6 +14,7 @@ import {
   project,
   scaleAt,
   tagPlacement,
+  tagTipOffset,
 } from './geometry';
 import { PITCH_MOTION, PITCH_SIZE, PITCH_VIEW } from './motion';
 
@@ -246,7 +249,8 @@ describe('tagPlacement (partida-campo-v2.md, 9 and 13, geometry 6)', () => {
                   const edge = Math.min(TAG_TIP_EDGE, w / 2);
                   const left = out[0]!;
                   const top = out[1]!;
-                  if (left < 0 || left + w > bw + 1e-9) bad.push(`${name}: x ${left}`);
+                  if (left < TAG_SIDE - 1e-9 || left + w > bw - TAG_SIDE + 1e-9)
+                    bad.push(`${name}: x ${left}`);
                   if (top < TAG_TOP - 1e-9 || top + h > bh + 1e-9) bad.push(`${name}: y ${top}`);
                   if (out[2]! < edge - 1e-9 || out[2]! > w - edge + 1e-9) {
                     bad.push(`${name}: tip ${out[2]}`);
@@ -303,6 +307,45 @@ describe('tagPlacement (partida-campo-v2.md, 9 and 13, geometry 6)', () => {
   });
 });
 
+describe('the shirt over the ball near a goal (partida-campo-v2.md, 16, item 14)', () => {
+  it('is far from the ball only near the edges or the goals, never in the middle of the pitch', () => {
+    const out = new Float64Array(3);
+    const p = new Float64Array(3);
+    let near = 0;
+    let hidden = 0;
+    for (const [bw, bh] of SIZES) {
+      const g = pitchGeometry(bw, bh, 1);
+      for (let x = -M; x <= L + M; x += 1) {
+        for (let y = -M; y <= W + M; y += 2) {
+          project(g, x, y, p);
+          tagPlacement(g, p[0]!, p[1]!, ballRadius(g, p[2]!), 32, 32, out);
+          const off = tagTipOffset(g, p[0]!, out);
+          if (off > TEAM_TIP_MAX) {
+            hidden++;
+            // Hidden only close to a side of the box or to a goal.
+            const closeToSide = p[0]! < 8 + 16 + TEAM_TIP_MAX || p[0]! > bw - 8 - 16 - TEAM_TIP_MAX;
+            const closeToGoal = [0, 4].some(
+              (i) => p[0]! > g.goals[i]! - 40 && p[0]! < g.goals[i + 2]! + 40,
+            );
+            expect(closeToSide || closeToGoal, `${bw}x${bh} at ${x},${y}`).toBe(true);
+          } else near++;
+          // In the middle of the pitch the tip is on the ball.
+          if (x > 30 && x < 75) expect(off).toBeLessThanOrEqual(1e-9);
+        }
+      }
+    }
+    expect(hidden).toBeGreaterThan(0);
+    expect(near).toBeGreaterThan(hidden);
+  });
+
+  it('measures how far the tip is from the ball', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const out = Float64Array.of(100, 50, 16);
+    expect(tagTipOffset(g, 130, out)).toBe(14);
+    expect(tagTipOffset(g, 112, out)).toBe(4);
+  });
+});
+
 describe('the goal boxes', () => {
   it('hold the posts, the bar and the net of each goal', () => {
     for (const [w, h] of SIZES) {
@@ -312,11 +355,13 @@ describe('the goal boxes', () => {
         [0, 0],
         [4, L],
       ] as const) {
-        project(g, x, W / 2 - 3.66, p);
-        expect(g.goals[i]!).toBeLessThanOrEqual(p[0]!);
-        expect(g.goals[i + 1]!).toBeLessThanOrEqual(p[1]! - 2.44 * p[2]! + 1e-9);
-        expect(g.goals[i + 2]!).toBeGreaterThanOrEqual(p[0]!);
-        expect(g.goals[i + 3]!).toBeGreaterThanOrEqual(p[1]!);
+        for (const y of [W / 2 - 3.66, W / 2 + 3.66]) {
+          project(g, x, y, p);
+          expect(g.goals[i]!).toBeLessThanOrEqual(p[0]!);
+          expect(g.goals[i + 1]!).toBeLessThanOrEqual(p[1]! - 2.44 * p[2]! + 1e-9);
+          expect(g.goals[i + 2]!).toBeGreaterThanOrEqual(p[0]!);
+          expect(g.goals[i + 3]!).toBeGreaterThanOrEqual(p[1]!);
+        }
       }
     }
   });

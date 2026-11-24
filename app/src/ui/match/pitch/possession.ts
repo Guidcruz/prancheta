@@ -40,6 +40,18 @@ export function possessionOwners(
   possession: number,
   seed: number | string,
 ): Uint8Array {
+  return possessionTrace(steps, possession, seed).owners;
+}
+
+/**
+ * The owners, and who has the ball after each step (`after`: where a play, a goal or the start of
+ * a half leaves it, before the quota may pass it on), for the tests of the rules of D4-C.
+ */
+export function possessionTrace(
+  steps: readonly MatchStep[],
+  possession: number,
+  seed: number | string,
+): { owners: Uint8Array; after: Uint8Array } {
   const rngOf = (label: string) => new Rng(seedFromString(`${seed}-pitch-${label}`));
   const band = (label: string) => {
     const rng = rngOf(label);
@@ -47,11 +59,12 @@ export function possessionOwners(
   };
   const p = Math.min(1, Math.max(0, possession / 100));
   const out = new Uint8Array(steps.length);
+  const after = new Uint8Array(steps.length);
   let holder: Side = 'home';
   let debt = 0;
   let width = band('band-start');
   let afterGoal = false;
-  steps.forEach((step, index) => {
+  const visit = (step: MatchStep, index: number): void => {
     const source = step.line?.source;
     const type = source?.type;
     const justScored = afterGoal;
@@ -90,6 +103,10 @@ export function possessionOwners(
     }
     debt += (p - (holder === 'home' ? 1 : 0)) * (MATCH_TIMING.normal[step.timing] / 800);
     out[index] = ownerOf(holder);
+  };
+  steps.forEach((step, index) => {
+    visit(step, index);
+    after[index] = ownerOf(holder);
   });
-  return out;
+  return { owners: out, after };
 }

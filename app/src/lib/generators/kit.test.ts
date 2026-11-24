@@ -19,6 +19,7 @@ import {
   kitConflict,
   kitSvg,
   kitsFor,
+  shirtSvg,
   matchKits,
   thirdKit,
   type FieldKit,
@@ -558,6 +559,7 @@ describe('kit: safe SVG (US-002)', () => {
       const m = matchKits(c, clubs[1]!);
       for (const k of Object.values(m.kits)) {
         const svg = kitSvg(k, 32, { part: 'shirt', instance: 'tag' });
+        expect(svg).toBe(shirtSvg(k, 32, { instance: 'tag' }));
         const name = `${c.id} ${k.slot}`;
         expect(svg, name).toMatch(/^<svg [^>]*viewBox="0 0 64 42" width="32" height="21"/);
         expect(wellFormed(svg), name).toBe(true);
@@ -570,6 +572,14 @@ describe('kit: safe SVG (US-002)', () => {
         expect(clip(svg), name).not.toBe(clip(kitSvg(k, 32, { instance: 'tag' })));
       }
     }
+  });
+
+  it('gives two shirts of the same kit different clip ids when their instances differ', () => {
+    const k = kitsFor(clubs[0]!).home;
+    const id = (svg: string) => /<clipPath id="([^"]+)"/.exec(svg)![1];
+    expect(id(shirtSvg(k, 32, { instance: 'e1play' }))).not.toBe(
+      id(shirtSvg(k, 32, { instance: 'team' })),
+    );
   });
 
   it('does not change the kit without the option', () => {

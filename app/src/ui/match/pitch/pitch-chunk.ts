@@ -5,7 +5,7 @@
  * chunk (`pitch-chunk-[hash].js`), which the E2E uses to find the request.
  */
 export { default as MatchPitch } from '../../components/MatchPitch.svelte';
-export { default as PitchTag } from '../../components/PitchTag.svelte';
+export { default as PitchTag, PITCH_TAG_MOTION } from '../../components/PitchTag.svelte';
 export {
   choreograph,
   createScene,
@@ -20,6 +20,7 @@ export {
   pitchKits,
   pitchTagKits,
   tagKitOf,
+  tagShirt,
   type PitchKits,
   type PitchTagKit,
   type PitchTagKits,

@@ -1,3 +1,4 @@
+import { PITCH_TAG_TIP } from '../../components/PitchTag.svelte';
 import { PITCH_SIZE, PITCH_VIEW } from './motion';
 
 /*
@@ -111,8 +112,9 @@ export const ballRadius = (g: PitchGeometry, k: number): number =>
   Math.max((BALL / 2) * k, g.ballMin);
 
 /** A coordinate held inside `[low, high]` (no allocation). */
-export const clampBall = (value: number, low: number, high: number): number =>
+export const clamp = (value: number, low: number, high: number): number =>
   value < low ? low : value > high ? high : value;
+export const clampBall = clamp;
 
 /**
  * Holds the centre of the ball, in canvas pixels, inside the trapezoid of the drawing with its
@@ -125,11 +127,24 @@ export function holdBall(
   r: number,
   out: Float64Array,
 ): void {
-  const y = clampBall(cy, g.yFar + r, g.height - r);
+  const y = clamp(cy, g.yFar + r, g.height - r);
   const t = g.farScale + ((y - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
   const half = (g.width / 2) * t - r;
-  out[0] = clampBall(cx, g.width / 2 - half, g.width / 2 + half);
+  out[0] = clamp(cx, g.width / 2 - half, g.width / 2 + half);
   out[1] = y;
+}
+
+export const TAG_GAP = 12;
+export const TAG_TOP = 4;
+export const TAG_SIDE = 8;
+export const TAG_GOAL_MARGIN = 6;
+export const TAG_TIP_EDGE = 20;
+/** The thread of the shirt over the ball may lean this far from the ball (px CSS, 16, item 14). */
+export const TEAM_TIP_MAX = 12;
+
+/** `x` held in `[TAG_SIDE, box − TAG_SIDE − w]` (the left edge of a pill of width `w`). */
+function holdSide(x: number, box: number, w: number): number {
+  return clamp(x, TAG_SIDE, Math.max(TAG_SIDE, box - TAG_SIDE - w));
 }
 
 /**
@@ -141,21 +156,13 @@ export function holdBall(
  *
  * 1. Over the player, centred on his x: the base of the pill {@link TAG_GAP} px above the top of
  *    the disc (7 of tip and 5 of thread).
- * 2. Held in the box: x from `space-2` and to `space-2` of the right edge; the top never above
- *    {@link TAG_TOP}.
+ * 2. Held in the box: x from `space-2` ({@link TAG_SIDE}) to `space-2` of the right edge; the top
+ *    never above {@link TAG_TOP}.
  * 3. Never over a goal: if it crosses, in height, the box of a goal with a margin of
  *    {@link TAG_GOAL_MARGIN}, it is pushed inwards to the side clear of it, and held again.
  * 4. The tip stays at the x of the player, but at least {@link TAG_TIP_EDGE} px from the ends of
  *    the pill (the thread then leans).
  */
-export const TAG_GAP = 12;
-export const TAG_TOP = 4;
-export const TAG_SIDE = 8;
-export const TAG_GOAL_MARGIN = 6;
-export const TAG_TIP_EDGE = 20;
-/** The height of the tip under the pill, in CSS pixels (PITCH_TAG_TIP in the component). */
-export const TAG_TIP = 7;
-
 export function tagPlacement(
   g: PitchGeometry,
   px: number,
@@ -169,9 +176,8 @@ export function tagPlacement(
   const cx = px / g.dpr;
   const top = (py - r) / g.dpr;
   const y = Math.max(top - TAG_GAP - h, TAG_TOP);
-  const reach = h + TAG_TIP;
-  const hold = (x: number) => clampBall(x, TAG_SIDE, Math.max(TAG_SIDE, boxW - TAG_SIDE - w));
-  let x = hold(cx - w / 2);
+  const reach = h + PITCH_TAG_TIP.height;
+  let x = holdSide(cx - w / 2, boxW, w);
   const centre = boxW / 2;
   for (let pass = 0; pass < 2; pass++) {
     for (let i = 0; i < 8; i += 4) {
@@ -180,11 +186,20 @@ export function tagPlacement(
       const above = g.goals[i + 1]! / g.dpr - TAG_GOAL_MARGIN;
       const below = g.goals[i + 3]! / g.dpr + TAG_GOAL_MARGIN;
       if (y + reach <= above || y >= below || x + w <= left || x >= right) continue;
-      x = hold(x + w / 2 < centre ? right : left - w);
+      x = holdSide(x + w / 2 < centre ? right : left - w, boxW, w);
     }
   }
   const edge = Math.min(TAG_TIP_EDGE, w / 2);
   out[0] = x;
   out[1] = y;
-  out[2] = clampBall(cx - x, edge, w - edge);
+  out[2] = clamp(cx - x, edge, w - edge);
+}
+
+/**
+ * How far, in px CSS, the tip placed in `out` (by `tagPlacement`) is from the x of the anchor at
+ * `px` canvas px. The shirt over the ball is not drawn when it passes {@link TEAM_TIP_MAX}: the
+ * thread would cross the mouth of a goal.
+ */
+export function tagTipOffset(g: PitchGeometry, px: number, out: Float64Array): number {
+  return Math.abs(out[0]! + out[2]! - px / g.dpr);
 }

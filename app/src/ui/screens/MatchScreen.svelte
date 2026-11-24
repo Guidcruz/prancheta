@@ -33,13 +33,13 @@
   import { loadPitch as loadPitchChunk, type PitchChunk } from '../match/pitch-loader';
   import type { PitchKits, PitchTagKits } from '../match/pitch/kits';
   import type { PitchTagView } from '../components/PitchTag.svelte';
-  import { TAG_KIND_KEYS, tagPlanOf, type TagPlan } from '../match/tags';
+  import { tagFields, tagPlanOf, type TagPlan } from '../match/tags';
+  import { TagTracker } from '../match/tag-tracker';
   import type { Choreography, PitchScene } from '../match/pitch/scene';
   import {
     announcement,
     clockLabel,
     commentaryItem,
-    nameOf,
     phaseLabel,
     scoreA11y,
     type NarrationContext,
@@ -323,33 +323,17 @@
   let tagKits: PitchTagKits | undefined;
   /** The owner of the ball in each step (possession.ts); 0: none. */
   let owners: Uint8Array | undefined;
-  /**
-   * The tag of a play or a goal on screen: how long it has been there, as the sum of the steps
-   * shown since its entry (the clock of the match, not the wall clock, so a pause counts for
-   * nothing), and the disc it hangs from.
-   */
-  let held: { plan: TagPlan; view: PitchTagView; age: number; disc: number } | undefined;
-  let leaving: PitchTagView | undefined;
+  /** Which tags are on screen after each step (tag-tracker.ts, which holds the times). */
+  const tracker = new TagTracker<PitchTagView>();
   let leavingTimer: ReturnType<typeof setTimeout> | undefined;
-  /** The step before the one revealed now: how long it lasted at the speed it was shown at. */
-  let lastDuration = 0;
-  /** The least a tag of a play stays: from its entry to the first step that may take it away. */
-  const TAG_MIN_MS = { normal: 1600, fast: 800 } as const;
-  /** How long a leaving tag is kept if the end of its fade never comes (no transition runs). */
-  const TAG_LEAVE_GRACE_MS = 240;
 
   function viewOf(plan: TagPlan, disc: number): PitchTagView {
-    const id = plan.player;
     const kit = pitch!.tagKitOf(tagKits!, disc);
-    const shirt = game.players[id]?.shirt;
-    const kind = t(TAG_KIND_KEYS[plan.kind], lang);
     return {
+      ...tagFields(plan, ctx),
       key: plan.key,
       tone: plan.tone,
-      kind,
-      name: nameOf(ctx, id),
-      ...(shirt === undefined ? {} : { shirt }),
-      kitSvg: kit.svg,
+      kitSvg: pitch!.tagShirt(kit, plan.key),
       number: kit.number,
       disc,
       leaving: false,
@@ -357,86 +341,51 @@
     };
   }
 
-  function dropLeaving(): boolean {
-    clearTimeout(leavingTimer);
-    if (leaving === undefined) return false;
-    leaving = undefined;
-    return true;
-  }
-
   function onTagLeft(key: string): void {
-    if (leaving?.key !== key) return;
-    dropLeaving();
-    publishTags();
-  }
-
-  function publishTags(team?: PitchTagView): void {
-    const next: PitchTagView[] = [];
-    if (team !== undefined) next.push(team);
-    if (leaving !== undefined) next.push(leaving);
-    if (held !== undefined) next.push(held.view);
-    tags = next;
+    if (!tracker.left(key)) return;
+    clearTimeout(leavingTimer);
+    tags = tracker.tags;
   }
 
   /**
    * The tags of the step just revealed (docs/design/telas/partida-campo-v2.md, 9, "Tempos da
-   * etiqueta do lance"): a new play replaces the one on screen at once; the same play (its start
-   * and its outcome) only changes the kind; the tag leaves, fading in 120 ms, at the first step
-   * without one that starts after the least time or when its disc leaves (the sent-off's stays at
-   * its last point until the least time); the goal tag leaves at once at the next step. Returns
-   * whether the tags on screen changed.
+   * etiqueta do lance"; the rules are the tracker's). Returns whether the tags on screen changed.
    */
   function updateTags(step: MatchStep, index: number): boolean {
     if (pitch === undefined || choreography === undefined || tagKits === undefined) return false;
     const speed = player.state.speed;
-    const before = tags;
-    const shownBefore = leaving !== undefined;
-    dropLeaving();
-    if (held !== undefined) held.age += lastDuration;
-    lastDuration = timingOf(step.timing, speed);
-
     const plan = tagPlanOf(step);
     const disc = plan === undefined ? -1 : pitch.tagDiscOf(choreography, index);
-    if (plan !== undefined && disc >= 0) {
-      const view = viewOf(plan, disc);
-      if (held?.plan.key === plan.key) {
-        held.view = view;
-        held.plan = plan;
-        held.disc = disc;
-      } else {
-        held = { plan, view, age: 0, disc };
-      }
-    } else if (held !== undefined) {
-      const sentOff = held.plan.kind === 'red';
-      const discGone = !sentOff && !pitch.discShownIn(choreography, index, held.disc);
-      if (held.plan.tone === 'goal') {
-        held = undefined;
-      } else if (held.age >= TAG_MIN_MS[speed] || discGone) {
-        const out = { ...held.view, leaving: true };
-        held = undefined;
-        // Reduced motion: no fade, away at once.
-        if (!reduced) {
-          leaving = out;
-          leavingTimer = setTimeout(() => {
-            if (leaving?.key === out.key) onTagLeft(out.key);
-          }, TAG_LEAVE_GRACE_MS);
-        }
-      }
-    }
-
-    // The shirt of the team over the ball: only in a minute with nothing shown, with no tag of a
-    // play on screen, never with reduced motion, no number and no name.
-    let team: PitchTagView | undefined;
+    // The shirt of the team over the ball: only in a minute with nothing shown, never with reduced
+    // motion, no number and no name (the tracker drops it while a play tag is on screen).
     const owner = owners?.[index] ?? 0;
-    if (!reduced && held === undefined && step.timing === 'minuteFull' && owner !== 0) {
-      const kit = owner === 1 ? tagKits.home : tagKits.away;
-      team = { key: 'team', tone: 'team', kitSvg: kit.svg, disc: -1, leaving: false, still: false };
+    const side = owner === 1 ? tagKits.home : tagKits.away;
+    clearTimeout(leavingTimer);
+    const changed = tracker.step({
+      plan,
+      view: plan !== undefined && disc >= 0 ? viewOf(plan, disc) : undefined,
+      duration: timingOf(step.timing, speed),
+      speed,
+      fade: !reduced,
+      team:
+        !reduced && step.timing === 'minuteFull' && owner !== 0
+          ? {
+              key: 'team',
+              tone: 'team',
+              kitSvg: pitch.tagShirt(side, `team-${owner}`),
+              disc: -1,
+              leaving: false,
+              still: false,
+            }
+          : undefined,
+    });
+    tags = tracker.tags;
+    const leaving = tracker.leavingKey;
+    if (leaving !== undefined) {
+      // If the end of the fade never comes (no transition runs), the tag goes after twice it.
+      leavingTimer = setTimeout(() => onTagLeft(leaving), pitch.PITCH_TAG_MOTION.out * 2);
     }
-    publishTags(team);
-    // Changed: something other than a step in the middle of the same tag.
-    return (
-      shownBefore || before.length !== tags.length || before.some((v, i) => v.key !== tags[i]!.key)
-    );
+    return changed;
   }
 
   /** The scene of the instant `now`, always the same object (nothing allocated per frame). */
