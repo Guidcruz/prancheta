@@ -52,6 +52,32 @@ const pixels = (page: Page) =>
     return hash;
   });
 
+/**
+ * Waits, in real time and with a ceiling, until the pitch has settled: every tag on screen has its
+ * position (the measure of a pill is a ResizeObserver, outside the fake clock, and the pitch draws
+ * one more frame when it arrives, for the thread) and the canvas gave the same pixels in two reads
+ * in a row. Only then is a picture of the paused pitch taken; after it, nothing may change.
+ */
+async function settled(page: Page): Promise<void> {
+  let last: number | undefined;
+  await expect
+    .poll(
+      async () => {
+        const placed = await page.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>('main.match .place')].every(
+            (place) => place.style.transform !== '',
+          ),
+        );
+        const now = await pixels(page);
+        const same = placed && now === last;
+        last = now;
+        return same;
+      },
+      { message: 'o campo não assentou', timeout: 10_000, intervals: [100, 200, 300, 500] },
+    )
+    .toBe(true);
+}
+
 const pitchRequests = (page: Page): string[] => {
   const asked: string[] = [];
   page.on('request', (request) => {
@@ -122,6 +148,7 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
       .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     // Paused at the end of a step: the pitch stops there (no frames, same pixels).
+    await settled(page);
     const still = await pixels(page);
     await page.clock.runFor(3_000);
     expect(await pixels(page)).toBe(still);
@@ -154,6 +181,11 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
     page,
     context,
   }) => {
+    // Two matches in one test (30 minutes and then a whole one): on the slow WebKit of the CI the
+    // second one alone took more than the 30 s of a test (the pitch of v2 also costs about 15% more
+    // per step with CPU 4x than the one of main: 11.8 s against 10.2 s for the whole match). A
+    // longer limit (3x), not a skip: the result of the match is still checked.
+    test.slow();
     const { expected } = await careerWith(page, 'full');
     await freezeClock(page);
     await openMatch(page);
@@ -198,6 +230,7 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
       .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     const minute = await minuteText(page);
+    await settled(page);
     const hidden = await pixels(page);
     await page.clock.runFor(20_000);
     expect(await minuteText(page)).toBe(minute);
