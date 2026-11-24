@@ -4,6 +4,7 @@ import {
   TAG_GOAL_MARGIN,
   TAG_GAP,
   TAG_SIDE,
+  TEAM_TIP_BACK,
   TEAM_TIP_MAX,
   TAG_TIP_EDGE,
   TAG_TOP,
@@ -15,6 +16,8 @@ import {
   scaleAt,
   tagPlacement,
   tagTipOffset,
+  teamShirtShown,
+  tipShift,
 } from './geometry';
 import { PITCH_MOTION, PITCH_SIZE, PITCH_VIEW } from './motion';
 
@@ -364,5 +367,39 @@ describe('the goal boxes', () => {
         }
       }
     }
+  });
+});
+
+describe('the tip shift and the shirt over the ball (review of the PR B)', () => {
+  it('moves the tip from the middle when the pill is measured again with the same tip and a new width', () => {
+    // The tip held 20px from the end of the pill: the same `tip` for any width over 40px.
+    const g = pitchGeometry(360, 240, 1);
+    const out = new Float64Array(3);
+    tagPlacement(g, 6, 150, 8, 100, 48, out);
+    const first = out[2]!;
+    tagPlacement(g, 6, 150, 8, 140, 48, out);
+    expect(out[2]!).toBe(first);
+    expect(tipShift(first, 140)).not.toBe(tipShift(first, 100));
+    expect(tipShift(first, 100)).toBe(first - 50);
+    expect(tipShift(first, 140)).toBe(first - 70);
+  });
+
+  it('has a hysteresis: gone above 12px, back only under 9px', () => {
+    expect(TEAM_TIP_BACK).toBeLessThan(TEAM_TIP_MAX);
+    // Shown: stays up to the limit, goes just above it.
+    expect(teamShirtShown(true, TEAM_TIP_MAX)).toBe(true);
+    expect(teamShirtShown(true, TEAM_TIP_MAX + 0.1)).toBe(false);
+    // Hidden: stays hidden between the two, comes back under the lower one.
+    expect(teamShirtShown(false, TEAM_TIP_MAX)).toBe(false);
+    expect(teamShirtShown(false, TEAM_TIP_BACK)).toBe(false);
+    expect(teamShirtShown(false, TEAM_TIP_BACK - 0.1)).toBe(true);
+    // A ball that wobbles around 10 to 11px does not blink.
+    let shown = true;
+    const seen: boolean[] = [];
+    for (const offset of [11, 12.5, 11, 10, 11, 12.5, 8, 10, 11]) {
+      shown = teamShirtShown(shown, offset);
+      seen.push(shown);
+    }
+    expect(seen).toEqual([true, false, false, false, false, false, true, true, true]);
   });
 });

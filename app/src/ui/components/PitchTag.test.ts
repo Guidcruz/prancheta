@@ -2,7 +2,8 @@ import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import { t } from '@lib/i18n';
-import PitchTag, { PITCH_TAG_MOTION, PITCH_TAG_TIP } from './PitchTag.svelte';
+import { PITCH_TAG_TIP } from '../match/pitch/geometry';
+import PitchTag, { PITCH_TAG_MOTION } from './PitchTag.svelte';
 
 /*
  * The PitchTag (partida-campo-v2.md, §9, §11 and §16). The shirt here is a stand-in for the SVG of
@@ -117,7 +118,7 @@ describe('PitchTag', () => {
       /number[^"]*\btwo\b/,
     );
     expect(body({ tone: 'play', name: 'Zé', shirt: 10, number: n })).toMatch(/number[^"]*\btwo\b/);
-    expect(style).toContain('filter: drop-shadow(0 0 1px var(--line))');
+    expect(style).toContain('filter: drop-shadow(0 0 1px var(--ink-muted))');
     expect(style).toMatch(/\[data-theme='dia'\]\) \.shirt[^{]*\{\s*filter: none/);
   });
 

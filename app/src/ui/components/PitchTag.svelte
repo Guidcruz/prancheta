@@ -1,11 +1,5 @@
 <script lang="ts" module>
   /**
-   * The tip under the pill, in px CSS (partida-campo-v2.md, §9): 12 wide, 7 tall. The thread of
-   * 5px from the tip to the top of the disc (or of the ball) is drawn by the pitch, not here.
-   */
-  export const PITCH_TAG_TIP = { width: 12, height: 7 } as const;
-
-  /**
    * Durations of the tag, in ms (partida-campo-v2.md, §9, "Tempos da etiqueta do lance" and
    * "Etiqueta de gol"): they stay here until the motion group of tokens exists (proposal 2). The
    * screen reads `out` to know when to take a `leaving` tag away; the goal tag leaves at once.
@@ -310,10 +304,10 @@
     width: 34px;
     height: 22px;
   }
-  /* A dark shirt (black, navy) would vanish in the dark circle at night: a hairline of `line`
+  /* A dark shirt (black, navy) would vanish in the dark circle at night: a hairline of `ink-muted`
      around it. In the day theme the circle is light and the outline of the shirt is enough. */
   .shirt :global(svg) {
-    filter: drop-shadow(0 0 1px var(--line));
+    filter: drop-shadow(0 0 1px var(--ink-muted));
   }
   :global([data-theme='dia']) .shirt :global(svg) {
     filter: none;
@@ -352,7 +346,7 @@
     transform: translateY(2px);
   }
   .compact .number.two {
-    font-size: 8px;
+    font-size: 9px;
     line-height: 10px;
   }
 

@@ -1,4 +1,3 @@
-import { PITCH_TAG_TIP } from '../../components/PitchTag.svelte';
 import { PITCH_SIZE, PITCH_VIEW } from './motion';
 
 /*
@@ -141,6 +140,24 @@ export const TAG_GOAL_MARGIN = 6;
 export const TAG_TIP_EDGE = 20;
 /** The thread of the shirt over the ball may lean this far from the ball (px CSS, 16, item 14). */
 export const TEAM_TIP_MAX = 12;
+/** Once hidden for leaning too far, the shirt over the ball is back under this (no flicker). */
+export const TEAM_TIP_BACK = 9;
+/**
+ * The tip under the pill, in px CSS (partida-campo-v2.md, §9): 12 wide, 7 tall. The thread of 5px
+ * from the tip to the top of the disc (or of the ball) is drawn by the pitch, not by the component.
+ */
+export const PITCH_TAG_TIP = { width: 12, height: 7 } as const;
+
+/** Where the tip is from the middle of a pill of width `w` whose tip is `tip` from its left edge. */
+export const tipShift = (tip: number, w: number): number => tip - w / 2;
+
+/**
+ * Whether the shirt over the ball is drawn, with a hysteresis around the {@link TEAM_TIP_MAX}: it
+ * goes when the tip leans more than that from the ball and comes back only under
+ * {@link TEAM_TIP_BACK}, so it does not blink at the limit. `shown` is how it was last frame.
+ */
+export const teamShirtShown = (shown: boolean, offset: number): boolean =>
+  shown ? offset <= TEAM_TIP_MAX : offset < TEAM_TIP_BACK;
 
 /** `x` held in `[TAG_SIDE, box − TAG_SIDE − w]` (the left edge of a pill of width `w`). */
 function holdSide(x: number, box: number, w: number): number {

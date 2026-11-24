@@ -9,16 +9,17 @@
     holdBall,
     pitchGeometry,
     project,
-    TEAM_TIP_MAX,
+    PITCH_TAG_TIP,
     tagPlacement,
     tagTipOffset,
+    teamShirtShown,
+    tipShift,
     type PitchGeometry,
   } from '../match/pitch/geometry';
   import { PITCH_SIZE, PITCH_STAND_END } from '../match/pitch/motion';
   import type { PitchScene } from '../match/pitch/scene';
   import PitchTag, {
     PITCH_TAG_MOTION,
-    PITCH_TAG_TIP,
     type PitchTagRefs,
     type PitchTagSize,
     type PitchTagView,
@@ -125,6 +126,8 @@
     x: number;
     y: number;
     tip: number;
+    /** What was last written to `--tip-shift`. */
+    shift: number;
     /** The anchor as last seen, in canvas px: a disc that left stays where it was. */
     ax: number;
     ay: number;
@@ -237,13 +240,18 @@
       run.y = slot[1]!;
       run.place.style.transform = `translate3d(${run.x}px, ${run.y}px, 0)`;
     }
-    if (!(Math.abs(slot[2]! - run.tip) <= MOVE)) {
-      run.tip = slot[2]!;
-      run.pill.style.setProperty('--tip-shift', `${run.tip - run.w / 2}px`);
+    run.tip = slot[2]!;
+    // The shift, not the tip, is what is written: a pill measured again with the same tip (held
+    // 20px from its end) but another width moves the tip from the middle.
+    const shift = tipShift(run.tip, run.w);
+    if (!(Math.abs(shift - run.shift) <= MOVE)) {
+      run.shift = shift;
+      run.pill.style.setProperty('--tip-shift', `${shift}px`);
     }
     // The shirt over the ball is decorative: if the goal pushed its tip far from the ball, it is not
     // there in this frame, so the thread never crosses the mouth of a goal (§16, item 14).
-    const visible = tag.tone !== 'team' || tagTipOffset(g, run.ax, slot) <= TEAM_TIP_MAX;
+    const visible =
+      tag.tone !== 'team' || teamShirtShown(run.visible, tagTipOffset(g, run.ax, slot));
     if (visible !== run.visible) {
       run.visible = visible;
       run.place.style.visibility = visible ? '' : 'hidden';
@@ -275,6 +283,7 @@
         x: Number.NaN,
         y: Number.NaN,
         tip: Number.NaN,
+        shift: Number.NaN,
         ax: 0,
         ay: 0,
         ar: 0,
