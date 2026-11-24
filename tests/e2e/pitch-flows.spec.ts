@@ -131,7 +131,11 @@ test.describe('Campo 2D: fluxos em volta (QA T-085)', () => {
     await expect(sheet).toHaveCount(0);
     await expect(page).toHaveURL(/#\/match$/);
     const minute = await minuteText(page);
-    await page.clock.runFor(3_000);
+    // A step of the v2 pitch can outlast 3 s: run until the minute changes, not for a fixed time.
+    await runUntil(page, async () => (await minuteText(page)) !== minute, {
+      step: 100,
+      max: 30_000,
+    });
     expect(await minuteText(page)).not.toBe(minute);
     await expect(canvas(page)).toHaveCount(1);
 
