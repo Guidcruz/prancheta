@@ -90,6 +90,8 @@ interface Snap {
   ariaHidden: string | null;
   pointer: string;
   visibility: string;
+  /** The pitch has written the position (the pill was measured; the measure runs in real time). */
+  placed: boolean;
   text: string;
   hasKind: boolean;
   hasName: boolean;
@@ -128,6 +130,7 @@ function snapshot(page: Page): Promise<{ tags: Snap[]; box: DOMRect }> {
           ariaHidden: place.getAttribute('aria-hidden'),
           pointer: getComputedStyle(place).pointerEvents,
           visibility: getComputedStyle(place).visibility,
+          placed: place.style.transform !== '',
           text: pill.textContent!.trim(),
           hasKind: pill.querySelector('.kind, .title') !== null,
           hasName: name !== null,
@@ -176,7 +179,18 @@ async function scan(
       const target = start + fraction * length;
       if (target > now) await page.clock.runFor(target - now);
       now = Math.max(now, target);
-      const { tags, box } = await snapshot(page);
+      let { tags, box } = await snapshot(page);
+      if (tags.some((t) => !t.placed)) {
+        // The measure of a pill that just mounted (ResizeObserver) comes in real time, outside the
+        // fake clock, and slower on a slow machine: wait for it by polling, never a fixed time.
+        // Until then the tag is hidden because it is not placed, not because of the 12px rule.
+        await expect
+          .poll(async () => (await snapshot(page)).tags.every((t) => t.placed), {
+            message: `passo ${i}: a etiqueta nunca foi medida`,
+          })
+          .toBe(true);
+        ({ tags, box } = await snapshot(page));
+      }
       each({ index: i, step: steps[i]!, at: fraction, tags, box });
     }
   }
@@ -444,8 +458,9 @@ test.describe('Campo v2, PR B: a camisa sobre a bola (E2E 5)', () => {
       }
     }
     expect(withShirt, 'minutos com a camisa sobre a bola').toBeGreaterThan(20);
-    // Hidden only by the 12px rule near a goal or the side: the rare frame, never the rule.
-    expect(visible / samples, 'amostras com a camisa visível').toBeGreaterThan(0.7);
+    // Hidden only by the 12px rule near a goal or the side (the samples are taken after the first
+    // measure, so a pill not placed yet is not counted): the rare frame, never the rule.
+    expect(visible / samples, 'amostras com a camisa visível').toBeGreaterThan(0.9);
   });
 
   test('nunca com movimento reduzido: nenhuma camisa em nenhum passo, e a etiqueta de gol e as do lance continuam', async ({
