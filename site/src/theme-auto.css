@@ -30,6 +30,8 @@
     --focus: #1565c0;
     --pitch: #2d8f55;
     --pitch-line: #eaf7ef;
+    --pitch-shadow: rgba(0,0,0,0.38);
+    --pitch-wedge: rgba(255,255,255,0.35);
     --surface-glass: rgba(255,255,255,0.72);
     --glass-line: rgba(16,32,44,0.10);
     --beam: rgba(240,180,41,0.14);

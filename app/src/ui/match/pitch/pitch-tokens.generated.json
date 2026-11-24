@@ -8,7 +8,9 @@
     "--floodlight": "#ffc83d",
     "--beam": "rgba(255,214,120,0.12)",
     "--pitch": "#1e6b3f",
-    "--pitch-line": "#9fdcb6"
+    "--pitch-line": "#9fdcb6",
+    "--pitch-shadow": "rgba(0,0,0,0.38)",
+    "--pitch-wedge": "rgba(4,18,10,0.45)"
   },
   "dia": {
     "--ink": "#10202c",
@@ -19,6 +21,8 @@
     "--floodlight": "#f0b429",
     "--beam": "rgba(240,180,41,0.14)",
     "--pitch": "#2d8f55",
-    "--pitch-line": "#eaf7ef"
+    "--pitch-line": "#eaf7ef",
+    "--pitch-shadow": "rgba(0,0,0,0.38)",
+    "--pitch-wedge": "rgba(255,255,255,0.35)"
   }
 }

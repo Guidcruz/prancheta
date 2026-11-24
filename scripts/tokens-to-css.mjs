@@ -91,6 +91,27 @@ const pairs = [
 // Graphic pairs (WCAG 2, 3:1 for graphic objects): the ring of the discs and the ball of the 2D
 // pitch in ink over the grass (design-system.md, "Campo da partida"; T-085).
 const graphicPairs = [['ink', 'pitch']];
+// Graphic pairs over a translucent layer (3:1): the foreground over the rgba token composited on the
+// solid background, at full strength. The attack wedge (pitch-wedge, proposal 42) starts at the ball
+// with its full alpha and fades to the goal, so its vertex is the worst case for the ink of the ball,
+// the discs and the threads (partida-campo-v2.md, 8).
+const overlayPairs = [['ink', 'pitch-wedge', 'pitch']];
+const rgba = (s) => {
+  const m = /^rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)$/.exec(s);
+  if (!m) throw new Error(`not an rgba() token value: ${s}`);
+  return [+m[1], +m[2], +m[3], +m[4]];
+};
+const composite = (top, hex) => {
+  const [r, g, b, a] = rgba(top);
+  const base = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return (
+    '#' +
+    [r, g, b]
+      .map((c, i) => Math.round(c * a + base[i] * (1 - a)))
+      .map((c) => c.toString(16).padStart(2, '0'))
+      .join('')
+  );
+};
 const failures = [];
 for (const theme of themes) {
   for (const [fg, bg] of pairs) {
@@ -101,6 +122,12 @@ for (const theme of themes) {
     const r = ratio(val(byName[fg], theme), val(byName[bg], theme));
     if (r < 3) failures.push(`${theme}: ${fg} on ${bg} = ${r.toFixed(2)}:1 (graphic, 3:1)`);
   }
+  for (const [fg, layer, bg] of overlayPairs) {
+    const under = composite(val(byName[layer], theme), val(byName[bg], theme));
+    const r = ratio(val(byName[fg], theme), under);
+    if (r < 3)
+      failures.push(`${theme}: ${fg} on ${layer} over ${bg} = ${r.toFixed(2)}:1 (graphic, 3:1)`);
+  }
 }
 if (failures.length) {
   console.error('Contrast below the minimum:\n  ' + failures.join('\n  '));
@@ -110,8 +137,7 @@ if (failures.length) {
 writeFileSync(resolve(root, 'app/src/tokens.css'), css);
 
 // The tokens the 2D pitch draws with, per theme, as a small JSON the pitch imports instead of the
-// whole tokens.css (docs/02-architecture.md, 4.7). The list is fixed here; `--pitch-shadow` and
-// `--pitch-wedge` enter on their own once design/tokens.json has them.
+// whole tokens.css (docs/02-architecture.md, 4.7). The list is fixed here.
 const PITCH_TOKENS = [
   'ink',
   'surface-0',
