@@ -31,7 +31,7 @@ describe('rgbOf', () => {
 });
 
 describe('fillBands', () => {
-  it('covers [round(top), end) with no hole and no overlap, from the first colour to the last', () => {
+  it('covers [round(top), end) with no hole and no overlap', () => {
     for (const [top, bottom, end] of [
       [0, 79.4, 79],
       [10.6, 120.2, 120],
