@@ -1,3 +1,4 @@
+import type { BackdropColors } from './backdrop';
 import css from '../../../tokens.css?raw';
 
 /*
@@ -30,4 +31,28 @@ export function parseTokens(css: string): Record<string, Theme> {
 export function themeToken(theme: string, name: string): string | undefined {
   themes ??= parseTokens(css);
   return themes[theme]?.[name];
+}
+
+/** The colours the pitch draws with in `theme`, and the `ink` of the discs and the ball. */
+export function pitchColors(
+  theme: string,
+  /** Asked for a token the file does not have (the caller reads the computed style). */
+  fallback: (name: string) => string,
+  lookup: (theme: string, name: string) => string | undefined = themeToken,
+): { colors: BackdropColors; ink: string } {
+  const token = (name: string) => lookup(theme, name) ?? fallback(name);
+  return {
+    ink: token('--ink'),
+    colors: {
+      surface0: token('--surface-0'),
+      surface1: token('--surface-1'),
+      surface2: token('--surface-2'),
+      line: token('--line'),
+      floodlight: token('--floodlight'),
+      beam: token('--beam'),
+      pitch: token('--pitch'),
+      pitchLine: token('--pitch-line'),
+      night: theme !== 'dia',
+    },
+  };
 }

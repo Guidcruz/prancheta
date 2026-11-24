@@ -161,7 +161,7 @@ function haloSprite(
 }
 
 /** `#rrggbb` or `rgb(r, g, b)` as three numbers, or `undefined`. */
-function rgbOf(color: string): [number, number, number] | undefined {
+export function rgbOf(color: string): [number, number, number] | undefined {
   const hex = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(color);
   if (hex !== null) return [parseInt(hex[1]!, 16), parseInt(hex[2]!, 16), parseInt(hex[3]!, 16)];
   const rgb = /^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(color);
@@ -170,10 +170,10 @@ function rgbOf(color: string): [number, number, number] | undefined {
 
 /**
  * A vertical gradient from `from` at `top` to `to` at `bottom`, over `[0, end)` of the canvas, as
- * flat bands one colour step tall: the same pixels a gradient gives in 8 bits, at the cost of a
- * few flat fills (a gradient is evaluated per pixel). A gradient where a colour is not plain.
+ * flat bands one colour step tall (64 at most): close to what a gradient gives in 8 bits, at the
+ * cost of a few flat fills (a gradient is evaluated per pixel). A gradient where a colour is not plain.
  */
-function fillBands(
+export function fillBands(
   ctx: Context,
   from: string,
   to: string,

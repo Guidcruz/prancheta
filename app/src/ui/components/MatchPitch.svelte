@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import type { PitchKit, PitchKits } from '../match/pitch/kits';
-  import { themeToken } from '../match/pitch/tokens';
+  import { pitchColors } from '../match/pitch/tokens';
   import { drawBackdrop, type BackdropColors } from '../match/pitch/backdrop';
   import {
     ballRadius,
@@ -96,28 +96,15 @@
   }
 
   /**
-   * The tokens, read once per theme (one `getComputedStyle`, nine reads): a new size does not read
-   * them again, so it forces no style or layout from inside the redraw.
+   * The colours, read once per theme (from the tokens file, `getComputedStyle` only for a token it
+   * lacks): a new size does not read them again, so it forces no style or layout in the redraw.
    */
   let colors: BackdropColors | undefined;
-  function readColors(): BackdropColors {
-    const theme = document.documentElement.dataset.theme ?? 'noite';
-    // From the tokens file when it has the theme (no forced style recalculation); else the browser.
+  function readColors(): { colors: BackdropColors; ink: string } {
     let style: CSSStyleDeclaration | undefined;
-    const token = (name: string) =>
-      themeToken(theme, name) ?? (style ??= getComputedStyle(box!)).getPropertyValue(name).trim();
-    ink = token('--ink');
-    return {
-      surface0: token('--surface-0'),
-      surface1: token('--surface-1'),
-      surface2: token('--surface-2'),
-      line: token('--line'),
-      floodlight: token('--floodlight'),
-      beam: token('--beam'),
-      pitch: token('--pitch'),
-      pitchLine: token('--pitch-line'),
-      night: theme !== 'dia',
-    };
+    return pitchColors(document.documentElement.dataset.theme ?? 'noite', (name) =>
+      (style ??= getComputedStyle(box!)).getPropertyValue(name).trim(),
+    );
   }
 
   /** The background, drawn out of the page at the canvas's pixel size. */
@@ -130,9 +117,14 @@
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
     geometry = pitchGeometry(width, height, dpr);
-    colors ??= readColors();
+    if (colors === undefined) {
+      const read = readColors();
+      colors = read.colors;
+      ink = read.ink;
+    }
     field ??= document.createElement('canvas');
-    // Set every time: it also clears the canvas, and starts the measure of the redraw of the QA.
+    // Set every time: it clears the canvas and the state of its context (the background is then
+    // drawn over a clean canvas).
     field.width = canvas.width;
     field.height = canvas.height;
     const g = field.getContext('2d');
@@ -238,14 +230,15 @@
       fail('draw', error);
       return;
     }
-    ready = true;
     if (cold) {
       // The very first drawing runs with the code cold: the background and the first frame go in
-      // two tasks, neither over 50 ms.
+      // two tasks, neither over 50 ms. `ready` (which starts the frames, also the one of a pitch
+      // that is still) waits for the second.
       cold = false;
       later?.port2.postMessage(0);
       return;
     }
+    ready = true;
     // A frame now, also while running: the next one may be a frame away.
     draw(performance.now());
   }
@@ -264,7 +257,11 @@
     channel = new MessageChannel();
     later = new MessageChannel();
     later.port1.onmessage = () => {
-      draw(performance.now());
+      if (failed) return;
+      // The effects draw the first frame when the pitch is still (and start the loop when it
+      // runs); a running pitch also draws one now, the next frame may be a frame away.
+      ready = true;
+      if (running) draw(performance.now());
     };
     channel.port1.onmessage = () => {
       scheduled = false;
