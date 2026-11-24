@@ -27,6 +27,7 @@ const PITCH_MAX_GZIP = 20_000;
 interface Chunk {
   file: string;
   css?: string[];
+  assets?: string[];
   imports?: string[];
   dynamicImports?: string[];
   isEntry?: boolean;
@@ -126,6 +127,24 @@ run('chunks of the assisted match (published build)', () => {
       PITCH_MAX_GZIP,
     );
     expect(total).toBeGreaterThan(0);
+  });
+
+  it('the pitch brings no image file: no asset of the manifest, no image path in its code (partida-campo-v2.md, 13, E2E 7)', () => {
+    const extra = [...pitch].filter((key) => !main.has(key) && !screen.has(key));
+    const image = /\.(png|jpe?g|gif|webp|avif|svg|ico)(\?|["')\s]|$)/i;
+    const found: string[] = [];
+    for (const key of extra) {
+      for (const asset of manifest[key]!.assets ?? []) {
+        if (image.test(asset)) found.push(`${key}: asset ${asset}`);
+      }
+    }
+    for (const file of filesOf(manifest, extra)) {
+      const text = readFileSync(join(game, file), 'utf8');
+      const hit = text.match(new RegExp(`["'(][^"'()\\s]*${image.source}`, 'i'));
+      if (hit !== null) found.push(`${file}: ${hit[0]}`);
+    }
+    expect(found).toEqual([]);
+    expect(extra.length).toBeGreaterThan(0);
   });
 
   it('the manifest is not published (dist/jogo/.vite/ does not exist)', () => {

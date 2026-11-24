@@ -688,6 +688,20 @@ test.describe('Campo 2D: offline (T-085)', () => {
   });
 });
 
+/** A long task of the page, with the minute the board showed when it was reported. */
+interface LongFrame {
+  startTime: number;
+  duration: number;
+  styleAndLayoutStart: number;
+  scripts: { sourceURL: string; sourceFunctionName: string; invoker: string; duration: number }[];
+}
+
+interface LongTask {
+  start: number;
+  duration: number;
+  minute: string;
+}
+
 test.describe('Campo 2D: desempenho (T-085)', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
 
@@ -749,5 +763,232 @@ test.describe('Campo 2D: desempenho (T-085)', () => {
     expect(at.length).toBeGreaterThan(200);
     expect(p95).toBeLessThanOrEqual(34);
     expect(median).toBeLessThanOrEqual(6);
+  });
+
+  test('sem tarefa longa (> 50 ms) na partida inteira da "Animada completa" em Rápido, CPU 4×, com a troca de tema no meio (partida-campo-v2.md, 13, E2E 2)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium' || test.info().project.name.endsWith('desktop'),
+      'CDP; uma vez',
+    );
+    test.setTimeout(180_000);
+    await careerWith(page, 'full');
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    await page.evaluate(() => {
+      const w = window as unknown as { longTasks: LongTask[]; longFrames: string[] };
+      w.longFrames = [];
+      w.longTasks = [];
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          w.longTasks.push({
+            start: entry.startTime,
+            duration: entry.duration,
+            minute:
+              document.querySelector('main.match .scoreboard .live .minute')?.textContent ?? '',
+          });
+        }
+      }).observe({ type: 'longtask' });
+      // The long frames name the scripts and the style and layout inside the slow task.
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries() as unknown as LongFrame[]) {
+          if (entry.duration < 50) continue;
+          w.longFrames.push(
+            `${entry.startTime.toFixed(0)}|${entry.duration.toFixed(0)} ms (estilo e leiaute ${entry.styleAndLayoutStart > 0 ? (entry.startTime + entry.duration - entry.styleAndLayoutStart).toFixed(0) : 0} ms; ` +
+              entry.scripts
+                .map(
+                  (x) =>
+                    `${x.sourceFunctionName || x.invoker} ${x.sourceURL.split('/').pop()} ${x.duration.toFixed(0)} ms`,
+                )
+                .join(', ') +
+              ')',
+          );
+        }
+      }).observe({ type: 'long-animation-frame', buffered: true });
+    });
+    await playButton(page).click();
+    await expect(matchScreen(page)).toBeVisible();
+    await expect(canvas(page)).toHaveCount(1);
+    // The match counts from the first frame of the pitch: the first drawing, with the code cold,
+    // is the opening of the screen (see the test of the redraw of the background).
+    await expect
+      .poll(() => pixelOf(page, 'grass'), { timeout: 15_000 })
+      .toBe(await tokenColor(page, 'pitch'));
+    await page.evaluate(
+      (word) => {
+        const w = window as unknown as { kickoff: number; whistle?: number };
+        w.kickoff = performance.now();
+        const phase = document.querySelector('main.match .scoreboard .live .phase')!;
+        new MutationObserver(() => {
+          if (w.whistle === undefined && phase.textContent === word) w.whistle = performance.now();
+        }).observe(phase, { childList: true, characterData: true, subtree: true });
+      },
+      ui('pt-BR', 'match.phase.end'),
+    );
+    await control(page, 'match.fast').click();
+    // The theme changes in the middle of the match, with the plays going on (E2E 2 of the spec).
+    const minute = async () =>
+      Number(/^(\d+)/.exec(await board(page).locator('.live .minute').innerText())?.[1] ?? 0);
+    const changes = [
+      { at: 15, run: () => setTheme(page, 'dia') },
+      { at: 40, run: () => setTheme(page, 'noite') },
+      { at: 65, run: () => setTheme(page, 'dia') },
+    ];
+    const themeAt: number[] = [];
+    for (const change of changes) {
+      await expect.poll(minute, { timeout: 90_000 }).toBeGreaterThanOrEqual(change.at);
+      themeAt.push(await page.evaluate(() => performance.now()));
+      await change.run();
+    }
+    await expect(control(page, 'match.toSummary')).toBeVisible({ timeout: 90_000 });
+    const longTasks = await page.evaluate(() => {
+      const w = window as unknown as {
+        longTasks: LongTask[];
+        kickoff: number;
+        whistle?: number;
+      };
+      return w.longTasks
+        .filter((t) => t.start >= w.kickoff && t.start < (w.whistle ?? Infinity))
+        .map((t) => ({ ...t, start: t.start - w.kickoff }));
+    });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    const kickoff = await page.evaluate(() => (window as unknown as { kickoff: number }).kickoff);
+    // The long frames from the first frame of the pitch on, with the second they began at.
+    const frames = await page.evaluate(() => {
+      const w = window as unknown as { longFrames: string[]; kickoff: number };
+      return w.longFrames
+        .map((f) => [Number(f.split('|')[0]) - w.kickoff, f.split('|')[1]!] as const)
+        .filter(([at]) => at >= 0)
+        .map(([at, text]) => `aos ${(at / 1000).toFixed(1)} s: ${text}`);
+    });
+    console.log(`quadros longos na partida: ${frames.join(' | ')}`);
+    console.log(
+      `tarefas longas na "Animada completa" inteira (CPU 4×): [${longTasks
+        .map(
+          (t) =>
+            `${t.duration.toFixed(0)} ms aos ${(t.start / 1000).toFixed(1)} s, minuto ${t.minute}`,
+        )
+        .join(
+          '; ',
+        )}]; trocas de tema aos ${themeAt.map((t) => ((t - kickoff) / 1000).toFixed(1)).join(', ')} s`,
+    );
+    expect(longTasks.filter((t) => t.duration > 50)).toEqual([]);
+  });
+
+  test('o redesenho do fundo, na troca de tema e no redimensionamento, leva no máximo 30 ms com CPU 4× e nunca é tarefa longa (partida-campo-v2.md, 12)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium' || test.info().project.name.endsWith('desktop'),
+      'CDP; uma vez',
+    );
+    test.setTimeout(120_000);
+    // The background is drawn in a canvas out of the page (`field`): it starts when its size is
+    // set and ends when the first copy to the main canvas returns. Measured from outside, with no hook in the game.
+    await page.addInitScript(() => {
+      const w = window as unknown as {
+        redraws: { took: number; width: number }[];
+        longTasks: { start: number; duration: number }[];
+      };
+      w.redraws = [];
+      w.longTasks = [];
+      let started: number | null = null;
+      const width = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, 'width')!;
+      Object.defineProperty(HTMLCanvasElement.prototype, 'width', {
+        ...width,
+        set(this: HTMLCanvasElement, value: number) {
+          if (!this.isConnected) started = performance.now();
+          width.set!.call(this, value);
+        },
+      });
+      const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+      CanvasRenderingContext2D.prototype.drawImage = function (
+        this: CanvasRenderingContext2D,
+        ...args: [CanvasImageSource, number, number]
+      ) {
+        const source = args[0];
+        const first =
+          started !== null && source instanceof HTMLCanvasElement && !source.isConnected;
+        const result = drawImage.apply(this, args as never);
+        // The first copy of the new background is part of the redraw: it is where the browser
+        // resolves the canvas, so the time is taken when the copy returns.
+        if (first) {
+          w.redraws.push({ took: performance.now() - started!, width: source.width });
+          started = null;
+        }
+        return result;
+      } as typeof drawImage;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          w.longTasks.push({ start: entry.startTime, duration: entry.duration });
+        }
+      }).observe({ type: 'longtask' });
+    });
+    await careerWith(page, 'full');
+    await page.getByRole('button', { name: ui('pt-BR', 'play.label') }).click();
+    await expect(canvas(page)).toHaveCount(1);
+    await expect.poll(() => page.evaluate(() => devicePixelRatio)).toBe(3);
+    const redraws = () =>
+      page.evaluate(
+        () => (window as unknown as { redraws: { took: number; width: number }[] }).redraws.length,
+      );
+    await expect.poll(redraws).toBeGreaterThan(0);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    const wanted: { what: string; at: number }[] = [];
+    const next = async (what: string, change: () => Promise<unknown>) => {
+      const before = await redraws();
+      const at = await page.evaluate(() => performance.now());
+      await change();
+      await expect.poll(redraws, { message: what }).toBeGreaterThan(before);
+      wanted.push({ what, at });
+    };
+    // Three rounds of: theme, theme, and the sizes of the phone upright, the small phone, lying
+    // down and the desktop. The phone sizes run at CPU 4× (the target of the spec); the desktop,
+    // whose canvas is the largest (about 1190×790 px), at CPU 1×: no desktop is 4× slower.
+    for (let round = 0; round < 3; round++) {
+      await next(`tema dia ${round}`, () => setTheme(page, 'dia'));
+      await next(`tema noite ${round}`, () => setTheme(page, 'noite'));
+      for (const [width, height] of [
+        [360, 640],
+        [844, 390],
+        [1280, 800],
+        [390, 844],
+      ] as const) {
+        const desktop = width === 1280;
+        if (desktop) await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+        await next(`${width}×${height} ${round}`, () => page.setViewportSize({ width, height }));
+        if (desktop) await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+      }
+    }
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    const { took, long } = await page.evaluate(() => {
+      const w = window as unknown as {
+        redraws: { took: number; width: number }[];
+        longTasks: { start: number; duration: number }[];
+      };
+      return { took: w.redraws.map((r) => ({ ...r })), long: [...w.longTasks] };
+    });
+    // The first redraw is the pitch loading (cold code, no throttling): not a theme or a size.
+    const measured = took.slice(1);
+    const worst = Math.max(...measured.map((r) => r.took));
+    console.log(
+      `redesenho do fundo (ms, CPU 4×, ${measured.length} redesenhos): ${measured
+        .map((r) => `${r.took.toFixed(1)}@${r.width}`)
+        .join(' ')}; pior ${worst.toFixed(1)} ms`,
+    );
+    // Each long task, with the last change made before it.
+    for (const task of long) {
+      const last = [...wanted].reverse().find((w) => w.at <= task.start);
+      console.log(
+        `tarefa longa de ${task.duration.toFixed(0)} ms, ${last === undefined ? 'antes das mudanças' : `${(task.start - last.at).toFixed(0)} ms depois de "${last.what}"`}`,
+      );
+    }
+    expect(measured.length).toBeGreaterThanOrEqual(wanted.length);
+    expect(worst).toBeLessThanOrEqual(30);
+    expect(long.filter((t) => t.duration > 50)).toEqual([]);
   });
 });

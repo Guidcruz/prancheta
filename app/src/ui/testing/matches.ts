@@ -38,3 +38,26 @@ export function testMatches(): readonly TestMatch[] {
   kept = found;
   return found;
 }
+
+const keptBySetup = new Map<string, TestMatch[]>();
+
+/**
+ * The matches of rounds 1 to `rounds` of the test career of `seed` (10 per round), in order. A
+ * larger corpus for the tests that need hundreds of matches (the anchor of the pitch tags).
+ */
+export function testMatchesOf(seed: number, rounds: number): readonly TestMatch[] {
+  const key = `${seed}-${rounds}`;
+  const hit = keptBySetup.get(key);
+  if (hit !== undefined) return hit;
+  const found: TestMatch[] = [];
+  for (let round = 1; round <= rounds; round++) {
+    const game = testCareer('full', round, seed);
+    const plan = prepareRound(game, params, { coaches: { [TEST_CLUB]: 'result' } });
+    if (!plan.ok) throw new Error(plan.error);
+    for (const match of plan.value.matches) {
+      found.push({ game, match, result: simulateMatch(match, params) });
+    }
+  }
+  keptBySetup.set(key, found);
+  return found;
+}
