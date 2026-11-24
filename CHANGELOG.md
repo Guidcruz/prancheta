@@ -6,6 +6,15 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Adicionado
 
+- Campo 2D v2, parte A: o campo inclinado, o fundo e as placas (spec `docs/design/telas/partida-campo-v2.md`, `docs/design/campo-lances.md`; ADR-0023):
+  - O campo é desenhado por código, inclinado, com projeção em trapézio. O fundo tem a arquibancada de longe e as laterais, quatro refletores (com halo no tema noite), a mureta e três filas de placas: a do fundo e as de trás de cada gol. O tema dia segue o tema do aplicativo, e a sobra da caixa do campo é pintada como arquibancada, não como grama.
+  - As placas têm só cores, sem texto, com 22 marcas fictícias aprovadas pelo CEO em `app/src/data/brands.json` (lote em `docs/content/lotes/2026-11-24-marcas-ficticias.md`). Nenhuma é patrocínio real: é só cenário.
+  - Modo "só a bola": os discos dos jogadores aparecem só nos eventos do motor, com fade, e somem depois.
+  - Goleiro expulso sem troca (decisão D5-A): o jogador de linha de maior físico assume o gol; o goleiro expulso sai do campo.
+  - O registro de erros separa a falha do campo (o canvas não funciona) do problema do campo (um desenho ou um dado fora do esperado).
+  - Desempenho: o redesenho do fundo roda numa tarefa própria, com caminhos em cache e tokens lidos sem recálculo de estilo. Medido com CPU 4×: quadros p95 de 16,8 ms; redesenho do fundo com p95 de até 26,5 ms e máximo de 45,9 ms. O código do campo tem cerca de 12,9 KB gzip (teto de 20 KB).
+  - Decisão do CEO: os testes de engasgo e de redesenho medem só o que o campo causa (spec, §16, item 9).
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Escudo do clube em cada lance da narração e da súmula (decisão do CEO de 2026-11-15, opção A):
   - Cada lance de time mostra um escudo de 24 px (token novo `size-medallion-xs`) logo depois do minuto, e o nome do clube continua na linha; as fases da partida ficam sem escudo. A súmula muda junto.
   - O escudo é decorativo (`aria-hidden`): o leitor de tela diz o clube logo depois do minuto. Na mudança tática a frase não repete o clube (aceito). O fundo verde do gol é igual nos dois lados.
