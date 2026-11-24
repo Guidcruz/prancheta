@@ -695,11 +695,16 @@ test.describe('Partida narrada (T-032)', () => {
     const noSideScroll = async (label: string) => {
       for (const [width, height] of sizes) {
         await page.setViewportSize({ width, height });
-        const scroll = await page.evaluate(() => ({
-          scroll: document.documentElement.scrollWidth,
-          client: document.documentElement.clientWidth,
-        }));
-        expect(scroll.scroll, `${label} ${width}`).toBeLessThanOrEqual(scroll.client);
+        // The pitch measure arrives in a real task after the resize: poll, do not read once.
+        await expect
+          .poll(
+            () =>
+              page.evaluate(
+                () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
+              ),
+            { message: `${label} ${width}` },
+          )
+          .toBeLessThanOrEqual(0);
       }
       await page.setViewportSize({ width: 390, height: 844 });
     };
