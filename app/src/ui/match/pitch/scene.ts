@@ -13,6 +13,23 @@ import { PITCH_LAYOUT } from '../../components/pitch-layout';
 import type { MatchStep } from '../steps';
 import { MATCH_TIMING, type TimingKey } from '../timing';
 import { PITCH_MOTION as M, PITCH_SIZE } from './motion';
+import {
+  attack,
+  ballAt,
+  fillTrails,
+  goalLine,
+  HEAD,
+  outcomeOf,
+  outcomeTarget,
+  playPoint,
+  slowMotion,
+  SLOW_SPLIT,
+  TRAIL,
+  weakPoint,
+  type BallPlanner,
+} from './plan';
+
+export { slowMotion };
 
 /*
  * The scene of the 2D pitch at each instant, as pure functions (docs/design/telas/partida.md,
@@ -49,9 +66,6 @@ const POSE = DISCS * 2 + 2;
 const BALL = DISCS * 2;
 const CENTRE_X = PITCH_SIZE.length / 2;
 const CENTRE_Y = PITCH_SIZE.width / 2;
-/** The fraction of the advance at the end of the first half of the time, with slow motion. */
-const SLOW_SPLIT = slowMotion(0.5);
-
 /**
  * The `physical` of a player as the engine reads it (`attributeOf`, which the ui may not import:
  * it is of the tools API): his own value, or 40% of `overall` rounded and held in range.
@@ -87,6 +101,17 @@ export interface PitchScene {
   readonly alpha: Float64Array;
   ballX: number;
   ballY: number;
+  /** Height of the ball above the ground, in metres (0 without a planner). */
+  ballZ: number;
+  /**
+   * The trails (plan.ts, `TRAIL`): the action in course and the three before it, newest first,
+   * `trailCount` of them. A ring of four fixed entries, written in place.
+   */
+  readonly trails: Float64Array;
+  trailCount: number;
+  /** The club whose wedge is drawn (0 none, 1 home, 2 away) and how much of it (the fade in). */
+  wedgeOwner: number;
+  wedgeAlpha: number;
 }
 
 /** `ease`: cubic in-out; `linear`: the advance itself (slow motion steps); `hold`: no change. */
@@ -145,17 +170,12 @@ export function createScene(): PitchScene {
     alpha: new Float64Array(DISCS),
     ballX: CENTRE_X,
     ballY: CENTRE_Y,
+    ballZ: 0,
+    trails: new Float64Array(TRAIL.count * TRAIL.stride),
+    trailCount: 0,
+    wedgeOwner: 0,
+    wedgeAlpha: 0,
   };
-}
-
-/**
- * Slow motion (partida.md, "Câmera lenta"): time `t` (0 to 1) of a dramatic pause becomes the
- * advance of the motion, at speed `v = 1 / 0.7` in the first half of the time and `0.4 v` in the
- * second: the last 600 ms of the 1.2 s in Normal, the last 250 ms of the 0.5 s in Rápido.
- */
-export function slowMotion(t: number): number {
-  const v = 1 / (0.5 + M.slow * 0.5);
-  return t <= 0.5 ? t * v : (0.5 + M.slow * (t - 0.5)) * v;
 }
 
 const ease = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (2 - 2 * t) ** 3 / 2);
@@ -179,9 +199,6 @@ export function formationSpot(
 const sideOf = (disc: number): Side => (disc < 11 ? 'home' : 'away');
 const firstDisc = (side: Side) => (side === 'home' ? 0 : 11);
 const other = (side: Side): Side => (side === 'home' ? 'away' : 'home');
-/** The x of the goal line `side` attacks, and the direction of its attack. */
-const goalLine = (side: Side) => (side === 'home' ? PITCH_SIZE.length : 0);
-const attack = (side: Side) => (side === 'home' ? 1 : -1);
 const within = (rng: Rng, [low, high]: readonly [number, number]) =>
   low + (high - low) * rng.next();
 
@@ -273,13 +290,6 @@ function finisherOf(event: MatchEvent): PlayerId | undefined {
   return undefined;
 }
 
-/** How a play ends, read only in the step that reveals it. */
-function outcomeOf(event: MatchEvent): 'goal' | 'saved' | 'post' | 'wide' | undefined {
-  if (event.type === 'goal') return 'goal';
-  if (event.type === 'chance' || event.type === 'penaltyMissed') return event.outcome;
-  return undefined;
-}
-
 /**
  * The motion of the ball (and of the keeper on a save) from where it is to where an outcome
  * leaves it, as segments: the flight ends at `endAt`, then the ball stays (or comes back from the
@@ -294,34 +304,17 @@ function outcomeSegments(
   endAt: readonly [number, number],
   restAt: readonly [number, number],
 ): Segment[] {
-  const line = goalLine(side);
-  const dir = attack(side);
+  const target = outcomeTarget(side, outcome, rng);
   const flown = copy(from);
   const rest = copy(from);
-  if (outcome === 'goal') {
-    const y = within(rng, M.goal.y);
-    setBall(flown, line + dir * M.goal.depth, y);
-    setBall(rest, line + dir * M.goal.depth, y);
-  } else if (outcome === 'saved') {
-    const y = within(rng, M.save.y);
-    const x = line - dir * M.save.off;
-    setBall(flown, x, y);
-    setBall(rest, x, y);
+  setBall(flown, target.fx, target.fy);
+  setBall(rest, target.rx, target.ry);
+  if (outcome === 'saved') {
     const keeper = firstDisc(other(side));
     if (field.on[keeper] === 1) {
-      setDisc(flown, keeper, x, y);
-      setDisc(rest, keeper, x, y);
+      setDisc(flown, keeper, target.fx, target.fy);
+      setDisc(rest, keeper, target.fx, target.fy);
     }
-  } else if (outcome === 'post') {
-    const y = CENTRE_Y + (rng.next() < 0.5 ? -1 : 1) * M.post.halfGoal;
-    setBall(flown, line, y);
-    setBall(rest, line - dir * M.post.bounce, y);
-  } else {
-    const below = rng.next() < 0.5;
-    const off = M.wide.spread * rng.next();
-    const y = below ? M.wide.inside[1] + off : M.wide.inside[0] - off;
-    setBall(flown, line + dir * M.wide.out, y);
-    setBall(rest, line + dir * M.wide.out, y);
   }
   return [segment(endAt[0], flown, 'ease', endAt[1]), segment(restAt[0], rest, 'ease', restAt[1])];
 }
@@ -361,6 +354,8 @@ export function choreograph(
     for (const player of lineups[side].players) squad.set(player.id, player);
   }
   let afterGoal = false;
+  /** The line whose start was only the way back to the centre after a goal (6, "Depois do gol"). */
+  let centred = '';
   let prevShow = new Uint8Array(DISCS);
   /** The disc of the player of an event; none (and a record) when he is not on the pitch. */
   const discFor = (side: Side, player: PlayerId): number => {
@@ -484,6 +479,7 @@ export function choreograph(
           event!.type === 'penaltyAwarded' ||
           (event!.type === 'chance' && step.timing === 'event'));
       if (play) {
+        if (line!.stage === 'build' || event!.type === 'penaltyAwarded') centred = line!.id;
         const disc = discFor(event!.side, player);
         tag = disc;
         const keeper = firstDisc(other(event!.side));
@@ -559,12 +555,9 @@ export function choreograph(
         if (disc !== -1) setDisc(contact, disc, px, CENTRE_Y);
         appear = [px - dir * M.penalty.behind, CENTRE_Y];
       } else {
-        const rng = rngOf(`${line.id}-build`);
         const freeKick =
           (event.type === 'chance' || event.type === 'goal') && event.kind === 'freeKick';
-        const range = freeKick ? M.freeKick : M.open;
-        const px = goal - dir * within(rng, range.distance);
-        const py = within(rng, range.y);
+        const [px, py] = playPoint(event, rngOf(`${line.id}-build`));
         // Behind the ball, on the line from the goal it attacks.
         const gx = px - goal;
         const gy = py - CENTRE_Y;
@@ -602,14 +595,34 @@ export function choreograph(
       if (shooter !== -1) show[shooter] = 1;
       const keeper = firstDisc(other(event.side));
       if (field.on[keeper] === 1) show[keeper] = 1;
-      segments = outcomeSegments(field, from, event.side, outcomeOf(event)!, rng, at, [1, 1]);
+      if (centred === line.id) {
+        // The start was only the way back to the centre: the finisher and the ball go together to
+        // the point of the play in the first 250 ms, and the shot leaves from there (6).
+        const [px, py] = playPoint(event, rngOf(`${line.id}-build`));
+        const approach = Math.min(1, M.approach / (MATCH_TIMING.normal[step.timing] / 1000));
+        const reach = copy(from);
+        if (shooter !== -1) setDisc(reach, shooter, px, py);
+        setBall(reach, px, py);
+        segments = [
+          segment(approach, reach, 'linear'),
+          ...outcomeSegments(
+            field,
+            reach,
+            event.side,
+            outcomeOf(event)!,
+            rng,
+            [Math.min(1, approach + at[0]), Math.min(1, approach + at[1])],
+            [1, 1],
+          ),
+        ];
+      } else {
+        segments = outcomeSegments(field, from, event.side, outcomeOf(event)!, rng, at, [1, 1]);
+      }
     } else if (source!.type === 'chance') {
       // A weak chance (no pause): to the point of the play, then the flight, in the same step.
       const event = source as Extract<MatchEvent, { type: 'chance' }>;
       const rng = rngOf(`${line.id}-outcome`);
-      const dir = attack(event.side);
-      const px = goalLine(event.side) - dir * within(rng, M.weak.distance);
-      const py = within(rng, M.weak.y);
+      const [px, py] = weakPoint(event.side, rng);
       const reach = copy(from);
       const shooter = discFor(event.side, event.shooter);
       tag = shooter;
@@ -716,16 +729,12 @@ function write(out: PitchScene, pose: Float64Array, on: Uint8Array): void {
   out.ballY = pose[BALL + 1]!;
 }
 
-/**
- * Writes into `out` the scene at `progress` (0 to 1) of step `index`, at the speed the step was
- * shown at (only the flight of an outcome depends on it). Returns `out`; allocates nothing.
- */
-export function sceneAt(
+function discsAt(
   choreography: Choreography,
   index: number,
   progress: number,
   out: PitchScene,
-  speed: MatchSpeed = 'normal',
+  speed: MatchSpeed,
 ): PitchScene {
   const steps = choreography.steps;
   if (steps.length === 0) return out;
@@ -761,19 +770,87 @@ export function sceneAt(
   return out;
 }
 
+const spot = new Float64Array(3);
+
+/**
+ * The ball, the trails and the wedge of step `index` at the advance `a` (of the planner, plan.ts):
+ * `still` is the one frame of reduced motion, where the step ends, with its trails whole.
+ */
+function planned(
+  out: PitchScene,
+  planner: BallPlanner,
+  index: number,
+  a: number,
+  still: boolean,
+): void {
+  planner.ensure(index);
+  const plan = planner.plans[index];
+  if (plan === undefined) return;
+  ballAt(plan, still ? 1 : a, spot);
+  out.ballX = spot[0]!;
+  out.ballY = spot[1]!;
+  out.ballZ = still ? 0 : spot[2]!;
+  out.trailCount = fillTrails(planner, index, a, still, out.trails);
+  // The wedge of whoever has the ball, unless the ball is at the goal it attacks.
+  let owner = plan[HEAD.wedge] === 1 ? plan[HEAD.owner]! : 0;
+  if (owner !== 0 && Math.abs(out.ballX - goalLine(owner === 1 ? 'home' : 'away')) < M.wedge.near) {
+    owner = 0;
+  }
+  out.wedgeOwner = owner;
+  const before = planner.plans[index - 1];
+  const held = before !== undefined && before[HEAD.wedge] === 1 && before[HEAD.owner] === owner;
+  out.wedgeAlpha = still || held ? 1 : clamp01((a * planner.length[index]!) / M.wedge.fade);
+}
+
+/**
+ * Writes into `out` the scene at `progress` (0 to 1) of step `index`, at the speed the step was
+ * shown at (only the flight of an outcome depends on it). With a `planner` the ball, the trails
+ * and the wedge are the planner's (partida-campo-v2.md, 6 to 8), made for this step on the way;
+ * without one the ball follows the choreography. Returns `out`; allocates nothing.
+ */
+export function sceneAt(
+  choreography: Choreography,
+  index: number,
+  progress: number,
+  out: PitchScene,
+  speed: MatchSpeed = 'normal',
+  planner?: BallPlanner,
+): PitchScene {
+  discsAt(choreography, index, progress, out, speed);
+  out.ballZ = 0;
+  out.trailCount = 0;
+  out.wedgeOwner = 0;
+  const steps = choreography.steps;
+  if (planner === undefined || steps.length === 0) return out;
+  const at = index < 0 ? 0 : index >= steps.length ? steps.length - 1 : index;
+  const p = clamp01(progress);
+  planned(out, planner, at, steps[at]!.slow ? slowMotion(p) : p, false);
+  return out;
+}
+
 /**
  * The one frame of step `index` with reduced motion (partida-campo-v2.md, 11): the discs of the play
- * and the ball where the step leaves them. Returns
- * `out`; allocates nothing.
+ * and the ball where the step leaves them, with the trails of the step whole and its wedge.
+ * Returns `out`; allocates nothing.
  */
-export function stillScene(choreography: Choreography, index: number, out: PitchScene): PitchScene {
+export function stillScene(
+  choreography: Choreography,
+  index: number,
+  out: PitchScene,
+  planner?: BallPlanner,
+): PitchScene {
   const steps = choreography.steps;
+  out.ballZ = 0;
+  out.trailCount = 0;
+  out.wedgeOwner = 0;
   if (steps.length === 0) return out;
-  const step = steps[index < 0 ? 0 : index >= steps.length ? steps.length - 1 : index]!;
+  const at = index < 0 ? 0 : index >= steps.length ? steps.length - 1 : index;
+  const step = steps[at]!;
   write(out, step.still, step.onEnd);
   // No fade with reduced motion: the discs of the play, where the step leaves them (also the
   // sent-off, at the touchline).
   for (let d = 0; d < DISCS; d++) out.alpha[d] = step.show[d]!;
+  if (planner !== undefined) planned(out, planner, at, 1, true);
   return out;
 }
 

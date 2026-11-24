@@ -25,4 +25,5 @@ export {
   type PitchTagKit,
   type PitchTagKits,
 } from './kits.ts';
-export { possessionOwners, OWNER } from './possession.ts';
+export { possessionOwners, possessionTrace, OWNER } from './possession.ts';
+export { BallPlanner } from './plan.ts';

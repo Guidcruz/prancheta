@@ -35,6 +35,7 @@
   import type { PitchTagView } from '../components/PitchTag.svelte';
   import { tagFields, tagPlanOf, type TagPlan } from '../match/tags';
   import { TagTracker } from '../match/tag-tracker';
+  import type { BallPlanner } from '../match/pitch/plan';
   import type { Choreography, PitchScene } from '../match/pitch/scene';
   import {
     announcement,
@@ -232,6 +233,8 @@
   let pitch: PitchChunk | undefined = $state.raw();
   let pitchFailed = $state(false);
   let choreography: Choreography | undefined;
+  /** The planner of the ball: the plan of step `i + 1` is made when step `i` is revealed. */
+  let planner: BallPlanner | undefined;
   let scene: PitchScene | undefined;
   /** The step revealed last, when and at what speed: the progress of the scene. */
   let revealIndex = 0;
@@ -310,6 +313,8 @@
     revealSpeed = player.state.speed;
     reduced = motionReduced();
     if (step.line !== undefined) lineIndex = index;
+    // The plan of the next step is made now, from where this one leaves the ball (plan.ts).
+    planner?.ensure(index + 1);
     const changed = updateTags(step, index);
     // With reduced motion, one frame per step with a line, none in the minutes between them (but
     // one when a tag went away: the canvas holds its thread).
@@ -391,10 +396,10 @@
   /** The scene of the instant `now`, always the same object (nothing allocated per frame). */
   function frame(now: number): PitchScene {
     const chunk = pitch!;
-    if (reduced) return chunk.stillScene(choreography!, lineIndex, scene!);
+    if (reduced) return chunk.stillScene(choreography!, lineIndex, scene!, planner);
     const duration = timingOf(steps[revealIndex]?.timing, revealSpeed);
     const progress = run.paused || duration === 0 ? 1 : (now - revealAt) / duration;
-    return chunk.sceneAt(choreography!, revealIndex, progress, scene!, revealSpeed);
+    return chunk.sceneAt(choreography!, revealIndex, progress, scene!, revealSpeed, planner);
   }
 
   /** The pitch is gone for the rest of the match: the layout of T-032, logged once. */
@@ -429,11 +434,14 @@
             game.clubs[live.match.home.clubId]!.def,
             game.clubs[live.match.away.clubId]!.def,
           );
-          owners = chunk.possessionOwners(
+          const trace = chunk.possessionTrace(
             steps,
             live.result.stats.home.possession,
             live.match.seed,
           );
+          owners = trace.owners;
+          planner = new chunk.BallPlanner(steps, trace, live.match.seed);
+          planner.ensure(1);
         } catch (error) {
           pitchFail('pitch-draw', error);
           return;
