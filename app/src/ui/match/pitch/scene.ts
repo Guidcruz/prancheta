@@ -114,6 +114,8 @@ interface StepMotion {
   /** The discs of a play of the engine drawn in this step, and in the one before it. */
   readonly show: Uint8Array;
   readonly showPrev: Uint8Array;
+  /** Discs that stay on the pitch (a keeper's) but are gone from sight at the end of the step. */
+  readonly gone: Uint8Array;
   /** Who owns each disc as the step starts (the anchor of the discs of a play, for the tests). */
   readonly owner: readonly (PlayerId | null)[];
 }
@@ -365,6 +367,7 @@ export function choreograph(
     const from = copy(field.pose);
     const on = new Uint8Array(field.on);
     const show = new Uint8Array(DISCS);
+    const gone = new Uint8Array(DISCS);
     const owner = [...field.owner];
     const line = step.line;
     const source = line?.source;
@@ -442,7 +445,11 @@ export function choreograph(
 
     /** The discs that go to the touchline: who leaves and, with a red, the sent-off keeper. */
     const toLine = leaving.slice();
-    if (expelled !== -1 && !toLine.includes(expelled)) toLine.push(expelled);
+    if (expelled !== -1 && !toLine.includes(expelled)) {
+      // A sent-off keeper: his disc stays (the new keeper wears it) but is not seen again.
+      toLine.push(expelled);
+      gone[expelled] = 1;
+    }
     const toTouchline = (pose: Float64Array) => {
       for (const d of toLine) {
         const y = from[d * 2 + 1]! < CENTRE_Y ? -M.leave : PITCH_SIZE.width + M.leave;
@@ -459,6 +466,30 @@ export function choreograph(
       field.toFormation(to);
       setBall(to, CENTRE_X, CENTRE_Y);
       toTouchline(to);
+      // A play or a red card right after a goal wins over the kick-off: its discs fade in as in
+      // any play (still at their spots of the formation), while the ball goes back to the centre.
+      const event = source as (MatchEvent & { side: Side }) | undefined;
+      const player = event === undefined ? undefined : finisherOf(event);
+      const play =
+        player !== undefined &&
+        (line!.stage === 'build' ||
+          event!.type === 'penaltyAwarded' ||
+          (event!.type === 'chance' && step.timing === 'event'));
+      if (play) {
+        const disc = discFor(event!.side, player);
+        const keeper = firstDisc(other(event!.side));
+        for (const d of disc === -1 ? [keeper] : [disc, keeper]) {
+          if (field.on[d] !== 1) continue;
+          show[d] = 1;
+          if (prevShow[d] !== 1) setDisc(from, d, to[d * 2]!, to[d * 2 + 1]!);
+        }
+      } else if (source?.type === 'red' && expelled !== -1) {
+        const by = from[BALL + 1]!;
+        const y = by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff;
+        setDisc(from, expelled, from[BALL]!, Math.min(PITCH_SIZE.width, Math.max(0, y)));
+        toTouchline(to);
+        show[expelled] = 1;
+      }
       segments = [segment(1, to)];
     } else if (line === undefined) {
       // A minute with nothing shown: the ball walks the midfield; the blocks follow it.
@@ -638,9 +669,11 @@ export function choreograph(
       still: copy(end),
       show,
       showPrev: prevShow,
+      gone,
       owner,
     });
-    prevShow = show;
+    // What the next step sees as shown before it: not the gone discs (the new keeper appears).
+    prevShow = show.map((v, d) => (gone[d] === 1 ? 0 : v));
   });
   return { steps: out, unknown };
 }
@@ -652,8 +685,9 @@ function fade(out: PitchScene, step: StepMotion, p: number): void {
     const now = step.show[d]!;
     const before = step.showPrev[d]!;
     const a = now === before ? now : now === 1 ? k : 1 - k;
-    // A disc that left the pitch is gone (a sent-off, at the end of his step).
-    out.alpha[d] = out.on[d] === 1 ? a : 0;
+    // A disc that left the pitch is gone (a sent-off, at the end of his step); so is a sent-off
+    // keeper's, which stays on the pitch for the one who replaces him.
+    out.alpha[d] = out.on[d] === 1 && !(p >= 1 && step.gone[d] === 1) ? a : 0;
   }
 }
 

@@ -179,11 +179,13 @@ export function drawBackdrop(
     const top = 5 * q;
     if (c.night) {
       const halo = ctx.createRadialGradient(x, top, 0, x, top, 52 * q);
+      // The beam holds to 35% of the radius and is zero at 75% (so the first lamp stays off the
+      // corner pixel); it is laid twice, which gives the strength of the prototype.
       halo.addColorStop(0, c.beam);
-      // Zero a little before the radius, so the halo of the first lamp stays off the corner pixel.
+      halo.addColorStop(0.35, c.beam);
       halo.addColorStop(0.75, 'rgba(0,0,0,0)');
       ctx.fillStyle = halo;
-      ctx.fillRect(x - 52 * q, 0, 104 * q, top + 52 * q);
+      for (let pass = 0; pass < 2; pass++) ctx.fillRect(x - 52 * q, 0, 104 * q, top + 52 * q);
     }
     ctx.fillStyle = c.night ? c.floodlight : c.line;
     ctx.fillRect(x - 9 * q, top, 18 * q, 3 * q);

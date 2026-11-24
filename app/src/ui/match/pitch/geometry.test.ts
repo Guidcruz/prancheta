@@ -90,7 +90,7 @@ describe('project', () => {
     }
   });
 
-  it('allocates nothing: it writes into the array it is given', () => {
+  it('is pure: it writes only into the array it is given and returns nothing', () => {
     const g = pitchGeometry(360, 240, 1);
     const out = new Float64Array(3);
     const again = new Float64Array(3);
@@ -99,6 +99,54 @@ describe('project', () => {
     expect([...out]).toEqual([...again]);
     expect(project(g, 1, 1, out)).toBeUndefined();
   });
+});
+
+describe('the radii above the minimum', () => {
+  it('are 2.75 k for a disc and 1.25 k for the ball', () => {
+    for (const [w, h, dpr] of [
+      [600, 400, 1],
+      [1200, 800, 2],
+    ] as const) {
+      const g = pitchGeometry(w, h, dpr);
+      for (let y = -M; y <= W + M; y += 3) {
+        const k = scaleAt(g, y);
+        expect(discRadius(g, k)).toBeCloseTo(2.75 * k, 9);
+        expect(ballRadius(g, k)).toBeCloseTo(1.25 * k, 9);
+      }
+    }
+  });
+});
+
+describe('holdBall leaves alone a ball already inside the trapezoid', () => {
+  for (const dpr of [1, 2]) {
+    for (const [w, h] of SIZES) {
+      it(`at ${w}x${h} (density ${dpr})`, () => {
+        const g = pitchGeometry(w * dpr, h * dpr, dpr);
+        const p = new Float64Array(3);
+        const held = new Float64Array(2);
+        let inside = 0;
+        let total = 0;
+        for (let x = 0; x <= L; x += 5) {
+          for (let y = 0; y <= W; y += 4) {
+            project(g, x, y, p);
+            const r = ballRadius(g, p[2]!);
+            const t = g.farScale + ((p[1]! - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
+            const whole =
+              p[1]! - r >= g.yFar &&
+              p[1]! + r <= g.height &&
+              Math.abs(p[0]! - g.width / 2) + r <= (g.width / 2) * t;
+            total++;
+            if (!whole) continue;
+            inside++;
+            holdBall(g, p[0]!, p[1]!, r, held);
+            expect([held[0], held[1]]).toEqual([p[0], p[1]]);
+          }
+        }
+        // Most of the pitch is whole in the trapezoid at every size.
+        expect(inside / total).toBeGreaterThan(0.8);
+      });
+    }
+  }
 });
 
 describe('holdBall: the ball stays whole inside the trapezoid', () => {
@@ -136,7 +184,6 @@ describe('the boards', () => {
     it(`never reach the grass of the drawing (${w}x${h})`, () => {
       const g = pitchGeometry(w, h, 1);
       const out = new Float64Array(8);
-      const p = new Float64Array(3);
       const half = (y: number) => {
         // Half width of the trapezoid at canvas y.
         const t = g.farScale + ((y - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
@@ -153,7 +200,6 @@ describe('the boards', () => {
           }
         }
       }
-      void p;
       for (let i = 0; i < FAR_BOARDS; i++) {
         farBoard(g, i, out);
         expect(out[1]!).toBeGreaterThan(out[0]!);

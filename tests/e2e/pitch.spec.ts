@@ -413,6 +413,17 @@ test.describe('Campo 2D (T-085)', () => {
     const stand = () => pixelOf(page, 'stand');
     expect(await grass()).toBe(await tokenColor(page, 'pitch'));
     expect(await stand()).toBe(await tokenColor(page, 'surface-0'));
+    // The floodlights are lit: 8px under the roof, under the 2nd one, the red is up by 45 or more.
+    const lit = await canvas(page).evaluate((element) => {
+      const c = element as HTMLCanvasElement;
+      const q = c.width / 360;
+      const at = c
+        .getContext('2d')!
+        .getImageData(Math.round(c.width * 0.37), Math.round(18 * q), 1, 1);
+      return at.data[0]!;
+    });
+    const base = Number((await tokenColor(page, 'surface-0')).match(/\d+/)![0]);
+    expect(lit - base).toBeGreaterThanOrEqual(45);
     const night = {
       pitch: await tokenColor(page, 'pitch'),
       stand: await tokenColor(page, 'surface-0'),

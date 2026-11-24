@@ -282,7 +282,9 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    background: var(--pitch);
+    /* The same cut as the drawing (1 − `grassShare` of the height): the leftover at the sides is
+       stand above and grass below, with a hard stop. */
+    background: linear-gradient(to bottom, var(--surface-0) 0 38%, var(--pitch) 38% 100%);
   }
   canvas {
     position: absolute;

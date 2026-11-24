@@ -427,7 +427,16 @@ describe('who leaves and who changes (item 7)', () => {
     expect(sceneAt(aloneChoreo, index, 1, out).on[4]).toBe(0);
   });
 
-  it("a keeper off with no substitution keeps the keeper's disc and takes off the outfield player of most `physical` (D5-A)", () => {
+  /** The lineups of the match with the `physical` of the home outfield slots set by hand. */
+  function withPhysical(values: readonly number[]) {
+    const byId = new Map(homeStarters.slice(1).map((id, i) => [id, values[i]!] as const));
+    const players = match.home.players.map((p) =>
+      byId.has(p.id) ? { ...p, attributes: { ...p.attributes, physical: byId.get(p.id)! } } : p,
+    );
+    return { ...lineupsOf(match), home: { ...match.home.sheet.lineup, players } };
+  }
+
+  it('a keeper off with no substitution: the outfield player of most `physical` goes to goal (D5-A)', () => {
     const red: MatchEvent = {
       ...at(40),
       importance: 3,
@@ -438,22 +447,122 @@ describe('who leaves and who changes (item 7)', () => {
     };
     const events = withEvents([red]);
     const steps = matchSteps(events, 'full');
+    const index = stepOf(steps, red, events);
+    // Slots 1 to 10: the most in slot 6 (the middle), a tie between slots 3 and 8 for the cases.
+    const cases: [readonly number[], number][] = [
+      [[50, 50, 50, 50, 50, 90, 50, 50, 50, 50], 6],
+      [[50, 50, 90, 50, 50, 50, 50, 90, 50, 50], 3],
+    ];
+    for (const [values, slot] of cases) {
+      const choreo = choreograph(steps, withPhysical(values), match.seed);
+      const out = sceneAt(choreo, index, 1, createScene());
+      expect(out.on[0]).toBe(1);
+      expect([...out.on.slice(0, 11)].flatMap((v, d) => (v === 0 ? [d] : []))).toEqual([slot]);
+      expect(onCount(out, 'home')).toBe(10);
+      // His disc is the keeper's from now on.
+      expect(choreo.steps[index + 1]!.owner[0]).toBe(homeStarters[slot]);
+    }
+  });
+
+  it('a sent-off keeper vanishes with his step and the new one appears in goal in the next play', () => {
+    const red: MatchEvent = {
+      ...at(40),
+      importance: 3,
+      type: 'red',
+      side: 'home',
+      player: homeStarters[0]!,
+      reason: 'direct',
+    };
+    const chance: MatchEvent = {
+      ...at(40),
+      importance: 2,
+      type: 'chance',
+      side: 'away',
+      shooter: match.away.sheet.lineup.starters[9]!,
+      kind: 'open',
+      outcome: 'saved',
+      pGoal: 0.3,
+    };
+    const events = withEvents([red, chance]);
+    const steps = matchSteps(events, 'full');
     const choreo = choreograph(steps, lineupsOf(match), match.seed);
     const index = stepOf(steps, red, events);
-    const out = sceneAt(choreo, index, 1, createScene());
-    // The engine's rule (`fillEmptyGoal`): most `physical` among slots 1 to 10, a tie keeps the first.
-    const physical = (id: PlayerId) => physicalOf(match.home.players.find((p) => p.id === id)!);
-    let best = 1;
-    for (let slot = 2; slot <= 10; slot++) {
-      if (physical(homeStarters[slot]!) > physical(homeStarters[best]!)) best = slot;
+    const build = steps.findIndex(
+      (s) => s.line?.id === `e${events.indexOf(chance)}` && s.line.stage === 'build',
+    );
+    expect(build).toBeGreaterThan(index);
+    const out = createScene();
+    // The sent-off keeper walks off in view, and is gone at the end of his step.
+    expect(sceneAt(choreo, index, 0.5, out).alpha[0]).toBe(1);
+    expect(sceneAt(choreo, index, 1, out).alpha[0]).toBe(0);
+    expect(sceneAt(choreo, index, 1, out).on[0]).toBe(1);
+    // The step of the play: nobody in goal at the start, then the new keeper fades in at his post.
+    expect(sceneAt(choreo, build, 0, out).alpha[0]).toBe(0);
+    const mid = sceneAt(choreo, build, 0.15, out).alpha[0]!;
+    expect(mid).toBeGreaterThan(0);
+    expect(mid).toBeLessThan(1);
+    expect(sceneAt(choreo, build, 0.3, out).alpha[0]).toBe(1);
+    expect(sceneAt(choreo, build, 0, out).x[0]!).toBeLessThan(12);
+    expect(sceneAt(choreo, build, 0, out).y[0]!).toBeGreaterThan(20);
+    expect(sceneAt(choreo, build, 0, out).y[0]!).toBeLessThan(48);
+  });
+
+  it('a play or a red card right after a goal has its discs fading in; the ball starts at the centre', () => {
+    const goal: MatchEvent = {
+      ...at(30),
+      importance: 3,
+      type: 'goal',
+      side: 'home',
+      scorer: homeStarters[9]!,
+      kind: 'open',
+      score: [1, 0],
+    } as MatchEvent;
+    const shooter = match.away.sheet.lineup.starters[8]!;
+    const chance: MatchEvent = {
+      ...at(30),
+      importance: 2,
+      type: 'chance',
+      side: 'away',
+      shooter,
+      kind: 'open',
+      outcome: 'saved',
+      pGoal: 0.3,
+    };
+    const red: MatchEvent = {
+      ...at(30),
+      importance: 3,
+      type: 'red',
+      side: 'away',
+      player: match.away.sheet.lineup.starters[4]!,
+      reason: 'direct',
+    };
+    const awayKeeper = match.away.sheet.lineup.starters[0]!;
+    for (const [event, owners] of [
+      [chance, [shooter, homeStarters[0]!]],
+      [red, [red.type === 'red' ? red.player : awayKeeper]],
+    ] as const) {
+      const events = withEvents([goal, event]);
+      const steps = matchSteps(events, 'full');
+      const choreo = choreograph(steps, lineupsOf(match), match.seed);
+      const here = steps.findIndex((s) => s.line?.id === `e${events.indexOf(event)}`);
+      expect(steps[here - 1]!.timing).toBe('afterGoal');
+      const out = createScene();
+      const at0 = sceneAt(choreo, here, 0, out);
+      // The discs of the play are not there yet; the goal's fade out as they are replaced.
+      const ids = new Set(owners);
+      expect(
+        [...at0.alpha].every((a, d) => a === 0 || !ids.has(choreo.steps[here]!.owner[d] as never)),
+      ).toBe(true);
+      const half = sceneAt(choreo, here, 0.5, out);
+      const shown = [...half.alpha].flatMap((a, d) =>
+        a === 1 ? [choreo.steps[here]!.owner[d]] : [],
+      );
+      expect(new Set(shown)).toEqual(new Set(owners));
+      expect([...half.alpha].filter((a) => a !== 0 && a !== 1)).toEqual([]);
+      // The kick-off: the ball is back at the centre.
+      const end = sceneAt(choreo, here, 1, out);
+      expect([end.ballX, end.ballY]).toEqual([PITCH_SIZE.length / 2, PITCH_SIZE.width / 2]);
     }
-    expect(out.on[0]).toBe(1);
-    expect(out.on[best]).toBe(0);
-    expect(onCount(out, 'home')).toBe(10);
-    // His disc is the keeper's from now on: the one drawn in goal is the outfield player.
-    expect(choreo.steps[index + 1]?.owner[0] ?? choreo.steps[index]!.owner[0]).toBeDefined();
-    const next = choreo.steps.findIndex((_, i) => i > index);
-    if (next !== -1) expect(choreo.steps[next]!.owner[0]).toBe(homeStarters[best]);
   });
 
   it('a new formation takes the discs to the slots of the new formation', () => {
@@ -592,7 +701,11 @@ describe('only the ball: the discs of the plays of the engine (partida-campo-v2.
       const out = createScene();
       steps.forEach((step, i) => {
         const after = i > 0 && steps[i - 1]!.timing === 'afterGoal';
-        if (step.line === undefined || after) {
+        // A play or a red card right after a goal wins over the kick-off: it has its discs.
+        const type = step.line?.source.type;
+        const play =
+          type === 'chance' || type === 'goal' || type === 'penaltyAwarded' || type === 'red';
+        if (step.line === undefined || (after && !play)) {
           for (const p of POINTS) {
             if (p >= 0.3)
               expect([...sceneAt(choreo, i, p, out).alpha].every((a) => a === 0)).toBe(true);
@@ -616,8 +729,6 @@ describe('only the ball: the discs of the plays of the engine (partida-campo-v2.
         const alpha = stillScene(choreo, i, out).alpha;
         const shown = [...alpha].flatMap((a, d) => (a === 1 ? [choreo.steps[i]!.owner[d]] : []));
         if (source === undefined || source.type === 'secondHalf') return;
-        // The step after a goal is the new kick-off: no disc (the play is shown from the next).
-        if (i > 0 && steps[i - 1]!.timing === 'afterGoal') return;
         if (source.type === 'red') {
           expect(shown).toEqual([source.player]);
           return;
