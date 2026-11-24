@@ -481,4 +481,45 @@ test.describe('Campo v2, PR B: a camisa sobre a bola (E2E 5)', () => {
     expect(minutes).toBeGreaterThan(20);
     expect(goals).toBeGreaterThan(0);
   });
+  test('a etiqueta aparece já posicionada e visível no passo em que nasce, sem esperar o ResizeObserver: a medida é síncrona na montagem', async ({
+    page,
+  }) => {
+    // O ResizeObserver da pílula nunca avisa (os outros, como o do tamanho do campo, são os de
+    // sempre): se a etiqueta tem posição e não está escondida, foi a medida da montagem.
+    await page.addInitScript(() => {
+      const Real = window.ResizeObserver;
+      window.ResizeObserver = class {
+        private readonly real: ResizeObserver;
+        constructor(callback: ResizeObserverCallback) {
+          this.real = new Real(callback);
+        }
+        observe(element: Element, options?: ResizeObserverOptions) {
+          if (element instanceof HTMLElement && element.classList.contains('tag')) return;
+          this.real.observe(element, options);
+        }
+        unobserve(element: Element) {
+          this.real.unobserve(element);
+        }
+        disconnect() {
+          this.real.disconnect();
+        }
+      };
+    });
+    const { steps } = await openWithHold(page);
+    const first = steps.findIndex((s) => planOf(s) !== undefined);
+    expect(first).toBeGreaterThan(0);
+    // No `runFor` além do que leva ao passo, e nenhuma espera em tempo real antes de ler.
+    await page.clock.runFor(timeTo(steps, first) + 20);
+    const placed = await page.evaluate(() =>
+      [...document.querySelectorAll<HTMLElement>('main.match .place')].map((place) => ({
+        transform: place.style.transform,
+        visibility: place.style.visibility,
+      })),
+    );
+    expect(placed.length).toBeGreaterThan(0);
+    for (const tag of placed) {
+      expect(tag.transform).toMatch(/^translate3d\(/);
+      expect(tag.visibility).not.toBe('hidden');
+    }
+  });
 });

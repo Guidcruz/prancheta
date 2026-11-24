@@ -296,6 +296,11 @@
 
   function measured(key: string, size: PitchTagSize): void {
     const run = runOf(key);
+    // The tag measures itself on mount (a layout read, in whole pixels) and the ResizeObserver
+    // measures it again, in fractions, a frame later: the same size is not placed and drawn twice.
+    if (run.measured && Math.abs(size.width - run.w) < 1 && Math.abs(size.height - run.h) < 1) {
+      return;
+    }
     run.w = size.width;
     run.h = size.height;
     run.measured = true;

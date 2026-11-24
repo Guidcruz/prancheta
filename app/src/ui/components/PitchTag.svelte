@@ -83,7 +83,7 @@
    * into the pill; both only move things (no layout).
    * The size of the pill is handed once through `onmeasure` (a ResizeObserver: again only if the
    * text, the fonts or the box change, never per frame; transforms and the entrance scale do not
-   * count).
+   * count); it is also read at once on mount and when the texts change (see the effect below).
    *
    * Motion: enters with opacity and scale 0.92 to 1 from the tip (160 ms `play`, 200 ms `goal`,
    * `ease-out`); with `leaving`, a `play` tag fades out in 120 ms (the goal and `team` tags go at
@@ -158,6 +158,19 @@
     if (refs === undefined) return;
     untrack(() => onref?.(refs));
     return () => untrack(() => onref?.(undefined));
+  });
+
+  // The size of the pill, read at once (one layout read per tag, never per frame): when it is
+  // mounted and whenever what it says changes (kind, name, number, size of the box), after the DOM
+  // is updated and before the next paint. So the pitch places it, and draws its thread, in the same
+  // frame the tag appears in; waiting for the ResizeObserver would leave a frame without the tag
+  // (and, with the match stopped, one more frame drawn later). `offsetWidth` is not touched by the
+  // scale of the entrance.
+  $effect(() => {
+    void [kind, name, assist, shirt, compact, tone, kitSvg];
+    const node = pill;
+    if (node === undefined) return;
+    untrack(() => onmeasure?.({ width: node.offsetWidth, height: node.offsetHeight }));
   });
 
   // Only `pill` is a dependency: `onmeasure` is read when the size comes, so a new callback from

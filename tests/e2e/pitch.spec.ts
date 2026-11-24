@@ -6,6 +6,7 @@ import { setTheme, tokenColor } from './css.ts';
 import { expect, playButton, test } from './fixtures.ts';
 import {
   board,
+  settled,
   careerWith,
   control,
   freezeClock,
@@ -14,6 +15,7 @@ import {
   matchScreen,
   onPhone,
   openMatch,
+  pixels as pixelsOf,
   playToEnd,
   runToMinute,
   runUntil,
@@ -339,14 +341,9 @@ test.describe('Campo 2D (T-085)', () => {
       .filter({ visible: true });
     await runUntil(page, async () => (await paused.count()) === 1, { step: 100, max: 8_000 });
     await page.clock.runFor(3_000);
-    const pixels = () =>
-      canvas(page).evaluate((element) => {
-        const c = element as HTMLCanvasElement;
-        const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
-        let hash = 0;
-        for (let i = 0; i < data.length; i++) hash = (Math.imul(hash, 31) + data[i]!) | 0;
-        return hash;
-      });
+    const pixels = () => pixelsOf(page);
+    // The pitch has settled (every tag placed, the canvas steady) before the first picture.
+    await settled(page);
     // Still hidden: the pause itself drew the end of the step (the player's `onchange`).
     const hidden = await pixels();
     await visibility('visible');
