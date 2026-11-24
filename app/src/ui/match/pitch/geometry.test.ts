@@ -1,6 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import { FAR_BOARDS, farBoard, goalBoard } from './backdrop';
-import { ballRadius, discRadius, holdBall, pitchGeometry, project, scaleAt } from './geometry';
+import {
+  TAG_GOAL_MARGIN,
+  TAG_GAP,
+  TAG_TIP_EDGE,
+  TAG_TOP,
+  ballRadius,
+  discRadius,
+  holdBall,
+  pitchGeometry,
+  project,
+  scaleAt,
+  tagPlacement,
+} from './geometry';
 import { PITCH_MOTION, PITCH_SIZE, PITCH_VIEW } from './motion';
 
 /*
@@ -208,4 +220,104 @@ describe('the boards', () => {
       expect(g.boardTop).toBeLessThan(g.yFar);
     });
   }
+});
+
+describe('tagPlacement (partida-campo-v2.md, 9 and 13, geometry 6)', () => {
+  const HEIGHTS = [32, 40, 48, 50, 66, 70];
+
+  it('keeps the pill whole in the box and off the goals, with the tip 20px from the ends', () => {
+    const out = new Float64Array(3);
+    const p = new Float64Array(3);
+    let cases = 0;
+    const bad: string[] = [];
+    for (const dpr of [1, 2]) {
+      for (const [bw, bh] of SIZES) {
+        const g = pitchGeometry(bw * dpr, bh * dpr, dpr);
+        for (const w of [32, 96, 160, 0.6 * bw]) {
+          for (const h of HEIGHTS) {
+            for (let x = -M; x <= L + M; x += 3) {
+              for (let y = -M; y <= W + M; y += 4) {
+                for (const ball of [false, true]) {
+                  project(g, x, y, p);
+                  const r = ball ? ballRadius(g, p[2]!) : discRadius(g, p[2]!);
+                  tagPlacement(g, p[0]!, p[1]!, r, w, h, out);
+                  const name = `${bw}x${bh} d${dpr} ${w}x${h} at ${x},${y}`;
+                  cases++;
+                  const edge = Math.min(TAG_TIP_EDGE, w / 2);
+                  const left = out[0]!;
+                  const top = out[1]!;
+                  if (left < 0 || left + w > bw + 1e-9) bad.push(`${name}: x ${left}`);
+                  if (top < TAG_TOP - 1e-9 || top + h > bh + 1e-9) bad.push(`${name}: y ${top}`);
+                  if (out[2]! < edge - 1e-9 || out[2]! > w - edge + 1e-9) {
+                    bad.push(`${name}: tip ${out[2]}`);
+                  }
+                  for (let i = 0; i < 8; i += 4) {
+                    const crosses =
+                      left < g.goals[i + 2]! / dpr + TAG_GOAL_MARGIN &&
+                      left + w > g.goals[i]! / dpr - TAG_GOAL_MARGIN &&
+                      top < g.goals[i + 3]! / dpr + TAG_GOAL_MARGIN &&
+                      top + h + 7 > g.goals[i + 1]! / dpr - TAG_GOAL_MARGIN;
+                    if (crosses) bad.push(`${name}: goal ${i / 4}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(bad.slice(0, 5)).toEqual([]);
+    expect(cases).toBeGreaterThan(10000);
+  });
+
+  it('puts the base of the pill 12px over the top of the disc, centred on it, when there is room', () => {
+    const g = pitchGeometry(600, 400, 1);
+    const p = new Float64Array(3);
+    const out = new Float64Array(3);
+    project(g, 52, 50, p);
+    const r = discRadius(g, p[2]!);
+    tagPlacement(g, p[0]!, p[1]!, r, 120, 48, out);
+    expect(out[1]! + 48).toBeCloseTo(p[1]! - r - TAG_GAP, 9);
+    expect(out[0]! + 60).toBeCloseTo(p[0]!, 9);
+    expect(out[2]!).toBeCloseTo(60, 9);
+  });
+
+  it('turns the pill inwards near the edge and leans the thread', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const p = new Float64Array(3);
+    const out = new Float64Array(3);
+    project(g, 2, 60, p);
+    tagPlacement(g, p[0]!, p[1]!, discRadius(g, p[2]!), 160, 48, out);
+    expect(out[0]!).toBeGreaterThanOrEqual(8);
+    expect(out[2]!).toBe(TAG_TIP_EDGE);
+    expect(out[0]! + out[2]!).toBeGreaterThan(p[0]!);
+  });
+
+  it('is pure: the same input gives the same output, and it returns nothing', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const a = new Float64Array(3);
+    const b = new Float64Array(3);
+    expect(tagPlacement(g, 180, 150, 8, 100, 48, a)).toBeUndefined();
+    tagPlacement(g, 180, 150, 8, 100, 48, b);
+    expect([...a]).toEqual([...b]);
+  });
+});
+
+describe('the goal boxes', () => {
+  it('hold the posts, the bar and the net of each goal', () => {
+    for (const [w, h] of SIZES) {
+      const g = pitchGeometry(w, h, 1);
+      const p = new Float64Array(3);
+      for (const [i, x] of [
+        [0, 0],
+        [4, L],
+      ] as const) {
+        project(g, x, W / 2 - 3.66, p);
+        expect(g.goals[i]!).toBeLessThanOrEqual(p[0]!);
+        expect(g.goals[i + 1]!).toBeLessThanOrEqual(p[1]! - 2.44 * p[2]! + 1e-9);
+        expect(g.goals[i + 2]!).toBeGreaterThanOrEqual(p[0]!);
+        expect(g.goals[i + 3]!).toBeGreaterThanOrEqual(p[1]!);
+      }
+    }
+  });
 });
