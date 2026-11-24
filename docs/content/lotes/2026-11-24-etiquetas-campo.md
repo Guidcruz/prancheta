@@ -1,6 +1,6 @@
 # Lote 2026-11-24: etiquetas do desfecho no campo v2 (PR B)
 
-Status: aguardando aprovação do CEO. Nada deste lote entrou em `app/src/content/`.
+Status: aprovado pelo CEO em 2026-11-24, com as opções recomendadas (pt-BR "Defesa", "Trave", "Para fora"; es "Atajada", "Al palo", "Afuera"; en "Saved", "Off the post", "Wide"). Entrou em `app/src/content/{pt-BR,es,en}/ui.json`, logo depois de `match.live.penalty`.
 
 Contexto: `docs/design/telas/partida-campo-v2.md`, seção de etiquetas. A pílula mostra o tipo da jogada em `rotulo` e o nome do jogador. No desfecho de uma chance que não virou gol, o tipo troca para uma das três chaves abaixo.
 
@@ -39,7 +39,7 @@ Recomendada em negrito; a alternativa vem logo abaixo.
 - Nenhum texto antecipa o resultado: a etiqueta só troca no desfecho.
 - Sem nome real, marca ou lema.
 
-## Onde entra depois da aprovação
+## Onde entrou
 
 Mesmas três chaves, mesmo texto por idioma, nos arquivos:
 
