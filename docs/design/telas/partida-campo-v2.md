@@ -361,6 +361,8 @@ Depois de ver os protótipos v1 a v5, o CEO escolheu o modo "só a bola" (modo 1
 7. **Propostas 45, 46, 47, 48 e 49:** aprovadas.
 8. **D2-B no modo "só a bola":** aprovada a bola entre 10 e 95 m nos minutos sem lance (§6). A confirmação do `game-designer` entra no `campo-lances.md`.
 9. **Medir só o que é do campo (decidido no QA do PR A):** o teste reprova quando o código do campo causa uma tarefa longa (> 50 ms) ou quando o redesenho do fundo passa de 30 ms no p95 das medidas, nunca acima de 50 ms. Os quadros longos só de renderização da página, sem script do campo, são registrados mas não reprovam. Motivo: com CPU 4× sob carga eles aparecem até com a caixa do campo escondida.
+10. **Etiquetas compactas (PR B, 2026-11-24):** abaixo de 200px de altura da caixa, a etiqueta de gol mostra a camisa com o número e "Gol!", sem o nome do artilheiro; na etiqueta do lance compacta, o nome longo quebra a linha e a pílula cresce além dos 40px, sem corte. A camisa sobre a bola (`team`) é o próprio círculo de 32px em `surface-2`, com a ponta em `surface-2`, e não tem animação de entrada nem de saída.
+11. **Textos das etiquetas (PR B, 2026-11-24):** `match.tag.saved`, `match.tag.post` e `match.tag.wide` aprovados como recomendados (lote `docs/content/lotes/2026-11-24-etiquetas-campo.md`).
 
 ## 17. Protótipos
 
