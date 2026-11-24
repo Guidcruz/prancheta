@@ -99,7 +99,7 @@ Hoje a bola anda até um ponto sorteado no meio-campo, sem dono. As opções:
 - **C. Só o número da camisa.** Contras: número é identidade (o jogador conhece "o 10" do elenco); tem os mesmos riscos de D com menos ganho.
 - **D. Nome e número, escolhidos por posição com a semente.** Prós: o mais vivo. Contras: inventa uns 68 "fatos" por partida; os riscos da seção 6 (nota, melhor em campo, posição depois de troca de formação, goleiro trocado); contraria a decisão 12 da T-032 (sem linhas de ambiente nos minutos sem lance), porque é o mesmo conteúdo inventado, só que no campo.
 
-**Regra da opção B (para o `developer`, sem interpretar):**
+**Regra da opção B (para o `developer`, sem interpretar):** _itens 2 a 5 sem efeito no modo "só a bola" (§10): não há discos nos minutos sem lance; a bola segue o planejador de [telas/partida-campo-v2.md](telas/partida-campo-v2.md), §6, entre 10 e 95 m. O item 1 continua._
 
 1. O dono do minuto sai de D4.
 2. O ponto de chegada da bola é sorteado como hoje (rótulo `m${slot}`, a no máximo `maxStep` = 20 m de onde ela está), mas na faixa do dono: `x` de 45 a 75 m quando o dono é o mandante e de 30 a 60 m quando é o visitante (o espelho), `y` de 10 a 58 m. Os blocos acompanham a bola como hoje (`follow`).
@@ -112,7 +112,7 @@ Hoje a bola anda até um ponto sorteado no meio-campo, sem dono. As opções:
 A regra que não pode quebrar (`partida.md`, "Nada antecipa o desfecho", com teste em 11 pontos): o começo de um gol e o de uma chance do mesmo tipo, lado e finalizador são iguais quadro a quadro. A assistência só existe no gol; usá-la no começo do lance entrega o desfecho.
 
 - **A. O passador do começo é o assistente real nos gols.** Contras: quebra a regra acima (um gol com assistência e uma chance seriam diferentes); e, no gol sem assistência (38% dos gols), não haveria de onde tirar o passador sem inventar. **Descartada.**
-- **B. Passe anônimo no começo, assistência na revelação (recomendada).** No começo do lance (jogada), a bola chega ao finalizador num passe de um companheiro **sem nome nem número**, escolhido pelo rótulo `${line.id}-build` que já existe, igual para gol e chance. O "próximo jogador, apagado no alto" é o finalizador, que a narração já nomeia no começo ("Fulano finaliza..."). Na revelação do gol, a etiqueta mostra o artilheiro e, se houver, a assistência (a narração e a súmula já mostram as duas). Prós: mantém a regra; nenhum nome sem fato. Contras: o rastro do começo pode sair de um disco que não é o do assistente; como esse disco não tem nome nem número, o jogador não consegue comparar.
+- **B. Passe anônimo no começo, assistência na revelação (recomendada).** No começo do lance (jogada), a bola chega ao finalizador num passe de um companheiro **sem nome nem número**, escolhido pelo rótulo `${line.id}-build` que já existe, igual para gol e chance. O "próximo jogador, apagado no alto" é o finalizador, que a narração já nomeia no começo ("Fulano finaliza..."). Na revelação do gol, a etiqueta mostra o artilheiro e, se houver, a assistência (a narração e a súmula já mostram as duas). Prós: mantém a regra; nenhum nome sem fato. Contras: o rastro do começo pode sair de um disco que não é o do assistente; como esse disco não tem nome nem número, o jogador não consegue comparar. _No modo "só a bola" (§10) não há disco de origem: o passe do começo sai de onde a bola está._
 - **B2 (opcional, junto de B).** Durante o passo depois do gol (2,0 s no Normal, 0,8 s no Rápido), um rastro de "replay" do disco do assistente até o ponto do chute. É fato, já revelado. Fica a critério do `ux-designer` (a comemoração ocupa o campo nesse passo).
 - **C. Sem passe no começo** (como hoje: a bola vai ao ponto do lance). Seguro, mas perde o momento mais tenso para mostrar a mecânica.
 - **Recomendo B**, com B2 se couber no visual.
@@ -130,7 +130,7 @@ A regra que não pode quebrar (`partida.md`, "Nada antecipa o desfecho", com tes
 - **C. A + cota com faixa (recomendada).** Nos minutos sem lance, cada time fica com a bola até "dever" de 0,5 a 2 minutos de posse em relação à porcentagem da súmula; aí ela passa ao outro. Medido em 1.900 partidas: desvio mediano de 1,2 ponto entre a parte do campo e a posse da súmula, p90 de 2,4, p99 de 3,3; sequências de 4,1 minutos em média (cerca de 3 s no Normal), sem a alternância mecânica de minuto a minuto. Prós: a sombra existe em todo minuto e conta a mesma história da súmula. Contras: usa a posse do jogo inteiro desde o 1º minuto (ver "Vazamento" abaixo).
 - **D. O motor passa a dar posse por tempo ou por minuto.** Ver D6. Descartada.
 
-**Regra da opção C (para o `developer`):**
+**Regra da opção C (para o `developer`):** _o item 4 vale também para os passos sem lance com bola em jogo, com peso pelo tempo, no modo "só a bola" (§10)._
 
 1. `p = stats.home.possession / 100`, do `MatchResult` que a tela já tem. `debt = 0` no começo do jogo; a faixa `band` é sorteada em `[0,5; 2,0]` com o rótulo `${seed}-pitch-band-start`.
 2. Nos passos de lance (começo, desfecho, pênalti, chance fraca), o dono é o `side` do evento; o `debt` não muda.
@@ -144,7 +144,7 @@ A regra que não pode quebrar (`partida.md`, "Nada antecipa o desfecho", com tes
 
 ### D5. O goleiro na defesa e a troca de goleiro
 
-O goleiro que defende é o dono do disco do goleiro do outro lado (`Field.owner`). Ele está certo nas trocas (o reserva fica com o disco de quem saiu). Ele **diverge do motor** num caso só: quando o goleiro sai sem troca, o motor põe no gol o jogador de linha com o maior `physical` (`fillEmptyGoal`, empate na primeira vaga), e a coreografia põe o da última vaga ocupada. Medido: 9 em 3.800 partidas (0,24%). O efeito de hoje: o disco do goleiro passa a ser de outro jogador, e se esse jogador finaliza depois, é o disco do goleiro que sobe para chutar.
+O goleiro que defende é o dono do disco do goleiro do outro lado (`Field.owner`). Ele está certo nas trocas (o reserva fica com o disco de quem saiu). Ele **diverge do motor** num caso só: quando o goleiro sai sem troca, o motor põe no gol o jogador de linha com o maior `physical` (`fillEmptyGoal`, empate na primeira vaga), e a coreografia põe o da última vaga ocupada. Medido: 9 em 3.800 partidas (0,24%). O efeito de hoje: o disco do goleiro passa a ser de outro jogador, e se esse jogador finaliza depois, é o disco do goleiro que sobe para chutar. _No modo "só a bola" (§10) esse efeito some (o disco do lance é criado pelo `PlayerId` do evento), e a opção B fica sem efeito pela decisão 4 do CEO (a defesa leva o finalizador)._
 
 - **A. Corrigir a coreografia** para a regra do motor: o disco de linha, em campo, cujo jogador tem o maior `attributeOf(player, 'physical')`, empate no menor índice de disco. Igual ao motor enquanto o lado não trocou de formação (a troca de formação reordena as vagas pela energia, que a tela não conhece).
 - **B. Defesa sem nome depois de uma troca de goleiro:** a etiqueta diz "defesa" com o escudo do clube, sem nome nem número.
@@ -195,9 +195,9 @@ Tudo em `app/src/ui/match/` (`scene.ts` e o que a etiqueta precisar); nada em `a
 1. **Nomes só de eventos:** em 200 partidas simuladas (sementes fixas), toda etiqueta com jogador tem um `PlayerId` do evento do passo (`shooter`, `scorer`, `taker`, `player`, `out`, `in`; `assist` só no desfecho do gol) ou é o goleiro de D5. Nenhum passo `minuteFull` tem etiqueta de jogador nem "próximo".
 2. **Número certo:** o número da etiqueta é o `shirt` do `Player` com aquele `PlayerId` em `live.match.<lado>.players`.
 3. **Nada antecipa o desfecho:** o teste dos 11 pontos que já existe passa a cobrir também o passe do começo do lance (origem, rastro e quem recebe), a etiqueta e o "próximo": iguais para gol e chance do mesmo lado, finalizador e tipo.
-4. **Posse que bate com a súmula:** em 1.000 partidas, `|parte dos minutos sem lance com o mandante como dono − stats.home.possession|` tem p90 de no máximo 3 pontos e p99 de no máximo 4,5.
+4. **Posse que bate com a súmula:** em 1.000 partidas, `|parte dos minutos sem lance com o mandante como dono − stats.home.possession|` tem p90 de no máximo 3 pontos e p99 de no máximo 4,5. _No modo "só a bola": parte do **tempo** (relógio Normal) dos passos da cota (§10)._
 5. **Dono depois dos lances:** depois de um gol, o dono é quem sofreu; depois de uma chance perdida ou um pênalti perdido, quem defendeu; o primeiro minuto sem lance de cada tempo (sem lance antes) é do mandante no 1º e do visitante no 2º.
-6. **Passes com discos em campo:** quem passa e quem recebe têm `on[d] === 1` no passo; o rastro nunca começa nem termina num disco fora.
+6. ~~**Passes com discos em campo:** quem passa e quem recebe têm `on[d] === 1` no passo; o rastro nunca começa nem termina num disco fora.~~ _Sem efeito no modo "só a bola" (§10)._
 7. **Goleiro (D5):** com o goleiro expulso sem troca, o disco do goleiro passa ao jogador de linha em campo de maior `physical` (empate: menor índice), num caso montado à mão; e, depois de uma troca de goleiro num lado que mudou de formação, a defesa sai sem nome.
 8. **Determinismo:** a mesma partida dá a mesma coreografia; os sorteios que existem (`m${slot}`, `-build`, `-outcome`) não mudam de valor por causa dos rótulos novos (`-band-start`, `m${slot}-band`).
 9. **Motor e save intactos:** `ENGINE_VERSION` 19, goldens do motor e `SAVE_SCHEMA_VERSION` sem mudança; o chunk do campo continua com no máximo 20.000 bytes gzip (`tests/regression/match-chunks.test.ts`).
@@ -215,3 +215,43 @@ Tudo em `app/src/ui/match/` (`scene.ts` e o que a etiqueta precisar); nada em `a
 ## 9. Decisões do CEO (2026-11-23)
 
 Aprovadas as recomendações: D1-A (só tem nome quem está num evento do motor), D2-B (passes de ligação anônimos), D3-B (passe anônimo no começo, assistência na revelação, sem "replay" no campo), D4-C (posse por cota que bate com a súmula) e D6-A (motor e save intactos). A parte "nenhum número ou texto no campo" da decisão 11 da T-032 fica revogada (a etiqueta fica fora do canvas). D5: a correção do goleiro no campo entra na fase 1; a etiqueta da defesa mostra o finalizador e "Defendida", sem nomear o goleiro. D7: a perspectiva por código (inclinação do campo) entra na fase 1, no lugar da vista de cima, com ADR; as restrições de regra da D7 valem (ver [telas/partida-campo-v2.md](telas/partida-campo-v2.md), §15).
+
+## 10. Modo "só a bola" (2026-11-24)
+
+O CEO escolheu o modo "só a bola" ([telas/partida-campo-v2.md](telas/partida-campo-v2.md), §5 e §16). Nos minutos sem lance, o campo mostra só a bola, os rastros por tipo, a cunha e a camisa do time com a bola; os discos só aparecem nos lances do motor. Conferi pelo lado da regra, com medida nova (1.900 partidas, 5 temporadas, `ENGINE_VERSION` 19). A regra em uma frase continua valendo.
+
+**Ficam sem efeito:**
+
+- os passes entre discos da D2-B (itens 2 a 5: quem passa, quem recebe, a faixa de 45 a 75 m do dono e o fim 1 m à frente de quem recebe) e o critério 6 do §7;
+- o disco de origem do passe do começo do lance na D3-B;
+- a D5-B, já trocada pela decisão 4 do CEO (a defesa leva o finalizador e "Defendida").
+
+**Confirmações e ajustes:**
+
+1. **D2-B com a bola de 10 a 95 m: confirmada, com um ajuste.**
+   - A faixa é simétrica entre os dois lados, porque o espelho de 10 a 95 é ele mesmo.
+   - Nada nela nomeia ninguém. A camisa sobre a bola não tem número nem nome.
+   - **Ajuste:** o cruzamento do §6 da spec cai "de 7 a 14 m da linha de fundo", o que leva a bola a até 98 m. Isso contradiz o limite de 95 m e o critério 4 de "planejador e rastros" do §13. O cruzamento passa a cair **de 10 a 14 m** da linha de fundo.
+   - Regra que fica: num minuto sem lance, a bola nunca chega a menos de 10 m de uma linha de gol, e nenhuma ação vai na direção do gol. O campo não mostra quase-chance que o motor não sorteou.
+   - **Regra de honestidade do planejador:** ele lê só a semente, o dono, o estado da bola no fim do passo anterior e o ponto do lance. Nunca lê o placar, as forças, o tipo de evento nem os eventos futuros. Os pesos das ações são os mesmos para os dois times. O único "domínio" que o campo mostra é a posse da súmula (D4-C).
+2. **D4-C: confirmada, com um ajuste para continuar batendo com a súmula.**
+   - No modo "só a bola", a cunha e a camisa aparecem também nos passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho. São cerca de 6 s por partida no Normal, além dos 53 s de minutos sem lance.
+   - Se só os minutos sem lance movessem a cota, a parte do tempo com a bola se afastaria da súmula: p90 de 3,9 pontos e p99 de 6,1.
+   - **Ajuste:** todo passo da cota move a conta, com peso pelo tempo. O item 4 vira `debt += (p − (dono é o mandante ? 1 : 0)) × duração Normal do passo ÷ 800 ms`, e a troca de dono é conferida antes, como hoje.
+   - Medido: p50 de 1,0 ponto, p90 de 2,2, p99 de 3,0 e máximo de 3,5. O critério 4 do §7 (p90 até 3, p99 até 4,5) passa a medir a parte do tempo.
+   - **Passos da cota:** os minutos sem lance e os passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho, exceto o passo logo depois de um gol (a bola volta ao centro, sem dono).
+   - **Nuance de texto para a spec:** a camisa sobre a bola diz "quem está com a bola" num minuto, e isso é decorativo. O fato é a parte do tempo, que bate com a posse da súmula. A spec diz "que é fato (D4-C)", e eu trocaria por "que segue a posse da súmula (D4-C)".
+3. **D3-B e o começo do gol igual ao da chance: confirmada.** A escolha do tipo do passe do começo usa só estes dados:
+   - o dono do passo anterior;
+   - a posição da bola no fim dele ("aberta" a mais de 14 m do meio na largura);
+   - se a ação anterior foi por cima;
+   - o ponto do lance, sorteado com o rótulo `-build` a partir do lado, do finalizador e do tipo.
+
+   Nada disso lê o desfecho, então gol e chance dão o mesmo cruzamento ou o mesmo rasteiro.
+   - Ressalva já aceita na D4-C: o `p` da cota é a posse do jogo inteiro e pode diferir, por pouco, entre uma partida em que o lance é gol e outra em que é chance. Isso não muda o começo do lance que se vê.
+   - **Pedido ao teste dos 11 pontos:** monte as duas variantes trocando só o evento do lance (gol ou chance, com o mesmo `stats.home.possession` e os mesmos eventos anteriores) e compare o tipo do passe do começo, o caminho da bola, a cunha, os discos e a etiqueta.
+
+4. **D5-A no PR A: confirmada.**
+   - O efeito visível ficou pequeno: o disco do goleiro é anônimo, e a defesa leva o finalizador.
+   - Ela continua necessária porque o critério 1 de âncora do §13 da spec calcula o goleiro pela regra do motor, e a coreografia de hoje erra em 0,24% das partidas.
+   - É barata: uma escolha por maior `physical` sobre os jogadores que a tela já tem.
