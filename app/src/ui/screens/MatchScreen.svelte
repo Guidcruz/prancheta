@@ -676,9 +676,15 @@
        sideways. */
     max-width: 100%;
     position: relative;
-    /* The same cut as the drawing (1 − `grassShare` of the height): the leftover at the sides is
-       stand above and grass below, with a hard stop. */
-    background: linear-gradient(to bottom, var(--surface-0) 0 38%, var(--pitch) 38% 100%);
+    /* The leftover of the box, at the sides of the canvas, goes on as the stand: the edge of the
+       drawing below the far line is stand, not grass (`PITCH_STAND_END` in motion.ts is the
+       33%: this screen may not import the chunk, and `motion.test.ts` keeps the two equal). Tokens only. */
+    background: linear-gradient(
+      to bottom,
+      var(--surface-0),
+      var(--surface-2) 33%,
+      var(--surface-0)
+    );
   }
   .match :global(section.feed) {
     order: 4;

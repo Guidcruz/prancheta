@@ -417,10 +417,13 @@ test.describe('Campo 2D (T-085)', () => {
     const lit = await canvas(page).evaluate((element) => {
       const c = element as HTMLCanvasElement;
       const q = c.width / 360;
-      const at = c
-        .getContext('2d')!
-        .getImageData(Math.round(c.width * 0.37), Math.round(18 * q), 1, 1);
-      return at.data[0]!;
+      // The median of 5 pixels in a column: a 1px row of seats cannot be the one that is read.
+      const column = Math.round(c.width * 0.37);
+      const top = Math.round(17 * q);
+      const reds = [0, 1, 2, 3, 4]
+        .map((i) => c.getContext('2d')!.getImageData(column, top + i, 1, 1).data[0]!)
+        .sort((x, y) => x - y);
+      return reds[2]!;
     });
     const base = Number((await tokenColor(page, 'surface-0')).match(/\d+/)![0]);
     expect(lit - base).toBeGreaterThanOrEqual(45);
@@ -443,6 +446,54 @@ test.describe('Campo 2D (T-085)', () => {
     await setTheme(page, 'noite');
     await expect.poll(grass).toBe(night.pitch);
     await expect.poll(stand).toBe(night.stand);
+  });
+
+  test('a sobra da caixa ao lado do campo continua a arquibancada: nenhum pixel de --pitch acima de 85% da altura, a 360×640, 844×390 e 1280×800, nos dois temas', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'uma vez por navegador');
+    await careerWith(page, 'full');
+    await freezeClock(page);
+    await openMatch(page);
+    await expect(canvas(page)).toHaveCount(1);
+    for (const [width, height] of [
+      [360, 640],
+      [844, 390],
+      [1280, 800],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      for (const theme of ['noite', 'dia'] as const) {
+        await setTheme(page, theme);
+        await page.clock.runFor(500);
+        const box = (await pitchBox(page).boundingBox())!;
+        const cv = (await canvas(page).boundingBox())!;
+        const strip = Math.floor(cv.x - box.x) - 2;
+        // Only a phone upright has room left at the sides; elsewhere the box is the canvas.
+        if (width === 360) expect(strip, `${width}×${height}: há sobra`).toBeGreaterThan(4);
+        if (strip < 1) continue;
+        const png = await page.screenshot({
+          clip: { x: box.x + 1, y: box.y, width: strip, height: box.height },
+        });
+        const grass = await tokenColor(page, 'pitch');
+        const found = await page.evaluate(
+          async ([data, pitch]) => {
+            const bitmap = await createImageBitmap(await (await fetch(data!)).blob());
+            const c = new OffscreenCanvas(bitmap.width, bitmap.height);
+            const g = c.getContext('2d')!;
+            g.drawImage(bitmap, 0, 0);
+            const column = Math.floor(bitmap.width / 2);
+            const bad: number[] = [];
+            for (let y = 0; y < bitmap.height * 0.85; y++) {
+              const [r, gr, b] = g.getImageData(column, y, 1, 1).data;
+              if (`rgb(${r}, ${gr}, ${b})` === pitch) bad.push(y);
+            }
+            return bad.length;
+          },
+          [`data:image/png;base64,${png.toString('base64')}`, grass],
+        );
+        expect(found, `${width}×${height} ${theme}`).toBe(0);
+      }
+    }
   });
 
   test('deitado (844×390) e desktop (1280×800): cabeçalho e campo à esquerda, placar e narração à direita, com a barra inteira (item 12)', async ({

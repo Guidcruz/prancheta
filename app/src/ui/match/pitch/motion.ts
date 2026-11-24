@@ -35,6 +35,17 @@ export const PITCH_VIEW = {
   ballMin: 4,
 } as const;
 
+/**
+ * Where the top of the far boards falls in a box of 1.5:1, as a share of its height (33%):
+ * `1 − grassShare − boardHeight × 1.5 ÷ 360`. The MatchPitch and the MatchScreen read it for the
+ * CSS variable `--pitch-stand-end`, so the stand painted around the canvas ends where the drawing's
+ * does; change `grassShare` or `boardHeight` here and both follow.
+ */
+export const PITCH_STAND_END = `${(
+  (1 - PITCH_VIEW.grassShare - (PITCH_VIEW.boardHeight * 1.5) / 360) *
+  100
+).toFixed(2)}%`;
+
 export const PITCH_MOTION = {
   /** Where the formation sits: the keeper 4 m off the line, the most advanced line 46 m ahead. */
   formation: { keeper: 4, depth: 46 },

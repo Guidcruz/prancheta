@@ -10,7 +10,7 @@
     project,
     type PitchGeometry,
   } from '../match/pitch/geometry';
-  import { PITCH_SIZE } from '../match/pitch/motion';
+  import { PITCH_SIZE, PITCH_STAND_END } from '../match/pitch/motion';
   import type { PitchScene } from '../match/pitch/scene';
 
   /**
@@ -266,7 +266,7 @@
   });
 </script>
 
-<div class="pitch" bind:this={box}>
+<div class="pitch" bind:this={box} style:--pitch-stand-end={PITCH_STAND_END}>
   <canvas
     bind:this={canvas}
     aria-hidden="true"
@@ -282,9 +282,15 @@
     width: 100%;
     height: 100%;
     overflow: hidden;
-    /* The same cut as the drawing (1 − `grassShare` of the height): the leftover at the sides is
-       stand above and grass below, with a hard stop. */
-    background: linear-gradient(to bottom, var(--surface-0) 0 38%, var(--pitch) 38% 100%);
+    /* The leftover of the box, at the sides of the canvas, goes on as the stand: the edge of the
+       drawing below the far line is stand, not grass (`PITCH_STAND_END` in motion.ts sets the
+       33%). Tokens only. */
+    background: linear-gradient(
+      to bottom,
+      var(--surface-0),
+      var(--surface-2) var(--pitch-stand-end),
+      var(--surface-0)
+    );
   }
   canvas {
     position: absolute;
