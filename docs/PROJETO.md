@@ -522,10 +522,10 @@ O jogo prende pela tensão da partida e pela história do clube, não por mecân
 
 **Tela da partida**
 
-- Campo 2D visto de cima, jogadores como bolinhas nas cores do uniforme, mostrando só os lances importantes.
+- Campo 2D inclinado por código, em perspectiva, com arquibancadas e placas de marcas fictícias (só cores) no fundo e atrás dos gols; só a bola se move o tempo todo, com rastros que mostram a jogada, e os jogadores aparecem como bolinhas nas cores do uniforme só nos lances importantes (quem está no lance, o goleiro e, no gol, o artilheiro). (Alterado em 2026-11-24 pela ADR-0023; antes, "Campo 2D visto de cima, jogadores como bolinhas nas cores do uniforme, mostrando só os lances importantes".)
 - Narração em texto rolando e voz nos momentos-chave; torcida que cresce no ataque, explode no gol e vaia quando o time vai mal.
 - Câmera lenta e pausa dramática antes de revelar se foi gol.
-- Comemoração com escudo, nome do artilheiro e vibração do celular (Android).
+- Comemoração com a etiqueta de gol saindo do artilheiro (camisa e nome; o escudo fica na linha da narração) e vibração do celular (Android). (Alterado em 2026-11-24 pela ADR-0023; antes, "com escudo, nome do artilheiro".)
 - Decisões durante o jogo: substituições, tática, comandos ("pressionar", "segurar o resultado", "todo mundo no ataque") e conversa no intervalo.
 - Opção "só resultado" para quem tem pressa.
 
