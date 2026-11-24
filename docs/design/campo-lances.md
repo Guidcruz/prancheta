@@ -233,17 +233,17 @@ O CEO escolheu o modo "só a bola" ([telas/partida-campo-v2.md](telas/partida-ca
    - Nada nela nomeia ninguém. A camisa sobre a bola não tem número nem nome.
    - **Ajuste:** o cruzamento do §6 da spec cai "de 7 a 14 m da linha de fundo", o que leva a bola a até 98 m. Isso contradiz o limite de 95 m e o critério 4 de "planejador e rastros" do §13. O cruzamento passa a cair **de 10 a 14 m** da linha de fundo.
    - Regra que fica: num minuto sem lance, a bola nunca chega a menos de 10 m de uma linha de gol, e nenhuma ação vai na direção do gol. O campo não mostra quase-chance que o motor não sorteou.
-   - **Regra de honestidade do planejador:** ele lê só a semente, o dono, o estado da bola no fim do passo anterior e o ponto do lance. Nunca lê o placar, as forças, o tipo de evento nem os eventos futuros. Os pesos das ações são os mesmos para os dois times. O único "domínio" que o campo mostra é a posse da súmula (D4-C).
+   - **Regra de honestidade do planejador:** nos passos da cota e no começo do lance, ele lê só a semente, o dono (`owners` e `after` de `possession.ts`), o estado da bola no fim do passo anterior, a duração do passo e, no começo do lance, o lado, o tipo do lance (jogada, falta, pênalti) e o ponto do lance. Nunca lê o placar, as forças, se o lance vira gol nem os passos futuros. Só o passo do desfecho (e a chance fraca, que é desfecho) lê o desfecho, pelo rótulo `-outcome`. Os pesos das ações são os mesmos para os dois times. O único "domínio" que o campo mostra é a posse da súmula (D4-C).
 2. **D4-C: confirmada, com um ajuste para continuar batendo com a súmula.**
-   - No modo "só a bola", a cunha e a camisa aparecem também nos passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho. São cerca de 6 s por partida no Normal, além dos 53 s de minutos sem lance.
+   - No modo "só a bola", a cunha aparece também nos passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho. São cerca de 6 s por partida no Normal, além dos 53 s de minutos sem lance. A camisa sobre a bola fica só nos minutos sem lance (spec, §9 e critério 5 do E2E, como o PR B fez); nos outros passos da cota, a cunha mostra o dono.
    - Se só os minutos sem lance movessem a cota, a parte do tempo com a bola se afastaria da súmula: p90 de 3,9 pontos e p99 de 6,1.
    - **Ajuste:** todo passo da cota move a conta, com peso pelo tempo. O item 4 vira `debt += (p − (dono é o mandante ? 1 : 0)) × duração Normal do passo ÷ 800 ms`, e a troca de dono é conferida antes, como hoje.
    - Medido: p50 de 1,0 ponto, p90 de 2,2, p99 de 3,0 e máximo de 3,5. O critério 4 do §7 (p90 até 3, p99 até 4,5) passa a medir a parte do tempo.
    - **Passos da cota:** os minutos sem lance e os passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho, exceto o passo logo depois de um gol (a bola volta ao centro, sem dono).
-   - **Nuance de texto para a spec:** a camisa sobre a bola diz "quem está com a bola" num minuto, e isso é decorativo. O fato é a parte do tempo, que bate com a posse da súmula. A spec diz "que é fato (D4-C)", e eu trocaria por "que segue a posse da súmula (D4-C)".
+   - **Nuance de texto para a spec:** a camisa sobre a bola diz "quem está com a bola" num minuto, e isso é decorativo. O fato é a parte do tempo, que bate com a posse da súmula. A spec dizia "que é fato (D4-C)" e passou a dizer "que segue a posse da súmula (D4-C)".
 3. **D3-B e o começo do gol igual ao da chance: confirmada.** A escolha do tipo do passe do começo usa só estes dados:
-   - o dono do passo anterior;
-   - a posição da bola no fim dele ("aberta" a mais de 14 m do meio na largura);
+   - quem ficou com a bola no fim do passo anterior (`after` de `possession.ts`);
+   - a posição da bola no fim dele ("aberta no terço final": a mais de 18 m além do meio-campo e a mais de 15 m do meio na largura, a mesma condição do cruzamento dos minutos; e a distância até o ponto, até 40 m);
    - se a ação anterior foi por cima;
    - o ponto do lance, sorteado com o rótulo `-build` a partir do lado, do finalizador e do tipo.
 
@@ -255,3 +255,25 @@ O CEO escolheu o modo "só a bola" ([telas/partida-campo-v2.md](telas/partida-ca
    - O efeito visível ficou pequeno: o disco do goleiro é anônimo, e a defesa leva o finalizador.
    - Ela continua necessária porque o critério 1 de âncora do §13 da spec calcula o goleiro pela regra do motor, e a coreografia de hoje erra em 0,24% das partidas.
    - É barata: uma escolha por maior `physical` sobre os jogadores que a tela já tem.
+
+5. **Conferência para o PR C (planejador da bola, 2026-11-24).** Simulei as regras do §6 da spec, só a bola, sobre 3.420 partidas reais da Série A (9 temporadas, `ENGINE_VERSION` 19, a cota de `possession.ts`). Completei a spec onde ela deixava o `developer` adivinhar, sem mudar decisão do CEO:
+   - **Reaproveitamento do PR B:** o planejador usa `owners` e `after` do `possessionTrace`; a troca de dono é `owners[i] ≠ after[i − 1]`, então não há disputa depois de um desfecho (quem defendeu já tem a bola).
+   - **Sorteio por passo:** `m${slot}-play` só no minuto sem lance; `${line.id}-play` nos outros passos da cota, que podem ser vários no mesmo minuto.
+   - **Limites:** alvo refletido no limite e passe de no mínimo 5 m (condução, 2 m); o passe ao goleiro termina de 10 a 14 m da linha (o protótipo levava a 4 m, fora do limite de 10 m); a **reposição** depois de um desfecho sem gol leva a bola de volta à faixa.
+   - **Passos da cota de 400 ms:** um passe rasteiro curto, com as distâncias pela metade. Com os padrões de 800 ms comprimidos, a bola passaria de 3 m em 16 ms (5,1 m), e a condução iria a 25,1%, fora da meta.
+   - **Começo de lance:** o cruzamento só da bola aberta no terço final (antes, "a mais de 14 m do meio na largura", de qualquer distância), e retomada sem rastro quando a bola está a mais de 40 m do ponto.
+   - **Depois do gol:** o começo de lance logo depois de um gol é só a volta ao centro (a exceção da âncora 4); a bola e o finalizador vão ao ponto nos primeiros 250 ms do desfecho (0,11 por partida). A chance fraca logo depois de um gol é só a volta ao centro (0,38 por partida).
+   - **Critério 2 do §13:** os 3 m em 16 ms não cabem na chance fraca, que junta a ida ao ponto e o chute em 400 ms (tempo decidido pelo CEO). Ali o limite passa a 8 m, em velocidade constante (pior caso medido: 7,0 m).
+
+   | Medida (3.420 partidas, ações dos passos da cota)                                             | Resultado                         | Meta (§13)              |
+   | --------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------- |
+   | Passe rasteiro (curto, recuo, ao goleiro, reposição)                                          | 67,6%                             | 60 a 70%                |
+   | Condução                                                                                      | 21,8%                             | 17 a 25%                |
+   | Tabela (uma ação por tabela)                                                                  | 3,9%                              | 3 a 8%                  |
+   | Por cima (lançamento e inversão)                                                              | 4,8%                              | 4 a 8%                  |
+   | Cruzamento                                                                                    | 1,9%, todos do terço final        | até 3%                  |
+   | Dois por cima seguidos; alvo fora da faixa                                                    | 0; 0                              | 0; 0                    |
+   | Maior trecho em 16 ms: cota; começo de lance; ida ao ponto depois do gol; chute; chance fraca | 2,6 m; 2,6 m; 2,8 m; 1,9 m; 7,0 m | 3 m; 3 m; 3 m; 3 m; 8 m |
+   | Menor trecho nos últimos 200 ms de um passe rasteiro da cota                                  | 0,31 m                            | 0,2 m                   |
+
+   Tudo dentro da meta, mas a tabela e o por cima ficam a menos de 1 ponto do piso. Uma proposta, para o CEO decidir: pesos 0,17 para "um passe rasteiro" (hoje 0,20), 0,10 para a tabela (hoje 0,08) e 0,12 para o por cima (hoje 0,11). Medido: 66,2%, 21,8%, 4,9%, 5,2% e 1,9%, mais perto do que o CEO viu no v5 (66,0%, 21,6%, 5,2%, 6,0% e 1,1%). Não apliquei, porque a decisão 13 do CEO aponta para a distribuição do §6.
