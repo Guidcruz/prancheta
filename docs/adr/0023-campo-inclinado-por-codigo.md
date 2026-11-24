@@ -1,6 +1,6 @@
 # ADR-0023: Campo da partida inclinado por código, só com a bola em movimento
 
-- **Status:** aceito (CEO, 2026-11-24). Em 2026-11-23 o CEO escolheu a saída A, o campo inclinado por código, sem fundo ilustrado. Em 2026-11-24, depois de ver os protótipos v1 a v5, escolheu o modo "só a bola" e fechou as pendências, todas como recomendado (`docs/design/telas/partida-campo-v2.md`, §15 e §16). A forma técnica é do `architect`.
+- **Status:** aceito (CEO, 2026-11-24). Em 2026-11-23 o CEO escolheu a saída A, o campo inclinado por código, sem fundo ilustrado. Em 2026-11-24, depois de ver os protótipos v1 a v5, escolheu o modo "só a bola" e fechou as pendências, todas como recomendado (`docs/design/telas/partida-campo-v2.md`, §15 e §16). A forma técnica é do `architect`. Errata de 2026-11-24, conferida contra o código do PR A, no fim deste documento.
 - **Data:** 2026-11-23 (proposta); 2026-11-24 (aceito, com as decisões finais)
 - **Decisores:** CEO (decidiu), ux-designer (estudo, protótipos e spec: `docs/design/telas/partida-campo-v2.md`, branch `docs/campinho-proposta`, commit 2a8a71b), game-designer (restrições de regra: `docs/design/campo-lances.md`, D1 a D7, na mesma branch), architect (redigiu)
 - **Substitui em parte:** `docs/PROJETO.md` › "Animações e engajamento saudável" › "Tela da partida": a linha 525 ("Campo 2D visto de cima, jogadores como bolinhas nas cores do uniforme, mostrando só os lances importantes") e o "com escudo" da linha 528 (a comemoração do gol vira a etiqueta de gol, sem escudo; o escudo continua na linha da narração).
@@ -232,3 +232,44 @@ export function tagPlacement(
   - o de nenhuma tarefa longa;
   - o dos pixels (`--pitch` embaixo, `--surface-0` no canto de cima, nos dois temas);
   - o `match-chunks.test.ts` (≤ 20.000 bytes gzip, nenhuma imagem nova).
+
+## Errata (architect, 2026-11-24): o ADR conferido contra o código do PR A
+
+Conferido contra o código mergeado do PR A (#89, commit 82629ab) e, nos itens marcados, contra a branch do PR B (`feat/campo-v2-b`, commit e5a26bb, em revisão). A decisão não muda: vista B, movimento D, os mesmos mínimos, as mesmas metas. Mudam nomes do contrato, um mecanismo e os números do orçamento. Onde o texto acima e esta errata divergem, vale a errata.
+
+1. **`PITCH_VIEW` tem cinco campos, não três.** Além de `farScale`, `grassShare` e `boardHeight`, guarda os mínimos do item 5 em px CSS: `discMin: 7` e `ballMin: 4`. O ajuste sem ADR do item 2 vale para os três primeiros; `discMin` e `ballMin` podem subir sem ADR, nunca descer. O mesmo módulo exporta `PITCH_STAND_END`, a altura (em % da caixa) em que termina a arquibancada pintada em volta do canvas (item 10 desta errata).
+2. **`PitchGeometry` tem mais campos.** Além de `s0`, `yFar`, `farScale` e `boardTop`, tem `width`, `height` e `dpr` (já existiam), `boardHeight` (a altura das placas de longe, em px do canvas) e `discMin` e `ballMin` (os mínimos, em px do canvas). Todos são calculados uma vez por tamanho, em `pitchGeometry(width, height, dpr)`.
+3. **A bola fica no trapézio por `holdBall`, não só por `clampBall`.** A linha do contrato "clampBall [...] applied to the ball's centre in pixels after the projection" passa a ser: `holdBall(g, cx, cy, r, out)` segura o centro da bola, em px do canvas, dentro do trapézio do desenho, descontado o raio. Assim a bola nunca entra na arquibancada nem sai do canvas. É aplicada depois da projeção e da altura, sem alocação. `clampBall(value, low, high)` continua igual e é usada por ela.
+4. **As caixas dos gols chamam-se `goals`, não `goalBoxes` (PR B).** É um `Float64Array(8)` em px do canvas: esquerda, topo, direita e base do gol do mandante em 0 a 3, e do visitante em 4 a 7. Inclui traves, travessão e rede projetados, sem margem; a margem é de `tagPlacement`.
+5. **`tagPlacement` devolve três números (PR B).** A assinatura é a do contrato. `px`, `py` e `r` estão em px do canvas (o que `project` e `discRadius` dão); `w` e `h` são o tamanho da pílula em px CSS, sem a ponta. `out` recebe px CSS da caixa:
+   - `out[0]` e `out[1]`: o canto de cima à esquerda da pílula;
+   - `out[2]`: o x do centro da ponta, a partir da borda esquerda da pílula.
+
+   As constantes (`TAG_GAP` 12, `TAG_TOP` 4, `TAG_SIDE` 8, `TAG_GOAL_MARGIN` 6, `TAG_TIP_EDGE` 20 e `TAG_TIP` 7, em px CSS) moram em `geometry.ts`.
+
+6. **As cores do tema não vêm do "mecanismo que já existe" (item 9).** Com `getComputedStyle` logo depois da troca de tema, o navegador recalcula o estilo da página inteira dentro do redesenho, cerca de 20 ms com CPU 4×, como o `developer` mediu no PR A. Por isso:
+   - o `MatchPitch` lê as cores com `pitchColors(theme, fallback)` (`app/src/ui/match/pitch/tokens.ts`);
+   - `pitchColors` consulta o `tokens.css` gerado, embutido no chunk como texto (`?raw`);
+   - `getComputedStyle` fica só para um token que o arquivo não tenha;
+   - o `MutationObserver` do `data-theme` e o `ResizeObserver` só agendam o redesenho do fundo, que roda numa tarefa própria (`MessageChannel`, não um timer);
+   - a primeira pintura se divide em duas tarefas: o fundo numa, o primeiro quadro na outra.
+
+   O custo é o `tokens.css` inteiro no chunk, 1.535 bytes gzip para usar 9 tokens. A troca por um arquivo gerado só com os tokens do campo já está na lista de pendências (ver o item 9).
+
+7. **Redesenho do fundo e tarefas longas: medido, não estimado.** O ADR estimava de 5 a 15 ms. No PR A, com CPU 4×, o redesenho deu p95 de até 26,5 ms e máximo de 45,9 ms, dentro da meta (p95 ≤ 30 ms, máximo ≤ 50 ms). O teste "nenhuma tarefa longa" da Conformidade segue a decisão do CEO da spec, §16, item 9. Ele reprova só o quadro longo em que o script do campo soma 50 ms ou mais, ou pelo menos metade do tempo de bloqueio. Quadros longos só de renderização da página são registrados e não reprovam.
+8. **Placas: a lista de marcas chegou no PR A.** As 22 marcas fictícias aprovadas estão em `app/src/data/brands.json`, e as placas usam `brandForSlot('pitch-boards', ...)` desde o primeiro desenho. O caminho provisório dos pares de tokens (item 8, "Lista de marcas") nunca foi implementado e deixa de valer. O contexto que o campo passa, a regra das placas vizinhas e o resto do contrato estão em `docs/02-architecture.md`, §4.8.
+9. **Orçamento do chunk: os números do §12 da spec e das Consequências estavam baixos.** Abaixo, medido como o `match-chunks.test.ts` mede (gzip do `.js` mais o do `.css` do chunk do campo):
+
+   | Momento                             | Estimado no ADR | Medido                                                         |
+   | ----------------------------------- | --------------- | -------------------------------------------------------------- |
+   | Depois do PR A                      | 10,1 KB (+3)    | 13.380 bytes (JS 12.855 + CSS 525); os "12,9 KB" eram só o JS  |
+   | Depois do PR B (branch, e5a26bb)    | 12,1 KB (+2)    | 17.422 bytes (JS 16.350 + CSS 1.072), já com a posse D4-C do C |
+   | Ao fim dos quatro PRs, sem mudanças | 15,5 a 16,5 KB  | projeção de 20,2 a 21,2 KB, acima do teto de 20.000 bytes      |
+
+   **O que pesou mais que o previsto:**
+   - no A, o `tokens.css` inteiro (cerca de 1,5 KB) e a lista de marcas (cerca de 0,9 KB);
+   - no B, o `kitSvg` do gerador de uniformes para a camisa da etiqueta (cerca de 1 KB, que a estimativa não previa) e o CSS da `PitchTag` (cerca de 0,5 KB).
+
+   **O plano:** trocar o `tokens.css` embutido por um arquivo gerado pelo `npm run tokens` só com os tokens do campo, o que economiza de 1,35 a 1,5 KB. Com isso, a projeção ao fim cai para cerca de 18,8 a 19,9 KB. O teto de 20.000 bytes da Conformidade não muda com esta errata: mudar o teto é decisão do CEO. Se a medida passar do teto, volta ao `architect` antes de qualquer corte de desenho, como já diz o ADR.
+
+10. **A sobra da caixa é arquibancada.** Quando a caixa do campo é mais larga ou mais alta que o retângulo de 1,5:1, a sobra em volta do canvas é pintada por CSS como a arquibancada, com o gradiente da caixa terminando em `--pitch-stand-end`, que vem de `PITCH_STAND_END`. Nenhum pixel de `--pitch` aparece acima de 85% da altura da caixa, como confere o E2E de `pitch.spec.ts`. O canvas continua sendo o maior retângulo de 1,5:1 (item 1).
