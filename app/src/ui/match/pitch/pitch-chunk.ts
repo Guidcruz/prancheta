@@ -5,13 +5,23 @@
  * chunk (`pitch-chunk-[hash].js`), which the E2E uses to find the request.
  */
 export { default as MatchPitch } from '../../components/MatchPitch.svelte';
-export { default as GoalCelebration } from '../../components/GoalCelebration.svelte';
+export { default as PitchTag } from '../../components/PitchTag.svelte';
 export {
   choreograph,
   createScene,
+  discShownIn,
   sceneAt,
   stillScene,
+  tagDiscOf,
   type Choreography,
   type PitchScene,
 } from './scene.ts';
-export { pitchKits, type PitchKits } from './kits.ts';
+export {
+  pitchKits,
+  pitchTagKits,
+  tagKitOf,
+  type PitchKits,
+  type PitchTagKit,
+  type PitchTagKits,
+} from './kits.ts';
+export { possessionOwners, OWNER } from './possession.ts';

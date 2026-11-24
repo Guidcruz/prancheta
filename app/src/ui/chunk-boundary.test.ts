@@ -22,7 +22,7 @@ describe('the boundary of the chunks of the match (lint)', () => {
       "import MatchScreen from './screens/MatchScreen.svelte';\nexport const x = MatchScreen;",
       "import { choreograph } from './match/pitch/scene';\nexport const x = choreograph;",
       "import MatchPitch from './components/MatchPitch.svelte';\nexport const x = MatchPitch;",
-      "import G from './components/GoalCelebration.svelte';\nexport const x = G;",
+      "import T from './components/PitchTag.svelte';\nexport const x = T;",
     ]) {
       expect(await ruleIds(code, 'src/ui/__fixture__.ts'), code).toContain('no-restricted-imports');
     }
@@ -32,9 +32,10 @@ describe('the boundary of the chunks of the match (lint)', () => {
     const code = [
       "import type { FinishOutcome } from './screens/MatchScreen.svelte';",
       "import type { PitchScene } from './match/pitch/scene';",
+      "import type { PitchTagView } from './components/PitchTag.svelte';",
       "export const load = () => import('./screens/MatchScreen.svelte');",
       "export const pitch = () => import('./match/pitch/pitch-chunk.ts');",
-      'export type T = [FinishOutcome, PitchScene];',
+      'export type T = [FinishOutcome, PitchScene, PitchTagView];',
     ].join('\n');
     expect(await ruleIds(code, 'src/ui/__fixture__.ts')).toEqual([]);
   });

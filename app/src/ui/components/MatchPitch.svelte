@@ -9,10 +9,17 @@
     holdBall,
     pitchGeometry,
     project,
+    TAG_TIP,
+    tagPlacement,
     type PitchGeometry,
   } from '../match/pitch/geometry';
   import { PITCH_SIZE, PITCH_STAND_END } from '../match/pitch/motion';
   import type { PitchScene } from '../match/pitch/scene';
+  import PitchTag, {
+    type PitchTagRefs,
+    type PitchTagSize,
+    type PitchTagView,
+  } from './PitchTag.svelte';
 
   /**
    * MatchPitch (componentes.md; docs/design/telas/partida-campo-v2.md; ADR-0023): the 2D pitch of
@@ -30,6 +37,11 @@
    *   disc of 5.5 m in the `fill` of its kit (7px CSS of radius at least) with a 2px ring in `ink`;
    *   the visitor carries the `mark` in the centre. The ball is a 2.5 m disc in `ink` (4px CSS of
    *   radius at least), held inside the trapezoid, over the discs. No text, number or card.
+   * - The tags (`tags`; partida-campo-v2.md, 9): the pitch draws the thread of each (1.5px in
+   *   `ink`, from its tip to the top of the disc or of the ball) and places the pill by
+   *   `tagPlacement`, writing its `transform` straight into the element (and `--tip-x`) only when
+   *   it moves more than 0.5px: no reactive work, no layout and no allocation per frame beyond the
+   *   string of the style. The pill itself is DOM over the canvas (`PitchTag`), never text in it.
    * - With `running`, one frame per `requestAnimationFrame`; without it, none: each change of
    *   `version` draws one frame (reduced motion, pause, the final whistle).
    * - With no 2D context, or an error while drawing, `onfail` and nothing more: the loop of frames
@@ -49,8 +61,22 @@
     /** The club and round that pick the brands of the boards (the same for everyone). */
     clubId?: string;
     round?: number;
+    /** The tags on the pitch (at most the one on screen and the one fading out). */
+    tags?: readonly PitchTagView[];
+    /** A tag that was `leaving` has faded out: the screen takes it away. */
+    onleft?: (key: string) => void;
   }
-  const { kits, frame, running, version, onfail, clubId = '', round = 0 }: Props = $props();
+  const {
+    kits,
+    frame,
+    running,
+    version,
+    onfail,
+    clubId = '',
+    round = 0,
+    tags = [],
+    onleft,
+  }: Props = $props();
 
   /** The drawing in metres: the pitch of play and the strip of grass around it. */
   const LENGTH = PITCH_SIZE.length + 2 * PITCH_SIZE.margin;
@@ -58,6 +84,13 @@
   const RATIO = LENGTH / WIDTH;
   const RING_PX = 2;
   const TAU = Math.PI * 2;
+  /** The thread of a tag, in px CSS; under this height of the box the tags are one line. */
+  const THREAD_PX = 1.5;
+  const COMPACT_BELOW = 200;
+  /** What a tag measures before the first measure comes (it is hidden until then). */
+  const GUESS = { width: 120, height: 48 };
+  /** The least a tag moves to be written to the DOM again, in px CSS (§9, item 6). */
+  const MOVE = 0.5;
 
   let box: HTMLDivElement | undefined = $state();
   let canvas: HTMLCanvasElement | undefined = $state();
@@ -71,9 +104,32 @@
   // The values of the frame, set when the size or the theme changes (nothing per frame).
   /** Reused every frame: a projected point, the held ball, the order of the discs. */
   const point = new Float64Array(3);
+  const slot = new Float64Array(3);
   const held = new Float64Array(2);
   const order = new Uint8Array(22);
   /** The sizes in pixels at this size of the canvas (the ball's limits included). */
+  /** What the pitch keeps of each tag: its size, its elements and where it wrote it last. */
+  interface TagRun {
+    w: number;
+    h: number;
+    measured: boolean;
+    /** Placed at least once: no longer hidden. */
+    shown: boolean;
+    place: HTMLElement | undefined;
+    pill: HTMLElement | undefined;
+    x: number;
+    y: number;
+    tip: number;
+    /** The anchor as last seen, in canvas px: a disc that left stays where it was. */
+    ax: number;
+    ay: number;
+    ar: number;
+    seen: boolean;
+  }
+  // A plain record, not a Map: the runs are not state (nothing reacts to them) and are read per frame.
+  const runs: Record<string, TagRun | undefined> = {};
+  const spot = new Float64Array(3);
+  let lastScene: PitchScene | undefined;
   let geometry: PitchGeometry = pitchGeometry(1, 1, 1);
   let dpr = 1;
   let ink = '';
@@ -125,11 +181,120 @@
     field ??= document.createElement('canvas');
     // Set every time: it clears the canvas and the state of its context (the background is then
     // drawn over a clean canvas).
+    // Setting `field.width` on each redraw also marks the start of the redraw's measure in
+    // tests/e2e/pitch.spec.ts (it hooks the setter): keep it, even if the width is unchanged.
     field.width = canvas.width;
     field.height = canvas.height;
     const g = field.getContext('2d');
     if (g === null) throw new Error('no 2D context for the field');
     drawBackdrop(g, geometry, colors, { round, clubId, stadiumId: clubId });
+  }
+
+  /**
+   * The ball's centre held inside the trapezoid (never in the stand or out of the canvas) into
+   * `held`; returns its radius in canvas px.
+   */
+  function holdTheBall(scene: PitchScene): number {
+    project(geometry, scene.ballX, scene.ballY, point);
+    const radius = ballRadius(geometry, point[2]!);
+    holdBall(geometry, point[0]!, point[1]!, radius, held);
+    return radius;
+  }
+
+  /**
+   * Finds the anchor of `tag` in `scene` and writes the pill's place into the DOM when it moved
+   * more than {@link MOVE}. Returns whether the thread is drawn: the anchor is in sight (a disc
+   * that left, or not yet in, has no thread; the pill stays where the disc was last seen).
+   */
+  function placeTag(tag: PitchTagView, run: TagRun, scene: PitchScene, ballR: number): boolean {
+    const g = geometry;
+    let live = false;
+    if (tag.disc < 0) {
+      run.ax = held[0]!;
+      run.ay = held[1]!;
+      run.ar = ballR;
+      live = true;
+    } else {
+      const shown = scene.alpha[tag.disc]! > 0;
+      if (shown || !run.seen) {
+        project(g, scene.x[tag.disc]!, scene.y[tag.disc]!, spot);
+        run.ax = spot[0]!;
+        run.ay = spot[1]!;
+        run.ar = discRadius(g, spot[2]!);
+      }
+      if (shown) run.seen = true;
+      live = shown;
+    }
+    if (run.place === undefined || run.pill === undefined || !run.measured) return live;
+    tagPlacement(g, run.ax, run.ay, run.ar, run.w, run.h, slot);
+    if (!(Math.abs(slot[0]! - run.x) <= MOVE) || !(Math.abs(slot[1]! - run.y) <= MOVE)) {
+      run.x = slot[0]!;
+      run.y = slot[1]!;
+      run.place.style.transform = `translate3d(${run.x}px, ${run.y}px, 0)`;
+    }
+    if (!(Math.abs(slot[2]! - run.tip) <= MOVE)) {
+      run.tip = slot[2]!;
+      run.pill.style.setProperty('--tip-x', `${run.tip}px`);
+    }
+    if (!run.shown) {
+      run.shown = true;
+      run.place.style.visibility = '';
+    }
+    return live;
+  }
+
+  /** The tags again over the last scene, outside a frame (a tag just arrived or was measured). */
+  function placeAll(): void {
+    if (lastScene === undefined || failed) return;
+    const radius = holdTheBall(lastScene);
+    for (let i = 0; i < tags.length; i++) {
+      const run = runs[tags[i]!.key];
+      if (run !== undefined) placeTag(tags[i]!, run, lastScene, radius);
+    }
+  }
+
+  const runOf = (key: string): TagRun => {
+    let run = runs[key];
+    if (run === undefined) {
+      run = {
+        w: GUESS.width,
+        h: GUESS.height,
+        measured: false,
+        shown: false,
+        place: undefined,
+        pill: undefined,
+        x: Number.NaN,
+        y: Number.NaN,
+        tip: Number.NaN,
+        ax: 0,
+        ay: 0,
+        ar: 0,
+        seen: false,
+      };
+      runs[key] = run;
+    }
+    return run;
+  };
+
+  function measured(key: string, size: PitchTagSize): void {
+    const run = runOf(key);
+    run.w = size.width;
+    run.h = size.height;
+    run.measured = true;
+    placeAll();
+  }
+
+  function registered(key: string, refs: PitchTagRefs | undefined): void {
+    if (refs === undefined) {
+      delete runs[key];
+      return;
+    }
+    const run = runOf(key);
+    run.place = refs.place;
+    run.pill = refs.pill;
+    // Hidden until measured and placed: it never shows at the corner for a frame.
+    if (!run.measured) refs.place.style.visibility = 'hidden';
+    placeAll();
   }
 
   function kitOf(disc: number): PitchKit {
@@ -144,6 +309,7 @@
     if (ctx === null || field === undefined || failed) return false;
     try {
       const scene = frame(now);
+      lastScene = scene;
       const g = geometry;
       const ring = RING_PX * dpr;
       ctx.drawImage(field, 0, 0);
@@ -182,11 +348,25 @@
           ctx.fill();
         }
       }
+      const radius = holdTheBall(scene);
+      // The threads of the tags, over the discs and under the ball.
+      ctx.lineWidth = THREAD_PX * dpr;
+      for (let i = 0; i < tags.length; i++) {
+        const tag = tags[i]!;
+        const run = runs[tag.key];
+        if (run === undefined) continue;
+        const live = placeTag(tag, run, scene, radius);
+        if (!live || tag.leaving) continue;
+        const tipY = (run.y + run.h + TAG_TIP) * dpr;
+        const top = run.ay - run.ar;
+        if (tipY >= top) continue;
+        ctx.globalAlpha = tag.disc < 0 ? 1 : scene.alpha[tag.disc]!;
+        ctx.beginPath();
+        ctx.moveTo((run.x + run.tip) * dpr, tipY);
+        ctx.lineTo(run.ax, top);
+        ctx.stroke();
+      }
       ctx.globalAlpha = 1;
-      project(g, scene.ballX, scene.ballY, point);
-      const radius = ballRadius(g, point[2]!);
-      // The centre held inside the trapezoid: never in the stand or out of the canvas.
-      holdBall(g, point[0]!, point[1]!, radius, held);
       ctx.beginPath();
       ctx.arc(held[0]!, held[1]!, radius, 0, TAU);
       ctx.fillStyle = ink;
@@ -314,12 +494,31 @@
 </script>
 
 <div class="pitch" bind:this={box} style:--pitch-stand-end={PITCH_STAND_END}>
-  <canvas
-    bind:this={canvas}
-    aria-hidden="true"
-    style:width="{cssWidth}px"
-    style:height="{cssHeight}px"
-  ></canvas>
+  <div class="stage" style:width="{cssWidth}px" style:height="{cssHeight}px">
+    <canvas
+      bind:this={canvas}
+      aria-hidden="true"
+      style:width="{cssWidth}px"
+      style:height="{cssHeight}px"
+    ></canvas>
+    {#each tags as tag (tag.key)}
+      <PitchTag
+        tone={tag.tone}
+        kind={tag.kind}
+        name={tag.name}
+        assist={tag.assist}
+        shirt={tag.shirt}
+        kitSvg={tag.kitSvg}
+        number={tag.number}
+        compact={cssHeight < COMPACT_BELOW}
+        leaving={tag.leaving}
+        still={tag.still}
+        onmeasure={(size) => measured(tag.key, size)}
+        onref={(refs) => registered(tag.key, refs)}
+        onleft={() => onleft?.(tag.key)}
+      />
+    {/each}
+  </div>
 </div>
 
 <style>
@@ -339,11 +538,14 @@
       var(--surface-0)
     );
   }
-  canvas {
+  /* The canvas and the tags over it share this box, centred in the container. */
+  .stage {
     position: absolute;
     top: 50%;
     left: 50%;
-    display: block;
     translate: -50% -50%;
+  }
+  canvas {
+    display: block;
   }
 </style>

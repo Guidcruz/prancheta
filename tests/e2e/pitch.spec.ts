@@ -33,7 +33,8 @@ import {
 
 const pitchBox = (page: Page) => matchScreen(page).locator('.pitch-box');
 const canvas = (page: Page) => matchScreen(page).locator('canvas');
-const celebration = (page: Page) => matchScreen(page).locator('.celebration');
+/** A etiqueta de gol (PitchTag `goal`, no lugar da comemoração em cartão): o `.place` é o `aria-hidden`. */
+const celebration = (page: Page) => matchScreen(page).locator('.place:has(.tag.goal)');
 
 /** Conta as chamadas a `requestAnimationFrame` da página (em `window.rafCalls`). */
 async function countFrames(page: Page): Promise<void> {
@@ -243,7 +244,7 @@ test.describe('Campo 2D (T-085)', () => {
     });
   });
 
-  test('comemoração: no desfecho do gol, o escudo de quem marcou e o artilheiro, escondida do leitor, até o passo seguinte; a 360×640, sem o nome (item 8)', async ({
+  test('etiqueta de gol: no desfecho do gol, a camisa e o artilheiro, escondida do leitor, até o passo seguinte; a 360×640, sem o nome (item 8)', async ({
     page,
   }) => {
     const { save, expected } = await careerWith(page, 'full', withGoal);
@@ -252,7 +253,6 @@ test.describe('Campo 2D (T-085)', () => {
     const id = `e${expected.result.events.indexOf(goal)}`;
     const outcome = steps.findIndex((s) => s.line?.id === id && s.line.stage === 'final');
     const name = (save.game.players[goal.scorer] as { name: { display: string } }).name.display;
-    const scorerId = goal.side === 'home' ? expected.homeId : expected.awayId;
     await freezeClock(page);
     await openMatch(page);
     await expect(canvas(page)).toHaveCount(1);
@@ -265,13 +265,9 @@ test.describe('Campo 2D (T-085)', () => {
     await expect(celebration(page)).toContainText(ui('pt-BR', 'match.celebration.title'));
     await expect(celebration(page)).toContainText(name);
     expect(await shownScore(page)).toEqual([...goal.score]);
-    // The crest of the club that scored: the shield carries the two colours of its club.
-    const crest = (await celebration(page).locator('.crest').innerHTML()).toLowerCase();
-    const clubColors = (club: string) =>
-      (save.game.clubs[club]!.def as unknown as { colors: [string, string] }).colors.map((c) =>
-        c.toLowerCase(),
-      );
-    for (const color of clubColors(scorerId)) expect(crest).toContain(color);
+    // The shirt of the scorer (no crest: the line of the commentary has it).
+    await expect(celebration(page).locator('svg[viewBox="0 0 64 42"]')).toHaveCount(1);
+    await expect(celebration(page).locator('.crest')).toHaveCount(0);
     expect(await celebration(page).evaluate((el) => getComputedStyle(el).pointerEvents)).toBe(
       'none',
     );
@@ -281,7 +277,7 @@ test.describe('Campo 2D (T-085)', () => {
     await page.clock.runFor(600);
     await expect(celebration(page)).toHaveCount(0);
 
-    // With the pitch under 200px tall (360×640): the crest and the title only.
+    // With the pitch under 200px tall (360×640): the shirt and the title only.
     await page.setViewportSize({ width: 360, height: 640 });
     await control(page, 'match.skip').click();
     await runUntil(page, async () => (await roundHeading(page).count()) === 1);

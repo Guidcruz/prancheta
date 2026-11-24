@@ -25,9 +25,41 @@
   }
 
   export type PitchTagTone = 'play' | 'goal' | 'team';
+
+  /** The two elements the pitch writes to by itself, per frame, with no reactivity (§9, item 6). */
+  export interface PitchTagRefs {
+    /** Takes the `transform` of the position. */
+    place: HTMLElement;
+    /** Takes the custom property `--tip-x`. */
+    pill: HTMLElement;
+  }
+
+  /**
+   * A tag as the screen asks the pitch to show it: what it says (already translated), the shirt,
+   * and what it hangs from (a disc of the scene, or the ball with `-1`). A new `key` is a new tag
+   * (it enters again); the same key with other texts only changes them in place.
+   */
+  export interface PitchTagView {
+    key: string;
+    tone: PitchTagTone;
+    kind?: string;
+    name?: string;
+    assist?: string;
+    shirt?: number;
+    kitSvg: string;
+    number?: PitchTagNumber;
+    /** 0 to 21, the disc of the scene it hangs from; -1: the ball. */
+    disc: number;
+    /** Fading out; the pitch tells `onleft` when it is done. */
+    leaving: boolean;
+    /** No transition (the screen's reduced motion, read once per step). */
+    still: boolean;
+  }
 </script>
 
 <script lang="ts">
+  import { untrack } from 'svelte';
+
   /**
    * PitchTag (partida-campo-v2.md, §9 and §11; proposals 41, 47 and 48, approved by the CEO): the
    * pill over the pitch that comes out of a player (or out of the ball) by a tip. DOM over the
@@ -88,6 +120,14 @@
     still?: boolean;
     /** The size of the pill without the tip, on mount and whenever it changes. */
     onmeasure?: (size: PitchTagSize) => void;
+    /**
+     * The elements the pitch moves each frame (the `transform` of the position and `--tip-x`)
+     * without going through the props, so no reactive work and no layout per frame; `undefined`
+     * when the tag is gone.
+     */
+    onref?: (refs: PitchTagRefs | undefined) => void;
+    /** The fade of `leaving` ended: the screen can take the tag away. */
+    onleft?: () => void;
   }
 
   const {
@@ -106,8 +146,11 @@
     leaving = false,
     still = false,
     onmeasure,
+    onref,
+    onleft,
   }: Props = $props();
 
+  let place: HTMLDivElement | undefined = $state();
   let pill: HTMLDivElement | undefined = $state();
 
   const team = $derived(tone === 'team');
@@ -116,6 +159,14 @@
   const showKind = $derived(!team && kind !== undefined && (goal || !compact));
   const showName = $derived(!team && name !== undefined && !(goal && compact));
   const showAssist = $derived(goal && !compact && assist !== undefined);
+
+  // The elements go to the pitch once, when they exist (the callback is never a dependency).
+  $effect(() => {
+    const refs = place !== undefined && pill !== undefined ? { place, pill } : undefined;
+    if (refs === undefined) return;
+    untrack(() => onref?.(refs));
+    return () => untrack(() => onref?.(undefined));
+  });
 
   // Only `pill` is a dependency: `onmeasure` is read when the size comes, so a new callback from
   // the screen never observes again.
@@ -135,7 +186,12 @@
   });
 </script>
 
-<div class="place" style:transform="translate3d({x}px, {y}px, 0)" aria-hidden="true">
+<div
+  bind:this={place}
+  class="place"
+  style:transform="translate3d({x}px, {y}px, 0)"
+  aria-hidden="true"
+>
   <div
     bind:this={pill}
     class="tag {tone}"
@@ -144,6 +200,9 @@
     class:leaving
     class:still
     style:--tip-x={tipX === undefined ? undefined : `${tipX}px`}
+    ontransitionend={(event) => {
+      if (leaving && event.propertyName === 'opacity') onleft?.();
+    }}
   >
     <span class="shirt">
       <!-- eslint-disable-next-line svelte/no-at-html-tags -- SVG from our kit generator over the club data, never user input -->

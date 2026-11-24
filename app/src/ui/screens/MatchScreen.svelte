@@ -31,7 +31,9 @@
   import { matchSteps, viewAt, type MatchStep, type WatchMode } from '../match/steps';
   import { timingOf } from '../match/timing';
   import { loadPitch as loadPitchChunk, type PitchChunk } from '../match/pitch-loader';
-  import type { PitchKits } from '../match/pitch/kits';
+  import type { PitchKits, PitchTagKits } from '../match/pitch/kits';
+  import type { PitchTagView } from '../components/PitchTag.svelte';
+  import { TAG_KIND_KEYS, tagPlanOf, type TagPlan } from '../match/tags';
   import type { Choreography, PitchScene } from '../match/pitch/scene';
   import {
     announcement,
@@ -56,6 +58,13 @@
    * match, `openLeave` pauses and asks "Sair da partida?". Nothing moves in the text: lines appear
    * in place, the outcome of a dramatic pause replaces its start, the score changes without
    * animation.
+   *
+   * The tags over the pitch (partida-campo-v2.md, 9; proposals 41, 47 and 48): the tag of a play,
+   * the goal tag in place of the old celebration, and the shirt of the team over the ball in the
+   * minutes with nothing shown. Which one each step has is `tagPlanOf` (match/tags.ts); the disc it
+   * hangs from is the one the choreography made for the `PlayerId` of the event, and the name and
+   * the number are that player's, as the commentary line of the same step says. The goal is still
+   * announced in the live region of the board.
    *
    * In "Animada completa" the 2D pitch (T-085; partida.md, "Campo 2D") sits between the board and
    * the commentary, or on the left of two columns lying down and on the desktop. It comes in a
@@ -258,8 +267,6 @@
   });
   /** Under 120px of height there is no pitch (the layout of T-032). */
   const PITCH_MIN_HEIGHT = 120;
-  /** Under 200px, the celebration shows the crest and the title only. */
-  const CELEBRATION_NAME_MIN_HEIGHT = 200;
   const pitchShown = $derived(
     mode === 'full' &&
       !pitchFailed &&
@@ -283,29 +290,13 @@
       !run.stopped,
   );
 
-  /** The goal whose celebration is on: during the step after it is revealed. */
-  const celebration = $derived.by(() => {
-    if (!pitchShown || pitch === undefined || run.index < 0) return undefined;
-    const step = steps[run.index];
-    const goal = step?.timing === 'afterGoal' ? step.line?.source : undefined;
-    if (goal?.type !== 'goal') return undefined;
-    return {
-      club: game.clubs[goal.side === 'home' ? homeId : awayId]!.def,
-      scorer:
-        (pitchSize?.height ?? 0) >= CELEBRATION_NAME_MIN_HEIGHT
-          ? nameOf(ctx, goal.scorer)
-          : undefined,
-      key: run.index,
-    };
-  });
-
   /**
    * Whether motion is reduced now, read once per step (never per frame) from the computed style of
    * the screen: `--motion-reduced` is 1 inside `@media (prefers-reduced-motion: reduce)`. Not the
    * MediaQueryList: in WebKit both its `change` event and its `matches` may stay stale until the
    * next rendering update, which may not come before the step (seen in the e2e (webkit) job with
    * the emulated media and a stopped clock), while computing the style evaluates the media at once.
-   * The GoalCelebration follows the same media in its own CSS.
+   * The PitchTag follows the same media in its own CSS.
    */
   function motionReduced(): boolean {
     if (!screenElement) return reduced;
@@ -319,8 +310,133 @@
     revealSpeed = player.state.speed;
     reduced = motionReduced();
     if (step.line !== undefined) lineIndex = index;
-    // With reduced motion, one frame per step with a line, none in the minutes between them.
-    if (!reduced || step.line !== undefined) version++;
+    const changed = updateTags(step, index);
+    // With reduced motion, one frame per step with a line, none in the minutes between them (but
+    // one when a tag went away: the canvas holds its thread).
+    if (!reduced || step.line !== undefined || changed) version++;
+  }
+
+  // ------------------------------------------------------------- the tags over the pitch (§9)
+
+  /** The tags on the pitch now (the one on screen, the shirt over the ball, one fading out). */
+  let tags: readonly PitchTagView[] = $state.raw([]);
+  let tagKits: PitchTagKits | undefined;
+  /** The owner of the ball in each step (possession.ts); 0: none. */
+  let owners: Uint8Array | undefined;
+  /**
+   * The tag of a play or a goal on screen: how long it has been there, as the sum of the steps
+   * shown since its entry (the clock of the match, not the wall clock, so a pause counts for
+   * nothing), and the disc it hangs from.
+   */
+  let held: { plan: TagPlan; view: PitchTagView; age: number; disc: number } | undefined;
+  let leaving: PitchTagView | undefined;
+  let leavingTimer: ReturnType<typeof setTimeout> | undefined;
+  /** The step before the one revealed now: how long it lasted at the speed it was shown at. */
+  let lastDuration = 0;
+  /** The least a tag of a play stays: from its entry to the first step that may take it away. */
+  const TAG_MIN_MS = { normal: 1600, fast: 800 } as const;
+  /** How long a leaving tag is kept if the end of its fade never comes (no transition runs). */
+  const TAG_LEAVE_GRACE_MS = 240;
+
+  function viewOf(plan: TagPlan, disc: number): PitchTagView {
+    const id = plan.player;
+    const kit = pitch!.tagKitOf(tagKits!, disc);
+    const shirt = game.players[id]?.shirt;
+    const kind = t(TAG_KIND_KEYS[plan.kind], lang);
+    return {
+      key: plan.key,
+      tone: plan.tone,
+      kind,
+      name: nameOf(ctx, id),
+      ...(shirt === undefined ? {} : { shirt }),
+      kitSvg: kit.svg,
+      number: kit.number,
+      disc,
+      leaving: false,
+      still: reduced,
+    };
+  }
+
+  function dropLeaving(): boolean {
+    clearTimeout(leavingTimer);
+    if (leaving === undefined) return false;
+    leaving = undefined;
+    return true;
+  }
+
+  function onTagLeft(key: string): void {
+    if (leaving?.key !== key) return;
+    dropLeaving();
+    publishTags();
+  }
+
+  function publishTags(team?: PitchTagView): void {
+    const next: PitchTagView[] = [];
+    if (team !== undefined) next.push(team);
+    if (leaving !== undefined) next.push(leaving);
+    if (held !== undefined) next.push(held.view);
+    tags = next;
+  }
+
+  /**
+   * The tags of the step just revealed (docs/design/telas/partida-campo-v2.md, 9, "Tempos da
+   * etiqueta do lance"): a new play replaces the one on screen at once; the same play (its start
+   * and its outcome) only changes the kind; the tag leaves, fading in 120 ms, at the first step
+   * without one that starts after the least time or when its disc leaves (the sent-off's stays at
+   * its last point until the least time); the goal tag leaves at once at the next step. Returns
+   * whether the tags on screen changed.
+   */
+  function updateTags(step: MatchStep, index: number): boolean {
+    if (pitch === undefined || choreography === undefined || tagKits === undefined) return false;
+    const speed = player.state.speed;
+    const before = tags;
+    const shownBefore = leaving !== undefined;
+    dropLeaving();
+    if (held !== undefined) held.age += lastDuration;
+    lastDuration = timingOf(step.timing, speed);
+
+    const plan = tagPlanOf(step);
+    const disc = plan === undefined ? -1 : pitch.tagDiscOf(choreography, index);
+    if (plan !== undefined && disc >= 0) {
+      const view = viewOf(plan, disc);
+      if (held?.plan.key === plan.key) {
+        held.view = view;
+        held.plan = plan;
+        held.disc = disc;
+      } else {
+        held = { plan, view, age: 0, disc };
+      }
+    } else if (held !== undefined) {
+      const sentOff = held.plan.kind === 'red';
+      const discGone = !sentOff && !pitch.discShownIn(choreography, index, held.disc);
+      if (held.plan.tone === 'goal') {
+        held = undefined;
+      } else if (held.age >= TAG_MIN_MS[speed] || discGone) {
+        const out = { ...held.view, leaving: true };
+        held = undefined;
+        // Reduced motion: no fade, away at once.
+        if (!reduced) {
+          leaving = out;
+          leavingTimer = setTimeout(() => {
+            if (leaving?.key === out.key) onTagLeft(out.key);
+          }, TAG_LEAVE_GRACE_MS);
+        }
+      }
+    }
+
+    // The shirt of the team over the ball: only in a minute with nothing shown, with no tag of a
+    // play on screen, never with reduced motion, no number and no name.
+    let team: PitchTagView | undefined;
+    const owner = owners?.[index] ?? 0;
+    if (!reduced && held === undefined && step.timing === 'minuteFull' && owner !== 0) {
+      const kit = owner === 1 ? tagKits.home : tagKits.away;
+      team = { key: 'team', tone: 'team', kitSvg: kit.svg, disc: -1, leaving: false, still: false };
+    }
+    publishTags(team);
+    // Changed: something other than a step in the middle of the same tag.
+    return (
+      shownBefore || before.length !== tags.length || before.some((v, i) => v.key !== tags[i]!.key)
+    );
   }
 
   /** The scene of the instant `now`, always the same object (nothing allocated per frame). */
@@ -360,6 +476,15 @@
           // An event of a player not on the pitch (a damaged save): no disc, a programming error.
           if (choreography.unknown.length > 0) onpitchissue?.('pitch-unknown-player');
           scene = chunk.createScene();
+          tagKits = chunk.pitchTagKits(
+            game.clubs[live.match.home.clubId]!.def,
+            game.clubs[live.match.away.clubId]!.def,
+          );
+          owners = chunk.possessionOwners(
+            steps,
+            live.result.stats.home.possession,
+            live.match.seed,
+          );
         } catch (error) {
           pitchFail('pitch-draw', error);
           return;
@@ -448,6 +573,7 @@
     window.addEventListener('popstate', onPop);
     return () => {
       destroyed = true;
+      clearTimeout(leavingTimer);
       player.stop();
       columns.removeEventListener('change', onColumns);
       document.removeEventListener('visibilitychange', onVisibility);
@@ -518,7 +644,6 @@
         >
           {#if pitch !== undefined && pitchKits !== undefined}
             {@const Pitch = pitch.MatchPitch}
-            {@const Celebration = pitch.GoalCelebration}
             <svelte:boundary onerror={(error) => pitchFail('pitch-draw', error)}>
               <Pitch
                 kits={pitchKits}
@@ -527,19 +652,11 @@
                 {version}
                 clubId={homeId}
                 {round}
+                {tags}
+                onleft={onTagLeft}
                 onfail={(reason, error) =>
                   pitchFail(reason === 'context' ? 'pitch-context' : 'pitch-draw', error)}
               />
-              {#if celebration !== undefined}
-                {#key celebration.key}
-                  <Celebration
-                    club={celebration.club}
-                    title={t('match.celebration.title', lang)}
-                    scorer={celebration.scorer}
-                    still={reduced}
-                  />
-                {/key}
-              {/if}
             </svelte:boundary>
           {/if}
         </div>

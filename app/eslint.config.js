@@ -180,7 +180,7 @@ const chunkPatterns = {
     group: [
       '**/match/pitch/**',
       '**/components/MatchPitch.svelte',
-      '**/components/GoalCelebration.svelte',
+      '**/components/PitchTag.svelte',
     ],
     allowTypeImports: true,
     message:
@@ -276,7 +276,7 @@ export default [
     files: [
       'src/ui/match/pitch/**/*.{ts,svelte}',
       'src/ui/components/MatchPitch.svelte',
-      'src/ui/components/GoalCelebration.svelte',
+      'src/ui/components/PitchTag.svelte',
     ],
     rules: {
       'no-restricted-imports': [
