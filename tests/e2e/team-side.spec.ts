@@ -254,17 +254,24 @@ test.describe('De qual time é cada lance', () => {
         [1280, 800],
       ] as const) {
         await page.setViewportSize({ width, height });
-        // The canvas of the pitch redraws on the (fake) clock: give it a few frames to settle.
-        let over = await sideScroll(page);
-        let gap = await pitchGap(page);
-        for (let tries = 0; (over > 0 || gap !== 0) && tries < 20; tries++) {
-          await page.clock.runFor(100);
-          over = await sideScroll(page);
-          gap = await pitchGap(page);
-        }
-        expect(over, `${lang} ${width}`).toBeLessThanOrEqual(0);
-        // In the single column (portrait: 360 and 390) the pitch is as wide as the match column: the measure arrived.
-        if (width < height) expect(gap, `${lang} ${width}: pitch-box vs main.match`).toBe(0);
+        // The measure of the pitch arrives in a real task (MessageChannel and ResizeObserver), outside the
+        // fake clock: poll in real time (with a ceiling), moving the fake clock a little on each turn.
+        // In the single column (portrait: 360 and 390) the pitch is as wide as the match column.
+        await expect
+          .poll(
+            async () => {
+              await page.clock.runFor(100);
+              return {
+                over: Math.max(0, await sideScroll(page)),
+                gap: width < height ? await pitchGap(page) : 0,
+              };
+            },
+            {
+              message: `${lang} ${width}: no side scroll and pitch-box vs main.match`,
+              timeout: 15_000,
+            },
+          )
+          .toEqual({ over: 0, gap: 0 });
       }
       await control(page, 'match.skip', lang).click();
       await runUntil(page, async () => (await roundHeading(page).count()) === 1);

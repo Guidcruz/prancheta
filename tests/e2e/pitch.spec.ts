@@ -541,7 +541,7 @@ test.describe('Campo 2D (T-085)', () => {
       page.evaluate(
         () => document.documentElement.scrollWidth - document.documentElement.clientWidth,
       );
-    expect(await sideScroll()).toBe(0);
+    await expect.poll(sideScroll).toBe(0);
 
     await page.setViewportSize({ width: 1280, height: 800 });
     await expect(matchScreen(page)).toHaveClass(/two/);
@@ -562,7 +562,7 @@ test.describe('Campo 2D (T-085)', () => {
     expect(at.bar.x).toBeGreaterThanOrEqual(at.feed.x - 1);
     expect(at.bar.y).toBeGreaterThanOrEqual(at.feed.y + at.feed.height - 1);
     expect(at.bar.y + at.bar.height).toBeLessThanOrEqual(800 + 1);
-    expect(await sideScroll()).toBe(0);
+    await expect.poll(sideScroll).toBe(0);
   });
 
   test('"Animada completa" é a primeira carta do Novo jogo e do seletor, marcada da primeira vez; com outra lembrada, a lembrada (item 13)', async ({
