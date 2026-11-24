@@ -419,11 +419,15 @@ function collarSvg(collar: KitCollar, c: string): string {
  * Renders the kit as SVG (viewBox 64x72, `size` px wide, 16..512, else 64). With `size <= 32` it
  * draws the simple version (no collar, cuffs or sock stripe; wider stripes). Clip ids derive from
  * the club id, the slot and `instance`, so several kits can share a page.
+ *
+ * `part: 'shirt'` (the pitch tags, partida-campo-v2.md, 9) draws only the shirt, in a viewBox of
+ * 64x42 (`size` px wide, the height 42/64 of it). The option is additive: without it nothing
+ * changes. The goalkeeper's kit takes it too.
  */
 export function kitSvg(
   kit: Kit,
   size = 64,
-  options: { label?: string; instance?: string } = {},
+  options: { label?: string; instance?: string; part?: 'shirt' } = {},
 ): string {
   const px = Number.isFinite(size) && size >= 16 && size <= 512 ? size : 64;
   const small = px <= SMALL_SIZE;
@@ -438,12 +442,15 @@ export function kitSvg(
   const trim = onColor(base, [secondary]);
   const slug = (t: string) => t.toLowerCase().replace(/[^a-z0-9-]/g, '');
   const slot = slug(String(kit.slot));
-  const k = `kt-${slug(String(kit.clubId))}-${slot}${small ? '-s' : ''}${options.instance ? `-${slug(options.instance)}` : ''}`;
+  const shirtOnly = options.part === 'shirt';
+  const k = `kt-${slug(String(kit.clubId))}-${slot}${small ? '-s' : ''}${shirtOnly ? '-sh' : ''}${options.instance ? `-${slug(options.instance)}` : ''}`;
   const a11y =
     options.label !== undefined
       ? `role="img" aria-label="${escapeText(options.label)}"`
       : 'aria-hidden="true" focusable="false"';
-  const head = `<svg viewBox="0 0 64 72" width="${px}" height="${Math.round(px * 1.125)}" xmlns="http://www.w3.org/2000/svg" ${a11y}>`;
+  const head = shirtOnly
+    ? `<svg viewBox="0 0 64 42" width="${px}" height="${Math.round((px * 42) / 64)}" xmlns="http://www.w3.org/2000/svg" ${a11y}>`
+    : `<svg viewBox="0 0 64 72" width="${px}" height="${Math.round(px * 1.125)}" xmlns="http://www.w3.org/2000/svg" ${a11y}>`;
   const sw = small ? 2.6 : 2;
   const legs =
     `<path d="${SHORTS}" fill="${shorts}" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/>` +
@@ -458,5 +465,5 @@ export function kitSvg(
     ? ''
     : collarSvg(collar, trim) +
       `<path d="M2 23l8 4M54 27l8-4M15 38.6H49" fill="none" stroke="${trim}" stroke-width="1.6"/>`;
-  return `${head}<defs><clipPath id="${k}"><path d="${SHIRT}"/></clipPath></defs>${legs}<g clip-path="url(#${k})">${rect(-2, -2, 68, 46, base)}${patternSvg(pattern, secondary, small)}</g>${detail}<path d="${SHIRT}" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/></svg>`;
+  return `${head}<defs><clipPath id="${k}"><path d="${SHIRT}"/></clipPath></defs>${shirtOnly ? '' : legs}<g clip-path="url(#${k})">${rect(-2, -2, 68, 46, base)}${patternSvg(pattern, secondary, small)}</g>${detail}<path d="${SHIRT}" fill="none" stroke="${INK}" stroke-width="${sw}" stroke-linejoin="round"/></svg>`;
 }
