@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 /*
  * The chunks of the assisted match (docs/02-architecture.md, 4.7; T-085), on the published build:
  * the match screen and the 2D pitch are chunks of their own, out of the main bundle, both in the
- * precache of the service worker (they work offline), and the pitch adds at most 20,000 bytes
+ * precache of the service worker (they work offline), and the pitch adds at most 24,000 bytes
  * gzip to what "Só lances principais" downloads. Reads the manifest of app/dist/.vite/ and the
  * files of dist/jogo/. Without the build it is skipped, unless REQUIRE_DIST=1 (`npm run test:all`).
  */
@@ -21,8 +21,12 @@ const run = built || process.env['REQUIRE_DIST'] === '1' ? describe : describe.s
 const SCREEN = 'src/ui/screens/MatchScreen.svelte';
 const PITCH = 'src/ui/match/pitch/pitch-chunk.ts';
 const ENTRY = 'index.html';
-/** The most the pitch may add, in bytes of gzip (partida.md, "Desempenho no celular"). */
-const PITCH_MAX_GZIP = 20_000;
+/**
+ * The most the pitch may add, in bytes of gzip (partida.md, "Desempenho no celular"). It was 20,000
+ * until the ball planner, the trails and the wedge of the pitch v2 (PR C); the CEO decided on
+ * 2026-11-24 that it goes to 24,000 if they did not fit (the ADR errata is the architect's).
+ */
+const PITCH_MAX_GZIP = 24_000;
 
 interface Chunk {
   file: string;
