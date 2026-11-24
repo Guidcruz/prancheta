@@ -4,9 +4,8 @@
   import { pitchColors } from '../match/pitch/tokens';
   import { drawBackdrop, type BackdropColors } from '../match/pitch/backdrop';
   import {
-    ballRadius,
+    ballPlace,
     discRadius,
-    holdBall,
     pitchGeometry,
     project,
     PITCH_TAG_TIP,
@@ -16,6 +15,14 @@
     tipShift,
     type PitchGeometry,
   } from '../match/pitch/geometry';
+  import {
+    drawShadow,
+    drawTrails,
+    drawWedge,
+    pitchDashes,
+    wedgeGradient,
+    type PitchDashes,
+  } from '../match/pitch/ballview';
   import { PITCH_SIZE, PITCH_STAND_END } from '../match/pitch/motion';
   import type { PitchScene } from '../match/pitch/scene';
   import PitchTag, {
@@ -40,7 +47,11 @@
    * - Only the discs of a play of the engine are drawn ("only the ball"), far ones first, each a
    *   disc of 5.5 m in the `fill` of its kit (7px CSS of radius at least) with a 2px ring in `ink`;
    *   the visitor carries the `mark` in the centre. The ball is a 2.5 m disc in `ink` (4px CSS of
-   *   radius at least), held inside the trapezoid, over the discs. No text, number or card.
+   *   radius at least), held inside the trapezoid, over the discs; in the air it grows and lifts
+   *   by its height, with its shadow on the ground in `pitch-shadow`. No text, number or card.
+   * - Under the discs, the wedge of the attack (`pitch-wedge`) and the trails of the ball by kind
+   *   (partida-campo-v2.md, 7 and 8; `ballview.ts`); the gradient of the wedge is made once per
+   *   size and theme, and a frame only moves its transform.
    * - The tags (`tags`; partida-campo-v2.md, 9): the pitch draws the thread of each (1.5px in
    *   `ink`, from its tip to the top of the disc or of the ball) and places the pill by
    *   `tagPlacement`, writing its `transform` straight into the element (and `--tip-x`) only when
@@ -109,6 +120,9 @@
   /** Reused every frame: a projected point, the held ball, the order of the discs. */
   const point = new Float64Array(3);
   const slot = new Float64Array(3);
+  /** The ball of the frame (`ballPlace`): ground point, lifted centre, radii, lift. */
+  const place = new Float64Array(7);
+  /** The centre of the ball, lifted and held, for the tags and the ball itself. */
   const held = new Float64Array(2);
   const order = new Uint8Array(22);
   /** The sizes in pixels at this size of the canvas (the ball's limits included). */
@@ -141,6 +155,10 @@
   let geometry: PitchGeometry = pitchGeometry(1, 1, 1);
   let dpr = 1;
   let ink = '';
+  let shadow = '';
+  let wedge = '';
+  let wedgeFill: CanvasGradient | undefined;
+  let dashes: PitchDashes = pitchDashes(1);
   let raf = 0;
 
   /** The largest 1.5:1 rectangle that fits the container. */
@@ -164,7 +182,7 @@
    * lacks): a new size does not read them again, so it forces no style or layout in the redraw.
    */
   let colors: BackdropColors | undefined;
-  function readColors(): { colors: BackdropColors; ink: string } {
+  function readColors(): { colors: BackdropColors; ink: string; shadow: string; wedge: string } {
     let style: CSSStyleDeclaration | undefined;
     return pitchColors(document.documentElement.dataset.theme ?? 'noite', (name) =>
       (style ??= getComputedStyle(box!)).getPropertyValue(name).trim(),
@@ -185,7 +203,12 @@
       const read = readColors();
       colors = read.colors;
       ink = read.ink;
+      shadow = read.shadow;
+      wedge = read.wedge;
+      wedgeFill = undefined;
     }
+    dashes = pitchDashes(dpr);
+    if (ctx !== null) wedgeFill = wedgeGradient(ctx, wedge);
     field ??= document.createElement('canvas');
     // Set every time: it clears the canvas and the state of its context (the background is then
     // drawn over a clean canvas).
@@ -199,14 +222,15 @@
   }
 
   /**
-   * The ball's centre held inside the trapezoid (never in the stand or out of the canvas) into
-   * `held`; returns its radius in canvas px.
+   * The ball's centre, lifted by its height and held inside the trapezoid (never in the stand or
+   * out of the canvas), into `held`; returns its radius in the air, in canvas px. `place` keeps the
+   * rest for the shadow.
    */
   function holdTheBall(scene: PitchScene): number {
-    project(geometry, scene.ballX, scene.ballY, point);
-    const radius = ballRadius(geometry, point[2]!);
-    holdBall(geometry, point[0]!, point[1]!, radius, held);
-    return radius;
+    ballPlace(geometry, scene.ballX, scene.ballY, scene.ballZ, place);
+    held[0] = place[2]!;
+    held[1] = place[3]!;
+    return place[4]!;
   }
 
   /**
@@ -333,6 +357,8 @@
       const g = geometry;
       const ring = RING_PX * dpr;
       ctx.drawImage(field, 0, 0);
+      if (wedgeFill !== undefined) drawWedge(ctx, g, scene, wedgeFill);
+      drawTrails(ctx, g, scene, ink, dashes);
       ctx.lineWidth = ring;
       ctx.strokeStyle = ink;
       // The discs of the plays only, the far ones first (insertion, nothing allocated).
@@ -394,6 +420,7 @@
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
+      drawShadow(ctx, g, scene.ballZ, place, shadow);
       ctx.beginPath();
       ctx.arc(held[0]!, held[1]!, radius, 0, TAU);
       ctx.fillStyle = ink;
