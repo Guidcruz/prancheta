@@ -109,6 +109,32 @@ if (failures.length) {
 
 writeFileSync(resolve(root, 'app/src/tokens.css'), css);
 
+// The tokens the 2D pitch draws with, per theme, as a small JSON the pitch imports instead of the
+// whole tokens.css (docs/02-architecture.md, 4.7). The list is fixed here; `--pitch-shadow` and
+// `--pitch-wedge` enter on their own once design/tokens.json has them.
+const PITCH_TOKENS = [
+  'ink',
+  'surface-0',
+  'surface-1',
+  'surface-2',
+  'line',
+  'floodlight',
+  'beam',
+  'pitch',
+  'pitch-line',
+  'pitch-shadow',
+  'pitch-wedge',
+].filter((name) => byName[name]);
+const pitchJson = {};
+for (const theme of themes) {
+  pitchJson[theme] = {};
+  for (const name of PITCH_TOKENS) pitchJson[theme][`--${name}`] = val(byName[name], theme);
+}
+writeFileSync(
+  resolve(root, 'app/src/ui/match/pitch/pitch-tokens.generated.json'),
+  JSON.stringify(pitchJson, null, 2) + '\n',
+);
+
 // Site only: the "dia" theme applied through prefers-color-scheme, without JavaScript.
 // "noite" stays the default for dark or unset preferences.
 const light = themes.find((t) => t === 'dia');

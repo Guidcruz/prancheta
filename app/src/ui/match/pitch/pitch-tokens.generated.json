@@ -1,0 +1,24 @@
+{
+  "noite": {
+    "--ink": "#f2f5f7",
+    "--surface-0": "#0f1a24",
+    "--surface-1": "#172534",
+    "--surface-2": "#20334a",
+    "--line": "#2e4458",
+    "--floodlight": "#ffc83d",
+    "--beam": "rgba(255,214,120,0.12)",
+    "--pitch": "#1e6b3f",
+    "--pitch-line": "#9fdcb6"
+  },
+  "dia": {
+    "--ink": "#10202c",
+    "--surface-0": "#f3f5f7",
+    "--surface-1": "#ffffff",
+    "--surface-2": "#e6ebf0",
+    "--line": "#cfd8e0",
+    "--floodlight": "#f0b429",
+    "--beam": "rgba(240,180,41,0.14)",
+    "--pitch": "#2d8f55",
+    "--pitch-line": "#eaf7ef"
+  }
+}
