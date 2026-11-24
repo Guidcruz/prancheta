@@ -354,6 +354,12 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
 
 ### Alterado
 
+- Cores do campo geradas em arquivo próprio (refatoração, sem mudança na tela):
+  - O `npm run tokens` passa a gerar também `app/src/ui/match/pitch/pitch-tokens.generated.json`, só com as cores do campo, por tema. O campo lê esse arquivo e não carrega mais o `tokens.css` inteiro.
+  - O pacote do campo caiu de 17.479 para 15.938 bytes gzip (teto de 20.000).
+  - O CI passa a falhar se esse JSON estiver desatualizado.
+  - Nada muda no motor nem no save.
+
 - A posição secundária passa a render em campo (T-079, ADR-0022):
   - Para quem joga: o jogador que "também joga de" outra posição rende 95% nela, mais que o improvisado (85% a 90%). Na Escalação, a vaga mostra a marca "Posição secundária", neutra, com ícone e texto; ela não entra nos avisos nem em "Nesta formação" da Tática. Ao selecionar ou arrastar uma vaga ocupada, os reservas que a têm como secundária ganham o mesmo selo.
   - `fit(player, slot)` e `fitLevel(player, slot)` recebem o jogador: na secundária, `max(FIT[natural][vaga], 0,95)`; quem não tem secundária rende o mesmo de antes, bit a bit. `FitLevel` ganha `'secondary'`. A força exibida, a IA, a geração e a partida leem o mesmo número.
