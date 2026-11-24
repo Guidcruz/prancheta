@@ -163,7 +163,7 @@ Nada nos dados muda com a perspectiva. Do lado da regra, o que ela precisa mante
 - **Lados fixos:** o mandante à esquerda atacando para a direita, o jogo todo. Na perspectiva, "esquerda" continua sendo o gol da esquerda de quem olha.
 - **A posição como pista que não depende da cor:** o jogador tem de saber de que lado é o lance pela posição. Na perspectiva, o lado de longe encolhe; o lance do fundo do campo não pode ficar ilegível.
 - **O desfecho não pode ser antecipado pelo ângulo:** se houver qualquer movimento de câmera, ele é o mesmo para gol e chance no começo do lance (a mesma regra da bola).
-- **As metas de desempenho** da T-085 continuam (chunk do campo de no máximo 20 KB gzip, quadro mediano de no máximo 6 ms com 4× de CPU, 30 quadros por segundo no pior caso). Um estádio desenhado tem de caber nelas; se não couber, volta ao `architect`.
+- **As metas de desempenho** da T-085 continuam (chunk do campo de no máximo 20 KB gzip, hoje 24 KB pela decisão do CEO no PR C, quadro mediano de no máximo 6 ms com 4× de CPU, 30 quadros por segundo no pior caso). Um estádio desenhado tem de caber nelas; se não couber, volta ao `architect`.
 
 ## 5. O que muda em decisões anteriores
 
@@ -200,7 +200,7 @@ Tudo em `app/src/ui/match/` (`scene.ts` e o que a etiqueta precisar); nada em `a
 6. ~~**Passes com discos em campo:** quem passa e quem recebe têm `on[d] === 1` no passo; o rastro nunca começa nem termina num disco fora.~~ _Sem efeito no modo "só a bola" (§10)._
 7. **Goleiro (D5):** com o goleiro expulso sem troca, o disco do goleiro passa ao jogador de linha em campo de maior `physical` (empate: menor índice), num caso montado à mão; e, depois de uma troca de goleiro num lado que mudou de formação, a defesa sai sem nome.
 8. **Determinismo:** a mesma partida dá a mesma coreografia; os sorteios que existem (`m${slot}`, `-build`, `-outcome`) não mudam de valor por causa dos rótulos novos (`-band-start`, `m${slot}-band`).
-9. **Motor e save intactos:** `ENGINE_VERSION` 19, goldens do motor e `SAVE_SCHEMA_VERSION` sem mudança; o chunk do campo continua com no máximo 20.000 bytes gzip (`tests/regression/match-chunks.test.ts`).
+9. **Motor e save intactos:** `ENGINE_VERSION` 19, goldens do motor e `SAVE_SCHEMA_VERSION` sem mudança; o chunk do campo continua com no máximo 24.000 bytes gzip (era 20.000; decisão do CEO no PR C, spec, §16, item 17) (`tests/regression/match-chunks.test.ts`).
 10. **Textos:** os tipos da etiqueta são chaves em `app/src/content/<idioma>/` (pt-BR, es, en), nunca no código; o lote passa pelo `content-writer` e pelo CEO.
 
 ## 8. Decisões para o CEO
