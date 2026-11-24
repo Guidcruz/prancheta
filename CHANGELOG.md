@@ -15,6 +15,14 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - Desempenho: o redesenho do fundo roda numa tarefa própria, com caminhos em cache e tokens lidos sem recálculo de estilo. Medido com CPU 4×: quadros p95 de 16,8 ms; redesenho do fundo com p95 de até 26,5 ms e máximo de 45,9 ms. O código do campo tem cerca de 12,9 KB gzip (teto de 20 KB).
   - Decisão do CEO: os testes de engasgo e de redesenho medem só o que o campo causa (spec, §16, item 9).
   - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
+- Campo 2D v2, parte B: as etiquetas (spec `docs/design/telas/partida-campo-v2.md`, §9 e §16, itens 10 a 14):
+  - A etiqueta do lance sai do jogador e fica presa ao disco do `PlayerId` do evento, por ponta e fio. Mostra o tipo (Finalização, Falta, Pênalti) e, no desfecho, Defesa, Trave ou Para fora, em pt-BR, es e en, com os textos aprovados pelo CEO. Mostra também a camisa com o número sobre uma placa, e o nome.
+  - A etiqueta de gol substitui a comemoração antiga (GoalCelebration, removida); o anúncio continua na região viva do placar. Há também a etiqueta de vermelho.
+  - A camisa do time aparece sobre a bola nos minutos sem lance: não aparece com movimento reduzido, some perto do gol (com histerese) e o dono vem do cálculo de posse, que antecipa parte do PR C.
+  - Regras gerais: tempo mínimo de 1,6 s no Normal e 0,8 s no Rápido; a etiqueta nunca cobre o gol; etiqueta compacta abaixo de 200 px; halo nas camisas escuras no tema noite.
+  - Chunk do campo com cerca de 17,3 a 17,4 KB gzip (teto de 20 KB). Decisão do CEO: se o PR C passar de 20 KB, o teto vai a 24 KB, conforme a errata do ADR (Guidcruz/prancheta#90).
+  - Testes novos de tela em `tests/e2e/pitch-tags.spec.ts`: 180 de 180 com `--repeat-each=10`.
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Escudo do clube em cada lance da narração e da súmula (decisão do CEO de 2026-11-15, opção A):
   - Cada lance de time mostra um escudo de 24 px (token novo `size-medallion-xs`) logo depois do minuto, e o nome do clube continua na linha; as fases da partida ficam sem escudo. A súmula muda junto.
   - O escudo é decorativo (`aria-hidden`): o leitor de tela diz o clube logo depois do minuto. Na mudança tática a frase não repete o clube (aceito). O fundo verde do gol é igual nos dois lados.
