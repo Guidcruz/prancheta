@@ -140,7 +140,7 @@ k     = s0 × t(v)                                  // px por metro naquele pont
 | Por cima (lançamento ou inversão) | 0,11 | um passe por cima no passo inteiro: lançamento (18 a 30 m para a frente, até 12 m para o lado) ou inversão (para o outro lado do campo), meio a meio |
 
 - **Passe rasteiro curto:** de 5 a 18 m para a frente e até 14 m para o lado.
-- **Cruzamento:** só com a bola aberta no terço final (a mais de 18 m do meio-campo no sentido do ataque e a mais de 15 m do meio na largura), com 45% de chance, no lugar do padrão sorteado: um passe por cima que cai na área (7 a 14 m da linha de fundo, até 7 m do meio na largura).
+- **Cruzamento:** só com a bola aberta no terço final (a mais de 18 m do meio-campo no sentido do ataque e a mais de 15 m do meio na largura), com 45% de chance, no lugar do padrão sorteado: um passe por cima que cai na área (10 a 14 m da linha de fundo, até 7 m do meio na largura; corrigido de "7 a 14 m" pelo `game-designer` em [../campo-lances.md](../campo-lances.md), §10, para a bola não passar de 95 m no comprimento, o limite dos minutos sem lance e do critério 4 do §13).
 - **Nunca dois por cima seguidos** (lançamento, inversão ou cruzamento), nem no começo de lance logo depois de um passe por cima: o peso do "por cima" sai do sorteio enquanto a ação anterior foi por cima.
 - **Limites:** a bola fica entre 10 e 95 m no comprimento e entre 5 e 63 m na largura nos minutos sem lance.
 - **Troca de dono:** quando o dono muda, a bola primeiro se solta (anda de 3 a 6 m, sem rastro, nos primeiros 30% do passo: a disputa) e só depois o novo dono joga.
