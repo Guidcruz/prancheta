@@ -71,9 +71,15 @@ export function goalBoard(g: PitchGeometry, side: 0 | 1, i: number, out: Float64
 
 type Context = CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D;
 
-/** A board as a quadrilateral: the fill, then the stripe of the mark, with a 1px outline. */
-function board(
-  ctx: Context,
+/** The shapes of one board: its fill, the stripe of the mark, and the colours of both. */
+interface BoardShape {
+  readonly fill: Path2D;
+  readonly stripe: Path2D;
+  readonly colors: readonly [string, string];
+}
+
+/** A board as a quadrilateral and its central stripe (60% of the width, 26% of the height). */
+function boardShape(
   ax: number,
   ay: number,
   ah: number,
@@ -82,41 +88,33 @@ function board(
   bh: number,
   brand: FictionalBrand,
   outlines: Path2D,
-): void {
+): BoardShape {
   const at = (t: number, lo: number, hi: number, out: number[]) => {
     const x = ax + (bx - ax) * t;
     const y = ay + (by - ay) * t;
     const h = ah + (bh - ah) * t;
     out.push(x, y - h * lo, x, y - h * hi);
   };
-  ctx.fillStyle = brand.colors[0];
-  ctx.beginPath();
-  ctx.moveTo(ax, ay);
-  ctx.lineTo(bx, by);
-  ctx.lineTo(bx, by - bh);
-  ctx.lineTo(ax, ay - ah);
-  ctx.closePath();
-  ctx.fill();
-  // The central stripe: 60% of the width, 26% of the height.
+  const fill = new Path2D();
+  fill.moveTo(ax, ay);
+  fill.lineTo(bx, by);
+  fill.lineTo(bx, by - bh);
+  fill.lineTo(ax, ay - ah);
+  fill.closePath();
   const left: number[] = [];
   const right: number[] = [];
   at(0.2, 0.37, 0.63, left);
   at(0.8, 0.37, 0.63, right);
-  ctx.fillStyle = brand.colors[1];
-  ctx.beginPath();
-  ctx.moveTo(left[0]!, left[1]!);
-  ctx.lineTo(right[0]!, right[1]!);
-  ctx.lineTo(right[2]!, right[3]!);
-  ctx.lineTo(left[2]!, left[3]!);
-  ctx.closePath();
-  ctx.fill();
+  const stripe = new Path2D();
+  stripe.moveTo(left[0]!, left[1]!);
+  stripe.lineTo(right[0]!, right[1]!);
+  stripe.lineTo(right[2]!, right[3]!);
+  stripe.lineTo(left[2]!, left[3]!);
+  stripe.closePath();
   // The outline (1px, in `line`: the darkest boards stay apart from the stand) is added to one
   // path for all the boards, stroked once.
-  outlines.moveTo(ax, ay);
-  outlines.lineTo(bx, by);
-  outlines.lineTo(bx, by - bh);
-  outlines.lineTo(ax, ay - ah);
-  outlines.closePath();
+  outlines.addPath(fill);
+  return { fill, stripe, colors: brand.colors };
 }
 
 /** The brand of board `index`; never the same as the one before it in its row. */
@@ -206,110 +204,77 @@ function fillBands(
   }
 }
 
-/** Everything behind the discs, drawn into `ctx` at the size of `g`. */
-export function drawBackdrop(
-  ctx: Context,
-  g: PitchGeometry,
-  c: BackdropColors,
-  boards: SlotContext,
-): void {
-  const { width: Wc, height: Hc } = g;
+const ROW_BUCKETS = 6;
+
+/**
+ * Everything that depends only on the size (and on which brands the boards carry), as paths: the
+ * rows of seats, the stands behind the goals, the boards and their outlines, the markings and the
+ * goals. Built once per size and kept, so a change of theme only draws them again with other
+ * colours.
+ */
+interface Shapes {
+  readonly key: string;
+  readonly rows: readonly Path2D[];
+  readonly sideStands: readonly Path2D[];
+  readonly boards: readonly BoardShape[];
+  readonly outlines: Path2D;
+  readonly marks: Path2D;
+  readonly goals: Path2D;
+  /** The spots of the markings: centre x, centre y, and the two radii. */
+  readonly spots: readonly (readonly [number, number, number, number])[];
+}
+
+let shapesCache: Shapes | undefined;
+
+function shapesOf(g: PitchGeometry, boards: SlotContext): Shapes {
+  const key = `${g.width}x${g.height}|${g.dpr}|${boards.round}|${boards.clubId}|${boards.stadiumId}`;
+  if (shapesCache?.key === key) return shapesCache;
+  const { width: Wc } = g;
   const q = Wc / 360;
-  const px = g.dpr;
   const out = new Float64Array(8);
   const p = new Float64Array(3);
 
-  // The three bands (stand, wall, grass) meet on whole pixels, so no pixel of the background is
-  // half transparent (the frame is drawn over the previous one without clearing it) and no base
-  // fill is needed under them.
-  const standEnd = Math.round(g.boardTop);
-  const wallEnd = Math.round(g.yFar);
-
-  // The far stand: from the top of the box to the top of the boards.
-  fillBands(ctx, c.surface0, c.surface2, 0, g.boardTop, standEnd, Wc);
-  // Rows of seats: 6px apart at the bottom to 3px at the top, from 30% to 90% opaque.
-  ctx.strokeStyle = c.line;
-  ctx.lineWidth = px;
+  // Rows of seats: 6px apart at the bottom to 3px at the top, in 6 paths by opacity.
   const roof = 10 * q;
-  // The rows go into 6 paths by opacity (a stroke each, not one per row).
-  const BUCKETS = 6;
+  const rows: Path2D[] = Array.from({ length: ROW_BUCKETS }, () => new Path2D());
   let y = g.boardTop - 3 * q;
-  const rows: Path2D[] = Array.from({ length: BUCKETS }, () => new Path2D());
   for (let step = 6 * q; y > roof; step = Math.max(3 * q, step - 0.4 * q)) {
     const t = Math.min(1, Math.max(0, (g.boardTop - y) / Math.max(1, g.boardTop - roof)));
-    const row = rows[Math.min(BUCKETS - 1, Math.floor(t * BUCKETS))]!;
+    const row = rows[Math.min(ROW_BUCKETS - 1, Math.floor(t * ROW_BUCKETS))]!;
     row.moveTo(0, y);
     row.lineTo(Wc, y);
     y -= step;
   }
-  for (let i = 0; i < BUCKETS; i++) {
-    ctx.globalAlpha = 0.3 + (0.6 * (i + 0.5)) / BUCKETS;
-    ctx.stroke(rows[i]!);
-  }
-  ctx.globalAlpha = 1;
-  // The roof and the four floodlights.
-  ctx.fillStyle = c.surface0;
-  ctx.fillRect(0, 0, Wc, roof);
-  for (const share of [0.12, 0.37, 0.63, 0.88]) {
-    const x = Wc * share;
-    const top = 5 * q;
-    if (c.night) {
-      // The beam holds to 35% of the radius and is zero at 75% (so the first lamp stays off the
-      // corner pixel). Two fills laid over each other (the strength of the prototype), only where the halo
-      // is not zero: the fill of a radial gradient is the costliest part of the background.
-      const reach = 52 * q * 0.75;
-      const sprite = haloSprite(reach, top, q, c.beam);
-      if (sprite !== undefined) {
-        ctx.drawImage(sprite, Math.round(x - reach), 0);
-      } else {
-        const halo = ctx.createRadialGradient(x, top, 0, x, top, 52 * q);
-        addHaloStops(halo, c.beam);
-        ctx.fillStyle = halo;
-        for (let pass = 0; pass < 2; pass++) ctx.fillRect(x - reach, 0, 2 * reach, top + reach);
-      }
-    }
-    ctx.fillStyle = c.night ? c.floodlight : c.line;
-    ctx.fillRect(x - 9 * q, top, 18 * q, 3 * q);
-  }
-
-  // The low wall, and the grass under it, edge to edge.
-  ctx.fillStyle = c.surface1;
-  ctx.fillRect(0, standEnd, Wc, wallEnd - standEnd);
-  ctx.fillStyle = c.pitch;
-  ctx.fillRect(0, wallEnd, Wc, Hc - wallEnd);
 
   // The stands behind the goals, outside each row of boards.
+  const sideStands: Path2D[] = [];
   for (const side of [0, 1] as const) {
     goalBoard(g, side, 0, out);
     const farTopX = out[6]!;
     const farTopY = out[7]!;
     goalBoard(g, side, GOAL_BOARDS.count - 1, out);
-    const nearTopX = out[4]!;
-    const nearTopY = out[5]!;
-    const nearBaseX = out[2]!;
     const edge = side === 0 ? 0 : Wc;
-    const back = ctx.createLinearGradient(0, g.boardTop, 0, Hc);
-    back.addColorStop(0, c.surface2);
-    back.addColorStop(1, c.surface0);
-    ctx.fillStyle = back;
-    ctx.beginPath();
-    ctx.moveTo(edge, g.boardTop);
-    ctx.lineTo(farTopX, farTopY);
-    ctx.lineTo(nearTopX, nearTopY);
-    ctx.lineTo(nearBaseX, Hc);
-    ctx.lineTo(edge, Hc);
-    ctx.closePath();
-    ctx.fill();
+    const stand = new Path2D();
+    stand.moveTo(edge, g.boardTop);
+    stand.lineTo(farTopX, farTopY);
+    stand.lineTo(out[4]!, out[5]!);
+    stand.lineTo(out[2]!, g.height);
+    stand.lineTo(edge, g.height);
+    stand.closePath();
+    sideStands.push(stand);
   }
 
-  // The three rows of boards: colours only, no text (the lot of fictional brands).
+  // The boards: colours only, no text (the lot of fictional brands).
   const outlines = new Path2D();
+  const shapes: BoardShape[] = [];
   let before: FictionalBrand | undefined;
   for (let i = 0; i < FAR_BOARDS; i++) {
     const brand = brandAt(boards, i, before);
     before = brand;
     farBoard(g, i, out);
-    board(ctx, out[0]!, g.yFar, g.boardHeight, out[1]!, g.yFar, g.boardHeight, brand, outlines);
+    shapes.push(
+      boardShape(out[0]!, g.yFar, g.boardHeight, out[1]!, g.yFar, g.boardHeight, brand, outlines),
+    );
   }
   for (const side of [0, 1] as const) {
     before = undefined;
@@ -319,20 +284,15 @@ export function drawBackdrop(
       goalBoard(g, side, i, out);
       const h0 = out[1]! - out[7]!;
       const h1 = out[3]! - out[5]!;
-      board(ctx, out[0]!, out[1]!, h0, out[2]!, out[3]!, h1, brand, outlines);
+      shapes.push(boardShape(out[0]!, out[1]!, h0, out[2]!, out[3]!, h1, brand, outlines));
     }
   }
-  ctx.lineWidth = px;
-  ctx.strokeStyle = c.line;
-  ctx.stroke(outlines);
 
-  // The markings, projected vertex by vertex, in `pitch-line`; all the lines are one path.
+  // The markings, projected vertex by vertex; all the lines are one path.
   const marks = new Path2D();
-  ctx.strokeStyle = c.pitchLine;
-  ctx.fillStyle = c.pitchLine;
-  const stroke = Math.max(1, Wc / px / 360) * px;
-  ctx.lineWidth = stroke;
-  ctx.lineJoin = 'round';
+  const goals = new Path2D();
+  const spots: [number, number, number, number][] = [];
+  const stroke = Math.max(1, Wc / g.dpr / 360) * g.dpr;
   const moveTo = (x: number, yy: number) => {
     project(g, x, yy, p);
     marks.moveTo(p[0]!, p[1]!);
@@ -359,20 +319,10 @@ export function drawBackdrop(
   };
   const spot = (x: number, yy: number) => {
     project(g, x, yy, p);
-    ctx.beginPath();
-    ctx.ellipse(
-      p[0]!,
-      p[1]!,
-      Math.max(stroke, 0.25 * p[2]!),
-      Math.max(stroke, 0.25 * p[2]!) * 0.6,
-      0,
-      0,
-      TAU,
-    );
-    ctx.fill();
+    const r = Math.max(stroke, 0.25 * p[2]!);
+    spots.push([p[0]!, p[1]!, r, r * 0.6]);
   };
   const cy = W / 2;
-  const goals = new Path2D();
   rect(0, 0, L, W);
   moveTo(L / 2, 0);
   lineTo(L / 2, W);
@@ -399,7 +349,98 @@ export function drawBackdrop(
     project(g, line, cy + 3.66, p);
     goals.lineTo(p[0]!, p[1]! - 2.44 * p[2]!);
   }
-  ctx.stroke(marks);
+  shapesCache = { key, rows, sideStands, boards: shapes, outlines, marks, goals, spots };
+  return shapesCache;
+}
+
+/** Everything behind the discs, drawn into `ctx` at the size of `g`. */
+export function drawBackdrop(
+  ctx: Context,
+  g: PitchGeometry,
+  c: BackdropColors,
+  boards: SlotContext,
+): void {
+  const { width: Wc, height: Hc } = g;
+  const q = Wc / 360;
+  const px = g.dpr;
+  const shapes = shapesOf(g, boards);
+
+  // The three bands (stand, wall, grass) meet on whole pixels, so no pixel of the background is
+  // half transparent (the frame is drawn over the previous one without clearing it) and no base
+  // fill is needed under them.
+  const standEnd = Math.round(g.boardTop);
+  const wallEnd = Math.round(g.yFar);
+
+  // The far stand: from the top of the box to the top of the boards, with its rows of seats.
+  fillBands(ctx, c.surface0, c.surface2, 0, g.boardTop, standEnd, Wc);
+  ctx.strokeStyle = c.line;
+  ctx.lineWidth = px;
+  for (let i = 0; i < ROW_BUCKETS; i++) {
+    ctx.globalAlpha = 0.3 + (0.6 * (i + 0.5)) / ROW_BUCKETS;
+    ctx.stroke(shapes.rows[i]!);
+  }
+  ctx.globalAlpha = 1;
+  // The roof and the four floodlights.
+  ctx.fillStyle = c.surface0;
+  ctx.fillRect(0, 0, Wc, 10 * q);
+  for (const share of [0.12, 0.37, 0.63, 0.88]) {
+    const x = Wc * share;
+    const top = 5 * q;
+    if (c.night) {
+      // The beam holds to 35% of the radius and is zero at 75% (so the first lamp stays off the
+      // corner pixel). Two fills laid over each other (the strength of the prototype), only where
+      // the halo is not zero: the fill of a radial gradient is the costliest part.
+      const reach = 52 * q * 0.75;
+      const sprite = haloSprite(reach, top, q, c.beam);
+      if (sprite !== undefined) {
+        ctx.drawImage(sprite, Math.round(x - reach), 0);
+      } else {
+        const halo = ctx.createRadialGradient(x, top, 0, x, top, 52 * q);
+        addHaloStops(halo, c.beam);
+        ctx.fillStyle = halo;
+        for (let pass = 0; pass < 2; pass++) ctx.fillRect(x - reach, 0, 2 * reach, top + reach);
+      }
+    }
+    ctx.fillStyle = c.night ? c.floodlight : c.line;
+    ctx.fillRect(x - 9 * q, top, 18 * q, 3 * q);
+  }
+
+  // The low wall, and the grass under it, edge to edge.
+  ctx.fillStyle = c.surface1;
+  ctx.fillRect(0, standEnd, Wc, wallEnd - standEnd);
+  ctx.fillStyle = c.pitch;
+  ctx.fillRect(0, wallEnd, Wc, Hc - wallEnd);
+
+  // The stands behind the goals: flat bands, from `surface-2` at the top to `surface-0`.
+  for (const stand of shapes.sideStands) {
+    ctx.save();
+    ctx.clip(stand);
+    fillBands(ctx, c.surface2, c.surface0, g.boardTop, Hc, Hc, Wc);
+    ctx.restore();
+  }
+
+  // The three rows of boards, then their outlines in `line`.
+  for (const shape of shapes.boards) {
+    ctx.fillStyle = shape.colors[0];
+    ctx.fill(shape.fill);
+    ctx.fillStyle = shape.colors[1];
+    ctx.fill(shape.stripe);
+  }
+  ctx.lineWidth = px;
+  ctx.strokeStyle = c.line;
+  ctx.stroke(shapes.outlines);
+
+  // The markings in `pitch-line`.
+  ctx.strokeStyle = c.pitchLine;
+  ctx.fillStyle = c.pitchLine;
+  ctx.lineWidth = Math.max(1, Wc / px / 360) * px;
+  ctx.lineJoin = 'round';
+  ctx.stroke(shapes.marks);
+  for (const [x, y, rx, ry] of shapes.spots) {
+    ctx.beginPath();
+    ctx.ellipse(x, y, rx, ry, 0, 0, TAU);
+    ctx.fill();
+  }
   ctx.lineWidth = 2 * px;
-  ctx.stroke(goals);
+  ctx.stroke(shapes.goals);
 }

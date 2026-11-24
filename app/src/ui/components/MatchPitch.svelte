@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onMount, untrack } from 'svelte';
   import type { PitchKit, PitchKits } from '../match/pitch/kits';
+  import { themeToken } from '../match/pitch/tokens';
   import { drawBackdrop, type BackdropColors } from '../match/pitch/backdrop';
   import {
     ballRadius,
@@ -100,8 +101,12 @@
    */
   let colors: BackdropColors | undefined;
   function readColors(): BackdropColors {
-    const style = getComputedStyle(box!);
-    const token = (name: string) => style.getPropertyValue(name).trim();
+    const theme = document.documentElement.dataset.theme ?? 'noite';
+    // From the tokens file when it has the theme (no forced style recalculation); else the browser.
+    let style: CSSStyleDeclaration | undefined;
+    const token = (name: string) =>
+      themeToken(theme, name) ?? (style ??= getComputedStyle(box!)).getPropertyValue(name).trim();
+    ink = token('--ink');
     return {
       surface0: token('--surface-0'),
       surface1: token('--surface-1'),
@@ -111,7 +116,7 @@
       beam: token('--beam'),
       pitch: token('--pitch'),
       pitchLine: token('--pitch-line'),
-      night: document.documentElement.dataset.theme !== 'dia',
+      night: theme !== 'dia',
     };
   }
 
@@ -125,10 +130,7 @@
     if (canvas.width !== width) canvas.width = width;
     if (canvas.height !== height) canvas.height = height;
     geometry = pitchGeometry(width, height, dpr);
-    if (colors === undefined) {
-      colors = readColors();
-      ink = getComputedStyle(box!).getPropertyValue('--ink').trim();
-    }
+    colors ??= readColors();
     field ??= document.createElement('canvas');
     // Set every time: it also clears the canvas, and starts the measure of the redraw of the QA.
     field.width = canvas.width;
