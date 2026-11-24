@@ -145,6 +145,11 @@ export function drawBackdrop(
   const out = new Float64Array(8);
   const p = new Float64Array(3);
 
+  // An opaque base, so no pixel of the background is half transparent where two areas meet at a
+  // fraction of a pixel (the frame is drawn over the previous one without clearing it).
+  ctx.fillStyle = c.surface0;
+  ctx.fillRect(0, 0, Wc, Hc);
+
   // The far stand: from the top of the box to the top of the boards.
   const stand = ctx.createLinearGradient(0, 0, 0, g.boardTop);
   stand.addColorStop(0, c.surface0);
@@ -175,7 +180,8 @@ export function drawBackdrop(
     if (c.night) {
       const halo = ctx.createRadialGradient(x, top, 0, x, top, 52 * q);
       halo.addColorStop(0, c.beam);
-      halo.addColorStop(1, 'rgba(0,0,0,0)');
+      // Zero a little before the radius, so the halo of the first lamp stays off the corner pixel.
+      halo.addColorStop(0.75, 'rgba(0,0,0,0)');
       ctx.fillStyle = halo;
       ctx.fillRect(x - 52 * q, 0, 104 * q, top + 52 * q);
     }
