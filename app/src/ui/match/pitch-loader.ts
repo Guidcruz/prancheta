@@ -2,7 +2,7 @@ import { lazyChunk } from '../lazy-chunk';
 
 /*
  * The chunk of the 2D pitch (docs/02-architecture.md, 4.7): the choreography, the MatchPitch and
- * the GoalCelebration, asked by the match screen only in "Animada completa", never in "Só lances
+ * the PitchTag, asked by the match screen only in "Animada completa", never in "Só lances
  * principais". This file is the only way into the chunk (the lint refuses a static import of it).
  */
 

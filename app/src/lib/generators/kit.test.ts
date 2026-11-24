@@ -19,6 +19,7 @@ import {
   kitConflict,
   kitSvg,
   kitsFor,
+  shirtSvg,
   matchKits,
   thirdKit,
   type FieldKit,
@@ -551,6 +552,40 @@ describe('kit: safe SVG (US-002)', () => {
     expect(
       ids(kitSvg(kitsFor(clubs[0]!).away, 64)).filter((i) => ids(kitSvg(k, 64)).includes(i)),
     ).toEqual([]);
+  });
+
+  it("draws only the shirt with part: 'shirt' (viewBox 64x42), goalkeeper's kit included", () => {
+    for (const c of clubs) {
+      const m = matchKits(c, clubs[1]!);
+      for (const k of Object.values(m.kits)) {
+        const svg = kitSvg(k, 32, { part: 'shirt', instance: 'tag' });
+        expect(svg).toBe(shirtSvg(k, 32, { instance: 'tag' }));
+        const name = `${c.id} ${k.slot}`;
+        expect(svg, name).toMatch(/^<svg [^>]*viewBox="0 0 64 42" width="32" height="21"/);
+        expect(wellFormed(svg), name).toBe(true);
+        expect(svg, name).toContain('aria-hidden="true"');
+        for (const re of FORBIDDEN) expect(svg, `${name} ${re}`).not.toMatch(re);
+        // No shorts and no socks: only the shirt and its outline, shorter than the full kit.
+        expect(svg, name).not.toContain('<rect x="16" y="60"');
+        expect(svg.length, name).toBeLessThan(kitSvg(k, 32, { instance: 'tag' }).length);
+        const clip = (s: string) => /<clipPath id="([^"]+)"/.exec(s)![1];
+        expect(clip(svg), name).not.toBe(clip(kitSvg(k, 32, { instance: 'tag' })));
+      }
+    }
+  });
+
+  it('gives two shirts of the same kit different clip ids when their instances differ', () => {
+    const k = kitsFor(clubs[0]!).home;
+    const id = (svg: string) => /<clipPath id="([^"]+)"/.exec(svg)![1];
+    expect(id(shirtSvg(k, 32, { instance: 'e1play' }))).not.toBe(
+      id(shirtSvg(k, 32, { instance: 'team' })),
+    );
+  });
+
+  it('does not change the kit without the option', () => {
+    const k = kitsFor(clubs[0]!).home;
+    expect(kitSvg(k, 48, { label: 'x' })).toBe(kitSvg(k, 48, { label: 'x', part: undefined }));
+    expect(kitSvg(k, 48)).toMatch(/viewBox="0 0 64 72"/);
   });
 
   it('turns out-of-range sizes into 64', () => {

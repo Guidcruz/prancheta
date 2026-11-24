@@ -1,6 +1,24 @@
 import { describe, expect, it } from 'vitest';
 import { FAR_BOARDS, farBoard, goalBoard } from './backdrop';
-import { ballRadius, discRadius, holdBall, pitchGeometry, project, scaleAt } from './geometry';
+import {
+  TAG_GOAL_MARGIN,
+  TAG_GAP,
+  TAG_SIDE,
+  TEAM_TIP_BACK,
+  TEAM_TIP_MAX,
+  TAG_TIP_EDGE,
+  TAG_TOP,
+  ballRadius,
+  discRadius,
+  holdBall,
+  pitchGeometry,
+  project,
+  scaleAt,
+  tagPlacement,
+  tagTipOffset,
+  teamShirtShown,
+  tipShift,
+} from './geometry';
 import { PITCH_MOTION, PITCH_SIZE, PITCH_VIEW } from './motion';
 
 /*
@@ -208,4 +226,180 @@ describe('the boards', () => {
       expect(g.boardTop).toBeLessThan(g.yFar);
     });
   }
+});
+
+describe('tagPlacement (partida-campo-v2.md, 9 and 13, geometry 6)', () => {
+  const HEIGHTS = [32, 40, 48, 50, 66, 70];
+
+  it('keeps the pill whole in the box and off the goals, with the tip 20px from the ends', () => {
+    const out = new Float64Array(3);
+    const p = new Float64Array(3);
+    let cases = 0;
+    const bad: string[] = [];
+    for (const dpr of [1, 2]) {
+      for (const [bw, bh] of SIZES) {
+        const g = pitchGeometry(bw * dpr, bh * dpr, dpr);
+        for (const w of [32, 96, 160, 0.6 * bw]) {
+          for (const h of HEIGHTS) {
+            for (let x = -M; x <= L + M; x += 3) {
+              for (let y = -M; y <= W + M; y += 4) {
+                for (const ball of [false, true]) {
+                  project(g, x, y, p);
+                  const r = ball ? ballRadius(g, p[2]!) : discRadius(g, p[2]!);
+                  tagPlacement(g, p[0]!, p[1]!, r, w, h, out);
+                  const name = `${bw}x${bh} d${dpr} ${w}x${h} at ${x},${y}`;
+                  cases++;
+                  const edge = Math.min(TAG_TIP_EDGE, w / 2);
+                  const left = out[0]!;
+                  const top = out[1]!;
+                  if (left < TAG_SIDE - 1e-9 || left + w > bw - TAG_SIDE + 1e-9)
+                    bad.push(`${name}: x ${left}`);
+                  if (top < TAG_TOP - 1e-9 || top + h > bh + 1e-9) bad.push(`${name}: y ${top}`);
+                  if (out[2]! < edge - 1e-9 || out[2]! > w - edge + 1e-9) {
+                    bad.push(`${name}: tip ${out[2]}`);
+                  }
+                  for (let i = 0; i < 8; i += 4) {
+                    const crosses =
+                      left < g.goals[i + 2]! / dpr + TAG_GOAL_MARGIN &&
+                      left + w > g.goals[i]! / dpr - TAG_GOAL_MARGIN &&
+                      top < g.goals[i + 3]! / dpr + TAG_GOAL_MARGIN &&
+                      top + h + 7 > g.goals[i + 1]! / dpr - TAG_GOAL_MARGIN;
+                    if (crosses) bad.push(`${name}: goal ${i / 4}`);
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    expect(bad.slice(0, 5)).toEqual([]);
+    expect(cases).toBeGreaterThan(10000);
+  });
+
+  it('puts the base of the pill 12px over the top of the disc, centred on it, when there is room', () => {
+    const g = pitchGeometry(600, 400, 1);
+    const p = new Float64Array(3);
+    const out = new Float64Array(3);
+    project(g, 52, 50, p);
+    const r = discRadius(g, p[2]!);
+    tagPlacement(g, p[0]!, p[1]!, r, 120, 48, out);
+    expect(out[1]! + 48).toBeCloseTo(p[1]! - r - TAG_GAP, 9);
+    expect(out[0]! + 60).toBeCloseTo(p[0]!, 9);
+    expect(out[2]!).toBeCloseTo(60, 9);
+  });
+
+  it('turns the pill inwards near the edge and leans the thread', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const p = new Float64Array(3);
+    const out = new Float64Array(3);
+    project(g, 2, 60, p);
+    tagPlacement(g, p[0]!, p[1]!, discRadius(g, p[2]!), 160, 48, out);
+    expect(out[0]!).toBeGreaterThanOrEqual(8);
+    expect(out[2]!).toBe(TAG_TIP_EDGE);
+    expect(out[0]! + out[2]!).toBeGreaterThan(p[0]!);
+  });
+
+  it('is pure: the same input gives the same output, and it returns nothing', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const a = new Float64Array(3);
+    const b = new Float64Array(3);
+    expect(tagPlacement(g, 180, 150, 8, 100, 48, a)).toBeUndefined();
+    tagPlacement(g, 180, 150, 8, 100, 48, b);
+    expect([...a]).toEqual([...b]);
+  });
+});
+
+describe('the shirt over the ball near a goal (partida-campo-v2.md, 16, item 14)', () => {
+  it('is far from the ball only near the edges or the goals, never in the middle of the pitch', () => {
+    const out = new Float64Array(3);
+    const p = new Float64Array(3);
+    let near = 0;
+    let hidden = 0;
+    for (const [bw, bh] of SIZES) {
+      const g = pitchGeometry(bw, bh, 1);
+      for (let x = -M; x <= L + M; x += 1) {
+        for (let y = -M; y <= W + M; y += 2) {
+          project(g, x, y, p);
+          tagPlacement(g, p[0]!, p[1]!, ballRadius(g, p[2]!), 32, 32, out);
+          const off = tagTipOffset(g, p[0]!, out);
+          if (off > TEAM_TIP_MAX) {
+            hidden++;
+            // Hidden only close to a side of the box or to a goal.
+            const closeToSide = p[0]! < 8 + 16 + TEAM_TIP_MAX || p[0]! > bw - 8 - 16 - TEAM_TIP_MAX;
+            const closeToGoal = [0, 4].some(
+              (i) => p[0]! > g.goals[i]! - 40 && p[0]! < g.goals[i + 2]! + 40,
+            );
+            expect(closeToSide || closeToGoal, `${bw}x${bh} at ${x},${y}`).toBe(true);
+          } else near++;
+          // In the middle of the pitch the tip is on the ball.
+          if (x > 30 && x < 75) expect(off).toBeLessThanOrEqual(1e-9);
+        }
+      }
+    }
+    expect(hidden).toBeGreaterThan(0);
+    expect(near).toBeGreaterThan(hidden);
+  });
+
+  it('measures how far the tip is from the ball', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const out = Float64Array.of(100, 50, 16);
+    expect(tagTipOffset(g, 130, out)).toBe(14);
+    expect(tagTipOffset(g, 112, out)).toBe(4);
+  });
+});
+
+describe('the goal boxes', () => {
+  it('hold the posts, the bar and the net of each goal', () => {
+    for (const [w, h] of SIZES) {
+      const g = pitchGeometry(w, h, 1);
+      const p = new Float64Array(3);
+      for (const [i, x] of [
+        [0, 0],
+        [4, L],
+      ] as const) {
+        for (const y of [W / 2 - 3.66, W / 2 + 3.66]) {
+          project(g, x, y, p);
+          expect(g.goals[i]!).toBeLessThanOrEqual(p[0]!);
+          expect(g.goals[i + 1]!).toBeLessThanOrEqual(p[1]! - 2.44 * p[2]! + 1e-9);
+          expect(g.goals[i + 2]!).toBeGreaterThanOrEqual(p[0]!);
+          expect(g.goals[i + 3]!).toBeGreaterThanOrEqual(p[1]!);
+        }
+      }
+    }
+  });
+});
+
+describe('the tip shift and the shirt over the ball (review of the PR B)', () => {
+  it('moves the tip from the middle when the pill is measured again with the same tip and a new width', () => {
+    // The tip held 20px from the end of the pill: the same `tip` for any width over 40px.
+    const g = pitchGeometry(360, 240, 1);
+    const out = new Float64Array(3);
+    tagPlacement(g, 6, 150, 8, 100, 48, out);
+    const first = out[2]!;
+    tagPlacement(g, 6, 150, 8, 140, 48, out);
+    expect(out[2]!).toBe(first);
+    expect(tipShift(first, 140)).not.toBe(tipShift(first, 100));
+    expect(tipShift(first, 100)).toBe(first - 50);
+    expect(tipShift(first, 140)).toBe(first - 70);
+  });
+
+  it('has a hysteresis: gone above 12px, back only under 9px', () => {
+    expect(TEAM_TIP_BACK).toBeLessThan(TEAM_TIP_MAX);
+    // Shown: stays up to the limit, goes just above it.
+    expect(teamShirtShown(true, TEAM_TIP_MAX)).toBe(true);
+    expect(teamShirtShown(true, TEAM_TIP_MAX + 0.1)).toBe(false);
+    // Hidden: stays hidden between the two, comes back under the lower one.
+    expect(teamShirtShown(false, TEAM_TIP_MAX)).toBe(false);
+    expect(teamShirtShown(false, TEAM_TIP_BACK)).toBe(false);
+    expect(teamShirtShown(false, TEAM_TIP_BACK - 0.1)).toBe(true);
+    // A ball that wobbles around 10 to 11px does not blink.
+    let shown = true;
+    const seen: boolean[] = [];
+    for (const offset of [11, 12.5, 11, 10, 11, 12.5, 8, 10, 11]) {
+      shown = teamShirtShown(shown, offset);
+      seen.push(shown);
+    }
+    expect(seen).toEqual([true, false, false, false, false, false, true, true, true]);
+  });
 });

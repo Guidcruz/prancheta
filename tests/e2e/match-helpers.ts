@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import type { Page } from '@playwright/test';
+import { expect, type Page } from '@playwright/test';
 import {
   prepareRound,
   simulateMatch,
@@ -175,4 +175,42 @@ export async function runToMinute(page: Page, minute: number): Promise<void> {
     const text = await minuteText(page);
     return Number(/^(\d+)/.exec(text)?.[1] ?? 0) >= minute;
   });
+}
+
+/** Um resumo dos pixels do canvas (para ver se o campo foi desenhado e se ele mudou). */
+export const pixels = (page: Page) =>
+  matchScreen(page)
+    .locator('canvas')
+    .evaluate((element) => {
+      const c = element as HTMLCanvasElement;
+      const data = c.getContext('2d')!.getImageData(0, 0, c.width, c.height).data;
+      let hash = 0;
+      for (let i = 0; i < data.length; i++) hash = (Math.imul(hash, 31) + data[i]!) | 0;
+      return hash;
+    });
+
+/**
+ * Waits, in real time and with a ceiling, until the pitch has settled: every tag on screen has its
+ * position (the measure of a pill is a ResizeObserver, outside the fake clock, and the pitch draws
+ * one more frame when it arrives, for the thread) and the canvas gave the same pixels in two reads
+ * in a row. Only then is a picture of the paused pitch taken; after it, nothing may change.
+ */
+export async function settled(page: Page): Promise<void> {
+  let last: number | undefined;
+  await expect
+    .poll(
+      async () => {
+        const placed = await page.evaluate(() =>
+          [...document.querySelectorAll<HTMLElement>('main.match .place')].every(
+            (place) => place.style.transform !== '',
+          ),
+        );
+        const now = await pixels(page);
+        const same = placed && now === last;
+        last = now;
+        return same;
+      },
+      { message: 'o campo não assentou', timeout: 10_000, intervals: [100, 200, 300, 500] },
+    )
+    .toBe(true);
 }

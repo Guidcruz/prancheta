@@ -118,6 +118,12 @@ interface StepMotion {
   readonly gone: Uint8Array;
   /** Who owns each disc as the step starts (the anchor of the discs of a play, for the tests). */
   readonly owner: readonly (PlayerId | null)[];
+  /**
+   * The disc the tag of this step hangs from: the one made for the `PlayerId` of the event (the
+   * finisher, the taker, the scorer or the sent-off), or -1 when there is none (no tag in the
+   * step, or the player is not on the pitch: then no tag either, never another's disc).
+   */
+  readonly tag: number;
 }
 
 /** The motion of every step of a match. */
@@ -377,6 +383,8 @@ export function choreograph(
     const leaving: number[] = [];
     /** The sent-off disc of a red card, whose player walks to the touchline. */
     let expelled = -1;
+    /** The disc of the player the tag of the step names (see `StepMotion.tag`). */
+    let tag = -1;
 
     // The roster first: who leaves, who comes in, the formation.
     if (source !== undefined && line!.stage === 'final') {
@@ -477,6 +485,7 @@ export function choreograph(
           (event!.type === 'chance' && step.timing === 'event'));
       if (play) {
         const disc = discFor(event!.side, player);
+        tag = disc;
         const keeper = firstDisc(other(event!.side));
         for (const d of disc === -1 ? [keeper] : [disc, keeper]) {
           if (field.on[d] !== 1) continue;
@@ -489,6 +498,7 @@ export function choreograph(
         setDisc(from, expelled, from[BALL]!, Math.min(PITCH_SIZE.width, Math.max(0, y)));
         toTouchline(to);
         show[expelled] = 1;
+        tag = expelled;
       }
       segments = [segment(1, to)];
     } else if (line === undefined) {
@@ -516,6 +526,7 @@ export function choreograph(
       const dir = attack(side);
       const goal = goalLine(side);
       const disc = discFor(side, finisherOf(event)!);
+      tag = disc;
       const keeper = firstDisc(other(side));
       const reach = copy(from);
       const contact = copy(from);
@@ -587,6 +598,7 @@ export function choreograph(
       const rng = rngOf(`${line.id}-outcome`);
       const at = flight(step.timing);
       const shooter = discFor(event.side, finisherOf(event)!);
+      tag = shooter;
       if (shooter !== -1) show[shooter] = 1;
       const keeper = firstDisc(other(event.side));
       if (field.on[keeper] === 1) show[keeper] = 1;
@@ -600,6 +612,7 @@ export function choreograph(
       const py = within(rng, M.weak.y);
       const reach = copy(from);
       const shooter = discFor(event.side, event.shooter);
+      tag = shooter;
       field.follow(reach, px, py, [shooter]);
       if (shooter !== -1) setDisc(reach, shooter, px, py);
       setBall(reach, px, py);
@@ -648,6 +661,7 @@ export function choreograph(
         const y = by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff;
         setDisc(from, expelled, from[BALL]!, Math.min(PITCH_SIZE.width, Math.max(0, y)));
         show[expelled] = 1;
+        tag = expelled;
       }
       const to = copy(from);
       toTouchline(to);
@@ -671,6 +685,7 @@ export function choreograph(
       showPrev: prevShow,
       gone,
       owner,
+      tag,
     });
     // What the next step sees as shown before it: not the gone discs (the new keeper appears).
     prevShow = show.map((v, d) => (gone[d] === 1 ? 0 : v));
@@ -760,4 +775,17 @@ export function stillScene(choreography: Choreography, index: number, out: Pitch
   // sent-off, at the touchline).
   for (let d = 0; d < DISCS; d++) out.alpha[d] = step.show[d]!;
   return out;
+}
+
+/**
+ * The disc the tag of step `index` hangs from (the one made for the `PlayerId` of its event), or
+ * -1 when the step has no disc for it. Never another player's disc.
+ */
+export function tagDiscOf(choreography: Choreography, index: number): number {
+  return choreography.steps[index]?.tag ?? -1;
+}
+
+/** Whether the disc `disc` is one of the discs of a play drawn in step `index`. */
+export function discShownIn(choreography: Choreography, index: number, disc: number): boolean {
+  return choreography.steps[index]?.show[disc] === 1;
 }

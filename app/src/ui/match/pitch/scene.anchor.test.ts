@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { type MatchEvent, type MatchInput, type PlayerId, type Side } from '@engine';
 import { testMatchesOf } from '../../testing/matches';
+import { commentaryItem, nameOf, type NarrationContext } from '../narration';
 import { matchSteps, type MatchStep } from '../steps';
+import { tagPlanOf } from '../tags';
 import { PITCH_MOTION, PITCH_SIZE } from './motion';
-import { choreograph, createScene, physicalOf, sceneAt, stillScene } from './scene';
+import { choreograph, createScene, physicalOf, sceneAt, stillScene, tagDiscOf } from './scene';
 
 /*
  * The anchor of the discs (docs/design/telas/partida-campo-v2.md, 10 and 13, "Vitest, âncora"),
@@ -162,5 +164,110 @@ describe('the anchor on a corpus of 200 matches (partida-campo-v2.md, 13)', () =
     }
     expect(opens).toBeGreaterThan(500);
     expect(penalties).toBeGreaterThan(0);
+  });
+});
+
+describe('the tag of each step (partida-campo-v2.md, 9, 10 and 13, anchor 3)', () => {
+  const ctxOf = (game: (typeof corpus)[number]['game'], match: MatchInput): NarrationContext => ({
+    game,
+    homeId: match.home.clubId,
+    awayId: match.away.clubId,
+    lang: 'pt-BR',
+  });
+
+  it('hangs from the disc of the PlayerId of the event, with his name and his shirt number, as the line of the same step says', () => {
+    let tags = 0;
+    let goals = 0;
+    let reds = 0;
+    let afterGoal = 0;
+    for (const { game, match, result } of corpus) {
+      const steps = matchSteps(result.events, 'full');
+      const choreo = choreograph(steps, lineupsOf(match), match.seed);
+      const ctx = ctxOf(game, match);
+      const squad = new Map([...match.home.players, ...match.away.players].map((p) => [p.id, p]));
+      const out = createScene();
+      steps.forEach((step, i) => {
+        const plan = tagPlanOf(step);
+        const source = step.line?.source;
+        const finisher =
+          source === undefined || source.type === 'secondHalf' ? undefined : finisherOf(source);
+        // A play (or a red card) has a tag, and only a play or a red card does.
+        const expected =
+          step.timing !== undefined &&
+          (finisher !== undefined || source?.type === 'red') &&
+          source !== undefined &&
+          'side' in source;
+        expect(plan !== undefined, `step ${i}`).toBe(expected);
+        if (plan === undefined) {
+          expect(tagDiscOf(choreo, i)).toBe(-1);
+          return;
+        }
+        tags++;
+        const player = source?.type === 'red' ? source.player : finisher!;
+        expect(plan.player).toBe(player);
+        // The same PlayerId gives the disc, the name and the number.
+        const disc = tagDiscOf(choreo, i);
+        expect(disc, `step ${i}: no disc`).toBeGreaterThanOrEqual(0);
+        expect(choreo.steps[i]!.owner[disc]).toBe(plan.player);
+        expect(stillScene(choreo, i, out).alpha[disc], `step ${i}: disc not in sight`).toBe(1);
+        const line = commentaryItem(step.line!, ctx);
+        const name = nameOf(ctx, plan.player);
+        expect(line.text, `step ${i}`).toContain(name);
+        const shirt = game.players[plan.player]?.shirt;
+        expect(shirt).toBe(squad.get(plan.player)!.shirt);
+        expect(Number.isInteger(shirt)).toBe(true);
+        if (plan.tone === 'goal') {
+          goals++;
+          expect(step.timing).toBe('afterGoal');
+          expect(line.text).toBe(name);
+        }
+        if (plan.kind === 'red') {
+          reds++;
+          expect(line.text).toBe(name);
+        }
+        if (steps[i - 1]?.timing === 'afterGoal') afterGoal++;
+      });
+    }
+    expect(tags).toBeGreaterThan(1000);
+    expect(goals).toBeGreaterThan(100);
+    expect(reds).toBeGreaterThan(0);
+    // A play right after a goal (the play wins over the kick-off) has its tag too, on the disc
+    // that fades in at its spot of the formation (the ball reaches the point of the play only
+    // in the step after, as the anchor test above leaves out).
+    expect(afterGoal).toBeGreaterThan(0);
+  });
+
+  it('gives the start and the outcome of a play the same tag, with the same player; only the kind changes', () => {
+    for (const { result } of corpus.slice(0, 40)) {
+      const steps = matchSteps(result.events, 'full');
+      const byLine = new Map<string, ReturnType<typeof tagPlanOf>[]>();
+      for (const step of steps) {
+        const plan = tagPlanOf(step);
+        if (plan === undefined || step.line === undefined) continue;
+        byLine.set(step.line.id, [...(byLine.get(step.line.id) ?? []), plan]);
+      }
+      for (const plans of byLine.values()) {
+        expect(new Set(plans.map((p) => p!.player)).size).toBe(1);
+        expect(new Set(plans.map((p) => p!.side)).size).toBe(1);
+      }
+    }
+  });
+
+  it('has no disc and no tag for a PlayerId that is not on the pitch (and the error is on record)', () => {
+    const found = corpus.find(({ result }) => result.events.some((e) => e.type === 'chance'))!;
+    const { match, result } = found;
+    const stranger = 'nobody-here' as PlayerId;
+    const events = result.events.map((e) =>
+      e.type === 'chance' ? { ...e, shooter: stranger } : e,
+    );
+    const steps = matchSteps(events, 'full');
+    const choreo = choreograph(steps, lineupsOf(match), match.seed);
+    expect(choreo.unknown).toContain(stranger);
+    steps.forEach((step, i) => {
+      const source = step.line?.source;
+      if (source?.type !== 'chance') return;
+      expect(tagPlanOf(step)?.player).toBe(stranger);
+      expect(tagDiscOf(choreo, i)).toBe(-1);
+    });
   });
 });
