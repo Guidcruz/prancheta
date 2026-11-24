@@ -346,16 +346,18 @@ Reaproveitadas: `match.live.shot`, `match.live.freeKick`, `match.live.penalty`, 
 12. **Modo "só a bola"** (escolhido entre três no protótipo v3): §5. "Só os envolvidos" e "os 22 em movimento contínuo" ficam fora (§18).
 13. **Passes variados, com o "por cima" como exceção** (v4 e v5): os tipos do §7 e a distribuição do §6.
 
-## 16. Pendências para o CEO
+## 16. Decisões do CEO de 2026-11-24 (antes pendências)
 
-1. **Arquibancada no tema dia:** seguir o tema (estádio claro, refletores apagados; sem token novo) (**recomendo**), ou estádio sempre à noite (dois tokens novos só para a arquibancada).
-2. **Placas só com cores ou com nome:** **recomendo só cores**, como o ADR do `architect`: a 360px as placas têm de 10 a 17px, o nome ficaria com 6 a 8px, ilegível, e torto nas placas dos fundos; só cores, tudo fica no canvas do fundo, sem texto e sem custo por quadro. Com nome, as placas iriam para o DOM (uma matriz CSS por placa inclinada). Se um dia valer, o nome entra só na fila de longe e a partir de 900px de largura.
-3. **Marcas fictícias:** as placas mostram as cores das marcas da lista, que é conteúdo da T-040 e passa pelo CEO. **Recomendo antecipar o lote da lista** para o PR A; até lá, pares de tokens. Placas vazias não, porque lembrariam espaço à venda (ADR-0015).
-4. **Altura da caixa:** manter 1,5:1 (149px de gramado a 360×740, 4 linhas de narração) (**recomendo**), ou uma caixa mais alta (360 × 270), com meia linha de narração a menos.
-5. **Divisão:** quatro PRs, A, B e C de tamanho M e D de tamanho P, na ordem do §1 (**recomendo**); ou outra divisão.
-6. **Tokens:** `pitch-wedge` já aprovado (só registro); **`pitch-shadow`** (proposta 49) e **`beam` no jogo** (proposta 45) (**recomendo aprovar os dois**).
-7. **Propostas 45, 46, 47, 48 e 49:** `beam` no jogo; campo inclinado com o modo "só a bola" e as placas; etiqueta de gol no lugar da comemoração; camisa sobre a bola, sem número nem nome; `pitch-shadow` (**recomendo aprovar as cinco**).
-8. **A D2-B no modo "só a bola":** a regra do `campo-lances.md` previa passes anônimos **entre discos**, com a bola numa faixa do dono (45 a 75 m para o mandante). Sem discos, não há quem passa nem quem recebe, e a jogada precisa de mais campo para ter cruzamentos e lançamentos: proponho a bola entre 10 e 95 m nos minutos sem lance (§6). É regra do `game-designer`; peço a confirmação dele e a do CEO.
+Depois de ver os protótipos v1 a v5, o CEO escolheu o modo "só a bola" (modo 1 do v3), com rastros por tipo e o passe por cima como exceção (v5), e decidiu as pendências, todas como recomendado:
+
+1. **Arquibancada no tema dia:** segue o tema (estádio claro, refletores apagados; sem token novo).
+2. **Placas:** só cores, no canvas do fundo, sem texto.
+3. **Marcas fictícias:** o lote da lista (T-040) é antecipado para o PR A e passa pelo CEO; até lá, pares de tokens.
+4. **Altura da caixa:** mantém 1,5:1.
+5. **Divisão:** quatro PRs, A, B e C de tamanho M e D de tamanho P, na ordem do §1; o ADR-0023 vai antes, em PR próprio.
+6. **Tokens:** `pitch-shadow` (proposta 49) e `beam` no jogo (proposta 45) aprovados; `pitch-wedge` já aprovado.
+7. **Propostas 45, 46, 47, 48 e 49:** aprovadas.
+8. **D2-B no modo "só a bola":** aprovada a bola entre 10 e 95 m nos minutos sem lance (§6). A confirmação do `game-designer` entra no `campo-lances.md`.
 
 ## 17. Protótipos
 
