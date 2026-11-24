@@ -59,13 +59,18 @@ const feedHeight = (page: Page) =>
       return feed.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
     });
 
-/** A cor do pixel (2, 2) do canvas, como `rgb(r, g, b)`: a faixa de grama em volta do campo. */
-const cornerPixel = (page: Page) =>
-  canvas(page).evaluate((element) => {
+/**
+ * A cor de um pixel do canvas, como `rgb(r, g, b)` (partida-campo-v2.md, 13, E2E 3): `grass` é o
+ * meio da borda de baixo (o gramado de perto, que nenhum disco nem a bola alcança) e `stand` o
+ * canto de cima à esquerda (a cobertura da arquibancada).
+ */
+const pixelOf = (page: Page, where: 'grass' | 'stand') =>
+  canvas(page).evaluate((element, spot) => {
     const c = element as HTMLCanvasElement;
-    const [r, g, b] = c.getContext('2d')!.getImageData(2, 2, 1, 1).data;
+    const [x, y] = spot === 'grass' ? [Math.floor(c.width / 2), c.height - 1] : [0, 0];
+    const [r, g, b] = c.getContext('2d')!.getImageData(x, y, 1, 1).data;
     return `rgb(${r}, ${g}, ${b})`;
-  });
+  }, where);
 
 /** As linhas do registro de erros (`errors` do banco de teste). */
 const errorCodes = (page: Page) =>
@@ -395,7 +400,7 @@ test.describe('Campo 2D (T-085)', () => {
     expect(await animations()).toBe(0);
   });
 
-  test('tema: o canto do canvas tem a cor de --pitch no tema noite e no dia, trocado no meio da partida (item 11)', async ({
+  test('tema: o meio da borda de baixo tem a cor de --pitch e o canto de cima, a de --surface-0, nos temas noite e dia, trocados no meio da partida (item 11)', async ({
     page,
   }) => {
     await careerWith(page, 'full');
@@ -404,17 +409,91 @@ test.describe('Campo 2D (T-085)', () => {
     await openMatch(page);
     await expect(canvas(page)).toHaveCount(1);
     await page.clock.runFor(1_000);
-    expect(await cornerPixel(page)).toBe(await tokenColor(page, 'pitch'));
-    const night = await tokenColor(page, 'pitch');
+    const grass = () => pixelOf(page, 'grass');
+    const stand = () => pixelOf(page, 'stand');
+    expect(await grass()).toBe(await tokenColor(page, 'pitch'));
+    expect(await stand()).toBe(await tokenColor(page, 'surface-0'));
+    // The floodlights are lit: 8px under the roof, under the 2nd one, the red is up by 45 or more.
+    const lit = await canvas(page).evaluate((element) => {
+      const c = element as HTMLCanvasElement;
+      const q = c.width / 360;
+      // The median of 5 pixels in a column: a 1px row of seats cannot be the one that is read.
+      const column = Math.round(c.width * 0.37);
+      const top = Math.round(17 * q);
+      const reds = [0, 1, 2, 3, 4]
+        .map((i) => c.getContext('2d')!.getImageData(column, top + i, 1, 1).data[0]!)
+        .sort((x, y) => x - y);
+      return reds[2]!;
+    });
+    const base = Number((await tokenColor(page, 'surface-0')).match(/\d+/)![0]);
+    expect(lit - base).toBeGreaterThanOrEqual(45);
+    const night = {
+      pitch: await tokenColor(page, 'pitch'),
+      stand: await tokenColor(page, 'surface-0'),
+    };
     await setTheme(page, 'dia');
-    const day = await tokenColor(page, 'pitch');
-    expect(day).not.toBe(night);
-    await expect.poll(() => cornerPixel(page)).toBe(day);
+    const day = {
+      pitch: await tokenColor(page, 'pitch'),
+      stand: await tokenColor(page, 'surface-0'),
+    };
+    expect(day.pitch).not.toBe(night.pitch);
+    expect(day.stand).not.toBe(night.stand);
+    await expect.poll(grass).toBe(day.pitch);
+    await expect.poll(stand).toBe(day.stand);
     // Paused, the theme still redraws the field.
     await control(page, 'match.pause').click();
     await page.clock.runFor(3_000);
     await setTheme(page, 'noite');
-    await expect.poll(() => cornerPixel(page)).toBe(night);
+    await expect.poll(grass).toBe(night.pitch);
+    await expect.poll(stand).toBe(night.stand);
+  });
+
+  test('a sobra da caixa ao lado do campo continua a arquibancada: nenhum pixel de --pitch acima de 85% da altura, a 360×640, 844×390 e 1280×800, nos dois temas', async ({
+    page,
+  }) => {
+    test.skip(!onPhone(page), 'uma vez por navegador');
+    await careerWith(page, 'full');
+    await freezeClock(page);
+    await openMatch(page);
+    await expect(canvas(page)).toHaveCount(1);
+    for (const [width, height] of [
+      [360, 640],
+      [844, 390],
+      [1280, 800],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      for (const theme of ['noite', 'dia'] as const) {
+        await setTheme(page, theme);
+        await page.clock.runFor(500);
+        const box = (await pitchBox(page).boundingBox())!;
+        const cv = (await canvas(page).boundingBox())!;
+        const strip = Math.floor(cv.x - box.x) - 2;
+        // Only a phone upright has room left at the sides; elsewhere the box is the canvas.
+        if (width === 360) expect(strip, `${width}×${height}: há sobra`).toBeGreaterThan(4);
+        if (strip < 1) continue;
+        const png = await page.screenshot({
+          clip: { x: box.x + 1, y: box.y, width: strip, height: box.height },
+        });
+        const grass = await tokenColor(page, 'pitch');
+        const found = await page.evaluate(
+          async ([data, pitch]) => {
+            const bitmap = await createImageBitmap(await (await fetch(data!)).blob());
+            const c = new OffscreenCanvas(bitmap.width, bitmap.height);
+            const g = c.getContext('2d')!;
+            g.drawImage(bitmap, 0, 0);
+            const column = Math.floor(bitmap.width / 2);
+            const bad: number[] = [];
+            for (let y = 0; y < bitmap.height * 0.85; y++) {
+              const [r, gr, b] = g.getImageData(column, y, 1, 1).data;
+              if (`rgb(${r}, ${gr}, ${b})` === pitch) bad.push(y);
+            }
+            return bad.length;
+          },
+          [`data:image/png;base64,${png.toString('base64')}`, grass],
+        );
+        expect(found, `${width}×${height} ${theme}`).toBe(0);
+      }
+    }
   });
 
   test('deitado (844×390) e desktop (1280×800): cabeçalho e campo à esquerda, placar e narração à direita, com a barra inteira (item 12)', async ({
@@ -604,9 +683,104 @@ test.describe('Campo 2D: offline (T-085)', () => {
     await playButton(page).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Rodada 1' })).toBeVisible();
     await expect(canvas(page)).toHaveCount(1);
-    await expect.poll(() => cornerPixel(page)).toBe(await tokenColor(page, 'pitch'));
+    await expect.poll(() => pixelOf(page, 'grass')).toBe(await tokenColor(page, 'pitch'));
+    await expect.poll(() => pixelOf(page, 'stand')).toBe(await tokenColor(page, 'surface-0'));
   });
 });
+
+/** A long task of the page, with the minute the board showed when it was reported. */
+interface LongFrame {
+  startTime: number;
+  duration: number;
+  blockingDuration: number;
+  styleAndLayoutStart: number;
+  scripts: { sourceURL: string; sourceFunctionName: string; invoker: string; duration: number }[];
+}
+
+/** A long animation frame (>= 50 ms) as the page saw it, with its scripts. */
+interface SeenFrame {
+  at: number;
+  duration: number;
+  blocking: number;
+  renderMs: number;
+  scripts: LongFrame['scripts'];
+}
+
+/*
+ * "Measure only what the pitch causes" (partida-campo-v2.md, 16 item 9, 12 and 13 E2E 2). A long
+ * animation frame (long-animation-frame, >= 50 ms) is the pitch's when the scripts of the pitch
+ * inside it are what makes it long:
+ *   - script of the pitch: the code of the pitch chunk (sourceURL pitch-chunk, MatchPitch,
+ *     backdrop, scene, geometry, tokens, motion, kits), which also holds the callbacks the pitch
+ *     registers (ResizeObserver, MutationObserver, MessagePort, requestAnimationFrame): the
+ *     invoker names the callback, the sourceURL says whose code it is;
+ *   - the pitch's share of the frame = the sum of the duration of those scripts in it;
+ *   - the frame FAILS when the share is >= 50 ms (the pitch alone is a long task) or when the
+ *     frame has blocking time and the share is >= 50% of it (the pitch is most of the part that
+ *     blocks the page). The union of the two is the strictest rule that still names a cause:
+ *     the first alone would let a pitch of 45 ms inside a 90 ms frame go; the second alone
+ *     would not catch a pitch of 60 ms next to a 130 ms render.
+ * The frames that are only style, layout and paint, and the scripts of other code (MatchScreen,
+ * timers), are real but not the pitch's: they are printed and do not fail (they show even with
+ * the box of the pitch hidden, so the load of the machine and of the page decide them).
+ */
+const PITCH_SCRIPT = /pitch-chunk|MatchPitch|backdrop|scene|geometry|tokens|motion|kits/i;
+const isPitchScript = (x: LongFrame['scripts'][number]) =>
+  PITCH_SCRIPT.test(x.sourceURL) || PITCH_SCRIPT.test(x.sourceFunctionName);
+
+const pitchShare = (frame: SeenFrame) =>
+  frame.scripts.filter(isPitchScript).reduce((sum, x) => sum + x.duration, 0);
+
+const isPitchFrame = (frame: SeenFrame) => {
+  const share = pitchShare(frame);
+  return share >= 50 || (frame.blocking > 0 && share >= 0.5 * frame.blocking);
+};
+
+const describeFrame = (frame: SeenFrame, from = 0) =>
+  `aos ${((frame.at - from) / 1000).toFixed(1)} s: ${frame.duration.toFixed(0)} ms (bloqueio ${frame.blocking.toFixed(0)} ms, estilo e leiaute ${frame.renderMs.toFixed(0)} ms, campo ${pitchShare(frame).toFixed(0)} ms; ${
+    frame.scripts
+      .map(
+        (x) =>
+          `${isPitchScript(x) ? 'CAMPO ' : ''}${x.sourceFunctionName || x.invoker} ${x.sourceURL.split('/').pop()} ${x.duration.toFixed(0)} ms`,
+      )
+      .join(', ') || 'sem script'
+  })`;
+
+/** Starts to record the long animation frames in `window.seenFrames`. */
+const watchFrames = (page: Page) =>
+  page.evaluate(() => {
+    const w = window as unknown as { seenFrames: SeenFrame[] };
+    w.seenFrames = [];
+    new PerformanceObserver((list) => {
+      for (const entry of list.getEntries() as unknown as LongFrame[]) {
+        if (entry.duration < 50) continue;
+        w.seenFrames.push({
+          at: entry.startTime,
+          duration: entry.duration,
+          blocking: entry.blockingDuration,
+          renderMs:
+            entry.styleAndLayoutStart > 0
+              ? entry.startTime + entry.duration - entry.styleAndLayoutStart
+              : 0,
+          scripts: entry.scripts.map((x) => ({
+            sourceURL: x.sourceURL,
+            sourceFunctionName: x.sourceFunctionName,
+            invoker: x.invoker,
+            duration: x.duration,
+          })),
+        });
+      }
+    }).observe({ type: 'long-animation-frame', buffered: true });
+  });
+
+const seenFrames = (page: Page) =>
+  page.evaluate(() => [...(window as unknown as { seenFrames: SeenFrame[] }).seenFrames]);
+
+interface LongTask {
+  start: number;
+  duration: number;
+  minute: string;
+}
 
 test.describe('Campo 2D: desempenho (T-085)', () => {
   test.use({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3 });
@@ -669,5 +843,238 @@ test.describe('Campo 2D: desempenho (T-085)', () => {
     expect(at.length).toBeGreaterThan(200);
     expect(p95).toBeLessThanOrEqual(34);
     expect(median).toBeLessThanOrEqual(6);
+  });
+
+  test('nenhum quadro longo (≥ 50 ms) é do campo na partida inteira da "Animada completa" em Rápido, CPU 4×, com a troca de tema no meio (partida-campo-v2.md, 13, E2E 2)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium' || test.info().project.name.endsWith('desktop'),
+      'CDP; uma vez',
+    );
+    test.setTimeout(180_000);
+    await careerWith(page, 'full');
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    await page.evaluate(() => {
+      const w = window as unknown as { longTasks: LongTask[] };
+      w.longTasks = [];
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          w.longTasks.push({
+            start: entry.startTime,
+            duration: entry.duration,
+            minute:
+              document.querySelector('main.match .scoreboard .live .minute')?.textContent ?? '',
+          });
+        }
+      }).observe({ type: 'longtask' });
+    });
+    await watchFrames(page);
+    await playButton(page).click();
+    await expect(matchScreen(page)).toBeVisible();
+    await expect(canvas(page)).toHaveCount(1);
+    // The match counts from the first frame of the pitch: the first drawing, with the code cold,
+    // is the opening of the screen (see the test of the redraw of the background).
+    await expect
+      .poll(() => pixelOf(page, 'grass'), { timeout: 15_000 })
+      .toBe(await tokenColor(page, 'pitch'));
+    await page.evaluate(
+      (word) => {
+        const w = window as unknown as { kickoff: number; whistle?: number };
+        w.kickoff = performance.now();
+        const phase = document.querySelector('main.match .scoreboard .live .phase')!;
+        new MutationObserver(() => {
+          if (w.whistle === undefined && phase.textContent === word) w.whistle = performance.now();
+        }).observe(phase, { childList: true, characterData: true, subtree: true });
+      },
+      ui('pt-BR', 'match.phase.end'),
+    );
+    await control(page, 'match.fast').click();
+    // The theme changes in the middle of the match, with the plays going on (E2E 2 of the spec).
+    const minute = async () =>
+      Number(/^(\d+)/.exec(await board(page).locator('.live .minute').innerText())?.[1] ?? 0);
+    const changes = [
+      { at: 15, run: () => setTheme(page, 'dia') },
+      { at: 40, run: () => setTheme(page, 'noite') },
+      { at: 65, run: () => setTheme(page, 'dia') },
+    ];
+    const themeAt: number[] = [];
+    for (const change of changes) {
+      await expect.poll(minute, { timeout: 90_000 }).toBeGreaterThanOrEqual(change.at);
+      themeAt.push(await page.evaluate(() => performance.now()));
+      await change.run();
+    }
+    await expect(control(page, 'match.toSummary')).toBeVisible({ timeout: 90_000 });
+    const longTasks = await page.evaluate(() => {
+      const w = window as unknown as {
+        longTasks: LongTask[];
+        kickoff: number;
+        whistle?: number;
+      };
+      return w.longTasks
+        .filter((t) => t.start >= w.kickoff && t.start < (w.whistle ?? Infinity))
+        .map((t) => ({ ...t, start: t.start - w.kickoff }));
+    });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    const { kickoff, whistle } = await page.evaluate(() => {
+      const w = window as unknown as { kickoff: number; whistle?: number };
+      return { kickoff: w.kickoff, whistle: w.whistle ?? Infinity };
+    });
+    // The long frames from the first frame of the pitch to the final whistle.
+    const inMatch = (await seenFrames(page)).filter((f) => f.at >= kickoff && f.at < whistle);
+    const pitchFrames = inMatch.filter(isPitchFrame);
+    const others = inMatch.filter((f) => !isPitchFrame(f));
+    console.log(
+      `quadros longos da partida que não são do campo (não reprovam, ${others.length}): ${others.map((f) => describeFrame(f, kickoff)).join(' | ')}`,
+    );
+    console.log(
+      `quadros longos da partida do campo (${pitchFrames.length}): ${pitchFrames.map((f) => describeFrame(f, kickoff)).join(' | ')}`,
+    );
+    console.log(
+      `tarefas longas na "Animada completa" inteira (CPU 4×, só registro): [${longTasks
+        .map(
+          (t) =>
+            `${t.duration.toFixed(0)} ms aos ${(t.start / 1000).toFixed(1)} s, minuto ${t.minute}`,
+        )
+        .join(
+          '; ',
+        )}]; trocas de tema aos ${themeAt.map((t) => ((t - kickoff) / 1000).toFixed(1)).join(', ')} s`,
+    );
+    expect(pitchFrames.map((f) => describeFrame(f, kickoff))).toEqual([]);
+  });
+
+  test('o redesenho do fundo, na troca de tema e no redimensionamento, tem p95 ≤ 30 ms e nenhuma medida acima de 50 ms com CPU 4×, e nenhum quadro longo é do campo (partida-campo-v2.md, 12)', async ({
+    page,
+    browserName,
+  }) => {
+    test.skip(
+      browserName !== 'chromium' || test.info().project.name.endsWith('desktop'),
+      'CDP; uma vez',
+    );
+    test.setTimeout(120_000);
+    // The background is drawn in a canvas out of the page (`field`): it starts when its size is
+    // set and ends when the first copy to the main canvas returns. Measured from outside, with no hook in the game.
+    await page.addInitScript(() => {
+      const w = window as unknown as {
+        redraws: { took: number; width: number }[];
+        longTasks: { start: number; duration: number }[];
+      };
+      w.redraws = [];
+      w.longTasks = [];
+      let started: number | null = null;
+      const width = Object.getOwnPropertyDescriptor(HTMLCanvasElement.prototype, 'width')!;
+      Object.defineProperty(HTMLCanvasElement.prototype, 'width', {
+        ...width,
+        set(this: HTMLCanvasElement, value: number) {
+          if (!this.isConnected) started = performance.now();
+          width.set!.call(this, value);
+        },
+      });
+      const drawImage = CanvasRenderingContext2D.prototype.drawImage;
+      CanvasRenderingContext2D.prototype.drawImage = function (
+        this: CanvasRenderingContext2D,
+        ...args: [CanvasImageSource, number, number]
+      ) {
+        const source = args[0];
+        const first =
+          started !== null && source instanceof HTMLCanvasElement && !source.isConnected;
+        const result = drawImage.apply(this, args as never);
+        // The first copy of the new background is part of the redraw: it is where the browser
+        // resolves the canvas, so the time is taken when the copy returns.
+        if (first) {
+          w.redraws.push({ took: performance.now() - started!, width: source.width });
+          started = null;
+        }
+        return result;
+      } as typeof drawImage;
+      new PerformanceObserver((list) => {
+        for (const entry of list.getEntries()) {
+          w.longTasks.push({ start: entry.startTime, duration: entry.duration });
+        }
+      }).observe({ type: 'longtask' });
+    });
+    await careerWith(page, 'full');
+    await watchFrames(page);
+    await page.getByRole('button', { name: ui('pt-BR', 'play.label') }).click();
+    await expect(canvas(page)).toHaveCount(1);
+    await expect.poll(() => page.evaluate(() => devicePixelRatio)).toBe(3);
+    const redraws = () =>
+      page.evaluate(
+        () => (window as unknown as { redraws: { took: number; width: number }[] }).redraws.length,
+      );
+    await expect.poll(redraws).toBeGreaterThan(0);
+    const cdp = await page.context().newCDPSession(page);
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    const wanted: { what: string; at: number }[] = [];
+    const next = async (what: string, change: () => Promise<unknown>) => {
+      const before = await redraws();
+      const at = await page.evaluate(() => performance.now());
+      await change();
+      await expect.poll(redraws, { message: what }).toBeGreaterThan(before);
+      wanted.push({ what, at });
+    };
+    // Four rounds of 6 changes (24 redraws, enough for a p95): theme, theme, and the sizes of the phone upright, the small phone, lying
+    // down and the desktop. The phone sizes run at CPU 4× (the target of the spec); the desktop,
+    // whose canvas is the largest (about 1190×790 px), at CPU 1×: no desktop is 4× slower.
+    for (let round = 0; round < 4; round++) {
+      await next(`tema dia ${round}`, () => setTheme(page, 'dia'));
+      await next(`tema noite ${round}`, () => setTheme(page, 'noite'));
+      for (const [width, height] of [
+        [360, 640],
+        [844, 390],
+        [1280, 800],
+        [390, 844],
+      ] as const) {
+        const desktop = width === 1280;
+        if (desktop) await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+        await next(`${width}×${height} ${round}`, () => page.setViewportSize({ width, height }));
+        if (desktop) await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+      }
+    }
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 1 });
+    const { took, long } = await page.evaluate(() => {
+      const w = window as unknown as {
+        redraws: { took: number; width: number }[];
+        longTasks: { start: number; duration: number }[];
+      };
+      return { took: w.redraws.map((r) => ({ ...r })), long: [...w.longTasks] };
+    });
+    // The first redraw is the pitch loading (cold code, no throttling): not a theme or a size.
+    const measured = took.slice(1);
+    const worst = Math.max(...measured.map((r) => r.took));
+    console.log(
+      `redesenho do fundo (ms, CPU 4×, ${measured.length} redesenhos): ${measured
+        .map((r) => `${r.took.toFixed(1)}@${r.width}`)
+        .join(' ')}; pior ${worst.toFixed(1)} ms`,
+    );
+    // Each long task, with the last change made before it (only logged).
+    for (const task of long) {
+      const last = [...wanted].reverse().find((w) => w.at <= task.start);
+      console.log(
+        `tarefa longa de ${task.duration.toFixed(0)} ms, ${last === undefined ? 'antes das mudanças' : `${(task.start - last.at).toFixed(0)} ms depois de "${last.what}"`}`,
+      );
+    }
+    const frames = await seenFrames(page);
+    const pitchFrames = frames.filter(isPitchFrame);
+    console.log(
+      `quadros longos que não são do campo (não reprovam, ${frames.length - pitchFrames.length}): ${frames
+        .filter((f) => !isPitchFrame(f))
+        .map((f) => describeFrame(f))
+        .join(' | ')}`,
+    );
+    const p95 = [...measured.map((r) => r.took)].sort((a, b) => a - b)[
+      Math.ceil(0.95 * measured.length) - 1
+    ]!;
+    console.log(
+      `redesenho do fundo: ${measured.length} medidas, p95 ${p95.toFixed(1)} ms, pior ${worst.toFixed(1)} ms`,
+    );
+    // At least 20 samples, so that the p95 is not the maximum under another name.
+    expect(measured.length).toBeGreaterThanOrEqual(20);
+    expect(measured.length).toBeGreaterThanOrEqual(wanted.length - 1);
+    expect(p95).toBeLessThanOrEqual(30);
+    expect(worst).toBeLessThanOrEqual(50);
+    expect(pitchFrames.map((f) => describeFrame(f))).toEqual([]);
   });
 });

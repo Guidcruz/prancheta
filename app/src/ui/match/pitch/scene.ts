@@ -3,6 +3,8 @@ import {
   seedFromString,
   type Formation,
   type MatchEvent,
+  ATTRIBUTE_RANGE,
+  type Player,
   type PlayerId,
   type Side,
 } from '@engine';
@@ -30,6 +32,11 @@ import { PITCH_MOTION as M, PITCH_SIZE } from './motion';
  * a chance of the same kind, side and player are the same frame by frame. The outcome is drawn only
  * in the step that reveals it.
  *
+ * "Only the ball" (partida-campo-v2.md, 5; campo-lances.md, 10): in a minute with nothing shown no
+ * disc is drawn. The discs appear only in the plays of the engine, each made for the `PlayerId` of
+ * the event (the finisher, the taker, the scorer, the sent-off) and for the keeper who defends,
+ * fading in over the first 30% of the step they appear in and out over the first 30% of the next.
+ *
  * The home side is always on the left, attacking to the right, the whole match. Discs 0 to 10 are
  * the home side's and 11 to 21 the visitor's, the keeper first, in the order of the slots of the
  * formation; a substitute takes the disc of the player who left.
@@ -45,10 +52,27 @@ const CENTRE_Y = PITCH_SIZE.width / 2;
 /** The fraction of the advance at the end of the first half of the time, with slow motion. */
 const SLOW_SPLIT = slowMotion(0.5);
 
+/**
+ * The `physical` of a player as the engine reads it (`attributeOf`, which the ui may not import:
+ * it is of the tools API): his own value, or 40% of `overall` rounded and held in range.
+ * `src/data/pitch-physical.test.ts` keeps the two equal.
+ */
+export function physicalOf(player: Pick<Player, 'attributes' | 'overall'>): number {
+  const own = player.attributes.physical;
+  if (own !== undefined) return own;
+  const rounded = Math.floor((4 * player.overall + 5) / 10);
+  return Math.min(ATTRIBUTE_RANGE.max, Math.max(ATTRIBUTE_RANGE.min, rounded));
+}
+
 /** The formation and the 11 of one side, as the match starts (`TeamSheet.lineup`). */
 export interface PitchLineup {
   readonly formation: Formation;
   readonly starters: readonly PlayerId[];
+  /**
+   * The squad of the side: the choreography needs the `physical` of the players on the pitch to
+   * follow the engine when a keeper leaves with no substitution (`fillEmptyGoal`).
+   */
+  readonly players: readonly Pick<Player, 'id' | 'attributes' | 'overall'>[];
 }
 
 /** What the MatchPitch draws at one instant; written in place by {@link sceneAt}. */
@@ -59,6 +83,8 @@ export interface PitchScene {
   readonly y: Float64Array;
   /** 1: the disc is on the pitch. */
   readonly on: Uint8Array;
+  /** 0 to 1: how much of each disc is drawn (0 for the discs not in a play of the engine). */
+  readonly alpha: Float64Array;
   ballX: number;
   ballY: number;
 }
@@ -83,13 +109,25 @@ interface StepMotion {
   /** Who is on the pitch during the step and at its end (a disc leaving goes at the end). */
   readonly on: Uint8Array;
   readonly onEnd: Uint8Array;
-  /** The one frame with reduced motion: the formation, and the ball where the step leaves it. */
+  /** The one frame with reduced motion: where the step leaves the discs and the ball. */
   readonly still: Float64Array;
+  /** The discs of a play of the engine drawn in this step, and in the one before it. */
+  readonly show: Uint8Array;
+  readonly showPrev: Uint8Array;
+  /** Discs that stay on the pitch (a keeper's) but are gone from sight at the end of the step. */
+  readonly gone: Uint8Array;
+  /** Who owns each disc as the step starts (the anchor of the discs of a play, for the tests). */
+  readonly owner: readonly (PlayerId | null)[];
 }
 
 /** The motion of every step of a match. */
 export interface Choreography {
   readonly steps: readonly StepMotion[];
+  /**
+   * The players of an event who are not on the pitch (a damaged save only): no disc was made for
+   * them, and the caller records it as a programming error.
+   */
+  readonly unknown: readonly PlayerId[];
 }
 
 /** A scene to be filled by {@link sceneAt}; one per pitch, reused for every frame. */
@@ -98,6 +136,7 @@ export function createScene(): PitchScene {
     x: new Float64Array(DISCS),
     y: new Float64Array(DISCS),
     on: new Uint8Array(DISCS),
+    alpha: new Float64Array(DISCS),
     ballX: CENTRE_X,
     ballY: CENTRE_Y,
   };
@@ -184,14 +223,13 @@ class Field {
     }
   }
 
-  /** The disc of `player` on `side`, or the last outfield disc on the pitch when not found. */
+  /** The disc of `player` on `side`, or -1 when he is not on the pitch (never another's disc). */
   discOf(side: Side, player: PlayerId): number {
     const first = firstDisc(side);
     for (let d = first; d < first + 11; d++) {
       if (this.on[d] === 1 && this.owner[d] === player) return d;
     }
-    for (let d = first + 10; d > first; d--) if (this.on[d] === 1) return d;
-    return first;
+    return -1;
   }
 }
 
@@ -225,7 +263,7 @@ function flight(timing: TimingKey): readonly [number, number] {
 function finisherOf(event: MatchEvent): PlayerId | undefined {
   if (event.type === 'chance') return event.shooter;
   if (event.type === 'goal') return event.scorer;
-  if (event.type === 'penaltyAwarded') return event.taker;
+  if (event.type === 'penaltyAwarded' || event.type === 'penaltyMissed') return event.taker;
   return undefined;
 }
 
@@ -311,17 +349,34 @@ export function choreograph(
   const field = new Field(lineups);
   const rngOf = (label: string) => new Rng(seedFromString(`${seed}-pitch-${label}`));
   const out: StepMotion[] = [];
+  const unknown: PlayerId[] = [];
+  const squad = new Map<PlayerId, Pick<Player, 'id' | 'attributes' | 'overall'>>();
+  for (const side of ['home', 'away'] as const) {
+    for (const player of lineups[side].players) squad.set(player.id, player);
+  }
   let afterGoal = false;
+  let prevShow = new Uint8Array(DISCS);
+  /** The disc of the player of an event; none (and a record) when he is not on the pitch. */
+  const discFor = (side: Side, player: PlayerId): number => {
+    const disc = field.discOf(side, player);
+    if (disc === -1) unknown.push(player);
+    return disc;
+  };
 
   steps.forEach((step, index) => {
     const from = copy(field.pose);
     const on = new Uint8Array(field.on);
+    const show = new Uint8Array(DISCS);
+    const gone = new Uint8Array(DISCS);
+    const owner = [...field.owner];
     const line = step.line;
     const source = line?.source;
     let segments: Segment[] = [];
     let slow = false;
     /** Discs that leave the pitch at the end of the step. */
     const leaving: number[] = [];
+    /** The sent-off disc of a red card, whose player walks to the touchline. */
+    let expelled = -1;
 
     // The roster first: who leaves, who comes in, the formation.
     if (source !== undefined && line!.stage === 'final') {
@@ -339,15 +394,32 @@ export function choreograph(
         for (let d = first; d < first + 11; d++) {
           if (field.on[d] === 1 && field.owner[d] === source.player) disc = d;
         }
+        if (source.type === 'red') {
+          expelled = disc;
+          if (disc === -1) unknown.push(source.player);
+        }
         if (disc === first) {
-          // The keeper's disc stays (whoever goes in goal wears the keeper's shirt): the disc of
-          // the last outfield slot on the pitch leaves, and its player takes the keeper's disc.
+          // The keeper's disc stays (whoever goes in goal wears the keeper's shirt). As the engine
+          // does (`fillEmptyGoal`, D5-A of campo-lances.md), the outfield player on the pitch with
+          // the highest `physical` goes to goal (a tie keeps the first slot); his disc leaves.
+          let best = -1;
+          let bestPhysical = -1;
           let last = -1;
-          for (let d = first + 10; d > first && last === -1; d--) if (field.on[d] === 1) last = d;
-          if (last !== -1) {
-            field.owner[first] = field.owner[last]!;
-            field.owner[last] = null;
-            leaving.push(last);
+          for (let d = first + 1; d < first + 11; d++) {
+            if (field.on[d] !== 1) continue;
+            last = d;
+            const player = squad.get(field.owner[d]!);
+            const physical = player === undefined ? -1 : physicalOf(player);
+            if (physical > bestPhysical) {
+              best = d;
+              bestPhysical = physical;
+            }
+          }
+          if (best === -1) best = last;
+          if (best !== -1) {
+            field.owner[first] = field.owner[best]!;
+            field.owner[best] = null;
+            leaving.push(best);
           }
         } else if (disc !== -1) {
           field.owner[disc] = null;
@@ -371,8 +443,15 @@ export function choreograph(
       }
     }
 
+    /** The discs that go to the touchline: who leaves and, with a red, the sent-off keeper. */
+    const toLine = leaving.slice();
+    if (expelled !== -1 && !toLine.includes(expelled)) {
+      // A sent-off keeper: his disc stays (the new keeper wears it) but is not seen again.
+      toLine.push(expelled);
+      gone[expelled] = 1;
+    }
     const toTouchline = (pose: Float64Array) => {
-      for (const d of leaving) {
+      for (const d of toLine) {
         const y = from[d * 2 + 1]! < CENTRE_Y ? -M.leave : PITCH_SIZE.width + M.leave;
         setDisc(pose, d, from[d * 2]!, y);
       }
@@ -387,6 +466,30 @@ export function choreograph(
       field.toFormation(to);
       setBall(to, CENTRE_X, CENTRE_Y);
       toTouchline(to);
+      // A play or a red card right after a goal wins over the kick-off: its discs fade in as in
+      // any play (still at their spots of the formation), while the ball goes back to the centre.
+      const event = source as (MatchEvent & { side: Side }) | undefined;
+      const player = event === undefined ? undefined : finisherOf(event);
+      const play =
+        player !== undefined &&
+        (line!.stage === 'build' ||
+          event!.type === 'penaltyAwarded' ||
+          (event!.type === 'chance' && step.timing === 'event'));
+      if (play) {
+        const disc = discFor(event!.side, player);
+        const keeper = firstDisc(other(event!.side));
+        for (const d of disc === -1 ? [keeper] : [disc, keeper]) {
+          if (field.on[d] !== 1) continue;
+          show[d] = 1;
+          if (prevShow[d] !== 1) setDisc(from, d, to[d * 2]!, to[d * 2 + 1]!);
+        }
+      } else if (source?.type === 'red' && expelled !== -1) {
+        const by = from[BALL + 1]!;
+        const y = by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff;
+        setDisc(from, expelled, from[BALL]!, Math.min(PITCH_SIZE.width, Math.max(0, y)));
+        toTouchline(to);
+        show[expelled] = 1;
+      }
       segments = [segment(1, to)];
     } else if (line === undefined) {
       // A minute with nothing shown: the ball walks the midfield; the blocks follow it.
@@ -412,12 +515,14 @@ export function choreograph(
       const side = event.side;
       const dir = attack(side);
       const goal = goalLine(side);
-      const disc = field.discOf(side, finisherOf(event)!);
+      const disc = discFor(side, finisherOf(event)!);
+      const keeper = firstDisc(other(side));
       const reach = copy(from);
       const contact = copy(from);
+      // Where the finisher appears (his disc is not in the step before).
+      let appear: readonly [number, number] | undefined;
       if (event.type === 'penaltyAwarded') {
         const px = goal - dir * M.penalty.spot;
-        const keeper = firstDisc(other(side));
         const front = goal - dir * M.penalty.areaDepth;
         const top = CENTRE_Y - M.penalty.areaWidth / 2;
         const bottom = CENTRE_Y + M.penalty.areaWidth / 2;
@@ -437,10 +542,11 @@ export function choreograph(
           else setDisc(reach, d, x, bottom + M.penalty.clear);
         }
         if (field.on[keeper] === 1) setDisc(reach, keeper, goal, CENTRE_Y);
-        setDisc(reach, disc, px - dir * M.penalty.behind, CENTRE_Y);
+        if (disc !== -1) setDisc(reach, disc, px - dir * M.penalty.behind, CENTRE_Y);
         setBall(reach, px, CENTRE_Y);
         contact.set(reach);
-        setDisc(contact, disc, px, CENTRE_Y);
+        if (disc !== -1) setDisc(contact, disc, px, CENTRE_Y);
+        appear = [px - dir * M.penalty.behind, CENTRE_Y];
       } else {
         const rng = rngOf(`${line.id}-build`);
         const freeKick =
@@ -453,10 +559,23 @@ export function choreograph(
         const gy = py - CENTRE_Y;
         const length = Math.hypot(gx, gy) || 1;
         field.follow(reach, px, py, [disc]);
-        setDisc(reach, disc, px + (gx / length) * M.behind, py + (gy / length) * M.behind);
+        if (disc !== -1) {
+          setDisc(reach, disc, px + (gx / length) * M.behind, py + (gy / length) * M.behind);
+        }
         setBall(reach, px, py);
         contact.set(reach);
-        setDisc(contact, disc, px, py);
+        if (disc !== -1) setDisc(contact, disc, px, py);
+        const away = freeKick ? M.appear.setPiece : M.appear.open;
+        appear = [px + (gx / length) * away, py + (gy / length) * away];
+      }
+      if (disc !== -1) {
+        show[disc] = 1;
+        if (prevShow[disc] !== 1 && appear !== undefined) setDisc(from, disc, appear[0], appear[1]);
+      }
+      if (field.on[keeper] === 1) {
+        show[keeper] = 1;
+        if (prevShow[keeper] !== 1)
+          setDisc(from, keeper, reach[keeper * 2]!, reach[keeper * 2 + 1]!);
       }
       slow = step.timing === 'drama';
       const split = slow ? SLOW_SPLIT : 0.5;
@@ -467,6 +586,10 @@ export function choreograph(
       const event = source as MatchEvent & { side: Side };
       const rng = rngOf(`${line.id}-outcome`);
       const at = flight(step.timing);
+      const shooter = discFor(event.side, finisherOf(event)!);
+      if (shooter !== -1) show[shooter] = 1;
+      const keeper = firstDisc(other(event.side));
+      if (field.on[keeper] === 1) show[keeper] = 1;
       segments = outcomeSegments(field, from, event.side, outcomeOf(event)!, rng, at, [1, 1]);
     } else if (source!.type === 'chance') {
       // A weak chance (no pause): to the point of the play, then the flight, in the same step.
@@ -476,8 +599,25 @@ export function choreograph(
       const px = goalLine(event.side) - dir * within(rng, M.weak.distance);
       const py = within(rng, M.weak.y);
       const reach = copy(from);
-      field.follow(reach, px, py);
+      const shooter = discFor(event.side, event.shooter);
+      field.follow(reach, px, py, [shooter]);
+      if (shooter !== -1) setDisc(reach, shooter, px, py);
       setBall(reach, px, py);
+      const keeper = firstDisc(other(event.side));
+      if (shooter !== -1) {
+        show[shooter] = 1;
+        const gx = px - goalLine(event.side);
+        const gy = py - CENTRE_Y;
+        const length = Math.hypot(gx, gy) || 1;
+        const away = M.appear.open;
+        if (prevShow[shooter] !== 1)
+          setDisc(from, shooter, px + (gx / length) * away, py + (gy / length) * away);
+      }
+      if (field.on[keeper] === 1) {
+        show[keeper] = 1;
+        if (prevShow[keeper] !== 1)
+          setDisc(from, keeper, reach[keeper * 2]!, reach[keeper * 2 + 1]!);
+      }
       const flightEnd = event.outcome === 'post' ? 0.75 : 1;
       segments = [
         segment(0.5, reach),
@@ -500,8 +640,15 @@ export function choreograph(
       field.toFormation(to);
       setBall(to, CENTRE_X, CENTRE_Y);
       segments = [segment(1, to)];
-    } else if (leaving.length > 0) {
+    } else if (toLine.length > 0) {
       // A red card, or an injury with no substitution in the same minute: off by the touchline.
+      // The sent-off appears 3 m from the ball, on the side of the touchline he walks to.
+      if (expelled !== -1) {
+        const by = from[BALL + 1]!;
+        const y = by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff;
+        setDisc(from, expelled, from[BALL]!, Math.min(PITCH_SIZE.width, Math.max(0, y)));
+        show[expelled] = 1;
+      }
       const to = copy(from);
       toTouchline(to);
       segments = [segment(1, to)];
@@ -513,11 +660,35 @@ export function choreograph(
     const end = segments.length === 0 ? from : segments[segments.length - 1]!.pose;
     field.pose.set(end);
     for (const d of leaving) field.on[d] = 0;
-    const still = copy(end);
-    field.toFormation(still);
-    out.push({ from, segments, slow, on, onEnd: new Uint8Array(field.on), still });
+    out.push({
+      from,
+      segments,
+      slow,
+      on,
+      onEnd: new Uint8Array(field.on),
+      still: copy(end),
+      show,
+      showPrev: prevShow,
+      gone,
+      owner,
+    });
+    // What the next step sees as shown before it: not the gone discs (the new keeper appears).
+    prevShow = show.map((v, d) => (gone[d] === 1 ? 0 : v));
   });
-  return { steps: out };
+  return { steps: out, unknown };
+}
+
+/** The share of each disc drawn at `progress` (0 to 1): the fade of the discs of a play. */
+function fade(out: PitchScene, step: StepMotion, p: number): void {
+  const k = ease(clamp01(p / M.appear.fade));
+  for (let d = 0; d < DISCS; d++) {
+    const now = step.show[d]!;
+    const before = step.showPrev[d]!;
+    const a = now === before ? now : now === 1 ? k : 1 - k;
+    // A disc that left the pitch is gone (a sent-off, at the end of his step); so is a sent-off
+    // keeper's, which stays on the pitch for the one who replaces him.
+    out.alpha[d] = out.on[d] === 1 && !(p >= 1 && step.gone[d] === 1) ? a : 0;
+  }
 }
 
 function write(out: PitchScene, pose: Float64Array, on: Uint8Array): void {
@@ -564,18 +735,20 @@ export function sceneAt(
       }
       out.ballX = lerp(from[BALL]!, to[BALL]!, w);
       out.ballY = lerp(from[BALL + 1]!, to[BALL + 1]!, w);
+      fade(out, step, p);
       return out;
     }
     start = end;
     from = seg.pose;
   }
   write(out, from, on);
+  fade(out, step, p);
   return out;
 }
 
 /**
- * The one frame of step `index` with reduced motion (partida.md, "Movimento"): the sides at the
- * spots of their formation (without who left) and the ball where the step leaves it. Returns
+ * The one frame of step `index` with reduced motion (partida-campo-v2.md, 11): the discs of the play
+ * and the ball where the step leaves them. Returns
  * `out`; allocates nothing.
  */
 export function stillScene(choreography: Choreography, index: number, out: PitchScene): PitchScene {
@@ -583,5 +756,8 @@ export function stillScene(choreography: Choreography, index: number, out: Pitch
   if (steps.length === 0) return out;
   const step = steps[index < 0 ? 0 : index >= steps.length ? steps.length - 1 : index]!;
   write(out, step.still, step.onEnd);
+  // No fade with reduced motion: the discs of the play, where the step leaves them (also the
+  // sent-off, at the touchline).
+  for (let d = 0; d < DISCS; d++) out.alpha[d] = step.show[d]!;
   return out;
 }

@@ -65,7 +65,8 @@
     watchModeOf,
   } from './match-flow';
   import type { WatchMode } from './match/steps';
-  import type { FinishOutcome, PitchFailure } from './screens/MatchScreen.svelte';
+  import type { FinishOutcome, PitchFailure, PitchIssue } from './screens/MatchScreen.svelte';
+  import { createPitchLog } from './match/pitch-log';
   import RoundSummary, { type RoundSaveState } from './screens/RoundSummary.svelte';
   import CalendarRound from './screens/CalendarRound.svelte';
   import CalendarView from './screens/CalendarView.svelte';
@@ -134,8 +135,8 @@
    */
   let MatchScreenView: typeof import('./screens/MatchScreen.svelte').default | undefined =
     $state.raw();
-  /** The pitch of this match already fell back (one entry in the error log per match). */
-  let pitchLogged = false;
+  /** What the pitch of this match records (one entry of each kind per match). */
+  const pitchLog = createPitchLog((report) => void log.record(report));
   /** The round of the match, once asked: a second ask gets the same answer (no second round). */
   let finished: Promise<FinishOutcome> | undefined;
   let matchScreen:
@@ -543,9 +544,12 @@
 
   /** The pitch fell back to the layout without it: logged once per match. */
   function pitchFailed(code: PitchFailure, error?: unknown): void {
-    if (pitchLogged) return;
-    pitchLogged = true;
-    void log.record({ kind: 'programming', code, screen: 'match', error });
+    pitchLog.failed(code, error);
+  }
+
+  /** An event of a player not on the pitch: logged once per match, apart from the failure. */
+  function pitchIssue(code: PitchIssue): void {
+    pitchLog.issue(code);
   }
 
   function openMatch(session: MatchSession): void {
@@ -559,7 +563,7 @@
     if (sheetEntry) history.replaceState(MATCH_ENTRY, '', MATCH_HASH);
     else history.pushState(MATCH_ENTRY, '', MATCH_HASH);
     finished = undefined;
-    pitchLogged = false;
+    pitchLog.reset();
     match = session;
   }
 
@@ -977,6 +981,7 @@
       onsummary={matchToSummary}
       onleave={leaveMatch}
       onpitchfail={pitchFailed}
+      onpitchissue={pitchIssue}
     />
   </ErrorBoundary>
 {:else if summaryShown}

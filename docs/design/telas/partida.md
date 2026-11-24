@@ -204,6 +204,19 @@ Em pt-BR, "Pausada" é mais larga que "1º tempo": o centro rodando fica uns 11p
 
 ## Campo 2D (T-085)
 
+### Atualizações na implementação (campo v2, PR A, 2026-11-24)
+
+O campo v2 ([partida-campo-v2.md](partida-campo-v2.md)) substitui, nesta seção, o **Desenho** e os **Tamanhos** (campo inclinado por código, §3), as **Placas** (três filas só com cores, §4) e a parte da **Coreografia** sobre quem aparece (modo "só a bola", §5). O que segue abaixo continua valendo onde o v2 não diz outra coisa: lados fixos, cores dos discos, semente própria, nada antecipa o desfecho, câmera lenta, carregamento, canvas que falha. A **Comemoração** (GoalCelebration) continua até o PR B, e o movimento da bola nos minutos sem lance continua o passeio de hoje até o PR C.
+
+Medido no PR A (Chromium, densidade 2): a 360×740, caixa de 360 × 240px, gramado de 148px, placas de longe com 12px, disco do lance de 14 a 18px, bola de 8px; a 844×390, caixa de 396 × 264px; a 1280×800, 594 × 396px. Decidido na revisão de interface:
+
+- **Halo do refletor:** chega a zero a 75% do raio de 52px (não no raio inteiro), para o pixel de canto de cima à esquerda continuar `surface-0` na E2E; a força do halo perto do refletor é a do protótipo v5 (a luz do `beam` aplicada duas vezes), para o estádio manter a cara de noite.
+- **Placas:** cada placa tem contorno de 1px em `line` (as de fundo escuro somem contra a arquibancada no tema noite sem ele), como sugerido no lote das marcas fictícias.
+- **A sobra da caixa** em volta do canvas (quando a caixa não é exatamente 1,5:1; a 360×640 são 31px de cada lado) continua a arquibancada, nunca o gramado: na borda do desenho, abaixo da fila de longe, ficam as arquibancadas atrás dos gols, não a grama. Gradiente vertical de `surface-0` (no alto) a `surface-2` em 33% da altura (o topo das placas de longe) e de volta a `surface-0` no pé.
+- **E2E de pixels:** o meio da borda de baixo em `pitch` e o canto de cima à esquerda em `surface-0`, nos dois temas (§13 do v2, E2E 3).
+- **Movimento reduzido:** os discos do lance no fim do passo (o finalizador com a bola, o goleiro); o expulso aparece na linha lateral no quadro do vermelho.
+- **Depois de um gol:** os discos do gol esmaecem nos primeiros 30% do passo seguinte. Se esse passo é lance ou vermelho, o lance prevalece: a bola volta ao centro e os discos do lance entram com o fade, parados nos pontos da formação ([partida-campo-v2.md](partida-campo-v2.md), §5); se não é, nenhum disco aparece.
+
 Definition of Ready revista em 2026-11-15, antes de chamar o `developer`: o que estava aberto ou ambíguo foi fechado nesta seção (lista em "Definition of Ready da T-085", no fim do arquivo). Os pontos que dependem do CEO estão em "Decisões para o CEO (T-085)"; enquanto ele não decide, vale a recomendação.
 
 **Onde aparece.** Só na "Animada completa" (decisão 2 da T-085). Em "Só lances principais" a tela continua a da T-032, sem campo, e o chunk do campo nem é pedido.

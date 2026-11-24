@@ -7,6 +7,8 @@
 
   /** Why the pitch fell back to the layout without it (the code of the error log). */
   export type PitchFailure = 'pitch-chunk' | 'pitch-context' | 'pitch-draw';
+  /** The pitch goes on, but an event had no disc (the code of the error log). */
+  export type PitchIssue = 'pitch-unknown-player';
 </script>
 
 <script lang="ts">
@@ -83,6 +85,8 @@
     loadPitch?: () => Promise<PitchChunk>;
     /** The pitch fell back to the layout without it (once per match). */
     onpitchfail?: (code: PitchFailure, error?: unknown) => void;
+    /** An event of a player not on the pitch: the pitch goes on without that disc. */
+    onpitchissue?: (code: PitchIssue) => void;
   }
   const {
     lang,
@@ -96,6 +100,7 @@
     onleave,
     loadPitch = loadPitchChunk,
     onpitchfail,
+    onpitchissue,
   }: Props = $props();
 
   const TITLE_ID = 'match-title';
@@ -346,9 +351,14 @@
           // The steps of "Animada completa" (the only mode with the pitch).
           choreography = chunk.choreograph(
             steps,
-            { home: live.match.home.sheet.lineup, away: live.match.away.sheet.lineup },
+            {
+              home: { ...live.match.home.sheet.lineup, players: live.match.home.players },
+              away: { ...live.match.away.sheet.lineup, players: live.match.away.players },
+            },
             live.match.seed,
           );
+          // An event of a player not on the pitch (a damaged save): no disc, a programming error.
+          if (choreography.unknown.length > 0) onpitchissue?.('pitch-unknown-player');
           scene = chunk.createScene();
         } catch (error) {
           pitchFail('pitch-draw', error);
@@ -515,6 +525,8 @@
                 {frame}
                 running={pitchRunning}
                 {version}
+                clubId={homeId}
+                {round}
                 onfail={(reason, error) =>
                   pitchFail(reason === 'context' ? 'pitch-context' : 'pitch-draw', error)}
               />
@@ -664,7 +676,15 @@
        sideways. */
     max-width: 100%;
     position: relative;
-    background: var(--pitch);
+    /* The leftover of the box, at the sides of the canvas, goes on as the stand: the edge of the
+       drawing below the far line is stand, not grass (`PITCH_STAND_END` in motion.ts is the
+       33%: this screen may not import the chunk, and `motion.test.ts` keeps the two equal). Tokens only. */
+    background: linear-gradient(
+      to bottom,
+      var(--surface-0),
+      var(--surface-2) 33%,
+      var(--surface-0)
+    );
   }
   .match :global(section.feed) {
     order: 4;

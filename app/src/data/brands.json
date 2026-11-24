@@ -1,0 +1,112 @@
+[
+  {
+    "id": "padaria-miolo-fofo",
+    "name": "Padaria Miolo Fofo",
+    "colors": ["#7a2e1d", "#ffd9a0"]
+  },
+  {
+    "id": "cimentao-materiais",
+    "name": "Cimentão Materiais",
+    "colors": ["#3d4a52", "#8fd3ff"]
+  },
+  {
+    "id": "radio-toca-fita-fm",
+    "name": "Rádio Toca-Fita FM",
+    "colors": ["#1f3a8a", "#9be7ff"]
+  },
+  {
+    "id": "acai-lingua-roxa",
+    "name": "Açaí Língua Roxa",
+    "colors": ["#4b1d6b", "#e6ff7a"]
+  },
+  {
+    "id": "borracharia-remendao",
+    "name": "Borracharia Remendão",
+    "colors": ["#243b2c", "#e8e0c8"]
+  },
+  {
+    "id": "pamonharia-milho-doce",
+    "name": "Pamonharia Milho Doce",
+    "colors": ["#f4d03f", "#0f5c4a"]
+  },
+  {
+    "id": "empanadas-dona-crocante",
+    "name": "Empanadas Doña Crocante",
+    "colors": ["#c9482b", "#fff1d6"]
+  },
+  {
+    "id": "yerbal-cuia-cheia",
+    "name": "Yerbal Cuia Cheia",
+    "colors": ["#2f6b3a", "#f0e2b6"]
+  },
+  {
+    "id": "espetinho-brasa-mansa",
+    "name": "Espetinho Brasa Mansa",
+    "colors": ["#2a2a35", "#ff7a45"]
+  },
+  {
+    "id": "lava-ligeiro",
+    "name": "Lava Ligeiro",
+    "colors": ["#00a6b8", "#08303a"]
+  },
+  {
+    "id": "sorvetes-gelo-fino",
+    "name": "Sorvetes Gelo Fino",
+    "colors": ["#f7b7d2", "#6a1b4d"]
+  },
+  {
+    "id": "mercadinho-fregues-feliz",
+    "name": "Mercadinho Freguês Feliz",
+    "colors": ["#e8efe0", "#b0302c"]
+  },
+  {
+    "id": "chaveiro-abre-te-sesamo",
+    "name": "Chaveiro Abre-Te Sésamo",
+    "colors": ["#0b5a8a", "#ffe9a8"]
+  },
+  {
+    "id": "celular-remenda",
+    "name": "Celular Remenda",
+    "colors": ["#7fd6a5", "#14344a"]
+  },
+  {
+    "id": "hortifruti-tomate-prosa",
+    "name": "Hortifruti Tomate Prosa",
+    "colors": ["#b3261e", "#e9f5c9"]
+  },
+  {
+    "id": "moto-pitoco",
+    "name": "Moto Pitoco",
+    "colors": ["#2b1b6e", "#ffb199"]
+  },
+  {
+    "id": "pastelao-da-esquina",
+    "name": "Pastelão da Esquina",
+    "colors": ["#d98324", "#2b1408"]
+  },
+  {
+    "id": "laticinios-vaca-prosa",
+    "name": "Laticínios Vaca Prosa",
+    "colors": ["#f2f2ee", "#1b5faa"]
+  },
+  {
+    "id": "salao-cachinho",
+    "name": "Salão Cachinho",
+    "colors": ["#e0559a", "#fff6fb"]
+  },
+  {
+    "id": "alfajores-dulce-tropiezo",
+    "name": "Alfajores Dulce Tropiezo",
+    "colors": ["#8b5a2b", "#ffe3f0"]
+  },
+  {
+    "id": "chipa-quentinho",
+    "name": "Chipá Quentinho",
+    "colors": ["#f3e6c4", "#8a3b12"]
+  },
+  {
+    "id": "pousada-rede-balancante",
+    "name": "Pousada Rede Balançante",
+    "colors": ["#1f8a8a", "#ffe27a"]
+  }
+]
