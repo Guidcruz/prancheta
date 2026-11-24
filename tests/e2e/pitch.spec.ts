@@ -59,13 +59,18 @@ const feedHeight = (page: Page) =>
       return feed.clientHeight - parseFloat(style.paddingTop) - parseFloat(style.paddingBottom);
     });
 
-/** A cor do pixel (2, 2) do canvas, como `rgb(r, g, b)`: a faixa de grama em volta do campo. */
-const cornerPixel = (page: Page) =>
-  canvas(page).evaluate((element) => {
+/**
+ * A cor de um pixel do canvas, como `rgb(r, g, b)` (partida-campo-v2.md, 13, E2E 3): `grass` é o
+ * meio da borda de baixo (o gramado de perto, que nenhum disco nem a bola alcança) e `stand` o
+ * canto de cima à esquerda (a cobertura da arquibancada).
+ */
+const pixelOf = (page: Page, where: 'grass' | 'stand') =>
+  canvas(page).evaluate((element, spot) => {
     const c = element as HTMLCanvasElement;
-    const [r, g, b] = c.getContext('2d')!.getImageData(2, 2, 1, 1).data;
+    const [x, y] = spot === 'grass' ? [Math.floor(c.width / 2), c.height - 1] : [0, 0];
+    const [r, g, b] = c.getContext('2d')!.getImageData(x, y, 1, 1).data;
     return `rgb(${r}, ${g}, ${b})`;
-  });
+  }, where);
 
 /** As linhas do registro de erros (`errors` do banco de teste). */
 const errorCodes = (page: Page) =>
@@ -395,7 +400,7 @@ test.describe('Campo 2D (T-085)', () => {
     expect(await animations()).toBe(0);
   });
 
-  test('tema: o canto do canvas tem a cor de --pitch no tema noite e no dia, trocado no meio da partida (item 11)', async ({
+  test('tema: o meio da borda de baixo tem a cor de --pitch e o canto de cima, a de --surface-0, nos temas noite e dia, trocados no meio da partida (item 11)', async ({
     page,
   }) => {
     await careerWith(page, 'full');
@@ -404,17 +409,29 @@ test.describe('Campo 2D (T-085)', () => {
     await openMatch(page);
     await expect(canvas(page)).toHaveCount(1);
     await page.clock.runFor(1_000);
-    expect(await cornerPixel(page)).toBe(await tokenColor(page, 'pitch'));
-    const night = await tokenColor(page, 'pitch');
+    const grass = () => pixelOf(page, 'grass');
+    const stand = () => pixelOf(page, 'stand');
+    expect(await grass()).toBe(await tokenColor(page, 'pitch'));
+    expect(await stand()).toBe(await tokenColor(page, 'surface-0'));
+    const night = {
+      pitch: await tokenColor(page, 'pitch'),
+      stand: await tokenColor(page, 'surface-0'),
+    };
     await setTheme(page, 'dia');
-    const day = await tokenColor(page, 'pitch');
-    expect(day).not.toBe(night);
-    await expect.poll(() => cornerPixel(page)).toBe(day);
+    const day = {
+      pitch: await tokenColor(page, 'pitch'),
+      stand: await tokenColor(page, 'surface-0'),
+    };
+    expect(day.pitch).not.toBe(night.pitch);
+    expect(day.stand).not.toBe(night.stand);
+    await expect.poll(grass).toBe(day.pitch);
+    await expect.poll(stand).toBe(day.stand);
     // Paused, the theme still redraws the field.
     await control(page, 'match.pause').click();
     await page.clock.runFor(3_000);
     await setTheme(page, 'noite');
-    await expect.poll(() => cornerPixel(page)).toBe(night);
+    await expect.poll(grass).toBe(night.pitch);
+    await expect.poll(stand).toBe(night.stand);
   });
 
   test('deitado (844×390) e desktop (1280×800): cabeçalho e campo à esquerda, placar e narração à direita, com a barra inteira (item 12)', async ({
@@ -604,7 +621,8 @@ test.describe('Campo 2D: offline (T-085)', () => {
     await playButton(page).click();
     await expect(page.getByRole('heading', { level: 1, name: 'Rodada 1' })).toBeVisible();
     await expect(canvas(page)).toHaveCount(1);
-    await expect.poll(() => cornerPixel(page)).toBe(await tokenColor(page, 'pitch'));
+    await expect.poll(() => pixelOf(page, 'grass')).toBe(await tokenColor(page, 'pitch'));
+    await expect.poll(() => pixelOf(page, 'stand')).toBe(await tokenColor(page, 'surface-0'));
   });
 });
 

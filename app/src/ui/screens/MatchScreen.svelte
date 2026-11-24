@@ -6,7 +6,8 @@
   export type BackAnswer = 'ask' | 'stay' | 'summary' | 'leave';
 
   /** Why the pitch fell back to the layout without it (the code of the error log). */
-  export type PitchFailure = 'pitch-chunk' | 'pitch-context' | 'pitch-draw';
+  export type PitchFailure =
+    'pitch-chunk' | 'pitch-context' | 'pitch-draw' | 'pitch-unknown-player';
 </script>
 
 <script lang="ts">
@@ -346,9 +347,14 @@
           // The steps of "Animada completa" (the only mode with the pitch).
           choreography = chunk.choreograph(
             steps,
-            { home: live.match.home.sheet.lineup, away: live.match.away.sheet.lineup },
+            {
+              home: { ...live.match.home.sheet.lineup, players: live.match.home.players },
+              away: { ...live.match.away.sheet.lineup, players: live.match.away.players },
+            },
             live.match.seed,
           );
+          // An event of a player not on the pitch (a damaged save): no disc, a programming error.
+          if (choreography.unknown.length > 0) onpitchfail?.('pitch-unknown-player');
           scene = chunk.createScene();
         } catch (error) {
           pitchFail('pitch-draw', error);
@@ -515,6 +521,8 @@
                 {frame}
                 running={pitchRunning}
                 {version}
+                clubId={homeId}
+                {round}
                 onfail={(reason, error) =>
                   pitchFail(reason === 'context' ? 'pitch-context' : 'pitch-draw', error)}
               />

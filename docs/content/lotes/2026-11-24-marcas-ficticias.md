@@ -1,6 +1,6 @@
 # Lote T-040: marcas fictícias do cenário (lote 1)
 
-Status: **proposta, aguardando o ok do CEO**. Nada disto está em `app/src/content/`; entra na T-040 depois do ok. Regras: ADR-0015 (marcas fictícias, só como cenário, sem rótulo de publicidade, sem link), `docs/design/telas/partida-campo-v2.md` §4 (placas só com cores, sem texto) e `docs/design/telas/partida.md` ("Marcas do cenário").
+Status: **aprovado pelo CEO em 2026-11-24**, com uma troca: "Açaí Beiço Roxo" passa a se chamar "Açaí Língua Roxa" (mesmas cores). Ficam as 22 marcas, com o nome igual nos três idiomas. Os dados estão em `app/src/data/brands.json` e a escolha por espaço em `app/src/lib/brands/`. Regras: ADR-0015 (marcas fictícias, só como cenário, sem rótulo de publicidade, sem link), `docs/design/telas/partida-campo-v2.md` §4 (placas só com cores, sem texto) e `docs/design/telas/partida.md` ("Marcas do cenário").
 
 Total: **22 marcas**, em categorias do dia a dia. Nenhuma de bebida alcoólica, aposta, cigarro, remédio ou farmácia. Nenhuma pede "Patrocine aqui": cada uma é só um nome, uma categoria e duas cores.
 
@@ -17,7 +17,7 @@ Total: **22 marcas**, em categorias do dia a dia. Nenhuma de bebida alcoólica, 
 | 1   | Padaria Miolo Fofo           | padaria                   | `#7a2e1d` | `#ffd9a0` | 7,01:1    |
 | 2   | Cimentão Materiais           | material de construção    | `#3d4a52` | `#8fd3ff` | 5,62:1    |
 | 3   | Rádio Toca-Fita FM           | rádio local               | `#1f3a8a` | `#9be7ff` | 7,52:1    |
-| 4   | Açaí Beiço Roxo              | açaí                      | `#4b1d6b` | `#e6ff7a` | 11,23:1   |
+| 4   | Açaí Língua Roxa             | açaí                      | `#4b1d6b` | `#e6ff7a` | 11,23:1   |
 | 5   | Borracharia Remendão         | borracharia               | `#243b2c` | `#e8e0c8` | 9,17:1    |
 | 6   | Pamonharia Milho Doce        | pamonha                   | `#f4d03f` | `#0f5c4a` | 5,26:1    |
 | 7   | Empanadas Doña Crocante      | empanadas                 | `#c9482b` | `#fff1d6` | 4,23:1    |
@@ -54,6 +54,4 @@ Pet shop e outras categorias ficam de reserva para um lote 2, se o CEO quiser ma
 
 ## Dúvidas de tom para o CEO
 
-1. "Açaí Beiço Roxo" é provocação de torcida, mas fala do rosto; se parecer demais, a troca é "Açaí Língua Roxa".
-2. Manter as 22 ou cortar para 16 (as de menor contraste, Rede Balançante e Cachinho, ficam perto do mínimo de 3:1)?
-3. Aprovar os nomes iguais nos três idiomas.
+Respondidas pelo CEO em 2026-11-24: (1) o açaí passa a "Açaí Língua Roxa"; (2) ficam as 22; (3) nomes iguais nos três idiomas aprovados.

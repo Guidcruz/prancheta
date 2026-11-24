@@ -12,11 +12,27 @@ export const PITCH_SIZE = {
   /** The strip of grass around the pitch (the drawing is 111 × 74). */
   margin: 3,
   /**
-   * The room the ball keeps from the edge of the drawing, in metres: its 8px minimum on a pitch of
-   * about 297px wide or more. On a smaller pitch (down to 180 × 120, the least height that still
-   * has a pitch) the MatchPitch also holds the centre of the ball inside the canvas.
+   * The room the ball keeps from the edge of the drawing, in metres, so it is whole in the strip
+   * of grass (the MatchPitch also holds its centre inside the trapezoid, `holdBall`).
    */
   ballRoom: 1.5,
+} as const;
+
+/**
+ * The view of the tilted pitch (docs/design/telas/partida-campo-v2.md, 3; ADR-0023): a fixed
+ * camera on the axis of the halfway line. May be tuned by eye on the device, without changing the
+ * rules.
+ */
+export const PITCH_VIEW = {
+  /** Width of the far edge of the drawing over the width of the near edge. */
+  farScale: 0.68,
+  /** The share of the box height taken by the grass (the rest is the stand). */
+  grassShare: 0.62,
+  /** Height of the far boards in CSS px at a box 360px wide (proportional to the width). */
+  boardHeight: 12,
+  /** The least radius of a disc and of the ball, in CSS px. */
+  discMin: 7,
+  ballMin: 4,
 } as const;
 
 export const PITCH_MOTION = {
@@ -32,6 +48,12 @@ export const PITCH_MOTION = {
   weak: { distance: [25, 35], y: [14, 54] },
   /** The finisher waits this far behind the ball until the slow motion. */
   behind: 1.5,
+  /**
+   * Where a disc of a play appears (partida-campo-v2.md, 5): the finisher of a play of the open
+   * game 6 m from the point, on the side of his own goal; a taker 2 m behind the ball; the sent-off
+   * 3 m from the ball, and the share of the step a disc takes to fade in or out.
+   */
+  appear: { open: 6, setPiece: 2, sentOff: 3, fade: 0.3 },
   /** The penalty: the spot, the taker behind it, the area the others leave (and how far out). */
   penalty: { spot: 11, behind: 2, areaDepth: 16.5, areaWidth: 40.3, clear: 1 },
   /** The outcomes, from the goal line. */
@@ -40,8 +62,7 @@ export const PITCH_MOTION = {
   post: { halfGoal: 3.66, bounce: 6 },
   /**
    * Wide: beside the goal, and into the strip of grass no further than `PITCH_SIZE.ballRoom` from
-   * the edge (3 m − 1.5 m). Below about 297px of width the MatchPitch holds the ball inside the
-   * canvas (`geometry.ts`).
+   * the edge (3 m − 1.5 m). The MatchPitch holds the ball inside the trapezoid (`geometry.ts`).
    */
   wide: { inside: [29, 39], spread: 7, out: 1.5 },
   /** A player leaving goes this far past the nearest touchline. */
