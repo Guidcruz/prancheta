@@ -411,8 +411,9 @@ test.describe('Campo 2D (T-085)', () => {
     await page.clock.runFor(1_000);
     const grass = () => pixelOf(page, 'grass');
     const stand = () => pixelOf(page, 'stand');
-    expect(await grass()).toBe(await tokenColor(page, 'pitch'));
-    expect(await stand()).toBe(await tokenColor(page, 'surface-0'));
+    // The first paint of the backdrop runs in a real task (MessageChannel) outside the fake clock.
+    await expect.poll(grass).toBe(await tokenColor(page, 'pitch'));
+    await expect.poll(stand).toBe(await tokenColor(page, 'surface-0'));
     // The floodlights are lit: 8px under the roof, under the 2nd one, the red is up by 45 or more.
     const lit = await canvas(page).evaluate((element) => {
       const c = element as HTMLCanvasElement;
@@ -465,6 +466,8 @@ test.describe('Campo 2D (T-085)', () => {
       for (const theme of ['noite', 'dia'] as const) {
         await setTheme(page, theme);
         await page.clock.runFor(500);
+        // The backdrop repaints in a real task: wait for the new theme before reading the strip.
+        await expect.poll(() => pixelOf(page, 'grass')).toBe(await tokenColor(page, 'pitch'));
         const box = (await pitchBox(page).boundingBox())!;
         const cv = (await canvas(page).boundingBox())!;
         const strip = Math.floor(cv.x - box.x) - 2;
