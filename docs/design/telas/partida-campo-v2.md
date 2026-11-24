@@ -1,45 +1,53 @@
-# Partida: campo v2 (campo inclinado, movimento, rastro, etiqueta e cunha)
+# Partida: campo v2 (campo inclinado, só a bola, rastros, etiquetas e cunha)
 
-**Estado:** decidido pelo CEO em 2026-11-23 (§15). A perspectiva foi revista no mesmo dia: o campo passa a ser **inclinado por código**, já na fase 1, no lugar da vista de cima. Ainda no mesmo dia, depois do protótipo, o CEO pediu quatro coisas: mais variedade no movimento dos jogadores (§6), a comemoração de gol como uma etiqueta saindo do jogador (§10), placas também atrás dos gols (§4) e etiquetas sempre no jogador certo (§9, "Âncora"). Sem código de produção ainda; a implementação espera o ADR do "visto de cima" do `docs/PROJETO.md`, que o `architect` escreve em paralelo. **Parte:** o visual e o movimento decorativo. A regra de jogo e a honestidade dos dados (quem ganha nome, de onde vêm a posse e a direção) são do `game-designer`, em [../campo-lances.md](../campo-lances.md); este arquivo segue as recomendações de lá (D1-A, D2-B, D3-B, D4-C, D5-A, D6-A, D7) e aponta onde diverge. **Base:** [partida.md](partida.md) ("Campo 2D (T-085)", "Movimento", "Acessibilidade", "Desempenho no celular"), [../design-system.md](../design-system.md) ("Campo da partida"), [../../art/uniformes.md](../../art/uniformes.md) e a §4.7 de [../../02-architecture.md](../../02-architecture.md). **Referência:** prints de um app real de lance a lance, só pela mecânica. Nada do visual, dos escudos, dos nomes ou das marcas daquele app entra no projeto, e nenhuma imagem dele está no repositório.
+**Estado:** decidido pelo CEO em 2026-11-23 e 2026-11-24 (§15), depois de cinco protótipos. Sem código de produção ainda; a implementação espera o ADR do campo inclinado (o "visto de cima" do `docs/PROJETO.md`), que o `architect` escreve em outra branch. **Parte:** o visual e o movimento decorativo da "Animada completa". A regra de jogo e a honestidade dos dados (quem ganha nome, de onde vêm a posse e a direção) são do `game-designer`, em [../campo-lances.md](../campo-lances.md); este arquivo segue as recomendações de lá (D1-A, D3-B, D4-C, D5-A, D6-A, D7), adapta a D2-B ao modo "só a bola" (§6, pendência 8) e aponta onde diverge. **Base:** [partida.md](partida.md) ("Campo 2D (T-085)", "Movimento", "Acessibilidade", "Desempenho no celular"), [../design-system.md](../design-system.md) ("Campo da partida"), [../../art/uniformes.md](../../art/uniformes.md) e a §4.7 de [../../02-architecture.md](../../02-architecture.md). **Referência:** prints de um app real de lance a lance, só pela mecânica. Nada do visual, dos escudos, dos nomes ou das marcas daquele app entra no projeto, e nenhuma imagem dele está no repositório.
 
-**Em uma frase:** o campo da "Animada completa" passa a ser visto de lado e de cima, inclinado por código, com arquibancada e placas fictícias em volta; os jogadores se movem cada um pela sua função; sobre o campo, o caminho da bola (rastro), uma cunha que aponta o ataque de quem tem a bola e uma etiqueta que sai do jogador do lance (e, no gol, a etiqueta de gol).
+**Em uma frase:** o campo da "Animada completa" passa a ser visto de lado e de cima, inclinado por código, com arquibancadas e placas fictícias em volta; nele, **só a bola** se move o tempo todo, deixando rastros que mostram a jogada (rasteiro, condução, tabela, por cima, cruzamento, chute), com uma cunha que aponta o ataque e a camisa do time com a bola; os jogadores só aparecem nos lances do motor, e a etiqueta (do lance e de gol) sai do jogador certo.
 
-## 1. Resumo e fases
+## 1. Resumo e divisão em PRs
 
-| Item                          | No Prancheta                                                                                                                                     | Fase |
-| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ---- |
-| 5. Campo em perspectiva       | **Campo inclinado por código** (§3), com a arquibancada, a mureta e as placas desenhadas uma vez num canvas fora da tela (§4)                    | 1a   |
-| Placas                        | Três filas: atrás da linha lateral de longe e atrás de cada linha de fundo; só marcas fictícias (ADR-0015); só cores, sem nome (pendência 2)     | 1a   |
-| Gol                           | **Etiqueta de gol** saindo do artilheiro, no lugar do cartão grande da comemoração (§10)                                                         | 1a   |
-| Jogador certo                 | A âncora da etiqueta e a correção do goleiro que sai sem troca (D5-A), com critério de aceite (§9)                                               | 1a   |
-| Movimento dos jogadores       | **Cada um pela sua função:** alvo próprio, atraso e ritmo próprios, pressão e cobertura, corrida de ruptura, goleiro no eixo do gol, deriva (§6) | 1b   |
-| 1. Rastro do passe            | **Rastro da bola:** linha em `ink` de onde a bola saiu até onde ela está (§7)                                                                    | 1b   |
-| 4. Sombra em cunha            | **Cunha do ataque:** triângulo a partir da bola até a linha do gol atacado, no token `pitch-wedge` (§8)                                          | 1b   |
-| 2. Etiqueta do lance          | **Etiqueta do lance:** pílula fora do canvas, presa ao jogador por uma ponta e um fio, com a camisa e o número, o tipo e o nome (§9)             | 1b   |
-| 3. O próximo jogador, apagado | **Etiqueta em espera:** o finalizador aparece apagado e acende quando a bola chega (§9); a assistência na etiqueta de gol (§10)                  | 2    |
+| Item                            | No Prancheta                                                                                                                              | PR  |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | --- |
+| Campo em perspectiva            | **Campo inclinado por código** (§3), com arquibancadas, mureta e três filas de placas desenhadas uma vez num canvas fora da tela (§4)     | A   |
+| Modo "só a bola"                | A bola sempre à vista; os discos só nos lances do motor: o jogador do evento, o goleiro e, no gol, o artilheiro (§5)                      | A   |
+| Goleiro que sai sem troca       | A correção D5-A do `campo-lances.md` (§10)                                                                                                | A   |
+| Etiqueta do lance e de gol      | Pílula fora do canvas, saindo do jogador por uma ponta e um fio, com a camisa e o número, o tipo e o nome; no gol, a etiqueta de gol (§9) | B   |
+| Camisa sobre a bola             | Nos minutos sem lance, só a camisa do time com a bola, sem número nem nome (§9)                                                           | B   |
+| Âncora no jogador certo         | Critério de aceite e testes (§10)                                                                                                         | B   |
+| Planejador da bola              | A bola nunca para: conduções, passes rasteiros, tabelas, passes por cima e cruzamentos, na proporção de um jogo real, passo a passo (§6)  | C   |
+| Rastros por tipo, encadeados    | Cada ação com a sua forma (reta, pontilhado, arco); a ação em curso e as três anteriores, esmaecendo (§7)                                 | C   |
+| Bola no ar                      | A bola sobe e desce no arco, com a sombra no chão no token novo `pitch-shadow` (§7)                                                       | C   |
+| Cunha do ataque                 | Triângulo a partir da bola até a linha do gol atacado, no token `pitch-wedge` (§8)                                                        | C   |
+| Etiqueta em espera; assistência | O finalizador apagado até a bola chegar; a assistência na etiqueta de gol (§9)                                                            | D   |
 
-**Por que a fase 1 se divide em duas.** Juntas, a perspectiva, o movimento e os três itens passariam do tamanho M (o G pede o "G aprovado" do CEO). Separadas, cada uma cabe num PR M:
+**Os PRs, na ordem** (o tamanho G pede o "G aprovado" do CEO; nenhum destes passa de M):
 
-- **1a, o campo inclinado:** a projeção em `geometry.ts`, o fundo novo (arquibancada, mureta, placas, gramado e marcações inclinados, traves), os discos por profundidade, a etiqueta ancorada (o componente e a regra de posição) com a etiqueta de gol no lugar da GoalCelebration, a correção D5-A do goleiro em `scene.ts` e os testes de geometria, de pixel e de âncora. O resto da coreografia não muda. Depende do ADR.
-- **1b, movimento, rastro, cunha e etiqueta do lance:** o modelo de movimento do §6 em `scene.ts`, a parte de regra do `game-designer` (passes anônimos D2-B, posse D4-C, passe do começo do lance D3-B) e os três itens sobre o campo inclinado. O movimento entra junto com a posse porque depende dela (quem ataca e quem defende).
-- **2, P:** a etiqueta em espera e a assistência na etiqueta de gol.
+| PR  | O quê                                                                                                                                                                                                                                                                                                                                   | Tamanho | Depende de |
+| --- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------- | ---------- |
+| A   | Projeção em `geometry.ts`; fundo novo (arquibancadas, mureta, placas só com cores, gramado e marcações inclinados, traves); modo "só a bola" sobre a coreografia de hoje (a bola e os discos do lance, com entrada e saída suaves); correção D5-A em `scene.ts`; testes de geometria e de pixel. A GoalCelebration continua até o PR B. | M       | o ADR      |
+| B   | `PitchTag` (lance, gol e camisa sobre a bola) com a regra de posição e o fio; a etiqueta de gol no lugar da GoalCelebration; os testes de âncora; textos novos (`match.tag.*`).                                                                                                                                                         | M       | A          |
+| C   | O planejador da bola (`app/src/ui/match/pitch/plan.ts`), passo a passo; posse D4-C; rastros por tipo e encadeados; bola no ar e sombra (`pitch-shadow`); cunha (`pitch-wedge`); testes de distribuição, continuidade e desfecho.                                                                                                        | M       | A, B       |
+| D   | Etiqueta em espera e assistência na etiqueta de gol (fase 2).                                                                                                                                                                                                                                                                           | P       | C          |
 
-## 2. O que não muda
+Se o PR C passar de M ao ser quebrado em tarefas, a cunha sai dele para um PR P próprio.
 
-- O campo continua decorativo e `aria-hidden`; a narração e o placar continuam sendo a versão acessível. A etiqueta também é `aria-hidden`.
-- **O canvas continua sem texto** (decisão 2 do CEO): a etiqueta é DOM sobre o canvas, e as placas, na recomendação, só têm cores (§4).
-- Nada antecipa o desfecho: o começo de um gol e o de uma chance do mesmo lado, tipo e finalizador continuam iguais quadro a quadro, agora com o movimento novo, o rastro, a cunha e a etiqueta (critério 3 do `campo-lances.md`). A câmera é fixa: nenhum movimento de câmera, zoom ou mudança de ângulo, em nenhum passo (D7).
-- O mandante fica sempre à esquerda, atacando para a direita, o jogo todo. Na perspectiva, "esquerda" é o gol da esquerda de quem olha.
+## 2. Regras que não mudam
+
+- O campo continua decorativo e `aria-hidden`; a narração e o placar continuam sendo a versão acessível. Etiquetas, camisa sobre a bola e placas também são `aria-hidden`.
+- **O canvas continua sem texto** (decisão 2): as etiquetas são DOM sobre o canvas, e as placas, na recomendação, só têm cores (§4).
+- **Nada antecipa o desfecho:** o começo de um gol e o de uma chance do mesmo lado, tipo e finalizador continuam iguais quadro a quadro (critério 3 do `campo-lances.md`): o caminho da bola, o tipo do passe do começo do lance, os discos, a cunha e a etiqueta. Só o passo do desfecho lê o desfecho. A câmera é fixa: nenhum movimento de câmera, zoom ou mudança de ângulo (D7).
+- **Só tem nome e número quem está num evento do motor** (D1-A). Tudo o que acontece nos minutos sem lance é decorativo e anônimo.
+- O mandante fica sempre à esquerda, atacando para a direita, o jogo todo.
 - Sem tremor, sem zoom, sem flash, sem mudança de cor do campo.
-- A coreografia continua em metros e continua uma função pura do passo, do progresso e da semente (`scene.ts`: `x` a partir da linha do gol do mandante, `y` a partir da linha lateral **de longe**, a de cima na tela). Na 1b, o movimento em bloco dá lugar ao modelo do §6, sem mudar o motor.
-- O tamanho da caixa do campo e a conta da altura (o maior retângulo 1,5:1 que cabe; `100dvh − 442px` em pé): a narração continua com 4 linhas de lance a 360×740.
-- As metas da T-085: quadros p95 ≤ 34 ms, desenho mediano ≤ 6 ms (CPU 4×, 390×844, densidade 3), nenhuma alocação por quadro na cena, chunk do campo ≤ 20 KB gzip, nenhum `requestAnimationFrame` parado.
+- A cena continua em metros e uma função pura do passo, do progresso e da semente; o motor e o save não mudam (D6-A).
+- O tamanho da caixa do campo e a conta da altura (o maior retângulo 1,5:1; `100dvh − 442px` em pé): a narração continua com 4 linhas de lance a 360×740.
+- As metas da T-085: quadros p95 ≤ 34 ms, desenho mediano ≤ 6 ms (CPU 4×, 390×844, densidade 3), nenhuma alocação por quadro na cena, chunk do campo ≤ 20 KB gzip, nenhum `requestAnimationFrame` parado, nenhuma tarefa longa (> 50 ms) durante a partida.
 
-## 3. Geometria e projeção (fase 1a)
+## 3. Geometria e projeção (PR A)
 
-**A câmera.** Fixa, no eixo do meio-campo, atrás da linha lateral de perto, a cerca de 143 m de altura e 157 m atrás da borda de perto do desenho: olha o centro do campo de cima, a cerca de **36°** do gramado. O plano da imagem é vertical, com o quadro deslocado para baixo, então **as verticais continuam verticais** (traves e placas) e a linha lateral de longe é horizontal. Ninguém precisa dessa câmera no código: ela é só o que a fórmula abaixo equivale. A proporção da caixa é fixa (1,5:1), então a câmera é a mesma em qualquer tamanho; só a escala muda.
+**A câmera.** Fixa, no eixo do meio-campo, atrás da linha lateral de perto, a cerca de 143 m de altura e 157 m atrás da borda de perto do desenho: olha o centro do campo de cima, a cerca de **36°** do gramado. O plano da imagem é vertical, com o quadro deslocado para baixo, então **as verticais continuam verticais** (traves, placas, a altura da bola) e a linha lateral de longe é horizontal. A proporção da caixa é fixa (1,5:1), então a câmera é a mesma em qualquer tamanho; só a escala muda.
 
-**Os três números da vista** (constante `PITCH_VIEW` em `app/src/ui/match/pitch/motion.ts`, com comentário apontando para cá; o `developer` pode ajustá-los ao ver no aparelho, sem mudar as regras):
+**Os três números da vista** (constante `PITCH_VIEW` em `app/src/ui/match/pitch/motion.ts`, com comentário apontando para cá; o `developer` pode ajustá-los no aparelho, sem mudar as regras):
 
 | Nome          | Valor | O que é                                                                                                   |
 | ------------- | ----- | --------------------------------------------------------------------------------------------------------- |
@@ -55,201 +63,146 @@ yFar  = Hc × (1 − grassShare)                      // a borda de longe do des
 t(v)  = 74·farScale / (74·farScale + (1 − farScale) × (74 − v))   // escala: 1 perto, farScale longe
 sx    = Wc/2 + (u − 55,5) × s0 × t(v)
 sy    = yFar + (Hc − yFar) × (t(v) − farScale) / (1 − farScale)
-k     = s0 × t(v)                                  // px por metro naquele ponto (discos, bola, traves, placas)
+k     = s0 × t(v)                                  // px por metro naquele ponto (discos, bola, traves, placas, altura)
 ```
 
-É uma perspectiva verdadeira (homografia): retas da cena continuam retas na tela, então uma linha do campo, o rastro, a cunha e a base das placas se desenham projetando só os vértices. Os cantos do desenho caem em `(0, Hc)` e `(Wc, Hc)` (perto, a largura toda) e em `(Wc × (1 − farScale)/2, yFar)` e `(Wc × (1 + farScale)/2, yFar)` (longe).
+É uma perspectiva verdadeira (homografia): retas da cena continuam retas na tela, então as linhas do campo, os rastros retos, a cunha e a base das placas se desenham projetando só os vértices. Os cantos do desenho caem em `(0, Hc)` e `(Wc, Hc)` (perto) e em `(Wc × (1 − farScale)/2, yFar)` e `(Wc × (1 + farScale)/2, yFar)` (longe). **Um ponto no ar** (a bola no arco) é o ponto do chão projetado, subido `z × k` px.
 
 **O que muda em `geometry.ts`.**
 
-- `pitchGeometry(width, height, dpr)` continua calculada uma vez por tamanho, nunca por quadro, e passa a guardar `s0`, `yFar`, `farScale`, a altura e o topo das placas de longe (`boardTop = yFar − boardHeight`, em px), os mínimos em px (disco e bola, abaixo) e as caixas dos dois gols na tela (para a etiqueta, §9).
-- Função nova e pura, `project(g, x, y, out)`: escreve `sx`, `sy` e `k` num `Float64Array(3)` que o chamador reaproveita, sem alocação.
-- **Disco:** raio `max(2,75 × k, 7 px CSS)`. O mínimo de 14px de diâmetro é o menor disco que a vista de cima já tinha (a 360×640) e mantém a marca do visitante com 4,7px ou mais, a pista de forma que não depende da cor. O anel continua com 2px CSS, por dentro, e a marca com um terço do diâmetro.
-- **Bola:** raio `max(1,25 × k, 4 px CSS)`. O mínimo de 8px continua.
-- **`clampBall`:** mesma função, agora aplicada **depois** da projeção, ao centro da bola em px: `[r, Wc − r] × [r, Hc − r]`. A projeção já deixa a bola inteira em todos os tamanhos medidos; o `clampBall` fica como rede de segurança.
-- **Ordem de desenho por profundidade:** os discos de longe primeiro (`y` menor), para o de perto ficar por cima. Um `Uint8Array(22)` de índices, ordenado por inserção a cada quadro (22 itens, quase sempre já em ordem), sem alocação. A bola continua sempre por cima de tudo.
-- **Quem sai pela lateral** (vermelho, lesão sem troca) continua indo 1,5 m além da linha mais próxima; pela lateral de perto, o disco pode ficar cortado pelo pé da caixa no último instante do passo, antes de sumir. Aceito.
-- `tagPlacement(g, px, py, r, w, h, out)`, pura, para a posição da etiqueta (§9).
+- `pitchGeometry(width, height, dpr)` continua calculada uma vez por tamanho, nunca por quadro, e passa a guardar `s0`, `yFar`, `farScale`, a altura e o topo das placas de longe (`boardTop = yFar − boardHeight`), os mínimos em px e as caixas dos dois gols na tela (para as etiquetas).
+- `project(g, x, y, out)`, pura: escreve `sx`, `sy` e `k` num `Float64Array(3)` reaproveitado, sem alocação.
+- **Disco** (só os do lance): raio `max(2,75 × k, 7 px CSS)`; o anel de 2px CSS e a marca do visitante (um terço do diâmetro) continuam.
+- **Bola:** raio `max(1,25 × k, 4 px CSS)`; no ar, vezes `1 + 0,45 × min(1, z ÷ 9)` (§7).
+- **`clampBall`:** a mesma função, aplicada depois da projeção (e da altura), ao centro da bola em px.
+- `tagPlacement(g, px, py, r, w, h, out)`, pura, para as etiquetas (§9).
+- `scene.ts` continua em metros; o PR A só acrescenta a correção D5-A, e o PR C troca o movimento da bola pelo planejador (§6).
 
-**O fundo, num canvas fora da tela** (redesenhado só quando o tamanho ou o `data-theme` muda, como hoje):
+**O fundo, num canvas fora da tela** (redesenhado só quando o tamanho ou o `data-theme` muda): as arquibancadas e a mureta (§4); o gramado (`pitch`) em toda a caixa abaixo da mureta e entre as filas dos fundos, sem faixas alternadas; as marcações em `pitch-line`, com traço de `max(1, Wc ÷ 360)` px CSS (os círculos como polilinhas de 48 pontos projetados); os gols (a rede no chão e, em cada poste, uma trave vertical de `2,44 × k` px com o travessão, em `pitch-line` com 2px CSS); as três filas de placas.
 
-1. A arquibancada de longe, as arquibancadas atrás dos gols e a mureta (§4).
-2. O gramado: a caixa inteira abaixo da mureta e entre as filas de placas dos fundos em `pitch`. Fora do trapézio do desenho continua grama, sem marcação; sem faixas alternadas, como hoje.
-3. As marcações em `pitch-line`, com traço de `max(1, Wc ÷ 360)` px CSS igual em toda a profundidade: retângulos e linhas pelos vértices projetados; o círculo central, as meias-luas e as marcas pela projeção de uma polilinha de 48 pontos por círculo.
-4. Os gols: a rede no chão (os 7,32 × 2 m de hoje, projetados) e, em cada poste, uma trave vertical de `2,44 × k` px de altura, com o travessão ligando os topos, em `pitch-line` com 2px CSS.
-5. As três filas de placas (§4).
+**A cada quadro:** copiar o fundo, a cunha (§8), os rastros (§7), os discos do lance (do fundo para a frente), os fios das etiquetas, a sombra da bola e a bola.
 
-**A cada quadro:** copiar o fundo, a cunha (§8), o rastro (§7), os 22 discos na ordem de profundidade, o fio da etiqueta (§9) e a bola.
+## 4. Arquibancadas, mureta e placas (PR A)
 
-## 4. Arquibancada, mureta e placas (fase 1a)
-
-**Arquibancada de longe** (no canvas do fundo, da borda de cima da caixa até `boardTop`; toda com tokens):
-
-- Fundo em gradiente vertical de `surface-0` (no alto) a `surface-2` (embaixo).
-- Fileiras: linhas horizontais de 1px em `line`, a cada 6px embaixo, apertando até 3px no alto, com opacidade de 0,3 no alto a 0,9 embaixo (`globalAlpha`, sem cor nova).
-- Cobertura: uma faixa de 10px em `surface-0` no alto.
-- Refletores: quatro barras de 18 × 3px a 12%, 37%, 63% e 88% da largura, a 5px do alto. No tema noite, em `floodlight`, cada uma com um halo radial de 52px no token `beam` (proposta 45, §14); no tema dia, apagadas: em `line`, sem halo.
-- Sem público, sem pessoas, sem bandeiras, sem nada que lembre um estádio real.
+**Arquibancada de longe** (da borda de cima da caixa até `boardTop`, toda com tokens): gradiente vertical de `surface-0` (no alto) a `surface-2`; fileiras de 1px em `line`, a cada 6px embaixo, apertando até 3px no alto, com opacidade de 0,3 a 0,9 (`globalAlpha`); cobertura de 10px em `surface-0`; quatro refletores de 18 × 3px a 12%, 37%, 63% e 88% da largura, a 5px do alto, em `floodlight` com halo radial de 52px no token `beam` no tema noite (proposta 45), apagados em `line` no tema dia. Sem público, sem pessoas, sem bandeiras, sem nada que lembre um estádio real.
 
 **Mureta:** de `boardTop` até `yFar`, em `surface-1`, por toda a largura.
 
-**Arquibancadas atrás dos gols:** do lado de fora de cada fila de placas dos fundos até a borda da caixa, um polígono em gradiente de `surface-2` (no alto) a `surface-0` (embaixo). Assim as placas ficam entre o gramado e o estádio, como na referência, e não soltas na grama.
+**Arquibancadas atrás dos gols:** do lado de fora de cada fila de placas dos fundos até a borda da caixa, um polígono em gradiente de `surface-2` (no alto) a `surface-0`.
 
-**Placas: três filas, no canvas do fundo, só com cores** (a recomendação; a alternativa com nome é a pendência 2):
+**Placas: três filas, no canvas do fundo, só com cores** (recomendação; pendência 2):
 
-- **Fundo:** 7 placas iguais, com 1px de intervalo, presas à borda de longe do desenho: largura total `Wc × farScale` (245px a 360px), centrada; altura `boardHeight × Wc ÷ 360` arredondada (12px a 360px, 13px deitado, 20px no desktop); topo em `boardTop`. A borda de longe é horizontal, então cada placa é um retângulo.
-- **Atrás de cada gol:** 6 placas de pé sobre a linha `x = −4,5 m` (esquerda) e `x = 109,5 m` (direita), 1,5 m fora da faixa de grama e 2,5 m atrás da rede, cobrindo `y` de −3 a 71 m com 0,6 m de intervalo entre elas. Cada placa é um paralelogramo: a base é o trecho projetado da linha (inclinada, seguindo a lateral do trapézio), e os lados são verticais, com a altura de `boardHeight` convertida em metros na borda de longe (`boardHeight ÷ (s0 × farScale)`, cerca de 5,4 m a 360px) vezes o `k` de cada ponta (12px no fundo, até cerca de 17px perto). Perto, a fila sai da caixa pelo lado; aceito, como na referência.
-- **Nunca cobrem o jogo.** Acima de qualquer ponto da lateral do trapézio, a tela já está fora do desenho (a lateral sobe inclinada para dentro), então uma placa de pé sobre a linha de fundo nunca se sobrepõe ao gramado, às traves, à rede, à bola ou aos discos; e, de qualquer modo, ela está no fundo: tudo o que é desenhado a cada quadro fica por cima. A fila de longe fica acima de `yFar`, onde a bola e os discos não chegam (no máximo 1,5 m além da linha lateral, dentro da faixa de grama).
-- **Cada placa** é uma marca fictícia de `brandForSlot` (`pitch-boards`, ADR-0015), desenhada só com as duas cores da marca (dado da marca, como as cores do escudo): o fundo na primeira cor e uma faixa central (60% da largura, 26% da altura) na segunda. Sem texto, sem rótulo de publicidade, sem link, não focável; o canvas já é `aria-hidden`. Enquanto a lista de marcas fictícias não existir, pares de tokens (`ink`/`surface-0`, `floodlight`/`on-floodlight`, `surface-1`/`ink`, `grass`/`on-grass`), como no protótipo.
-- **Custo:** nenhum por quadro (estão no fundo). No redesenho do fundo, 19 polígonos a mais.
+- **Fundo:** 7 placas iguais, com 1px de intervalo, sobre a borda de longe: largura total `Wc × farScale` (245px a 360px), centrada; altura `boardHeight × Wc ÷ 360` (12px a 360px, 13px deitado, 20px no desktop).
+- **Atrás de cada gol:** 6 placas de pé sobre a linha `x = −4,5 m` e `x = 109,5 m` (1,5 m fora da faixa de grama, 2,5 m atrás da rede), cobrindo `y` de −3 a 71 m com 0,6 m de intervalo. Cada uma é um paralelogramo: a base é o trecho projetado da linha (inclinado, seguindo a lateral do trapézio), os lados são verticais, com a altura de `boardHeight` convertida em metros na borda de longe (`boardHeight ÷ (s0 × farScale)`, cerca de 5,4 m) vezes o `k` de cada ponta (12px no fundo, até cerca de 17px perto). Perto, a fila sai da caixa pelo lado.
+- **Nunca cobrem o jogo:** acima de qualquer ponto da lateral do trapézio a tela já está fora do desenho, então uma placa de pé sobre a linha de fundo nunca se sobrepõe ao gramado, às traves, à rede ou à bola; e tudo o que é desenhado a cada quadro fica por cima do fundo.
+- **Cada placa** é uma marca fictícia de `brandForSlot` (`pitch-boards`, ADR-0015), só com as duas cores da marca (dado da marca): o fundo na primeira e uma faixa central (60% da largura, 26% da altura) na segunda. Sem texto, sem rótulo de publicidade, sem link. Até a lista de marcas existir, pares de tokens (`ink`/`surface-0`, `floodlight`/`on-floodlight`, `surface-1`/`ink`, `grass`/`on-grass`), como no protótipo (pendência 3).
 
-## 5. Tamanhos
+## 5. O modo "só a bola" (PR A; o movimento da bola no PR C)
 
-A caixa é a mesma de hoje (o maior retângulo 1,5:1); a tabela é a mesma conta da fórmula em cada tamanho.
+**Escolhido pelo CEO em 2026-11-24** (§15), depois de comparar três modos no protótipo v3. É o que a referência faz e o que deixa o campo fluido: a bola nunca para, e o que não é fato não ganha rosto.
 
-| Medida (px CSS)                                                 | 360×740 em pé | 844×390 deitado | 1280×800 desktop | 360×640 em pé      |
-| --------------------------------------------------------------- | ------------- | --------------- | ---------------- | ------------------ |
-| Caixa do campo                                                  | 360 × 240     | 397 × 265       | 600 × 400        | 297 × 198          |
-| Estádio de longe (arquibancada, mureta e placas)                | 91            | 101             | 152              | 75                 |
-| Gramado (do fundo ao pé)                                        | 149           | 164             | 248              | 123                |
-| Placas de longe (altura; largura da fila)                       | 12; 245       | 13; 270         | 20; 408          | 10; 202            |
-| Placas dos fundos (altura longe / perto)                        | 12 / 17       | 13 / 19         | 20 / 29          | 10 / 14            |
-| Disco perto / longe (mínimo de 14)                              | 18 / 14       | 20 / 14         | 30 / 20          | 15 / 14            |
-| Bola perto / longe (mínimo de 8)                                | 8 / 8         | 9 / 8           | 13 / 9           | 8 / 8              |
-| Profundidade: px por metro perto / longe                        | 2,9 / 1,4     | 3,2 / 1,5       | 4,9 / 2,3        | 2,4 / 1,1          |
-| Etiqueta do lance (altura; acima do disco, com a ponta e o fio) | 48; 60        | 48; 60          | 48; 60           | 40; 52 (uma linha) |
-| Etiqueta de gol (altura sem / com assistência)                  | 50 / 66       | 50 / 66         | 50 / 66          | 40 (uma linha)     |
-| Topo da trave de longe                                          | 138           | 153             | 230              | 114                |
+**O que aparece, e quando:**
 
-**Leitura.** A etiqueta cabe acima de qualquer disco em todos os tamanhos: o disco mais ao fundo tem o topo a cerca de 84px a 360×740, e a etiqueta precisa de 60px acima dele. O lado de longe perde mais da metade da resolução em profundidade em relação à vista de cima (3,2 px/m): é o custo que o CEO aceitou ao escolher a perspectiva. Os mínimos de disco e bola seguram a leitura.
+| Passo                                            | Bola e rastros                     | Cunha | Discos                                                                            | Etiqueta                                  |
+| ------------------------------------------------ | ---------------------------------- | ----- | --------------------------------------------------------------------------------- | ----------------------------------------- |
+| Minuto sem lance                                 | sim                                | sim   | nenhum                                                                            | a camisa do time com a bola, sobre a bola |
+| Começo de lance (jogada, falta, pênalti)         | sim                                | sim   | o finalizador ou cobrador e o goleiro que defende                                 | a do lance, no finalizador ou cobrador    |
+| Desfecho sem gol                                 | sim                                | não   | os mesmos                                                                         | a do lance, com o tipo do desfecho        |
+| Desfecho de gol                                  | sim                                | não   | o artilheiro e o goleiro                                                          | a de gol, no artilheiro                   |
+| Vermelho                                         | sim                                | sim   | o expulso, que surge a 3 m da bola e anda até a linha lateral mais perto no passo | a do vermelho, no expulso                 |
+| Depois do gol, começo e intervalo                | a bola volta ao centro, sem rastro | não   | os discos saem                                                                    | nenhuma                                   |
+| Amarelo, lesão, troca, mudança tática, acréscimo | sim (a bola segue a jogada)        | sim   | nenhum                                                                            | nenhuma (só a narração)                   |
 
-**Uma alternativa que não recomendo:** uma caixa mais alta (por exemplo 360 × 270 em pé) daria 168px de gramado, mas tiraria meia linha da narração a 360×740. Fica registrada para o caso de o CEO achar o gramado baixo no aparelho.
+- **Os discos entram e saem suavemente:** opacidade de 0 a 1 nos primeiros 30% do passo em que aparecem e de 1 a 0 nos primeiros 30% do passo seguinte (curva cúbica), sem animação com movimento reduzido. Os 22 nunca aparecem juntos.
+- **Onde o disco surge:** o finalizador surge a 6 m do ponto do lance, do lado do próprio gol, e corre até 1,5 m atrás da bola na primeira metade do avanço e até a bola na câmera lenta (como hoje); o cobrador de falta e de pênalti surge 2 m atrás da bola; o goleiro surge no eixo do gol (§6, item 7). A posição do disco é decorativa; **quem ele é** não (§10).
+- **Tamanhos a 360×740:** caixa de 360 × 240px; estádio de longe com 91px; gramado com 149px; placas de 12px (longe) e de 12 a 17px (fundos); disco do lance de 14 a 18px; bola de 8px (até 11,6px no alto de um arco); a etiqueta precisa de 60px acima do disco e cabe sobre o disco mais ao fundo. Deitado (844×390): caixa de 397 × 265px. Desktop (1280×800): 600 × 400px. A 360×640: 297 × 198px, com a etiqueta em uma linha.
 
-## 6. Movimento dos jogadores (fase 1b)
+**Os modos não escolhidos** ("só os envolvidos" e "os 22 em movimento contínuo") ficam registrados no §18.
 
-**O que incomodava.** Na T-085, cada disco vai à posição da formação deslocada pela bola com os mesmos pesos (35% no comprimento, 20% na largura), na mesma curva e no mesmo instante: o time anda em bloco, como uma peça só (pedido do CEO, 2026-11-23).
+## 6. O planejador da bola (PR C)
 
-**O modelo.** Em cada passo, cada disco tem **um alvo próprio** (a sua função na formação, puxada pela bola e pela fase do time), **um atraso e um ritmo próprios** e **uma deriva pequena**. Continua uma função pura de (passo, progresso) e da semente da partida, sem alocação por quadro, sem tocar no motor. Os números ficam em `PITCH_MOTION` (`app/src/ui/match/pitch/motion.ts`), com comentário apontando para cá; o `developer` pode ajustá-los no aparelho sem mudar as regras.
+**O que ele faz.** Decide, passo a passo, o caminho da bola: em cada minuto sem lance, uma ou duas ações do time com a bola (conduzir, passar rasteiro, tabelar, recuar, passar por cima, cruzar), encadeadas de modo que **a bola nunca para**; nos lances, o passe do começo (D3-B), o chute e o que vem depois. Também decide onde os discos do lance surgem e andam. Mora em `app/src/ui/match/pitch/plan.ts`, sem DOM, testado no Vitest; os números ficam em `PITCH_MOTION`, com comentário apontando para cá.
 
-**1. Função.** Do `FORMATION_SLOTS` do motor (GK, CB, FB, DM, AM, ST); um ST ou AM cuja vaga fica a 17 m ou mais do meio na largura é **aberto** (W: ponta ou meia aberto).
+**Dono da bola e direção.** O dono de cada minuto sem lance é o da cota de posse D4-C do `campo-lances.md` (que bate com a posse da súmula); nos lances, o `side` do evento. A direção é a do lado.
 
-**2. Fase do time no passo.** Ataque (o time é o dono da bola do passo, D4-C), defesa (o outro) ou neutra (sem dono: começo de cada tempo, intervalo, depois do gol).
+**As ações e a distribuição** (`PITCH_MOTION.actions`; sorteio por passo com o rótulo `m${slot}-play`):
 
-**3. Alvo pela função** (`a` = 1 para o mandante, −1 para o visitante; `(bx, by)` = onde a bola termina o passo; a vaga em `(sx, sy)`):
+| Padrão do minuto                  | Peso | O que a bola faz (frações do passo; distâncias em metros)                                                                                            |
+| --------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Condução e passe rasteiro         | 0,20 | conduz por 30 a 45% do passo (3 a 6 m para a frente, até 3 m para o lado) e passa rasteiro até o fim do passo                                        |
+| Passe rasteiro e condução         | 0,15 | passa rasteiro em 55% do passo; quem recebe conduz 2 a 5 m                                                                                           |
+| Um passe rasteiro                 | 0,20 | um passe rasteiro no passo inteiro                                                                                                                   |
+| Dois passes rasteiros             | 0,14 | dois passes rasteiros, metade do passo cada                                                                                                          |
+| Recuo                             | 0,12 | no próprio campo (8 m ou mais atrás do meio), metade das vezes para o goleiro; senão, um recuo de 8 a 15 m e uma condução de 2 a 4 m                 |
+| Tabela                            | 0,08 | dois passes rasteiros curtos, metade do passo cada; o segundo volta 6 m à frente de onde a bola saiu, formando um "V"                                |
+| Por cima (lançamento ou inversão) | 0,11 | um passe por cima no passo inteiro: lançamento (18 a 30 m para a frente, até 12 m para o lado) ou inversão (para o outro lado do campo), meio a meio |
 
-```
-x = sx + kx × (bx − 52,5) + a × avanço
-y = sy + ky × (by − 34) + fecha × (34 − sy)
-```
+- **Passe rasteiro curto:** de 5 a 18 m para a frente e até 14 m para o lado.
+- **Cruzamento:** só com a bola aberta no terço final (a mais de 18 m do meio-campo no sentido do ataque e a mais de 15 m do meio na largura), com 45% de chance, no lugar do padrão sorteado: um passe por cima que cai na área (7 a 14 m da linha de fundo, até 7 m do meio na largura).
+- **Nunca dois por cima seguidos** (lançamento, inversão ou cruzamento), nem no começo de lance logo depois de um passe por cima: o peso do "por cima" sai do sorteio enquanto a ação anterior foi por cima.
+- **Limites:** a bola fica entre 10 e 95 m no comprimento e entre 5 e 63 m na largura nos minutos sem lance.
+- **Troca de dono:** quando o dono muda, a bola primeiro se solta (anda de 3 a 6 m, sem rastro, nos primeiros 30% do passo: a disputa) e só depois o novo dono joga.
 
-| Função | `kx` ataque / defesa | `avanço` ataque / defesa (m) | `ky` | `fecha` na defesa | Deriva (m) |
-| ------ | -------------------- | ---------------------------- | ---- | ----------------- | ---------- |
-| CB     | 0,40 / 0,30          | +4 / −3                      | 0,15 | 0,10              | 0,5        |
-| FB     | 0,55 / 0,35          | +10 / −2                     | 0,20 | 0,18              | 0,9        |
-| DM     | 0,50 / 0,40          | +3 / −3                      | 0,35 | 0,10              | 0,8        |
-| AM     | 0,60 / 0,45          | +6 / −6                      | 0,45 | 0,10              | 1,0        |
-| W      | 0,55 / 0,45          | +8 / −10                     | 0,12 | 0,12              | 1,0        |
-| ST     | 0,50 / 0,30          | +8 / −2                      | 0,30 | 0                 | 1,1        |
+**A proporção medida** (protótipo v5, 20 partidas de 90 minutos, 2.298 ações sem contar os lances): passe rasteiro (curto e recuo) **66,0%**, condução **21,6%**, tabela **5,2%**, por cima **6,0%**, cruzamento **1,1%**; nenhuma vez dois passes por cima seguidos. Numa partida só (semente 11): 66,7%, 20,8%, 2,5%, 5,8% e 4,2%.
 
-Na fase neutra, `kx` é a média das duas colunas, sem avanço nem fecha. Os zagueiros da mesma linha têm os mesmos pesos, então seguram a linha juntos; os laterais sobem com a posse; os meias acompanham mais a bola; os pontas recuam com o time sem a bola. O alvo fica dentro do campo (de 1 a 104 m e de 1 a 67 m).
+**O lance (D3-B, sem antecipar o desfecho).**
 
-**4. Linha do impedimento.** No time com a bola, ST, W e AM não passam da linha do último defensor de linha do outro time menos 0,5 m, no sentido do ataque (exceto quem faz a corrida, item 7).
+- **Começo de lance de jogada:** se o dono da bola já é o lado do lance, um passe anônimo leva a bola ao ponto do lance na primeira metade do avanço: **cruzamento** se a bola está aberta (a mais de 14 m do meio na largura), o ponto fica na área e a ação anterior não foi por cima; senão, **rasteiro**. Se o dono era o outro lado, a bola vai ao ponto sem rastro (uma retomada). Tudo isso depende só do que já aconteceu e do ponto do lance (rótulo `-build`), então o começo do gol e o da chance são iguais.
+- **Falta e pênalti:** a bola vai ao ponto sem rastro (não há passe).
+- **Desfecho:** o chute sai do ponto do lance e chega ao destino de hoje (rede, goleiro, poste, fora) em metade do `afterMiss`. Chute rasteiro na maioria; **por cima do travessão** em metade dos "para fora" (o destino passa a ficar dentro da largura do gol, acima do travessão); **arco baixo** em toda falta (por cima da barreira). Na trave, a volta de 6 m continua. Só este passo lê o desfecho (rótulo `-outcome`).
+- **Depois do gol, começo e intervalo:** a bola rola até o centro no passo, sem rastro.
 
-**5. Pressão e cobertura.** No time sem a bola, o disco de linha mais perto da bola **no começo do passo** vai a 2,5 m dela, na reta entre a bola e o próprio gol; o segundo mais perto vai a 9 m, na mesma reta.
+**Discos do lance.** O finalizador ou cobrador e o goleiro, como no §5. O goleiro fica no eixo do gol: profundidade a partir da própria linha de `2 + 0,12 × (distância da bola a essa linha)`, entre 2 e 14 m, e largura `34 + 0,3 × (y da bola − 34)`, limitada a ±6 m; na defesa, vai ao ponto da defesa (como hoje).
 
-**6. Quem recebe.** O receptor do passe anônimo (D2-B) vai ao ponto de chegada, e a bola termina 1 m à frente dele, no sentido do ataque. Quem passa é o disco do dono mais perto da bola no começo do passo; se for o mesmo disco, é condução (D2-B), sem rastro.
+**Continuidade.** A bola é contínua em posição em todo o jogo: cada ação começa onde a anterior terminou, e cada passo começa onde o anterior terminou. A condução é uma curva cúbica (Hermite) com a velocidade da bola na saída; o passe rasteiro desacelera (`1 − (1 − u)²`); o passe por cima anda constante no chão e sobe numa parábola (§7). Os discos do lance seguem curvas cúbicas com velocidade contínua, com no máximo 11 m/s no relógio Normal (o finalizador, até 14 m/s, para chegar à bola).
 
-**7. Corrida de ruptura.** Em 35% dos passes dos minutos sem lance (sorteio com o rótulo `m${slot}-run`), o atacante central do time com a bola (o ST mais perto do meio na largura, que não é quem passa nem quem recebe) corre até 3 m além da linha do último defensor, fechando 35% do caminho para o meio. No começo de um lance, quem corre é o finalizador, pela regra de hoje.
+**Passo a passo, sem tarefa longa.** O planejador **nunca monta a partida inteira de uma vez**. O plano do passo `i + 1` é feito quando o passo `i` é revelado (no `onreveal`), a partir do estado do fim do passo `i` (onde a bola está, como se move, quem é o dono, se a ação anterior foi por cima) e da semente: cerca de 0,1 ms por passo com CPU 4×. Como o plano de um passo só depende do passado e da semente, montar passo a passo ou de uma vez dá o mesmo resultado (teste). Pular para o resultado não precisa de plano.
 
-**8. Goleiro.** No eixo do gol: profundidade a partir da própria linha de `2 + 0,1 × (distância da bola a essa linha)`, entre 2 e 12 m; largura `34 + 0,25 × (by − 34)`, limitada a ±5 m. No desfecho de defesa, ao ponto da defesa (como hoje); no gol, 60% do caminho até a bola na largura; no chute para fora, 50% até o poste mais perto.
+**Sem alocação por quadro.** O plano de cada passo cabe num `Float64Array` de tamanho fixo (até 3 ações por passo, 12 números cada, mais 16 números de pontos de condução), escrito uma vez no plano; a cena do quadro só avalia esses números e escreve no mesmo `out` de sempre.
 
-**9. Começo de lance e desfecho.** No começo de lance, os alvos são os do ponto do lance, com o time do lance no ataque; o finalizador segue a regra de hoje (1,5 m atrás da bola, depois a bola, na câmera lenta). No desfecho, o finalizador segue 1,5 m na direção do gol, o goleiro faz o item 8, e os outros seguram.
+**Tempo.** O plano é em segundos do relógio Normal; o quadro usa `τ = início do passo + avanço × duração Normal`, com o avanço da câmera lenta na pausa dramática. No Rápido, tudo anda na mesma proporção.
 
-**10. Tempo de cada um.** Dentro do passo, cada disco anda no seu trecho, com a curva cúbica de hoje:
+## 7. Rastros por tipo e encadeados (PR C)
 
-```
-atraso = 0,04 + 0,16 × reação + 0,10 × sorteio      // fração do passo
-ritmo  = min(1 − atraso, 0,55 + 0,35 × sorteio')     // fração do passo para chegar
-```
+**Os tipos se distinguem pela forma, nunca só pela cor** (todos em `ink`):
 
-A **reação** é fixa por disco na partida (rótulo `react`); os sorteios são por passo e por disco. Quem tem função no passo (receptor, quem pressiona, quem cobre, quem corre, o finalizador, o goleiro na defesa) sai na hora e chega junto com a bola (atraso 0, ritmo 1). No começo de lance, todos se ajeitam na primeira metade do avanço, antes da câmera lenta. **Todos chegam ao alvo no fim do passo**, então o passo seguinte começa onde este terminou: nada salta.
+| Ação                                          | Desenho                                                                                                                                                                    |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Passe rasteiro (curto, recuo, para o goleiro) | linha reta contínua de 2px CSS, que cresce com a bola                                                                                                                      |
+| Tabela                                        | dois rasteiros encadeados (o "V")                                                                                                                                          |
+| Condução                                      | **pontilhado** (traço `[0,1, 5]`, 2,2px, pontas redondas) pelos 8 pontos do caminho real da bola, colado ao chão                                                           |
+| Por cima (lançamento, inversão, cruzamento)   | **arco no ar**: 19 pontos da parábola, cada um projetado e subido `z × k`, em linha de 2px; e, no chão, o **rastro da sombra**, tracejado (`[3, 4]`, 1,2px, opacidade 0,7) |
+| Chute                                         | linha reta **mais grossa** (3,5px) até o destino                                                                                                                           |
+| Chute por cima (travessão, barreira)          | **arco baixo** de 3px                                                                                                                                                      |
+| Trave                                         | linha quebrada: do ponto ao poste e a volta                                                                                                                                |
 
-**11. Deriva.** Por eixo, `amplitude × (0,7 × sen(2π f₁ τ + φ₁) + 0,3 × sen(2π f₂ τ + φ₂))`, com a amplitude da tabela, `f₁ = 0,23 Hz` e `f₂ = 0,61 Hz` vezes um fator do disco (de 0,85 a 1,15), fases do disco, e `τ` = o relógio da partida em segundos do ritmo Normal (a soma das durações Normais dos passos anteriores mais o progresso vezes a duração Normal do passo; contínuo entre passos). Quem tem função no passo não deriva: o peso da deriva vai de 0 a 1 (ou de 1 a 0) com a curva do passo, sem salto; assim o receptor chega exatamente à bola.
+- **Altura do passe por cima:** `h = min(11, 2,5 + 0,17 × distância)` m, numa parábola `z = h × 4u(1 − u)`; cruzamento de 4 a 6 m; chute por cima do travessão subindo até 3,2 m na linha do gol (`z = h × (1 − (1 − u)²)`); falta com 2,2 m.
+- **O ponto de origem** (5px de diâmetro em `ink`) só na ação mais nova.
+- **Encadeados:** a ação em curso e as **três anteriores**, com opacidade 1; 0,6; 0,38; 0,22, cada uma ainda vezes `1 − idade ÷ 3,2 s` (relógio Normal) depois de terminar. Assim a jogada inteira aparece, como na referência. A cadeia recomeça na volta ao centro (depois do gol, começo e intervalo). Um anel fixo de 4 entradas, sem alocação.
+- **A bola no ar:** desenhada no ponto subido, com o raio vezes `1 + 0,45 × min(1, z ÷ 9)`; **a sombra** fica no chão, embaixo: uma elipse de `1,05 r₀ × 0,5 r₀` no token novo **`pitch-shadow`** (`rgba(0, 0, 0, 0.38)` nos dois temas; proposta 49), desenhada só com `z > 0,15 m`. A sombra é escura nos dois temas porque uma sombra clara não se lê como sombra; ela é decoração e nunca fica sob texto.
+- **Ressalva de leitura:** um passe por cima quase só na profundidade (de perto para longe) vira uma linha quase vertical, porque a altura também é vertical na tela; o arco se lê bem quando o passe tem componente lateral. É raro (os por cima são 6%).
+- **Custo:** até cerca de 100 projeções por quadro (4 rastros, 19 pontos no pior caso), os padrões de traço em arrays fixos, a elipse e as polilinhas como chamadas do canvas: de 0,1 a 0,2 ms por quadro com CPU 4×.
 
-**12. Sorteios e semente.** Os sorteios por passo e por disco saem de uma função de espalhamento inteira, sem estado, de `(semente da partida, passo, disco)` (ou do `Rng` com rótulo `${seed}-pitch-…`, calculados ao montar a coreografia). Os sorteios de hoje (`m${slot}`, `-build`, `-outcome`) não mudam de valor por causa dos novos.
+## 8. Cunha do ataque (PR C)
 
-**Honestidade e desfecho.** O movimento usa só o dono da bola (D4-C, que bate com a posse da súmula), o lado e o ponto do lance: não sugere domínio que o motor não calculou. No começo de lance, tudo depende do lado, do finalizador, do tipo e do ponto (rótulo `-build`) e da pose de partida, nunca do desfecho: o começo do gol e o da chance continuam iguais quadro a quadro.
+Um triângulo translúcido com o vértice na bola (no ponto do chão, também com a bola no ar), apontado para o centro do gol que o dono ataca, até a linha desse gol, com meia-abertura de 26°, recortado ao retângulo de jogo projetado; gradiente do token `pitch-wedge` (proposta 42, aprovada: noite `rgba(4, 18, 10, 0.45)`, dia `rgba(255, 255, 255, 0.35)`) no vértice até transparente no gol. A cunha sempre afasta o gramado do `ink` (no vértice, 10,96:1 no tema noite e 7,35:1 no dia). Em todo passo com dono; some no desfecho e na volta ao centro; com a bola a menos de 3 m da linha do gol atacado, não é desenhada. Quando o dono muda, a nova entra em 200 ms (`globalAlpha`). O gradiente é criado uma vez por tamanho e tema num eixo local, e a cada quadro só se ajusta a transformação e se passam os vértices para o eixo local (sem alocação): de 0,1 a 0,3 ms por quadro com CPU 4×.
 
-**Movimento reduzido.** Nada disso anima: o quadro parado de cada passo com linha na narração continua com os times nas posições da formação (regra da T-085), sem deriva.
+## 9. Etiquetas: do lance, de gol e a camisa sobre a bola (PR B; espera e assistência no PR D)
 
-**Custo.** Por quadro e por disco: uma interpolação, uma curva cúbica e quatro senos (ou dois espalhamentos inteiros, se o atraso e o ritmo não forem guardados no passo): menos de 0,05 ms para os 22 com CPU 4×. Na coreografia, por passo, os alvos (46 números) e uma máscara de bits de quem tem função (um inteiro), como as poses de hoje: cerca de 100 KB por partida. No chunk, de 1,5 a 2 KB gzip.
+**A etiqueta sai do jogador** (pedido do CEO, 2026-11-23): uma pílula fora do canvas, presa ao disco por uma ponta e um fio.
 
-## 7. Item 1: rastro da bola (fase 1b)
+**Posição** (`tagPlacement`, pura, a cada quadro):
 
-**O que é.** O caminho que a bola fez **no passo atual**, de onde ela saiu até onde ela está, com a bola andando na ponta. É o "passe" da referência, mas sem afirmar quem passou: nos minutos sem lance, um passe anônimo entre dois discos do time com a bola (D2-B); no começo de um lance de jogada, o passe anônimo que chega ao finalizador (D3-B); no desfecho e na chance fraca, o chute.
-
-| Passo                                             | Rastro                                                                           |
-| ------------------------------------------------- | -------------------------------------------------------------------------------- |
-| Minuto sem lance com passe (D2-B)                 | de onde a bola saiu até a bola                                                   |
-| Minuto sem lance com condução (o mesmo disco)     | nenhum (a bola anda sozinha, como hoje)                                          |
-| Começo de lance de jogada                         | do companheiro anônimo até a bola (D3-B)                                         |
-| Começo de falta e de pênalti                      | nenhum (a bola vai ao ponto, como hoje)                                          |
-| Desfecho, chance fraca (o voo)                    | do ponto do lance até a bola; na trave, uma linha quebrada (ponto, poste, volta) |
-| Depois do gol, começo, intervalo, 2º tempo        | nenhum (a bola volta ao centro sem rastro)                                       |
-| Vermelho, lesão, troca, mudança tática, acréscimo | nenhum                                                                           |
-
-O rastro **vive o passo em que nasceu**: some no começo do passo seguinte, sem animação. Pausada (no fim de um passo), a partida mostra o rastro daquele passo inteiro.
-
-**Desenho.** A origem e a bola (e o poste, na trave) projetados (§3) e ligados por uma linha de 2px CSS em `ink`, pontas e juntas redondas, com um ponto de 5px de diâmetro em `ink` na origem. A espessura é a mesma em toda a profundidade. Por cima do gramado e da cunha, por baixo dos discos; a bola por cima de tudo. O `ink` sobre `pitch` dá 5,94:1 (noite) e 4,09:1 (dia), o par do anel e da bola. Ele se distingue das marcações (`pitch-line`, 1px) pela espessura, pelo ponto de origem e porque segue a bola.
-
-**Desempenho.** Um `stroke` de até 4 pontos e um `arc` por quadro, com os pontos num `Float64Array` de tamanho fixo escrito pela cena: menos de 0,1 ms por quadro com CPU 4×.
-
-## 8. Item 4: cunha do ataque (fase 1b)
-
-**O que é.** Um triângulo translúcido com o vértice na bola, apontado para o centro do gol que o time com a bola ataca, até a linha desse gol. Diz "quem está com a bola e para onde vai" sem cor de time. O CEO pediu para manter ("a sombra que indica qual lado está atacando").
-
-**Dono e direção.** Do `campo-lances.md`, D4-C: nos lances, o `side` do evento; nos minutos sem lance, a cota de posse que bate com a da súmula. A direção é a do lado.
-
-**Desenho.**
-
-- **Em metros:** vértice no centro da bola; eixo da bola ao centro do gol atacado; meia-abertura de 26°; até a linha do gol atacado; recortado ao retângulo de jogo (105 × 68). Na tela, os três vértices projetados, e o recorte é o trapézio do retângulo de jogo projetado. Na perspectiva, a cunha estreita ao longe, como a sombra da referência.
-- Gradiente linear ao longo do eixo **na tela**, do token `pitch-wedge` no vértice projetado até transparente no centro do gol projetado.
-- **`pitch-wedge`** (proposta 42, aprovada): noite `rgba(4, 18, 10, 0.45)` (sombra); dia `rgba(255, 255, 255, 0.35)` (luz). A cunha sempre **afasta o gramado do `ink`**: no vértice, o `ink` sobre o gramado com a cunha dá 10,96:1 (noite, 5,94 sem ela) e 7,35:1 (dia, 4,09).
-- Logo depois do fundo copiado e antes do rastro e dos discos.
-
-**Quando aparece.** Em todo passo com dono (D4-C), também nos minutos sem lance. Some no começo do passo de desfecho e no gol, na volta ao centro, no começo de cada tempo e no intervalo; volta no passo seguinte com dono. Com a bola a menos de 3 m da linha do gol atacado, não é desenhada.
-
-**Tempos.** Quando o dono muda, a cunha nova entra com opacidade de 0 a 1 em 200 ms (`globalAlpha`), e a antiga sai de uma vez. O dono troca a cada 4,1 minutos em média (cerca de 3 s no Normal).
-
-**Desempenho, sem alocação.** O gradiente é criado **uma vez** por tamanho e tema, num eixo local de (0, 0) a (1, 0). A cada quadro, com o vértice `a` e o fim `e` já projetados, comprimento `len` e ângulo `θ` do segmento, `setTransform(cos θ·len, sin θ·len, −sin θ·len, cos θ·len, ax, ay)` (vezes a densidade), e os três vértices projetados passam para o eixo local pela inversa (`R(−θ)·(p − a) / len`) antes do `fill`. Mais `save`/`clip`/`restore`. De 0,1 a 0,3 ms por quadro com CPU 4×.
-
-## 9. Item 2: etiqueta do lance (fase 1b; a âncora e o componente na 1a)
-
-**O que é.** A linha da narração em miniatura, **saindo do jogador**: a camisa dele com o número, o tipo do lance e o nome, numa pílula presa a ele por uma ponta e um fio. Só para quem está num evento do motor (D1-A).
-
-**Por que presa ao jogador, e não fixa no alto.** É o que a referência faz e o que o CEO pediu para o gol; usar a mesma regra no lance e no gol deixa uma etiqueta só, que sempre aponta quem é. A pista do time passa a ser o próprio disco a que ela está ligada (com ou sem a marca do visitante), além da narração.
-
-**Posição** (função pura `tagPlacement`, §3, a cada quadro):
-
-1. Em cima do disco do jogador, centrada no `x` dele: a base da pílula fica 12px acima do topo do disco (7px de ponta e 5px de fio).
+1. Em cima do disco (ou da bola, na camisa sobre a bola), centrada no `x` dele: a base fica 12px acima do topo (7px de ponta e 5px de fio).
 2. Presa na caixa: `x` entre `space-2` e `Wc − space-2 − largura`; o topo nunca acima de 4px.
-3. **Nunca cobre um gol:** se a pílula cruzar, na altura, a caixa de um dos gols na tela (traves, travessão e rede projetados, com 6px de margem), ela é empurrada para o lado de dentro (para o meio do campo) até não cobrir; depois, presa na caixa de novo.
-4. **A ponta** fica no `x` do jogador, limitada a 20px das pontas da pílula: perto da borda ou do gol, a pílula vira para o lado de dentro e o fio sai inclinado.
-5. **O fio** é desenhado no canvas (é traço, não texto), de 1,5px em `ink`, da ponta ao topo do disco, depois dos discos e antes da bola.
-6. Ela segue o jogador a cada quadro. A largura e a altura são medidas **uma vez** por etiqueta; a posição vai para o DOM como `transform` só quando muda mais de 0,5px (é a única escrita no DOM por quadro, e nada de layout).
+3. **Nunca cobre um gol:** se cruzar, na altura, a caixa de um gol na tela (traves, travessão e rede projetados, com 6px de margem), ela é empurrada para o lado de dentro até não cobrir, e presa na caixa de novo.
+4. **A ponta** fica no `x` do jogador, limitada a 20px das pontas da pílula: perto da borda ou do gol, a pílula vira para dentro e o fio sai inclinado.
+5. **O fio** é traço no canvas (1,5px em `ink`), da ponta ao topo do disco ou da bola.
+6. A largura e a altura são medidas uma vez por etiqueta; a posição vai para o DOM como `transform` só quando muda mais de 0,5px (a única escrita no DOM por quadro; sem layout).
 
-O que ela pode cobrir por instantes: os discos logo acima do jogador e, no passe do começo do lance, a bola que vem de cima dele. O que ela nunca cobre: os gols, o próprio jogador e a bola no pé dele.
+O que ela pode cobrir por instantes: a bola que vem de cima do jogador no passe do começo do lance. O que ela nunca cobre: os gols, o próprio jogador e a bola no pé dele.
 
-**Desenho** (protótipo v2, capturas 2 e 4).
-
-- Pílula em `surface-1`, borda de 1px em `line`, `radius-pill` e `shadow-card`; a ponta, um triângulo de 12 × 7px na cor da pílula. Respiro `space-1` em cima, embaixo e do lado da camisa; `space-3` do lado do texto.
-- **Camisa:** um círculo de 40px em `surface-2` com a camisa do uniforme do jogador (o `kitSvg` do gerador da T-026, só a camisa, 34 × 22px; o goleiro com a de goleiro) e, por cima, o número (`Player.shirt`) em `numero` com `tabular-nums`, na `numberColor` do uniforme; com a `numberPlate`, sobre uma placa nessa cor, com 4px de raio (contrato de [uniformes.md](../../art/uniformes.md) §3: o número sempre com 4,5:1 contra o que está atrás dele). Para só a camisa, o `kitSvg` ganha uma opção aditiva (`part: 'shirt'`, a `viewBox` `0 0 64 42`); pedido ao `art-director` e ao `developer`, sem efeito no save nem no motor.
-- **Texto, em duas linhas:** o tipo em `rotulo` (caixa alta), em `ink-muted`; o nome (`name.display`) em `body-strong`, em `ink`. Pares já conferidos sobre `surface-1`.
-- **Largura máxima:** 60% da largura da caixa (216px a 360px; cerca de 150px para o nome). O nome quebra em até 2 linhas e nunca corta. Altura: 48px com uma linha de nome, 70px com duas.
-- **Abaixo de 200px de altura da caixa** (360×640): uma linha só (a camisa e o nome, sem o tipo), 40px.
-- Sem `backdrop-filter`.
-
-**Quando aparece, e com que tipo** (decisões 4 e 5 do CEO): só lances com bola e vermelho.
+**Etiqueta do lance.** Pílula em `surface-1`, borda de 1px em `line`, `radius-pill`, `shadow-card`; ponta de 12 × 7px na cor da pílula. À esquerda, a camisa: um círculo de 40px em `surface-2` com a camisa do uniforme do jogador (`kitSvg` com a opção aditiva `part: 'shirt'`, a `viewBox` `0 0 64 42`, 34 × 22px; o goleiro com a de goleiro; pedido ao `art-director` e ao `developer`) e o número (`Player.shirt`) em `numero` com `tabular-nums`, na `numberColor` do uniforme, sobre a `numberPlate` quando ela existe. À direita, o tipo em `rotulo` (`ink-muted`) e o nome em `body-strong` (`ink`). Largura de até 60% da caixa (216px a 360px); o nome quebra em até 2 linhas e nunca corta; 48px de altura (70px com duas linhas de nome); abaixo de 200px de altura da caixa, uma linha só (camisa e nome), 40px.
 
 | Passo                                                        | Tipo (chave)                                                  | Âncora (disco do…) |
 | ------------------------------------------------------------ | ------------------------------------------------------------- | ------------------ |
@@ -257,181 +210,167 @@ O que ela pode cobrir por instantes: os discos logo acima do jogador e, no passe
 | Começo de falta                                              | `match.live.freeKick` ("Falta")                               | cobrador           |
 | `penaltyAwarded`                                             | `match.live.penalty` ("Pênalti")                              | cobrador           |
 | Desfecho: defesa, trave, fora; pênalti perdido; chance fraca | `match.tag.saved`, `match.tag.post`, `match.tag.wide` (novas) | finalizador        |
-| Desfecho: gol                                                | a etiqueta de gol (§10)                                       | artilheiro         |
+| Desfecho: gol                                                | a etiqueta de gol                                             | artilheiro         |
 | Vermelho                                                     | `report.event.red` ("Vermelho")                               | expulso            |
 
-**Âncora: sempre o jogador certo** (pergunta do CEO, 2026-11-23; critério de aceite):
+**Etiqueta de gol** (substitui a GoalCelebration; proposta 47). A mesma pílula, com `tone="goal"`: fundo, borda e ponta em `grass`, texto em `on-grass` (par conferido), o círculo da camisa em `surface-1`; "Gol!" (`match.celebration.title`) em `numero`, caixa alta; o artilheiro em `body-strong`; no PR D, "Assistência de {player}" (`match.celebration.assist`) em `caption`. 50px de altura (66px com a assistência); sem escudo (a camisa identifica, e a linha da narração tem o escudo). Entra com escala de 0,92 a 1 e opacidade em 200 ms `ease-out` a partir da ponta; fica o passo "depois de um gol" inteiro, seguindo o artilheiro; sai sem animação no passo seguinte. O anúncio do gol continua na região viva do placar.
 
-- A etiqueta ancora no **disco que representa o jogador do evento** (finalizador, artilheiro, cobrador ou expulso) e mostra o nome e o número **desse** jogador: o mesmo `PlayerId` dá o disco, o nome e o `Player.shirt`.
-- O vínculo entre disco e jogador é o `Field.owner` da coreografia, que segue a escalação real em campo naquele minuto: os 11 titulares na ordem das vagas; numa troca, o disco passa a ser de quem entrou; no vermelho e na lesão sem troca, o disco sai no fim do passo.
-- **A bola vai a esse mesmo disco:** no começo do lance, o contato (o fim da câmera lenta) põe a bola no disco da âncora; no pênalti, o cobrador é o disco que chega à marca; no desfecho, a bola sai dele.
-- **O expulso:** a etiqueta entra no passo do vermelho, presa ao disco enquanto ele anda até a linha lateral; quando o disco sai, no fim do passo, a etiqueta fica no último ponto dele, sem fio, até o tempo mínimo, e sai.
-- **O goleiro que sai sem troca (D5-A do `campo-lances.md`, corrigido na fase 1a):** hoje o campo põe no gol o jogador da última vaga ocupada; o motor põe o jogador de linha em campo de maior `physical` (empate na primeira vaga). A coreografia passa a seguir o motor: o disco do goleiro passa ao jogador de linha em campo de maior `attributeOf(player, 'physical')` (empate no menor índice de disco), e o disco desse jogador sai pela lateral. O caso que a regra não cobre (troca de formação antes da saída do goleiro, que reordena as vagas pela energia que a tela não conhece) é o D5-B: a etiqueta da defesa já não leva o goleiro (decisão 4), então nenhum nome errado aparece.
-- **Sem disco:** a função de hoje `discOf` devolve "o último disco de linha em campo" quando não acha o jogador. Para a etiqueta, isso seria apontar o jogador errado: sem disco do jogador do evento (só com save danificado), **não há etiqueta**, e o caso é registrado como erro de programação em `lib/errors`.
+**A camisa sobre a bola** (minutos sem lance; proposta 48). Uma pílula compacta só com a camisa do time com a bola, **sem número e sem nome**: círculo de 32px em `surface-2` com a camisa de 26 × 17px, ponta e fio até a bola (subida, no ar). Diz só quem está com a bola, que é fato (D4-C); o número diria quem tocou, o que seria inventar (D2-B). Aparece nos passos de minuto sem lance quando não há etiqueta de lance na tela; troca de camisa, sem animação, quando o dono muda; não aparece com movimento reduzido (o campo só é redesenhado nos lances).
 
-**Tempos.**
+**Tempos da etiqueta do lance.** Entra com opacidade e escala de 0,92 a 1 a partir da ponta, em 160 ms `ease-out`, no `onreveal`; do começo ao desfecho do mesmo lance, só o texto do tipo muda; outro jogador substitui na hora; sai com opacidade em 120 ms no começo do primeiro passo sem etiqueta que comece pelo menos 1,6 s (Normal) ou 0,8 s (Rápido) depois da entrada, ou quando o disco dela sai de cena. As durações ficam no componente, com comentário apontando para cá, até o grupo de movimento dos tokens existir.
 
-- **Entrada:** opacidade de 0 a 1 e escala de 0,92 a 1 a partir da ponta, em 160 ms `ease-out`, no `onreveal` do passo.
-- **Mesmo jogador, tipo novo** (do começo ao desfecho do mesmo lance): só o texto do tipo muda, no lugar.
-- **Outro jogador:** a etiqueta nova substitui a anterior na hora e entra como acima.
-- **Saída:** fica até ser substituída ou até o começo do primeiro passo sem etiqueta que comece pelo menos **1,6 s (Normal) ou 0,8 s (Rápido)** depois da entrada; aí sai com opacidade de 1 a 0 em 120 ms. Saindo, para de seguir o jogador e perde o fio.
-- **Pausa:** pausada, a etiqueta do momento fica.
-- As durações ficam escritas no componente, com comentário apontando para cá, até o grupo de movimento dos tokens existir.
+**Etiqueta em espera (PR D).** No começo de um lance de jogada, o nome entra em `ink-muted` e passa para `ink` quando a bola chega ao finalizador (o fim do primeiro trecho: 35% do tempo na pausa dramática). Igual para gol e chance; na falta e no pênalti, e com movimento reduzido, entra acesa. É a versão honesta do "próximo jogador, apagado" da referência.
 
-**A etiqueta em espera (fase 2).** No começo de um lance de jogada, a narração já nomeia o finalizador, e o passe anônimo vai até ele (D3-B). A etiqueta entra com o nome em `ink-muted` e passa para `ink` quando a bola chega ao finalizador (o fim do primeiro trecho da cena: 35% do tempo na pausa dramática). Igual para gol e chance. Na falta e no pênalti, entra já acesa; com movimento reduzido, também. É a versão honesta do "próximo jogador, apagado" da referência: lá é um fato que o app tem; aqui, mostrar quem vem antes de o lance começar entregaria o lance.
+**Leitor de tela.** Todas `aria-hidden`: o que dizem está na linha da narração do mesmo passo. Nada entra na região viva.
 
-**Movimento reduzido.** A etiqueta aparece e some sem transição, presa ao disco no quadro parado (o disco na posição da formação); o tempo mínimo na tela continua.
+**Idiomas.** Medido em `rotulo`: o tipo mais largo que já existe é "Finalização", 65,4px; as sugestões novas, de 25,8 ("Wide") a 70,8px ("Off the post"). Os `match.tag.*` com no máximo 140px nos três idiomas.
 
-**Leitor de tela.** `aria-hidden="true"`: tudo o que ela diz está na linha da narração do mesmo passo. Nada entra na região viva.
+**Componente.** `PitchTag.svelte` em `app/src/ui/components/` (casca do `ux-designer`, no chunk do campo): `tone: 'play' | 'goal' | 'team'`, `kind?: string`, `name?: string`, `assist?: string`, `shirt?: number`, `kitSvg: string`, `number?: { color: string; plate: string | null }`, `waiting?: boolean`, `compact?: boolean`. A posição vem de fora (a tela aplica o `tagPlacement`).
 
-**Idiomas.** Medido em `rotulo`: o mais largo dos tipos que já existem é "Finalização", 65,4px; as sugestões novas, de 25,8 ("Wide") a 70,8px ("Off the post"). Os `match.tag.*` com no máximo 140px nos três idiomas.
+## 10. Âncora: sempre o jogador certo (PR A e B; critério de aceite)
 
-**Componente.** `PitchTag.svelte` em `app/src/ui/components/` (casca do `ux-designer`, no chunk do campo), props: `tone: 'play' | 'goal'`, `kind: string` (texto pronto), `name: string`, `assist?: string` (fase 2), `shirt?: number`, `kitSvg: string`, `number: { color: string; plate: string | null }`, `waiting?: boolean` (fase 2), `compact?: boolean`. A posição vem de fora (a tela aplica o `tagPlacement`); quem decide qual etiqueta mostrar e quando é a tela.
-
-## 10. Comemoração de gol: a etiqueta de gol (fase 1a)
-
-**O pedido do CEO** (2026-11-23): o cartão grande da comemoração parecia uma notificação; melhor algo saindo do jogador, como na referência. A GoalCelebration (cartão em `surface-1` com escudo `md` e "Gol!" em `display-lg`, proposta 39) **sai**, e o gol vira a **etiqueta de gol**: a mesma `PitchTag` do §9, com `tone="goal"`, presa ao artilheiro pelas mesmas regras de posição (nunca cobre um gol, nunca sai da caixa, vira para dentro perto da borda).
-
-**Desenho** (protótipo v2, captura 3).
-
-- Pílula em `grass`, borda em `grass`, ponta em `grass`; texto em `on-grass` (o par do botão primário, conferido pelo `npm run tokens`). O círculo da camisa em `surface-1`, com o número como no §9.
-- **"Gol!"** (`match.celebration.title`) em `numero`, caixa alta, na primeira linha; o **artilheiro** em `body-strong` na segunda; na fase 2, **"Assistência de {player}"** (`match.celebration.assist`) em `caption`, `on-grass`, na terceira.
-- Altura: 50px sem a assistência, 66px com; largura até 60% da caixa. Abaixo de 200px de altura da caixa: "Gol!" e o nome numa linha só, sem a assistência (40px).
-- Sem escudo: a camisa com o número já identifica, e a linha da narração do gol tem o escudo e o nome do clube.
-
-**Tempos.** Entra no desfecho do gol com escala de 0,92 a 1 e opacidade de 0 a 1 em 200 ms `ease-out`, a partir da ponta (o que a proposta 39 já fazia); fica o passo "depois de um gol" inteiro, seguindo o artilheiro; sai sem animação no começo do passo seguinte. A etiqueta do lance que estava no artilheiro é trocada por ela no mesmo lugar.
-
-**Movimento reduzido.** Aparece e some parada.
-
-**Leitor de tela.** Nada muda: a etiqueta é `aria-hidden`, e o anúncio do gol continua na região viva do placar (`match.live.goal.a11y`). O som (T-047) e a vibração (T-041) continuam no mesmo ponto de revelação.
+- No modo "só a bola", **cada disco do lance é criado para o jogador do evento**: o finalizador, o cobrador, o artilheiro ou o expulso, pelo `PlayerId` do evento. A etiqueta ancora nesse disco e mostra o nome e o número **desse** jogador (o mesmo `PlayerId` dá o disco, o nome e o `Player.shirt`).
+- **O goleiro** é o dono atual da vaga de goleiro do lado que defende, pelo `Field.owner` da coreografia, que segue a escalação real em campo naquele minuto: os titulares; nas trocas, quem entrou; no vermelho e na lesão sem troca, a vaga vazia.
+- **D5-A (PR A):** quando o goleiro sai sem troca, o motor põe no gol o jogador de linha em campo de maior `physical` (empate na primeira vaga); hoje o campo põe o da última vaga. A coreografia passa a seguir o motor: a vaga de goleiro passa ao jogador de linha em campo de maior `attributeOf(player, 'physical')`, empate no menor índice. O caso que a regra não cobre (troca de formação antes, que reordena as vagas pela energia) não mostra nome errado: a etiqueta da defesa leva o finalizador (decisão 4).
+- **A bola vai a esse disco:** no começo do lance, o contato (o fim da câmera lenta) põe a bola no disco do finalizador; no pênalti, o cobrador chega à marca; o chute sai dele.
+- **O expulso:** a etiqueta entra no passo do vermelho, presa ao disco enquanto ele anda até a linha lateral; quando o disco sai, no fim do passo, a etiqueta fica no último ponto dele, sem fio, até o tempo mínimo.
+- **Sem jogador:** se o `PlayerId` do evento não estiver na lista do time (só com save danificado), não há disco nem etiqueta, e o caso é registrado como erro de programação em `lib/errors`. O "último disco de linha" que o `discOf` de hoje devolve nunca é usado para etiqueta.
 
 ## 11. Temas e movimento reduzido
 
-**Tema noite (padrão):** arquibancadas em `surface-0` → `surface-2`, fileiras em `line`, refletores acesos (`floodlight` com halo `beam`), mureta `surface-1`, gramado `pitch`, marcações `pitch-line`, cunha escura, anel, bola, rastro e fio da etiqueta em `ink` claro.
+**Tema noite (padrão):** arquibancadas em `surface-0` → `surface-2`, refletores acesos (`floodlight` com halo `beam`), mureta `surface-1`, gramado `pitch`, marcações `pitch-line`, cunha escura, bola, rastros e fios em `ink` claro, sombra da bola em `pitch-shadow`.
 
-**Tema dia:** os mesmos papéis com os tokens do dia: as arquibancadas claras, os refletores apagados (em `line`, sem halo), a cunha clara e o `ink` escuro. O estádio perde a cara de noite; ver a pendência 1 (§16).
+**Tema dia:** os mesmos papéis com os tokens do dia: arquibancadas claras, refletores apagados (em `line`, sem halo), cunha clara, `ink` escuro; a sombra continua escura. O estádio perde a cara de noite (pendência 1). Ao trocar o tema, o fundo e o gradiente da cunha são redesenhados uma vez.
 
-**Troca de tema no meio da partida:** o fundo (com as placas) é redesenhado uma vez, e o gradiente da cunha também.
-
-**Movimento reduzido** (regra da T-085, sem mudança): o campo fica parado, com um quadro só a cada passo com linha na narração e nenhum `requestAnimationFrame` entre eles. No quadro: os times nas posições da formação, projetados, sem deriva; a bola no ponto de chegada do passo; o rastro **inteiro** daquele passo, parado; a cunha do dono daquele passo, sem a entrada de 200 ms; a etiqueta (do lance ou de gol) sem transição, presa ao disco. A câmera nunca se move. As arquibancadas e as placas são paradas por natureza.
+**Movimento reduzido** (regra da T-085, ajustada ao modo "só a bola"): o campo fica parado, com um quadro só a cada passo com linha na narração e nenhum `requestAnimationFrame` entre eles. No quadro: a bola no ponto de chegada do passo (no chão); os rastros daquele passo **inteiros e parados** (o arco desenhado completo, a condução pontilhada inteira); a cunha do dono daquele passo; os discos do lance no **fim do passo** (não mais nas posições da formação, que deixariam o finalizador longe da bola); as etiquetas sem transição; sem a camisa sobre a bola. A câmera nunca se move.
 
 ## 12. Desempenho e orçamento
 
-| Item                               | Hoje (medido, CHANGELOG da T-085) | Fase 1a (estimativa)                                                        | Fase 1b (estimativa)                                            | Meta                                  |
-| ---------------------------------- | --------------------------------- | --------------------------------------------------------------------------- | --------------------------------------------------------------- | ------------------------------------- |
-| Chunk do campo (JS + CSS, gzip)    | 7,1 KB                            | +3 a 5 KB (projeção, fundo, três filas de placas, etiqueta e posição, D5-A) | +3,5 a 5 KB (movimento, rastro, cunha, regras de posse e passe) | ≤ 20 KB                               |
-| Desenho de um quadro (mediana)     | 0,5 ms                            | +0,2 ms (24 projeções, ordenação, fio da etiqueta)                          | +0,5 ms (movimento, cunha com recorte, rastro)                  | ≤ 6 ms                                |
-| Intervalo entre quadros (p95)      | 16,8 ms                           | sem mudança esperada                                                        | sem mudança esperada                                            | ≤ 34 ms                               |
-| Redesenho do fundo (tamanho, tema) | não medido                        | de 5 a 15 ms com CPU 4× (fileiras, polilinhas, placas)                      | —                                                               | ≤ 30 ms, nunca tarefa longa (> 50 ms) |
-| Imagens e precache                 | nenhuma imagem                    | nenhuma imagem                                                              | nenhuma imagem                                                  | —                                     |
+| Item                               | Hoje (medido, T-085) | PR A                                        | PR B                        | PR C                                                           | PR D | Meta                        |
+| ---------------------------------- | -------------------- | ------------------------------------------- | --------------------------- | -------------------------------------------------------------- | ---- | --------------------------- |
+| Chunk do campo (JS + CSS, gzip)    | 7,1 KB               | +3 KB (projeção, fundo, placas, modo, D5-A) | +2 KB (`PitchTag`, posição) | +3 a 4 KB (planejador, rastros por tipo, sombra, cunha)        | +0,3 | ≤ 20 KB                     |
+| Desenho de um quadro (mediana)     | 0,5 ms               | +0,1 ms (projeções, até 3 discos)           | +0,05 ms (fios)             | +0,3 ms (rastros, sombra, cunha)                               | —    | ≤ 6 ms                      |
+| Intervalo entre quadros (p95)      | 16,8 ms              | sem mudança esperada                        | sem mudança esperada        | sem mudança esperada                                           | —    | ≤ 34 ms                     |
+| Redesenho do fundo (tamanho, tema) | não medido           | de 5 a 15 ms com CPU 4×                     | —                           | —                                                              | —    | ≤ 30 ms, nunca tarefa longa |
+| Planejamento                       | —                    | —                                           | —                           | cerca de 0,1 ms por passo, no `onreveal`                       | —    | nenhuma tarefa longa        |
+| Memória do plano                   | poses de hoje        | —                                           | —                           | até cerca de 60 números por passo (cerca de 70 KB por partida) | —    | —                           |
 
-Total estimado ao fim da fase 1: de 13 a 17 KB gzip no chunk do campo e de 1 a 1,5 ms de mediana por quadro. Se uma meta passar, volta ao `architect` antes de a tela virar tela de espera.
+Total estimado ao fim: de 15,5 a 16,5 KB gzip no chunk do campo e cerca de 1 ms de mediana por quadro; nenhuma imagem nova no precache. Se uma meta passar, volta ao `architect`.
 
-## 13. Medidas para os testes
+## 13. Critérios de aceite e medidas
 
-**Vitest (1a), geometria** (`geometry.test.ts`, reescrito):
+**Vitest, geometria (PR A):**
 
 1. Os quatro cantos do desenho caem onde o §3 diz (tolerância de 0,5px), em 360×240, 397×265, 600×400 e 297×198.
-2. Profundidade monótona: para `y` crescente, `sy` cresce e `k` cresce.
-3. Retas continuam retas: três pontos alinhados na cena continuam alinhados na tela (tolerância de 0,5px).
-4. Mínimos: raio do disco ≥ 7px CSS e da bola ≥ 4px CSS em todo o desenho, nos quatro tamanhos.
-5. `project` e `tagPlacement` são puras e não alocam.
-6. A bola, em qualquer ponto a até 1,5 m da borda do desenho, fica inteira no canvas depois da projeção.
-7. Placas: nenhum vértice das placas dos fundos fica dentro do trapézio do desenho; a fila de longe fica acima de `yFar`.
-8. `tagPlacement`, numa grade de posições de jogador nos quatro tamanhos e com as duas alturas de etiqueta: a pílula fica inteira na caixa, não cruza a caixa de nenhum gol, e a ponta fica a no máximo 20px das pontas da pílula.
+2. Profundidade monótona; retas continuam retas (três pontos alinhados na cena continuam alinhados na tela, tolerância de 0,5px).
+3. Mínimos: disco ≥ 7px CSS de raio e bola ≥ 4px CSS em todo o desenho.
+4. `project` e `tagPlacement` são puras e não alocam.
+5. Placas: nenhum vértice das placas dos fundos dentro do trapézio do desenho; a fila de longe acima de `yFar`.
+6. `tagPlacement`, numa grade de posições nos quatro tamanhos e com as alturas de etiqueta: a pílula fica inteira na caixa, não cruza a caixa de nenhum gol, e a ponta fica a no máximo 20px das pontas da pílula.
 
-**Vitest, âncora: sempre o jogador certo** (1a para o gol, o vermelho e o D5-A; 1b para os lances; com o `qa-engineer`):
+**Vitest, âncora (PR A e B; com o `qa-engineer`):**
 
-1. **Em 200 partidas simuladas** (sementes fixas, escalações reais, com trocas, vermelhos e lesões), para todo passo com etiqueta, o disco-âncora é o disco cujo dono, naquele passo, é o jogador do evento. O dono de referência é calculado no teste de forma independente da coreografia: os titulares na ordem das vagas, refeitos evento a evento (troca: quem entra fica com a vaga de quem saiu; vermelho e lesão sem troca: a vaga fica vazia; goleiro que sai sem troca: a regra do motor, maior `physical`).
-2. **O expulso:** o critério vale no passo do vermelho, com o disco ainda em campo (`on[d] === 1`).
-3. **Nome e número:** o nome da etiqueta é igual ao da linha da narração do mesmo passo, e o número é o `Player.shirt` do mesmo `PlayerId`.
-4. **A bola no disco:** no fim do começo de cada lance (contato), a bola fica a no máximo 0,1 m do disco-âncora; no pênalti, o disco-âncora é o que está na marca.
-5. **D5-A:** num caso montado à mão (goleiro expulso sem troca), o disco do goleiro passa ao jogador de linha em campo de maior `physical`; nas 200 partidas, todo caso de goleiro sem troca bate com o goleiro que o motor usa nas defesas seguintes.
-6. **Sem disco:** com um evento de um jogador fora de campo (montado à mão), não há etiqueta, e o erro é registrado.
+1. Em 200 partidas simuladas (sementes fixas, escalações reais, com trocas, vermelhos e lesões), todo passo com etiqueta tem o disco-âncora criado para o `PlayerId` do evento do passo; o goleiro do lance é o dono da vaga de goleiro naquele passo, calculado no teste de forma independente da coreografia (titulares, refeitos evento a evento: troca, vermelho, lesão sem troca e a regra do motor para o goleiro que sai).
+2. O expulso: o critério vale no passo do vermelho, com o disco ainda em cena.
+3. O nome da etiqueta é igual ao da linha da narração do mesmo passo, e o número é o `Player.shirt` do mesmo `PlayerId`.
+4. No fim do começo de cada lance de jogada, a bola fica a no máximo 0,1 m do disco do finalizador; no pênalti, o cobrador está na marca.
+5. D5-A: num caso montado à mão (goleiro expulso sem troca), a vaga de goleiro passa ao jogador de linha em campo de maior `physical`.
+6. Sem jogador: com um evento de um `PlayerId` fora da lista (montado à mão), não há disco nem etiqueta, e o erro é registrado.
 
-**Vitest (1b), movimento:**
+**Vitest, planejador e rastros (PR C):**
 
-1. Determinismo: a mesma partida dá a mesma cena em qualquer `(passo, progresso)`.
-2. Nada salta: a posição de cada disco no fim de um passo é igual (até 1 mm) à do começo do seguinte, com a deriva.
-3. Todos chegam: no fim de cada passo, cada disco está no seu alvo mais a deriva; `atraso + ritmo ≤ 1` sempre.
-4. O receptor chega à bola: no fim de cada passe, a bola está a 1 m (± 0,1) do receptor, no sentido do ataque.
-5. Pressão: no fim de cada passo com dono, há um disco do outro time a no máximo 3 m da bola.
-6. Impedimento: no fim de cada passo com dono, nenhum ST, W ou AM do time com a bola passa a linha do último defensor, salvo quem corre.
-7. Goleiro: sempre a no máximo 12 m da própria linha e a ±5 m do meio na largura, fora o desfecho de defesa.
-8. Velocidade: nenhum disco anda mais de 10 m por segundo de relógio Normal (nada de teletransporte).
-9. Nada antecipa o desfecho: o teste dos 11 pontos cobre o movimento novo, a origem do rastro, a cunha e a etiqueta (na fase 2, também o instante em que o nome acende).
-10. Sem alocação: `sceneAt` continua escrevendo no mesmo objeto.
+1. Determinismo: a mesma partida dá o mesmo plano; montar passo a passo (no `onreveal`) e de uma vez dá o mesmo resultado, número a número.
+2. A bola nunca salta: a posição no fim de cada passo é igual (até 1 mm) à do começo do seguinte; dentro do passo, a distância entre dois instantes a 16 ms nunca passa de 3 m (nem no chute).
+3. A bola nunca para nos minutos sem lance: em nenhum intervalo de 200 ms do relógio Normal a bola anda menos de 0,2 m (o fim de um passe rasteiro curto, que desacelera, é o caso mais lento).
+4. Limites: nos minutos sem lance, a bola fica entre 10 e 95 m e entre 5 e 63 m.
+5. **Distribuição**, em 1.000 partidas: passe rasteiro (curto e recuo) entre 60 e 70%; condução entre 17 e 25%; tabela entre 3 e 8%; por cima (lançamento e inversão) entre 4 e 8%; cruzamento no máximo 3%, e só com a bola aberta no terço final.
+6. Nunca dois passes por cima seguidos (lançamento, inversão ou cruzamento), também no começo de lance.
+7. **Nada antecipa o desfecho:** o teste dos 11 pontos cobre o caminho da bola, o tipo do passe do começo do lance, os discos, a cunha e a etiqueta: iguais para gol e chance do mesmo lado, finalizador e tipo.
+8. Sem alocação: `sceneAt` escreve no mesmo objeto, e o anel de rastros tem 4 entradas fixas.
 
 **E2E (Playwright, como os da T-085):**
 
-1. **Desempenho** (1a e 1b): quadros p95 ≤ 34 ms e desenho mediano ≤ 6 ms a 390×844, densidade 3, CPU 4×, 15 s de "Animada completa" no Normal.
-2. **Redesenho do fundo:** trocar o tema no meio da partida não gera tarefa longa (> 50 ms).
-3. **Pixels** (substitui o item 11 da T-085 e o do E2E offline, que liam um canto em `--pitch`): o pixel do meio da borda de baixo do canvas fica em `--pitch` (a faixa de grama de perto); o do canto de cima à esquerda, em `--surface-0` (a cobertura). Nos dois temas. Os cantos de baixo deixam de servir: dependendo do tamanho, caem na grama, numa placa dos fundos ou na arquibancada atrás do gol.
-4. **Etiqueta de gol** (1a): `aria-hidden`; aparece no desfecho do gol e some no passo seguinte; inteira dentro da caixa; o anúncio do gol continua na região viva do placar.
-5. **Etiqueta do lance** (1b): `aria-hidden`; nunca num passo `minuteFull`; o texto é o da linha da narração do mesmo passo; inteira dentro da caixa a 360×740, 844×390 e 1280×800; uma linha só a 360×640.
-6. **Movimento reduzido:** sem transição na etiqueta e na cunha; nenhum `requestAnimationFrame` entre lances (como hoje).
+1. **Desempenho:** quadros p95 ≤ 34 ms e desenho mediano ≤ 6 ms a 390×844, densidade 3, CPU 4×, 15 s de "Animada completa" no Normal (PR A e de novo no C).
+2. **Sem tarefa longa** durante a partida inteira, com o planejamento passo a passo e a troca de tema no meio (`PerformanceObserver` de `longtask`).
+3. **Pixels** (substitui o item 11 da T-085 e o do E2E offline): o pixel do meio da borda de baixo do canvas em `--pitch`; o do canto de cima à esquerda em `--surface-0`. Nos dois temas.
+4. **Etiquetas:** `aria-hidden`; a de gol aparece no desfecho do gol e some no passo seguinte; a do lance nunca num passo `minuteFull`; inteiras dentro da caixa a 360×740, 844×390 e 1280×800; uma linha só a 360×640; o anúncio do gol continua na região viva do placar.
+5. **Camisa sobre a bola:** `aria-hidden`; só em passos `minuteFull`; nunca com movimento reduzido.
+6. **Movimento reduzido:** sem transição nas etiquetas e na cunha; nenhum `requestAnimationFrame` entre lances.
 7. **Chunk** (`tests/regression/match-chunks.test.ts`): o do campo com no máximo 20.000 bytes gzip, e nenhum arquivo de imagem novo no fecho dele.
 
 ## 14. Design system e textos
 
 **Propostas** (numeração de [componentes.md](componentes.md#propostas-ao-design-system); registro lá e no `design-system.md` na implementação):
 
-41. **Etiqueta do lance no campo: aprovada**, agora presa ao jogador (§9). Revoga o "nenhum número ou texto no campo" da decisão 11 da T-032; o canvas continua sem texto; sobre ele, fora do canvas, **uma** etiqueta `aria-hidden` com a camisa, o número, o tipo e o nome de quem está no evento do passo, ligada ao disco dele.
-42. **Token `pitch-wedge`: aprovada.** Noite `rgba(4, 18, 10, 0.45)`, dia `rgba(255, 255, 255, 0.35)`, só na cunha; o `npm run tokens` confere o `ink` sobre o `pitch` com a cunha ≥ 3:1 nos dois temas.
-43. **Rastro da bola** (aprovado com a fase 1): linha de 2px em `ink` com ponto de origem, só no passo em que nasce, inteira e parada com `prefers-reduced-motion`. Sem token novo.
-44. **Assistência no gol: aprovada**, na fase 2; agora como a terceira linha da etiqueta de gol (§10).
-45. **`beam` também no jogo (nova, para o CEO):** usar o token, hoje "só no site", nos halos dos refletores da arquibancada do campo, no tema noite, decorativo, nunca sob texto. Sem valor novo.
-46. **Campo inclinado e placas (nova, para o CEO, junto do ADR):** a regra "Campo da partida" passa de "campo deitado, visto de cima" para "campo inclinado por código (§3), com arquibancadas, mureta e três filas de placas só com cores no canvas do fundo, e a etiqueta em DOM sobre ele". Sem token novo.
-47. **Etiqueta de gol no lugar da comemoração (nova, para o CEO):** a GoalCelebration (proposta 39) sai; o gol é a `PitchTag` com `tone="goal"` (`grass` e `on-grass`, par conferido), presa ao artilheiro (§10). Sem token novo.
+41. **Etiqueta do lance no campo: aprovada**, presa ao jogador (§9).
+42. **Token `pitch-wedge`: aprovada** (§8); o `npm run tokens` confere o `ink` sobre o `pitch` com a cunha ≥ 3:1 nos dois temas.
+43. **Rastros da bola** (aprovados com a fase 1; revistos): os tipos do §7, distintos pela forma, encadeados, inteiros e parados com `prefers-reduced-motion`. Sem token novo além do 49.
+44. **Assistência no gol: aprovada**, como a terceira linha da etiqueta de gol (PR D).
+45. **`beam` também no jogo (para o CEO):** o token, hoje "só no site", nos halos dos refletores da arquibancada, no tema noite, decorativo. Sem valor novo.
+46. **Campo inclinado, modo "só a bola" e placas (para o CEO, junto do ADR):** a regra "Campo da partida" passa de "campo deitado, visto de cima, com os 22" para "campo inclinado por código (§3), com arquibancadas, mureta e três filas de placas só com cores no fundo, só a bola em movimento e os discos só nos lances do motor (§5)".
+47. **Etiqueta de gol no lugar da comemoração (para o CEO):** a GoalCelebration (proposta 39) sai; o gol é a `PitchTag` com `tone="goal"` (§9).
+48. **Camisa sobre a bola (para o CEO):** a etiqueta só com a camisa do time com a bola, sem número nem nome, nos minutos sem lance (§9).
+49. **Token `pitch-shadow` (para o CEO):** `rgba(0, 0, 0, 0.38)` nos dois temas, só a sombra da bola no ar (§7).
 
 **Textos novos** (para o `content-writer`; o lote passa pelo CEO):
 
-| Chave                      | pt-BR (sugestão)          | Uso                                       |
-| -------------------------- | ------------------------- | ----------------------------------------- |
-| `match.tag.saved`          | "Defendida"               | tipo da etiqueta no desfecho de defesa    |
-| `match.tag.post`           | "Na trave"                | idem, trave                               |
-| `match.tag.wide`           | "Para fora"               | idem, para fora                           |
-| `match.celebration.assist` | "Assistência de {player}" | fase 2, terceira linha da etiqueta de gol |
+| Chave                      | pt-BR (sugestão)          | Uso                                     |
+| -------------------------- | ------------------------- | --------------------------------------- |
+| `match.tag.saved`          | "Defendida"               | tipo da etiqueta no desfecho de defesa  |
+| `match.tag.post`           | "Na trave"                | idem, trave                             |
+| `match.tag.wide`           | "Para fora"               | idem, para fora                         |
+| `match.celebration.assist` | "Assistência de {player}" | PR D, terceira linha da etiqueta de gol |
 
-Reaproveitadas: `match.live.shot`, `match.live.freeKick`, `match.live.penalty`, `report.event.red`, `match.celebration.title`. Limite de 140px em `rotulo` para os `match.tag.*`.
+Reaproveitadas: `match.live.shot`, `match.live.freeKick`, `match.live.penalty`, `report.event.red`, `match.celebration.title`.
 
-**Atualizações em [partida.md](partida.md) na implementação** (no PR de cada fase, pelo `ux-designer`): "Desenho", "Tamanhos", "Coreografia", "Comemoração", "Placas", "Marcas do cenário" e "Medidas para o E2E" passam a apontar para este arquivo.
+**Atualizações em [partida.md](partida.md) na implementação** (no PR de cada parte, pelo `ux-designer`): "Desenho", "Tamanhos", "Coreografia", "Comemoração", "Placas", "Movimento", "Marcas do cenário" e "Medidas para o E2E" passam a apontar para este arquivo.
 
-## 15. Decisões do CEO (2026-11-23)
+## 15. Decisões do CEO
 
-1. **Fases:** aprovadas. Fase 1: rastro, etiqueta e cunha, no campo inclinado (item 6), com os passes anônimos e a posse do `campo-lances.md`. Fase 2: etiqueta em espera e assistência na comemoração. (A divisão da fase 1 em 1a e 1b, no §1, é só para cada PR caber em M.)
+**2026-11-23, sobre a proposta:**
+
+1. **Fases:** aprovadas. Fase 1: rastro, etiqueta e cunha, no campo inclinado (item 6), com a posse do `campo-lances.md`. Fase 2: etiqueta em espera e assistência. (A divisão em PRs do §1 é para cada PR caber em M.)
 2. **Proposta 41 (etiqueta no campo): aprovada.** Fica revogada a parte "nenhum número ou texto no campo" da decisão 11 da T-032; o canvas continua sem texto.
 3. **Proposta 42 (token `pitch-wedge`): aprovada.**
 4. **Etiqueta da defesa:** finalizador e "Defendida" na fase 1.
 5. **Eventos com etiqueta:** só lances com bola (finalização, gol, pênalti) e cartão vermelho.
-6. **Perspectiva (revista pelo CEO no mesmo dia):** o CEO prefere a vista parecida com a referência. Entra a **saída A, campo inclinado por código**, já na fase 1, no lugar da vista de cima; sem fundo ilustrado. Muda o "visto de cima" do `docs/PROJETO.md`, então pede ADR antes da implementação. A cunha do ataque continua, por pedido explícito do CEO ("a sombra que indica qual lado está atacando").
-7. **Placas:** com a perspectiva, uma fila de placas no fundo, só com marcas fictícias (ADR-0015); nenhuma na faixa de grama.
-8. **Proposta 44 (assistência na comemoração): aprovada**, na fase 2; sem "replay" da assistência no campo.
+6. **Perspectiva:** a **saída A, campo inclinado por código**, já na fase 1, no lugar da vista de cima; sem fundo ilustrado; ADR antes da implementação. A cunha do ataque continua ("a sombra que indica qual lado está atacando").
+7. **Placas:** uma fila no fundo, só com marcas fictícias (ADR-0015); nenhuma na faixa de grama.
+8. **Proposta 44 (assistência): aprovada**, na fase 2; sem "replay" da assistência no campo.
 
-**Pedidos do CEO depois do protótipo (mesmo dia), atendidos nesta versão:** mais variedade no movimento (§6); o gol como etiqueta saindo do jogador, no lugar do cartão grande (§10, proposta 47); placas também atrás dos gols (§4); etiquetas sempre no jogador certo, com critério de aceite (§9 e §13).
+**2026-11-23 e 2026-11-24, depois dos protótipos:**
+
+9. **Placas também atrás dos gols** (pedido do CEO): três filas (§4).
+10. **O gol como etiqueta saindo do jogador**, no lugar do cartão grande (pedido do CEO): §9, proposta 47.
+11. **Etiquetas sempre no jogador certo**, com critério de aceite (pergunta do CEO): §10 e §13.
+12. **Modo "só a bola"** (escolhido entre três no protótipo v3): §5. "Só os envolvidos" e "os 22 em movimento contínuo" ficam fora (§18).
+13. **Passes variados, com o "por cima" como exceção** (v4 e v5): os tipos do §7 e a distribuição do §6.
 
 ## 16. Pendências para o CEO
 
-1. **Arquibancada no tema dia:** seguir o tema (estádio claro, refletores apagados; sem token novo) (recomendo), ou estádio sempre à noite (dois tokens novos só para a arquibancada).
-2. **Placas com nome ou só com cores:** recomendo **só cores**, como o ADR do `architect`. A 360px as placas têm de 10 a 17px de altura (de longe e dos fundos), e um nome nelas fica com 6 a 8px, ilegível; nas placas dos fundos, inclinadas, o texto ainda sai torto (o protótipo v2 tem a alternância "Placas: só cores / com nome" para comparar). Só cores, tudo fica no canvas do fundo, sem texto e sem custo por quadro; com nome, as placas teriam de ir para o DOM (a de longe como retângulo, as dos fundos com uma matriz CSS por placa), e a regra "canvas sem texto" se mantém, mas com mais código e letras que ninguém lê. Se um dia valer a pena, o nome entra só na fila de longe e só a partir de 900px de largura (20px de placa).
-3. **As marcas das placas:** mesmo só com cores, as placas mostram marcas fictícias da lista (as duas cores de cada marca), que é conteúdo da T-040 e passa pelo CEO. Recomendo **antecipar o lote da lista** para a fase 1a; até lá, pares de tokens, como no protótipo. Placas vazias não, porque lembrariam espaço à venda (ADR-0015).
-4. **Propostas 45 (`beam` no jogo), 46 (campo inclinado e placas) e 47 (etiqueta de gol no lugar da comemoração):** recomendo aprovar as três.
-5. **Altura da caixa:** manter 1,5:1 (149px de gramado a 360×740, 4 linhas de narração) (recomendo), ou uma caixa mais alta, com meia linha de narração a menos.
-6. **A etiqueta presa ao jogador cobre por instantes os discos logo acima dele** (de 1 a 2 s por lance). Recomendo aceitar: é o que a referência faz, e o lance (o jogador, a bola no pé dele e o gol) fica sempre à vista.
+1. **Arquibancada no tema dia:** seguir o tema (estádio claro, refletores apagados; sem token novo) (**recomendo**), ou estádio sempre à noite (dois tokens novos só para a arquibancada).
+2. **Placas só com cores ou com nome:** **recomendo só cores**, como o ADR do `architect`: a 360px as placas têm de 10 a 17px, o nome ficaria com 6 a 8px, ilegível, e torto nas placas dos fundos; só cores, tudo fica no canvas do fundo, sem texto e sem custo por quadro. Com nome, as placas iriam para o DOM (uma matriz CSS por placa inclinada). Se um dia valer, o nome entra só na fila de longe e a partir de 900px de largura.
+3. **Marcas fictícias:** as placas mostram as cores das marcas da lista, que é conteúdo da T-040 e passa pelo CEO. **Recomendo antecipar o lote da lista** para o PR A; até lá, pares de tokens. Placas vazias não, porque lembrariam espaço à venda (ADR-0015).
+4. **Altura da caixa:** manter 1,5:1 (149px de gramado a 360×740, 4 linhas de narração) (**recomendo**), ou uma caixa mais alta (360 × 270), com meia linha de narração a menos.
+5. **Divisão:** quatro PRs, A, B e C de tamanho M e D de tamanho P, na ordem do §1 (**recomendo**); ou outra divisão.
+6. **Tokens:** `pitch-wedge` já aprovado (só registro); **`pitch-shadow`** (proposta 49) e **`beam` no jogo** (proposta 45) (**recomendo aprovar os dois**).
+7. **Propostas 45, 46, 47, 48 e 49:** `beam` no jogo; campo inclinado com o modo "só a bola" e as placas; etiqueta de gol no lugar da comemoração; camisa sobre a bola, sem número nem nome; `pitch-shadow` (**recomendo aprovar as cinco**).
+8. **A D2-B no modo "só a bola":** a regra do `campo-lances.md` previa passes anônimos **entre discos**, com a bola numa faixa do dono (45 a 75 m para o mandante). Sem discos, não há quem passa nem quem recebe, e a jogada precisa de mais campo para ter cruzamentos e lançamentos: proponho a bola entre 10 e 95 m nos minutos sem lance (§6). É regra do `game-designer`; peço a confirmação dele e a do CEO.
 
-## 17. Maquetes e protótipo
+## 17. Protótipos
 
-Tudo fora do repositório, no scratchpad da sessão, com clubes fictícios do jogo (Cruzador x Miragol) e escudos, uniformes e nomes dos geradores do próprio jogo; nenhum escudo, nome ou marca real. As placas mostram só o nome do jogo e marcas abstratas.
+Tudo fora do repositório, no scratchpad da sessão, com clubes fictícios do jogo (Cruzador x Miragol) e escudos, uniformes e nomes dos geradores do próprio jogo; nenhum escudo, nome ou marca real. As placas mostram o nome do jogo e marcas abstratas.
 
-- **Protótipo v2:** `prototipo-v2.html`, um arquivo só, sem nada externo (fontes do jogo embutidas), a 360×740, cerca de 33 s em loop no ritmo Normal. Tem o movimento do §6, a etiqueta presa ao jogador (lance e gol), a etiqueta em espera, as placas nas três filas e a alternância "Placas: só cores / com nome", além de tema dia, movimento reduzido e recomeçar; "Pausar" e "Rápido" funcionam. O número da etiqueta é sempre o do disco de onde ela sai. Simplificações: o protótipo sempre mostra um passe nos minutos sem lance (D2-B permite condução), não tem intervalo, trocas nem vermelho.
-- **Capturas do v2** (densidade 2): `v2-1-passe-movimento.png`, `v2-2-finalizacao-etiqueta.png`, `v2-3-gol-etiqueta.png`, `v2-4-tema-dia.png`, `v2-5-placas-so-cores.png`, `v2-6-placas-com-nome.png`; e o vídeo de 8 s do lance do gol, `v2-video-gol.webm` (e `v2-video-gol.gif`).
-- **Protótipo v1** (`prototipo.html` e as capturas `proto-*.png`): o movimento em bloco e a comemoração em cartão, para comparar.
-- **Maquetes estáticas da proposta original:** `a-vista-de-cima.png` a `i-etiqueta-em-espera.png` e `comparativo-a-b-c.png`.
+- **v5 (o que esta spec descreve):** `prototipo-v5.html`, só o modo 1, com a distribuição do §6, e `v5-jogada.gif` (7,5 s de uma sequência típica).
+- **v4:** os tipos de rastro, com passes por cima demais (`prototipo-v4.html`, `v4-*.png`, `v4-jogada.gif`).
+- **v3:** os três modos (`prototipo-v3.html`, `v3-*`).
+- **v2 e v1:** o campo inclinado com os 22 e a comemoração em cartão.
+- **Maquetes estáticas** da proposta original (`a-vista-de-cima.png` a `i-etiqueta-em-espera.png`).
 
-## 18. Anexo: as saídas estudadas para a perspectiva
+## 18. Anexo: o que não foi escolhido
 
-Registro do estudo que levou à decisão 6; não é mais escolha aberta.
-
-- **A. Inclinar por código (escolhida):** projeção feita à mão (§3), discos redondos menores ao longe, arquibancada e placas por código. Nenhuma imagem; menos de 0,3 ms a mais por quadro. A transformação por CSS (`perspective()` e `rotateX()` no canvas) foi descartada: achata os discos e a marca do visitante, desfoca o lado de perto e deixa a tela sem saber onde cada ponto caiu.
-- **B. Fundo ilustrado (ComfyUI na máquina do CEO, pelo `art-director`):** só a arquibancada numa imagem, com o resto da saída A. De 75 a 360 KB a mais no precache para todos os jogadores, revisão de arte a cada ajuste de enquadramento, cores fora do `npm run tokens`. Descartada pelo CEO.
-- **C. Não fazer (a vista de cima):** a melhor legibilidade a 360px (3,2 px/m em toda a profundidade, discos de 18px), sem custo. Era a recomendação do `ux-designer`; o CEO preferiu a vista da referência.
+- **Vista de cima** (saída C) e **fundo ilustrado** (saída B, ComfyUI): o CEO escolheu o campo inclinado por código. B custaria de 75 a 360 KB a mais no precache para todos e revisão de arte a cada ajuste; C tinha a melhor legibilidade, sem custo. A transformação por CSS do canvas foi descartada (achata os discos, desfoca, e a tela não sabe onde cada ponto caiu).
+- **Os 22 com movimento por função** (v2): alvo por função, pressão, cobertura, corrida de ruptura, deriva. O CEO achou travado e com pouca variação.
+- **Os 22 em movimento contínuo** (modo 3 do v3): curvas com velocidade carregada, planos assíncronos, conduções. Mais fluido, mas a 360px os discos se embolam perto da bola, e cada disco sem nome é um fato inventado na tela. Custo estimado: 0,6 a 1 ms por quadro e de 4 a 4,5 KB.
+- **Só os envolvidos** (modo 2 do v3): de 3 a 5 discos que aparecem e somem; tira a noção de quem é quem e não ganha do modo 1.
+- **A comemoração em cartão grande** (proposta 39): substituída pela etiqueta de gol.
