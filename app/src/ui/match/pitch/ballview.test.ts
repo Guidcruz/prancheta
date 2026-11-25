@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { clearOf, drawShadow, drawTrails, drawWedge, pitchDashes } from './ballview';
-import { ballPlace, pitchGeometry, shadowShift } from './geometry';
+import { ballPlace, holdBall, pitchGeometry, ringSize, shadowShift, project } from './geometry';
 import { PITCH_MOTION as M } from './motion';
 import { SEG, TRAIL, Z, heightAt } from './plan';
 import { createScene } from './scene';
@@ -23,7 +23,7 @@ describe('the shadow of the ball (7, rule against covering it)', () => {
       for (const dpr of [1, 2, 3]) {
         const g = pitchGeometry(w * dpr, h * dpr, dpr);
         const place = new Float64Array(7);
-        for (const y of [20, 34, 48]) {
+        for (const y of [5, 6, 7, 20, 34, 48, 61, 63]) {
           for (const x of [20, 52.5, 85]) {
             for (let z = 0.16; z <= 11; z += 0.05) {
               ballPlace(g, x, y, z, place);
@@ -31,8 +31,7 @@ describe('the shadow of the ball (7, rule against covering it)', () => {
               const r0 = place[5]!;
               const lift = place[6]!;
               const shift = shadowShift(g, r, r0, lift);
-              // Away from the edges the ball is not held: the centre is the ground point lifted.
-              expect(place[3]).toBeCloseTo(place[1]! - lift, 6);
+              expect(lift).toBeCloseTo(place[1]! - place[3]!, 9);
               const apart = place[1]! + shift - place[3]!;
               expect(apart).toBeGreaterThanOrEqual(r + 0.5 * r0 + dpr - 1e-9);
             }
@@ -77,6 +76,7 @@ describe('the shadow of the ball (7, rule against covering it)', () => {
 /** A context that records what the trails and the wedge do to it. */
 function recorder() {
   const log: string[] = [];
+  const points: [number, number][] = [];
   const state = { dash: [] as readonly number[], width: 0, alpha: 1 };
   const ctx = {
     set strokeStyle(_v: string) {},
@@ -92,8 +92,15 @@ function recorder() {
       state.dash = d;
     },
     beginPath: () => log.push('begin'),
-    moveTo: () => log.push('move'),
-    lineTo: () => log.push('line'),
+    moveTo: (x: number, y: number) => {
+      log.push('move');
+      points.push([x, y]);
+    },
+    lineTo: (x: number, y: number) => {
+      log.push('line');
+      points.push([x, y]);
+    },
+    ellipse: () => log.push('ellipse'),
     closePath: () => log.push('close'),
     stroke: () =>
       log.push(`stroke w${state.width} d${state.dash.join('/')} a${state.alpha.toFixed(2)}`),
@@ -101,7 +108,7 @@ function recorder() {
     fill: () => log.push('fill'),
     setTransform: (...a: number[]) => log.push(`transform ${a.length}`),
   } as unknown as CanvasRenderingContext2D;
-  return { ctx, log };
+  return { ctx, log, points };
 }
 
 function trail(entries: Record<string, number>[]) {
@@ -147,9 +154,11 @@ describe('the trails by kind (7)', () => {
   it('a pass over the top is an arc of 19 points and the dashed trail of its shadow on the ground', () => {
     const a = recorder();
     drawTrails(a.ctx, g, trail([{ kind: SEG.air, h: 8, zmode: Z.arch }]), '#fff', dashes);
-    expect(a.log.filter((l) => l === 'line' || l === 'move')).toHaveLength(19 + 2);
+    // 19 points of the arc, the 2 of the shadow trail and the 4 starts of the ring.
+    expect(a.log.filter((l) => l === 'line' || l === 'move')).toHaveLength(19 + 2 + 4);
+    expect(a.log.filter((l) => l === 'ellipse')).toHaveLength(4);
     const strokes = a.log.filter((l) => l.startsWith('stroke'));
-    expect(strokes).toEqual(['stroke w2 d a1.00', 'stroke w1.2 d3/4 a0.70']);
+    expect(strokes).toEqual(['stroke w2 d a1.00', 'stroke w1.2 d3/4 a0.70', 'stroke w2 d a1.00']);
   });
 
   it('a shot over the bar is a low arc of 3px; the origin dot only on the newest action', () => {
@@ -234,5 +243,130 @@ describe('the wedge (8)', () => {
     expect(clearOf('rgba(255, 255, 255, 0.35)')).toBe('rgba(255, 255, 255, 0)');
     expect(clearOf('#123456')).toBe('transparent');
     expect(M.wedge.half).toBe(26);
+  });
+});
+
+describe('the ring of the landing (7, planner 11)', () => {
+  const dashes = pitchDashes(1);
+
+  it('only a pass over the top has one: not a chip, a shot, a carry or a ground pass', () => {
+    for (const [kind, rings] of [
+      [SEG.air, 4],
+      [SEG.cross, 4],
+      [SEG.chip, 0],
+      [SEG.shot, 0],
+      [SEG.carry, 0],
+      [SEG.ground, 0],
+      [SEG.back, 0],
+    ] as const) {
+      const a = recorder();
+      drawTrails(
+        a.ctx,
+        pitchGeometry(360, 240, 1),
+        trail([{ kind, h: 5, zmode: Z.arch }]),
+        '#fff',
+        dashes,
+      );
+      expect(
+        a.log.filter((l) => l === 'ellipse'),
+        String(kind),
+      ).toHaveLength(rings);
+    }
+  });
+
+  it('fades in over the first 20% of the pass, with the weight of its entry, whole in the reduced frame', () => {
+    const g = pitchGeometry(360, 240, 1);
+    for (const [s, expected] of [
+      [0.1, 0.5],
+      [0.2, 1],
+      [1, 1],
+    ] as const) {
+      const a = recorder();
+      drawTrails(
+        a.ctx,
+        g,
+        trail([{ kind: SEG.air, alpha: 0.6, h: 5, zmode: Z.arch, s }]),
+        '#fff',
+        dashes,
+      );
+      const ringStroke = a.log.filter((l) => l.startsWith('stroke')).at(-1)!;
+      expect(ringStroke).toBe(`stroke w2 d a${(0.6 * expected).toFixed(2)}`);
+    }
+  });
+
+  it('is whole inside the trapezoid and keeps the ball 2px CSS from its stroke, on the four sizes, for every target of the band', () => {
+    const out = new Float64Array(2);
+    const at = new Float64Array(3);
+    for (const [w, h] of SIZES) {
+      for (const dpr of [1, 2, 3]) {
+        const g = pitchGeometry(w * dpr, h * dpr, dpr);
+        for (let x = 10; x <= 95; x += 5) {
+          for (const y of [5, 6, 10, 34, 58, 63]) {
+            project(g, x, y, at);
+            ringSize(g, at[2]!, out);
+            const r0 = Math.max(1.25 * at[2]!, g.ballMin);
+            // Clear of the ball: the inside of the stroke (1px CSS from the line) from its edge.
+            expect(out[1]! - r0 - dpr).toBeGreaterThanOrEqual(2 * dpr - 1e-9);
+            // Inside the trapezoid: held by the same rule as a ball of the ring's own size.
+            const held = new Float64Array(2);
+            holdBall(g, at[0]!, at[1]!, out[1]!, held);
+            expect(Math.abs(held[1]! - at[1]!)).toBeLessThan(0.75 * dpr);
+            const half = out[0]!;
+            const t = g.farScale + ((at[1]! - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
+            expect(at[0]! - half).toBeGreaterThanOrEqual(g.width / 2 - (g.width / 2) * t - 1e-9);
+            expect(at[0]! + half).toBeLessThanOrEqual(g.width / 2 + (g.width / 2) * t + 1e-9);
+          }
+        }
+      }
+    }
+  });
+
+  it('is at least 12px CSS wide and 3 times the radius of the ball on the ground', () => {
+    const g = pitchGeometry(360, 240, 1);
+    const out = new Float64Array(2);
+    const at = new Float64Array(3);
+    project(g, 52.5, 5, at);
+    ringSize(g, at[2]!, out);
+    expect(out[0]).toBeGreaterThanOrEqual(12);
+    expect(out[1]! / out[0]!).toBeCloseTo(0.62, 1);
+  });
+});
+
+describe('the arc is held in the trapezoid like the ball (7, planner 12)', () => {
+  it('every point of the arc is where the ball is drawn at that progress, inside the trapezoid with its radius', () => {
+    for (const [w, h] of SIZES) {
+      const g = pitchGeometry(w, h, 1);
+      for (const [x0, y0, x1, y1, h0] of [
+        [30, 6, 60, 5, 11],
+        [20, 34, 80, 34, 11],
+        [95, 8, 100, 10, 6],
+        [10, 63, 70, 60, 9],
+      ] as const) {
+        const a = recorder();
+        drawTrails(
+          a.ctx,
+          g,
+          (() => {
+            const scene = trail([{ kind: SEG.air, h: h0, zmode: Z.arch }]);
+            scene.trails.set([x0, y0, x1, y1], TRAIL.x0);
+            return scene;
+          })(),
+          '#fff',
+          pitchDashes(1),
+        );
+        const arc = a.points.slice(0, 19);
+        const place = new Float64Array(7);
+        arc.forEach(([px, py], k) => {
+          const u = k / 18;
+          ballPlace(g, x0 + (x1 - x0) * u, y0 + (y1 - y0) * u, h0 * 4 * u * (1 - u), place);
+          expect(Math.hypot(px - place[2]!, py - place[3]!)).toBeLessThanOrEqual(0.5);
+          const r = place[4]!;
+          expect(py).toBeGreaterThanOrEqual(g.yFar + r - 1e-9);
+          expect(py).toBeLessThanOrEqual(g.height - r + 1e-9);
+          const t = g.farScale + ((py - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
+          expect(Math.abs(px - g.width / 2)).toBeLessThanOrEqual((g.width / 2) * t - r + 1e-9);
+        });
+      }
+    }
   });
 });

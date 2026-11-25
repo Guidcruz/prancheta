@@ -142,7 +142,10 @@
     tip: number;
     /** What was last written to `--tip-shift`. */
     shift: number;
-    /** The anchor as last seen, in canvas px: a disc that left stays where it was. */
+    /** The anchor as last seen, in metres: a disc that left stays where it was, whatever the size. */
+    mx: number;
+    my: number;
+    /** Its place in canvas px at the current size. */
     ax: number;
     ay: number;
     ar: number;
@@ -205,10 +208,9 @@
       ink = read.ink;
       shadow = read.shadow;
       wedge = read.wedge;
-      wedgeFill = undefined;
     }
     dashes = pitchDashes(dpr);
-    if (ctx !== null) wedgeFill = wedgeGradient(ctx, wedge);
+    wedgeFill = wedgeGradient(ctx, wedge);
     field ??= document.createElement('canvas');
     // Set every time: it clears the canvas and the state of its context (the background is then
     // drawn over a clean canvas).
@@ -249,11 +251,14 @@
     } else {
       const shown = scene.alpha[tag.disc]! > 0;
       if (shown || !run.seen) {
-        project(g, scene.x[tag.disc]!, scene.y[tag.disc]!, spot);
-        run.ax = spot[0]!;
-        run.ay = spot[1]!;
-        run.ar = discRadius(g, spot[2]!);
+        run.mx = scene.x[tag.disc]!;
+        run.my = scene.y[tag.disc]!;
       }
+      // Projected every frame from the metres, so a resize moves a disc that is gone too.
+      project(g, run.mx, run.my, spot);
+      run.ax = spot[0]!;
+      run.ay = spot[1]!;
+      run.ar = discRadius(g, spot[2]!);
       if (shown) run.seen = true;
       live = shown;
     }
@@ -308,6 +313,8 @@
         y: Number.NaN,
         tip: Number.NaN,
         shift: Number.NaN,
+        mx: 0,
+        my: 0,
         ax: 0,
         ay: 0,
         ar: 0,
@@ -359,6 +366,9 @@
       ctx.drawImage(field, 0, 0);
       if (wedgeFill !== undefined) drawWedge(ctx, g, scene, wedgeFill);
       drawTrails(ctx, g, scene, ink, dashes);
+      // The shadow under the discs and the ball, over the trails.
+      const radius = holdTheBall(scene);
+      drawShadow(ctx, g, scene.ballZ, place, shadow);
       ctx.lineWidth = ring;
       ctx.strokeStyle = ink;
       // The discs of the plays only, the far ones first (insertion, nothing allocated).
@@ -394,7 +404,6 @@
           ctx.fill();
         }
       }
-      const radius = holdTheBall(scene);
       // The threads of the tags, over the discs and under the ball.
       ctx.lineWidth = THREAD_PX * dpr;
       for (let i = 0; i < tags.length; i++) {
@@ -420,7 +429,6 @@
         ctx.stroke();
       }
       ctx.globalAlpha = 1;
-      drawShadow(ctx, g, scene.ballZ, place, shadow);
       ctx.beginPath();
       ctx.arc(held[0]!, held[1]!, radius, 0, TAU);
       ctx.fillStyle = ink;

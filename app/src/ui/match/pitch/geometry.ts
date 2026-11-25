@@ -147,10 +147,22 @@ export const shadowShift = (g: PitchGeometry, r: number, r0: number, lift: numbe
   Math.max(0, r + 0.5 * r0 + SHADOW_GAP * g.dpr - lift);
 
 /**
+ * The semi-axes of the ring of a landing on the ground where the scale is `k`, into `out`:
+ * `out[0]` horizontal, `3 × r0` (12px CSS at least), `out[1]` vertical, that times the local
+ * flattening of the projection.
+ */
+export function ringSize(g: PitchGeometry, k: number, out: Float64Array): void {
+  const r = 3 * ballRadius(g, k);
+  const flat = ((g.height - g.yFar) * (k / g.s0)) / (WIDTH * g.farScale * g.s0);
+  out[0] = r;
+  out[1] = r * flat;
+}
+
+/**
  * The ball of the scene at `(x, y)` metres and `z` metres up, into `out`, in canvas px: `out[0]`,
  * `out[1]` the point on the ground held in the trapezoid, `out[2]`, `out[3]` the centre of the ball
  * (lifted by `z × k` and held again), `out[4]` its radius in the air (`1 + 0.45 × min(1, z ÷ 9)`
- * times the radius on the ground), `out[5]` the radius on the ground and `out[6]` the lift.
+ * times the radius on the ground), `out[5]` the radius on the ground and `out[6]` the vertical gap between the ground point and the centre.
  * Pure; no allocation beyond the two scratch arrays.
  */
 export function ballPlace(
@@ -174,7 +186,8 @@ export function ballPlace(
   out[3] = ballHeld[1]!;
   out[4] = r;
   out[5] = r0;
-  out[6] = lift;
+  // The real gap between the ground point and the centre, held or not (the shadow reads it).
+  out[6] = out[1]! - out[3]!;
 }
 const ballSpot = new Float64Array(3);
 const ballHeld = new Float64Array(2);

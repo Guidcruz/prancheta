@@ -1,4 +1,4 @@
-import { project, shadowShift, type PitchGeometry } from './geometry';
+import { ballPlace, project, ringSize, shadowShift, type PitchGeometry } from './geometry';
 import { PITCH_MOTION as M, PITCH_SIZE } from './motion';
 import { heightAt, hermite, SEG, TRAIL } from './plan';
 import type { PitchScene } from './scene';
@@ -13,6 +13,12 @@ import type { PitchScene } from './scene';
 const TAU = Math.PI * 2;
 const ARC_POINTS = 19;
 const CARRY_POINTS = 8;
+/** The ring of the landing fades in over this share of the pass. */
+const RING_FADE = 0.2;
+const RING_START = [15, 105, 195, 285].map((d) => (d * Math.PI) / 180);
+const RING_SPAN = Math.PI / 3;
+const RING_COS = RING_START.map((a) => Math.cos(a));
+const RING_SIN = RING_START.map((a) => Math.sin(a));
 /** Widths of the trails in px CSS: ground, shot, carry, shot over, shadow trail, origin. */
 const WIDTH = { ground: 2, shot: 3.5, carry: 2.2, chip: 3, shadow: 1.2, origin: 2.5 } as const;
 
@@ -30,6 +36,8 @@ export const pitchDashes = (dpr: number): PitchDashes => ({
 });
 
 const here = new Float64Array(3);
+const arcPlace = new Float64Array(7);
+const ringSizes = new Float64Array(2);
 const there = new Float64Array(3);
 
 /** Strokes the ground line of metres `(x0, y0)` to `(x1, y1)`: both ends projected. */
@@ -66,10 +74,10 @@ function arc(
   ctx.beginPath();
   for (let k = 0; k < ARC_POINTS; k++) {
     const u = (covered * k) / (ARC_POINTS - 1);
-    project(g, x0 + dx * u, y0 + dy * u, here);
-    const y = here[1]! - heightAt(mode, h, u) * here[2]!;
-    if (k === 0) ctx.moveTo(here[0]!, y);
-    else ctx.lineTo(here[0]!, y);
+    // The path of the centre of the ball as drawn, held in the trapezoid like it (7).
+    ballPlace(g, x0 + dx * u, y0 + dy * u, heightAt(mode, h, u), arcPlace);
+    if (k === 0) ctx.moveTo(arcPlace[2]!, arcPlace[3]!);
+    else ctx.lineTo(arcPlace[2]!, arcPlace[3]!);
   }
   ctx.stroke();
 }
@@ -103,7 +111,7 @@ export function drawTrails(
     const covered = t[e + TRAIL.s]!;
     ctx.globalAlpha = alpha;
     ctx.setLineDash(dashes.none as number[]);
-    if (kind === SEG.ground || kind === SEG.shot) {
+    if (kind === SEG.ground || kind === SEG.shot || kind === SEG.back) {
       ctx.lineWidth = (kind === SEG.ground ? WIDTH.ground : WIDTH.shot) * dpr;
       ground(ctx, g, x0, y0, x0 + (x1 - x0) * covered, y0 + (y1 - y0) * covered);
     } else if (kind === SEG.carry) {
@@ -133,11 +141,16 @@ export function drawTrails(
       ctx.lineWidth = WIDTH.shadow * dpr;
       ctx.setLineDash(dashes.shadow as number[]);
       ground(ctx, g, x0, y0, x0 + (x1 - x0) * covered, y0 + (y1 - y0) * covered);
+      // The ring where it will land, from the start of the pass: faint for the first 20% of it.
+      ctx.globalAlpha = alpha * Math.min(1, covered / RING_FADE);
+      ctx.lineWidth = WIDTH.ground * dpr;
+      ctx.setLineDash(dashes.none as number[]);
+      ring(ctx, g, x1, y1);
     } else if (kind === SEG.chip) {
       ctx.lineWidth = WIDTH.chip * dpr;
       arc(ctx, g, t, e, covered);
     } else continue;
-    if (n === 0) {
+    if ((n === 0 && kind !== SEG.back) || (n === 1 && t[TRAIL.kind] === SEG.back)) {
       // The origin of the newest action.
       ctx.globalAlpha = alpha;
       ctx.setLineDash(dashes.none as number[]);
@@ -150,6 +163,31 @@ export function drawTrails(
   }
   ctx.setLineDash(dashes.none as number[]);
   ctx.globalAlpha = 1;
+}
+
+/**
+ * The ring of the landing: an ellipse lying on the grass, only stroked, in four arcs of 60 degrees
+ * with gaps of 30 at the cardinal points, `3 × r0` wide (12px CSS at least), centred on the spot.
+ */
+function ring(ctx: CanvasRenderingContext2D, g: PitchGeometry, x: number, y: number): void {
+  project(g, x, y, here);
+  const cx = here[0]!;
+  const cy = here[1]!;
+  ringSize(g, here[2]!, ringSizes);
+  ctx.beginPath();
+  for (let a = 0; a < RING_START.length; a++) {
+    ctx.moveTo(cx + ringSizes[0]! * RING_COS[a]!, cy + ringSizes[1]! * RING_SIN[a]!);
+    ctx.ellipse(
+      cx,
+      cy,
+      ringSizes[0]!,
+      ringSizes[1]!,
+      0,
+      RING_START[a]!,
+      RING_START[a]! + RING_SPAN,
+    );
+  }
+  ctx.stroke();
 }
 
 // -------------------------------------------------------------------------------- the wedge
