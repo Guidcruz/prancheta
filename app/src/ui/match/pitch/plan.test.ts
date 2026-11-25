@@ -1010,18 +1010,14 @@ describe('the sent-off disc stays on the pitch (5)', () => {
           sceneAt(choreo, i, p, out, 'normal', planner);
           expect(out.x[disc]!, `x at ${p}`).toBeGreaterThanOrEqual(0);
           expect(out.x[disc]!).toBeLessThanOrEqual(PITCH_SIZE.length);
-          if (!just) {
-            expect(out.y[disc]!).toBeGreaterThanOrEqual(0);
-            expect(out.y[disc]!).toBeLessThanOrEqual(PITCH_SIZE.width);
-          }
+          expect(out.y[disc]!).toBeGreaterThanOrEqual(0);
+          expect(out.y[disc]!).toBeLessThanOrEqual(PITCH_SIZE.width);
         }
         // The end of the step, moving and in the reduced frame: on the touchline, not past it.
         stillScene(choreo, i, still, planner);
         sceneAt(choreo, i, 1, out, 'normal', planner);
-        if (!just) {
-          for (const y of [out.y[disc]!, still.y[disc]!]) {
-            expect([0, PITCH_SIZE.width]).toContain(y);
-          }
+        for (const y of [out.y[disc]!, still.y[disc]!]) {
+          expect([0, PITCH_SIZE.width]).toContain(y);
         }
         if (just) {
           // Standing at his spot of the formation from the first frame.

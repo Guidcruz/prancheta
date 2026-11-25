@@ -466,7 +466,8 @@ export function choreograph(
     }
     const toTouchline = (pose: Float64Array) => {
       for (const d of toLine) {
-        const y = from[d * 2 + 1]! < CENTRE_Y ? -M.leave : PITCH_SIZE.width + M.leave;
+        // To the touchline itself, not past it: a disc is never cut by the edge of the canvas.
+        const y = from[d * 2 + 1]! < CENTRE_Y ? 0 : PITCH_SIZE.width;
         setDisc(pose, d, from[d * 2]!, y);
       }
     };

@@ -78,8 +78,6 @@ export const PITCH_MOTION = {
    * the edge (3 m − 1.5 m). The MatchPitch holds the ball inside the trapezoid (`geometry.ts`).
    */
   wide: { inside: [29, 39], spread: 7, out: 1.5 },
-  /** A player leaving goes this far past the nearest touchline. */
-  leave: 1.5,
   /** Slow motion: the second half of the time at 40% of the speed (v = 1 / 0.7). */
   slow: 0.4,
   /**
