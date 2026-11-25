@@ -52,7 +52,9 @@ export const PITCH_MOTION = {
   /** A minute with nothing shown: the ball walks to a point of the midfield, at most 20 m away. */
   minute: { x: [35, 70], y: [10, 58], maxStep: 20 },
   /** How much of the ball's distance to the centre the blocks follow (the keeper less). */
-  follow: { length: 0.35, width: 0.2, keeper: 0.1 },
+  follow: { length: 0.35, width: 0.2 },
+  /** The keeper on the axis of his goal: out from the line, and across (partida-campo-v2.md, 6). */
+  keeper: { near: 2, far: 14, share: 0.12, across: 6 },
   /** The point of a play, from the goal it attacks, and across. */
   open: { distance: [11, 30], y: [20, 48] },
   freeKick: { distance: [20, 28], y: [16, 52] },

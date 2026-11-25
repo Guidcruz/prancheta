@@ -149,6 +149,8 @@ interface StepMotion {
    * step, or the player is not on the pitch: then no tag either, never another's disc).
    */
   readonly tag: number;
+  /** The sent-off disc that walks to the touchline in this step, or -1. */
+  readonly walker: number;
 }
 
 /** The motion of every step of a match. */
@@ -238,11 +240,18 @@ class Field {
     for (let d = 0; d < DISCS; d++) {
       if (this.on[d] !== 1 || skip.includes(d)) continue;
       const [x, y] = this.spot(d);
-      const keeper = d === 0 || d === 11;
-      const along = keeper ? M.follow.keeper : M.follow.length;
-      const across = keeper ? M.follow.keeper : M.follow.width;
-      pose[d * 2] = x + along * (bx - CENTRE_X);
-      pose[d * 2 + 1] = y + across * (by - CENTRE_Y);
+      if (d === 0 || d === 11) {
+        // The keeper stays on the axis of his goal: out from his line by `2 + 0.12 ×` the distance
+        // of the ball to it (2 to 14 m, never behind it) and across by 30% of the ball's, within 6 m.
+        const line = d === 0 ? 0 : PITCH_SIZE.length;
+        const depth = Math.min(M.keeper.far, M.keeper.near + M.keeper.share * Math.abs(bx - line));
+        const across = Math.min(M.keeper.across, Math.max(-M.keeper.across, 0.3 * (by - CENTRE_Y)));
+        pose[d * 2] = d === 0 ? depth : line - depth;
+        pose[d * 2 + 1] = CENTRE_Y + across;
+        continue;
+      }
+      pose[d * 2] = x + M.follow.length * (bx - CENTRE_X);
+      pose[d * 2 + 1] = y + M.follow.width * (by - CENTRE_Y);
     }
   }
 
@@ -699,6 +708,7 @@ export function choreograph(
       gone,
       owner,
       tag,
+      walker: expelled !== -1 && show[expelled] === 1 ? expelled : -1,
     });
     // What the next step sees as shown before it: not the gone discs (the new keeper appears).
     prevShow = show.map((v, d) => (gone[d] === 1 ? 0 : v));
@@ -803,6 +813,23 @@ function planned(
 }
 
 /**
+ * The sent-off disc, from the ball the pitch draws: it appears 3 m from it, on the side of the
+ * touchline it walks to, and walks there in the step (`done`: how far, 0 to 1). The ball of the
+ * choreography is not the drawn one, so the plan's start of the step gives the spot.
+ */
+function walk(out: PitchScene, step: StepMotion, plan: Float64Array, done: number): void {
+  const d = step.walker;
+  const by = plan[HEAD.sy]!;
+  const start = Math.min(
+    PITCH_SIZE.width,
+    Math.max(0, by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff),
+  );
+  const end = start < CENTRE_Y ? -M.leave : PITCH_SIZE.width + M.leave;
+  out.x[d] = plan[HEAD.sx]!;
+  out.y[d] = lerp(start, end, done);
+}
+
+/**
  * Writes into `out` the scene at `progress` (0 to 1) of step `index`, at the speed the step was
  * shown at (only the flight of an outcome depends on it). With a `planner` the ball, the trails
  * and the wedge are the planner's (partida-campo-v2.md, 6 to 8), made for this step on the way;
@@ -825,6 +852,8 @@ export function sceneAt(
   const at = index < 0 ? 0 : index >= steps.length ? steps.length - 1 : index;
   const p = clamp01(progress);
   planned(out, planner, at, steps[at]!.slow ? slowMotion(p) : p, false);
+  const step = steps[at]!;
+  if (step.walker !== -1) walk(out, step, planner.plans[at]!, ease(p));
   return out;
 }
 
@@ -850,7 +879,10 @@ export function stillScene(
   // No fade with reduced motion: the discs of the play, where the step leaves them (also the
   // sent-off, at the touchline).
   for (let d = 0; d < DISCS; d++) out.alpha[d] = step.show[d]!;
-  if (planner !== undefined) planned(out, planner, at, 1, true);
+  if (planner !== undefined) {
+    planned(out, planner, at, 1, true);
+    if (step.walker !== -1) walk(out, step, planner.plans[at]!, 1);
+  }
   return out;
 }
 

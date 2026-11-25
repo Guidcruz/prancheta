@@ -123,6 +123,8 @@ export const SEG = {
   chip: 5,
   fall: 6,
   cross: 7,
+  /** The way back from a post: drawn with the shot before it, as one action. */
+  back: 8,
 } as const;
 /** How the height goes with the progress `u` of an action: none, an arch, a rise, a fall. */
 export const Z = { flat: 0, arch: 1, rise: 2, fall: 3 } as const;
@@ -472,7 +474,9 @@ export class BallPlanner {
     if (!isPenalty(event) && !isFreeKick(event) && mine && reach <= M.passReach) {
       const open =
         dir * (this.x - CENTRE_X) > M.cross.from && Math.abs(this.y - CENTRE_Y) > M.cross.wide;
-      const area = Math.abs(px - goal) <= M.penalty.areaDepth && Math.abs(py - CENTRE_Y) <= 20.16;
+      const area =
+        Math.abs(px - goal) <= M.penalty.areaDepth &&
+        Math.abs(py - CENTRE_Y) <= M.penalty.areaWidth / 2;
       if (open && area && !this.over) {
         const rng = this.rng(`${step.line!.id}-play`);
         const h = within(rng, M.cross.height);
@@ -542,24 +546,35 @@ export class BallPlanner {
     seconds: number,
     outcome: Outcome,
   ): void {
-    const dir = attack(event.side);
     const line = goalLine(event.side);
     const fk = isFreeKick(event);
-    // Half of the wide shots go over the bar, inside the width of the goal (the draw comes last, so
-    // the other draws of the outcome do not change).
+    // Half of the wide shots go over the bar (the draws come last, so the others do not change):
+    // it crosses the goal line between the posts, 3.2 m up, on the side it lands on, and falls to
+    // the spot of an ordinary wide shot, never into the net (partida-campo-v2.md, 6).
     const over = outcome === 'wide' && !fk && rng.next() < 0.5;
     if (over) {
-      const y = CENTRE_Y + (rng.next() * 2 - 1) * (M.post.halfGoal - 0.4);
+      const side = target.fy < CENTRE_Y ? -1 : 1;
+      const y = CENTRE_Y + side * rng.next() * (M.post.halfGoal - 0.4);
       const mid = t0 + (t1 - t0) * 0.7;
-      this.add(plan, SEG.chip, t0, mid, line + dir * 0.3, y, seconds * 0.7, M.height.chip, Z.rise);
-      this.add(plan, SEG.fall, mid, last, target.fx, y, seconds * 0.3, M.height.chip, Z.fall);
+      this.add(plan, SEG.chip, t0, mid, line, y, seconds * 0.7, M.height.chip, Z.rise);
+      this.add(
+        plan,
+        SEG.fall,
+        mid,
+        last,
+        target.fx,
+        target.fy,
+        seconds * 0.3,
+        M.height.chip,
+        Z.fall,
+      );
     } else if (fk) {
       this.add(plan, SEG.chip, t0, t1, target.fx, target.fy, seconds, M.height.freeKick, Z.arch);
     } else {
       this.add(plan, SEG.shot, t0, t1, target.fx, target.fy, seconds);
     }
     if (outcome === 'post' && t1 < last) {
-      this.add(plan, SEG.shot, t1, last, target.rx, target.ry, (last - t1) * (seconds / (t1 - t0)));
+      this.add(plan, SEG.back, t1, last, target.rx, target.ry, (last - t1) * (seconds / (t1 - t0)));
     }
     this.over = false;
   }
@@ -712,18 +727,16 @@ export class BallPlanner {
         go(SEG.carry, mid, 1, carry(2, 4, 2));
       }
     } else if (pick === 'wall') {
+      // An open "V" (decision 18 of the CEO): the first pass goes 6 to 12 m to the side with more
+      // room, the second comes back ahead of where the ball started, on the other side. With no
+      // 14 m of room ahead the V opens backwards.
       const x0 = this.x;
       const y0 = this.y;
-      go(SEG.ground, from, mid, pass());
-      // The second pass of the wall: 6 m ahead of where the ball started, in a "V".
-      const t = atLeast(
-        this.x,
-        this.y,
-        reflectX(x0 + dir * 6),
-        reflectY(y0 + U(-4, 4)),
-        M.least.pass,
-      );
-      go(SEG.ground, mid, 1, t);
+      const side = y0 <= CENTRE_Y ? 1 : -1;
+      const room = dir > 0 ? XHI - x0 : x0 - XLO;
+      const f = room < 14 ? -dir : dir;
+      go(SEG.ground, from, mid, [reflectX(x0 + f * U(2, 8)), reflectY(y0 + side * U(6, 12))]);
+      go(SEG.ground, mid, 1, [reflectX(x0 + f * U(8, 14)), reflectY(y0 - side * U(0, 4))]);
     } else {
       const long = rng.next() < 0.5;
       const t = atLeast(
@@ -754,6 +767,8 @@ export function fillTrails(
   if (here === undefined) return 0;
   const tau = planner.start[index]! + a * planner.length[index]!;
   let n = 0;
+  // The weight of the action: the way back from a post shares the one of its shot.
+  let w = 0;
   for (let j = index; j >= 0 && n < TRAIL.count; j--) {
     const plan = planner.plans[j]!;
     const end = planner.start[j]! + planner.length[j]!;
@@ -776,7 +791,8 @@ export function fillTrails(
       }
       const e = n * TRAIL.stride;
       out[e + TRAIL.kind] = kind;
-      out[e + TRAIL.alpha] = M.trail.weights[n]! * Math.max(0, 1 - age / M.trail.life);
+      out[e + TRAIL.alpha] = M.trail.weights[w]! * Math.max(0, 1 - age / M.trail.life);
+      if (kind !== SEG.back) w++;
       out[e + TRAIL.x0] = plan[o + ACT.x0]!;
       out[e + TRAIL.y0] = plan[o + ACT.y0]!;
       out[e + TRAIL.x1] = plan[o + ACT.x1]!;

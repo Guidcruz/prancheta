@@ -13,11 +13,13 @@ import {
   TRAIL,
   ballAt,
   fillTrails,
+  heightAt,
   slowMotion,
   type PlanTrace,
 } from './plan';
 import { possessionTrace } from './possession';
 import { choreograph, createScene, discShownIn, sceneAt, stillScene, tagDiscOf } from './scene';
+import { ballPlace, pitchGeometry, shadowShift } from './geometry';
 
 /*
  * The planner of the ball (docs/design/telas/partida-campo-v2.md, 6 and 13, "planejador e
@@ -237,7 +239,9 @@ describe('the planner: the ball never stops, and the limits (13, planner 3 and 4
       });
     }
     expect(restarts).toBeGreaterThan(50);
-    expect(reach).toBeLessThan(2);
+    // The 0.25 m of slack is the cubic of a carry, which may bend a hair past a limit between its
+    // two ends (both inside); the ends themselves are held to the band to 1e-9 above.
+    expect(reach).toBeLessThan(0.25);
   });
 
   it('never has the ball nearer than 10 m of a goal line in a minute with nothing shown', () => {
@@ -248,8 +252,8 @@ describe('the planner: the ball never stops, and the limits (13, planner 3 and 4
         if (planner.plans[i]![HEAD.sx]! < 10 || planner.plans[i]![HEAD.sx]! > 95) return;
         for (let k = 0; k <= 10; k++) {
           const p = at(planner, i, k / 10);
-          expect(p[0]).toBeGreaterThan(8);
-          expect(p[0]).toBeLessThan(PITCH_SIZE.length - 8);
+          expect(p[0]).toBeGreaterThan(10);
+          expect(p[0]).toBeLessThan(PITCH_SIZE.length - 10);
         }
       });
     }
@@ -358,11 +362,182 @@ describe('the planner: the actions (13, planner 5 and 6)', () => {
   });
 });
 
+describe('the open V of the wall pass and the landing of a shot over the bar (13, planner 9 and 10)', () => {
+  it('the V opens 20 degrees or more in 95% of the wall passes and never under 10; the first pass goes 6 m to the side or more', () => {
+    const angles: number[] = [];
+    for (const m of corpus) {
+      const { planner } = prepare(m);
+      for (const plan of planner.plans) {
+        if (plan[HEAD.pattern] !== PATTERN.wall) continue;
+        // The two last actions (a dispute, loose, may come before them).
+        const n = plan[HEAD.count]!;
+        const a = HEAD.size + (n - 2) * ACT.size;
+        const b = HEAD.size + (n - 1) * ACT.size;
+        const [x0, y0] = [plan[a + ACT.x0]!, plan[a + ACT.y0]!];
+        const [tx, ty] = [plan[a + ACT.x1]!, plan[a + ACT.y1]!];
+        const [x2, y2] = [plan[b + ACT.x1]!, plan[b + ACT.y1]!];
+        expect(Math.abs(ty - y0)).toBeGreaterThanOrEqual(6 - 1e-9);
+        // The angle at the point where the ball turns, between the way back to the start and the return.
+        const back = Math.atan2(y0 - ty, x0 - tx);
+        const out = Math.atan2(y2 - ty, x2 - tx);
+        let d = Math.abs(back - out);
+        if (d > Math.PI) d = 2 * Math.PI - d;
+        angles.push((d * 180) / Math.PI);
+      }
+    }
+    expect(angles.length).toBeGreaterThan(3000);
+    const open = angles.filter((d) => d >= 20).length / angles.length;
+    expect(open).toBeGreaterThanOrEqual(0.95);
+    expect(Math.min(...angles)).toBeGreaterThanOrEqual(10);
+  });
+
+  it('no wide shot looks like a goal: it ends on the ground 5 m from the middle or more; over the bar it crosses the line between the posts, 3.2 m up, on the side it lands', () => {
+    let wide = 0;
+    let over = 0;
+    for (const m of corpus) {
+      const { steps, planner } = prepare(m);
+      steps.forEach((step, i) => {
+        const type = step.line?.source.type;
+        const isOutcome =
+          step.timing === 'afterMiss' || (type === 'chance' && step.timing === 'event');
+        if (!isOutcome || steps[i - 1]?.timing === 'afterGoal' || type === 'penaltyAwarded') return;
+        const plan = planner.plans[i]!;
+        if (plan[HEAD.count] === 0) return;
+        const end = at(planner, i, 1);
+        const event = step.line!.source as Extract<MatchEvent, { side: Side }>;
+        const goal = event.side === 'home' ? PITCH_SIZE.length : 0;
+        const behind = (end[0] - goal) * (event.side === 'home' ? 1 : -1) > 0;
+        // Nothing but a goal ends in the net.
+        if (behind) expect(Math.abs(end[1] - PITCH_SIZE.width / 2)).toBeGreaterThan(3.66);
+        if ('outcome' in event && event.outcome === 'wide') {
+          wide++;
+          expect(end[2]).toBe(0);
+          expect(Math.abs(end[1] - PITCH_SIZE.width / 2)).toBeGreaterThanOrEqual(5);
+        }
+        for (let s = 0; s < plan[HEAD.count]!; s++) {
+          const o = HEAD.size + s * ACT.size;
+          if (plan[o + ACT.kind] !== SEG.chip || plan[o + ACT.zmode] !== 2) continue;
+          over++;
+          const y = plan[o + ACT.y1]!;
+          expect(plan[o + ACT.x1]).toBe(goal);
+          expect(plan[o + ACT.h]).toBe(3.2);
+          expect(Math.abs(y - PITCH_SIZE.width / 2)).toBeLessThanOrEqual(3.26 + 1e-9);
+          expect(
+            Math.sign(y - PITCH_SIZE.width / 2) * Math.sign(end[1] - PITCH_SIZE.width / 2),
+          ).toBeGreaterThanOrEqual(0);
+        }
+      });
+    }
+    expect(wide).toBeGreaterThan(500);
+    expect(over).toBeGreaterThan(100);
+  });
+});
+
+describe('the sent-off disc, the keeper and the shadow follow the drawn ball', () => {
+  it('the sent-off appears 3 m from the ball of the planner at the start of the red card step', () => {
+    let reds = 0;
+    for (const m of corpus.slice(0, 600)) {
+      const { steps, trace } = prepare(m);
+      if (!steps.some((s) => s.line?.source.type === 'red')) continue;
+      const choreo = choreograph(steps, lineupsOf(m), m.match.seed);
+      const planner = new BallPlanner(steps, trace, m.match.seed);
+      const out = createScene();
+      steps.forEach((step, i) => {
+        if (step.line?.source.type !== 'red' || step.line.stage !== 'final') return;
+        const disc = tagDiscOf(choreo, i);
+        if (disc < 0) return;
+        reds++;
+        sceneAt(choreo, i, 0, out, 'normal', planner);
+        const sy = planner.plans[i]![HEAD.sy]!;
+        const room = Math.abs(out.y[disc]! - sy);
+        // 3 m from the ball (a ball 3 m from a touchline holds him at the line).
+        expect(Math.hypot(out.x[disc]! - out.ballX, out.y[disc]! - out.ballY)).toBeLessThanOrEqual(
+          3 + 1e-9,
+        );
+        if (sy > 3 && sy < PITCH_SIZE.width - 3) expect(room).toBeCloseTo(3, 9);
+        // And he walks on to the touchline at the end of the step.
+        sceneAt(choreo, i, 1, out, 'normal', planner);
+        expect(out.y[disc]! < 0 || out.y[disc]! > PITCH_SIZE.width).toBe(true);
+      });
+    }
+    expect(reds).toBeGreaterThan(20);
+  });
+
+  it('the keeper stands on the axis of his goal: out 2 + 0.12 × the distance of the ball (2 to 14 m), across within 6 m, never behind the line', () => {
+    let checked = 0;
+    for (const m of small.slice(0, 30)) {
+      const { steps, trace } = prepare(m);
+      const choreo = choreograph(steps, lineupsOf(m), m.match.seed);
+      const planner = new BallPlanner(steps, trace, m.match.seed);
+      const out = createScene();
+      steps.forEach((step, i) => {
+        if (step.line?.stage !== 'build' || steps[i - 1]?.timing === 'afterGoal') return;
+        const event = step.line.source as Extract<MatchEvent, { side: Side }>;
+        // A penalty puts the keeper on his line.
+        if (event.type === 'penaltyAwarded') return;
+        // The keeper who defends: the other side's, the first disc of it.
+        const keeper = event.side === 'home' ? 11 : 0;
+        if (!discShownIn(choreo, i, keeper)) return;
+        sceneAt(choreo, i, 1, out, 'normal', planner);
+        const line = keeper === 0 ? 0 : PITCH_SIZE.length;
+        const depth = Math.abs(out.x[keeper]! - line);
+        const distance = Math.abs(out.ballX - line);
+        expect(depth).toBeCloseTo(Math.min(14, 2 + 0.12 * distance), 6);
+        expect(depth).toBeGreaterThanOrEqual(2);
+        expect(Math.abs(out.y[keeper]! - 34)).toBeLessThanOrEqual(6 + 1e-9);
+        checked++;
+      });
+    }
+    expect(checked).toBeGreaterThan(40);
+  });
+
+  it('the shadow keeps the ball off it at every real arc, near the far touchline included', () => {
+    for (const [w, h] of [
+      [360, 240],
+      [397, 265],
+      [600, 400],
+      [297, 198],
+    ] as const) {
+      const g = pitchGeometry(w * 2, h * 2, 2);
+      const place = new Float64Array(7);
+      for (const m of small.slice(0, 40)) {
+        const { planner } = prepare(m);
+        for (const plan of planner.plans) {
+          for (let s = 0; s < plan[HEAD.count]!; s++) {
+            const o = HEAD.size + s * ACT.size;
+            const mode = plan[o + ACT.zmode]!;
+            if (mode === 0) continue;
+            for (let k = 0; k <= 20; k++) {
+              const u = k / 20;
+              const z = heightAt(mode, plan[o + ACT.h]!, u);
+              if (z <= M.shadowMin) continue;
+              ballPlace(
+                g,
+                plan[o + ACT.x0]! + (plan[o + ACT.x1]! - plan[o + ACT.x0]!) * u,
+                plan[o + ACT.y0]! + (plan[o + ACT.y1]! - plan[o + ACT.y0]!) * u,
+                z,
+                place,
+              );
+              const shift = shadowShift(g, place[4]!, place[5]!, place[6]!);
+              const apart = place[1]! + shift - place[3]!;
+              expect(apart).toBeGreaterThanOrEqual(place[4]! + 0.5 * place[5]! + 2 - 1e-9);
+            }
+          }
+        }
+      }
+    }
+  });
+});
+
 describe('the planner: nothing runs ahead of the outcome (13, planner 7)', () => {
   const POINTS = Array.from({ length: 11 }, (_, i) => i / 10);
 
   /** The goal at `index` as a chance of the same side, kind and player, or the chance as a goal. */
-  function swapped(events: readonly MatchEvent[], index: number): MatchEvent[] | undefined {
+  function swapped(
+    events: readonly MatchEvent[],
+    index: number,
+    outcome: 'saved' | 'post' | 'wide' = 'saved',
+  ): MatchEvent[] | undefined {
     const event = events[index]!;
     const base = {
       minute: event.minute,
@@ -378,7 +553,7 @@ describe('the planner: nothing runs ahead of the outcome (13, planner 7)', () =>
         side: event.side,
         shooter: event.scorer,
         kind: event.kind,
-        outcome: 'saved',
+        outcome,
         pGoal: 0.3,
       };
     } else if (event.type === 'chance' && event.importance >= 2) {
@@ -400,17 +575,23 @@ describe('the planner: nothing runs ahead of the outcome (13, planner 7)', () =>
     const { steps, planner } = prepare(m, events);
     const choreo = choreograph(steps, lineupsOf(m), m.match.seed);
     const out = createScene();
-    return POINTS.map((p) => {
-      sceneAt(choreo, index, p, out, fast ? 'fast' : 'normal', planner);
-      return JSON.stringify({
+    const snap = () =>
+      JSON.stringify({
         ball: [out.ballX, out.ballY, out.ballZ],
+        // The trails carry the ring of the landing: its centre is the end of the entry.
         trails: [...out.trails.slice(0, out.trailCount * TRAIL.stride)],
         wedge: [out.wedgeOwner, out.wedgeAlpha],
         discs: [...out.x, ...out.y, ...out.alpha],
         tag: tagDiscOf(choreo, index),
         shown: [...out.alpha].map((_, d) => discShownIn(choreo, index, d)),
       });
+    const points = POINTS.map((p) => {
+      sceneAt(choreo, index, p, out, fast ? 'fast' : 'normal', planner);
+      return snap();
     });
+    // The one frame of reduced motion too.
+    stillScene(choreo, index, out, planner);
+    return [...points, snap()];
   }
 
   it('the start of every goal equals the start of the same chance, in 11 points, also right after a goal', () => {
@@ -420,24 +601,29 @@ describe('the planner: nothing runs ahead of the outcome (13, planner 7)', () =>
       const events = m.result.events;
       events.forEach((event, index) => {
         if (event.type !== 'goal' && event.type !== 'chance') return;
-        const other = swapped(events, index);
-        if (other === undefined) return;
-        const id = `e${index}`;
-        const a = matchSteps(events, 'full');
-        const b = matchSteps(other, 'full');
-        const at = a.findIndex((s) => s.line?.id === id && s.line.stage === 'build');
-        expect(at).toBeGreaterThan(0);
-        expect(b.findIndex((s) => s.line?.id === id && s.line.stage === 'build')).toBe(at);
-        tried++;
-        if (a[at - 1]?.timing === 'afterGoal') afterGoal++;
-        expect(frames(m, events, at, false), id).toEqual(frames(m, other, at, false));
-        if (tried % 5 === 0)
-          expect(frames(m, events, at, true), id).toEqual(frames(m, other, at, true));
+        // A goal against a chance that is saved, hits the post or goes wide: the same start.
+        for (const outcome of ['saved', 'post', 'wide'] as const) {
+          const other = swapped(events, index, outcome);
+          if (other === undefined || (event.type === 'chance' && outcome !== 'saved')) continue;
+          const id = `e${index}`;
+          const a = matchSteps(events, 'full');
+          const b = matchSteps(other, 'full');
+          const at = a.findIndex((s) => s.line?.id === id && s.line.stage === 'build');
+          expect(at).toBeGreaterThan(0);
+          expect(b.findIndex((s) => s.line?.id === id && s.line.stage === 'build')).toBe(at);
+          tried++;
+          if (a[at - 1]?.timing === 'afterGoal') afterGoal++;
+          expect(frames(m, events, at, false), `${id} ${outcome}`).toEqual(
+            frames(m, other, at, false),
+          );
+          if (tried % 5 === 0)
+            expect(frames(m, events, at, true), id).toEqual(frames(m, other, at, true));
+        }
       });
     }
     expect(tried).toBeGreaterThan(300);
     expect(afterGoal).toBeGreaterThan(5);
-  });
+  }, 60_000);
 
   it('a penalty scored and the same penalty missed start the same', () => {
     let penalties = 0;
@@ -638,9 +824,12 @@ describe('the wedge and the reduced frame (8, 11)', () => {
             made++;
         }
         expect(out.trailCount).toBe(made);
+        let w = 0;
         for (let k = 0; k < out.trailCount; k++) {
           expect(out.trails[k * TRAIL.stride + TRAIL.s]).toBe(1);
-          expect(out.trails[k * TRAIL.stride + TRAIL.alpha]).toBe(M.trail.weights[k]);
+          expect(out.trails[k * TRAIL.stride + TRAIL.alpha]).toBe(M.trail.weights[w]);
+          // The way back from a post shares the weight of its shot.
+          if (out.trails[k * TRAIL.stride + TRAIL.kind] !== SEG.back) w++;
         }
         trails += out.trailCount;
       });
@@ -663,7 +852,6 @@ describe('the wedge and the reduced frame (8, 11)', () => {
         for (let k = 0; k < n; k++) {
           const alpha = ring[k * TRAIL.stride + TRAIL.alpha]!;
           // Newest first, weights 1, 0.6, 0.38, 0.22, each less than the one before (older).
-          expect(alpha / M.trail.weights[k]!).toBeLessThanOrEqual(1);
           expect(alpha).toBeLessThanOrEqual(last + 1e-9);
           last = Math.max(alpha, 0);
         }
@@ -702,17 +890,31 @@ describe('the planner: no allocation (13, planner 8)', () => {
     steps.forEach((step, i) => {
       if (!isQuota(planner, i) || step.timing !== 'minuteFull') return;
       const n = fillTrails(planner, i, 1, false, ring);
+      // The expected alphas, worked out by hand: newest first, weight × (1 − age ÷ 3.2 s), the age
+      // from the end of each action to the end of this step.
+      const now = planner.start[i]! + planner.length[i]!;
+      const expected: number[] = [];
+      let w = 0;
+      for (let j = i; j >= 0 && expected.length < TRAIL.count; j--) {
+        const plan = planner.plans[j]!;
+        for (let s = plan[HEAD.count]! - 1; s >= 0; s--) {
+          const o = HEAD.size + s * ACT.size;
+          const kind = plan[o + ACT.kind]!;
+          if (kind === SEG.loose || kind === SEG.fall) continue;
+          const age = now - (planner.start[j]! + plan[o + ACT.t1]! * planner.length[j]!);
+          expected.push(M.trail.weights[w]! * Math.max(0, 1 - age / M.trail.life));
+          if (kind !== SEG.back) w++;
+        }
+        if (plan[HEAD.centre] === 1) break;
+      }
+      expect(n).toBeGreaterThan(0);
       for (let k = 0; k < n; k++) {
-        const alpha = ring[k * TRAIL.stride + TRAIL.alpha]!;
-        expect(alpha).toBeLessThanOrEqual(M.trail.weights[k]! + 1e-9);
-        expect(alpha).toBeGreaterThanOrEqual(0);
+        expect(ring[k * TRAIL.stride + TRAIL.alpha]).toBeCloseTo(expected[k]!, 9);
         seen++;
       }
       // Reduced motion: the whole step, no time passing.
       const still = fillTrails(planner, i, 0, true, ring);
       expect(still).toBe(planner.plans[i]![HEAD.count]! > 0 ? still : 0);
-      for (let k = 0; k < still; k++)
-        expect(ring[k * TRAIL.stride + TRAIL.alpha]).toBe(M.trail.weights[k]);
     });
     expect(seen).toBeGreaterThan(50);
   });
