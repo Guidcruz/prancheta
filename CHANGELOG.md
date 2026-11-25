@@ -23,6 +23,18 @@ Formato: [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/). Versioname
   - Chunk do campo com cerca de 17,3 a 17,4 KB gzip (teto de 20 KB). Decisão do CEO: se o PR C passar de 20 KB, o teto vai a 24 KB, conforme a errata do ADR (Guidcruz/prancheta#90).
   - Testes novos de tela em `tests/e2e/pitch-tags.spec.ts`: 180 de 180 com `--repeat-each=10`.
   - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
+- Campo 2D v2, parte C: o planejador da bola (spec `docs/design/telas/partida-campo-v2.md`, §6 a §8, §13 e §16, itens 9 a 19):
+  - Planejador da bola passo a passo, com semente, que nada antecipa: a bola nunca para nos minutos sem lance. O limite é de 3 m por quadro, e de 8 m só na chance fraca (decisão do CEO).
+  - Rastros por tipo: passe rasteiro, condução pontilhada, tabela em V aberto (decisão do CEO), passe por cima e cruzamento em arco. Distribuição em 1.000 partidas: rasteiro 66,3%, condução 21,8%, tabela 4,9%, por cima 5,2%, cruzamento 1,8%.
+  - Anel no ponto de queda dos passes por cima (decisão do CEO).
+  - Bola no ar com sombra (token `pitch-shadow`), sem a bola cobrir a sombra.
+  - Cunha do lado que ataca (token `pitch-wedge`), com o contraste conferido no `npm run tokens`.
+  - O chute por cima do travessão cai ao lado do gol, nunca na rede; o expulso fica a 3 m da bola e termina na linha lateral; o goleiro nunca fica atrás da linha.
+  - Corrigido (bug do PR B): a etiqueta é reposicionada ao girar o celular.
+  - Chunk do campo com 21.766 bytes gzip, com teto de 24.000 (decisão do CEO; a errata do ADR-0023 fica para o `architect`, em PR próprio).
+  - Desempenho: quadros p95 de 16,7 a 16,8 ms, desenho p50 de 0,2 a 0,4 ms e nenhuma tarefa longa.
+  - Testes: `test:all` com 213 arquivos e 3.103 testes (1 pulado), mais 148 e 26; E2E no Chromium com 409 passaram e 0 falharam; specs do campo com `--repeat-each=5`: 540 de 540.
+  - Nada muda no motor nem no save: nenhuma partida, nem o formato, nem o `ENGINE_VERSION` mudam.
 - Escudo do clube em cada lance da narração e da súmula (decisão do CEO de 2026-11-15, opção A):
   - Cada lance de time mostra um escudo de 24 px (token novo `size-medallion-xs`) logo depois do minuto, e o nome do clube continua na linha; as fases da partida ficam sem escudo. A súmula muda junto.
   - O escudo é decorativo (`aria-hidden`): o leitor de tela diz o clube logo depois do minuto. Na mudança tática a frase não repete o clube (aceito). O fundo verde do gol é igual nos dois lados.

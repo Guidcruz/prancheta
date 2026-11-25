@@ -16,16 +16,21 @@ export function themeToken(theme: string, name: string): string | undefined {
   return themes[theme]?.[name];
 }
 
-/** The colours the pitch draws with in `theme`, and the `ink` of the discs and the ball. */
+/**
+ * The colours the pitch draws with in `theme`, the `ink` of the discs, the ball and the trails, and
+ * the `pitch-shadow` of the ball in the air and the `pitch-wedge` of the attack.
+ */
 export function pitchColors(
   theme: string,
   /** Asked for a token the file does not have (the caller reads the computed style). */
   fallback: (name: string) => string,
   lookup: (theme: string, name: string) => string | undefined = themeToken,
-): { colors: BackdropColors; ink: string } {
+): { colors: BackdropColors; ink: string; shadow: string; wedge: string } {
   const token = (name: string) => lookup(theme, name) ?? fallback(name);
   return {
     ink: token('--ink'),
+    shadow: token('--pitch-shadow'),
+    wedge: token('--pitch-wedge'),
     colors: {
       surface0: token('--surface-0'),
       surface1: token('--surface-1'),

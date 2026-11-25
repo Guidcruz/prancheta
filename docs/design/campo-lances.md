@@ -163,7 +163,7 @@ Nada nos dados muda com a perspectiva. Do lado da regra, o que ela precisa mante
 - **Lados fixos:** o mandante à esquerda atacando para a direita, o jogo todo. Na perspectiva, "esquerda" continua sendo o gol da esquerda de quem olha.
 - **A posição como pista que não depende da cor:** o jogador tem de saber de que lado é o lance pela posição. Na perspectiva, o lado de longe encolhe; o lance do fundo do campo não pode ficar ilegível.
 - **O desfecho não pode ser antecipado pelo ângulo:** se houver qualquer movimento de câmera, ele é o mesmo para gol e chance no começo do lance (a mesma regra da bola).
-- **As metas de desempenho** da T-085 continuam (chunk do campo de no máximo 20 KB gzip, quadro mediano de no máximo 6 ms com 4× de CPU, 30 quadros por segundo no pior caso). Um estádio desenhado tem de caber nelas; se não couber, volta ao `architect`.
+- **As metas de desempenho** da T-085 continuam (chunk do campo de no máximo 20 KB gzip, hoje 24 KB pela decisão do CEO no PR C, quadro mediano de no máximo 6 ms com 4× de CPU, 30 quadros por segundo no pior caso). Um estádio desenhado tem de caber nelas; se não couber, volta ao `architect`.
 
 ## 5. O que muda em decisões anteriores
 
@@ -200,7 +200,7 @@ Tudo em `app/src/ui/match/` (`scene.ts` e o que a etiqueta precisar); nada em `a
 6. ~~**Passes com discos em campo:** quem passa e quem recebe têm `on[d] === 1` no passo; o rastro nunca começa nem termina num disco fora.~~ _Sem efeito no modo "só a bola" (§10)._
 7. **Goleiro (D5):** com o goleiro expulso sem troca, o disco do goleiro passa ao jogador de linha em campo de maior `physical` (empate: menor índice), num caso montado à mão; e, depois de uma troca de goleiro num lado que mudou de formação, a defesa sai sem nome.
 8. **Determinismo:** a mesma partida dá a mesma coreografia; os sorteios que existem (`m${slot}`, `-build`, `-outcome`) não mudam de valor por causa dos rótulos novos (`-band-start`, `m${slot}-band`).
-9. **Motor e save intactos:** `ENGINE_VERSION` 19, goldens do motor e `SAVE_SCHEMA_VERSION` sem mudança; o chunk do campo continua com no máximo 20.000 bytes gzip (`tests/regression/match-chunks.test.ts`).
+9. **Motor e save intactos:** `ENGINE_VERSION` 19, goldens do motor e `SAVE_SCHEMA_VERSION` sem mudança; o chunk do campo continua com no máximo 24.000 bytes gzip (era 20.000; decisão do CEO no PR C, spec, §16, item 17) (`tests/regression/match-chunks.test.ts`).
 10. **Textos:** os tipos da etiqueta são chaves em `app/src/content/<idioma>/` (pt-BR, es, en), nunca no código; o lote passa pelo `content-writer` e pelo CEO.
 
 ## 8. Decisões para o CEO
@@ -233,17 +233,17 @@ O CEO escolheu o modo "só a bola" ([telas/partida-campo-v2.md](telas/partida-ca
    - Nada nela nomeia ninguém. A camisa sobre a bola não tem número nem nome.
    - **Ajuste:** o cruzamento do §6 da spec cai "de 7 a 14 m da linha de fundo", o que leva a bola a até 98 m. Isso contradiz o limite de 95 m e o critério 4 de "planejador e rastros" do §13. O cruzamento passa a cair **de 10 a 14 m** da linha de fundo.
    - Regra que fica: num minuto sem lance, a bola nunca chega a menos de 10 m de uma linha de gol, e nenhuma ação vai na direção do gol. O campo não mostra quase-chance que o motor não sorteou.
-   - **Regra de honestidade do planejador:** ele lê só a semente, o dono, o estado da bola no fim do passo anterior e o ponto do lance. Nunca lê o placar, as forças, o tipo de evento nem os eventos futuros. Os pesos das ações são os mesmos para os dois times. O único "domínio" que o campo mostra é a posse da súmula (D4-C).
+   - **Regra de honestidade do planejador:** nos passos da cota e no começo do lance, ele lê só a semente, o dono (`owners` e `after` de `possession.ts`), o estado da bola no fim do passo anterior, a duração do passo e, no começo do lance, o lado, o tipo do lance (jogada, falta, pênalti) e o ponto do lance. Nunca lê o placar, as forças, se o lance vira gol nem os passos futuros. Só o passo do desfecho (e a chance fraca, que é desfecho) lê o desfecho, pelo rótulo `-outcome`. Os pesos das ações são os mesmos para os dois times. O único "domínio" que o campo mostra é a posse da súmula (D4-C).
 2. **D4-C: confirmada, com um ajuste para continuar batendo com a súmula.**
-   - No modo "só a bola", a cunha e a camisa aparecem também nos passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho. São cerca de 6 s por partida no Normal, além dos 53 s de minutos sem lance.
+   - No modo "só a bola", a cunha aparece também nos passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho. São cerca de 6 s por partida no Normal, além dos 53 s de minutos sem lance. A camisa sobre a bola fica só nos minutos sem lance (spec, §9 e critério 5 do E2E, como o PR B fez); nos outros passos da cota, a cunha mostra o dono.
    - Se só os minutos sem lance movessem a cota, a parte do tempo com a bola se afastaria da súmula: p90 de 3,9 pontos e p99 de 6,1.
    - **Ajuste:** todo passo da cota move a conta, com peso pelo tempo. O item 4 vira `debt += (p − (dono é o mandante ? 1 : 0)) × duração Normal do passo ÷ 800 ms`, e a troca de dono é conferida antes, como hoje.
    - Medido: p50 de 1,0 ponto, p90 de 2,2, p99 de 3,0 e máximo de 3,5. O critério 4 do §7 (p90 até 3, p99 até 4,5) passa a medir a parte do tempo.
    - **Passos da cota:** os minutos sem lance e os passos de amarelo, lesão, troca, mudança tática, acréscimo e vermelho, exceto o passo logo depois de um gol (a bola volta ao centro, sem dono).
-   - **Nuance de texto para a spec:** a camisa sobre a bola diz "quem está com a bola" num minuto, e isso é decorativo. O fato é a parte do tempo, que bate com a posse da súmula. A spec diz "que é fato (D4-C)", e eu trocaria por "que segue a posse da súmula (D4-C)".
+   - **Nuance de texto para a spec:** a camisa sobre a bola diz "quem está com a bola" num minuto, e isso é decorativo. O fato é a parte do tempo, que bate com a posse da súmula. A spec dizia "que é fato (D4-C)" e passou a dizer "que segue a posse da súmula (D4-C)".
 3. **D3-B e o começo do gol igual ao da chance: confirmada.** A escolha do tipo do passe do começo usa só estes dados:
-   - o dono do passo anterior;
-   - a posição da bola no fim dele ("aberta" a mais de 14 m do meio na largura);
+   - quem ficou com a bola no fim do passo anterior (`after` de `possession.ts`);
+   - a posição da bola no fim dele ("aberta no terço final": a mais de 18 m além do meio-campo e a mais de 15 m do meio na largura, a mesma condição do cruzamento dos minutos; e a distância até o ponto, até 40 m);
    - se a ação anterior foi por cima;
    - o ponto do lance, sorteado com o rótulo `-build` a partir do lado, do finalizador e do tipo.
 
@@ -255,3 +255,26 @@ O CEO escolheu o modo "só a bola" ([telas/partida-campo-v2.md](telas/partida-ca
    - O efeito visível ficou pequeno: o disco do goleiro é anônimo, e a defesa leva o finalizador.
    - Ela continua necessária porque o critério 1 de âncora do §13 da spec calcula o goleiro pela regra do motor, e a coreografia de hoje erra em 0,24% das partidas.
    - É barata: uma escolha por maior `physical` sobre os jogadores que a tela já tem.
+
+5. **Conferência para o PR C (planejador da bola, 2026-11-24).** Simulei as regras do §6 da spec, só a bola, sobre 3.420 partidas reais da Série A (9 temporadas, `ENGINE_VERSION` 19, a cota de `possession.ts`). Completei a spec onde ela deixava o `developer` adivinhar, sem mudar decisão do CEO:
+   - **Reaproveitamento do PR B:** o planejador usa `owners` e `after` do `possessionTrace`; a troca de dono é `owners[i] ≠ after[i − 1]`, então não há disputa depois de um desfecho (quem defendeu já tem a bola).
+   - **Sorteio por passo:** `m${slot}-play` só no minuto sem lance; `${line.id}-play` nos outros passos da cota, que podem ser vários no mesmo minuto.
+   - **Limites:** alvo refletido no limite e passe de no mínimo 5 m (condução, 2 m); o passe ao goleiro termina de 10 a 14 m da linha (o protótipo levava a 4 m, fora do limite de 10 m); a **reposição** depois de um desfecho sem gol leva a bola de volta à faixa.
+   - **Passos da cota de 400 ms:** um passe rasteiro curto, com as distâncias pela metade. Com os padrões de 800 ms comprimidos, a bola passaria de 3 m em 16 ms (5,1 m), e a condução iria a 25,1%, fora da meta.
+   - **Começo de lance:** o cruzamento só da bola aberta no terço final (antes, "a mais de 14 m do meio na largura", de qualquer distância), e retomada sem rastro quando a bola está a mais de 40 m do ponto.
+   - **Depois do gol:** o começo de lance logo depois de um gol é só a volta ao centro (a exceção da âncora 4); a bola e o finalizador vão ao ponto nos primeiros 250 ms do desfecho (0,11 por partida). A chance fraca logo depois de um gol é só a volta ao centro (0,38 por partida).
+   - **Tabela com V aberto (decisão 18 do CEO, depois da revisão do PR C):** o primeiro passe abre de 6 a 12 m para o lado com mais espaço e de 2 a 8 m à frente; o segundo volta de 8 a 14 m à frente de onde a bola saiu, até 4 m para o lado oposto; sem 14 m à frente até o limite, o V abre para trás. Antes (segundo passe a `x0 + 6 m ± 4 m`), 20,4% das tabelas tinham o V abaixo de 10° e a mediana era 22,0°; agora o mínimo é 31,9° e a mediana 56,5°, em 19.049 tabelas.
+   - **Critério 2 do §13:** os 3 m em 16 ms não cabem na chance fraca, que junta a ida ao ponto e o chute em 400 ms (tempo decidido pelo CEO). Ali o limite passa a 8 m, em velocidade constante (pior caso medido: 7,0 m).
+
+   | Medida (3.420 partidas, ações dos passos da cota)                                             | Resultado                         | Meta (§13)              |
+   | --------------------------------------------------------------------------------------------- | --------------------------------- | ----------------------- |
+   | Passe rasteiro (curto, recuo, ao goleiro, reposição)                                          | 67,6%                             | 60 a 70%                |
+   | Condução                                                                                      | 21,8%                             | 17 a 25%                |
+   | Tabela (uma ação por tabela)                                                                  | 3,9%                              | 3 a 8%                  |
+   | Por cima (lançamento e inversão)                                                              | 4,8%                              | 4 a 8%                  |
+   | Cruzamento                                                                                    | 1,9%, todos do terço final        | até 3%                  |
+   | Dois por cima seguidos; alvo fora da faixa                                                    | 0; 0                              | 0; 0                    |
+   | Maior trecho em 16 ms: cota; começo de lance; ida ao ponto depois do gol; chute; chance fraca | 2,6 m; 2,6 m; 2,8 m; 1,9 m; 7,0 m | 3 m; 3 m; 3 m; 3 m; 8 m |
+   | Menor trecho nos últimos 200 ms de um passe rasteiro da cota                                  | 0,31 m                            | 0,2 m                   |
+
+   A tabela acima é com os pesos do v5: tudo dentro da meta, mas a tabela e o por cima a menos de 1 ponto do piso. **Decisão do CEO (2026-11-24; spec, §16, itens 15 e 16):** os pesos passam a 0,17 para "um passe rasteiro" (era 0,20), 0,10 para a tabela (era 0,08) e 0,12 para o por cima (era 0,11). Medido de novo nas mesmas 3.420 partidas: rasteiro 66,2%, condução 21,8%, tabela 4,9%, por cima 5,2% e cruzamento 1,9%, mais perto do v5 (66,0%, 21,6%, 5,2%, 6,0% e 1,1%); os trechos por quadro não mudam. Com o V aberto da tabela (decisão 18), na mesma simulação: 66,1%, 21,8%, 4,9%, 5,2% e 2,0%, todos na meta, com o maior trecho da tabela em 2,2 m por quadro. O limite de 8 m por quadro fica só na chance fraca e no pênalti sem desfecho; nos outros casos, 3 m.

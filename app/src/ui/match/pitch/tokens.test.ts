@@ -29,6 +29,8 @@ const NEEDED = [
   '--beam',
   '--pitch',
   '--pitch-line',
+  '--pitch-shadow',
+  '--pitch-wedge',
 ];
 
 describe('pitch-tokens.generated.json', () => {
@@ -55,8 +57,13 @@ describe('pitch-tokens.generated.json', () => {
 describe('pitchColors', () => {
   it('takes every token from the file and asks the browser for none it has', () => {
     const asked: string[] = [];
-    const { colors, ink } = pitchColors('dia', (name) => (asked.push(name), 'computed'));
+    const { colors, ink, shadow, wedge } = pitchColors(
+      'dia',
+      (name) => (asked.push(name), 'computed'),
+    );
     expect(asked).toEqual([]);
+    expect(shadow).toBe('rgba(0,0,0,0.38)');
+    expect(wedge).toBe('rgba(255,255,255,0.35)');
     expect(ink).toBe(themeToken('dia', '--ink'));
     expect(colors.pitch).toBe(themeToken('dia', '--pitch'));
     expect(colors.night).toBe(false);
@@ -66,11 +73,13 @@ describe('pitchColors', () => {
   it('asks the computed style, per token, for a theme or a token the file lacks', () => {
     const asked: string[] = [];
     const read = (name: string) => (asked.push(name), `computed ${name}`);
-    const { colors, ink } = pitchColors('mystery', read, themeToken);
+    const { colors, ink, shadow, wedge } = pitchColors('mystery', read, themeToken);
     expect(ink).toBe('computed --ink');
+    expect(shadow).toBe('computed --pitch-shadow');
+    expect(wedge).toBe('computed --pitch-wedge');
     expect(colors.surface0).toBe('computed --surface-0');
     expect(colors.pitchLine).toBe('computed --pitch-line');
-    expect(asked).toHaveLength(9);
+    expect(asked).toHaveLength(11);
     // One token missing from an otherwise known theme: only that one is asked.
     const some = (theme: string, name: string) =>
       name === '--beam' ? undefined : themeToken(theme, name);

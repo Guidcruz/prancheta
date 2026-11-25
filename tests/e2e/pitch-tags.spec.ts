@@ -523,3 +523,90 @@ test.describe('Campo v2, PR B: a camisa sobre a bola (E2E 5)', () => {
     }
   });
 });
+
+test.describe('Campo v2, PR C: a etiqueta de um disco que já saiu acompanha a âncora reprojetada (revisão do PR C)', () => {
+  test.use({ viewport: { width: 360, height: 740 } });
+  test.beforeEach(async ({ page }) => {
+    await page.clock.install();
+    test.setTimeout(120_000);
+  });
+
+  /** The tip of the pill (where the thread would start) in the page, and the box of the canvas. */
+  const tipOf = (page: Page) =>
+    page.evaluate(() => {
+      const screen = document.querySelector('main.match')!;
+      const box = screen.querySelector('canvas')!.getBoundingClientRect();
+      const places = [...screen.querySelectorAll<HTMLElement>('.place')].filter(
+        (p) => p.querySelector('.tag:not(.team)') !== null,
+      );
+      const place = places[0];
+      if (place === undefined) return undefined;
+      const pill = place.querySelector<HTMLElement>('.tag')!;
+      const shift = parseFloat(pill.style.getPropertyValue('--tip-shift') || '0');
+      const rect = place.getBoundingClientRect();
+      return {
+        count: places.length,
+        leaving: pill.classList.contains('leaving'),
+        text: pill.textContent!.trim(),
+        // The pill's left edge in the page, so the tip x is the middle of the pill plus the shift.
+        x: rect.left + pill.offsetWidth / 2 + shift - box.left,
+        y: rect.top + pill.offsetHeight + 7 - box.top,
+        width: box.width,
+        height: box.height,
+      };
+    });
+
+  test('o disco já saiu (minuto cheio, etiqueta segurada pelo tempo mínimo): ao redimensionar, a ponta da pílula fica na mesma fração do campo (a âncora é reprojetada, não fica no pixel antigo)', async ({
+    page,
+  }) => {
+    const { steps } = await openWithHold(page);
+    const shouldBe = model(steps);
+    // A minute with nothing shown where a play tag is held only by the minimum time: its disc is gone.
+    const held = steps.findIndex(
+      (s, i) =>
+        s.timing === 'minuteFull' &&
+        planOf(s) === undefined &&
+        shouldBe[i]!.held?.tone === 'play' &&
+        !shouldBe[i]!.leaving,
+    );
+    expect(held).toBeGreaterThan(0);
+    await page.clock.runFor(timeTo(steps, held) + 0.4 * timingOf(steps[held]!.timing, 'normal'));
+    await expect.poll(async () => (await tipOf(page))?.count ?? 0).toBe(1);
+    const before = (await tipOf(page))!;
+    expect(before.leaving).toBe(false);
+    const fx = before.x / before.width;
+    const fy = before.y / before.height;
+
+    const seen: number[] = [before.width];
+    for (const [width, height] of [
+      [844, 390],
+      [1280, 800],
+      [390, 844],
+      [360, 740],
+    ] as const) {
+      await page.setViewportSize({ width, height });
+      // The pill follows the new size: wait for it, never a fixed time (the canvas can be 0 for a moment).
+      await expect
+        .poll(
+          async () => {
+            const now = await tipOf(page);
+            // Until the canvas has the new size the fraction is trivially the old one: wait for the size first.
+            if (now === undefined || now.width < 100 || now.width === seen.at(-1))
+              return 'sem medida';
+            return Math.abs(now.x / now.width - fx) <= 0.02 &&
+              Math.abs(now.y / now.height - fy) <= 0.06
+              ? 'ok'
+              : `fx ${(now.x / now.width).toFixed(3)} (queria ${fx.toFixed(3)}), fy ${(now.y / now.height).toFixed(3)} (queria ${fy.toFixed(3)})`;
+          },
+          { message: `${width}×${height}: a ponta fica na âncora reprojetada` },
+        )
+        .toBe('ok');
+      const now = (await tipOf(page))!;
+      expect(now.text, `${width}×${height}: a mesma etiqueta`).toBe(before.text);
+      expect(now.leaving).toBe(false);
+      seen.push(now.width);
+    }
+    // The boxes were really different sizes (the test would pass with a stuck pill otherwise).
+    expect(Math.max(...seen) - Math.min(...seen)).toBeGreaterThan(150);
+  });
+});

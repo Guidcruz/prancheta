@@ -52,7 +52,9 @@ export const PITCH_MOTION = {
   /** A minute with nothing shown: the ball walks to a point of the midfield, at most 20 m away. */
   minute: { x: [35, 70], y: [10, 58], maxStep: 20 },
   /** How much of the ball's distance to the centre the blocks follow (the keeper less). */
-  follow: { length: 0.35, width: 0.2, keeper: 0.1 },
+  follow: { length: 0.35, width: 0.2 },
+  /** The keeper on the axis of his goal: out from the line, and across (partida-campo-v2.md, 6). */
+  keeper: { near: 2, far: 14, share: 0.12, across: 6 },
   /** The point of a play, from the goal it attacks, and across. */
   open: { distance: [11, 30], y: [20, 48] },
   freeKick: { distance: [20, 28], y: [16, 52] },
@@ -76,8 +78,38 @@ export const PITCH_MOTION = {
    * the edge (3 m − 1.5 m). The MatchPitch holds the ball inside the trapezoid (`geometry.ts`).
    */
   wide: { inside: [29, 39], spread: 7, out: 1.5 },
-  /** A player leaving goes this far past the nearest touchline. */
-  leave: 1.5,
   /** Slow motion: the second half of the time at 40% of the speed (v = 1 / 0.7). */
   slow: 0.4,
+  /**
+   * The ball planner (docs/design/telas/partida-campo-v2.md, 6 to 8; campo-lances.md, 10, item 5):
+   * the same weights for both clubs, in the order carry and pass, pass and carry, one pass, two
+   * passes, back, wall (a tabela) and over.
+   */
+  actions: {
+    carryPass: 0.2,
+    passCarry: 0.15,
+    pass: 0.17,
+    twoPasses: 0.14,
+    back: 0.12,
+    wall: 0.1,
+    over: 0.12,
+  },
+  /** In a step of the quota the ball stays inside this band (metres): length, then width. */
+  band: { x: [10, 95], y: [5, 63] },
+  /** The least a pass and a carry cover, a short pass of a step of 400 ms, the retaken distance. */
+  least: { pass: 5, carry: 2, short: 2.5 },
+  /** Over the top: the chance of a cross from the open ball, the height `min(11, 2.5 + 0.17 d)`. */
+  cross: { chance: 0.45, from: 18, wide: 15, near: [10, 14], across: 7, height: [4, 6] },
+  height: { base: 2.5, perMetre: 0.17, max: 11, chip: 3.2, freeKick: 2.2, grow: 9, grew: 0.45 },
+  /** The ball takes this share of the step to be loose (a dispute), and a taker arrives in 250 ms. */
+  loose: 0.3,
+  approach: 0.25,
+  /** A play to the point of the start: farthest a pass goes (m) rather than a ball without trail. */
+  passReach: 40,
+  /** The trails: the weights of the action in course and of the three before, and their life (s). */
+  trail: { weights: [1, 0.6, 0.38, 0.22], life: 3.2 },
+  /** The wedge: half opening (degrees), the fade in of a new owner (s), the least to the goal (m). */
+  wedge: { half: 26, fade: 0.2, near: 3 },
+  /** The shadow shows above this height (m). */
+  shadowMin: 0.15,
 } as const;

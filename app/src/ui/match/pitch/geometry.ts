@@ -1,4 +1,4 @@
-import { PITCH_SIZE, PITCH_VIEW } from './motion';
+import { PITCH_MOTION, PITCH_SIZE, PITCH_VIEW } from './motion';
 
 /*
  * The tilted pitch (docs/design/telas/partida-campo-v2.md, 3; ADR-0023): a true perspective (a
@@ -132,6 +132,65 @@ export function holdBall(
   out[0] = clamp(cx, g.width / 2 - half, g.width / 2 + half);
   out[1] = y;
 }
+
+/** The least the shadow keeps from the ball above it, besides both radii, in px CSS (7, rule). */
+export const SHADOW_GAP = 1;
+
+/**
+ * How far below its point on the ground the shadow of the ball is drawn, in canvas px
+ * (partida-campo-v2.md, 7): while the ball is low (its lift `z × k` under both radii) the shadow
+ * goes down, so the ball never covers it, and the vertical distance between the two centres is
+ * always at least `r + 0.5 r0 + 1px`; once the ball is high enough the shift is 0 and the shadow
+ * is right under it. `r` is the radius of the ball in the air, `r0` its radius on the ground.
+ */
+export const shadowShift = (g: PitchGeometry, r: number, r0: number, lift: number): number =>
+  Math.max(0, r + 0.5 * r0 + SHADOW_GAP * g.dpr - lift);
+
+/**
+ * The semi-axes of the ring of a landing on the ground where the scale is `k`, into `out`:
+ * `out[0]` horizontal, `3 × r0` (12px CSS at least), `out[1]` vertical, that times the local
+ * flattening of the projection.
+ */
+export function ringSize(g: PitchGeometry, k: number, out: Float64Array): void {
+  const r = 3 * ballRadius(g, k);
+  const flat = ((g.height - g.yFar) * (k / g.s0)) / (WIDTH * g.farScale * g.s0);
+  out[0] = r;
+  out[1] = r * flat;
+}
+
+/**
+ * The ball of the scene at `(x, y)` metres and `z` metres up, into `out`, in canvas px: `out[0]`,
+ * `out[1]` the point on the ground held in the trapezoid, `out[2]`, `out[3]` the centre of the ball
+ * (lifted by `z × k` and held again), `out[4]` its radius in the air (`1 + 0.45 × min(1, z ÷ 9)`
+ * times the radius on the ground), `out[5]` the radius on the ground and `out[6]` the vertical gap between the ground point and the centre.
+ * Pure; no allocation beyond the two scratch arrays.
+ */
+export function ballPlace(
+  g: PitchGeometry,
+  x: number,
+  y: number,
+  z: number,
+  out: Float64Array,
+): void {
+  project(g, x, y, ballSpot);
+  const k = ballSpot[2]!;
+  const r0 = ballRadius(g, k);
+  holdBall(g, ballSpot[0]!, ballSpot[1]!, r0, ballHeld);
+  out[0] = ballHeld[0]!;
+  out[1] = ballHeld[1]!;
+  const grown = 1 + PITCH_MOTION.height.grew * Math.min(1, z / PITCH_MOTION.height.grow);
+  const r = r0 * grown;
+  const lift = z * k;
+  holdBall(g, ballHeld[0]!, ballHeld[1]! - lift, r, ballHeld);
+  out[2] = ballHeld[0]!;
+  out[3] = ballHeld[1]!;
+  out[4] = r;
+  out[5] = r0;
+  // The real gap between the ground point and the centre, held or not (the shadow reads it).
+  out[6] = out[1]! - out[3]!;
+}
+const ballSpot = new Float64Array(3);
+const ballHeld = new Float64Array(2);
 
 export const TAG_GAP = 12;
 export const TAG_TOP = 4;
