@@ -865,6 +865,57 @@ describe('the wedge and the reduced frame (8, 11)', () => {
   });
 });
 
+describe('the ring of the landing, from the plan (13, planner 11)', () => {
+  it('in 1,000 matches every pass over the top lands on the end of its trail, to 1 mm, on the ground; a shot or a chip is never counted as one', () => {
+    const ring = new Float64Array(TRAIL.count * TRAIL.stride);
+    let passes = 0;
+    let crosses = 0;
+    let shots = 0;
+    for (const m of corpus) {
+      const { steps, planner } = prepare(m);
+      for (let i = 0; i < steps.length; i++) {
+        const plan = planner.plans[i]!;
+        const n = fillTrails(planner, i, 0, true, ring);
+        const entries: { kind: number; x1: number; y1: number }[] = [];
+        for (let k = 0; k < n; k++) {
+          const e = k * TRAIL.stride;
+          entries.push({
+            kind: ring[e + TRAIL.kind]!,
+            x1: ring[e + TRAIL.x1]!,
+            y1: ring[e + TRAIL.y1]!,
+          });
+        }
+        for (let s = 0; s < plan[HEAD.count]!; s++) {
+          const o = HEAD.size + s * ACT.size;
+          const kind = plan[o + ACT.kind]!;
+          if (kind === SEG.shot || kind === SEG.chip) shots++;
+          if (kind !== SEG.air && kind !== SEG.cross) continue;
+          passes++;
+          if (kind === SEG.cross) crosses++;
+          // The ball is at the target, on the ground, when the pass ends...
+          ballAt(plan, plan[o + ACT.t1]!, ball);
+          expect(ball[0]!, `${m.match.seed} step ${i}: x`).toBeCloseTo(plan[o + ACT.x1]!, 3);
+          expect(ball[1]!, `${m.match.seed} step ${i}: y`).toBeCloseTo(plan[o + ACT.y1]!, 3);
+          expect(ball[2]!, `${m.match.seed} step ${i}: z`).toBeLessThan(0.01);
+          // ...and the trail the screen draws the ring for ends at the same point.
+          expect(
+            entries.some(
+              (e) =>
+                e.kind === kind &&
+                Math.abs(e.x1 - plan[o + ACT.x1]!) < 0.001 &&
+                Math.abs(e.y1 - plan[o + ACT.y1]!) < 0.001,
+            ),
+            `${m.match.seed} step ${i}: the trail of the pass`,
+          ).toBe(true);
+        }
+      }
+    }
+    expect(passes).toBeGreaterThan(1000);
+    expect(crosses).toBeGreaterThan(30);
+    expect(shots).toBeGreaterThan(1000);
+  }, 120_000);
+});
+
 describe('the planner: no allocation (13, planner 8)', () => {
   it('sceneAt and stillScene write into the same scene and the same ring of four trails', () => {
     const m = small[3]!;
