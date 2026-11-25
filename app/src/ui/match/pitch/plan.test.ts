@@ -445,19 +445,24 @@ describe('the sent-off disc, the keeper and the shadow follow the drawn ball', (
       steps.forEach((step, i) => {
         if (step.line?.source.type !== 'red' || step.line.stage !== 'final') return;
         const disc = tagDiscOf(choreo, i);
-        if (disc < 0) return;
+        // Right after a goal he comes in at his spot (tested below).
+        if (disc < 0 || steps[i - 1]?.timing === 'afterGoal') return;
         reds++;
         sceneAt(choreo, i, 0, out, 'normal', planner);
         const sy = planner.plans[i]![HEAD.sy]!;
         const room = Math.abs(out.y[disc]! - sy);
         // 3 m from the ball (a ball 3 m from a touchline holds him at the line).
-        expect(Math.hypot(out.x[disc]! - out.ballX, out.y[disc]! - out.ballY)).toBeLessThanOrEqual(
-          3 + 1e-9,
-        );
+        const sx = planner.plans[i]![HEAD.sx]!;
+        // (A restart starts the ball behind the goal line, where the disc is held at the line.)
+        if (sx >= 0 && sx <= PITCH_SIZE.length) {
+          expect(
+            Math.hypot(out.x[disc]! - out.ballX, out.y[disc]! - out.ballY),
+          ).toBeLessThanOrEqual(3 + 1e-9);
+        }
         if (sy > 3 && sy < PITCH_SIZE.width - 3) expect(room).toBeCloseTo(3, 9);
         // And he walks on to the touchline at the end of the step.
         sceneAt(choreo, i, 1, out, 'normal', planner);
-        expect(out.y[disc]! < 0 || out.y[disc]! > PITCH_SIZE.width).toBe(true);
+        expect([0, PITCH_SIZE.width]).toContain(out.y[disc]);
       });
     }
     expect(reds).toBeGreaterThan(20);
@@ -913,11 +918,71 @@ describe('the planner: no allocation (13, planner 8)', () => {
         seen++;
       }
       // Reduced motion: the whole step, no time passing.
-      const still = fillTrails(planner, i, 0, true, ring);
-      expect(still).toBe(planner.plans[i]![HEAD.count]! > 0 ? still : 0);
+      // The reduced frame holds the actions of this step only, each with its full weight.
+      const plan = planner.plans[i]!;
+      let made = 0;
+      for (let s = 0; s < plan[HEAD.count]!; s++) {
+        const kind = plan[HEAD.size + s * ACT.size + ACT.kind]!;
+        if (kind !== SEG.loose && kind !== SEG.fall) made++;
+      }
+      expect(fillTrails(planner, i, 0, true, ring)).toBe(Math.min(made, TRAIL.count));
+      if (made > 0) expect(ring[TRAIL.alpha]).toBe(M.trail.weights[0]);
     });
     expect(seen).toBeGreaterThan(50);
   });
 });
 
 export type { Side };
+
+describe('the sent-off disc stays on the pitch (5)', () => {
+  it('never behind a goal line, ends on the touchline, and right after a goal comes in at his spot', () => {
+    let reds = 0;
+    let afterGoal = 0;
+    let restart = 0;
+    for (const m of corpus) {
+      const { steps, trace } = prepare(m);
+      if (!steps.some((s) => s.line?.source.type === 'red')) continue;
+      const choreo = choreograph(steps, lineupsOf(m), m.match.seed);
+      const planner = new BallPlanner(steps, trace, m.match.seed);
+      const out = createScene();
+      const still = createScene();
+      steps.forEach((step, i) => {
+        if (step.line?.source.type !== 'red' || step.line.stage !== 'final') return;
+        const disc = tagDiscOf(choreo, i);
+        if (disc < 0) return;
+        reds++;
+        const just = steps[i - 1]?.timing === 'afterGoal';
+        if (just) afterGoal++;
+        planner.ensure(i);
+        if (planner.plans[i]![HEAD.sx]! > 95 || planner.plans[i]![HEAD.sx]! < 10) restart++;
+        for (const p of [0, 0.25, 0.5, 0.75, 1]) {
+          sceneAt(choreo, i, p, out, 'normal', planner);
+          expect(out.x[disc]!, `x at ${p}`).toBeGreaterThanOrEqual(0);
+          expect(out.x[disc]!).toBeLessThanOrEqual(PITCH_SIZE.length);
+          if (!just) {
+            expect(out.y[disc]!).toBeGreaterThanOrEqual(0);
+            expect(out.y[disc]!).toBeLessThanOrEqual(PITCH_SIZE.width);
+          }
+        }
+        // The end of the step, moving and in the reduced frame: on the touchline, not past it.
+        stillScene(choreo, i, still, planner);
+        sceneAt(choreo, i, 1, out, 'normal', planner);
+        if (!just) {
+          for (const y of [out.y[disc]!, still.y[disc]!]) {
+            expect([0, PITCH_SIZE.width]).toContain(y);
+          }
+        }
+        if (just) {
+          // Standing at his spot of the formation from the first frame.
+          sceneAt(choreo, i, 0, out, 'normal', planner);
+          const spot = choreo.steps[i]!;
+          expect(spot.from[disc * 2]).toBe(out.x[disc]);
+          expect(spot.from[disc * 2 + 1]).toBe(out.y[disc]);
+        }
+      });
+    }
+    expect(reds).toBeGreaterThan(100);
+    expect(afterGoal).toBeGreaterThan(3);
+    expect(restart).toBeGreaterThan(5);
+  });
+});

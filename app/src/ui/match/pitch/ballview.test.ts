@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { clearOf, drawShadow, drawTrails, drawWedge, pitchDashes } from './ballview';
-import { ballPlace, holdBall, pitchGeometry, ringSize, shadowShift, project } from './geometry';
+import { ballPlace, pitchGeometry, ringSize, shadowShift, project } from './geometry';
 import { PITCH_MOTION as M } from './motion';
 import { SEG, TRAIL, Z, heightAt } from './plan';
 import { createScene } from './scene';
@@ -77,6 +77,7 @@ describe('the shadow of the ball (7, rule against covering it)', () => {
 function recorder() {
   const log: string[] = [];
   const points: [number, number][] = [];
+  const ellipses: number[][] = [];
   const state = { dash: [] as readonly number[], width: 0, alpha: 1 };
   const ctx = {
     set strokeStyle(_v: string) {},
@@ -100,7 +101,10 @@ function recorder() {
       log.push('line');
       points.push([x, y]);
     },
-    ellipse: () => log.push('ellipse'),
+    ellipse: (...a: number[]) => {
+      log.push('ellipse');
+      ellipses.push(a);
+    },
     closePath: () => log.push('close'),
     stroke: () =>
       log.push(`stroke w${state.width} d${state.dash.join('/')} a${state.alpha.toFixed(2)}`),
@@ -108,7 +112,7 @@ function recorder() {
     fill: () => log.push('fill'),
     setTransform: (...a: number[]) => log.push(`transform ${a.length}`),
   } as unknown as CanvasRenderingContext2D;
-  return { ctx, log, points };
+  return { ctx, log, points, ellipses };
 }
 
 function trail(entries: Record<string, number>[]) {
@@ -307,14 +311,16 @@ describe('the ring of the landing (7, planner 11)', () => {
             const r0 = Math.max(1.25 * at[2]!, g.ballMin);
             // Clear of the ball: the inside of the stroke (1px CSS from the line) from its edge.
             expect(out[1]! - r0 - dpr).toBeGreaterThanOrEqual(2 * dpr - 1e-9);
-            // Inside the trapezoid: held by the same rule as a ball of the ring's own size.
-            const held = new Float64Array(2);
-            holdBall(g, at[0]!, at[1]!, out[1]!, held);
-            expect(Math.abs(held[1]! - at[1]!)).toBeLessThan(0.75 * dpr);
-            const half = out[0]!;
-            const t = g.farScale + ((at[1]! - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
-            expect(at[0]! - half).toBeGreaterThanOrEqual(g.width / 2 - (g.width / 2) * t - 1e-9);
-            expect(at[0]! + half).toBeLessThanOrEqual(g.width / 2 + (g.width / 2) * t + 1e-9);
+            // Inside the trapezoid, exactly: every point of the ring is between the far edge and the
+            // near one and inside the sides at its own depth.
+            for (let deg = 0; deg < 360; deg += 5) {
+              const px = at[0]! + out[0]! * Math.cos((deg * Math.PI) / 180);
+              const py = at[1]! + out[1]! * Math.sin((deg * Math.PI) / 180);
+              expect(py).toBeGreaterThanOrEqual(g.yFar);
+              expect(py).toBeLessThanOrEqual(g.height);
+              const t = g.farScale + ((py - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
+              expect(Math.abs(px - g.width / 2)).toBeLessThanOrEqual((g.width / 2) * t);
+            }
           }
         }
       }
@@ -365,6 +371,35 @@ describe('the arc is held in the trapezoid like the ball (7, planner 12)', () =>
           expect(py).toBeLessThanOrEqual(g.height - r + 1e-9);
           const t = g.farScale + ((py - g.yFar) / (g.height - g.yFar)) * (1 - g.farScale);
           expect(Math.abs(px - g.width / 2)).toBeLessThanOrEqual((g.width / 2) * t - r + 1e-9);
+        });
+      }
+    }
+  });
+});
+
+describe('the ring is centred on the landing (planner 11)', () => {
+  it('four arcs on the projected target, to a thousandth of a pixel, with the semi-axes of ringSize', () => {
+    for (const [w, h] of SIZES) {
+      const g = pitchGeometry(w * 2, h * 2, 2);
+      const out = new Float64Array(2);
+      const at = new Float64Array(3);
+      for (const [x1, y1] of [
+        [60, 20],
+        [95, 63],
+        [12, 5],
+      ] as const) {
+        const scene = trail([{ kind: SEG.cross, h: 5, zmode: Z.arch }]);
+        scene.trails.set([x1, y1], TRAIL.x1);
+        const a = recorder();
+        drawTrails(a.ctx, g, scene, '#fff', pitchDashes(2));
+        project(g, x1, y1, at);
+        ringSize(g, at[2]!, out);
+        expect(a.ellipses).toHaveLength(4);
+        a.ellipses.forEach(([cx, cy, rx, ry]) => {
+          expect(cx).toBeCloseTo(at[0]!, 3);
+          expect(cy).toBeCloseTo(at[1]!, 3);
+          expect(rx).toBeCloseTo(out[0]!, 9);
+          expect(ry).toBeCloseTo(out[1]!, 9);
         });
       }
     }

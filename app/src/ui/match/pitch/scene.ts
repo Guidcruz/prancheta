@@ -387,6 +387,8 @@ export function choreograph(
     const leaving: number[] = [];
     /** The sent-off disc of a red card, whose player walks to the touchline. */
     let expelled = -1;
+    /** The sent-off of a red card right after a goal: parked at his spot, no walk from the ball. */
+    let parked = false;
     /** The disc of the player the tag of the step names (see `StepMotion.tag`). */
     let tag = -1;
 
@@ -498,9 +500,10 @@ export function choreograph(
           if (prevShow[d] !== 1) setDisc(from, d, to[d * 2]!, to[d * 2 + 1]!);
         }
       } else if (source?.type === 'red' && expelled !== -1) {
-        const by = from[BALL + 1]!;
-        const y = by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff;
-        setDisc(from, expelled, from[BALL]!, Math.min(PITCH_SIZE.width, Math.max(0, y)));
+        // Right after a goal he comes in standing at his spot of the formation (5), not by the ball.
+        const [fx, fy] = field.spot(expelled);
+        setDisc(from, expelled, fx, fy);
+        parked = true;
         toTouchline(to);
         show[expelled] = 1;
         tag = expelled;
@@ -708,7 +711,7 @@ export function choreograph(
       gone,
       owner,
       tag,
-      walker: expelled !== -1 && show[expelled] === 1 ? expelled : -1,
+      walker: expelled !== -1 && show[expelled] === 1 && !parked ? expelled : -1,
     });
     // What the next step sees as shown before it: not the gone discs (the new keeper appears).
     prevShow = show.map((v, d) => (gone[d] === 1 ? 0 : v));
@@ -824,8 +827,10 @@ function walk(out: PitchScene, step: StepMotion, plan: Float64Array, done: numbe
     PITCH_SIZE.width,
     Math.max(0, by < CENTRE_Y ? by - M.appear.sentOff : by + M.appear.sentOff),
   );
-  const end = start < CENTRE_Y ? -M.leave : PITCH_SIZE.width + M.leave;
-  out.x[d] = plan[HEAD.sx]!;
+  // To the touchline itself, not past it: the disc is never cut by the edge of the canvas.
+  const end = start < CENTRE_Y ? 0 : PITCH_SIZE.width;
+  // Never behind a goal line (a restart after a wide shot starts the ball out there).
+  out.x[d] = Math.min(PITCH_SIZE.length, Math.max(0, plan[HEAD.sx]!));
   out.y[d] = lerp(start, end, done);
 }
 
